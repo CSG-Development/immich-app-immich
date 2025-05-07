@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import JobsPanel from '$lib/components/admin-page/jobs/jobs-panel.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import { AppRoute } from '$lib/constants';
@@ -48,7 +49,7 @@
       </Button>
       <Button
         leadingIcon={mdiCog}
-        href="{AppRoute.ADMIN_SETTINGS}?isOpen=job"
+        href={resolveRoute(`${AppRoute.ADMIN_SETTINGS}?isOpen=job`, {})}
         size="small"
         variant="ghost"
         color="secondary"

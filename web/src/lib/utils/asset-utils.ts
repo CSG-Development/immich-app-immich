@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { resolveRoute } from '$app/paths';
 import FormatBoldMessage from '$lib/components/i18n/format-bold-message.svelte';
 import type { InterpolationValues } from '$lib/components/i18n/format-message';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
@@ -62,7 +63,7 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(`${AppRoute.ALBUMS}/${albumId}`);
+          return goto(resolveRoute(`${AppRoute.ALBUMS}/${albumId}`, {}));
         },
       },
     });
@@ -137,7 +138,7 @@ export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[])
     button: {
       text: $t('view_album'),
       onClick() {
-        return goto(`${AppRoute.ALBUMS}/${album.id}`);
+        return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
       },
     },
   });

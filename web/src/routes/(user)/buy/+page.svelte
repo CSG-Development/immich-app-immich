@@ -1,15 +1,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
+  import Icon from '$lib/components/elements/icon.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import LicenseActivationSuccess from '$lib/components/shared-components/purchasing/purchase-activation-success.svelte';
   import LicenseContent from '$lib/components/shared-components/purchasing/purchase-content.svelte';
+  import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
   import { AppRoute } from '$lib/constants';
+  import { purchaseStore } from '$lib/stores/purchase.store';
+  import { mdiAlertCircleOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { mdiAlertCircleOutline } from '@mdi/js';
-  import { purchaseStore } from '$lib/stores/purchase.store';
-  import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
 
   interface Props {
     data: PageData;
@@ -38,7 +39,7 @@
       {/if}
 
       {#if showLicenseActivated || data.isActivated === true}
-        <LicenseActivationSuccess onDone={() => goto(AppRoute.PHOTOS, { replaceState: false })} />
+        <LicenseActivationSuccess onDone={() => goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: false })} />
       {:else}
         <LicenseContent
           onActivate={() => {

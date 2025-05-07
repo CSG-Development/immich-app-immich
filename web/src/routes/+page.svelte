@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import { AppRoute } from '$lib/constants';
-  import { Heading, Button, Logo } from '@immich/ui';
+  import { Button, Heading, Logo } from '@immich/ui';
   import { t } from 'svelte-i18n';
 </script>
 
@@ -10,7 +11,7 @@
       <Logo variant="icon" class="text-center" size="landing" />
     </div>
     <Heading size="giant" color="primary" tag="h1">{$t('welcome_to_immich')}</Heading>
-    <Button href={AppRoute.AUTH_REGISTER} size="giant" shape="round">
+    <Button href={resolveRoute(AppRoute.AUTH_REGISTER, {})} size="giant" shape="round">
       <span class="px-2 font-bold">{$t('getting_started')}</span>
     </Button>
   </div>

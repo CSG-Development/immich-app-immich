@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import empty3Url from '$lib/assets/empty-3.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
@@ -33,7 +34,7 @@
   let { data }: Props = $props();
 
   if (!$featureFlags.trash) {
-    handlePromiseError(goto(AppRoute.PHOTOS));
+    handlePromiseError(goto(resolveRoute(AppRoute.PHOTOS, {})));
   }
 
   const assetStore = new AssetStore();

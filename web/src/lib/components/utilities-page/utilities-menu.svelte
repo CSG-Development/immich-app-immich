@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { mdiContentDuplicate } from '@mdi/js';
+  import { resolveRoute } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
+  import { mdiContentDuplicate } from '@mdi/js';
   import { t } from 'svelte-i18n';
 </script>
 
@@ -9,7 +10,7 @@
   <p class="text-xs font-medium p-4">{$t('organize_your_library').toUpperCase()}</p>
 
   <a
-    href={AppRoute.DUPLICATES}
+    href={resolveRoute(AppRoute.DUPLICATES, {})}
     class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4"
   >
     <span

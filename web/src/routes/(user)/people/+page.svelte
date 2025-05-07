@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/stores';
   import { focusTrap } from '$lib/actions/focus-trap';
   import { scrollMemory } from '$lib/actions/scroll-memory';
@@ -230,7 +231,7 @@
 
   const handleMergePeople = async (detail: PersonResponseDto) => {
     await goto(
-      `${AppRoute.PEOPLE}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${AppRoute.PEOPLE}`,
+      `${resolveRoute(AppRoute.PEOPLE, {})}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolveRoute(AppRoute.PEOPLE, {})}`,
     );
   };
 
@@ -365,7 +366,7 @@
     [
       scrollMemory,
       {
-        routeStartsWith: AppRoute.PEOPLE,
+        routeStartsWith: resolveRoute(AppRoute.PEOPLE, {}),
         beforeSave: () => {
           if (currentPage) {
             sessionStorage.setItem(SessionStorageKey.INFINITE_SCROLL_PAGE, currentPage.toString());

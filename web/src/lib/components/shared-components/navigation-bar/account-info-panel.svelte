@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { focusTrap } from '$lib/actions/focus-trap';
   import Button from '$lib/components/elements/buttons/button.svelte';
@@ -75,7 +76,14 @@
     </div>
 
     <div class="flex flex-col gap-1">
-      <Button href={AppRoute.USER_SETTINGS} onclick={onClose} color="dark-gray" size="sm" shadow={false} border>
+      <Button
+        href={resolveRoute(AppRoute.USER_SETTINGS, {})}
+        onclick={onClose}
+        color="dark-gray"
+        size="sm"
+        shadow={false}
+        border
+      >
         <div class="flex place-content-center place-items-center text-center gap-2 px-2">
           <Icon path={mdiCog} size="18" ariaHidden />
           {$t('account_settings')}
@@ -83,7 +91,7 @@
       </Button>
       {#if $user.isAdmin}
         <Button
-          href={AppRoute.ADMIN_USER_MANAGEMENT}
+          href={resolveRoute(AppRoute.ADMIN_USER_MANAGEMENT, {})}
           onclick={onClose}
           color="dark-gray"
           size="sm"

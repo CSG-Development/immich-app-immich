@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import GroupTab from '$lib/components/elements/group-tab.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
@@ -56,7 +57,7 @@
 
   const handleEditDone = async () => {
     await refresh();
-    await goto(AppRoute.SHARED_LINKS);
+    await goto(resolveRoute(AppRoute.SHARED_LINKS, {}));
   };
 
   type Filter = 'all' | 'album' | 'individual';
@@ -77,7 +78,7 @@
 
   let selectedTab = $derived(getActiveTab(page.url));
   const handleSelectTab = async (value: string) => {
-    await goto(`${AppRoute.SHARED_LINKS}?filter=${value}`);
+    await goto(resolveRoute(`${AppRoute.SHARED_LINKS}?filter=${value}`, {}));
   };
 
   let filteredSharedLinks = $derived(

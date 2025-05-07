@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import AuthPageLayout from '$lib/components/layouts/AuthPageLayout.svelte';
   import { AppRoute } from '$lib/constants';
   import { retrieveServerConfig } from '$lib/stores/server-config.store';
@@ -36,7 +37,7 @@
     try {
       await signUpAdmin({ signUpDto: { email, password, name } });
       await retrieveServerConfig();
-      await goto(AppRoute.AUTH_LOGIN);
+      await goto(resolveRoute(AppRoute.AUTH_LOGIN, {}));
     } catch (error) {
       handleError(error, $t('errors.unable_to_create_admin_account'));
       errorMessage = $t('errors.unable_to_create_admin_account');

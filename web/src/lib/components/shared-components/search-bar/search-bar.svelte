@@ -1,19 +1,20 @@
 <script lang="ts">
-  import { AppRoute } from '$lib/constants';
   import { goto } from '$app/navigation';
-  import { searchStore } from '$lib/stores/search.svelte';
-  import { mdiClose, mdiMagnify, mdiTune } from '@mdi/js';
-  import SearchHistoryBox from './search-history-box.svelte';
-  import SearchFilterModal from './search-filter-modal.svelte';
-  import type { MetadataSearchDto, SmartSearchDto } from '@immich/sdk';
-  import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
-  import { handlePromiseError } from '$lib/utils';
-  import { shortcuts } from '$lib/actions/shortcut';
+  import { resolveRoute } from '$app/paths';
   import { focusOutside } from '$lib/actions/focus-outside';
+  import { shortcuts } from '$lib/actions/shortcut';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
-  import { t } from 'svelte-i18n';
+  import { AppRoute } from '$lib/constants';
+  import { searchStore } from '$lib/stores/search.svelte';
+  import { handlePromiseError } from '$lib/utils';
   import { generateId } from '$lib/utils/generate-id';
+  import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
+  import type { MetadataSearchDto, SmartSearchDto } from '@immich/sdk';
+  import { mdiClose, mdiMagnify, mdiTune } from '@mdi/js';
   import { onDestroy, tick } from 'svelte';
+  import { t } from 'svelte-i18n';
+  import SearchFilterModal from './search-filter-modal.svelte';
+  import SearchHistoryBox from './search-history-box.svelte';
 
   interface Props {
     value?: string;
@@ -45,7 +46,7 @@
     closeDropdown();
     showFilter = false;
     searchStore.isSearchEnabled = false;
-    await goto(`${AppRoute.SEARCH}?${params}`);
+    await goto(resolveRoute(`${AppRoute.SEARCH}?${params}`, {}));
   };
 
   const clearSearchTerm = (searchTerm: string) => {
@@ -206,7 +207,7 @@
     draggable="false"
     autocomplete="off"
     class="select-text text-sm"
-    action={AppRoute.SEARCH}
+    action={resolveRoute(AppRoute.SEARCH, {})}
     onreset={() => (value = '')}
     {onsubmit}
     onfocusin={onFocusIn}

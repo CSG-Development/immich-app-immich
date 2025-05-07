@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import empty2Url from '$lib/assets/empty-2.svg';
   import Albums from '$lib/components/album-page/albums-list.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
@@ -48,7 +49,13 @@
       >
         <Text class="hidden md:block">{$t('create_album')}</Text>
       </Button>
-      <Button leadingIcon={mdiLink} href={AppRoute.SHARED_LINKS} size="small" variant="ghost" color="secondary">
+      <Button
+        leadingIcon={mdiLink}
+        href={resolveRoute(AppRoute.SHARED_LINKS, {})}
+        size="small"
+        variant="ghost"
+        color="secondary"
+      >
         <Text class="hidden md:block">{$t('shared_links')}</Text>
       </Button>
     </HStack>
@@ -64,7 +71,7 @@
         <div class="flex flex-row flex-wrap gap-4">
           {#each data.partners as partner (partner.id)}
             <a
-              href="{AppRoute.PARTNERS}/{partner.id}"
+              href={resolveRoute(`${AppRoute.PARTNERS}/${partner.id}`, {})}
               class="flex gap-4 rounded-lg px-5 py-4 transition-all hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <UserAvatar user={partner} size="lg" />
