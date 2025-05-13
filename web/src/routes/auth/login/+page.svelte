@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import AuthPageLayout from '$lib/components/layouts/AuthPageLayout.svelte';
   import { AppRoute } from '$lib/constants';
   import { eventManager } from '$lib/managers/event-manager.svelte';
@@ -26,12 +27,12 @@
   let oauthLoading = $state(true);
 
   const onSuccess = async (user: LoginResponseDto) => {
-    await goto(AppRoute.PHOTOS, { invalidateAll: true });
+    await goto(resolveRoute(AppRoute.PHOTOS, {}), { invalidateAll: true });
     eventManager.emit('auth.login', user);
   };
 
-  const onFirstLogin = async () => await goto(AppRoute.AUTH_CHANGE_PASSWORD);
-  const onOnboarding = async () => await goto(AppRoute.AUTH_ONBOARDING);
+  const onFirstLogin = async () => await goto(resolveRoute(AppRoute.AUTH_CHANGE_PASSWORD, {}));
+  const onOnboarding = async () => await goto(resolveRoute(AppRoute.AUTH_ONBOARDING, {}));
 
   onMount(async () => {
     if (!$featureFlags.oauth) {
@@ -53,7 +54,7 @@
 
     try {
       if ($featureFlags.oauthAutoLaunch && !oauth.isAutoLaunchDisabled(globalThis.location)) {
-        await goto(`${AppRoute.AUTH_LOGIN}?autoLaunch=0`, { replaceState: true });
+        await goto(resolveRoute(`${AppRoute.AUTH_LOGIN}?autoLaunch=0`, {}), { replaceState: true });
         await oauth.authorize(globalThis.location);
         return;
       }

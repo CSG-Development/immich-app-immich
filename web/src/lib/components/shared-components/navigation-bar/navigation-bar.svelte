@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
@@ -78,7 +79,7 @@
         }}
         class="sidebar:hidden"
       />
-      <a data-sveltekit-preload-data="hover" href={AppRoute.PHOTOS}>
+      <a data-sveltekit-preload-data="hover" href={resolveRoute(AppRoute.PHOTOS, {})}>
         <ImmichLogo class="max-md:h-[48px] h-[50px]" noText={!mobileDevice.isFullSidebar} />
       </a>
     </div>
@@ -97,7 +98,7 @@
             variant="ghost"
             size="medium"
             icon={mdiMagnify}
-            href={AppRoute.SEARCH}
+            href={resolveRoute(AppRoute.SEARCH, {})}
             id="search-button"
             class="sm:hidden"
             aria-label={$t('go_to_search')}

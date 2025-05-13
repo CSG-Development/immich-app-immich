@@ -2,6 +2,7 @@
   import { run } from 'svelte/legacy';
 
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import MapSettingsModal from '$lib/components/map-page/map-settings-modal.svelte';
   import Map from '$lib/components/shared-components/map/map.svelte';
@@ -11,13 +12,13 @@
   import type { MapSettings } from '$lib/stores/preferences.store';
   import { mapSettings } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
+  import { handlePromiseError } from '$lib/utils';
+  import { navigate } from '$lib/utils/navigation';
   import { getMapMarkers, type MapMarkerResponseDto } from '@immich/sdk';
   import { isEqual } from 'lodash-es';
   import { DateTime, Duration } from 'luxon';
   import { onDestroy, onMount } from 'svelte';
   import type { PageData } from './$types';
-  import { handlePromiseError } from '$lib/utils';
-  import { navigate } from '$lib/utils/navigation';
 
   interface Props {
     data: PageData;
@@ -44,7 +45,7 @@
 
   run(() => {
     if (!$featureFlags.map) {
-      handlePromiseError(goto(AppRoute.PHOTOS));
+      handlePromiseError(goto(resolveRoute(AppRoute.PHOTOS, {})));
     }
   });
   const omit = (obj: MapSettings, key: string) => {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { intersectionObserver } from '$lib/actions/intersection-observer';
   import { resizeObserver } from '$lib/actions/resize-observer';
@@ -105,7 +106,7 @@
   const handlePreviousAsset = () => handleNavigate(current?.previous?.asset);
   const handleNextMemory = () => handleNavigate(current?.nextMemory?.assets[0]);
   const handlePreviousMemory = () => handleNavigate(current?.previousMemory?.assets[0]);
-  const handleEscape = async () => goto(AppRoute.PHOTOS);
+  const handleEscape = async () => goto(resolveRoute(AppRoute.PHOTOS, {}));
   const handleSelectAll = () => assetInteraction.selectAssets(current?.memory.assets || []);
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
     // leaving these log statements here as comments. Very useful to figure out what's going on during dev!
@@ -227,7 +228,7 @@
 
   const init = (target: Page | NavigationTarget | null) => {
     if (memoryStore.memories.length === 0) {
-      return handlePromiseError(goto(AppRoute.PHOTOS));
+      return handlePromiseError(goto(resolveRoute(AppRoute.PHOTOS, {})));
     }
 
     current = loadFromParams(target);
@@ -341,7 +342,7 @@
   use:resizeObserver={({ height, width }) => ((viewport.height = height), (viewport.width = width))}
 >
   {#if current}
-    <ControlAppBar onClose={() => goto(AppRoute.PHOTOS)} forceDark multiRow>
+    <ControlAppBar onClose={() => goto(resolveRoute(AppRoute.PHOTOS, {}))} forceDark multiRow>
       {#snippet leading()}
         {#if current}
           <p class="text-lg">
@@ -509,7 +510,7 @@
 
               <div>
                 <IconButton
-                  href="{AppRoute.PHOTOS}?at={current.asset.id}"
+                  href={resolveRoute(`${AppRoute.PHOTOS}?at=${current.asset.id}`, {})}
                   icon={mdiImageSearch}
                   aria-label={$t('view_in_timeline')}
                   color="secondary"

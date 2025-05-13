@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
   import type { UploadAsset } from '$lib/models/upload-asset';
@@ -36,7 +37,9 @@
   };
 
   const asLink = (asset: UploadAsset) => {
-    return asset.isTrashed ? `${AppRoute.TRASH}/${asset.assetId}` : `${AppRoute.PHOTOS}/${uploadAsset.assetId}`;
+    return asset.isTrashed
+      ? resolveRoute(`${AppRoute.TRASH}/${asset.assetId}`, {})
+      : resolveRoute(`${AppRoute.PHOTOS}/${uploadAsset.assetId}`, {});
   };
 </script>
 

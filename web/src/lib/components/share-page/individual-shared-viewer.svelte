@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
   import ImmichLogoSmallLink from '$lib/components/shared-components/immich-logo-small-link.svelte';
   import { AppRoute, AssetAction } from '$lib/constants';
@@ -80,7 +81,7 @@
       case AssetAction.ARCHIVE:
       case AssetAction.DELETE:
       case AssetAction.TRASH: {
-        await goto(AppRoute.PHOTOS);
+        await goto(resolveRoute(AppRoute.PHOTOS, {}));
         break;
       }
     }
@@ -103,7 +104,11 @@
         {/if}
       </AssetSelectControlBar>
     {:else}
-      <ControlAppBar onClose={() => goto(AppRoute.PHOTOS)} backIcon={mdiArrowLeft} showBackButton={false}>
+      <ControlAppBar
+        onClose={() => goto(resolveRoute(AppRoute.PHOTOS, {}))}
+        backIcon={mdiArrowLeft}
+        showBackButton={false}
+      >
         {#snippet leading()}
           <ImmichLogoSmallLink />
         {/snippet}

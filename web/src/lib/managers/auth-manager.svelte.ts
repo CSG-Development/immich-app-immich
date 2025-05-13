@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { resolveRoute } from '$app/paths';
 import { page } from '$app/state';
 import { AppRoute } from '$lib/constants';
 import { eventManager } from '$lib/managers/event-manager.svelte';
@@ -20,7 +21,7 @@ class AuthManager {
       console.log('Error logging out:', error);
     }
 
-    redirectUri = redirectUri ?? AppRoute.AUTH_LOGIN;
+    redirectUri = redirectUri ? resolveRoute(redirectUri, {}) : resolveRoute(AppRoute.AUTH_LOGIN, {});
 
     try {
       if (redirectUri.startsWith('/')) {

@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { createBubbler, preventDefault } from 'svelte/legacy';
-
-  const bubble = createBubbler();
+  import { resolveRoute } from '$app/paths';
+  import FormatMessage from '$lib/components/i18n/format-message.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
+  import SettingButtonsRow from '$lib/components/shared-components/settings/setting-buttons-row.svelte';
+  import SettingInputField from '$lib/components/shared-components/settings/setting-input-field.svelte';
+  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
   import { AppRoute, SettingInputFieldType } from '$lib/constants';
   import { user } from '$lib/stores/user.store';
   import {
@@ -13,16 +15,14 @@
   import handlebar from 'handlebars';
   import { isEqual } from 'lodash-es';
   import * as luxon from 'luxon';
+  import type { Snippet } from 'svelte';
+  import { t } from 'svelte-i18n';
+  import { createBubbler, preventDefault } from 'svelte/legacy';
   import { fade } from 'svelte/transition';
   import type { SettingsResetEvent, SettingsSaveEvent } from '../admin-settings';
   import SupportedDatetimePanel from './supported-datetime-panel.svelte';
   import SupportedVariablesPanel from './supported-variables-panel.svelte';
-  import SettingButtonsRow from '$lib/components/shared-components/settings/setting-buttons-row.svelte';
-  import SettingInputField from '$lib/components/shared-components/settings/setting-input-field.svelte';
-  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
-  import { t } from 'svelte-i18n';
-  import FormatMessage from '$lib/components/i18n/format-message.svelte';
-  import type { Snippet } from 'svelte';
+  const bubble = createBubbler();
 
   interface Props {
     savedConfig: SystemConfigDto;
@@ -266,7 +266,10 @@
                       values={{ job: $t('admin.storage_template_migration_job') }}
                     >
                       {#snippet children({ message })}
-                        <a href={AppRoute.ADMIN_JOBS} class="text-immich-primary dark:text-immich-dark-primary">
+                        <a
+                          href={resolveRoute(AppRoute.ADMIN_JOBS, {})}
+                          class="text-immich-primary dark:text-immich-dark-primary"
+                        >
                           {message}
                         </a>
                       {/snippet}

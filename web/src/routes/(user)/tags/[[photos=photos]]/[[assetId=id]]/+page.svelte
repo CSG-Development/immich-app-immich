@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/stores';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
@@ -22,9 +23,9 @@
   import { deleteTag, getAllTags, updateTag, upsertTags, type TagResponseDto } from '@immich/sdk';
   import { Button, HStack, Text } from '@immich/ui';
   import { mdiPencil, mdiPlus, mdiTag, mdiTagMultiple, mdiTrashCanOutline } from '@mdi/js';
+  import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
-  import { onDestroy } from 'svelte';
 
   interface Props {
     data: PageData;
@@ -55,7 +56,7 @@
   };
 
   const getLink = (path: string) => {
-    const url = new URL(AppRoute.TAGS, globalThis.location.href);
+    const url = new URL(resolveRoute(AppRoute.TAGS, {}), globalThis.location.href);
     if (path) {
       url.searchParams.set(QueryParameter.PATH, path);
     }

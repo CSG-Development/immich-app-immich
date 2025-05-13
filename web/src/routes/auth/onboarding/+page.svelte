@@ -2,6 +2,7 @@
   import { run } from 'svelte/legacy';
 
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/stores';
   import OnboardingHello from '$lib/components/onboarding-page/onboarding-hello.svelte';
   import OnboardingPrivacy from '$lib/components/onboarding-page/onboarding-privacy.svelte';
@@ -39,17 +40,27 @@
     if (index >= onboardingSteps.length - 1) {
       await updateAdminOnboarding({ adminOnboardingUpdateDto: { isOnboarded: true } });
       await retrieveServerConfig();
-      await goto(AppRoute.PHOTOS);
+      await goto(resolveRoute(AppRoute.PHOTOS, {}));
     } else {
       index++;
-      await goto(`${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[index].name}`);
+      await goto(
+        resolveRoute(
+          `${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[index].name}`,
+          {},
+        ),
+      );
     }
   };
 
   const handlePrevious = async () => {
     if (index >= 1) {
       index--;
-      await goto(`${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[index].name}`);
+      await goto(
+        resolveRoute(
+          `${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[index].name}`,
+          {},
+        ),
+      );
     }
   };
 

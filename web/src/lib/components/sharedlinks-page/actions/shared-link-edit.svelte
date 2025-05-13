@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { AppRoute } from '$lib/constants';
@@ -15,7 +16,7 @@
   let { sharedLink, menuItem = false }: Props = $props();
 
   const onEdit = async () => {
-    await goto(`${AppRoute.SHARED_LINKS}/${sharedLink.id}`);
+    await goto(resolveRoute(`${AppRoute.SHARED_LINKS}/${sharedLink.id}`, {}));
   };
 </script>
 
