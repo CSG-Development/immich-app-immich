@@ -2,10 +2,16 @@
   xmlns:tools="http://schemas.android.com/tools">
 
   <uses-permission android:name="android.permission.INTERNET" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-    android:maxSdkVersion="32" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-    android:maxSdkVersion="32" />
+  <uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32"
+    tools:replace="android:maxSdkVersion"
+  />
+  <uses-permission
+    android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28"
+    tools:replace="android:maxSdkVersion"
+  />
   <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
   <uses-permission android:name="android.permission.MANAGE_MEDIA" />
   <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -29,7 +35,6 @@
     android:name=".ImmichApp"
     android:usesCleartextTraffic="true"
     android:icon="@mipmap/ic_launcher"
-    android:requestLegacyExternalStorage="true"
     android:largeHeap="true"
     android:localeConfig="@xml/locales_config"
     android:fullBackupContent="@xml/backup_rules"
