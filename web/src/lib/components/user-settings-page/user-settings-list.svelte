@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { OpenSettingQueryParameterValue, QueryParameter } from '$lib/constants';
-  import { featureFlags } from '$lib/stores/server-config.store';
+  // import { featureFlags } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { oauth } from '$lib/utils';
   import { type ApiKeyResponseDto, type SessionResponseDto } from '@immich/sdk';
@@ -10,7 +10,7 @@
   import AppSettings from './app-settings.svelte';
   // import ChangePasswordSettings from './change-password-settings.svelte';
   import DeviceList from './device-list.svelte';
-  import OAuthSettings from './oauth-settings.svelte';
+  // import OAuthSettings from './oauth-settings.svelte';
   import PartnerSettings from './partner-settings.svelte';
   // import UserAPIKeyList from './user-api-key-list.svelte';
   // import UserProfileSettings from './user-profile-settings.svelte';
@@ -110,17 +110,17 @@
     <NotificationsSettings />
   </SettingAccordion>
 
-  {#if $featureFlags.loaded && $featureFlags.oauth}
-    <SettingAccordion
-      icon={mdiTwoFactorAuthentication}
-      key="oauth"
-      title={$t('oauth')}
-      subtitle={$t('manage_your_oauth_connection')}
-      isOpen={oauthOpen || undefined}
-    >
-      <OAuthSettings user={$user} />
-    </SettingAccordion>
-  {/if}
+  <!--{#if $featureFlags.loaded && $featureFlags.oauth}-->
+  <!--  <SettingAccordion-->
+  <!--    icon={mdiTwoFactorAuthentication}-->
+  <!--    key="oauth"-->
+  <!--    title={$t('oauth')}-->
+  <!--    subtitle={$t('manage_your_oauth_connection')}-->
+  <!--    isOpen={oauthOpen || undefined}-->
+  <!--  >-->
+  <!--    <OAuthSettings user={$user} />-->
+  <!--  </SettingAccordion>-->
+  <!--{/if}-->
 
 <!--  <SettingAccordion icon={mdiOnepassword} key="password" title={$t('password')} subtitle={$t('change_your_password')}>-->
 <!--    <ChangePasswordSettings />-->
