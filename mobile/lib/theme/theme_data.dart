@@ -170,6 +170,12 @@ ThemeData getThemeData({
       // circularTrackColor: Colors.black12,
       trackGap: 3,
     ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: <TargetPlatform, PageTransitionsBuilder>{
+        // Set the predictive back transitions for Android.
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+      },
+    ),
   );
 }
 
