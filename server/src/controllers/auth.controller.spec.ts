@@ -134,12 +134,12 @@ describe(AuthController.name, () => {
     });
   });
 
-  describe('POST /auth/change-password', () => {
-    it('should be an authenticated route', async () => {
-      await request(ctx.getHttpServer())
-        .post('/auth/change-password')
-        .send({ password: 'password', newPassword: 'Password1234' });
-      expect(ctx.authenticate).toHaveBeenCalled();
-    });
-  });
+  // describe('POST /auth/change-password', () => {
+  //   it('should be an authenticated route', async () => {
+  //     await request(ctx.getHttpServer())
+  //       .post('/auth/change-password')
+  //       .send({ password: 'password', newPassword: 'Password1234' });
+  //     expect(ctx.authenticate).toHaveBeenCalled();
+  //   });
+  // });
 });

@@ -17,7 +17,7 @@
   import NotificationsSettings from '$lib/components/user-settings-page/notifications-settings.svelte';
   import { t } from 'svelte-i18n';
   import DownloadSettings from '$lib/components/user-settings-page/download-settings.svelte';
-  // import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte';
+  import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte';
   import FeatureSettings from '$lib/components/user-settings-page/feature-settings.svelte';
   import {
     mdiAccountGroupOutline,
@@ -83,23 +83,23 @@
     <DeviceList bind:devices={sessions} />
   </SettingAccordion>
 
-  <SettingAccordion
-    icon={mdiDownload}
-    key="download-settings"
-    title={$t('download_settings')}
-    subtitle={$t('download_settings_description')}
-  >
-    <DownloadSettings />
-  </SettingAccordion>
+<!--  <SettingAccordion-->
+<!--    icon={mdiDownload}-->
+<!--    key="download-settings"-->
+<!--    title={$t('download_settings')}-->
+<!--    subtitle={$t('download_settings_description')}-->
+<!--  >-->
+<!--    <DownloadSettings />-->
+<!--  </SettingAccordion>-->
 
-  <SettingAccordion
-    icon={mdiFeatureSearchOutline}
-    key="feature"
-    title={$t('features')}
-    subtitle={$t('features_setting_description')}
-  >
-    <FeatureSettings />
-  </SettingAccordion>
+<!--  <SettingAccordion-->
+<!--    icon={mdiFeatureSearchOutline}-->
+<!--    key="feature"-->
+<!--    title={$t('features')}-->
+<!--    subtitle={$t('features_setting_description')}-->
+<!--  >-->
+<!--    <FeatureSettings />-->
+<!--  </SettingAccordion>-->
 
   <SettingAccordion
     icon={mdiBellOutline}
