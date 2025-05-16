@@ -11,6 +11,10 @@
 *.ipa
 *.zip
 
+*.g.dart
+*.gen.dart
+*.freezed.dart
+
 # IntelliJ related
 *.iml
 *.ipr
