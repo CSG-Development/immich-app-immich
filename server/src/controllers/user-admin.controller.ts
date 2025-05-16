@@ -31,21 +31,21 @@ export class UserAdminController {
     return this.service.create(createUserDto);
   }
 
-  @Get(':id')
-  @Authenticated({ permission: Permission.ADMIN_USER_READ, admin: true })
-  getUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
-    return this.service.get(auth, id);
-  }
-
-  @Put(':id')
-  @Authenticated({ permission: Permission.ADMIN_USER_UPDATE, admin: true })
-  updateUserAdmin(
-    @Auth() auth: AuthDto,
-    @Param() { id }: UUIDParamDto,
-    @Body() dto: UserAdminUpdateDto,
-  ): Promise<UserAdminResponseDto> {
-    return this.service.update(auth, id, dto);
-  }
+  // @Get(':id')
+  // @Authenticated({ permission: Permission.ADMIN_USER_READ, admin: true })
+  // getUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
+  //   return this.service.get(auth, id);
+  // }
+  //
+  // @Put(':id')
+  // @Authenticated({ permission: Permission.ADMIN_USER_UPDATE, admin: true })
+  // updateUserAdmin(
+  //   @Auth() auth: AuthDto,
+  //   @Param() { id }: UUIDParamDto,
+  //   @Body() dto: UserAdminUpdateDto,
+  // ): Promise<UserAdminResponseDto> {
+  //   return this.service.update(auth, id, dto);
+  // }
 
   @Delete(':id')
   @Authenticated({ permission: Permission.ADMIN_USER_DELETE, admin: true })
@@ -73,10 +73,10 @@ export class UserAdminController {
     return this.service.updatePreferences(auth, id, dto);
   }
 
-  @Post(':id/restore')
-  @Authenticated({ permission: Permission.ADMIN_USER_DELETE, admin: true })
-  @HttpCode(HttpStatus.OK)
-  restoreUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
-    return this.service.restore(auth, id);
-  }
+  // @Post(':id/restore')
+  // @Authenticated({ permission: Permission.ADMIN_USER_DELETE, admin: true })
+  // @HttpCode(HttpStatus.OK)
+  // restoreUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
+  //   return this.service.restore(auth, id);
+  // }
 }
