@@ -131,5 +131,20 @@
       <action android:name="android.intent.action.VIEW" />
       <data android:scheme="geo" />
     </intent>
+    <intent>
+      <action android:name="android.intent.action.GET_CONTENT" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <action android:name="android.intent.action.SEND_MULTIPLE" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <provider android:authorities="com.android.externalstorage.documents" />
+    <provider android:authorities="com.google.android.apps.photos.content" />
   </queries>
 </manifest>
