@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <exclude domain="sharedpref" path="sensitive_data.xml" />
+</data-extraction-rules>
