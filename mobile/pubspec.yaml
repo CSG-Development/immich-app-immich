@@ -80,6 +80,7 @@ dependencies:
   # DB
   drift: ^2.23.1
   drift_flutter: ^0.2.4
+  flutter_dotenv: ^5.2.1
 
 dependency_overrides:
   analyzer: ^6.0.0
@@ -114,6 +115,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - .env.dev
+    - .env.prod
   fonts:
     - family: Inconsolata
       fonts:
