@@ -42,29 +42,30 @@
 {/if}
 
 <div
-  class="text-sm flex md:flex ps-5 pe-1 place-items-center place-content-center justify-between min-w-52 overflow-hidden dark:text-immich-dark-fg"
+  class="text-sm flex md:flex ps-5 pe-1 place-items-center place-content-center justify-end min-w-52 overflow-hidden dark:text-immich-dark-fg"
 >
-  {#if $connected}
-    <div class="flex gap-2 place-items-center place-content-center">
-      <div class="w-[7px] h-[7px] bg-green-500 rounded-full"></div>
-      <p class="dark:text-immich-gray">{$t('server_online')}</p>
-    </div>
-  {:else}
-    <div class="flex gap-2 place-items-center place-content-center">
-      <div class="w-[7px] h-[7px] bg-red-500 rounded-full"></div>
-      <p class="text-red-500">{$t('server_offline')}</p>
-    </div>
-  {/if}
+  <!--{#if $connected}-->
+  <!--  <div class="flex gap-2 place-items-center place-content-center">-->
+  <!--    <div class="w-[7px] h-[7px] bg-green-500 rounded-full"></div>-->
+  <!--    <p class="dark:text-immich-gray">{$t('server_online')}</p>-->
+  <!--  </div>-->
+  <!--{:else}-->
+  <!--  <div class="flex gap-2 place-items-center place-content-center">-->
+  <!--    <div class="w-[7px] h-[7px] bg-red-500 rounded-full"></div>-->
+  <!--    <p class="text-red-500">{$t('server_offline')}</p>-->
+  <!--  </div>-->
+  <!--{/if}-->
 
   <div class="flex justify-between justify-items-center">
     {#if $connected && version}
-      <button type="button" onclick={() => (isOpen = true)} class="dark:text-immich-gray flex gap-1">
-        {#if isMain}
-          <Icon path={mdiAlert} size="1.5em" color="#ffcc4d" /> {info?.sourceRef}
-        {:else}
-          {version}
-        {/if}
-      </button>
+<!--      <button type="button" onclick={() => (isOpen = true)} class="dark:text-immich-gray flex gap-1">-->
+<!--        {#if isMain}-->
+<!--          <Icon path={mdiAlert} size="1.5em" color="#ffcc4d" /> {info?.sourceRef}-->
+<!--        {:else}-->
+<!--          {version}-->
+<!--        {/if}-->
+<!--      </button>-->
+      <p class="dark:text-immich-gray">{version}</p>
     {:else}
       <p class="text-red-500">{$t('unknown')}</p>
     {/if}

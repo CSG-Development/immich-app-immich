@@ -89,22 +89,6 @@
           {$t('account_settings')}
         </div>
       </Button>
-      {#if $user.isAdmin}
-        <Button
-          href={resolveRoute(AppRoute.ADMIN_USER_MANAGEMENT, {})}
-          onclick={onClose}
-          color="dark-gray"
-          size="sm"
-          shadow={false}
-          border
-          aria-current={page.url.pathname.includes('/admin') ? 'page' : undefined}
-        >
-          <div class="flex place-content-center place-items-center text-center gap-2 px-2">
-            <Icon path={mdiWrench} size="18" ariaHidden />
-            {$t('administration')}
-          </div>
-        </Button>
-      {/if}
     </div>
   </div>
 

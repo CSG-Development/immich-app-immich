@@ -50,12 +50,12 @@ export class AuthController {
     return { authStatus: true };
   }
 
-  @Post('change-password')
-  @HttpCode(HttpStatus.OK)
-  @Authenticated()
-  changePassword(@Auth() auth: AuthDto, @Body() dto: ChangePasswordDto): Promise<UserAdminResponseDto> {
-    return this.service.changePassword(auth, dto);
-  }
+  // @Post('change-password')
+  // @HttpCode(HttpStatus.OK)
+  // @Authenticated()
+  // changePassword(@Auth() auth: AuthDto, @Body() dto: ChangePasswordDto): Promise<UserAdminResponseDto> {
+  //   return this.service.changePassword(auth, dto);
+  // }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)

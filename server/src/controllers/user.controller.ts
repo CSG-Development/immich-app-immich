@@ -48,11 +48,11 @@ export class UserController {
     return this.service.getMe(auth);
   }
 
-  @Put('me')
-  @Authenticated()
-  updateMyUser(@Auth() auth: AuthDto, @Body() dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
-    return this.service.updateMe(auth, dto);
-  }
+  // @Put('me')
+  // @Authenticated()
+  // updateMyUser(@Auth() auth: AuthDto, @Body() dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
+  //   return this.service.updateMe(auth, dto);
+  // }
 
   @Get('me/preferences')
   @Authenticated()
@@ -75,17 +75,17 @@ export class UserController {
     return this.service.getLicense(auth);
   }
 
-  @Put('me/license')
-  @Authenticated()
-  async setUserLicense(@Auth() auth: AuthDto, @Body() license: LicenseKeyDto): Promise<LicenseResponseDto> {
-    return this.service.setLicense(auth, license);
-  }
+  // @Put('me/license')
+  // @Authenticated()
+  // async setUserLicense(@Auth() auth: AuthDto, @Body() license: LicenseKeyDto): Promise<LicenseResponseDto> {
+  //   return this.service.setLicense(auth, license);
+  // }
 
-  @Delete('me/license')
-  @Authenticated()
-  async deleteUserLicense(@Auth() auth: AuthDto): Promise<void> {
-    await this.service.deleteLicense(auth);
-  }
+  // @Delete('me/license')
+  // @Authenticated()
+  // async deleteUserLicense(@Auth() auth: AuthDto): Promise<void> {
+  //   await this.service.deleteLicense(auth);
+  // }
 
   @Get(':id')
   @Authenticated()
