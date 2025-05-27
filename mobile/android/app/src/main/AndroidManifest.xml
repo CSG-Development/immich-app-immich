@@ -146,7 +146,6 @@
       <data android:mimeType="*/*" />
     </intent>
     <intent>
-      <action android:name="android.intent.action.SEND" />
       <action android:name="android.intent.action.SEND_MULTIPLE" />
       <data android:mimeType="*/*" />
     </intent>

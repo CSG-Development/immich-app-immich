@@ -7,9 +7,9 @@
     </trust-anchors>
   </base-config>
   <!-- ensure app endpoints to interact only over https including subdomains -->
-  <domain-config cleartextTrafficPermitted="false">
+  <!-- <domain-config cleartextTrafficPermitted="false">
     <domain includeSubdomains="true"></domain>
-  </domain-config>
+  </domain-config> -->
   <!-- for debug builds: allow cleartext traffic to test api calls with Fiddler / Charles / other -->
   <debug-overrides cleartextTrafficPermitted="true">
     <trust-anchors>
