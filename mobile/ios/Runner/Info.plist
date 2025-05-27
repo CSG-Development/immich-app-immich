@@ -6,8 +6,8 @@
 	<string>$(CUSTOM_GROUP_ID)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>app.alextran.immich.backgroundFetch</string>
-		<string>app.alextran.immich.backgroundProcessing</string>
+		<string>com.seagate.immich.backgroundFetch</string>
+		<string>com.seagate.immich.backgroundProcessing</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
