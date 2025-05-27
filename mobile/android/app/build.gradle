@@ -50,6 +50,10 @@ android {
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            debugSymbolLevel = "FULL"
+        }
     }
 
    signingConfigs {
@@ -69,13 +73,28 @@ android {
         debug {
             applicationIdSuffix '.debug'
             versionNameSuffix '-DEBUG'
+            signingConfig signingConfigs.debug
         }
 
         release {
+            shrinkResources true
             signingConfig signingConfigs.release
+            ndk {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            }
         }
     }
+
     namespace 'app.alextran.immich'
+
+    splits {
+        abi {
+            enable true
+            reset()
+            // https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures
+            include("armeabi-v7a", "arm64-v8a", "x86_64")
+            universalApk true // generate an additional APK that contains all the ABIs
+        }
 }
 
 flutter {
