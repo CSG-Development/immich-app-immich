@@ -59,6 +59,9 @@ PODS:
     - Flutter
   - isar_flutter_libs (1.0.0):
     - Flutter
+  - local_auth_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - MapLibre (6.5.0)
   - maplibre_gl (0.0.1):
     - Flutter
@@ -137,6 +140,7 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
+  - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
   - maplibre_gl (from `.symlinks/plugins/maplibre_gl/ios`)
   - native_video_player (from `.symlinks/plugins/native_video_player/ios`)
   - network_info_plus (from `.symlinks/plugins/network_info_plus/ios`)
@@ -192,6 +196,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   isar_flutter_libs:
     :path: ".symlinks/plugins/isar_flutter_libs/ios"
+  local_auth_darwin:
+    :path: ".symlinks/plugins/local_auth_darwin/darwin"
   maplibre_gl:
     :path: ".symlinks/plugins/maplibre_gl/ios"
   native_video_player:
@@ -240,6 +246,7 @@ SPEC CHECKSUMS:
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   isar_flutter_libs: bc909e72c3d756c2759f14c8776c13b5b0556e26
+  local_auth_darwin: 553ce4f9b16d3fdfeafce9cf042e7c9f77c1c391
   MapLibre: 0ebfa9329d313cec8bf0a5ba5a336a1dc903785e
   maplibre_gl: eab61cca6e1cfa9187249bacd3f08b51e8cd8ae9
   native_video_player: b65c58951ede2f93d103a25366bdebca95081265

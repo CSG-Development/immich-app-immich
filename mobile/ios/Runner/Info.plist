@@ -161,5 +161,7 @@
 	<true/>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Why is my app authenticating using face id?</string>
 </dict>
 </plist>

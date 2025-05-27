@@ -13,6 +13,7 @@
 
 *.g.dart
 *.gen.dart
+*.gr.dart
 *.freezed.dart
 
 # IntelliJ related
