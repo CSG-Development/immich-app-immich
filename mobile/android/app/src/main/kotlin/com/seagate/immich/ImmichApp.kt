@@ -1,4 +1,4 @@
-package app.alextran.immich
+package com.seagate.immich
 
 import android.app.Application
 import androidx.work.Configuration
