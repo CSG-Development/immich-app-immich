@@ -136,6 +136,7 @@ flutter:
     - family: OverpassMono
       fonts:
         - asset: fonts/overpass/OverpassMono.ttf
+  default-flavor: prod
 
 flutter_launcher_icons:
   image_path_android: 'assets/immich-logo.png'
