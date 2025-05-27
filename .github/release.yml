@@ -31,3 +31,7 @@ changelog:
     - title: 🌐 Translations
       labels:
         - changelog:translation
+
+    - title: Other Changes
+      labels:
+        - "*"
