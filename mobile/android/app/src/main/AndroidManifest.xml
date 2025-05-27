@@ -24,9 +24,17 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
-  <application android:label="Immich" android:name=".ImmichApp" android:usesCleartextTraffic="true"
-    android:icon="@mipmap/ic_launcher" android:requestLegacyExternalStorage="true"
-    android:largeHeap="true" android:enableOnBackInvokedCallback="false">
+  <application
+    android:label="Immich"
+    android:name=".ImmichApp"
+    android:usesCleartextTraffic="true"
+    android:icon="@mipmap/ic_launcher"
+    android:requestLegacyExternalStorage="true"
+    android:largeHeap="true"
+    android:localeConfig="@xml/locales_config"
+    android:fullBackupContent="@xml/backup_rules"
+    android:dataExtractionRules="@xml/data_extraction_rules"
+    android:enableOnBackInvokedCallback="false">
 
     <service
       android:name="androidx.work.impl.foreground.SystemForegroundService"
@@ -123,5 +131,20 @@
       <action android:name="android.intent.action.VIEW" />
       <data android:scheme="geo" />
     </intent>
+    <intent>
+      <action android:name="android.intent.action.GET_CONTENT" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <action android:name="android.intent.action.SEND_MULTIPLE" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <provider android:authorities="com.android.externalstorage.documents" />
+    <provider android:authorities="com.google.android.apps.photos.content" />
   </queries>
 </manifest>
