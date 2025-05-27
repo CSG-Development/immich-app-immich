@@ -16,7 +16,7 @@ import 'package:immich_mobile/utils/bytes_units.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_profile_info.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_server_info.dart';
 import 'package:immich_mobile/widgets/common/confirm_dialog.dart';
-import 'package:url_launcher/url_launcher.dart';
+// import 'package:url_launcher/url_launcher.dart';
 
 class ImmichAppBarDialog extends HookConsumerWidget {
   const ImmichAppBarDialog({super.key});
@@ -101,13 +101,13 @@ class ImmichAppBarDialog extends HookConsumerWidget {
       );
     }
 
-    buildAppLogButton() {
-      return buildActionButton(
-        Icons.assignment_outlined,
-        "profile_drawer_app_logs",
-        () => context.pushRoute(const AppLogRoute()),
-      );
-    }
+    // buildAppLogButton() {
+    //   return buildActionButton(
+    //     Icons.assignment_outlined,
+    //     "profile_drawer_app_logs",
+    //     () => context.pushRoute(const AppLogRoute()),
+    //   );
+    // }
 
     buildSignOutButton() {
       return buildActionButton(
@@ -214,49 +214,49 @@ class ImmichAppBarDialog extends HookConsumerWidget {
       );
     }
 
-    buildFooter() {
-      return Padding(
-        padding: const EdgeInsets.only(top: 10, bottom: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            InkWell(
-              onTap: () {
-                context.pop();
-                launchUrl(
-                  Uri.parse('https://immich.app'),
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-              child: Text(
-                "documentation",
-                style: context.textTheme.bodySmall,
-              ).tr(),
-            ),
-            const SizedBox(
-              width: 20,
-              child: Text(
-                "•",
-                textAlign: TextAlign.center,
-              ),
-            ),
-            InkWell(
-              onTap: () {
-                context.pop();
-                launchUrl(
-                  Uri.parse('https://github.com/immich-app/immich'),
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-              child: Text(
-                "profile_drawer_github",
-                style: context.textTheme.bodySmall,
-              ).tr(),
-            ),
-          ],
-        ),
-      );
-    }
+    // buildFooter() {
+    //   return Padding(
+    //     padding: const EdgeInsets.only(top: 10, bottom: 20),
+    //     child: Row(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         InkWell(
+    //           onTap: () {
+    //             context.pop();
+    //             launchUrl(
+    //               Uri.parse('https://immich.app'),
+    //               mode: LaunchMode.externalApplication,
+    //             );
+    //           },
+    //           child: Text(
+    //             "documentation",
+    //             style: context.textTheme.bodySmall,
+    //           ).tr(),
+    //         ),
+    //         const SizedBox(
+    //           width: 20,
+    //           child: Text(
+    //             "•",
+    //             textAlign: TextAlign.center,
+    //           ),
+    //         ),
+    //         InkWell(
+    //           onTap: () {
+    //             context.pop();
+    //             launchUrl(
+    //               Uri.parse('https://github.com/immich-app/immich'),
+    //               mode: LaunchMode.externalApplication,
+    //             );
+    //           },
+    //           child: Text(
+    //             "profile_drawer_github",
+    //             style: context.textTheme.bodySmall,
+    //           ).tr(),
+    //         ),
+    //       ],
+    //     ),
+    //   );
+    // }
 
     return Dismissible(
       behavior: HitTestBehavior.translucent,
@@ -287,10 +287,11 @@ class ImmichAppBarDialog extends HookConsumerWidget {
                 const AppBarProfileInfoBox(),
                 buildStorageInformation(),
                 const AppBarServerInfo(),
-                buildAppLogButton(),
+                // buildAppLogButton(),
                 buildSettingButton(),
                 buildSignOutButton(),
-                buildFooter(),
+                // buildFooter(),
+                const Padding(padding: EdgeInsets.only(bottom: 20)),
               ],
             ),
           ),
