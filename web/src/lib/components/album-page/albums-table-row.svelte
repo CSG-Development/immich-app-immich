@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute, dateFormats } from '$lib/constants';
   import { locale } from '$lib/stores/preferences.store';
@@ -32,7 +33,7 @@
 
 <tr
   class="flex h-[50px] w-full place-items-center border-[3px] border-transparent p-2 text-center odd:bg-subtle even:bg-immich-bg hover:cursor-pointer hover:border-immich-primary/75 odd:dark:bg-immich-dark-gray/75 even:dark:bg-immich-dark-gray/50 dark:hover:border-immich-dark-primary/75 md:p-5"
-  onclick={() => goto(`${AppRoute.ALBUMS}/${album.id}`)}
+  onclick={() => goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}))}
   {oncontextmenu}
 >
   <td class="text-md text-ellipsis text-start w-8/12 sm:w-4/12 md:w-4/12 xl:w-[30%] 2xl:w-[40%] items-center">

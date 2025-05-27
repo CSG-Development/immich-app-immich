@@ -1,33 +1,34 @@
 <script lang="ts">
   import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
+  import { page } from '$app/stores';
+  import { resizeObserver, type OnResizeCallback } from '$lib/actions/resize-observer';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
+  import Skeleton from '$lib/components/photos-page/skeleton.svelte';
   import { AppRoute, AssetAction } from '$lib/constants';
+  import { albumMapViewManager } from '$lib/managers/album-view-map.manager.svelte';
+  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { AssetBucket, assetsSnapshot, AssetStore, isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { showDeleteModal } from '$lib/stores/preferences.store';
   import { searchStore } from '$lib/stores/search.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { handlePromiseError } from '$lib/utils';
   import { deleteAssets, updateStackedAssetInTimeline, updateUnstackedAssetInTimeline } from '$lib/utils/actions';
   import { archiveAssets, cancelMultiselect, selectAllAssets, stackAssets } from '$lib/utils/asset-utils';
+  import { focusNext } from '$lib/utils/focus-util';
   import { navigate } from '$lib/utils/navigation';
   import { type ScrubberListener } from '$lib/utils/timeline-util';
   import type { AlbumResponseDto, AssetResponseDto, PersonResponseDto } from '@immich/sdk';
   import { onMount, type Snippet } from 'svelte';
+  import type { UpdatePayload } from 'vite';
   import Portal from '../shared-components/portal/portal.svelte';
   import Scrubber from '../shared-components/scrubber/scrubber.svelte';
   import ShowShortcuts from '../shared-components/show-shortcuts.svelte';
   import AssetDateGroup from './asset-date-group.svelte';
   import DeleteAssetDialog from './delete-asset-dialog.svelte';
-  import { resizeObserver, type OnResizeCallback } from '$lib/actions/resize-observer';
-  import Skeleton from '$lib/components/photos-page/skeleton.svelte';
-  import { page } from '$app/stores';
-  import type { UpdatePayload } from 'vite';
-  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
-  import { focusNext } from '$lib/utils/focus-util';
-  import { albumMapViewManager } from '$lib/managers/album-view-map.manager.svelte';
 
   interface Props {
     isSelectionMode?: boolean;
@@ -639,7 +640,7 @@
       const shortcuts: ShortcutOptions[] = [
         { shortcut: { key: 'Escape' }, onShortcut: onEscape },
         { shortcut: { key: '?', shift: true }, onShortcut: () => (showShortcuts = !showShortcuts) },
-        { shortcut: { key: '/' }, onShortcut: () => goto(AppRoute.EXPLORE) },
+        { shortcut: { key: '/' }, onShortcut: () => goto(resolveRoute(AppRoute.EXPLORE, {})) },
         { shortcut: { key: 'A', ctrl: true }, onShortcut: () => selectAllAssets(assetStore, assetInteraction) },
         { shortcut: { key: 'PageDown' }, preventDefault: false, onShortcut: focusElement },
         { shortcut: { key: 'PageUp' }, preventDefault: false, onShortcut: focusElement },

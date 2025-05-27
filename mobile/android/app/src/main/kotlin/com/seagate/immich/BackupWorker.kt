@@ -1,4 +1,4 @@
-package app.alextran.immich
+package com.seagate.immich
 
 import android.app.Notification
 import android.app.NotificationChannel

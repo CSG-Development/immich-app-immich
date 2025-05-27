@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { resolveRoute } from '$app/paths';
 import { purchaseStore } from '$lib/stores/purchase.store';
 import { preferences as preferences$, user as user$ } from '$lib/stores/user.store';
 import { userInteraction } from '$lib/stores/user.svelte';
@@ -59,11 +60,11 @@ export const authenticate = async (options?: AuthOptions) => {
   }
 
   if (!user) {
-    redirect(302, AppRoute.AUTH_LOGIN);
+    redirect(302, resolveRoute(AppRoute.AUTH_LOGIN, {}));
   }
 
   if (adminRoute && !user.isAdmin) {
-    redirect(302, AppRoute.PHOTOS);
+    redirect(302, resolveRoute(AppRoute.PHOTOS, {}));
   }
 };
 

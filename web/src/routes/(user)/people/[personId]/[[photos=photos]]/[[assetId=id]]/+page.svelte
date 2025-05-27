@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/stores';
   import { clickOutside } from '$lib/actions/click-outside';
   import { listNavigation } from '$lib/actions/list-navigation';
@@ -83,7 +84,7 @@
 
   let viewMode: PersonPageViewMode = $state(PersonPageViewMode.VIEW_ASSETS);
   let isEditingName = $state(false);
-  let previousRoute: string = $state(AppRoute.EXPLORE);
+  let previousRoute: string = $state(resolveRoute(AppRoute.EXPLORE, {}));
   let people: PersonResponseDto[] = [];
   let personMerge1: PersonResponseDto | undefined = $state();
   let personMerge2: PersonResponseDto | undefined = $state();
@@ -237,7 +238,7 @@
         await updateAssetCount();
         return;
       }
-      await goto(`${AppRoute.PEOPLE}/${personToBeMergedIn.id}`, { replaceState: true });
+      await goto(resolveRoute(`${AppRoute.PEOPLE}/${personToBeMergedIn.id}`, {}), { replaceState: true });
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_name'));
     }
@@ -489,7 +490,7 @@
 <main
   class="relative h-dvh overflow-hidden bg-immich-bg tall:ms-4 md:pt-[var(--navbar-height-md)] pt-[var(--navbar-height)] dark:bg-immich-dark-bg"
   use:scrollMemoryClearer={{
-    routeStartsWith: AppRoute.PEOPLE,
+    routeStartsWith: resolveRoute(AppRoute.PEOPLE, {}) as AppRoute,
     beforeClear: () => {
       sessionStorage.removeItem(SessionStorageKey.INFINITE_SCROLL_PAGE);
     },

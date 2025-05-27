@@ -24,6 +24,9 @@ const config = {
       '@test-data': 'src/test-data',
       $i18n: '../i18n',
     },
+    paths: {
+      base: '/photos',
+    },
   },
 };
 

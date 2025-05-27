@@ -1,43 +1,44 @@
 <script lang="ts">
-  import { onMount, type Snippet } from 'svelte';
-  import { groupBy } from 'lodash-es';
-  import { addUsersToAlbum, deleteAlbum, type AlbumUserAddDto, type AlbumResponseDto, isHttpError } from '@immich/sdk';
-  import { mdiDeleteOutline, mdiShareVariantOutline, mdiFolderDownloadOutline, mdiRenameOutline } from '@mdi/js';
+  import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
+  import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
+  import AlbumsTable from '$lib/components/album-page/albums-table.svelte';
+  import UserSelectionModal from '$lib/components/album-page/user-selection-modal.svelte';
   import EditAlbumForm from '$lib/components/forms/edit-album-form.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import RightClickContextMenu from '$lib/components/shared-components/context-menu/right-click-context-menu.svelte';
   import CreateSharedLinkModal from '$lib/components/shared-components/create-share-link-modal/create-shared-link-modal.svelte';
   import {
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
-  import RightClickContextMenu from '$lib/components/shared-components/context-menu/right-click-context-menu.svelte';
-  import AlbumsTable from '$lib/components/album-page/albums-table.svelte';
-  import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
-  import UserSelectionModal from '$lib/components/album-page/user-selection-modal.svelte';
-  import { handleError } from '$lib/utils/handle-error';
-  import { downloadAlbum } from '$lib/utils/asset-utils';
-  import { normalizeSearchString } from '$lib/utils/string-utils';
+  import { AppRoute } from '$lib/constants';
   import {
-    getSelectedAlbumGroupOption,
-    type AlbumGroup,
-    confirmAlbumDelete,
-    sortAlbums,
-    stringToSortOrder,
-  } from '$lib/utils/album-utils';
-  import type { ContextMenuPosition } from '$lib/utils/context-menu';
-  import { user } from '$lib/stores/user.store';
-  import {
+    AlbumFilter,
     AlbumGroupBy,
     AlbumSortBy,
-    AlbumFilter,
     AlbumViewMode,
     SortOrder,
     locale,
     type AlbumViewSettings,
   } from '$lib/stores/preferences.store';
+  import { user } from '$lib/stores/user.store';
   import { userInteraction } from '$lib/stores/user.svelte';
-  import { goto } from '$app/navigation';
-  import { AppRoute } from '$lib/constants';
+  import {
+    confirmAlbumDelete,
+    getSelectedAlbumGroupOption,
+    sortAlbums,
+    stringToSortOrder,
+    type AlbumGroup,
+  } from '$lib/utils/album-utils';
+  import { downloadAlbum } from '$lib/utils/asset-utils';
+  import type { ContextMenuPosition } from '$lib/utils/context-menu';
+  import { handleError } from '$lib/utils/handle-error';
+  import { normalizeSearchString } from '$lib/utils/string-utils';
+  import { addUsersToAlbum, deleteAlbum, isHttpError, type AlbumResponseDto, type AlbumUserAddDto } from '@immich/sdk';
+  import { mdiDeleteOutline, mdiFolderDownloadOutline, mdiRenameOutline, mdiShareVariantOutline } from '@mdi/js';
+  import { groupBy } from 'lodash-es';
+  import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { run } from 'svelte/legacy';
 
@@ -312,7 +313,7 @@
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(`${AppRoute.ALBUMS}/${album.id}`);
+          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
         },
       },
     });

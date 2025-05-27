@@ -247,6 +247,7 @@ export const defaults = Object.freeze<SystemConfig>({
       import: false,
     },
   },
+  // TODO point oauth to client oauth server
   oauth: {
     autoLaunch: false,
     autoRegister: true,
@@ -294,7 +295,7 @@ export const defaults = Object.freeze<SystemConfig>({
     },
   },
   newVersionCheck: {
-    enabled: true,
+    enabled: false,
   },
   trash: {
     enabled: true,
@@ -312,11 +313,13 @@ export const defaults = Object.freeze<SystemConfig>({
       enabled: false,
     },
   },
+  // TODO set external domain to TURN URL (???)
   server: {
     externalDomain: '',
     loginPageMessage: '',
     publicUsers: true,
   },
+  // TODO point to client SMTP server
   notifications: {
     smtp: {
       enabled: false,

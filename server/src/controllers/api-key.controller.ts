@@ -12,38 +12,38 @@ import { UUIDParamDto } from 'src/validation';
 export class APIKeyController {
   constructor(private service: ApiKeyService) {}
 
-  @Post()
-  @Authenticated({ permission: Permission.API_KEY_CREATE })
-  createApiKey(@Auth() auth: AuthDto, @Body() dto: APIKeyCreateDto): Promise<APIKeyCreateResponseDto> {
-    return this.service.create(auth, dto);
-  }
-
-  @Get()
-  @Authenticated({ permission: Permission.API_KEY_READ })
-  getApiKeys(@Auth() auth: AuthDto): Promise<APIKeyResponseDto[]> {
-    return this.service.getAll(auth);
-  }
-
-  @Get(':id')
-  @Authenticated({ permission: Permission.API_KEY_READ })
-  getApiKey(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<APIKeyResponseDto> {
-    return this.service.getById(auth, id);
-  }
-
-  @Put(':id')
-  @Authenticated({ permission: Permission.API_KEY_UPDATE })
-  updateApiKey(
-    @Auth() auth: AuthDto,
-    @Param() { id }: UUIDParamDto,
-    @Body() dto: APIKeyUpdateDto,
-  ): Promise<APIKeyResponseDto> {
-    return this.service.update(auth, id, dto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Authenticated({ permission: Permission.API_KEY_DELETE })
-  deleteApiKey(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<void> {
-    return this.service.delete(auth, id);
-  }
+  // @Post()
+  // @Authenticated({ permission: Permission.API_KEY_CREATE })
+  // createApiKey(@Auth() auth: AuthDto, @Body() dto: APIKeyCreateDto): Promise<APIKeyCreateResponseDto> {
+  //   return this.service.create(auth, dto);
+  // }
+  //
+  // @Get()
+  // @Authenticated({ permission: Permission.API_KEY_READ })
+  // getApiKeys(@Auth() auth: AuthDto): Promise<APIKeyResponseDto[]> {
+  //   return this.service.getAll(auth);
+  // }
+  //
+  // @Get(':id')
+  // @Authenticated({ permission: Permission.API_KEY_READ })
+  // getApiKey(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<APIKeyResponseDto> {
+  //   return this.service.getById(auth, id);
+  // }
+  //
+  // @Put(':id')
+  // @Authenticated({ permission: Permission.API_KEY_UPDATE })
+  // updateApiKey(
+  //   @Auth() auth: AuthDto,
+  //   @Param() { id }: UUIDParamDto,
+  //   @Body() dto: APIKeyUpdateDto,
+  // ): Promise<APIKeyResponseDto> {
+  //   return this.service.update(auth, id, dto);
+  // }
+  //
+  // @Delete(':id')
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // @Authenticated({ permission: Permission.API_KEY_DELETE })
+  // deleteApiKey(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<void> {
+  //   return this.service.delete(auth, id);
+  // }
 }

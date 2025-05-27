@@ -1,12 +1,15 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import Icon from '$lib/components/elements/icon.svelte';
+  import { dialogController } from '$lib/components/shared-components/dialog/dialog';
   import { ActionQueryParameterValue, AppRoute, QueryParameter } from '$lib/constants';
   import { handleError } from '$lib/utils/handle-error';
   import { getAllPeople, getPerson, mergePerson, type PersonResponseDto } from '@immich/sdk';
   import { mdiCallMerge, mdiMerge, mdiSwapHorizontal } from '@mdi/js';
   import { onMount } from 'svelte';
+  import { t } from 'svelte-i18n';
   import { flip } from 'svelte/animate';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
@@ -16,8 +19,6 @@
   import { NotificationType, notificationController } from '../shared-components/notification/notification';
   import FaceThumbnail from './face-thumbnail.svelte';
   import PeopleList from './people-list.svelte';
-  import { dialogController } from '$lib/components/shared-components/dialog/dialog';
-  import { t } from 'svelte-i18n';
 
   interface Props {
     person: PersonResponseDto;
@@ -44,7 +45,7 @@
   const handleSwapPeople = async () => {
     [person, selectedPeople[0]] = [selectedPeople[0], person];
     page.url.searchParams.set(QueryParameter.ACTION, ActionQueryParameterValue.MERGE);
-    await goto(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`);
+    await goto(resolveRoute(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`, {}));
   };
 
   const onSelect = async (selected: PersonResponseDto) => {

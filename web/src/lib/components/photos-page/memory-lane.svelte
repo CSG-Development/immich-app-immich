@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import { resizeObserver } from '$lib/actions/resize-observer';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute, QueryParameter } from '$lib/constants';
@@ -77,7 +78,7 @@
       {#each memoryStore.memories as memory (memory.id)}
         <a
           class="memory-card relative me-2 md:me-4 last:me-0 inline-block aspect-[3/4] md:aspect-[4/3] max-md:h-[150px] xl:aspect-video h-[215px] rounded-xl"
-          href="{AppRoute.MEMORY}?{QueryParameter.ID}={memory.assets[0].id}"
+          href={resolveRoute(`${AppRoute.MEMORY}?${QueryParameter.ID}=${memory.assets[0].id}`, {})}
         >
           <img
             class="h-full w-full rounded-xl object-cover"

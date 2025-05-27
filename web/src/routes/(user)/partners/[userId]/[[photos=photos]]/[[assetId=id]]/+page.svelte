@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
   import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
   import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
@@ -56,7 +57,7 @@
       <DownloadAction />
     </AssetSelectControlBar>
   {:else}
-    <ControlAppBar showBackButton backIcon={mdiArrowLeft} onClose={() => goto(AppRoute.SHARING)}>
+    <ControlAppBar showBackButton backIcon={mdiArrowLeft} onClose={() => goto(resolveRoute(AppRoute.SHARING, {}))}>
       {#snippet leading()}
         <p class="whitespace-nowrap text-immich-fg dark:text-immich-dark-fg">
           {data.partner.name}'s photos

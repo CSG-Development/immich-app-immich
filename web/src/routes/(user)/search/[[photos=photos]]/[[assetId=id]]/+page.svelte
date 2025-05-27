@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { shortcut } from '$lib/actions/shortcut';
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
@@ -54,7 +55,7 @@
   // The GalleryViewer pushes it's own history state, which causes weird
   // behavior for history.back(). To prevent that we store the previous page
   // manually and navigate back to that.
-  let previousRoute = $state(AppRoute.EXPLORE as string);
+  let previousRoute = $state(resolveRoute(AppRoute.EXPLORE, {}) as string);
 
   let nextPage = $state(1);
   let searchResultAlbums: AlbumResponseDto[] = $state([]);
@@ -104,11 +105,11 @@
     const route = from?.route?.id;
 
     if (isPeopleRoute(route)) {
-      previousRoute = AppRoute.PHOTOS;
+      previousRoute = resolveRoute(AppRoute.PHOTOS, {});
     }
 
     if (isAlbumsRoute(route)) {
-      previousRoute = AppRoute.EXPLORE;
+      previousRoute = resolveRoute(AppRoute.EXPLORE, {});
     }
 
     tick()

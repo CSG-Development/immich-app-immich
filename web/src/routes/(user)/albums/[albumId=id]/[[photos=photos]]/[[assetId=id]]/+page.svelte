@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, onNavigate } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
   import AlbumDescription from '$lib/components/album-page/album-description.svelte';
   import AlbumMap from '$lib/components/album-page/album-map.svelte';
@@ -93,7 +94,7 @@
 
   let oldAt: AssetGridRouteSearchParams | null | undefined = $state();
 
-  let backUrl: string = $state(AppRoute.ALBUMS);
+  let backUrl: string = $state(resolveRoute(AppRoute.ALBUMS, {}));
   let viewMode: AlbumPageViewMode = $state(AlbumPageViewMode.VIEW);
   let isCreatingSharedAlbum = $state(false);
   let isShowActivity = $state(false);
@@ -111,15 +112,15 @@
     }
 
     if (isAlbumsRoute(route) || isPeopleRoute(route)) {
-      url = AppRoute.ALBUMS;
+      url = resolveRoute(AppRoute.ALBUMS, {});
     }
 
-    backUrl = url || AppRoute.ALBUMS;
+    backUrl = url || resolveRoute(AppRoute.ALBUMS, {});
 
-    if (backUrl === AppRoute.SHARING && album.albumUsers.length === 0 && !album.hasSharedLink) {
+    if (backUrl === resolveRoute(AppRoute.SHARING, {}) && album.albumUsers.length === 0 && !album.hasSharedLink) {
       isCreatingSharedAlbum = true;
-    } else if (backUrl === AppRoute.SHARED_LINKS) {
-      backUrl = history.state?.backUrl || AppRoute.ALBUMS;
+    } else if (backUrl === resolveRoute(AppRoute.SHARED_LINKS, {})) {
+      backUrl = history.state?.backUrl || resolveRoute(AppRoute.ALBUMS, {});
     }
   });
 
@@ -423,7 +424,10 @@
   );
 </script>
 
-<div class="flex overflow-hidden" use:scrollMemoryClearer={{ routeStartsWith: AppRoute.ALBUMS }}>
+<div
+  class="flex overflow-hidden"
+  use:scrollMemoryClearer={{ routeStartsWith: resolveRoute(AppRoute.ALBUMS, {}) as AppRoute }}
+>
   <div class="relative w-full shrink">
     {#if assetInteraction.selectionActive}
       <AssetSelectControlBar

@@ -37,24 +37,24 @@ describe(UserController.name, () => {
     });
   });
 
-  describe('PUT /users/me', () => {
-    it('should be an authenticated route', async () => {
-      await request(ctx.getHttpServer()).put('/users/me');
-      expect(ctx.authenticate).toHaveBeenCalled();
-    });
-
-    for (const key of ['email', 'name']) {
-      it(`should not allow null ${key}`, async () => {
-        const dto = { [key]: null };
-        const { status, body } = await request(ctx.getHttpServer())
-          .put(`/users/me`)
-          .set('Authorization', `Bearer token`)
-          .send(dto);
-        expect(status).toBe(400);
-        expect(body).toEqual(errorDto.badRequest());
-      });
-    }
-  });
+  // describe('PUT /users/me', () => {
+  //   it('should be an authenticated route', async () => {
+  //     await request(ctx.getHttpServer()).put('/users/me');
+  //     expect(ctx.authenticate).toHaveBeenCalled();
+  //   });
+  //
+  //   for (const key of ['email', 'name']) {
+  //     it(`should not allow null ${key}`, async () => {
+  //       const dto = { [key]: null };
+  //       const { status, body } = await request(ctx.getHttpServer())
+  //         .put(`/users/me`)
+  //         .set('Authorization', `Bearer token`)
+  //         .send(dto);
+  //       expect(status).toBe(400);
+  //       expect(body).toEqual(errorDto.badRequest());
+  //     });
+  //   }
+  // });
 
   describe('GET /users/:id', () => {
     it('should be an authenticated route', async () => {

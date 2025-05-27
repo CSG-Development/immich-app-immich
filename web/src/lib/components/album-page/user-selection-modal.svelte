@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import AlbumSharedLink from '$lib/components/album-page/album-shared-link.svelte';
   import Dropdown from '$lib/components/elements/dropdown.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
@@ -172,7 +173,7 @@
       {#if sharedLinks.length > 0}
         <div class="flex justify-between items-center">
           <Text>{$t('shared_links')}</Text>
-          <Link href={AppRoute.SHARED_LINKS} class="text-sm">{$t('view_all')}</Link>
+          <Link href={resolveRoute(AppRoute.SHARED_LINKS, {})} class="text-sm">{$t('view_all')}</Link>
         </div>
 
         <Stack gap={4}>

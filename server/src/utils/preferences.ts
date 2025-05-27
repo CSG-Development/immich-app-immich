@@ -16,18 +16,18 @@ const getDefaultPreferences = (): UserPreferences => {
     },
     people: {
       enabled: true,
-      sidebarWeb: false,
+      sidebarWeb: true,
     },
     sharedLinks: {
       enabled: true,
-      sidebarWeb: false,
+      sidebarWeb: true,
     },
     ratings: {
       enabled: false,
     },
     tags: {
-      enabled: false,
-      sidebarWeb: false,
+      enabled: true,
+      sidebarWeb: true,
     },
     emailNotifications: {
       enabled: true,

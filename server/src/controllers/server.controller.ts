@@ -78,17 +78,17 @@ export class ServerController {
     return this.service.getSupportedMediaTypes();
   }
 
-  @Put('license')
-  @Authenticated({ admin: true })
-  setServerLicense(@Body() license: LicenseKeyDto): Promise<LicenseResponseDto> {
-    return this.service.setLicense(license);
-  }
+  // @Put('license')
+  // @Authenticated({ admin: true })
+  // setServerLicense(@Body() license: LicenseKeyDto): Promise<LicenseResponseDto> {
+  //   return this.service.setLicense(license);
+  // }
 
-  @Delete('license')
-  @Authenticated({ admin: true })
-  deleteServerLicense(): Promise<void> {
-    return this.service.deleteLicense();
-  }
+  // @Delete('license')
+  // @Authenticated({ admin: true })
+  // deleteServerLicense(): Promise<void> {
+  //   return this.service.deleteLicense();
+  // }
 
   @Get('license')
   @Authenticated({ admin: true })

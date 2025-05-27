@@ -6,12 +6,12 @@ import type { PageLoad } from './$types';
 export const load = (async () => {
   await authenticate();
 
-  const keys = await getApiKeys();
+  // const keys = await getApiKeys();
   const sessions = await getSessions();
   const $t = await getFormatter();
 
   return {
-    keys,
+    // keys,
     sessions,
     meta: {
       title: $t('settings'),

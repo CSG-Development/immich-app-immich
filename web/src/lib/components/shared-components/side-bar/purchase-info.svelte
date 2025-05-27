@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
@@ -81,7 +82,7 @@
 <div class="license-status ps-4 text-sm">
   {#if $isPurchased && $preferences.purchase.showSupportBadge}
     <button
-      onclick={() => goto(`${AppRoute.USER_SETTINGS}?isOpen=user-purchase-settings`)}
+      onclick={() => goto(resolveRoute(`${AppRoute.USER_SETTINGS}?isOpen=user-purchase-settings`, {}))}
       class="w-full"
       type="button"
     >
