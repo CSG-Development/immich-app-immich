@@ -119,7 +119,6 @@ async function navigateAssetRoute(route: AssetRoute, options?: NavOptions) {
 
 async function navigateAssetGridRoute(route: AssetGridRoute, options?: NavOptions) {
   const { assetId, assetGridRouteSearchParams: assetGridScrollTarget } = route;
-  console.log(assetId);
   const assetUrl = assetId ? currentUrlReplaceAssetId(assetId) : currentUrlWithoutAsset();
   const next = replaceScrollTarget(assetUrl, assetGridScrollTarget);
   const current = currentUrl();
