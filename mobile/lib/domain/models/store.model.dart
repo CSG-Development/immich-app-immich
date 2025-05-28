@@ -68,7 +68,10 @@ enum StoreKey<T> {
   manageLocalMediaAndroid<bool>._(137),
 
   // Experimental stuff
-  photoManagerCustomFilter<bool>._(1000);
+  photoManagerCustomFilter<bool>._(1000),
+
+  // Seagate
+  enableBiometric<bool>._(2000);
 
   const StoreKey._(this.id);
   final int id;

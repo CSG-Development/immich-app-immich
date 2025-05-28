@@ -33,6 +33,9 @@ import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/domain/services/store.service.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 
 class LoginForm extends HookConsumerWidget {
   LoginForm({super.key});
@@ -192,6 +195,36 @@ class LoginForm extends HookConsumerWidget {
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
         } else {
+          if (!context.mounted) return;
+
+          // Show dialog to prompt user to add biometric authentication
+          final shouldAddBiometric = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('login_form_add_security_title').tr(),
+                content: const Text('login_form_add_security_content').tr(),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('login_form_not_now').tr(),
+                    onPressed: () => Navigator.of(context).pop(false),
+                  ),
+                  TextButton(
+                    child: const Text('common_yes').tr(),
+                    onPressed: () => Navigator.of(context).pop(true),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (!context.mounted) return;
+
+          if (shouldAddBiometric == true) {
+            // Save biometric settings
+            await Store.put(StoreKey.enableBiometric, true);
+          }
+
           context.replaceRoute(const TabControllerRoute());
         }
       } catch (error) {
