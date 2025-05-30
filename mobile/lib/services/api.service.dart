@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
@@ -161,7 +163,7 @@ class ApiService implements Authentication {
 
   Future<void> setAccessToken(String accessToken) async {
     _accessToken = accessToken;
-    await Store.put(StoreKey.accessToken, accessToken);
+    await SecureStore.put(SecureStoreKey.accessToken, accessToken);
   }
 
   Future<void> setDeviceInfoHeader() async {
@@ -184,7 +186,7 @@ class ApiService implements Authentication {
   }
 
   static Map<String, String> getRequestHeaders() {
-    var accessToken = Store.get(StoreKey.accessToken, "");
+    var accessToken = SecureStore.get(SecureStoreKey.accessToken, "");
     var customHeadersStr = Store.get(StoreKey.customHeaders, "");
     var header = <String, String>{};
     if (accessToken.isNotEmpty) {

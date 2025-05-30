@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/utils/background_sync.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/interfaces/auth.interface.dart';
 import 'package:immich_mobile/interfaces/auth_api.interface.dart';
@@ -126,7 +128,7 @@ class AuthService {
     await Future.wait([
       _authRepository.clearLocalData(),
       Store.delete(StoreKey.currentUser),
-      Store.delete(StoreKey.accessToken),
+      SecureStore.delete(SecureStoreKey.accessToken),
       Store.delete(StoreKey.assetETag),
       Store.delete(StoreKey.autoEndpointSwitching),
       Store.delete(StoreKey.preferredWifiName),
