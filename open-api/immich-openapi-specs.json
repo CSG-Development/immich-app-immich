@@ -7796,7 +7796,7 @@
   "tags": [],
   "servers": [
     {
-      "url": "/api"
+      "url": "/photos/api"
     }
   ],
   "components": {
