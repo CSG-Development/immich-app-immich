@@ -90,6 +90,7 @@ enum AppSettingsEnum<T> {
     null,
     false,
   ),
+  enableBiometric<bool>(StoreKey.enableBiometric, null, false),
   ;
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);

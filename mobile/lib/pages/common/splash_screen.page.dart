@@ -8,6 +8,7 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:logging/logging.dart';
+import 'package:immich_mobile/services/local_auth.service.dart';
 
 @RoutePage()
 class SplashScreenPage extends StatefulHookConsumerWidget {
@@ -19,6 +20,7 @@ class SplashScreenPage extends StatefulHookConsumerWidget {
 
 class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   final log = Logger("SplashScreenPage");
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +74,42 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       return;
     }
 
+    // Check if biometric authentication is enabled
+    final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
+
+    if (enableBiometric) {
+      if (!mounted) return;
+      
+      // Try biometric authentication up to 3 times
+      int attempts = 0;
+      bool authSuccess = false;
+      
+      while (attempts < 3 && !authSuccess) {
+        final localAuthService = LocalAuthService();
+        final isBiometricAvailable = await localAuthService.isBiometricAvailable();
+        
+        if (isBiometricAvailable) {
+          authSuccess = await localAuthService.authenticateWithBiometrics();
+          if (authSuccess) {
+            proceedToMainScreen();
+            return;
+          }
+        }
+        attempts++;
+      }
+      
+      // If all attempts failed, logout user
+      if (!authSuccess) {
+        ref.read(authProvider.notifier).logout();
+        context.replaceRoute(const LoginRoute());
+        return;
+      }
+    } else {
+      proceedToMainScreen();
+    }
+  }
+
+  void proceedToMainScreen() async {
     context.replaceRoute(const TabControllerRoute());
 
     final hasPermission =

@@ -132,6 +132,8 @@ class AuthService {
       Store.delete(StoreKey.preferredWifiName),
       Store.delete(StoreKey.localEndpoint),
       Store.delete(StoreKey.externalEndpointList),
+      // Clear security settings
+      Store.delete(StoreKey.enableBiometric),
     ]);
   }
 
