@@ -19,6 +19,8 @@ import 'package:immich_mobile/infrastructure/repositories/log.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:immich_mobile/domain/services/secure_store.service.dart';
+import 'package:immich_mobile/infrastructure/repositories/secure_store.repository.dart';
 
 abstract final class Bootstrap {
   static Future<Isar> initIsar() async {
@@ -53,6 +55,7 @@ abstract final class Bootstrap {
     bool shouldBufferLogs = true,
   }) async {
     await StoreService.init(storeRepository: IsarStoreRepository(db));
+    await SecureStoreService.init(storeRepository: SecureStoreRepository());
     await LogService.init(
       logRepository: IsarLogRepository(db),
       storeRepository: IsarStoreRepository(db),

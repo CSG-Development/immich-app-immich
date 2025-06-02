@@ -1,5 +1,6 @@
 import 'package:immich_mobile/domain/interfaces/device_asset.interface.dart';
 import 'package:immich_mobile/domain/interfaces/log.interface.dart';
+import 'package:immich_mobile/domain/interfaces/secure_store.interface.dart';
 import 'package:immich_mobile/domain/interfaces/store.interface.dart';
 import 'package:immich_mobile/domain/interfaces/sync_api.interface.dart';
 import 'package:immich_mobile/domain/interfaces/sync_stream.interface.dart';
@@ -8,6 +9,8 @@ import 'package:immich_mobile/domain/interfaces/user_api.interface.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockStoreRepository extends Mock implements IStoreRepository {}
+
+class MockSecureStoreRepository extends Mock implements ISecureStoreRepository {}
 
 class MockLogRepository extends Mock implements ILogRepository {}
 

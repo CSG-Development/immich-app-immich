@@ -4,10 +4,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
@@ -77,7 +79,7 @@ void main() {
     await StoreService.init(storeRepository: IsarStoreRepository(db));
     Store.put(StoreKey.currentUser, UserStub.admin);
     Store.put(StoreKey.serverEndpoint, '');
-    Store.put(StoreKey.accessToken, '');
+    SecureStore.put(SecureStoreKey.accessToken, '');
   });
 
   setUp(() async {

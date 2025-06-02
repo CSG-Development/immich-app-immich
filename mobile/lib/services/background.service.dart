@@ -11,8 +11,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/interfaces/backup_album.interface.dart';
 import 'package:immich_mobile/models/backup/backup_candidate.model.dart';
@@ -362,7 +364,7 @@ class BackgroundService {
     HttpOverrides.global = HttpSSLCertOverride();
     ref
         .read(apiServiceProvider)
-        .setAccessToken(Store.get(StoreKey.accessToken));
+        .setAccessToken(SecureStore.get(SecureStoreKey.accessToken));
     await ref.read(authServiceProvider).setOpenApiServiceEndpoint();
     if (kDebugMode) {
       debugPrint(

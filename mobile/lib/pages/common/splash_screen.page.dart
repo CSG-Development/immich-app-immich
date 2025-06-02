@@ -1,7 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
@@ -42,7 +44,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   void resumeSession() async {
     final serverUrl = Store.tryGet(StoreKey.serverUrl);
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
-    final accessToken = Store.tryGet(StoreKey.accessToken);
+    final accessToken = SecureStore.tryGet(SecureStoreKey.accessToken);
 
     bool isAuthSuccess = false;
 
