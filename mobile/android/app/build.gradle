@@ -96,6 +96,19 @@ android {
             universalApk true // generate an additional APK that contains all the ABIs
         }
     }
+
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            resValue "string", "app_name", "Immich(Dev)"
+        }
+        prod {
+            dimension "environment"
+            resValue "string", "app_name", "Immich"
+        }
+    }
 }
 
 flutter {
