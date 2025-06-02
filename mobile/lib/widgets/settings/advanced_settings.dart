@@ -100,7 +100,7 @@ class AdvancedSettings extends HookConsumerWidget {
       ),
       const LocalStorageSettings(),
       SettingsSwitchListTile(
-        enabled: !isLoggedIn,
+        enabled: false,
         valueNotifier: allowSelfSignedSSLCert,
         title: "advanced_settings_self_signed_ssl_title".tr(),
         subtitle: "advanced_settings_self_signed_ssl_subtitle".tr(),
