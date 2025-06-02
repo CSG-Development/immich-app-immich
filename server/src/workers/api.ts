@@ -42,7 +42,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new WebSocketAdapter(app));
   useSwagger(app, { write: isDev });
 
-  app.setGlobalPrefix('api', { exclude: excludePaths });
+  app.setGlobalPrefix('photos/api', { exclude: excludePaths });
   if (existsSync(resourcePaths.web.root)) {
     // copied from https://github.com/sveltejs/kit/blob/679b5989fe62e3964b9a73b712d7b41831aa1f07/packages/adapter-node/src/handler.js#L46
     // provides serving of precompressed assets and caching of immutable assets

@@ -31,7 +31,7 @@ export interface Events {
 }
 
 const websocket: Socket<Events> = io({
-  path: '/api/socket.io',
+  path: '/photos/api/socket.io',
   transports: ['websocket'],
   reconnection: true,
   forceNew: true,

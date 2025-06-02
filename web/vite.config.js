@@ -28,7 +28,7 @@ export default defineConfig({
   server: {
     // connect to a remote backend during web-only development
     proxy: {
-      '/api': upstream,
+      '/photos/api': upstream,
       '/.well-known/immich': upstream,
       '/custom.css': upstream,
     },
