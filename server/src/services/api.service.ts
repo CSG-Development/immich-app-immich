@@ -71,7 +71,7 @@ export class ApiService {
 
     return async (request: Request, res: Response, next: NextFunction) => {
       if (
-        request.url.startsWith('/api') ||
+        request.url.startsWith('/photos/api') ||
         request.method.toLowerCase() !== 'get' ||
         excludePaths.some((item) => request.url.startsWith(item))
       ) {
