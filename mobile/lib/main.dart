@@ -34,9 +34,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 
 void main() async {
   ImmichWidgetsBinding();
+
+  await Firebase.initializeApp();
+
   final db = await Bootstrap.initIsar();
   await Bootstrap.initDomain(db);
   await initApp();
