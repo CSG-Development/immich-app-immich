@@ -51,7 +51,7 @@ end
 
 lane :build_dev_adhoc do |options|
 # NOVEO
-     local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "ad-hoc", options:options)
+     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", export_method: "ad-hoc", options:options)
 #    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "ad-hoc", options:options)
 end
 
