@@ -537,11 +537,13 @@ class LoginForm extends HookConsumerWidget {
                       GestureDetector(
                         onDoubleTap: () => populateTestLoginInfo(),
                         onLongPress: () => populateTestLoginInfo1(),
-                        child: RotationTransition(
-                          turns: logoAnimationController,
-                          child: const ImmichLogo(
-                            heroTag: 'logo',
-                          ),
+                        // child: RotationTransition(
+                        //   turns: logoAnimationController,
+                        //   child: const ImmichLogo(
+                        //     heroTag: 'logo',
+                        //   ),
+                        child: const ImmichLogo(
+                          heroTag: 'logo',
                         ),
                       ),
                       const Padding(
