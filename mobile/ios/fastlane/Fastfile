@@ -36,3 +36,114 @@ platform :ios do
   end
 
 end
+
+lane :build_prod_appstore do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "app-store", options:options)
+end
+
+lane :build_prod_adhoc do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "ad-hoc", options:options)
+end
+
+lane :build_dev_appstore do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "app-store", options:options)
+end
+
+lane :build_dev_adhoc do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "ad-hoc", options:options)
+end
+
+def local_create_app_exact(bundle_identifier:, export_method:, options:) 
+    local_create_app(
+      export_method: export_method,
+      team_id: "57HJ3KH2XC",
+      bundle_identifier: bundle_identifier,
+      options: options,
+    )
+end
+
+def local_create_app(
+  export_method:, 
+  team_id:,
+  bundle_identifier:,
+  options:
+  )
+    import_from_git(
+        url: "git@gitlab.noveogroup.com:iOSTeam/fastlane-common.git",
+        path: "build-ios-app",
+    )
+
+    schemeName = ENV["API_environment_key"] ? "#{ENV["API_environment_key"]}" : "Runner"
+
+    app_definition = AppDefinition.new(
+        lane: self,
+        workspace_name: "Runner",
+        project_name: "Runner",
+        scheme: schemeName,
+        export_method: export_method,
+		    xcargs: "-allowProvisioningUpdates",
+        team_id: team_id,
+        ota_upload: "no-ota-upload",
+        insert_build_number: true,
+        include_bitcode: false,
+    )
+
+    app_definition.add_target(
+        target_name: "Runner",
+        bundle_identifier: bundle_identifier,
+    )
+# add more targets if present
+#    app_definition.add_target(
+#        target_name: "NotificationService",
+#        bundle_identifier: "#{bundle_identifier}.NotificationService",
+#    )
+
+# If several targets are present, usually app group or shared keychain are required to be updated too.
+#    update_plist(
+#      plist_path: "[path to .entitlements file]",
+#      update_block: lambda { |plist|
+#        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
+#        plist['keychain-access-groups'] = ["$(AppIdentifierPrefix)#{bundle_identifier}"]
+#      }
+#    )
+
+    app_definition.update_codesigning_and_build()
+end
+
+########################
+# Uploading to Appstore
+########################
+
+def upload_ipa(ipa_path, apple_id)
+    upload_to_testflight(
+        ipa: ipa_path,
+        skip_submission: true,
+        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
+        apple_id: apple_id,
+    )
+end
+
+lane :upload_build do |options|
+    ipa_path=options[:ipa_path]
+    apple_id=options[:apple_id]
+    upload_ipa(ipa_path, apple_id)
+end
+
+def upload_ipa_old(ipa_path)
+    appStoreConnect_IssuerID = ENV["AppStoreConnect_IssuerID"]
+    appStoreConnect_KeyID = ENV["AppStoreConnect_KeyID"]
+    api_key = app_store_connect_api_key(
+      key_id: appStoreConnect_KeyID,
+      issuer_id: appStoreConnect_IssuerID,
+      key_filepath: "./Appstore-AuthKey.p8",
+      duration: 1200, # optional (maximum 1200)
+      in_house: false # optional but may be required if using match/sigh
+    )
+
+    pilot(
+        ipa: ipa_path,
+        skip_submission: true,
+        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
+        api_key: api_key,
+    )
+end
