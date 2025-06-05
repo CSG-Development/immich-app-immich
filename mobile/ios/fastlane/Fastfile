@@ -99,17 +99,17 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: "com.noveo.immich.ShareExtension.dev", # "#{bundle_identifier}.NotificationService",
+        bundle_identifier: "com.noveo.immich.ShareExtension.dev", # "#{bundle_identifier}.NotificationService", # FIX ME!!!
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
-#    update_plist(
-#      plist_path: "[path to .entitlements file]",
-#      update_block: lambda { |plist|
-#        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
-#        plist['keychain-access-groups'] = ["$(AppIdentifierPrefix)#{bundle_identifier}"]
-#      }
-#    )
+    update_plist(
+      plist_path: "Runner/RunnerProfile.entitlements",
+      update_block: lambda { |plist|
+        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
+#        plist['keychain-access-groups'] = "group.com.noveo.immich.share" # ["$(AppIdentifierPrefix)#{bundle_identifier}"] # FIX ME!!!
+      }
+    )
 
     app_definition.update_codesigning_and_build()
 end
