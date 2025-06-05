@@ -30,7 +30,7 @@ export default defineConfig({
     proxy: {
       '/photos/api': upstream,
       '/.well-known/immich': upstream,
-      '/custom.css': upstream,
+      '/photos/custom.css': upstream,
     },
     allowedHosts: true,
   },
