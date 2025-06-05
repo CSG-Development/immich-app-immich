@@ -10,33 +10,6 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
-
-default_platform(:ios)
-
-platform :ios do
-  desc "iOS Release"
-  lane :release do
-    enable_automatic_code_signing(
-      path: "./Runner.xcodeproj",
-    )
-    increment_version_number(
-      version_number: "1.0.0"
-    )
-    increment_build_number(
-      build_number: latest_testflight_build_number + 1,
-    )
-    build_app(scheme: "Runner",
-              workspace: "Runner.xcworkspace",
-              xcargs: "-allowProvisioningUpdates")
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true
-    )
-  end
-
-end
-
 lane :build_prod_appstore do |options|
     local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "app-store", options:options)
 end
@@ -50,9 +23,7 @@ lane :build_dev_appstore do |options|
 end
 
 lane :build_dev_adhoc do |options|
-# NOVEO
-     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", export_method: "ad-hoc", options:options)
-#    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "ad-hoc", options:options)
+     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", share_bundle_identifier: "com.noveo.immich.ShareExtension.dev", security_group: "group.com.noveo.immich.share", export_method: "ad-hoc", options:options)
 end
 
 def local_create_app_exact(bundle_identifier:, export_method:, options:) 
@@ -62,6 +33,8 @@ def local_create_app_exact(bundle_identifier:, export_method:, options:)
       team_id: "HVE639V94N",
 #      team_id: "57HJ3KH2XC",
       bundle_identifier: bundle_identifier,
+      share_bundle_identifier: share_bundle_identifier,
+      security_group: security_group,
       options: options,
     )
 end
@@ -70,6 +43,8 @@ def local_create_app(
   export_method:, 
   team_id:,
   bundle_identifier:,
+  share_bundle_identifier:,
+  security_group:,
   options:
   )
     import_from_git(
@@ -99,7 +74,7 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: "com.noveo.immich.ShareExtension.dev", # "#{bundle_identifier}.NotificationService", # FIX ME!!!
+        bundle_identifier: share_bundle_identifier,
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
@@ -107,7 +82,12 @@ def local_create_app(
       plist_path: "Runner/RunnerProfile.entitlements",
       update_block: lambda { |plist|
         plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
-#        plist['keychain-access-groups'] = "group.com.noveo.immich.share" # ["$(AppIdentifierPrefix)#{bundle_identifier}"] # FIX ME!!!
+      }
+    )
+    update_plist(
+      plist_path: "ShareExtension/ShareExtension.entitlements",
+      update_block: lambda { |plist|
+        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
       }
     )
 
