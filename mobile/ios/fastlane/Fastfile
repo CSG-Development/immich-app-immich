@@ -80,13 +80,13 @@ def local_create_app(
 # If several targets are present, usually app group or shared keychain are required to be updated too.
     update_plist(
       plist_path: "Runner/RunnerProfile.entitlements",
-      update_block: lambda { |plist|
+      block: lambda { |plist|
         plist["com.apple.security.application-groups"] = [security_group]
       }
     )
     update_plist(
       plist_path: "ShareExtension/ShareExtension.entitlements",
-      update_block: lambda { |plist|
+      block: lambda { |plist|
         plist["com.apple.security.application-groups"] = [security_group]
       }
     )
