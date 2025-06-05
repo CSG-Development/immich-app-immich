@@ -26,7 +26,7 @@ lane :build_dev_adhoc do |options|
      local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", share_bundle_identifier: "com.noveo.immich.ShareExtension.dev", security_group: "group.com.noveo.immich.share", export_method: "ad-hoc", options:options)
 end
 
-def local_create_app_exact(bundle_identifier:, export_method:, options:) 
+def local_create_app_exact(bundle_identifier:, share_bundle_identifier, security_group, export_method:, options:) 
     local_create_app(
       export_method: export_method,
 # NOVEO
@@ -81,13 +81,13 @@ def local_create_app(
     update_plist(
       plist_path: "Runner/RunnerProfile.entitlements",
       update_block: lambda { |plist|
-        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
+        plist["com.apple.security.application-groups"] = [security_group]
       }
     )
     update_plist(
       plist_path: "ShareExtension/ShareExtension.entitlements",
       update_block: lambda { |plist|
-        plist["com.apple.security.application-groups"] = ["group.#{bundle_identifier}"]
+        plist["com.apple.security.application-groups"] = [security_group]
       }
     )
 
