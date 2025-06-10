@@ -11,7 +11,7 @@ import 'package:isar/isar.dart';
 import '../../fixtures/user.stub.dart';
 import '../../test_utils.dart';
 
-const _kTestAccessToken = "#TestToken";
+const _kTestDeviceId = "#TestDeviceId";
 final _kTestBackupFailed = DateTime(2025, 2, 20, 11, 45);
 const _kTestVersion = 10;
 const _kTestColorfulInterface = false;
@@ -37,7 +37,7 @@ Future<void> _populateStore(Isar db) async {
       StoreKey.backupFailedSince,
       _kTestBackupFailed.millisecondsSinceEpoch,
     );
-    await _addStrStoreValue(db, StoreKey.accessToken, _kTestAccessToken);
+    await _addStrStoreValue(db, StoreKey.deviceId, _kTestDeviceId);
     await _addIntStoreValue(db, StoreKey.version, _kTestVersion);
   });
 }
@@ -61,11 +61,11 @@ void main() {
     });
 
     test('converts string', () async {
-      String? accessToken = await sut.tryGet(StoreKey.accessToken);
-      expect(accessToken, isNull);
-      await sut.insert(StoreKey.accessToken, _kTestAccessToken);
-      accessToken = await sut.tryGet(StoreKey.accessToken);
-      expect(accessToken, _kTestAccessToken);
+      String? deviceId = await sut.tryGet(StoreKey.deviceId);
+      expect(deviceId, isNull);
+      await sut.insert(StoreKey.deviceId, _kTestDeviceId);
+      deviceId = await sut.tryGet(StoreKey.deviceId);
+      expect(deviceId, _kTestDeviceId);
     });
 
     test('converts datetime', () async {
@@ -157,8 +157,8 @@ void main() {
           ),
           emits(
             const StoreUpdateEvent<dynamic>(
-              StoreKey.accessToken,
-              _kTestAccessToken,
+              StoreKey.deviceId,
+              _kTestDeviceId,
             ),
           ),
           emits(

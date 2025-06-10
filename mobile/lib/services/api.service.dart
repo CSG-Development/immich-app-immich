@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
@@ -128,30 +130,31 @@ class ApiService implements Authentication {
     return true;
   }
 
+  // Temporary
   Future<String> _getWellKnownEndpoint(String baseUrl) async {
     final Client client = Client();
 
     try {
-      var headers = {"Accept": "application/json"};
-      headers.addAll(getRequestHeaders());
+      // var headers = {"Accept": "application/json"};
+      // headers.addAll(getRequestHeaders());
 
-      final res = await client
-          .get(
-            Uri.parse("$baseUrl/.well-known/immich"),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 5));
+      // final res = await client
+      //     .get(
+      //       Uri.parse("$baseUrl/.well-known/immich"),
+      //       headers: headers,
+      //     )
+      //     .timeout(const Duration(seconds: 5));
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final endpoint = data['api']['endpoint'].toString();
+      // if (res.statusCode == 200) {
+      //   final data = jsonDecode(res.body);
+      //   final endpoint = data['api']['endpoint'].toString();
 
-        if (endpoint.startsWith('/')) {
-          // Full URL is relative to base
-          return "$baseUrl$endpoint";
-        }
-        return endpoint;
-      }
+      //   if (endpoint.startsWith('/')) {
+      //     // Full URL is relative to base
+      //     return "$baseUrl$endpoint";
+      //   }
+      // }
+        return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
     } catch (e) {
       debugPrint("Could not locate /.well-known/immich at $baseUrl");
     }
@@ -161,7 +164,7 @@ class ApiService implements Authentication {
 
   Future<void> setAccessToken(String accessToken) async {
     _accessToken = accessToken;
-    await Store.put(StoreKey.accessToken, accessToken);
+    await SecureStore.put(SecureStoreKey.accessToken, accessToken);
   }
 
   Future<void> setDeviceInfoHeader() async {
@@ -184,7 +187,7 @@ class ApiService implements Authentication {
   }
 
   static Map<String, String> getRequestHeaders() {
-    var accessToken = Store.get(StoreKey.accessToken, "");
+    var accessToken = SecureStore.get(SecureStoreKey.accessToken, "");
     var customHeadersStr = Store.get(StoreKey.customHeaders, "");
     var header = <String, String>{};
     if (accessToken.isNotEmpty) {

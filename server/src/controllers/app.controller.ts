@@ -11,7 +11,7 @@ export class AppController {
   getImmichWellKnown() {
     return {
       api: {
-        endpoint: '/api',
+        endpoint: '/photos/api',
       },
     };
   }

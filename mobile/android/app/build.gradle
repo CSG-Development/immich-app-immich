@@ -57,33 +57,33 @@ android {
     }
 
    signingConfigs {
-       release {
+        debug {
             def keyAliasVal = System.getenv("ALIAS")
             def keyPasswordVal = System.getenv("ANDROID_KEY_PASSWORD")
             def storePasswordVal = System.getenv("ANDROID_STORE_PASSWORD")
 
-            keyAlias keyAliasVal ? keyAliasVal : keystoreProperties['keyAlias']
-            keyPassword keyPasswordVal ? keyPasswordVal : keystoreProperties['keyPassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
             storeFile file("../key.jks") ? file("../key.jks") : file(keystoreProperties['storeFile'])
-            storePassword storePasswordVal ? storePasswordVal : keystoreProperties['storePassword']
-       }
-   }
-
-    buildTypes {
-        debug {
-            applicationIdSuffix '.debug'
-            versionNameSuffix '-DEBUG'
-            signingConfig signingConfigs.debug
+            storePassword keystoreProperties['storePassword']
         }
-
-        release {
-            shrinkResources true
-            signingConfig signingConfigs.release
-            ndk {
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+        release_dev {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE_DEV')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
             }
         }
-    }
+        release_prod {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE_PROD')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
+        }
+   }
 
     namespace 'com.seagate.immich'
 
@@ -94,6 +94,49 @@ android {
             // https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures
             include("armeabi-v7a", "arm64-v8a", "x86_64")
             universalApk true // generate an additional APK that contains all the ABIs
+        }
+    }
+
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            resValue "string", "app_name", "Immich(Dev)"
+            buildTypes {
+                debug {
+                    applicationIdSuffix '.debug'
+                    versionNameSuffix '-DEBUG'
+                    signingConfig signingConfigs.debug
+                }
+
+                release {
+                    shrinkResources true
+                    signingConfig signingConfigs.release_dev
+                    ndk {
+                        abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+                    }
+                }
+            }
+        }
+        prod {
+            dimension "environment"
+            resValue "string", "app_name", "Immich"
+            buildTypes {
+                debug {
+                    applicationIdSuffix '.debug'
+                    versionNameSuffix '-DEBUG'
+                    signingConfig signingConfigs.debug
+                }
+
+                release {
+                    shrinkResources true
+                    signingConfig signingConfigs.release_prod
+                    ndk {
+                        abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+                    }
+                }
+            }
         }
     }
 }
@@ -124,3 +167,5 @@ dependencies {
 //f configurations.all {
 //f     exclude group: 'com.google.android.gms'
 //f }
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'

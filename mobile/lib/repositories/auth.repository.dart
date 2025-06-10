@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/etag.entity.dart';
+import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
@@ -35,7 +37,7 @@ class AuthRepository extends DatabaseRepository implements IAuthRepository {
 
   @override
   String getAccessToken() {
-    return Store.get(StoreKey.accessToken);
+    return SecureStore.get(SecureStoreKey.accessToken);
   }
 
   @override

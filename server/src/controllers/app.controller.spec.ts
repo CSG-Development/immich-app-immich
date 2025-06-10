@@ -28,7 +28,7 @@ describe(AppController.name, () => {
       expect(status).toBe(200);
       expect(body).toEqual({
         api: {
-          endpoint: '/api',
+          endpoint: '/photos/api',
         },
       });
     });

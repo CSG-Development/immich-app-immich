@@ -75,7 +75,7 @@ enum AppSettingsEnum<T> {
   mapIncludeArchived<bool>(StoreKey.mapIncludeArchived, null, false),
   mapwithPartners<bool>(StoreKey.mapwithPartners, null, false),
   mapRelativeDate<int>(StoreKey.mapRelativeDate, null, 0),
-  allowSelfSignedSSLCert<bool>(StoreKey.selfSignedCert, null, false),
+  allowSelfSignedSSLCert<bool>(StoreKey.selfSignedCert, null, true),
   ignoreIcloudAssets<bool>(StoreKey.ignoreIcloudAssets, null, false),
   selectedAlbumSortReverse<bool>(
     StoreKey.selectedAlbumSortReverse,
@@ -90,6 +90,7 @@ enum AppSettingsEnum<T> {
     null,
     false,
   ),
+  enableBiometric<bool>(StoreKey.enableBiometric, null, false),
   ;
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);

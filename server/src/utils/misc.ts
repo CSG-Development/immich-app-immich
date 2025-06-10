@@ -180,7 +180,7 @@ const patchOpenAPI = (document: OpenAPIObject) => {
   }
 
   for (const [key, value] of Object.entries(document.paths)) {
-    const newKey = key.replace('/api/', '/');
+    const newKey = key.replace('/photos/api/', '/');
     delete document.paths[key];
     document.paths[newKey] = value;
   }
@@ -242,7 +242,7 @@ export const useSwagger = (app: INestApplication, { write }: { write: boolean })
       },
       MetadataKey.API_KEY_SECURITY,
     )
-    .addServer('/api')
+    .addServer('/photos/api')
     .build();
 
   const options: SwaggerDocumentOptions = {
@@ -256,8 +256,8 @@ export const useSwagger = (app: INestApplication, { write }: { write: boolean })
     swaggerOptions: {
       persistAuthorization: true,
     },
-    jsonDocumentUrl: '/api/spec.json',
-    yamlDocumentUrl: '/api/spec.yaml',
+    jsonDocumentUrl: '/photos/api/spec.json',
+    yamlDocumentUrl: '/photos/api/spec.yaml',
     customSiteTitle: 'Immich API Documentation',
   };
 

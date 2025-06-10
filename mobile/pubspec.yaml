@@ -64,6 +64,10 @@ dependencies:
   uuid: ^4.5.1
   wakelock_plus: ^1.2.10
   worker_manager: ^7.2.3
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^9.2.4
+  firebase_core: ^3.13.1
+  firebase_crashlytics: ^4.3.6
 
   native_video_player:
     git:
@@ -80,6 +84,7 @@ dependencies:
   # DB
   drift: ^2.23.1
   drift_flutter: ^0.2.4
+  flutter_dotenv: ^5.2.1
 
 dependency_overrides:
   analyzer: ^6.0.0
@@ -114,6 +119,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - .env.dev
+    - .env.prod
   fonts:
     - family: Inconsolata
       fonts:
@@ -133,6 +140,7 @@ flutter:
     - family: OverpassMono
       fonts:
         - asset: fonts/overpass/OverpassMono.ttf
+  default-flavor: prod
 
 flutter_launcher_icons:
   image_path_android: 'assets/immich-logo.png'

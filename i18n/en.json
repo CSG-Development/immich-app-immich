@@ -1903,5 +1903,17 @@
   "yes": "Yes",
   "you_dont_have_any_shared_links": "You don't have any shared links",
   "your_wifi_name": "Your Wi-Fi name",
-  "zoom_image": "Zoom Image"
+  "zoom_image": "Zoom Image",
+  "common_cancel": "Cancel",
+  "common_continue": "Continue",
+  "common_no": "No",
+  "common_yes": "Yes",
+  "login_form_add_security_title": "Add Security",
+  "login_form_add_security_content": "Would you like to add a Biometric authentication to secure your app?",
+  "login_form_not_now": "Not Now",
+  "security_settings_biometric_not_available": "Biometric authentication is not available on this device",
+  "biometric_switch": "Biometric Authentication",
+  "biometric_subtitle": "Use biometric authentication (fingerprint, face ID) to unlock the app",
+  "security_settings_title": "Security settings",
+  "security_settings_subtitle": "Manage security settings"
 }
