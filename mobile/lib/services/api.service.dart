@@ -130,30 +130,31 @@ class ApiService implements Authentication {
     return true;
   }
 
+  // Temporary
   Future<String> _getWellKnownEndpoint(String baseUrl) async {
     final Client client = Client();
 
     try {
-      var headers = {"Accept": "application/json"};
-      headers.addAll(getRequestHeaders());
+      // var headers = {"Accept": "application/json"};
+      // headers.addAll(getRequestHeaders());
 
-      final res = await client
-          .get(
-            Uri.parse("$baseUrl/.well-known/immich"),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 5));
+      // final res = await client
+      //     .get(
+      //       Uri.parse("$baseUrl/.well-known/immich"),
+      //       headers: headers,
+      //     )
+      //     .timeout(const Duration(seconds: 5));
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final endpoint = data['api']['endpoint'].toString();
+      // if (res.statusCode == 200) {
+      //   final data = jsonDecode(res.body);
+      //   final endpoint = data['api']['endpoint'].toString();
 
-        if (endpoint.startsWith('/')) {
-          // Full URL is relative to base
-          return "$baseUrl$endpoint";
-        }
-        return endpoint;
-      }
+      //   if (endpoint.startsWith('/')) {
+      //     // Full URL is relative to base
+      //     return "$baseUrl$endpoint";
+      //   }
+      // }
+        return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
     } catch (e) {
       debugPrint("Could not locate /.well-known/immich at $baseUrl");
     }
