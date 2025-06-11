@@ -10,29 +10,124 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
+lane :build_prod_appstore do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "app-store", options:options)
+end
 
-default_platform(:ios)
+lane :build_prod_adhoc do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "ad-hoc", options:options)
+end
 
-platform :ios do
-  desc "iOS Release"
-  lane :release do
-    enable_automatic_code_signing(
-      path: "./Runner.xcodeproj",
+lane :build_dev_appstore do |options|
+    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "app-store", options:options)
+end
+
+lane :build_dev_adhoc do |options|
+     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", share_bundle_identifier: "com.noveo.immich.dev.ShareExtension", security_group: "group.com.noveo.immich.share", export_method: "ad-hoc", options:options)
+end
+
+def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
+    local_create_app(
+      export_method: export_method,
+# NOVEO
+      team_id: "HVE639V94N",
+#      team_id: "57HJ3KH2XC",
+      bundle_identifier: bundle_identifier,
+      share_bundle_identifier: share_bundle_identifier,
+      security_group: security_group,
+      options: options,
     )
-    increment_version_number(
-      version_number: "1.0.1"
+end
+
+def local_create_app(
+  export_method:, 
+  team_id:,
+  bundle_identifier:,
+  share_bundle_identifier:,
+  security_group:,
+  options:
+  )
+    import_from_git(
+        url: "git@gitlab.noveogroup.com:iOSTeam/fastlane-common.git",
+        path: "build-ios-app",
     )
-    increment_build_number(
-      build_number: latest_testflight_build_number + 1,
+
+    schemeName = ENV["API_environment_key"] ? "#{ENV["API_environment_key"]}" : "Runner"
+
+    app_definition = AppDefinition.new(
+        lane: self,
+        workspace_name: "Runner",
+        project_name: "Runner",
+        scheme: schemeName,
+        export_method: export_method,
+		    xcargs: "-allowProvisioningUpdates",
+        team_id: team_id,
+        ota_upload: "no-ota-upload",
+        insert_build_number: true,
+        include_bitcode: false,
     )
-    build_app(scheme: "Runner",
-              workspace: "Runner.xcworkspace",
-              xcargs: "-allowProvisioningUpdates")
+
+    app_definition.add_target(
+        target_name: "Runner",
+        bundle_identifier: bundle_identifier,
+    )
+# add more targets if present
+    app_definition.add_target(
+        target_name: "ShareExtension",
+        bundle_identifier: share_bundle_identifier,
+    )
+
+# If several targets are present, usually app group or shared keychain are required to be updated too.
+    update_plist(
+      plist_path: "Runner/Runner.entitlements",
+      block: lambda { |plist|
+        plist["com.apple.security.application-groups"] = [security_group]
+      }
+    )
+    update_plist(
+      plist_path: "ShareExtension/ShareExtension.entitlements",
+      block: lambda { |plist|
+        plist["com.apple.security.application-groups"] = [security_group]
+      }
+    )
+
+    app_definition.update_codesigning_and_build()
+end
+
+########################
+# Uploading to Appstore
+########################
+
+def upload_ipa(ipa_path, apple_id)
     upload_to_testflight(
-      skip_waiting_for_build_processing: true
+        ipa: ipa_path,
+        skip_submission: true,
+        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
+        apple_id: apple_id,
     )
-  end
+end
 
+lane :upload_build do |options|
+    ipa_path=options[:ipa_path]
+    apple_id=options[:apple_id]
+    upload_ipa(ipa_path, apple_id)
+end
+
+def upload_ipa_old(ipa_path)
+    appStoreConnect_IssuerID = ENV["AppStoreConnect_IssuerID"]
+    appStoreConnect_KeyID = ENV["AppStoreConnect_KeyID"]
+    api_key = app_store_connect_api_key(
+      key_id: appStoreConnect_KeyID,
+      issuer_id: appStoreConnect_IssuerID,
+      key_filepath: "./Appstore-AuthKey.p8",
+      duration: 1200, # optional (maximum 1200)
+      in_house: false # optional but may be required if using match/sigh
+    )
+
+    pilot(
+        ipa: ipa_path,
+        skip_submission: true,
+        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
+        api_key: api_key,
+    )
 end
