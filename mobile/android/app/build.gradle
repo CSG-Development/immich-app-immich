@@ -57,7 +57,7 @@ android {
     }
 
    signingConfigs {
-        debug {
+        debug { // this section is incomplete
             def keyAliasVal = System.getenv("ALIAS")
             def keyPasswordVal = System.getenv("ANDROID_KEY_PASSWORD")
             def storePasswordVal = System.getenv("ANDROID_STORE_PASSWORD")
@@ -68,19 +68,19 @@ android {
             storePassword keystoreProperties['storePassword']
         }
         release_dev {
-            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE_DEV')) {
-                storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            if (keystoreProperties['MYAPP_UPLOAD_STORE_FILE_DEV']) {
+                storeFile file(keystoreProperties['MYAPP_UPLOAD_STORE_FILE_DEV'])
+                storePassword keystoreProperties['MYAPP_UPLOAD_STORE_PASSWORD_DEV']
+                keyAlias keystoreProperties['MYAPP_UPLOAD_KEY_ALIAS_DEV']
+                keyPassword keystoreProperties['MYAPP_UPLOAD_KEY_PASSWORD_DEV']
             }
         }
         release_prod {
-            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE_PROD')) {
-                storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            if (keystoreProperties['MYAPP_UPLOAD_STORE_FILE_PROD']) {
+                storeFile file(keystoreProperties['MYAPP_UPLOAD_STORE_FILE_PROD'])
+                storePassword keystoreProperties['MYAPP_UPLOAD_STORE_PASSWORD_PROD']
+                keyAlias keystoreProperties['MYAPP_UPLOAD_KEY_ALIAS_PROD']
+                keyPassword keystoreProperties['MYAPP_UPLOAD_KEY_PASSWORD_PROD']
             }
         }
    }
