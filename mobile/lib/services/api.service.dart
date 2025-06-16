@@ -12,9 +12,59 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+
+class PerformanceHttpClient extends BaseClient {
+  final Client _inner;
+  final FirebasePerformance _performance;
+
+  PerformanceHttpClient(this._inner, this._performance);
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) async {
+    final trace = _performance.newHttpMetric(
+      request.url.toString(),
+      HttpMethod.values.firstWhere(
+        (method) => method.toString().split('.').last.toUpperCase() == request.method,
+        orElse: () => HttpMethod.Get,
+      ),
+    );
+    await trace.start();
+
+    try {
+      final response = await _inner.send(request);
+      trace.httpResponseCode = response.statusCode;
+      trace.responseContentType = response.headers['content-type'];
+      trace.responsePayloadSize = int.tryParse(response.headers['content-length'] ?? '0');
+      await trace.stop();
+      return response;
+    } on TlsException catch (e) {
+      await trace.stop();
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'TLS/SSL communication failed: ${request.method} ${request.url}',
+        e,
+        StackTrace.current,
+      );
+    } on SocketException catch (e) {
+      await trace.stop();
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'Socket operation failed: ${request.method} ${request.url}',
+        e,
+        StackTrace.current,
+      );
+    } catch (e) {
+      await trace.stop();
+      rethrow;
+    }
+  }
+}
 
 class ApiService implements Authentication {
   late ApiClient _apiClient;
+  final _performance = FirebasePerformance.instance;
+  late final PerformanceHttpClient _httpClient;
 
   late UsersApi usersApi;
   late AuthenticationApi authenticationApi;
@@ -37,6 +87,7 @@ class ApiService implements Authentication {
   late MemoriesApi memoriesApi;
 
   ApiService() {
+    _httpClient = PerformanceHttpClient(Client(), _performance);
     // The below line ensures that the api clients are initialized when the service is instantiated
     // This is required to avoid late initialization errors when the clients are access before the endpoint is resolved
     setEndpoint('');
@@ -50,6 +101,7 @@ class ApiService implements Authentication {
 
   setEndpoint(String endpoint) {
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
+    _apiClient.client = _httpClient;
     if (_accessToken != null) {
       setAccessToken(_accessToken!);
     }
@@ -108,6 +160,9 @@ class ApiService implements Authentication {
   }
 
   Future<bool> _isEndpointAvailable(String serverUrl) async {
+    final trace = _performance.newTrace('endpoint_availability');
+    await trace.start();
+
     if (!serverUrl.endsWith('/api')) {
       serverUrl += '/api';
     }
@@ -115,11 +170,15 @@ class ApiService implements Authentication {
     try {
       await setEndpoint(serverUrl);
       await serverInfoApi.pingServer().timeout(const Duration(seconds: 5));
+      await trace.stop();
     } on TimeoutException catch (_) {
+      await trace.stop();
       return false;
     } on SocketException catch (_) {
+      await trace.stop();
       return false;
     } catch (error, stackTrace) {
+      await trace.stop();
       _log.severe(
         "Error while checking server availability",
         error,
