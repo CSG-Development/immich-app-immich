@@ -145,6 +145,7 @@ class TabControllerPage extends HookConsumerWidget {
 
     final multiselectEnabled = ref.watch(multiselectProvider);
     return AutoTabsRouter(
+      inheritNavigatorObservers: true,
       routes: [
         const PhotosRoute(),
         SearchRoute(),
