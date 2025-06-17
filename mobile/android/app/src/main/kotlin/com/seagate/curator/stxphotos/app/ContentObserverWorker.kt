@@ -1,4 +1,4 @@
-package com.seagate.immich
+package com.seagate.curator.stxphotos.app
 
 import android.content.Context
 import android.os.SystemClock

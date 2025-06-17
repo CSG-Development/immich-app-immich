@@ -11,15 +11,15 @@
 #
 
 lane :build_prod_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "app-store", options:options)
+    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app", export_method: "app-store", options:options)
 end
 
 lane :build_prod_adhoc do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "ad-hoc", options:options)
+    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app", export_method: "ad-hoc", options:options)
 end
 
 lane :build_dev_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "app-store", options:options)
+    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app.dev", export_method: "app-store", options:options)
 end
 
 lane :build_dev_adhoc do |options|

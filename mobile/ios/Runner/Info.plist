@@ -6,8 +6,8 @@
 	<string>$(CUSTOM_GROUP_ID)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.seagate.immich.backgroundFetch</string>
-		<string>com.seagate.immich.backgroundProcessing</string>
+		<string>com.seagate.curator.stxphotos.backgroundFetch</string>
+		<string>com.seagate.curator.stxphotos.backgroundProcessing</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

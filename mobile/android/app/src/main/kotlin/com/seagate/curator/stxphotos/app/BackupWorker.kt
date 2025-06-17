@@ -1,4 +1,4 @@
-package com.seagate.immich
+package com.seagate.curator.stxphotos.app
 
 import android.app.Notification
 import android.app.NotificationChannel
