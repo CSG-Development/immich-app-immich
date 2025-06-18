@@ -10,23 +10,43 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
+team_id = "57HJ3KH2XC"
+group_id = "group.com.seagate.curator.stxfiles"
+bundle_id_prod = "com.seagate.curator.stxphotos.app"
+bundle_id_dev = "com.seagate.curator.stxphotos.app.dev"
+share_extension_suffix = "ShareExtension"
+
+
 lane :build_prod_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app", export_method: "app-store", options:options)
+    local_create_app_exact(
+      bundle_identifier: bundle_id,
+      security_group: group_id,
+      export_method: "app-store",
+      options: options
 end
 
 lane :build_prod_adhoc do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app", export_method: "ad-hoc", options:options)
+    local_create_app_exact(
+      bundle_identifier: bundle_id,
+      security_group: group_id,
+      export_method: "ad-hoc",
+      options: options
+    )
 end
 
 lane :build_dev_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.curator.stxphotos.app.dev", export_method: "app-store", options:options)
+    local_create_app_exact(
+      bundle_identifier: bundle_id_dev,
+      security_group: group_id,
+      export_method: "app-store",
+      options: options
+    )
 end
 
 lane :build_dev_adhoc do |options|
     local_create_app_exact(
-      bundle_identifier: "com.seagate.curator.stxphotos.app.dev",
-      share_bundle_identifier: "com.seagate.curator.stxphotos.app.dev.ShareExtension",
-      security_group: "group.com.seagate.curator.stxfiles",
+      bundle_identifier: bundle_id_dev,
+      security_group: group_id,
       export_method: "ad-hoc",
       options: options
     )
@@ -35,9 +55,8 @@ end
 def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
     local_create_app(
       export_method: export_method,
-      team_id: "57HJ3KH2XC",
+      team_id: team_id,
       bundle_identifier: bundle_identifier,
-      share_bundle_identifier: share_bundle_identifier,
       security_group: security_group,
       options: options,
     )
@@ -47,7 +66,6 @@ def local_create_app(
   export_method:, 
   team_id:,
   bundle_identifier:,
-  share_bundle_identifier:,
   security_group:,
   options:
   )
@@ -70,6 +88,7 @@ def local_create_app(
         insert_build_number: true,
         include_bitcode: false,
     )
+    security_group = "#{bundle_identifier}.#{share_extension_suffix}"
 
     app_definition.add_target(
         target_name: "Runner",
@@ -78,7 +97,7 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: share_bundle_identifier,
+        bundle_identifier: security_group,
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
