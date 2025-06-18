@@ -14,7 +14,7 @@ team_id = "57HJ3KH2XC"
 security_group_id = "group.com.seagate.curator.stxfiles"
 bundle_id_prod = "com.seagate.curator.stxphotos.app"
 bundle_id_dev = "com.seagate.curator.stxphotos.app.dev"
-share_extension_suffix = "ShareExtension"
+SHARE_EXTENSION_SUFFIX = "ShareExtension"
 
 
 lane :build_prod_appstore do |options|
@@ -101,7 +101,7 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: "#{bundle_identifier}.#{share_extension_suffix}",
+        bundle_identifier: "#{bundle_identifier}.#{SHARE_EXTENSION_SUFFIX}",
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
