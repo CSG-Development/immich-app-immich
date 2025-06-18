@@ -20,6 +20,7 @@ share_extension_suffix = "ShareExtension"
 lane :build_prod_appstore do |options|
     local_create_app_exact(
       bundle_identifier: bundle_id,
+      team_id: team_id,
       security_group: security_group_id,
       export_method: "app-store",
       options: options
@@ -29,6 +30,7 @@ end
 lane :build_prod_adhoc do |options|
     local_create_app_exact(
       bundle_identifier: bundle_id,
+      team_id: team_id,
       security_group: security_group_id,
       export_method: "ad-hoc",
       options: options
@@ -38,6 +40,7 @@ end
 lane :build_dev_appstore do |options|
     local_create_app_exact(
       bundle_identifier: bundle_id_dev,
+      team_id: team_id,
       security_group: security_group_id,
       export_method: "app-store",
       options: options
@@ -47,13 +50,14 @@ end
 lane :build_dev_adhoc do |options|
     local_create_app_exact(
       bundle_identifier: bundle_id_dev,
+      team_id: team_id,
       security_group: security_group_id,
       export_method: "ad-hoc",
       options: options
     )
 end
 
-def local_create_app_exact(bundle_identifier:, security_group:, export_method:, options:) 
+def local_create_app_exact(bundle_identifier:, team_id:, security_group:, export_method:, options:) 
     local_create_app(
       export_method: export_method,
       team_id: team_id,
