@@ -11,7 +11,7 @@
 #
 
 team_id = "57HJ3KH2XC"
-group_id = "group.com.seagate.curator.stxfiles"
+security_group_id = "group.com.seagate.curator.stxfiles"
 bundle_id_prod = "com.seagate.curator.stxphotos.app"
 bundle_id_dev = "com.seagate.curator.stxphotos.app.dev"
 share_extension_suffix = "ShareExtension"
@@ -53,7 +53,7 @@ lane :build_dev_adhoc do |options|
     )
 end
 
-def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
+def local_create_app_exact(bundle_identifier:, security_group:, export_method:, options:) 
     local_create_app(
       export_method: export_method,
       team_id: team_id,
@@ -89,7 +89,6 @@ def local_create_app(
         insert_build_number: true,
         include_bitcode: false,
     )
-    security_group = "#{bundle_identifier}.#{share_extension_suffix}"
 
     app_definition.add_target(
         target_name: "Runner",
@@ -98,20 +97,20 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: security_group,
+        bundle_identifier: "#{bundle_identifier}.#{share_extension_suffix}",
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
     update_plist(
       plist_path: "Runner/Runner.entitlements",
       block: lambda { |plist|
-        plist["com.apple.security.application-groups"] = [security_group]
+        plist["com.apple.security.application-groups"] = [security_group_id]
       }
     )
     update_plist(
       plist_path: "ShareExtension/ShareExtension.entitlements",
       block: lambda { |plist|
-        plist["com.apple.security.application-groups"] = [security_group]
+        plist["com.apple.security.application-groups"] = [security_group_id]
       }
     )
 
