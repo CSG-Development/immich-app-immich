@@ -25,7 +25,7 @@ end
 lane :build_dev_adhoc do |options|
     local_create_app_exact(
       bundle_identifier: "com.seagate.curator.stxphotos.app.dev",
-      share_bundle_identifier: "com.seagate.curator.stxphotos.ShareExtension.dev",
+      share_bundle_identifier: "com.seagate.curator.stxphotos.app.dev.ShareExtension",
       security_group: "group.com.seagate.curator.stxfiles",
       export_method: "ad-hoc",
       options: options
