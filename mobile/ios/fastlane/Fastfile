@@ -32,9 +32,7 @@ end
 def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
     local_create_app(
       export_method: export_method,
-# NOVEO
-      team_id: "HVE639V94N",
-#      team_id: "57HJ3KH2XC",
+      team_id: "57HJ3KH2XC",
       bundle_identifier: bundle_identifier,
       share_bundle_identifier: share_bundle_identifier,
       security_group: security_group,
