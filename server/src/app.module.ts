@@ -73,6 +73,7 @@ class BaseModule implements OnModuleInit, OnModuleDestroy {
     );
 
     this.eventRepository.setup({ services });
+
     await this.eventRepository.emit('app.bootstrap');
   }
 
