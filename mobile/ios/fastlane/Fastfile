@@ -23,6 +23,7 @@ lane :build_prod_appstore do |options|
       security_group: group_id,
       export_method: "app-store",
       options: options
+    )
 end
 
 lane :build_prod_adhoc do |options|
