@@ -23,7 +23,10 @@ lane :build_dev_appstore do |options|
 end
 
 lane :build_dev_adhoc do |options|
-     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", share_bundle_identifier: "com.noveo.immich.dev.ShareExtension", security_group: "group.com.noveo.immich.share", export_method: "ad-hoc", options:options)
+     local_create_app_exact(bundle_identifier: "	
+com.seagate.curator.stxphotos.app.dev", share_bundle_identifier: "	
+com.seagate.curator.stxphotos.ShareExtension.dev", security_group: "
+group.com.seagate.curator.stxfiles", export_method: "ad-hoc", options:options)
 end
 
 def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
