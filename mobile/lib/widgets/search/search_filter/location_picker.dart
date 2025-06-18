@@ -48,7 +48,8 @@ class LocationPicker extends HookConsumerWidget {
       ),
     );
 
-    return Column(
+    return ListView(
+      shrinkWrap: true,
       children: [
         SearchDropdown(
           dropdownMenuEntries: switch (countries) {
