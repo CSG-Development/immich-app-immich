@@ -79,7 +79,7 @@
 		886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
-		97C146EE1CF9000F007C117D /* Immich-Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Immich-Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Curator Photos-Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -193,7 +193,7 @@
 		97C146EF1CF9000F007C117D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				97C146EE1CF9000F007C117D /* Immich-Debug.app */,
+				97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */,
 				FAC6F8902D287C890078CB2F /* ShareExtension.appex */,
 			);
 			name = Products;
@@ -253,7 +253,7 @@
 			);
 			name = Runner;
 			productName = Runner;
-			productReference = 97C146EE1CF9000F007C117D /* Immich-Debug.app */;
+			productReference = 97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */;
 			productType = "com.apple.product-type.application";
 		};
 		FAC6F88F2D287C890078CB2F /* ShareExtension */ = {
@@ -584,7 +584,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich.profile;
-				PRODUCT_NAME = "Immich-Profile";
+				PRODUCT_NAME = "Curator Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -729,7 +729,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich.vdebug;
-				PRODUCT_NAME = "Immich-Debug";
+				PRODUCT_NAME = "Curator Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -760,7 +760,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich;
-				PRODUCT_NAME = Immich;
+				PRODUCT_NAME = "Curator Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -849,7 +849,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich.vdebug.dev;
-				PRODUCT_NAME = "Immich-Debug";
+				PRODUCT_NAME = "Curator Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -980,7 +980,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich.dev;
-				PRODUCT_NAME = Immich;
+				PRODUCT_NAME = "Curator Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1105,7 +1105,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.immich.profile.dev;
-				PRODUCT_NAME = "Immich-Profile";
+				PRODUCT_NAME = "Curator Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
