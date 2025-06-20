@@ -150,7 +150,7 @@ end
 def create_profile(
     is_app:,
     is_prod:,
-    adhoc:,
+    adhoc:
 )
   app_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
   app_id = is_app ? app_id : "#{app_id}.#{SHARE_EXTENSION_SUFFIX}"
@@ -169,7 +169,7 @@ def create_profile(
 end
 
 def create_profiles(
-  is_prod:,
+  is_prod:
 )
   create_profile(is_app: true,  is_prod: is_prod, adhoc: true)
   create_profile(is_app: false, is_prod: is_prod, adhoc: true)
