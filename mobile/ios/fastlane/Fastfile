@@ -10,18 +10,19 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
-team_id = "57HJ3KH2XC"
-security_group_id = "group.com.seagate.curator.stxfiles"
-bundle_id_prod = "com.seagate.curator.stxphotos.app"
-bundle_id_dev = "com.seagate.curator.stxphotos.app.dev"
+APP_NAME = "Curator Photos"
+TEAM_ID = "57HJ3KH2XC"
+SECURITY_GROUP_ID = "group.com.seagate.curator"
+BUNDLE_ID_PROD = "com.seagate.curator.stxphotos.ios"
+BUNDLE_ID_DEV = "com.seagate.curator.stxphotos.ios.dev"
 SHARE_EXTENSION_SUFFIX = "ShareExtension"
 
 
 lane :build_prod_appstore do |options|
     local_create_app_exact(
-      bundle_identifier: bundle_id_prod,
-      team_id: team_id,
-      security_group: security_group_id,
+      bundle_identifier: BUNDLE_ID_PROD,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
       export_method: "app-store",
       options: options
     )
@@ -29,9 +30,9 @@ end
 
 lane :build_prod_adhoc do |options|
     local_create_app_exact(
-      bundle_identifier: bundle_id_prod,
-      team_id: team_id,
-      security_group: security_group_id,
+      bundle_identifier: BUNDLE_ID_PROD,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
       export_method: "ad-hoc",
       options: options
     )
@@ -39,9 +40,9 @@ end
 
 lane :build_dev_appstore do |options|
     local_create_app_exact(
-      bundle_identifier: bundle_id_dev,
-      team_id: team_id,
-      security_group: security_group_id,
+      bundle_identifier: BUNDLE_ID_DEV,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
       export_method: "app-store",
       options: options
     )
@@ -49,9 +50,9 @@ end
 
 lane :build_dev_adhoc do |options|
     local_create_app_exact(
-      bundle_identifier: bundle_id_dev,
-      team_id: team_id,
-      security_group: security_group_id,
+      bundle_identifier: BUNDLE_ID_DEV,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
       export_method: "ad-hoc",
       options: options
     )
@@ -140,21 +141,47 @@ lane :upload_build do |options|
     upload_ipa(ipa_path, apple_id)
 end
 
-def upload_ipa_old(ipa_path)
-    appStoreConnect_IssuerID = ENV["AppStoreConnect_IssuerID"]
-    appStoreConnect_KeyID = ENV["AppStoreConnect_KeyID"]
-    api_key = app_store_connect_api_key(
-      key_id: appStoreConnect_KeyID,
-      issuer_id: appStoreConnect_IssuerID,
-      key_filepath: "./Appstore-AuthKey.p8",
-      duration: 1200, # optional (maximum 1200)
-      in_house: false # optional but may be required if using match/sigh
-    )
+#######################
+# Creation of provisioning profiles in Seagate Apple Development portal
+# Set environment variables AppStoreConnect_KeyID, appStoreConnect_IssuerID
+# Run GenerateProvisioningProfiles
+#######################
 
-    pilot(
-        ipa: ipa_path,
-        skip_submission: true,
-        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
-        api_key: api_key,
-    )
+def create_profile(
+    is_app:,
+    is_prod:,
+    adhoc:,
+)
+  app_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
+  app_id = is_app ? app_id : "#{app_id}.#{SHARE_EXTENSION_SUFFIX}"
+  provisioning_name = "#{APP_NAME} :: #{is_app ? "App" : "ShareExtension"} :: #{is_prod ? "Prod" : "Dev"} :: #{adhoc ? "AdHoc" : "AppStore"} -- Bundle ID: #{app_id}"
+  UI.message("Creating profile: #{provisioning_name}")
+  sigh(
+    username: ENV["FASTLANE_USER"],
+    password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"],
+    adhoc: adhoc,
+    force: true,
+    app_identifier: app_id,
+    provisioning_name: provisioning_name,
+    output_path: "./",
+    cert_id: ENV["AppStoreConnect_CertID"]
+  )
+end
+
+def create_profiles(
+  is_prod:,
+)
+  create_profile(is_app: true,  is_prod: is_prod, adhoc: true)
+  create_profile(is_app: false, is_prod: is_prod, adhoc: true)
+  create_profile(is_app: true,  is_prod: is_prod, adhoc: false)
+  create_profile(is_app: false, is_prod: is_prod, adhoc: false)
+end
+
+lane :GenerateProvisioningProfiles do
+  UI.user_error!("Error: Missing AppStoreConnect_CertID") unless ENV["AppStoreConnect_CertID"]
+  UI.user_error!("Error: Missing FASTLANE_USER") unless ENV["FASTLANE_USER"]
+  UI.user_error!("Error: Missing FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD") unless ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]
+
+  create_profiles(is_prod: true)
+  create_profiles(is_prod: false)
 end
