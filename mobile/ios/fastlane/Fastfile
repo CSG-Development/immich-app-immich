@@ -157,8 +157,6 @@ def create_profile(
   provisioning_name = "#{APP_NAME} :: #{is_app ? "App" : "ShareExtension"} :: #{is_prod ? "Prod" : "Dev"} :: #{adhoc ? "AdHoc" : "AppStore"} -- Bundle ID: #{app_id}"
   UI.message("Creating profile: #{provisioning_name}")
   sigh(
-    username: ENV["FASTLANE_USER"],
-    password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"],
     adhoc: adhoc,
     force: true,
     app_identifier: app_id,
