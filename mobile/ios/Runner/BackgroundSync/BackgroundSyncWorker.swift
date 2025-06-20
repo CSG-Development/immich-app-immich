@@ -38,7 +38,7 @@ class BackgroundSyncWorker {
         // This is the background message passing channel to be used with the background engine
         // created here in this platform code
         self.channel = FlutterMethodChannel(
-            name: "immich/backgroundChannel",
+            name: "stxphotos/backgroundChannel",
             binaryMessenger: engine!.binaryMessenger
         )
         self.completionHandler = completionHandler

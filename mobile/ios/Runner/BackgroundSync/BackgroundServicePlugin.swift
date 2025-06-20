@@ -36,7 +36,7 @@ class BackgroundServicePlugin: NSObject, FlutterPlugin {
     // to this BackgroundServicePlugion()
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
-            name: "immich/foregroundChannel",
+            name: "stxphotos/foregroundChannel",
             binaryMessenger: registrar.messenger()
         )
 
