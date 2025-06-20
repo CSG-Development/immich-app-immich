@@ -1,4 +1,4 @@
-package com.seagate.curator.stxphotos.app
+package com.seagate.curator.stxphotos.android
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
