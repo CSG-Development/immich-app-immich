@@ -44,7 +44,7 @@ class BackgroundServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
 
   private fun onAttachedToEngine(ctx: Context, messenger: BinaryMessenger) {
     context = ctx
-    methodChannel = MethodChannel(messenger, "immich/foregroundChannel")
+    methodChannel = MethodChannel(messenger, "stxphotos/foregroundChannel")
     methodChannel?.setMethodCallHandler(this)
 
     // Add file trash channel

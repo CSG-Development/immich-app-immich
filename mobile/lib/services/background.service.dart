@@ -42,11 +42,11 @@ final backgroundServiceProvider = Provider((ref) => BackgroundService());
 
 /// Background backup service
 class BackgroundService {
-  static const String _portNameLock = "immichLock";
+  static const String _portNameLock = "stxphotosLock";
   static const MethodChannel _foregroundChannel =
-      MethodChannel('immich/foregroundChannel');
+      MethodChannel('stxphotos/foregroundChannel');
   static const MethodChannel _backgroundChannel =
-      MethodChannel('immich/backgroundChannel');
+      MethodChannel('stxphotos/backgroundChannel');
   static const notifyInterval = Duration(milliseconds: 400);
   bool _isBackgroundInitialized = false;
   CancellationToken? _cancellationToken;
