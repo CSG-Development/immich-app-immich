@@ -573,7 +573,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -583,7 +583,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
 				PRODUCT_NAME = "Immich-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -718,7 +718,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -728,7 +728,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug;
 				PRODUCT_NAME = "Immich-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -749,7 +749,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -759,7 +759,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
 				PRODUCT_NAME = Immich;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -838,7 +838,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -848,7 +848,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app.dev.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug;
 				PRODUCT_NAME = "Immich-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -872,7 +872,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -890,7 +890,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension.dev.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -969,7 +969,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -979,7 +979,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
 				PRODUCT_NAME = Immich;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1002,7 +1002,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1019,7 +1019,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1094,7 +1094,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1104,7 +1104,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.app.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
 				PRODUCT_NAME = "Immich-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1127,7 +1127,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1144,7 +1144,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1168,7 +1168,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1186,7 +1186,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1212,7 +1212,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1229,7 +1229,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1253,7 +1253,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.share;
+				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
 				DEVELOPMENT_TEAM = 2F67MQ8R79;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1270,7 +1270,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
