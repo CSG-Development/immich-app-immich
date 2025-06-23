@@ -4,17 +4,17 @@
   import IndividualSharedViewer from '$lib/components/share-page/individual-shared-viewer.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import ImmichLogoSmallLink from '$lib/components/shared-components/immich-logo-small-link.svelte';
-  import ThemeButton from '$lib/components/shared-components/theme-button.svelte';
   import PasswordField from '$lib/components/shared-components/password-field.svelte';
-  import { user } from '$lib/stores/user.store';
-  import { handleError } from '$lib/utils/handle-error';
-  import { getMySharedLink, SharedLinkType } from '@immich/sdk';
-  import type { PageData } from './$types';
-  import { setSharedLink } from '$lib/utils';
-  import { t } from 'svelte-i18n';
-  import { navigate } from '$lib/utils/navigation';
+  import ThemeButton from '$lib/components/shared-components/theme-button.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { user } from '$lib/stores/user.store';
+  import { setSharedLink } from '$lib/utils';
+  import { handleError } from '$lib/utils/handle-error';
+  import { navigate } from '$lib/utils/navigation';
+  import { getMySharedLink, SharedLinkType } from '@immich/sdk';
   import { tick } from 'svelte';
+  import { t } from 'svelte-i18n';
+  import type { PageData } from './$types';
 
   interface Props {
     data: PageData;
@@ -33,7 +33,7 @@
       sharedLink = await getMySharedLink({ password, key });
       setSharedLink(sharedLink);
       passwordRequired = false;
-      title = (sharedLink.album ? sharedLink.album.albumName : $t('public_share')) + ' - Immich';
+      title = (sharedLink.album ? sharedLink.album.albumName : $t('public_share')) + ' - Curator Photos';
       description =
         sharedLink.description ||
         $t('shared_photos_and_videos_count', { values: { assetCount: sharedLink.assets.length } });
