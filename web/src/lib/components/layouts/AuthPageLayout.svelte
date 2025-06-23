@@ -14,7 +14,7 @@
     <img
       src={immichLogo}
       class="max-w-screen-md mx-auto h-full mb-2 antialiased -z-10 overflow-hidden"
-      alt="Immich logo"
+      alt="Curator Photos logo"
     />
     <div
       class="w-full h-[99%] absolute start-0 top-0 backdrop-blur-[200px] bg-transparent dark:bg-immich-dark-bg/20"
