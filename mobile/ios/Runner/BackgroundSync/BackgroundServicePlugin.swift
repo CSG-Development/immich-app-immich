@@ -20,23 +20,23 @@ class BackgroundServicePlugin: NSObject, FlutterPlugin {
     }
 
     //  Pause the application in XCode, then enter
-    // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.seagate.immich.backgroundFetch"]
+    // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.seagate.curator.stxphotos.backgroundFetch"]
     // or
-    // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.seagate.immich.backgroundProcessing"]
+    // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.seagate.curator.stxphotos.backgroundProcessing"]
     // Then resume the application see the background code run
     // Tested on a physical device, not a simulator
     // This will submit either the Fetch or Processing command to the BGTaskScheduler for immediate processing.
-    // In my tests, I can only get com.seagate.immich.backgroundProcessing simulated by running the above command
+    // In my tests, I can only get com.seagate.curator.stxphotos.backgroundProcessing simulated by running the above command
     
     // This is the task ID in Info.plist to register as our background task ID
-    public static let backgroundFetchTaskID = "com.seagate.immich.backgroundFetch"
-    public static let backgroundProcessingTaskID = "com.seagate.immich.backgroundProcessing"
+    public static let backgroundFetchTaskID = "com.seagate.curator.stxphotos.backgroundFetch"
+    public static let backgroundProcessingTaskID = "com.seagate.curator.stxphotos.backgroundProcessing"
     
     // Establish communication with the main isolate and set up the channel call
     // to this BackgroundServicePlugion()
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
-            name: "immich/foregroundChannel",
+            name: "stxphotos/foregroundChannel",
             binaryMessenger: registrar.messenger()
         )
 
@@ -267,7 +267,7 @@ class BackgroundServicePlugin: NSObject, FlutterPlugin {
     }
   
     // Checks the status of the Background App Refresh from the system
-    // Returns true if the service is enabled for Immich, and false otherwise
+    // Returns true if the service is enabled for Curator Photos, and false otherwise
     func handleBackgroundRefreshStatus(call: FlutterMethodCall, result: FlutterResult) {
         switch UIApplication.shared.backgroundRefreshStatus {
         case .available:

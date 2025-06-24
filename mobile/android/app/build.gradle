@@ -45,7 +45,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.seagate.immich"
+        applicationId "com.seagate.curator.stxphotos.android"
         minSdkVersion 26
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
@@ -85,7 +85,7 @@ android {
         }
    }
 
-    namespace 'com.seagate.immich'
+    namespace 'com.seagate.curator.stxphotos.android'
 
     splits {
         abi {
@@ -102,7 +102,7 @@ android {
         dev {
             dimension "environment"
             applicationIdSuffix ".dev"
-            resValue "string", "app_name", "Immich(Dev)"
+            resValue "string", "app_name", "Curator Photos(Dev)"
             buildTypes {
                 debug {
                     applicationIdSuffix '.debug'
@@ -121,7 +121,7 @@ android {
         }
         prod {
             dimension "environment"
-            resValue "string", "app_name", "Immich"
+            resValue "string", "app_name", "Curator Photos"
             buildTypes {
                 debug {
                     applicationIdSuffix '.debug'

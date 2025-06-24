@@ -10,30 +10,59 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
+APP_NAME = "Curator Photos"
+TEAM_ID = "57HJ3KH2XC"
+SECURITY_GROUP_ID = "group.com.seagate.curator"
+BUNDLE_ID_PROD = "com.seagate.curator.stxphotos.ios"
+BUNDLE_ID_DEV = "com.seagate.curator.stxphotos.ios.dev"
+SHARE_EXTENSION_SUFFIX = "ShareExtension"
+
+
 lane :build_prod_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "app-store", options:options)
+    local_create_app_exact(
+      bundle_identifier: BUNDLE_ID_PROD,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
+      export_method: "app-store",
+      options: options
+    )
 end
 
 lane :build_prod_adhoc do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich", export_method: "ad-hoc", options:options)
+    local_create_app_exact(
+      bundle_identifier: BUNDLE_ID_PROD,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
+      export_method: "ad-hoc",
+      options: options
+    )
 end
 
 lane :build_dev_appstore do |options|
-    local_create_app_exact(bundle_identifier: "com.seagate.immich.dev", export_method: "app-store", options:options)
+    local_create_app_exact(
+      bundle_identifier: BUNDLE_ID_DEV,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
+      export_method: "app-store",
+      options: options
+    )
 end
 
 lane :build_dev_adhoc do |options|
-     local_create_app_exact(bundle_identifier: "com.noveo.immich.dev", share_bundle_identifier: "com.noveo.immich.dev.ShareExtension", security_group: "group.com.noveo.immich.share", export_method: "ad-hoc", options:options)
+    local_create_app_exact(
+      bundle_identifier: BUNDLE_ID_DEV,
+      team_id: TEAM_ID,
+      security_group: SECURITY_GROUP_ID,
+      export_method: "ad-hoc",
+      options: options
+    )
 end
 
-def local_create_app_exact(bundle_identifier:, share_bundle_identifier:, security_group:, export_method:, options:) 
+def local_create_app_exact(bundle_identifier:, team_id:, security_group:, export_method:, options:) 
     local_create_app(
       export_method: export_method,
-# NOVEO
-      team_id: "HVE639V94N",
-#      team_id: "57HJ3KH2XC",
+      team_id: team_id,
       bundle_identifier: bundle_identifier,
-      share_bundle_identifier: share_bundle_identifier,
       security_group: security_group,
       options: options,
     )
@@ -43,7 +72,6 @@ def local_create_app(
   export_method:, 
   team_id:,
   bundle_identifier:,
-  share_bundle_identifier:,
   security_group:,
   options:
   )
@@ -74,7 +102,7 @@ def local_create_app(
 # add more targets if present
     app_definition.add_target(
         target_name: "ShareExtension",
-        bundle_identifier: share_bundle_identifier,
+        bundle_identifier: "#{bundle_identifier}.#{SHARE_EXTENSION_SUFFIX}",
     )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
@@ -113,21 +141,44 @@ lane :upload_build do |options|
     upload_ipa(ipa_path, apple_id)
 end
 
-def upload_ipa_old(ipa_path)
-    appStoreConnect_IssuerID = ENV["AppStoreConnect_IssuerID"]
-    appStoreConnect_KeyID = ENV["AppStoreConnect_KeyID"]
-    api_key = app_store_connect_api_key(
-      key_id: appStoreConnect_KeyID,
-      issuer_id: appStoreConnect_IssuerID,
-      key_filepath: "./Appstore-AuthKey.p8",
-      duration: 1200, # optional (maximum 1200)
-      in_house: false # optional but may be required if using match/sigh
-    )
+#######################
+# Creation of provisioning profiles in Seagate Apple Development portal
+# Set environment variables AppStoreConnect_KeyID, appStoreConnect_IssuerID
+# Run GenerateProvisioningProfiles
+#######################
 
-    pilot(
-        ipa: ipa_path,
-        skip_submission: true,
-        skip_waiting_for_build_processing: ENV["should_skip_processing"] || true,
-        api_key: api_key,
-    )
+def create_profile(
+    is_app:,
+    is_prod:,
+    adhoc:
+)
+  app_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
+  app_id = is_app ? app_id : "#{app_id}.#{SHARE_EXTENSION_SUFFIX}"
+  provisioning_name = "#{APP_NAME} :: #{is_app ? "App" : "ShareExtension"} :: #{is_prod ? "Prod" : "Dev"} :: #{adhoc ? "AdHoc" : "AppStore"} -- Bundle ID: #{app_id}"
+  UI.message("Creating profile: #{provisioning_name}")
+  sigh(
+    adhoc: adhoc,
+    force: true,
+    app_identifier: app_id,
+    provisioning_name: provisioning_name,
+    output_path: "./",
+    cert_id: ENV["AppStoreConnect_CertID"]
+  )
+end
+
+def create_profiles(
+  is_prod:
+)
+  create_profile(is_app: true,  is_prod: is_prod, adhoc: true)
+  create_profile(is_app: false, is_prod: is_prod, adhoc: true)
+  create_profile(is_app: true,  is_prod: is_prod, adhoc: false)
+  create_profile(is_app: false, is_prod: is_prod, adhoc: false)
+end
+lane :GenerateProvisioningProfiles do
+  UI.user_error!("Error: Missing FASTLANE_USER") unless ENV["FASTLANE_USER"]
+  UI.user_error!("Error: Missing FASTLANE_SESSION") unless ENV["FASTLANE_SESSION"]
+  UI.user_error!("Error: Missing AppStoreConnect_CertID") unless ENV["AppStoreConnect_CertID"]
+
+  create_profiles(is_prod: true)
+  create_profiles(is_prod: false)
 end

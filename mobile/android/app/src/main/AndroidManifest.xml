@@ -81,13 +81,13 @@
 
       <!--TODO:
       Add this filter if you want to handle shared images-->
-      <intent-filter android:label="Upload to Immich">
+      <intent-filter android:label="Upload to Curator Photos">
         <action android:name="android.intent.action.SEND" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:mimeType="image/*" />
       </intent-filter>
 
-      <intent-filter android:label="Upload to Immich">
+      <intent-filter android:label="Upload to Curator Photos">
         <action android:name="android.intent.action.SEND_MULTIPLE" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:mimeType="image/*" />
@@ -95,12 +95,12 @@
 
       <!--TODO:
       Add this filter if you want to handle shared videos-->
-      <intent-filter android:label="Upload to Immich">
+      <intent-filter android:label="Upload to Curator Photos">
         <action android:name="android.intent.action.SEND" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:mimeType="video/*" />
       </intent-filter>
-      <intent-filter android:label="Upload to Immich">
+      <intent-filter android:label="Upload to Curator Photos">
         <action android:name="android.intent.action.SEND_MULTIPLE" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:mimeType="video/*" />

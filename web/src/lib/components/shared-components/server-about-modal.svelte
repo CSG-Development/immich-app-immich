@@ -1,12 +1,12 @@
 <script lang="ts">
+  import Icon from '$lib/components/elements/icon.svelte';
   import FullScreenModal from '$lib/components/shared-components/full-screen-modal.svelte';
   import Portal from '$lib/components/shared-components/portal/portal.svelte';
+  import { locale } from '$lib/stores/preferences.store';
   import { type ServerAboutResponseDto, type ServerVersionHistoryResponseDto } from '@immich/sdk';
+  import { mdiAlert } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
-  import { mdiAlert } from '@mdi/js';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { locale } from '$lib/stores/preferences.store';
 
   interface Props {
     onClose: () => void;
@@ -22,7 +22,7 @@
     <div class="flex flex-col sm:grid sm:grid-cols-2 gap-1 text-immich-primary dark:text-immich-dark-primary">
       <div>
         <label class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm" for="version-desc"
-          >Immich</label
+          >Curator Photos</label
         >
         <div>
           <a

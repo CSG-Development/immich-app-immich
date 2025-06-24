@@ -1,4 +1,4 @@
-package com.seagate.immich
+package com.seagate.curator.stxphotos.android
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -73,7 +73,7 @@ class BackupWorker(ctx: Context, params: WorkerParameters) : ListenableWorker(ct
       // normal background services can only up to 10 minutes
       // foreground services are allowed to run indefinitely
       // requires battery optimizations to be disabled (either manually by the user
-      // or by the system learning that immich is important to the user)
+      // or by the system learning that stxphotos is important to the user)
       val title = ctx.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE)
         .getString(SHARED_PREF_NOTIFICATION_TITLE, NOTIFICATION_DEFAULT_TITLE)!!
       showInfo(getInfoBuilder(title, indeterminate = true).build())
@@ -101,7 +101,7 @@ class BackupWorker(ctx: Context, params: WorkerParameters) : ListenableWorker(ct
     val appBundlePath = flutterLoader.findAppBundlePath()
 
     engine?.let { engine ->
-      backgroundChannel = MethodChannel(engine.dartExecutor, "immich/backgroundChannel")
+      backgroundChannel = MethodChannel(engine.dartExecutor, "stxphotos/backgroundChannel")
       backgroundChannel.setMethodCallHandler(this@BackupWorker)
       engine.dartExecutor.executeDartCallback(
         DartExecutor.DartCallback(
@@ -294,15 +294,15 @@ class BackupWorker(ctx: Context, params: WorkerParameters) : ListenableWorker(ct
   }
 
   companion object {
-    const val SHARED_PREF_NAME = "immichBackgroundService"
+    const val SHARED_PREF_NAME = "stxphotosBackgroundService"
     const val SHARED_PREF_CALLBACK_KEY = "callbackDispatcherHandle"
     const val SHARED_PREF_NOTIFICATION_TITLE = "notificationTitle"
     const val SHARED_PREF_LAST_CHANGE = "lastChange"
 
-    private const val TASK_NAME_BACKUP = "immich/BackupWorker"
-    private const val NOTIFICATION_CHANNEL_ID = "immich/backgroundService"
-    private const val NOTIFICATION_CHANNEL_ERROR_ID = "immich/backgroundServiceError"
-    private const val NOTIFICATION_DEFAULT_TITLE = "Immich"
+    private const val TASK_NAME_BACKUP = "stxphotos/BackupWorker"
+    private const val NOTIFICATION_CHANNEL_ID = "stxphotos/backgroundService"
+    private const val NOTIFICATION_CHANNEL_ERROR_ID = "stxphotos/backgroundServiceError"
+    private const val NOTIFICATION_DEFAULT_TITLE = "Curator Photos"
     private const val NOTIFICATION_ID = 1
     private const val NOTIFICATION_ERROR_ID = 2
     private const val NOTIFICATION_DETAIL_ID = 3
