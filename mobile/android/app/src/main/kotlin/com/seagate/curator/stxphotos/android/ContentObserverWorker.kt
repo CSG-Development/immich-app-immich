@@ -40,7 +40,7 @@ class ContentObserverWorker(ctx: Context, params: WorkerParameters) : Worker(ctx
         private const val SHARED_PREF_TRIGGER_UPDATE_DELAY = "triggerUpdateDelay"
         private const val SHARED_PREF_TRIGGER_MAX_DELAY = "triggerMaxDelay"
 
-        private const val TASK_NAME_OBSERVER = "immich/ContentObserver"
+        private const val TASK_NAME_OBSERVER = "stxphotos/ContentObserver"
 
         /**
          * Enqueues the `ContentObserverWorker`.

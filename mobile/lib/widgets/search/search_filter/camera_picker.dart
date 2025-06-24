@@ -90,6 +90,7 @@ class CameraPicker extends HookConsumerWidget {
 
     if (context.isMobile) {
       return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           makeWidget,
           const SizedBox(height: 8),

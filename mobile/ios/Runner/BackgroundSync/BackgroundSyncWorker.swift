@@ -22,7 +22,7 @@ class BackgroundSyncWorker {
     // Flutter engine which shows the UI.
     // It needs to be started up, registered, and torn down here
     let engine: FlutterEngine? = FlutterEngine(
-        name: "BackgroundImmich"
+        name: "BackgroundCuratorPhotos"
     )
     
     let notificationId = "com.seagate.curator.stxphotos/backgroundNotifications"
@@ -38,7 +38,7 @@ class BackgroundSyncWorker {
         // This is the background message passing channel to be used with the background engine
         // created here in this platform code
         self.channel = FlutterMethodChannel(
-            name: "immich/backgroundChannel",
+            name: "stxphotos/backgroundChannel",
             binaryMessenger: engine!.binaryMessenger
         )
         self.completionHandler = completionHandler
@@ -212,7 +212,7 @@ class BackgroundSyncWorker {
         // Build the notification
         let notificationContent = UNMutableNotificationContent()
         notificationContent.body = content ?? "Uploading..."
-        notificationContent.title = title ?? "Immich"
+        notificationContent.title = title ?? "Curator Photos"
         
         // Add it to the Notification center
         let notification = UNNotificationRequest(
@@ -248,7 +248,7 @@ class BackgroundSyncWorker {
         // Build the notification
         let notificationContent = UNMutableNotificationContent()
         notificationContent.body = content ?? "Error running the backup job."
-        notificationContent.title = title ?? "Immich"
+        notificationContent.title = title ?? "Curator Photos"
         
         // Add it to the Notification center
         let notification = UNNotificationRequest(

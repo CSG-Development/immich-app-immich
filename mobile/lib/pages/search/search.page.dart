@@ -391,6 +391,7 @@ class SearchPage extends HookConsumerWidget {
 
       showFilterBottomSheet(
         context: context,
+        isScrollControlled: true,
         child: FilterBottomSheetScaffold(
           title: 'search_filter_media_type_title'.tr(),
           onSearch: search,
@@ -469,6 +470,7 @@ class SearchPage extends HookConsumerWidget {
 
       showFilterBottomSheet(
         context: context,
+        isScrollControlled: true,
         child: FilterBottomSheetScaffold(
           title: 'display_options'.tr(),
           onSearch: search,
