@@ -1,4 +1,4 @@
-package com.seagate.immich
+package com.seagate.curator.stxphotos.android
 
 import android.app.Activity
 import android.content.ContentResolver

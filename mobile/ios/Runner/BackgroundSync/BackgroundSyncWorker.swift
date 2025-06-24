@@ -25,7 +25,7 @@ class BackgroundSyncWorker {
         name: "BackgroundCuratorPhotos"
     )
     
-    let notificationId = "com.seagate.immich/backgroundNotifications"
+    let notificationId = "com.seagate.curator.stxphotos/backgroundNotifications"
     // The background message passing channel
     var channel: FlutterMethodChannel?
     
