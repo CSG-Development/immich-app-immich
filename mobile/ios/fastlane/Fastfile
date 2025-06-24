@@ -150,8 +150,7 @@ end
 def create_profile(
     is_app:,
     is_prod:,
-    adhoc:,
-    api_key:
+    adhoc:
 )
   app_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
   app_id = is_app ? app_id : "#{app_id}.#{SHARE_EXTENSION_SUFFIX}"
