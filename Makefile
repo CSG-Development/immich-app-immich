@@ -5,7 +5,7 @@ dev-down:
 	docker compose -f ./docker/docker-compose.dev.yml down --remove-orphans
 
 dev-update:
-	docker compose -f ./docker/docker-compose.dev.yml up --build -V --remove-orphans
+	docker compose -f ./docker/docker-compose.dev.yml up --build --force-recreate -V --remove-orphans
 
 dev-scale:
 	docker compose -f ./docker/docker-compose.dev.yml up --build -V  --scale immich-server=3 --remove-orphans
