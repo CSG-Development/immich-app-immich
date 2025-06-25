@@ -8,11 +8,11 @@
   import { clickOutside } from '$lib/actions/click-outside';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import HelpAndFeedbackModal from '$lib/components/shared-components/help-and-feedback-modal.svelte';
-  import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
   import NotificationPanel from '$lib/components/shared-components/navigation-bar/notification-panel.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
   import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { notificationManager } from '$lib/stores/notification-manager.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
@@ -20,14 +20,13 @@
   import { user } from '$lib/stores/user.store';
   import { userInteraction } from '$lib/stores/user.svelte';
   import { getAboutInfo, type ServerAboutResponseDto } from '@immich/sdk';
-  import { Button, IconButton } from '@immich/ui';
+  import { Button, IconButton, Logo } from '@immich/ui';
   import { mdiBellBadge, mdiBellOutline, mdiHelpCircleOutline, mdiMagnify, mdiMenu, mdiTrayArrowUp } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import ThemeButton from '../theme-button.svelte';
   import UserAvatar from '../user-avatar.svelte';
   import AccountInfoPanel from './account-info-panel.svelte';
-
   interface Props {
     showUploadButton?: boolean;
     onUploadClick: () => void;
@@ -80,7 +79,11 @@
         class="sidebar:hidden"
       />
       <a data-sveltekit-preload-data="hover" href={resolveRoute(AppRoute.PHOTOS, {})}>
-        <ImmichLogo class="max-md:h-[48px] h-[50px]" noText={!mobileDevice.isFullSidebar} />
+        <Logo
+          class={mobileDevice.isFullSidebar ? 'max-md:h-[48px] h-[50px]' : 'max-md:h-[35px] h-[35px]'}
+          variant={mobileDevice.isFullSidebar ? 'inline' : 'icon'}
+          appTheme={themeManager.value}
+        />
       </a>
     </div>
     <div class="flex justify-between gap-4 lg:gap-8 pe-6">

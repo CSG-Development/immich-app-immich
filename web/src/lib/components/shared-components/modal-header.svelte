@@ -1,7 +1,8 @@
 <script lang="ts">
-  import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
+  import Icon from '$lib/components/elements/icon.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import { Logo } from '@immich/ui';
   import { mdiClose } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -28,7 +29,7 @@
 <div class="flex place-items-center justify-between px-5 pb-3">
   <div class="flex gap-2 place-items-center">
     {#if showLogo}
-      <ImmichLogo noText={true} class="h-[40px]" />
+      <Logo class="h-[40px]" variant="icon" appTheme={themeManager.value} />
     {:else if icon}
       <Icon path={icon} size={24} ariaHidden={true} class="text-immich-primary dark:text-immich-dark-primary" />
     {/if}

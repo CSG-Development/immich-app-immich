@@ -3,18 +3,18 @@
   import { resolveRoute } from '$app/paths';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
-  import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
   import Portal from '$lib/components/shared-components/portal/portal.svelte';
   import LicenseModal from '$lib/components/shared-components/purchasing/purchase-modal.svelte';
   import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
   import { AppRoute } from '$lib/constants';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { purchaseStore } from '$lib/stores/purchase.store';
   import { preferences } from '$lib/stores/user.store';
   import { getAccountAge } from '$lib/utils/auth';
   import { handleError } from '$lib/utils/handle-error';
   import { getButtonVisibility } from '$lib/utils/purchase-utils';
   import { updateMyPreferences } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, Logo } from '@immich/ui';
   import { mdiClose, mdiInformationOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
@@ -101,7 +101,7 @@
       <div class="flex justify-between w-full place-items-center place-content-center">
         <div class="flex place-items-center place-content-center gap-1">
           <div class="h-6 w-6">
-            <ImmichLogo noText class="h-[24px]" />
+            <Logo class="h-[24px]" variant="icon" appTheme={themeManager.value} />
           </div>
           <p class="flex text-immich-primary dark:text-immich-dark-primary font-medium">
             {$t('purchase_button_buy_immich')}
@@ -133,7 +133,7 @@
     >
       <div class="flex justify-between place-items-center">
         <div class="h-10 w-10">
-          <ImmichLogo noText class="h-[32px]" />
+          <Logo class="h-[32px]" variant="icon" appTheme={themeManager.value} />
         </div>
         <CircleIconButton
           icon={mdiClose}

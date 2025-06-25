@@ -2,12 +2,13 @@
   import { page } from '$app/state';
   import { shouldIgnoreEvent } from '$lib/actions/shortcut';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { isAlbumsRoute } from '$lib/utils/navigation';
+  import { Logo } from '@immich/ui';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
-  import ImmichLogo from './immich-logo.svelte';
 
   let albumId = $derived(isAlbumsRoute(page.route?.id) ? page.params.albumId : undefined);
 
@@ -165,7 +166,7 @@
     transition:fade={{ duration: 250 }}
     ondragover={onDragOver}
   >
-    <ImmichLogo noText class="m-16 h-48 animate-bounce" />
+    <Logo class="m-16 h-36 animate-bounce bg-transparent" variant="icon" appTheme={themeManager.value} />
     <div class="text-2xl">{$t('drop_files_to_upload')}</div>
   </div>
 {/if}
