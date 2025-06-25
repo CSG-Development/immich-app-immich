@@ -1,7 +1,8 @@
 import { browser } from '$app/environment';
-import { Theme } from '$lib/constants';
+
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import { PersistedLocalStorage } from '$lib/utils/persisted';
+import { Theme } from '@immich/ui';
 
 export interface ThemeSetting {
   value: Theme;
@@ -10,10 +11,10 @@ export interface ThemeSetting {
 
 const getDefaultTheme = () => {
   if (!browser) {
-    return Theme.DARK;
+    return Theme.Dark;
   }
 
-  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? Theme.DARK : Theme.LIGHT;
+  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? Theme.Dark : Theme.Light;
 };
 
 class ThemeManager {
@@ -33,7 +34,7 @@ class ThemeManager {
 
   value = $derived(this.theme.value);
 
-  isDark = $derived(this.value === Theme.DARK);
+  isDark = $derived(this.value === Theme.Dark);
 
   constructor() {
     eventManager.on('app.init', () => this.#onAppInit());
@@ -48,7 +49,7 @@ class ThemeManager {
   }
 
   toggleTheme() {
-    this.#update(this.value === Theme.DARK ? Theme.LIGHT : Theme.DARK);
+    this.#update(this.value === Theme.Dark ? Theme.Light : Theme.Dark);
   }
 
   #onAppInit() {
@@ -63,7 +64,7 @@ class ThemeManager {
     const theme: ThemeSetting =
       value === 'system' ? { system: true, value: getDefaultTheme() } : { system: false, value };
 
-    if (theme.value === Theme.LIGHT) {
+    if (theme.value === Theme.Light) {
       document.documentElement.classList.remove('dark');
     } else {
       document.documentElement.classList.add('dark');

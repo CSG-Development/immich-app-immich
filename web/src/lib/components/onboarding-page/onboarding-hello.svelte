@@ -1,11 +1,12 @@
 <script lang="ts">
-  import OnboardingCard from './onboarding-card.svelte';
   import Button from '$lib/components/elements/buttons/button.svelte';
-  import { mdiArrowRight } from '@mdi/js';
   import Icon from '$lib/components/elements/icon.svelte';
-  import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { user } from '$lib/stores/user.store';
+  import { Logo } from '@immich/ui';
+  import { mdiArrowRight } from '@mdi/js';
   import { t } from 'svelte-i18n';
+  import OnboardingCard from './onboarding-card.svelte';
 
   interface Props {
     onDone: () => void;
@@ -15,7 +16,7 @@
 </script>
 
 <OnboardingCard>
-  <ImmichLogo noText class="h-[50px]" />
+  <Logo class="h-[50px]" variant="icon" appTheme={themeManager.value} />
   <p class="font-medium text-6xl my-6 text-immich-primary dark:text-immich-dark-primary">
     {$t('onboarding_welcome_user', { values: { user: $user.name } })}
   </p>

@@ -1,8 +1,9 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
-  import ImmichLogo from '$lib/components/shared-components/immich-logo.svelte';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
+  import Icon from '$lib/components/elements/icon.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { copyToClipboard } from '$lib/utils';
+  import { Logo } from '@immich/ui';
   import { mdiCodeTags, mdiContentCopy, mdiMessage, mdiPartyPopper } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -25,7 +26,7 @@
   <section class="bg-immich-bg dark:bg-immich-dark-bg">
     <div class="flex place-items-center border-b px-6 py-4 dark:border-b-immich-dark-gray">
       <a class="flex place-items-center gap-2 hover:cursor-pointer" href="/photos">
-        <ImmichLogo class="h-[50px]" />
+        <Logo class="h-[50px]" variant="inline" appTheme={themeManager.value} />
       </a>
     </div>
   </section>
