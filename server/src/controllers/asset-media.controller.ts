@@ -129,6 +129,7 @@ export class AssetMediaController {
     @Res() res: Response,
     @Next() next: NextFunction,
   ) {
+    this.logger.debug('get asset thumbnail called');
     const viewThumbnailRes = await this.service.viewThumbnail(auth, id, dto);
 
     if (viewThumbnailRes instanceof ImmichFileResponse) {
@@ -151,8 +152,10 @@ export class AssetMediaController {
         throw new Error('Invalid targetSize: ' + targetSize);
       }
       const finalRedirPath = redirPath + '?' + redirSearchParams.toString();
+      this.logger.debug(`get asset thumbnail returning redirPath: ${finalRedirPath}`);
       return res.redirect(finalRedirPath);
     }
+    this.logger.debug(`get asset thumbnail returning viewThumbnailRes: ${viewThumbnailRes}`);
   }
 
   @Get(':id/video/playback')

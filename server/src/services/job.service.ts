@@ -250,6 +250,7 @@ export class JobService extends BaseService {
    * Queue follow up jobs
    */
   private async onDone(item: JobItem) {
+    this.logger.debug(`Job done: ${JSON.stringify(item)}`);
     switch (item.name) {
       case JobName.SIDECAR_SYNC:
       case JobName.SIDECAR_DISCOVERY: {

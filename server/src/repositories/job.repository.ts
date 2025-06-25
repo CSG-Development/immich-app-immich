@@ -188,6 +188,7 @@ export class JobRepository {
   }
 
   async queue(item: JobItem): Promise<void> {
+    this.logger.debug(`Job queued: ${JSON.stringify(item)}`);
     return this.queueAll([item]);
   }
 

@@ -234,6 +234,7 @@ export class EventRepository implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   emit<T extends EmitEvent>(event: T, ...args: ArgsOf<T>): Promise<void> {
+    this.logger.debug(`EventRepository.emit called with event ${event} and args ${JSON.stringify(args)}`);
     return this.onEvent({ name: event, args, server: false });
   }
 
@@ -250,6 +251,7 @@ export class EventRepository implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   clientSend<T extends keyof ClientEventMap>(event: T, room: string, ...data: ClientEventMap[T]) {
+    this.logger.debug(`EventRepository.emit called with event ${event}, room ${room} and data ${JSON.stringify(data)}`);
     this.server?.to(room).emit(event, ...data);
   }
 

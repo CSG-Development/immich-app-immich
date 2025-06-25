@@ -225,6 +225,7 @@ export class AssetRepository {
   }
 
   create(asset: Insertable<Assets>) {
+    console.debug(`assetRepository.create called for asset: ${JSON.stringify(asset)}`);
     return this.db.insertInto('assets').values(asset).returningAll().executeTakeFirstOrThrow();
   }
 
@@ -434,6 +435,7 @@ export class AssetRepository {
   }
 
   async update(asset: Updateable<Assets> & { id: string }) {
+    console.debug(`assetRepository.update called for asset: ${JSON.stringify(asset)}`);
     const value = omitBy(asset, isUndefined);
     delete value.id;
     if (!isEmpty(value)) {
