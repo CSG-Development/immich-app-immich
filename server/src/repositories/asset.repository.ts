@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Insertable, Kysely, NotNull, Selectable, UpdateResult, Updateable, sql } from 'kysely';
 import { isEmpty, isUndefined, omitBy } from 'lodash';
 import { InjectKysely } from 'nestjs-kysely';
@@ -141,7 +141,11 @@ export interface DayOfYearAssets {
 
 @Injectable()
 export class AssetRepository {
-  constructor(@InjectKysely() private db: Kysely<DB>) {}
+  private logger: Logger;
+
+  constructor(@InjectKysely() private db: Kysely<DB>) {
+    this.logger = new Logger(this.constructor.name);
+  }
 
   async upsertExif(exif: Insertable<Exif>): Promise<void> {
     const value = { ...exif, assetId: asUuid(exif.assetId) };
@@ -225,7 +229,7 @@ export class AssetRepository {
   }
 
   create(asset: Insertable<Assets>) {
-    console.debug(`assetRepository.create called for asset: ${JSON.stringify(asset)}`);
+    this.logger.debug(`assetRepository.create called for asset: ${JSON.stringify(asset)}`);
     return this.db.insertInto('assets').values(asset).returningAll().executeTakeFirstOrThrow();
   }
 
@@ -435,7 +439,7 @@ export class AssetRepository {
   }
 
   async update(asset: Updateable<Assets> & { id: string }) {
-    console.debug(`assetRepository.update called for asset: ${JSON.stringify(asset)}`);
+    this.logger.debug(`assetRepository.update called for asset: ${JSON.stringify(asset)}`);
     const value = omitBy(asset, isUndefined);
     delete value.id;
     if (!isEmpty(value)) {

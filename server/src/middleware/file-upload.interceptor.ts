@@ -113,6 +113,7 @@ export class FileUploadInterceptor implements NestInterceptor {
   }
 
   private handleFile(request: AuthRequest, file: Express.Multer.File, callback: Callback<Partial<ImmichFile>>) {
+    this.logger.debug(`Handling file ${file.originalname}`);
     (file as ImmichMulterFile).uuid = randomUUID();
 
     request.on('error', (error) => {
@@ -132,6 +133,7 @@ export class FileUploadInterceptor implements NestInterceptor {
         hash.destroy();
         callback(error);
       } else {
+        this.logger.debug(`Handled file ${file.originalname} successfully`);
         callback(null, { ...info, checksum: hash.digest() });
       }
     });
