@@ -21,6 +21,7 @@ import UIKit
     GeneratedPluginRegistrant.register(with: self)
     BackgroundServicePlugin.registerBackgroundProcessing()
 
+    TelemetryWrapperPlugin.register(with: self.registrar(forPlugin: "TelemetryWrapperPlugin")!)
     BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
 
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in
