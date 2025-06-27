@@ -10,6 +10,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(BackgroundServicePlugin())
+        flutterEngine.plugins.add(TelemetryWrapperPlugin())
         // No need to set up method channel here as it's now handled in the plugin
     }
 }
