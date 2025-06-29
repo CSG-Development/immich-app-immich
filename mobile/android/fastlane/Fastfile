@@ -43,7 +43,7 @@ platform :android do
   end
 
   desc "Deploy a new version to the Google Play"
-  lane :deploy do
+  lane :deploy do |options|
     aab_path=options[:aab_path]
     package_name=options[:package_name]
     json_key=options[:json_key]
