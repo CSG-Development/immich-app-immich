@@ -16,7 +16,11 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */; };
+		CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CE8353CC2DEEE8B800C413E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */; };
+		CEFC4ED82E0DA30600C94B12 /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
+		CEFC4ED92E0DA30600C94B12 /* telemetry.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D218389C4A4C4693F141F7D1 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */; };
 		FAC6F89B2D287C890078CB2F /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FAC6F8902D287C890078CB2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FAC6F8B72D287F120078CB2F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC6F8B52D287F120078CB2F /* ShareViewController.swift */; };
@@ -40,6 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				CEFC4ED92E0DA30600C94B12 /* telemetry.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -89,7 +94,9 @@
 		B1FBA9EE014DE20271B0FE77 /* Pods-ShareExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.profile.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.profile.xcconfig"; sourceTree = "<group>"; };
 		C4DBC5BB9D911AC10AC6063E /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		CDE1EAD0A3CF9D6EFE285FFF /* Pods-Runner.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"; sourceTree = "<group>"; };
+		CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryWrapperPlugin.swift; sourceTree = "<group>"; };
 		CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = telemetry.xcframework; sourceTree = "<group>"; };
 		E0E99CDC17B3EB7FA8BA2332 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		F2484051C4A1A79C2EE0041F /* Pods-ShareExtension.profile-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.profile-prod.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.profile-prod.xcconfig"; sourceTree = "<group>"; };
 		F7101BB0391A314774615E89 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
@@ -109,6 +116,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D218389C4A4C4693F141F7D1 /* Pods_Runner.framework in Frameworks */,
+				CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,6 +125,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B6A31FED0FC846D6BD69BBC /* Pods_ShareExtension.framework in Frameworks */,
+				CEFC4ED82E0DA30600C94B12 /* telemetry.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,6 +160,7 @@
 		1754452DD81DA6620E279E51 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */,
 				886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */,
 				357FC57E54FD0F51795CF28A /* Pods_ShareExtension.framework */,
 			);
@@ -202,6 +212,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */,
 				FA9973382CF6DF4B000EF859 /* Runner.entitlements */,
 				65DD438629917FAD0047FFA8 /* BackgroundSync */,
 				FAC7416727DB9F5500C668D8 /* RunnerProfile.entitlements */,
@@ -459,6 +470,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				65F32F33299D349D00CE9261 /* BackgroundSyncWorker.swift in Sources */,
+				CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -873,7 +885,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1003,7 +1015,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1128,7 +1140,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1169,7 +1181,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1213,7 +1225,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1254,7 +1266,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 2F67MQ8R79;
+				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;

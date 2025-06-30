@@ -51,6 +51,9 @@ void main() async {
   await migrateDatabaseIfNeeded(db);
   HttpOverrides.global = HttpSSLCertOverride();
 
+  // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
+  // await telemetryChannel.invokeMethod('init', ['test']);
+
   runApp(
     ProviderScope(
       overrides: [

@@ -1,5 +1,6 @@
 buildscript {
-    ext.kotlin_version = '2.0.20' 
+    ext.kotlin_version = '2.0.20'
+    ext.roomVersion = '1.1.1-rc1'
     repositories {
         google()
         mavenCentral()
