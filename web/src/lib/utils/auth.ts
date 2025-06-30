@@ -51,7 +51,7 @@ const hasAuthCookie = (): boolean => {
   return false;
 };
 
-export const authenticate = async (options?: AuthOptions) => {
+export const authenticate = async (url: URL, options?: AuthOptions) => {
   const { public: publicRoute, admin: adminRoute } = options || {};
   const user = await loadUser();
 
@@ -60,7 +60,7 @@ export const authenticate = async (options?: AuthOptions) => {
   }
 
   if (!user) {
-    redirect(302, resolveRoute(AppRoute.AUTH_LOGIN, {}));
+    redirect(302, resolveRoute(`${AppRoute.AUTH_LOGIN}?continue=${encodeURIComponent(url.pathname + url.search)}`, {}));
   }
 
   if (adminRoute && !user.isAdmin) {

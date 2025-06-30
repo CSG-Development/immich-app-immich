@@ -3,16 +3,18 @@
   import { resolveRoute } from '$app/paths';
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
   import AlbumsTable from '$lib/components/album-page/albums-table.svelte';
-  import UserSelectionModal from '$lib/components/album-page/user-selection-modal.svelte';
-  import EditAlbumForm from '$lib/components/forms/edit-album-form.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import RightClickContextMenu from '$lib/components/shared-components/context-menu/right-click-context-menu.svelte';
-  import CreateSharedLinkModal from '$lib/components/shared-components/create-share-link-modal/create-shared-link-modal.svelte';
   import {
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
   import { AppRoute } from '$lib/constants';
+  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import AlbumEditModal from '$lib/modals/AlbumEditModal.svelte';
+  import AlbumShareModal from '$lib/modals/AlbumShareModal.svelte';
+  import QrCodeModal from '$lib/modals/QrCodeModal.svelte';
+  import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
   import {
     AlbumFilter,
     AlbumGroupBy,
@@ -24,6 +26,7 @@
   } from '$lib/stores/preferences.store';
   import { user } from '$lib/stores/user.store';
   import { userInteraction } from '$lib/stores/user.svelte';
+  import { makeSharedLinkUrl } from '$lib/utils';
   import {
     confirmAlbumDelete,
     getSelectedAlbumGroupOption,
@@ -141,9 +144,6 @@
 
   let albumGroupOption: string = $state(AlbumGroupBy.None);
 
-  let showShareByURLModal = $state(false);
-
-  let albumToEdit: AlbumResponseDto | null = $state(null);
   let albumToShare: AlbumResponseDto | null = $state(null);
   let albumToDelete: AlbumResponseDto | null = null;
 
@@ -257,9 +257,14 @@
     await deleteSelectedAlbum();
   };
 
-  const handleEdit = (album: AlbumResponseDto) => {
-    albumToEdit = album;
+  const handleEdit = async (album: AlbumResponseDto) => {
     closeAlbumContextMenu();
+    const editedAlbum = await modalManager.show(AlbumEditModal, {
+      album,
+    });
+    if (editedAlbum) {
+      successEditAlbumInfo(editedAlbum);
+    }
   };
 
   const deleteSelectedAlbum = async () => {
@@ -305,8 +310,6 @@
   };
 
   const successEditAlbumInfo = (album: AlbumResponseDto) => {
-    albumToEdit = null;
-
     notificationController.show({
       message: $t('album_info_updated'),
       type: NotificationType.Info,
@@ -347,18 +350,31 @@
     updateAlbumInfo(album);
   };
 
-  const openShareModal = () => {
+  const openShareModal = async () => {
     if (!contextMenuTargetAlbum) {
       return;
     }
 
     albumToShare = contextMenuTargetAlbum;
     closeAlbumContextMenu();
-  };
+    const result = await modalManager.show(AlbumShareModal, { album: albumToShare });
 
-  const closeShareModal = () => {
-    albumToShare = null;
-    showShareByURLModal = false;
+    switch (result?.action) {
+      case 'sharedUsers': {
+        await handleAddUsers(result.data);
+        return;
+      }
+
+      case 'sharedLink': {
+        const sharedLink = await modalManager.show(SharedLinkCreateModal, { albumId: albumToShare.id });
+
+        if (sharedLink) {
+          handleSharedLinkCreated(albumToShare);
+          await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink.key) });
+        }
+        return;
+      }
+    }
   };
 </script>
 
@@ -409,33 +425,3 @@
     <MenuOption icon={mdiDeleteOutline} text={$t('delete')} onClick={() => setAlbumToDelete()} />
   {/if}
 </RightClickContextMenu>
-
-{#if allowEdit}
-  <!-- Edit Modal -->
-  {#if albumToEdit}
-    <EditAlbumForm
-      album={albumToEdit}
-      onEditSuccess={successEditAlbumInfo}
-      onCancel={() => (albumToEdit = null)}
-      onClose={() => (albumToEdit = null)}
-    />
-  {/if}
-
-  <!-- Share Modal -->
-  {#if albumToShare}
-    {#if showShareByURLModal}
-      <CreateSharedLinkModal
-        albumId={albumToShare.id}
-        onClose={() => closeShareModal()}
-        onCreated={() => albumToShare && handleSharedLinkCreated(albumToShare)}
-      />
-    {:else}
-      <UserSelectionModal
-        album={albumToShare}
-        onSelect={handleAddUsers}
-        onShare={() => (showShareByURLModal = true)}
-        onClose={() => closeShareModal()}
-      />
-    {/if}
-  {/if}
-{/if}

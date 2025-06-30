@@ -1,5 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import NotificationsSettings from '$lib/components/user-settings-page/notifications-settings.svelte';
+  import UserUsageStatistic from '$lib/components/user-settings-page/user-usage-statistic.svelte';
   import { OpenSettingQueryParameterValue, QueryParameter } from '$lib/constants';
   // import { featureFlags } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
@@ -14,26 +16,8 @@
   import PartnerSettings from './partner-settings.svelte';
   // import UserAPIKeyList from './user-api-key-list.svelte';
   // import UserProfileSettings from './user-profile-settings.svelte';
-  import NotificationsSettings from '$lib/components/user-settings-page/notifications-settings.svelte';
+  import { mdiAccountGroupOutline, mdiBellOutline, mdiCogOutline, mdiDevices, mdiServerOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import DownloadSettings from '$lib/components/user-settings-page/download-settings.svelte';
-  import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte';
-  import FeatureSettings from '$lib/components/user-settings-page/feature-settings.svelte';
-  import {
-    mdiAccountGroupOutline,
-    mdiAccountOutline,
-    mdiApi,
-    mdiBellOutline,
-    mdiCogOutline,
-    mdiDevices,
-    mdiDownload,
-    mdiFeatureSearchOutline,
-    mdiKeyOutline,
-    mdiOnepassword,
-    mdiServerOutline,
-    mdiTwoFactorAuthentication,
-  } from '@mdi/js';
-  import UserUsageStatistic from '$lib/components/user-settings-page/user-usage-statistic.svelte';
 
   interface Props {
     keys?: ApiKeyResponseDto[];
@@ -57,9 +41,9 @@
     <AppSettings />
   </SettingAccordion>
 
-<!--  <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>-->
-<!--    <UserProfileSettings />-->
-<!--  </SettingAccordion>-->
+  <!--  <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>-->
+  <!--    <UserProfileSettings />-->
+  <!--  </SettingAccordion>-->
 
   <SettingAccordion
     icon={mdiServerOutline}
@@ -70,9 +54,9 @@
     <UserUsageStatistic />
   </SettingAccordion>
 
-<!--  <SettingAccordion icon={mdiApi} key="api-keys" title={$t('api_keys')} subtitle={$t('manage_your_api_keys')}>-->
-<!--    <UserAPIKeyList bind:keys />-->
-<!--  </SettingAccordion>-->
+  <!--  <SettingAccordion icon={mdiApi} key="api-keys" title={$t('api_keys')} subtitle={$t('manage_your_api_keys')}>-->
+  <!--    <UserAPIKeyList bind:keys />-->
+  <!--  </SettingAccordion>-->
 
   <SettingAccordion
     icon={mdiDevices}
@@ -83,23 +67,23 @@
     <DeviceList bind:devices={sessions} />
   </SettingAccordion>
 
-<!--  <SettingAccordion-->
-<!--    icon={mdiDownload}-->
-<!--    key="download-settings"-->
-<!--    title={$t('download_settings')}-->
-<!--    subtitle={$t('download_settings_description')}-->
-<!--  >-->
-<!--    <DownloadSettings />-->
-<!--  </SettingAccordion>-->
+  <!--  <SettingAccordion-->
+  <!--    icon={mdiDownload}-->
+  <!--    key="download-settings"-->
+  <!--    title={$t('download_settings')}-->
+  <!--    subtitle={$t('download_settings_description')}-->
+  <!--  >-->
+  <!--    <DownloadSettings />-->
+  <!--  </SettingAccordion>-->
 
-<!--  <SettingAccordion-->
-<!--    icon={mdiFeatureSearchOutline}-->
-<!--    key="feature"-->
-<!--    title={$t('features')}-->
-<!--    subtitle={$t('features_setting_description')}-->
-<!--  >-->
-<!--    <FeatureSettings />-->
-<!--  </SettingAccordion>-->
+  <!--  <SettingAccordion-->
+  <!--    icon={mdiFeatureSearchOutline}-->
+  <!--    key="feature"-->
+  <!--    title={$t('features')}-->
+  <!--    subtitle={$t('features_setting_description')}-->
+  <!--  >-->
+  <!--    <FeatureSettings />-->
+  <!--  </SettingAccordion>-->
 
   <SettingAccordion
     icon={mdiBellOutline}
@@ -122,9 +106,9 @@
   <!--  </SettingAccordion>-->
   <!--{/if}-->
 
-<!--  <SettingAccordion icon={mdiOnepassword} key="password" title={$t('password')} subtitle={$t('change_your_password')}>-->
-<!--    <ChangePasswordSettings />-->
-<!--  </SettingAccordion>-->
+  <!--  <SettingAccordion icon={mdiOnepassword} key="password" title={$t('password')} subtitle={$t('change_your_password')}>-->
+  <!--    <ChangePasswordSettings />-->
+  <!--  </SettingAccordion>-->
 
   <SettingAccordion
     icon={mdiAccountGroupOutline}
@@ -135,13 +119,23 @@
     <PartnerSettings user={$user} />
   </SettingAccordion>
 
-<!--  <SettingAccordion-->
-<!--    icon={mdiKeyOutline}-->
-<!--    key="user-purchase-settings"-->
-<!--    title={$t('user_purchase_settings')}-->
-<!--    subtitle={$t('user_purchase_settings_description')}-->
-<!--    autoScrollTo={true}-->
-<!--  >-->
-<!--    <UserPurchaseSettings />-->
-<!--  </SettingAccordion>-->
+  <!-- <SettingAccordion
+    icon={mdiLockSmart}
+    key="user-pin-code-settings"
+    title={$t('user_pin_code_settings')}
+    subtitle={$t('user_pin_code_settings_description')}
+    autoScrollTo={true}
+  >
+    <ChangePinCodeSettings />
+  </SettingAccordion>
+
+  <SettingAccordion
+    icon={mdiKeyOutline}
+    key="user-purchase-settings"
+    title={$t('user_purchase_settings')}
+    subtitle={$t('user_purchase_settings_description')}
+    autoScrollTo={true}
+  >
+    <UserPurchaseSettings />
+  </SettingAccordion> -->
 </SettingAccordionState>
