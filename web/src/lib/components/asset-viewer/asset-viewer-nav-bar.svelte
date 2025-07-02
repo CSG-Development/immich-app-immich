@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolveRoute } from '$app/paths';
+  import CastButton from '$lib/cast/cast-button.svelte';
   import type { OnAction, PreAction } from '$lib/components/asset-viewer/actions/action';
   import AddToAlbumAction from '$lib/components/asset-viewer/actions/add-to-album-action.svelte';
   import ArchiveAction from '$lib/components/asset-viewer/actions/archive-action.svelte';
@@ -13,10 +14,11 @@
   import SetAlbumCoverAction from '$lib/components/asset-viewer/actions/set-album-cover-action.svelte';
   import SetFeaturedPhotoAction from '$lib/components/asset-viewer/actions/set-person-featured-action.svelte';
   import SetProfilePictureAction from '$lib/components/asset-viewer/actions/set-profile-picture-action.svelte';
+  import SetStackPrimaryAsset from '$lib/components/asset-viewer/actions/set-stack-primary-asset.svelte';
+  import SetVisibilityAction from '$lib/components/asset-viewer/actions/set-visibility-action.svelte';
   import ShareAction from '$lib/components/asset-viewer/actions/share-action.svelte';
   import ShowDetailAction from '$lib/components/asset-viewer/actions/show-detail-action.svelte';
   import UnstackAction from '$lib/components/asset-viewer/actions/unstack-action.svelte';
-  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { AppRoute } from '$lib/constants';
@@ -25,14 +27,17 @@
   import { getAssetJobName, getSharedLink } from '$lib/utils';
   import { canCopyImageToClipboard } from '$lib/utils/asset-utils';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { toTimelineAsset } from '$lib/utils/timeline-util';
   import {
     AssetJobName,
     AssetTypeEnum,
+    AssetVisibility,
     type AlbumResponseDto,
     type AssetResponseDto,
     type PersonResponseDto,
     type StackResponseDto,
   } from '@immich/sdk';
+  import { IconButton } from '@immich/ui';
   import {
     mdiAlertOutline,
     mdiCogRefreshOutline,
@@ -92,6 +97,7 @@
   const sharedLink = getSharedLink();
   let isOwner = $derived($user && asset.ownerId === $user?.id);
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
+  let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
 
   // $: showEditorButton =
   //   isOwner &&
@@ -105,38 +111,55 @@
 </script>
 
 <div
-  class="z-[1001] flex h-16 place-items-center justify-between bg-gradient-to-b from-black/40 px-3 transition-transform duration-200"
+  class="flex h-16 place-items-center justify-between bg-linear-to-b from-black/40 px-3 transition-transform duration-200"
 >
-  <div class="text-white">
+  <div class="dark">
     {#if showCloseButton}
       <CloseAction {onClose} />
     {/if}
   </div>
-  <div class="flex gap-2 overflow-x-auto text-white" data-testid="asset-viewer-navbar-actions">
-    {#if !asset.isTrashed && $user}
+  <div class="flex gap-2 overflow-x-auto dark" data-testid="asset-viewer-navbar-actions">
+    <CastButton />
+
+    {#if !asset.isTrashed && $user && !isLocked}
       <ShareAction {asset} />
     {/if}
     {#if asset.isOffline}
-      <CircleIconButton color="alert" icon={mdiAlertOutline} onclick={onShowDetail} title={$t('asset_offline')} />
+      <IconButton
+        shape="round"
+        color="danger"
+        icon={mdiAlertOutline}
+        onclick={onShowDetail}
+        aria-label={$t('asset_offline')}
+      />
     {/if}
     {#if asset.livePhotoVideoId}
       {@render motionPhoto?.()}
     {/if}
     {#if asset.type === AssetTypeEnum.Image}
-      <CircleIconButton
-        color="opaque"
-        hideMobile={true}
+      <IconButton
+        class="hidden sm:flex"
+        color="secondary"
+        variant="ghost"
+        shape="round"
         icon={$photoZoomState && $photoZoomState.currentZoom > 1 ? mdiMagnifyMinusOutline : mdiMagnifyPlusOutline}
-        title={$t('zoom_image')}
+        aria-label={$t('zoom_image')}
         onclick={onZoomImage}
       />
     {/if}
     {#if canCopyImageToClipboard() && asset.type === AssetTypeEnum.Image}
-      <CircleIconButton color="opaque" icon={mdiContentCopy} title={$t('copy_image')} onclick={() => onCopyImage?.()} />
+      <IconButton
+        color="secondary"
+        variant="ghost"
+        shape="round"
+        icon={mdiContentCopy}
+        aria-label={$t('copy_image')}
+        onclick={() => onCopyImage?.()}
+      />
     {/if}
 
     {#if !isOwner && showDownloadButton}
-      <DownloadAction {asset} />
+      <DownloadAction asset={toTimelineAsset(asset)} />
     {/if}
 
     {#if showDetailButton}
@@ -146,37 +169,34 @@
     {#if isOwner}
       <FavoriteAction {asset} {onAction} />
     {/if}
-    <!-- {#if showEditorButton}
-      <CircleIconButton
-        color="opaque"
-        hideMobile={true}
-        icon={mdiImageEditOutline}
-        onclick={showEditorHandler}
-        title={$t('editor')}
-      />
-    {/if} -->
 
     {#if isOwner}
       <DeleteAction {asset} {onAction} {preAction} />
 
-      <ButtonContextMenu direction="left" align="top-right" color="opaque" title={$t('more')} icon={mdiDotsVertical}>
-        {#if showSlideshow}
+      <ButtonContextMenu direction="left" align="top-right" color="secondary" title={$t('more')} icon={mdiDotsVertical}>
+        {#if showSlideshow && !isLocked}
           <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={onPlaySlideshow} />
         {/if}
         {#if showDownloadButton}
-          <DownloadAction {asset} menuItem />
+          <DownloadAction asset={toTimelineAsset(asset)} menuItem />
         {/if}
-        {#if asset.isTrashed}
-          <RestoreAction {asset} {onAction} />
-        {:else}
-          <AddToAlbumAction {asset} {onAction} />
-          <AddToAlbumAction {asset} {onAction} shared />
+
+        {#if !isLocked}
+          {#if asset.isTrashed}
+            <RestoreAction {asset} {onAction} />
+          {:else}
+            <AddToAlbumAction {asset} {onAction} />
+            <AddToAlbumAction {asset} {onAction} shared />
+          {/if}
         {/if}
 
         {#if isOwner}
           {#if stack}
             <UnstackAction {stack} {onAction} />
             <KeepThisDeleteOthersAction {stack} {asset} {onAction} />
+            {#if stack?.primaryAssetId !== asset.id}
+              <SetStackPrimaryAsset {stack} {asset} {onAction} />
+            {/if}
           {/if}
           {#if album}
             <SetAlbumCoverAction {asset} {album} />
@@ -184,21 +204,28 @@
           {#if person}
             <SetFeaturedPhotoAction {asset} {person} />
           {/if}
-          {#if asset.type === AssetTypeEnum.Image}
+          {#if asset.type === AssetTypeEnum.Image && !isLocked}
             <SetProfilePictureAction {asset} />
           {/if}
-          <ArchiveAction {asset} {onAction} {preAction} />
-          <MenuOption
-            icon={mdiUpload}
-            onClick={() => openFileUploadDialog({ multiple: false, assetId: asset.id })}
-            text={$t('replace_with_upload')}
-          />
-          {#if !asset.isArchived && !asset.isTrashed}
+
+          {#if !isLocked}
+            <ArchiveAction {asset} {onAction} {preAction} />
             <MenuOption
-              icon={mdiImageSearch}
-              onClick={() => goto(resolveRoute(`${AppRoute.PHOTOS}?at=${stack?.primaryAssetId ?? asset.id}`, {}))}
-              text={$t('view_in_timeline')}
+              icon={mdiUpload}
+              onClick={() => openFileUploadDialog({ multiple: false, assetId: asset.id })}
+              text={$t('replace_with_upload')}
             />
+            {#if !asset.isArchived && !asset.isTrashed}
+              <MenuOption
+                icon={mdiImageSearch}
+                onClick={() => goto(resolveRoute(`${AppRoute.PHOTOS}?at=${stack?.primaryAssetId ?? asset.id}`, {}))}
+                text={$t('view_in_timeline')}
+              />
+            {/if}
+          {/if}
+
+          {#if !asset.isTrashed}
+            <SetVisibilityAction asset={toTimelineAsset(asset)} {onAction} {preAction} />
           {/if}
           <hr />
           <MenuOption

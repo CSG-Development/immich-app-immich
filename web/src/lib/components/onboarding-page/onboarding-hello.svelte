@@ -1,31 +1,22 @@
 <script lang="ts">
-  import Button from '$lib/components/elements/buttons/button.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
   import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import { OnboardingRole } from '$lib/models/onboarding-role';
+  import { serverConfig } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { Logo } from '@immich/ui';
-  import { mdiArrowRight } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import OnboardingCard from './onboarding-card.svelte';
 
-  interface Props {
-    onDone: () => void;
-  }
-
-  let { onDone }: Props = $props();
+  let userRole = $derived($user.isAdmin && !$serverConfig.isOnboarded ? OnboardingRole.SERVER : OnboardingRole.USER);
 </script>
 
-<OnboardingCard>
-  <Logo class="h-[50px]" variant="icon" appTheme={themeManager.value} />
-  <p class="font-medium text-6xl my-6 text-immich-primary dark:text-immich-dark-primary">
+<div class="gap-4">
+  <Logo class="h-[100px] mb-2" variant="icon" appTheme={themeManager.value} />
+  <p class="font-medium mb-6 text-6xl text-immich-primary dark:text-immich-dark-primary">
     {$t('onboarding_welcome_user', { values: { user: $user.name } })}
   </p>
-  <p class="text-3xl pb-6 font-light">{$t('onboarding_welcome_description')}</p>
-
-  <div class="w-full flex place-content-end">
-    <Button class="flex gap-2 place-content-center" onclick={() => onDone()}>
-      <p>{$t('theme')}</p>
-      <Icon path={mdiArrowRight} size="18" />
-    </Button>
-  </div>
-</OnboardingCard>
+  <p class="text-3xl pb-6 font-light">
+    {userRole == OnboardingRole.SERVER
+      ? $t('onboarding_server_welcome_description')
+      : $t('onboarding_user_welcome_description')}
+  </p>
+</div>
