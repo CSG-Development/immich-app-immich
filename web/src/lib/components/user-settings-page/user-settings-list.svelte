@@ -2,7 +2,7 @@
   /* import { page } from '$app/stores'; */
   import ChangePinCodeSettings from '$lib/components/user-settings-page/PinCodeSettings.svelte';
   /*   import DownloadSettings from '$lib/components/user-settings-page/download-settings.svelte'; */
-  /* import FeatureSettings from '$lib/components/user-settings-page/feature-settings.svelte'; */
+  import FeatureSettings from '$lib/components/user-settings-page/feature-settings.svelte';
   import NotificationsSettings from '$lib/components/user-settings-page/notifications-settings.svelte';
   /* import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte'; */
   import UserUsageStatistic from '$lib/components/user-settings-page/user-usage-statistic.svelte';
@@ -19,7 +19,7 @@
     mdiCogOutline,
     mdiDevices,
     /* mdiDownload, */
-    /* mdiFeatureSearchOutline, */
+    mdiFeatureSearchOutline,
     /* mdiKeyOutline, */
     mdiLockSmart,
     /* mdiOnepassword, */
@@ -93,14 +93,14 @@
   <!--    <DownloadSettings />-->
   <!--  </SettingAccordion>-->
 
-  <!--  <SettingAccordion-->
-  <!--    icon={mdiFeatureSearchOutline}-->
-  <!--    key="feature"-->
-  <!--    title={$t('features')}-->
-  <!--    subtitle={$t('features_setting_description')}-->
-  <!--  >-->
-  <!--    <FeatureSettings />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion
+    icon={mdiFeatureSearchOutline}
+    key="feature"
+    title={$t('features')}
+    subtitle={$t('features_setting_description')}
+  >
+    <FeatureSettings />
+  </SettingAccordion>
 
   <SettingAccordion
     icon={mdiBellOutline}

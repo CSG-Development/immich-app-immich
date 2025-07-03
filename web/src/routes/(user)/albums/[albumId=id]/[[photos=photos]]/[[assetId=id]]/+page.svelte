@@ -442,130 +442,127 @@
   };
 </script>
 
-<div
-  class="flex overflow-hidden"
-  use:scrollMemoryClearer={{ routeStartsWith: resolveRoute(AppRoute.ALBUMS, {}) as AppRoute }}
->
+<div class="flex overflow-hidden" use:scrollMemoryClearer={{ routeStartsWith: AppRoute.ALBUMS }}>
   <div class="relative w-full shrink">
-    {#if assetInteraction.selectionActive}
-      <main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
-        <AssetGrid
-          enableRouting={viewMode === AlbumPageViewMode.SELECT_ASSETS ? false : true}
-          {album}
-          {timelineManager}
-          assetInteraction={currentAssetIntersection}
-          {isShared}
-          {isSelectionMode}
-          {singleSelect}
-          {showArchiveIcon}
-          {onSelect}
-          onEscape={handleEscape}
-        >
-          {#if viewMode !== AlbumPageViewMode.SELECT_ASSETS}
-            {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
-              <!-- ALBUM TITLE -->
-              <section class="pt-8 md:pt-24">
-                <AlbumTitle
-                  id={album.id}
-                  albumName={album.albumName}
-                  {isOwned}
-                  onUpdate={(albumName) => (album.albumName = albumName)}
-                />
+    <main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
+      <AssetGrid
+        enableRouting={viewMode === AlbumPageViewMode.SELECT_ASSETS ? false : true}
+        {album}
+        {timelineManager}
+        assetInteraction={currentAssetIntersection}
+        {isShared}
+        {isSelectionMode}
+        {singleSelect}
+        {showArchiveIcon}
+        {onSelect}
+        onEscape={handleEscape}
+      >
+        {#if viewMode !== AlbumPageViewMode.SELECT_ASSETS}
+          {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
+            <!-- ALBUM TITLE -->
+            <section class="pt-8 md:pt-24">
+              <AlbumTitle
+                id={album.id}
+                albumName={album.albumName}
+                {isOwned}
+                onUpdate={(albumName) => (album.albumName = albumName)}
+              />
 
-                {#if album.assetCount > 0}
-                  <AlbumSummary {album} />
-                {/if}
+              {#if album.assetCount > 0}
+                <AlbumSummary {album} />
+              {/if}
 
-                <!-- ALBUM SHARING -->
-                {#if album.albumUsers.length > 0 || (album.hasSharedLink && isOwned)}
-                  <div class="my-3 flex gap-x-1">
-                    <!-- link -->
-                    {#if album.hasSharedLink && isOwned}
-                      <IconButton
-                        aria-label={$t('create_link_to_share')}
-                        color="secondary"
-                        size="medium"
-                        shape="round"
-                        icon={mdiLink}
-                        onclick={handleShareLink}
-                      />
-                    {/if}
+              <!-- ALBUM SHARING -->
+              {#if album.albumUsers.length > 0 || (album.hasSharedLink && isOwned)}
+                <div class="my-3 flex gap-x-1">
+                  <!-- link -->
+                  {#if album.hasSharedLink && isOwned}
+                    <IconButton
+                      aria-label={$t('create_link_to_share')}
+                      color="secondary"
+                      size="medium"
+                      shape="round"
+                      icon={mdiLink}
+                      onclick={handleShareLink}
+                    />
+                  {/if}
 
-                    <!-- owner -->
-                    <button type="button" onclick={handleEditUsers}>
-                      <UserAvatar user={album.owner} size="md" />
-                    </button>
-
-                    <!-- users with write access (collaborators) -->
-                    {#each album.albumUsers.filter(({ role }) => role === AlbumUserRole.Editor) as { user } (user.id)}
-                      <button type="button" onclick={handleEditUsers}>
-                        <UserAvatar {user} size="md" />
-                      </button>
-                    {/each}
-
-                    <!-- display ellipsis if there are readonly users too -->
-                    {#if albumHasViewers}
-                      <IconButton
-                        shape="round"
-                        aria-label={$t('view_all_users')}
-                        color="secondary"
-                        size="medium"
-                        icon={mdiDotsVertical}
-                        onclick={handleEditUsers}
-                      />
-                    {/if}
-
-                    {#if isOwned}
-                      <IconButton
-                        shape="round"
-                        color="secondary"
-                        size="medium"
-                        icon={mdiPlus}
-                        onclick={handleShare}
-                        aria-label={$t('add_more_users')}
-                      />
-                    {/if}
-                  </div>
-                {/if}
-                <!-- ALBUM DESCRIPTION -->
-                <AlbumDescription id={album.id} bind:description={album.description} {isOwned} />
-              </section>
-            {/if}
-
-            {#if album.assetCount === 0}
-              <section id="empty-album" class=" mt-[200px] flex place-content-center place-items-center">
-                <div class="w-[300px]">
-                  <p class="text-xs dark:text-immich-dark-fg">{$t('add_photos').toUpperCase()}</p>
-                  <button
-                    type="button"
-                    onclick={() => (viewMode = AlbumPageViewMode.SELECT_ASSETS)}
-                    class="mt-5 bg-subtle flex w-full place-items-center gap-6 rounded-2xl border px-8 py-8 text-immich-fg transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-immich-primary dark:border-none dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
-                  >
-                    <span class="text-text-immich-primary dark:text-immich-dark-primary"
-                      ><Icon path={mdiPlus} size="24" />
-                    </span>
-                    <span class="text-lg">{$t('select_photos')}</span>
+                  <!-- owner -->
+                  <button type="button" onclick={handleEditUsers}>
+                    <UserAvatar user={album.owner} size="md" />
                   </button>
+
+                  <!-- users with write access (collaborators) -->
+                  {#each album.albumUsers.filter(({ role }) => role === AlbumUserRole.Editor) as { user } (user.id)}
+                    <button type="button" onclick={handleEditUsers}>
+                      <UserAvatar {user} size="md" />
+                    </button>
+                  {/each}
+
+                  <!-- display ellipsis if there are readonly users too -->
+                  {#if albumHasViewers}
+                    <IconButton
+                      shape="round"
+                      aria-label={$t('view_all_users')}
+                      color="secondary"
+                      size="medium"
+                      icon={mdiDotsVertical}
+                      onclick={handleEditUsers}
+                    />
+                  {/if}
+
+                  {#if isOwned}
+                    <IconButton
+                      shape="round"
+                      color="secondary"
+                      size="medium"
+                      icon={mdiPlus}
+                      onclick={handleShare}
+                      aria-label={$t('add_more_users')}
+                    />
+                  {/if}
                 </div>
-              </section>
-            {/if}
+              {/if}
+              <!-- ALBUM DESCRIPTION -->
+              <AlbumDescription id={album.id} bind:description={album.description} {isOwned} />
+            </section>
           {/if}
-        </AssetGrid>
 
-        {#if showActivityStatus && !activityManager.isLoading}
-          <div class="absolute z-2 bottom-0 end-0 mb-6 me-6 justify-self-end">
-            <ActivityStatus
-              disabled={!album.isActivityEnabled}
-              isLiked={activityManager.isLiked}
-              numberOfComments={activityManager.commentCount}
-              numberOfLikes={undefined}
-              onFavorite={handleFavorite}
-              onOpenActivityTab={handleOpenAndCloseActivityTab}
-            />
-          </div>
+          {#if album.assetCount === 0}
+            <section id="empty-album" class=" mt-[200px] flex place-content-center place-items-center">
+              <div class="w-[300px]">
+                <p class="text-xs dark:text-immich-dark-fg">{$t('add_photos').toUpperCase()}</p>
+                <button
+                  type="button"
+                  onclick={() => (viewMode = AlbumPageViewMode.SELECT_ASSETS)}
+                  class="mt-5 bg-subtle flex w-full place-items-center gap-6 rounded-2xl border px-8 py-8 text-immich-fg transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-immich-primary dark:border-none dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+                >
+                  <span class="text-text-immich-primary dark:text-immich-dark-primary"
+                    ><Icon path={mdiPlus} size="24" />
+                  </span>
+                  <span class="text-lg">{$t('select_photos')}</span>
+                </button>
+              </div>
+            </section>
+          {/if}
         {/if}
-      </main>
+      </AssetGrid>
 
+      {#if showActivityStatus && !activityManager.isLoading}
+        <div class="absolute z-2 bottom-0 end-0 mb-6 me-6 justify-self-end">
+          <ActivityStatus
+            disabled={!album.isActivityEnabled}
+            isLiked={activityManager.isLiked}
+            numberOfComments={activityManager.commentCount}
+            numberOfLikes={undefined}
+            onFavorite={handleFavorite}
+            onOpenActivityTab={handleOpenAndCloseActivityTab}
+          />
+        </div>
+      {/if}
+    </main>
+
+    {#if assetInteraction.selectionActive}
       <AssetSelectControlBar
         assets={assetInteraction.selectedAssets}
         clearSelect={() => assetInteraction.clearMultiselect()}
