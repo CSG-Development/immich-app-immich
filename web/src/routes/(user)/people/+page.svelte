@@ -316,7 +316,7 @@
     [
       scrollMemory,
       {
-        routeStartsWith: resolveRoute(AppRoute.PEOPLE, {}),
+        routeStartsWith: AppRoute.PEOPLE,
         beforeSave: () => {
           if (currentPage) {
             sessionStorage.setItem(SessionStorageKey.INFINITE_SCROLL_PAGE, currentPage.toString());

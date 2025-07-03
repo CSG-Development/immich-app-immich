@@ -377,7 +377,7 @@
 <main
   class="relative z-0 h-dvh overflow-hidden px-2 md:px-6 md:pt-(--navbar-height-md) pt-(--navbar-height)"
   use:scrollMemoryClearer={{
-    routeStartsWith: resolveRoute(AppRoute.PEOPLE, {}) as AppRoute,
+    routeStartsWith: AppRoute.PEOPLE,
     beforeClear: () => {
       sessionStorage.removeItem(SessionStorageKey.INFINITE_SCROLL_PAGE);
     },
