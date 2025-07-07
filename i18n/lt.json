@@ -1033,7 +1033,7 @@
   "variables": "Kintamieji",
   "version": "Versija",
   "version_announcement_closing": "Tavo draugas, Alex",
-  "version_announcement_message": "Sveiki! Nauja „Immich“ versija yra pasiekiama. Prašome skirti šiek tiek laiko perskaityti <link>leidimo pastabas</link>, kad įsitikintumėte, jog jūsų nustatymai yra atnaujinti. Tai padės išvengti netinkamo sukonfigūravimo, ypač jei naudojate „WatchTower“ ar kitą mechanizmą, kuris automatiškai atnaujina jūsų „Immich“ serverį.",
+  "version_announcement_message": "Sveiki! Nauja „Curator Photos“ versija yra pasiekiama. Prašome skirti šiek tiek laiko perskaityti <link>leidimo pastabas</link>, kad įsitikintumėte, jog jūsų nustatymai yra atnaujinti. Tai padės išvengti netinkamo sukonfigūravimo, ypač jei naudojate „WatchTower“ ar kitą mechanizmą, kuris automatiškai atnaujina jūsų „Curator Photos“ serverį.",
   "version_history": "Versijų istorija",
   "version_history_item": "Versija {version} įdiegta {date}",
   "video": "Vaizdo įrašas",

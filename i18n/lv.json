@@ -1021,7 +1021,7 @@
   "utilities": "Rīki",
   "variables": "Mainīgie",
   "version": "Versija",
-  "version_announcement_message": "Sveiki! Ir pieejama jauna Curator Photos versija. Lūdzu, veltiet laiku, lai izlasītu <link>laidiena piezīmes</link> un pārliecinātos, ka jūsu iestatījumi ir atjaunināti, lai novērstu jebkādu nepareizu konfigurāciju, jo īpaši, ja izmantojat WatchTower vai citu mehānismu, kas automātiski atjaunina jūsu Immich instanci.",
+  "version_announcement_message": "Sveiki! Ir pieejama jauna Curator Photos versija. Lūdzu, veltiet laiku, lai izlasītu <link>laidiena piezīmes</link> un pārliecinātos, ka jūsu iestatījumi ir atjaunināti, lai novērstu jebkādu nepareizu konfigurāciju, jo īpaši, ja izmantojat WatchTower vai citu mehānismu, kas automātiski atjaunina jūsu Curator Photos instanci.",
   "version_history": "Versiju vēsture",
   "version_history_item": "{version} uzstādīta {date}",
   "video": "Videoklips",
