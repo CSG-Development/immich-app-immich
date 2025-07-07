@@ -1,4 +1,4 @@
-package app.alextran.immich
+package com.seagate.curator.stxphotos.android
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -33,7 +33,7 @@ class HttpSSLOptionsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   }
 
   private fun onAttachedToEngine(ctx: Context, messenger: BinaryMessenger) {
-    methodChannel = MethodChannel(messenger, "immich/httpSSLOptions")
+    methodChannel = MethodChannel(messenger, "stxphotos/httpSSLOptions")
     methodChannel?.setMethodCallHandler(this)
   }
 

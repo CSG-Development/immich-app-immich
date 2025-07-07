@@ -3,9 +3,9 @@ package com.seagate.curator.stxphotos.android
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.NonNull
-import app.alextran.immich.sync.NativeSyncApi
-import app.alextran.immich.sync.NativeSyncApiImpl26
-import app.alextran.immich.sync.NativeSyncApiImpl30
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApi
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl26
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl30
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 

@@ -8,7 +8,7 @@ import 'package:immich_mobile/utils/http_ssl_cert_override.dart';
 import 'package:logging/logging.dart';
 
 class HttpSSLOptions {
-  static const MethodChannel _channel = MethodChannel('immich/httpSSLOptions');
+  static const MethodChannel _channel = MethodChannel('stxphotos/httpSSLOptions');
 
   static void apply() {
     AppSettingsEnum setting = AppSettingsEnum.allowSelfSignedSSLCert;

@@ -148,9 +148,9 @@ void main() {
           emits(
             StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
           ),
-          emits(
-            const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
-          ),
+          // emits(
+          //   const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
+          // ),
           emits(
             const StoreDto<Object>(
               StoreKey.colorfulInterface,

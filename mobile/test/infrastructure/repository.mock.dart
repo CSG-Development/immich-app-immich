@@ -2,6 +2,7 @@ import 'package:immich_mobile/domain/interfaces/device_asset.interface.dart';
 import 'package:immich_mobile/domain/interfaces/local_album.interface.dart';
 import 'package:immich_mobile/domain/interfaces/local_asset.interface.dart';
 import 'package:immich_mobile/domain/interfaces/log.interface.dart';
+import 'package:immich_mobile/domain/interfaces/secure_store.interface.dart';
 import 'package:immich_mobile/domain/interfaces/storage.interface.dart';
 import 'package:immich_mobile/domain/interfaces/store.interface.dart';
 import 'package:immich_mobile/domain/interfaces/sync_api.interface.dart';

@@ -149,7 +149,7 @@ struct ImmichRandomProvider: AppIntentTimelineProvider {
 }
 
 struct ImmichRandomWidget: Widget {
-  let kind: String = "com.immich.widget.random"
+  let kind: String = "com.seagate.curator.stxphotos.widget.random"
 
   var body: some WidgetConfiguration {
     AppIntentConfiguration(

@@ -221,7 +221,7 @@ class ImmichAppState extends ConsumerState<ImmichApp>
         localeProvider.overrideWithValue(context.locale),
       ],
       child: MaterialApp.router(
-        title: 'Immich',
+        title: 'Curator Photos',
         debugShowCheckedModeBanner: true,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
@@ -237,7 +237,10 @@ class ImmichAppState extends ConsumerState<ImmichApp>
         ),
         routeInformationParser: router.defaultRouteParser(),
         routerDelegate: router.delegate(
-          navigatorObservers: () => [AppNavigationObserver(ref: ref)],
+          navigatorObservers: () => [
+            PerformanceRouteObserver(),
+            AppNavigationObserver(ref: ref),
+          ],
         ),
       ),
     );

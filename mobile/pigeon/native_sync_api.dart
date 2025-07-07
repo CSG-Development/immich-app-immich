@@ -6,10 +6,10 @@ import 'package:pigeon/pigeon.dart';
     swiftOut: 'ios/Runner/Sync/Messages.g.swift',
     swiftOptions: SwiftOptions(),
     kotlinOut:
-        'android/app/src/main/kotlin/app/alextran/immich/sync/Messages.g.kt',
-    kotlinOptions: KotlinOptions(package: 'app.alextran.immich.sync'),
+        'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/sync/Messages.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.sync'),
     dartOptions: DartOptions(),
-    dartPackageName: 'immich_mobile',
+    dartPackageName: 'curator_photos',
   ),
 )
 class PlatformAsset {

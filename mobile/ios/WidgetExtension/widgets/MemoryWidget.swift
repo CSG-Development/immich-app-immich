@@ -146,7 +146,7 @@ struct ImmichMemoryProvider: TimelineProvider {
 }
 
 struct ImmichMemoryWidget: Widget {
-  let kind: String = "com.immich.widget.memory"
+  let kind: String = "com.seagate.curator.stxphotos.widget.memory"
 
   var body: some WidgetConfiguration {
     StaticConfiguration(

@@ -1,4 +1,4 @@
-package app.alextran.immich.sync
+package com.seagate.curator.stxphotos.android.sync
 
 import android.content.Context
 import android.os.Build

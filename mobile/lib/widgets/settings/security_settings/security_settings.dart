@@ -12,13 +12,13 @@ class SecuritySettings extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localAuthService = ref.watch(localAuthServiceProvider);
+    final localAuthService = ref.watch(localAuthProvider);
     final enableBiometric = useAppSettingsState(AppSettingsEnum.enableBiometric);
 
     onEnableBiometricChange(value) async {
       if (value) {
         // Check if biometrics are available
-        final isBiometricAvailable = await localAuthService.isBiometricAvailable();
+        final isBiometricAvailable = localAuthService.canAuthenticate;
         if (!isBiometricAvailable) {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(

@@ -56,7 +56,7 @@ class ImmichAPI {
 
   init() async throws {
     // fetch the credentials from the UserDefaults store that dart placed here
-    guard let defaults = UserDefaults(suiteName: "group.app.immich.share"),
+    guard let defaults = UserDefaults(suiteName: "group.com.seagate.curator.stxphotos.ios.share"),
       let serverURL = defaults.string(forKey: "widget_server_url"),
       let sessionKey = defaults.string(forKey: "widget_auth_token")
     else {

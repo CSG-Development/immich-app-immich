@@ -6,8 +6,8 @@
     <string>$(CUSTOM_GROUP_ID)</string>
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
-      <string>app.alextran.immich.backgroundFetch</string>
-      <string>app.alextran.immich.backgroundProcessing</string>
+		<string>com.seagate.curator.stxphotos.backgroundFetch</string>
+		<string>com.seagate.curator.stxphotos.backgroundProcessing</string>
     </array>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true />
@@ -74,7 +74,7 @@
       <string>zh</string>
     </array>
     <key>CFBundleName</key>
-    <string>immich_mobile</string>
+    <string>curator_photos</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
