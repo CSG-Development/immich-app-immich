@@ -1,21 +1,28 @@
 <script lang="ts">
   import Tree from '$lib/components/shared-components/tree/tree.svelte';
-  import { type TreeNode } from '$lib/utils/tree-utils';
+  import { normalizeTreePath, type RecursiveObject } from '$lib/utils/tree-utils';
 
   interface Props {
-    tree: TreeNode;
-    active: string;
+    items: RecursiveObject;
+    parent?: string;
+    active?: string;
     icons: { default: string; active: string };
     getLink: (path: string) => string;
+    getColor?: (path: string) => string | undefined;
   }
 
-  let { tree, active, icons, getLink }: Props = $props();
+  let { items, parent = '', active = '', icons, getLink, getColor = () => undefined }: Props = $props();
 </script>
 
 <ul class="list-none ms-2">
-  {#each tree.children as node (node.color ? node.path + node.color : node.path)}
-    <li>
-      <Tree {node} {icons} {active} {getLink} />
-    </li>
+  <!-- eslint-disable-next-line svelte/require-each-key -->
+  {#each Object.entries(items).sort() as [path, tree]}
+    {@const value = normalizeTreePath(`${parent}/${path}`)}
+    {@const key = value + getColor(value)}
+    {#key key}
+      <li>
+        <Tree {parent} value={path} {tree} {icons} {active} {getLink} {getColor} />
+      </li>
+    {/key}
   {/each}
 </ul>

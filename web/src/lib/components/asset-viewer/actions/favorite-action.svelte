@@ -1,17 +1,16 @@
 <script lang="ts">
   import { shortcut } from '$lib/actions/shortcut';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import {
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
   import { AssetAction } from '$lib/constants';
   import { handleError } from '$lib/utils/handle-error';
-  import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
   import { mdiHeart, mdiHeartOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { OnAction } from './action';
-  import { IconButton } from '@immich/ui';
 
   interface Props {
     asset: AssetResponseDto;
@@ -31,10 +30,7 @@
 
       asset = { ...asset, isFavorite: data.isFavorite };
 
-      onAction({
-        type: asset.isFavorite ? AssetAction.FAVORITE : AssetAction.UNFAVORITE,
-        asset: toTimelineAsset(asset),
-      });
+      onAction({ type: asset.isFavorite ? AssetAction.FAVORITE : AssetAction.UNFAVORITE, asset });
 
       notificationController.show({
         type: NotificationType.Info,
@@ -46,13 +42,11 @@
   };
 </script>
 
-<svelte:document use:shortcut={{ shortcut: { key: 'f' }, onShortcut: toggleFavorite }} />
+<svelte:window use:shortcut={{ shortcut: { key: 'f' }, onShortcut: toggleFavorite }} />
 
-<IconButton
-  color="secondary"
-  shape="round"
-  variant="ghost"
+<CircleIconButton
+  color="opaque"
   icon={asset.isFavorite ? mdiHeart : mdiHeartOutline}
-  aria-label={asset.isFavorite ? $t('unfavorite') : $t('to_favorite')}
+  title={asset.isFavorite ? $t('unfavorite') : $t('to_favorite')}
   onclick={toggleFavorite}
 />

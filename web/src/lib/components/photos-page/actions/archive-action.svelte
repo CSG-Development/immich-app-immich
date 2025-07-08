@@ -1,12 +1,11 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import type { OnArchive } from '$lib/utils/actions';
-  import { archiveAssets } from '$lib/utils/asset-utils';
-  import { AssetVisibility } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
   import { mdiArchiveArrowDownOutline, mdiArchiveArrowUpOutline, mdiTimerSand } from '@mdi/js';
-  import { t } from 'svelte-i18n';
   import MenuOption from '../../shared-components/context-menu/menu-option.svelte';
   import { getAssetControlContext } from '../asset-select-control-bar.svelte';
+  import { archiveAssets } from '$lib/utils/asset-utils';
+  import { t } from 'svelte-i18n';
 
   interface Props {
     onArchive?: OnArchive;
@@ -24,12 +23,12 @@
   const { clearSelect, getOwnedAssets } = getAssetControlContext();
 
   const handleArchive = async () => {
-    const isArchived = unarchive ? AssetVisibility.Timeline : AssetVisibility.Archive;
-    const assets = [...getOwnedAssets()].filter((asset) => asset.visibility !== isArchived);
+    const isArchived = !unarchive;
+    const assets = [...getOwnedAssets()].filter((asset) => asset.isArchived !== isArchived);
     loading = true;
-    const ids = await archiveAssets(assets, isArchived as AssetVisibility);
+    const ids = await archiveAssets(assets, isArchived);
     if (ids) {
-      onArchive?.(ids, isArchived ? AssetVisibility.Archive : AssetVisibility.Timeline);
+      onArchive?.(ids, isArchived);
       clearSelect();
     }
     loading = false;
@@ -42,15 +41,8 @@
 
 {#if !menuItem}
   {#if loading}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
-      aria-label={$t('loading')}
-      icon={mdiTimerSand}
-      onclick={() => {}}
-    />
+    <CircleIconButton title={$t('loading')} icon={mdiTimerSand} onclick={() => {}} />
   {:else}
-    <IconButton shape="round" color="secondary" variant="ghost" aria-label={text} {icon} onclick={handleArchive} />
+    <CircleIconButton title={text} {icon} onclick={handleArchive} />
   {/if}
 {/if}

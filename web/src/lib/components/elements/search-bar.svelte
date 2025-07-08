@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SearchOptions } from '$lib/utils/dipatch';
   import { mdiClose, mdiMagnify } from '@mdi/js';
+  import type { SearchOptions } from '$lib/utils/dipatch';
   import LoadingSpinner from '../shared-components/loading-spinner.svelte';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import { t } from 'svelte-i18n';
-  import { IconButton } from '@immich/ui';
 
   interface Props {
     name: string;
@@ -43,13 +43,11 @@
     ? 'rounded-2xl'
     : 'rounded-t-lg'} bg-gray-200 p-2 dark:bg-immich-dark-gray gap-2 place-items-center h-full"
 >
-  <IconButton
-    shape="round"
-    color="secondary"
-    variant="ghost"
+  <CircleIconButton
     icon={mdiMagnify}
-    aria-label={$t('search')}
-    size="small"
+    title={$t('search')}
+    size="16"
+    padding="2"
     onclick={() => onSearch({ force: true })}
   />
   <input
@@ -67,14 +65,6 @@
     </div>
   {/if}
   {#if name}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
-      icon={mdiClose}
-      aria-label={$t('clear_value')}
-      size="small"
-      onclick={resetSearch}
-    />
+    <CircleIconButton icon={mdiClose} title={$t('clear_value')} size="16" padding="2" onclick={resetSearch} />
   {/if}
 </div>

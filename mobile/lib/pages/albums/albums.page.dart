@@ -8,7 +8,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
-import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/models/albums/album_search.model.dart';
 import 'package:immich_mobile/pages/common/large_leading_tile.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
@@ -230,17 +229,13 @@ class AlbumsPage extends HookConsumerWidget {
                             ),
                             subtitle: sorted[index].ownerId != null
                                 ? Text(
-                                    '${'items_count'.t(
-                                      context: context,
-                                      args: {
-                                        'count': sorted[index].assetCount,
-                                      },
-                                    )} • ${sorted[index].ownerId != userId ? 'shared_by_user'.t(
-                                        context: context,
-                                        args: {
-                                          'user': sorted[index].ownerName!,
+                                    '${(sorted[index].assetCount == 1 ? 'album_thumbnail_card_item'.tr() : 'album_thumbnail_card_items'.tr(
+                                        namedArgs: {
+                                          'count': sorted[index]
+                                              .assetCount
+                                              .toString(),
                                         },
-                                      ) : 'owned'.t(context: context)}',
+                                      ))} • ${sorted[index].ownerId != userId ? 'album_thumbnail_shared_by'.tr(namedArgs: {'user': sorted[index].ownerName!}) : 'owned'.tr()}',
                                     overflow: TextOverflow.ellipsis,
                                     style:
                                         context.textTheme.bodyMedium?.copyWith(
@@ -274,7 +269,6 @@ class AlbumsPage extends HookConsumerWidget {
           ],
         ),
       ),
-      resizeToAvoidBottomInset: false,
     );
   }
 }

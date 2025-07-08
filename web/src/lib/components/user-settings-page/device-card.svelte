@@ -1,13 +1,12 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import type { SessionResponseDto } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
   import {
     mdiAndroid,
     mdiApple,
     mdiAppleSafari,
-    mdiCast,
     mdiGoogleChrome,
     mdiHelp,
     mdiLinux,
@@ -47,8 +46,6 @@
       <Icon path={mdiUbuntu} size="40" />
     {:else if device.deviceOS === 'Chrome OS' || device.deviceType === 'Chrome' || device.deviceType === 'Chromium' || device.deviceType === 'Mobile Chrome'}
       <Icon path={mdiGoogleChrome} size="40" />
-    {:else if device.deviceOS === 'Google Cast'}
-      <Icon path={mdiCast} size="40" />
     {:else}
       <Icon path={mdiHelp} size="40" />
     {/if}
@@ -75,13 +72,11 @@
     </div>
     {#if !device.current && onDelete}
       <div>
-        <IconButton
-          color="danger"
-          variant="ghost"
-          shape="round"
+        <CircleIconButton
+          color="primary"
           icon={mdiTrashCanOutline}
-          aria-label={$t('log_out')}
-          size="small"
+          title={$t('log_out')}
+          size="16"
           onclick={onDelete}
         />
       </div>

@@ -419,7 +419,7 @@ export class AssetMediaService extends BaseService {
       duration: dto.duration || null,
       visibility: dto.visibility ?? AssetVisibility.TIMELINE,
       livePhotoVideoId: dto.livePhotoVideoId,
-      originalFileName: dto.filename || file.originalName,
+      originalFileName: file.originalName,
       sidecarPath: sidecarFile?.originalPath,
     });
 

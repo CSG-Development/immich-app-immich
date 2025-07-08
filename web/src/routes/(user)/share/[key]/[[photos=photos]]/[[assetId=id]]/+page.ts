@@ -5,9 +5,9 @@ import { getAssetInfoFromParam } from '$lib/utils/navigation';
 import { getMySharedLink, isHttpError } from '@immich/sdk';
 import type { PageLoad } from './$types';
 
-export const load = (async ({ params, url }) => {
+export const load = (async ({ params }) => {
   const { key } = params;
-  await authenticate(url, { public: true });
+  await authenticate({ public: true });
 
   const $t = await getFormatter();
 

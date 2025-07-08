@@ -1,22 +1,20 @@
 <script lang="ts">
-  import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
-  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
-  import { cancelMultiselect, selectAllAssets } from '$lib/utils/asset-utils';
-  import { Button, IconButton } from '@immich/ui';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
+  import { type AssetStore, isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
   import { mdiSelectAll, mdiSelectRemove } from '@mdi/js';
+  import { selectAllAssets, cancelMultiselect } from '$lib/utils/asset-utils';
   import { t } from 'svelte-i18n';
+  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
 
   interface Props {
-    timelineManager: TimelineManager;
+    assetStore: AssetStore;
     assetInteraction: AssetInteraction;
-    withText?: boolean;
   }
 
-  let { timelineManager, assetInteraction, withText = false }: Props = $props();
+  let { assetStore, assetInteraction }: Props = $props();
 
   const handleSelectAll = async () => {
-    await selectAllAssets(timelineManager, assetInteraction);
+    await selectAllAssets(assetStore, assetInteraction);
   };
 
   const handleCancel = () => {
@@ -24,23 +22,8 @@
   };
 </script>
 
-{#if withText}
-  <Button
-    leadingIcon={$isSelectingAllAssets ? mdiSelectRemove : mdiSelectAll}
-    size="medium"
-    color="secondary"
-    variant="ghost"
-    onclick={$isSelectingAllAssets ? handleCancel : handleSelectAll}
-  >
-    {$isSelectingAllAssets ? $t('unselect_all') : $t('select_all')}
-  </Button>
+{#if $isSelectingAllAssets}
+  <CircleIconButton title={$t('unselect_all')} icon={mdiSelectRemove} onclick={handleCancel} />
 {:else}
-  <IconButton
-    shape="round"
-    color="secondary"
-    variant="ghost"
-    aria-label={$isSelectingAllAssets ? $t('unselect_all') : $t('select_all')}
-    icon={$isSelectingAllAssets ? mdiSelectRemove : mdiSelectAll}
-    onclick={$isSelectingAllAssets ? handleCancel : handleSelectAll}
-  />
+  <CircleIconButton title={$t('select_all')} icon={mdiSelectAll} onclick={handleSelectAll} />
 {/if}

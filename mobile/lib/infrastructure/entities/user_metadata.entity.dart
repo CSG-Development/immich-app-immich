@@ -6,8 +6,8 @@ import 'package:immich_mobile/infrastructure/utils/drift_default.mixin.dart';
 class UserMetadataEntity extends Table with DriftDefaultsMixin {
   const UserMetadataEntity();
 
-  TextColumn get userId =>
-      text().references(UserEntity, #id, onDelete: KeyAction.cascade)();
+  BlobColumn get userId =>
+      blob().references(UserEntity, #id, onDelete: KeyAction.cascade)();
   TextColumn get preferences => text().map(userPreferenceConverter)();
 
   @override

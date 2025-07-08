@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/interfaces/network.interface.dart';
 import 'package:immich_mobile/repositories/network.repository.dart';
 import 'package:immich_mobile/repositories/permission.repository.dart';
 
@@ -10,7 +11,7 @@ final networkServiceProvider = Provider((ref) {
 });
 
 class NetworkService {
-  final NetworkRepository _repository;
+  final INetworkRepository _repository;
   final IPermissionRepository _permissionRepository;
 
   NetworkService(this._repository, this._permissionRepository);

@@ -12,7 +12,7 @@
   let { onPreviousAsset }: Props = $props();
 </script>
 
-<svelte:document
+<svelte:window
   use:shortcuts={[
     { shortcut: { key: 'ArrowLeft' }, onShortcut: onPreviousAsset },
     { shortcut: { key: 'a' }, onShortcut: onPreviousAsset },

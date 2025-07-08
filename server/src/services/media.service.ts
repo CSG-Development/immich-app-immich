@@ -24,6 +24,7 @@ import {
   VideoCodec,
   VideoContainer,
 } from 'src/enum';
+import { UpsertFileOptions } from 'src/repositories/asset.repository';
 import { BoundingBox } from 'src/repositories/machine-learning.repository';
 import { BaseService } from 'src/services/base.service';
 import {
@@ -41,11 +42,6 @@ import { getAssetFiles } from 'src/utils/asset.util';
 import { BaseConfig, ThumbnailConfig } from 'src/utils/media';
 import { mimeTypes } from 'src/utils/mime-types';
 import { clamp, isFaceImportEnabled, isFacialRecognitionEnabled } from 'src/utils/misc';
-interface UpsertFileOptions {
-  assetId: string;
-  type: AssetFileType;
-  path: string;
-}
 
 @Injectable()
 export class MediaService extends BaseService {
@@ -332,13 +328,15 @@ export class MediaService extends BaseService {
 
     const { ownerId, x1, y1, x2, y2, oldWidth, oldHeight, exifOrientation, previewPath, originalPath } = data;
     let inputImage: string | Buffer;
-    if (data.type === AssetType.VIDEO) {
+    if (mimeTypes.isVideo(originalPath)) {
       if (!previewPath) {
         this.logger.error(`Could not generate person thumbnail for video ${id}: missing preview path`);
         return JobStatus.FAILED;
       }
       inputImage = previewPath;
-    } else if (image.extractEmbedded && mimeTypes.isRaw(originalPath)) {
+    }
+
+    if (image.extractEmbedded && mimeTypes.isRaw(originalPath)) {
       const extracted = await this.extractImage(originalPath, image.preview.size);
       inputImage = extracted ? extracted.buffer : originalPath;
     } else {
@@ -549,7 +547,7 @@ export class MediaService extends BaseService {
   private getMainStream<T extends VideoStreamInfo | AudioStreamInfo>(streams: T[]): T {
     return streams
       .filter((stream) => stream.codecName !== 'unknown')
-      .sort((stream1, stream2) => stream2.bitrate - stream1.bitrate)[0];
+      .sort((stream1, stream2) => stream2.frameCount - stream1.frameCount)[0];
   }
 
   private getTranscodeTarget(

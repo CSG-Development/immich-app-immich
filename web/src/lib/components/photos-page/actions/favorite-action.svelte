@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import {
     NotificationType,
@@ -8,9 +9,8 @@
   import { handleError } from '$lib/utils/handle-error';
   import { updateAssets } from '@immich/sdk';
   import { mdiHeartMinusOutline, mdiHeartOutline, mdiTimerSand } from '@mdi/js';
-  import { t } from 'svelte-i18n';
   import { getAssetControlContext } from '../asset-select-control-bar.svelte';
-  import { IconButton } from '@immich/ui';
+  import { t } from 'svelte-i18n';
 
   interface Props {
     onFavorite?: OnFavorite;
@@ -68,15 +68,8 @@
 
 {#if !menuItem}
   {#if loading}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
-      aria-label={$t('loading')}
-      icon={mdiTimerSand}
-      onclick={() => {}}
-    />
+    <CircleIconButton title={$t('loading')} icon={mdiTimerSand} onclick={() => {}} />
   {:else}
-    <IconButton shape="round" color="secondary" variant="ghost" aria-label={text} {icon} onclick={handleFavorite} />
+    <CircleIconButton title={text} {icon} onclick={handleFavorite} />
   {/if}
 {/if}

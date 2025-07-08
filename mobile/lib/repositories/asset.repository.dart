@@ -1,5 +1,4 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/duplicated_asset.entity.dart';
@@ -230,8 +229,6 @@ class AssetRepository extends DatabaseRepository implements IAssetRepository {
     return db.assets
         .where()
         .ownerIdEqualToAnyChecksum(fastHash(userId))
-        .filter()
-        .visibilityEqualTo(AssetVisibilityEnum.timeline)
         .sortByFileCreatedAtDesc()
         .findAll();
   }
@@ -242,7 +239,6 @@ class AssetRepository extends DatabaseRepository implements IAssetRepository {
         .where()
         .ownerIdEqualToAnyChecksum(fastHash(userId))
         .filter()
-        .visibilityEqualTo(AssetVisibilityEnum.timeline)
         .livePhotoVideoIdIsNotNull()
         .findAll();
   }

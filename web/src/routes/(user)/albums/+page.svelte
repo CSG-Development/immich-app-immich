@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveRoute } from '$app/paths';
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import AlbumsControls from '$lib/components/album-page/albums-controls.svelte';
   import Albums from '$lib/components/album-page/albums-list.svelte';
@@ -22,7 +23,7 @@
   let albumGroups: string[] = $state([]);
 </script>
 
-<UserPageLayout title={data.meta.title} use={[[scrollMemory, { routeStartsWith: AppRoute.ALBUMS }]]}>
+<UserPageLayout title={data.meta.title} use={[[scrollMemory, { routeStartsWith: resolveRoute(AppRoute.ALBUMS, {}) }]]}>
   {#snippet buttons()}
     <div class="flex place-items-center gap-2">
       <AlbumsControls {albumGroups} bind:searchQuery />

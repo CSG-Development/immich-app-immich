@@ -251,10 +251,6 @@ export const assetStub = {
     duplicateId: null,
     isOffline: false,
     stack: null,
-    orientation: '',
-    projectionType: null,
-    height: 3840,
-    width: 2160,
     visibility: AssetVisibility.TIMELINE,
   }),
 

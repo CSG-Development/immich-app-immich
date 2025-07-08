@@ -37,9 +37,6 @@ export class UserTable {
   @Column({ default: '' })
   password!: Generated<string>;
 
-  @Column({ nullable: true })
-  pinCode!: string | null;
-
   @CreateDateColumn()
   createdAt!: Generated<Timestamp>;
 

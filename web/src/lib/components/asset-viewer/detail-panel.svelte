@@ -7,6 +7,7 @@
   import DetailPanelTags from '$lib/components/asset-viewer/detail-panel-tags.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import ChangeDate from '$lib/components/shared-components/change-date.svelte';
+  import Portal from '$lib/components/shared-components/portal/portal.svelte';
   import { AppRoute, QueryParameter, timeToLoadTheMap } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
@@ -19,8 +20,7 @@
   import { getByteUnitString } from '$lib/utils/byte-units';
   import { handleError } from '$lib/utils/handle-error';
   import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
-  import { fromISODateTime, fromISODateTimeUTC } from '$lib/utils/timeline-util';
-  import { getParentPath } from '$lib/utils/tree-utils';
+  import { fromDateTimeOriginal, fromLocalDateTime } from '$lib/utils/timeline-util';
   import {
     AssetMediaSize,
     getAssetInfo,
@@ -29,7 +29,6 @@
     type AssetResponseDto,
     type ExifResponseDto,
   } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
   import {
     mdiCalendar,
     mdiCameraIris,
@@ -45,6 +44,7 @@
   import { t } from 'svelte-i18n';
   import { slide } from 'svelte/transition';
   import ImageThumbnail from '../assets/thumbnail/image-thumbnail.svelte';
+  import CircleIconButton from '../elements/buttons/circle-icon-button.svelte';
   import PersonSidePanel from '../faces-page/person-side-panel.svelte';
   import LoadingSpinner from '../shared-components/loading-spinner.svelte';
   import UserAvatar from '../shared-components/user-avatar.svelte';
@@ -114,8 +114,8 @@
   let timeZone = $derived(asset.exifInfo?.timeZone);
   let dateTime = $derived(
     timeZone && asset.exifInfo?.dateTimeOriginal
-      ? fromISODateTime(asset.exifInfo.dateTimeOriginal, timeZone)
-      : fromISODateTimeUTC(asset.localDateTime),
+      ? fromDateTimeOriginal(asset.exifInfo.dateTimeOriginal, timeZone)
+      : fromLocalDateTime(asset.localDateTime),
   );
 
   const getMegapixel = (width: number, height: number): number | undefined => {
@@ -139,7 +139,7 @@
   const getAssetFolderHref = (asset: AssetResponseDto) => {
     const folderUrl = new URL(resolveRoute(AppRoute.FOLDERS, {}), globalThis.location.href);
     // Remove the last part of the path to get the parent path
-    const assetParentPath = getParentPath(asset.originalPath);
+    const assetParentPath = asset.originalPath.split('/').slice(0, -1).join('/');
     folderUrl.searchParams.set(QueryParameter.PATH, assetParentPath);
     return folderUrl.href;
   };
@@ -158,16 +158,9 @@
   }
 </script>
 
-<section class="relative p-2">
+<section class="relative p-2 dark:bg-immich-dark-bg dark:text-immich-dark-fg">
   <div class="flex place-items-center gap-2">
-    <IconButton
-      icon={mdiClose}
-      aria-label={$t('close')}
-      onclick={onClose}
-      shape="round"
-      color="secondary"
-      variant="ghost"
-    />
+    <CircleIconButton icon={mdiClose} title={$t('close')} onclick={onClose} />
     <p class="text-lg text-immich-fg dark:text-immich-dark-fg">{$t('info')}</p>
   </div>
 
@@ -202,34 +195,30 @@
         <h2>{$t('people').toUpperCase()}</h2>
         <div class="flex gap-2 items-center">
           {#if people.some((person) => person.isHidden)}
-            <IconButton
-              aria-label={$t('show_hidden_people')}
+            <CircleIconButton
+              title={$t('show_hidden_people')}
               icon={showingHiddenPeople ? mdiEyeOff : mdiEye}
-              size="medium"
-              shape="round"
-              color="secondary"
-              variant="ghost"
+              padding="1"
+              buttonSize="32"
               onclick={() => (showingHiddenPeople = !showingHiddenPeople)}
             />
           {/if}
-          <IconButton
-            aria-label={$t('tag_people')}
+          <CircleIconButton
+            title={$t('tag_people')}
             icon={mdiPlus}
-            size="medium"
-            shape="round"
-            color="secondary"
-            variant="ghost"
+            padding="1"
+            size="20"
+            buttonSize="32"
             onclick={() => (isFaceEditMode.value = !isFaceEditMode.value)}
           />
 
           {#if people.length > 0 || unassignedFaces.length > 0}
-            <IconButton
-              aria-label={$t('edit_people')}
+            <CircleIconButton
+              title={$t('edit_people')}
               icon={mdiPencil}
-              size="medium"
-              shape="round"
-              color="secondary"
-              variant="ghost"
+              padding="1"
+              size="20"
+              buttonSize="32"
               onclick={() => (showEditFaces = true)}
             />
           {/if}
@@ -370,12 +359,14 @@
     {/if}
 
     {#if isShowChangeDate}
-      <ChangeDate
-        initialDate={dateTime}
-        initialTimeZone={timeZone ?? ''}
-        onConfirm={handleConfirmChangeDate}
-        onCancel={() => (isShowChangeDate = false)}
-      />
+      <Portal>
+        <ChangeDate
+          initialDate={dateTime}
+          initialTimeZone={timeZone ?? ''}
+          onConfirm={handleConfirmChangeDate}
+          onCancel={() => (isShowChangeDate = false)}
+        />
+      </Portal>
     {/if}
 
     <div class="flex gap-4 py-4">
@@ -385,13 +376,11 @@
         <p class="break-all flex place-items-center gap-2 whitespace-pre-wrap">
           {asset.originalFileName}
           {#if isOwner}
-            <IconButton
+            <CircleIconButton
               icon={mdiInformationOutline}
-              aria-label={$t('show_file_location')}
-              size="small"
-              shape="round"
-              color="secondary"
-              variant="ghost"
+              title={$t('show_file_location')}
+              size="16"
+              padding="2"
               onclick={toggleAssetPath}
             />
           {/if}
@@ -511,11 +500,9 @@
           },
         ]}
         center={latlng}
-        showSettings={false}
         zoom={12.5}
         simplified
         useLocationPin
-        showSimpleControls={!showEditFaces}
         onOpenInMapView={() => goto(resolveRoute(`${AppRoute.MAP}#12.5/${latlng.lat}/${latlng.lng}`, {}))}
       >
         {#snippet popup({ marker })}

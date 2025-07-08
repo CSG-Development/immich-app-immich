@@ -1,16 +1,15 @@
 import { authManager } from '$lib/managers/auth-manager.svelte';
-import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { type AssetGridRouteSearchParams } from '$lib/utils/navigation';
 import { getAssetInfo, type AssetResponseDto } from '@immich/sdk';
 import { readonly, writable } from 'svelte/store';
 
 function createAssetViewingStore() {
   const viewingAssetStoreState = writable<AssetResponseDto>();
-  const preloadAssets = writable<TimelineAsset[]>([]);
+  const preloadAssets = writable<AssetResponseDto[]>([]);
   const viewState = writable<boolean>(false);
   const gridScrollTarget = writable<AssetGridRouteSearchParams | null | undefined>();
 
-  const setAsset = (asset: AssetResponseDto, assetsToPreload: TimelineAsset[] = []) => {
+  const setAsset = (asset: AssetResponseDto, assetsToPreload: AssetResponseDto[] = []) => {
     preloadAssets.set(assetsToPreload);
     viewingAssetStoreState.set(asset);
     viewState.set(true);

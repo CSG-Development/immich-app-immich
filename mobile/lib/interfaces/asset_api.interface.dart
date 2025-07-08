@@ -1,4 +1,3 @@
-import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 
 abstract interface class IAssetApiRepository {
@@ -16,11 +15,4 @@ abstract interface class IAssetApiRepository {
   // Future<void> delete(String id);
 
   Future<List<Asset>> search({List<String> personIds = const []});
-
-  Future<void> updateVisibility(
-    List<String> list,
-    AssetVisibilityEnum visibility,
-  );
-
-  Future<String?> getAssetMIMEType(String id);
 }

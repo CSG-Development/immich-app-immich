@@ -1,29 +1,27 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
 
-  import Icon from '$lib/components/elements/icon.svelte';
-  import PurchaseContent from '$lib/components/shared-components/purchasing/purchase-content.svelte';
-  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
-  import { dateFormats } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import { locale } from '$lib/stores/preferences.store';
+  import { onMount } from 'svelte';
   import { purchaseStore } from '$lib/stores/purchase.store';
   import { preferences, user } from '$lib/stores/user.store';
-  import { handleError } from '$lib/utils/handle-error';
-  import { setSupportBadgeVisibility } from '$lib/utils/purchase-utils';
   import {
-    deleteUserLicense as deleteIndividualProductKey,
     deleteServerLicense as deleteServerProductKey,
+    deleteUserLicense as deleteIndividualProductKey,
     getAboutInfo,
     getMyUser,
     getServerLicense,
     isHttpError,
     type LicenseResponseDto,
   } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import Icon from '$lib/components/elements/icon.svelte';
   import { mdiKey } from '@mdi/js';
-  import { onMount } from 'svelte';
+  import { dialogController } from '$lib/components/shared-components/dialog/dialog';
+  import { handleError } from '$lib/utils/handle-error';
+  import PurchaseContent from '$lib/components/shared-components/purchasing/purchase-content.svelte';
   import { t } from 'svelte-i18n';
+  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
+  import { setSupportBadgeVisibility } from '$lib/utils/purchase-utils';
+  import { Button } from '@immich/ui';
   const { isPurchased } = purchaseStore;
 
   let isServerProduct = $state(false);
@@ -64,10 +62,11 @@
 
   const removeIndividualProductKey = async () => {
     try {
-      const isConfirmed = await modalManager.showDialog({
+      const isConfirmed = await dialogController.show({
         title: $t('purchase_remove_product_key'),
         prompt: $t('purchase_remove_product_key_prompt'),
         confirmText: $t('remove'),
+        cancelText: $t('cancel'),
       });
 
       if (!isConfirmed) {
@@ -83,10 +82,11 @@
 
   const removeServerProductKey = async () => {
     try {
-      const isConfirmed = await modalManager.showDialog({
+      const isConfirmed = await dialogController.show({
         title: $t('purchase_remove_server_product_key'),
         prompt: $t('purchase_remove_server_product_key_prompt'),
         confirmText: $t('remove'),
+        cancelText: $t('cancel'),
       });
 
       if (!isConfirmed) {
@@ -134,9 +134,7 @@
             {#if $user.isAdmin && serverPurchaseInfo?.activatedAt}
               <p class="dark:text-white text-sm mt-1 col-start-2">
                 {$t('purchase_activated_time', {
-                  values: {
-                    date: new Date(serverPurchaseInfo.activatedAt).toLocaleString($locale, dateFormats.settings),
-                  },
+                  values: { date: new Date(serverPurchaseInfo.activatedAt) },
                 })}
               </p>
             {:else}
@@ -165,9 +163,7 @@
             {#if $user.license?.activatedAt}
               <p class="dark:text-white text-sm mt-1 col-start-2">
                 {$t('purchase_activated_time', {
-                  values: {
-                    date: new Date($user.license?.activatedAt).toLocaleString($locale, dateFormats.settings),
-                  },
+                  values: { date: new Date($user.license?.activatedAt) },
                 })}
               </p>
             {/if}

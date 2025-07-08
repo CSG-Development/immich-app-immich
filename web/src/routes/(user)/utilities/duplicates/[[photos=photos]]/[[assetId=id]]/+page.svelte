@@ -1,20 +1,21 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import { dialogController } from '$lib/components/shared-components/dialog/dialog';
+  import DuplicatesModal from '$lib/components/shared-components/duplicates-modal.svelte';
   import {
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
+  import ShowShortcuts from '$lib/components/shared-components/show-shortcuts.svelte';
   import DuplicatesCompareControl from '$lib/components/utilities-page/duplicates/duplicates-compare-control.svelte';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import DuplicatesInformationModal from '$lib/modals/DuplicatesInformationModal.svelte';
-  import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { stackAssets } from '$lib/utils/asset-utils';
   import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { handleError } from '$lib/utils/handle-error';
   import type { AssetResponseDto } from '@immich/sdk';
-  import { deleteAssets, deleteDuplicates, updateAssets } from '@immich/sdk';
+  import { deleteAssets, updateAssets } from '@immich/sdk';
   import { Button, HStack, IconButton, Text } from '@immich/ui';
   import { mdiCheckOutline, mdiInformationOutline, mdiKeyboard, mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -25,6 +26,9 @@
   }
 
   let { data = $bindable() }: Props = $props();
+
+  let isShowKeyboardShortcut = $state(false);
+  let isShowDuplicateInfo = $state(false);
 
   interface Shortcuts {
     general: ExplainedShortcut[];
@@ -51,7 +55,7 @@
   let hasDuplicates = $derived(duplicates.length > 0);
   const withConfirmation = async (callback: () => Promise<void>, prompt?: string, confirmText?: string) => {
     if (prompt && confirmText) {
-      const isConfirmed = await modalManager.showDialog({ prompt, confirmText });
+      const isConfirmed = await dialogController.show({ prompt, confirmText });
       if (!isConfirmed) {
         return;
       }
@@ -134,10 +138,10 @@
   };
 
   const handleKeepAll = async () => {
-    const ids = duplicates.map(({ duplicateId }) => duplicateId);
+    const ids = duplicates.flatMap((group) => group.assets.map((asset) => asset.id));
     return withConfirmation(
       async () => {
-        await deleteDuplicates({ bulkIdsDto: { ids } });
+        await updateAssets({ assetBulkUpdateDto: { ids, duplicateId: null } });
 
         duplicates = [];
 
@@ -181,7 +185,7 @@
         color="secondary"
         icon={mdiKeyboard}
         title={$t('show_keyboard_shortcuts')}
-        onclick={() => modalManager.show(ShortcutsModal, { shortcuts: duplicateShortcuts })}
+        onclick={() => (isShowKeyboardShortcut = !isShowKeyboardShortcut)}
         aria-label={$t('show_keyboard_shortcuts')}
       />
     </HStack>
@@ -193,14 +197,12 @@
         <div class="text-sm dark:text-white">
           <p>{$t('duplicates_description')}</p>
         </div>
-        <IconButton
-          shape="round"
-          variant="ghost"
-          color="secondary"
+        <CircleIconButton
           icon={mdiInformationOutline}
-          aria-label={$t('deduplication_info')}
-          size="small"
-          onclick={() => modalManager.show(DuplicatesInformationModal)}
+          title={$t('deduplication_info')}
+          size="16"
+          padding="2"
+          onclick={() => (isShowDuplicateInfo = true)}
         />
       </div>
 
@@ -219,3 +221,10 @@
     {/if}
   </div>
 </UserPageLayout>
+
+{#if isShowKeyboardShortcut}
+  <ShowShortcuts shortcuts={duplicateShortcuts} onClose={() => (isShowKeyboardShortcut = false)} />
+{/if}
+{#if isShowDuplicateInfo}
+  <DuplicatesModal onClose={() => (isShowDuplicateInfo = false)} />
+{/if}

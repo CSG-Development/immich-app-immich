@@ -73,8 +73,3 @@ final assetsTimelineProvider =
     null,
   );
 });
-
-final lockedTimelineProvider = StreamProvider<RenderList>((ref) {
-  final timelineService = ref.watch(timelineServiceProvider);
-  return timelineService.watchLockedTimelineProvider();
-});

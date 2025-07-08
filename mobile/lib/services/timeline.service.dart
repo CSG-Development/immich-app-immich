@@ -2,6 +2,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
+import 'package:immich_mobile/interfaces/timeline.interface.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/repositories/timeline.repository.dart';
@@ -17,7 +18,7 @@ final timelineServiceProvider = Provider<TimelineService>((ref) {
 });
 
 class TimelineService {
-  final TimelineRepository _timelineRepository;
+  final ITimelineRepository _timelineRepository;
   final AppSettingsService _appSettingsService;
   final UserService _userService;
 
@@ -74,9 +75,7 @@ class TimelineService {
   }
 
   Stream<RenderList> watchAllVideosTimeline() {
-    final user = _userService.getMyUser();
-
-    return _timelineRepository.watchAllVideosTimeline(user.id);
+    return _timelineRepository.watchAllVideosTimeline();
   }
 
   Future<RenderList> getTimelineFromAssets(
@@ -105,14 +104,5 @@ class TimelineService {
   GroupAssetsBy _getGroupByOption() {
     return GroupAssetsBy
         .values[_appSettingsService.getSetting(AppSettingsEnum.groupAssetsBy)];
-  }
-
-  Stream<RenderList> watchLockedTimelineProvider() async* {
-    final user = _userService.getMyUser();
-
-    yield* _timelineRepository.watchLockedTimeline(
-      user.id,
-      _getGroupByOption(),
-    );
   }
 }

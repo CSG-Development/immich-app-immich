@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/interfaces/share_handler.interface.dart';
 import 'package:immich_mobile/models/upload/share_intent_attachment.model.dart';
 import 'package:share_handler/share_handler.dart';
 
@@ -8,11 +9,13 @@ final shareHandlerRepositoryProvider = Provider(
   (ref) => ShareHandlerRepository(),
 );
 
-class ShareHandlerRepository {
+class ShareHandlerRepository implements IShareHandlerRepository {
   ShareHandlerRepository();
 
+  @override
   void Function(List<ShareIntentAttachment> attachments)? onSharedMedia;
 
+  @override
   Future<void> init() async {
     final handler = ShareHandlerPlatform.instance;
     final media = await handler.getInitialSharedMedia();

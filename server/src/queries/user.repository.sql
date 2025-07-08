@@ -87,16 +87,6 @@ where
   "users"."isAdmin" = $1
   and "users"."deletedAt" is null
 
--- UserRepository.getForPinCode
-select
-  "users"."pinCode",
-  "users"."password"
-from
-  "users"
-where
-  "users"."id" = $1
-  and "users"."deletedAt" is null
-
 -- UserRepository.getByEmail
 select
   "id",
@@ -290,7 +280,7 @@ order by
 select
   "users"."id" as "userId",
   "users"."name" as "userName",
-  "users"."quotaSizeInBytes",
+  "users"."quotaSizeInBytes" as "quotaSizeInBytes",
   count(*) filter (
     where
       (
@@ -335,8 +325,9 @@ select
 from
   "users"
   left join "assets" on "assets"."ownerId" = "users"."id"
-  and "assets"."deletedAt" is null
   left join "exif" on "exif"."assetId" = "assets"."id"
+where
+  "assets"."deletedAt" is null
 group by
   "users"."id"
 order by

@@ -35,7 +35,6 @@ class PersonNameEditForm extends HookConsumerWidget {
       content: SingleChildScrollView(
         child: TextFormField(
           controller: controller,
-          textCapitalization: TextCapitalization.words,
           autofocus: true,
           decoration: InputDecoration(
             hintText: 'name'.tr(),

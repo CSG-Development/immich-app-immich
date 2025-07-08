@@ -6,4 +6,4 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'map_service.provider.g.dart';
 
 @riverpod
-MapService mapService(Ref ref) => MapService(ref.watch(apiServiceProvider));
+MapSerivce mapService(Ref ref) => MapSerivce(ref.watch(apiServiceProvider));

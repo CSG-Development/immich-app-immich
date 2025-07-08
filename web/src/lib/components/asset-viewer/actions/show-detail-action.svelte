@@ -1,6 +1,6 @@
 <script lang="ts">
   import { shortcut } from '$lib/actions/shortcut';
-  import { IconButton } from '@immich/ui';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import { mdiInformationOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -11,13 +11,6 @@
   let { onShowDetail }: Props = $props();
 </script>
 
-<svelte:document use:shortcut={{ shortcut: { key: 'i' }, onShortcut: onShowDetail }} />
+<svelte:window use:shortcut={{ shortcut: { key: 'i' }, onShortcut: onShowDetail }} />
 
-<IconButton
-  color="secondary"
-  shape="round"
-  variant="ghost"
-  icon={mdiInformationOutline}
-  onclick={onShowDetail}
-  aria-label={$t('info')}
-/>
+<CircleIconButton color="opaque" icon={mdiInformationOutline} onclick={onShowDetail} title={$t('info')} />

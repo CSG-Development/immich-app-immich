@@ -104,10 +104,11 @@
 
     <div class="sm:hidden">
       <ButtonContextMenu
-        color="primary"
+        color="transparent"
         title={$t('shared_link_options')}
         icon={mdiDotsVertical}
-        size="large"
+        size="24"
+        padding="3"
         hideContent
       >
         <SharedLinkEdit menuItem sharedLink={link} />

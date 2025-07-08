@@ -9,7 +9,7 @@
 
   interface Props {
     inputType: SettingInputFieldType;
-    value: string | number | undefined | null;
+    value: string | number | undefined;
     min?: number;
     max?: number;
     step?: string;

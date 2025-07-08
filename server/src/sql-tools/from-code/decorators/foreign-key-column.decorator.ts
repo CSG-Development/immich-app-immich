@@ -1,10 +1,11 @@
 import { ColumnBaseOptions } from 'src/sql-tools/from-code/decorators/column.decorator';
-import { ForeignKeyAction } from 'src/sql-tools/from-code/decorators/foreign-key-constraint.decorator';
 import { register } from 'src/sql-tools/from-code/register';
 
+type Action = 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
+
 export type ForeignKeyColumnOptions = ColumnBaseOptions & {
-  onUpdate?: ForeignKeyAction;
-  onDelete?: ForeignKeyAction;
+  onUpdate?: Action;
+  onDelete?: Action;
   constraintName?: string;
 };
 

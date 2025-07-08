@@ -1,8 +1,9 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { copyToClipboard } from '$lib/utils';
-  import { IconButton, Logo } from '@immich/ui';
+  import { Logo } from '@immich/ui';
   import { mdiCodeTags, mdiContentCopy, mdiMessage, mdiPartyPopper } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -22,7 +23,7 @@
 </script>
 
 <div class="h-dvh w-dvw">
-  <section>
+  <section class="bg-immich-bg dark:bg-immich-dark-bg">
     <div class="flex place-items-center border-b px-6 py-4 dark:border-b-immich-dark-gray">
       <a class="flex place-items-center gap-2 hover:cursor-pointer" href="/photos">
         <Logo class="h-[50px]" variant="inline" appTheme={themeManager.value} />
@@ -33,7 +34,7 @@
   <div class="fixed top-0 flex h-full w-full place-content-center place-items-center overflow-hidden bg-black/50">
     <div>
       <div
-        class="w-[500px] max-w-[95vw] rounded-3xl border shadow-sm dark:border-immich-dark-gray dark:text-immich-dark-fg bg-subtle/80"
+        class="w-[500px] max-w-[95vw] rounded-3xl border bg-immich-bg shadow-sm dark:border-immich-dark-gray dark:bg-immich-dark-gray dark:text-immich-dark-fg"
       >
         <div>
           <div class="flex items-center justify-between gap-4 px-4 py-4">
@@ -41,11 +42,10 @@
               🚨 {$t('error_title')}
             </h1>
             <div class="flex justify-end">
-              <IconButton
-                shape="round"
+              <CircleIconButton
                 color="primary"
                 icon={mdiContentCopy}
-                aria-label={$t('copy_error')}
+                title={$t('copy_error')}
                 onclick={() => handleCopy()}
               />
             </div>

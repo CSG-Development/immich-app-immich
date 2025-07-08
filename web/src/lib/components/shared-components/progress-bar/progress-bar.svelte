@@ -51,11 +51,7 @@
 
   onMount(async () => {
     if (autoplay) {
-      status = ProgressBarStatus.Playing;
       await play();
-    } else {
-      status = ProgressBarStatus.Paused;
-      await progress.set(0);
     }
   });
 
@@ -71,15 +67,16 @@
     await progress.set($progress);
   };
 
-  export const restart = async () => {
+  export const restart = async (autoplay: boolean) => {
     await progress.set(0);
 
-    if (status !== ProgressBarStatus.Paused) {
+    if (autoplay) {
       await play();
     }
   };
 
-  export const resetProgress = async () => {
+  export const reset = async () => {
+    status = ProgressBarStatus.Paused;
     await progress.set(0);
   };
 

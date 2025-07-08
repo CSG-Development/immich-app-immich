@@ -69,7 +69,7 @@ export class CancellableTask {
     } catch (error) {
       // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       if ((error as any).name === 'AbortError') {
-        // abort error is not treated as an error, but as a cancellation.
+        // abort error is not treated as an error, but as a cancelation.
         return 'CANCELED';
       }
       this.#transitionToErrored(error);

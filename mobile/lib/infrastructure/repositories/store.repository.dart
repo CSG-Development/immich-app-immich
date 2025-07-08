@@ -22,7 +22,7 @@ class IsarStoreRepository extends IsarDatabaseRepository
   }
 
   @override
-  Stream<StoreDto<Object>> watchAll() {
+  Stream<StoreUpdateEvent> watchAll() {
     return _db.storeValues
         .filter()
         .anyOf(validStoreKeys, (query, id) => query.idEqualTo(id))
@@ -71,11 +71,10 @@ class IsarStoreRepository extends IsarDatabaseRepository
         .asyncMap((e) async => e == null ? null : await _toValue(key, e));
   }
 
-  Future<StoreDto<Object>> _toUpdateEvent(StoreValue entity) async {
-    final key = StoreKey.values.firstWhere((e) => e.id == entity.id)
-        as StoreKey<Object>;
+  Future<StoreUpdateEvent> _toUpdateEvent(StoreValue entity) async {
+    final key = StoreKey.values.firstWhere((e) => e.id == entity.id);
     final value = await _toValue(key, entity);
-    return StoreDto(key, value);
+    return StoreUpdateEvent(key, value);
   }
 
   Future<T?> _toValue<T>(StoreKey<T> key, StoreValue entity) async =>
@@ -107,14 +106,5 @@ class IsarStoreRepository extends IsarDatabaseRepository
         ),
     };
     return StoreValue(key.id, intValue: intValue, strValue: strValue);
-  }
-
-  @override
-  Future<List<StoreDto<Object>>> getAll() async {
-    final entities = await _db.storeValues
-        .filter()
-        .anyOf(validStoreKeys, (query, id) => query.idEqualTo(id))
-        .findAll();
-    return Future.wait(entities.map((e) => _toUpdateEvent(e)).toList());
   }
 }

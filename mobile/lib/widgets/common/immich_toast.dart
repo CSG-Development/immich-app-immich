@@ -40,7 +40,7 @@ class ImmichToast {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+          borderRadius: BorderRadius.circular(5.0),
           color: context.colorScheme.surfaceContainer,
           border: Border.all(
             color: context.colorScheme.outline.withValues(alpha: .5),
@@ -59,23 +59,14 @@ class ImmichToast {
                 msg,
                 style: TextStyle(
                   color: getColor(toastType, context),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
             ),
           ],
         ),
       ),
-      positionedToastBuilder: (context, child, gravity) {
-        return Positioned(
-          top: gravity == ToastGravity.TOP ? 150 : null,
-          bottom: gravity == ToastGravity.BOTTOM ? 150 : null,
-          left: MediaQuery.of(context).size.width / 2 - 150,
-          right: MediaQuery.of(context).size.width / 2 - 150,
-          child: child,
-        );
-      },
       gravity: gravity,
       toastDuration: Duration(seconds: durationInSecond),
     );

@@ -50,7 +50,7 @@
     searchedPeopleLocal = $bindable(),
     type,
     numberPeopleToSearch = maximumLengthSearchPeople,
-    inputClass = 'w-full gap-2',
+    inputClass = 'w-full gap-2 bg-immich-bg dark:bg-immich-dark-bg',
     showLoadingSpinner = $bindable(false),
     placeholder = $t('name_or_nickname'),
     onReset = () => {},

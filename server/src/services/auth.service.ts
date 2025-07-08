@@ -9,16 +9,11 @@ import { StorageCore } from 'src/cores/storage.core';
 import { UserAdmin } from 'src/database';
 import {
   AuthDto,
-  AuthStatusResponseDto,
   ChangePasswordDto,
   LoginCredentialDto,
   LogoutResponseDto,
   OAuthCallbackDto,
   OAuthConfigDto,
-  PinCodeChangeDto,
-  PinCodeResetDto,
-  PinCodeSetupDto,
-  SessionUnlockDto,
   SignUpDto,
   mapLoginResponse,
 } from 'src/dtos/auth.dto';
@@ -61,9 +56,9 @@ export class AuthService extends BaseService {
       throw new UnauthorizedException('Password login has been disabled');
     }
 
-    let user = await this.userRepository.getByEmail(dto.email, { withPassword: true });
+    let user = await this.userRepository.getByEmail(dto.email, true);
     if (user) {
-      const isAuthenticated = this.validateSecret(dto.password, user.password);
+      const isAuthenticated = this.validatePassword(dto.password, user);
       if (!isAuthenticated) {
         user = undefined;
       }
@@ -91,12 +86,12 @@ export class AuthService extends BaseService {
 
   async changePassword(auth: AuthDto, dto: ChangePasswordDto): Promise<UserAdminResponseDto> {
     const { password, newPassword } = dto;
-    const user = await this.userRepository.getByEmail(auth.user.email, { withPassword: true });
+    const user = await this.userRepository.getByEmail(auth.user.email, true);
     if (!user) {
       throw new UnauthorizedException();
     }
 
-    const valid = this.validateSecret(password, user.password);
+    const valid = this.validatePassword(password, user);
     if (!valid) {
       throw new BadRequestException('Wrong password');
     }
@@ -106,57 +101,6 @@ export class AuthService extends BaseService {
     const updatedUser = await this.userRepository.update(user.id, { password: hashedPassword });
 
     return mapUserAdmin(updatedUser);
-  }
-
-  async setupPinCode(auth: AuthDto, { pinCode }: PinCodeSetupDto) {
-    const user = await this.userRepository.getForPinCode(auth.user.id);
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    if (user.pinCode) {
-      throw new BadRequestException('User already has a PIN code');
-    }
-
-    const hashed = await this.cryptoRepository.hashBcrypt(pinCode, SALT_ROUNDS);
-    await this.userRepository.update(auth.user.id, { pinCode: hashed });
-  }
-
-  async resetPinCode(auth: AuthDto, dto: PinCodeResetDto) {
-    const user = await this.userRepository.getForPinCode(auth.user.id);
-    this.validatePinCode(user, dto);
-
-    await this.userRepository.update(auth.user.id, { pinCode: null });
-    await this.sessionRepository.lockAll(auth.user.id);
-  }
-
-  async changePinCode(auth: AuthDto, dto: PinCodeChangeDto) {
-    const user = await this.userRepository.getForPinCode(auth.user.id);
-    this.validatePinCode(user, dto);
-
-    const hashed = await this.cryptoRepository.hashBcrypt(dto.newPinCode, SALT_ROUNDS);
-    await this.userRepository.update(auth.user.id, { pinCode: hashed });
-  }
-
-  private validatePinCode(
-    user: { pinCode: string | null; password: string | null },
-    dto: { pinCode?: string; password?: string },
-  ) {
-    if (!user.pinCode) {
-      throw new BadRequestException('User does not have a PIN code');
-    }
-
-    if (dto.password) {
-      if (!this.validateSecret(dto.password, user.password)) {
-        throw new BadRequestException('Wrong password');
-      }
-    } else if (dto.pinCode) {
-      if (!this.validateSecret(dto.pinCode, user.pinCode)) {
-        throw new BadRequestException('Wrong PIN code');
-      }
-    } else {
-      throw new BadRequestException('Either password or pinCode is required');
-    }
   }
 
   async adminSignUp(dto: SignUpDto): Promise<UserAdminResponseDto> {
@@ -300,7 +244,7 @@ export class AuthService extends BaseService {
         name: userName,
         email: profile.email,
         oauthId: profile.sub,
-        quotaSizeInBytes: storageQuota === null ? null : storageQuota * HumanReadableSize.GiB,
+        quotaSizeInBytes: storageQuota * HumanReadableSize.GiB || null,
         storageLabel: storageLabel || null,
       });
     }
@@ -427,12 +371,11 @@ export class AuthService extends BaseService {
     throw new UnauthorizedException('Invalid API key');
   }
 
-  private validateSecret(inputSecret: string, existingHash?: string | null): boolean {
-    if (!existingHash) {
+  private validatePassword(inputPassword: string, user: { password?: string }): boolean {
+    if (!user || !user.password) {
       return false;
     }
-
-    return this.cryptoRepository.compareBcrypt(inputSecret, existingHash);
+    return this.cryptoRepository.compareBcrypt(inputPassword, user.password);
   }
 
   private async validateSession(tokenValue: string): Promise<AuthDto> {
@@ -446,25 +389,10 @@ export class AuthService extends BaseService {
         await this.sessionRepository.update(session.id, { id: session.id, updatedAt: new Date() });
       }
 
-      // Pin check
-      let hasElevatedPermission = false;
-
-      if (session.pinExpiresAt) {
-        const pinExpiresAt = DateTime.fromJSDate(session.pinExpiresAt);
-        hasElevatedPermission = pinExpiresAt > now;
-
-        if (hasElevatedPermission && now.plus({ minutes: 5 }) > pinExpiresAt) {
-          await this.sessionRepository.update(session.id, {
-            pinExpiresAt: DateTime.now().plus({ minutes: 5 }).toJSDate(),
-          });
-        }
-      }
-
       return {
         user: session.user,
         session: {
           id: session.id,
-          hasElevatedPermission,
         },
       };
     }
@@ -472,39 +400,18 @@ export class AuthService extends BaseService {
     throw new UnauthorizedException('Invalid user token');
   }
 
-  async unlockSession(auth: AuthDto, dto: SessionUnlockDto): Promise<void> {
-    if (!auth.session) {
-      throw new BadRequestException('This endpoint can only be used with a session token');
-    }
-
-    const user = await this.userRepository.getForPinCode(auth.user.id);
-    this.validatePinCode(user, { pinCode: dto.pinCode });
-
-    await this.sessionRepository.update(auth.session.id, {
-      pinExpiresAt: DateTime.now().plus({ minutes: 15 }).toJSDate(),
-    });
-  }
-
-  async lockSession(auth: AuthDto): Promise<void> {
-    if (!auth.session) {
-      throw new BadRequestException('This endpoint can only be used with a session token');
-    }
-
-    await this.sessionRepository.update(auth.session.id, { pinExpiresAt: null });
-  }
-
   private async createLoginResponse(user: UserAdmin, loginDetails: LoginDetails) {
-    const token = this.cryptoRepository.randomBytesAsText(32);
-    const tokenHashed = this.cryptoRepository.hashSha256(token);
+    const key = this.cryptoRepository.newPassword(32);
+    const token = this.cryptoRepository.hashSha256(key);
 
     await this.sessionRepository.create({
-      token: tokenHashed,
+      token,
       deviceOS: loginDetails.deviceOS,
       deviceType: loginDetails.deviceType,
       userId: user.id,
     });
 
-    return mapLoginResponse(user, token);
+    return mapLoginResponse(user, key);
   }
 
   private getClaim<T>(profile: OAuthProfile, options: ClaimOptions<T>): T {
@@ -520,22 +427,5 @@ export class AuthService extends BaseService {
       return url.replace(/app\.immich:\/+oauth-callback/, mobileRedirectUri);
     }
     return url;
-  }
-
-  async getAuthStatus(auth: AuthDto): Promise<AuthStatusResponseDto> {
-    const user = await this.userRepository.getForPinCode(auth.user.id);
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    const session = auth.session ? await this.sessionRepository.get(auth.session.id) : undefined;
-
-    return {
-      pinCode: !!user.pinCode,
-      password: !!user.password,
-      isElevated: !!auth.session?.hasElevatedPermission,
-      expiresAt: session?.expiresAt?.toISOString(),
-      pinExpiresAt: session?.pinExpiresAt?.toISOString(),
-    };
   }
 }

@@ -53,15 +53,11 @@ class ThemeManager {
   }
 
   #onAppInit() {
-    globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener(
-      'change',
-      () => {
-        if (this.theme.system) {
-          this.#update('system');
-        }
-      },
-      { passive: true },
-    );
+    globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (this.theme.system) {
+        this.#update('system');
+      }
+    });
   }
 
   #update(value: Theme | 'system') {

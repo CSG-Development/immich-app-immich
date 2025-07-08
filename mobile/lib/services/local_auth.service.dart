@@ -1,23 +1,41 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/models/auth/biometric_status.model.dart';
-import 'package:immich_mobile/repositories/biometric.repository.dart';
-
-final localAuthServiceProvider = Provider(
-  (ref) => LocalAuthService(
-    ref.watch(biometricRepositoryProvider),
-  ),
-);
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:logging/logging.dart';
 
 class LocalAuthService {
-  final BiometricRepository _biometricRepository;
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  final log = Logger("LocalAuthService");
 
-  LocalAuthService(this._biometricRepository);
-
-  Future<BiometricStatus> getStatus() {
-    return _biometricRepository.getStatus();
+  Future<bool> isBiometricAvailable() async {
+    try {
+      return await _localAuth.canCheckBiometrics;
+    } on PlatformException catch (e) {
+      log.severe('Error checking biometric availability', e);
+      return false;
+    }
   }
 
-  Future<bool> authenticate([String? message]) async {
-    return _biometricRepository.authenticate(message);
+  Future<List<BiometricType>> getAvailableBiometrics() async {
+    try {
+      return await _localAuth.getAvailableBiometrics();
+    } on PlatformException catch (e) {
+      log.severe('Error getting available biometrics', e);
+      return [];
+    }
   }
-}
+
+  Future<bool> authenticateWithBiometrics() async {
+    try {
+      return await _localAuth.authenticate(
+        localizedReason: 'Authenticate to access your photos',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+    } on PlatformException catch (e) {
+      log.severe('Error authenticating with biometrics', e);
+      return false;
+    }
+  }
+} 

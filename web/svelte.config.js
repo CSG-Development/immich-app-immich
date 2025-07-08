@@ -14,9 +14,6 @@ const config = {
   },
   preprocess: vitePreprocess(),
   kit: {
-    paths: {
-      relative: false,
-    },
     adapter: adapter({
       fallback: 'index.html',
       precompress: true,
@@ -26,7 +23,6 @@ const config = {
       '$lib/*': 'src/lib/*',
       '@test-data': 'src/test-data',
       $i18n: '../i18n',
-      'chromecast-caf-sender': './node_modules/@types/chromecast-caf-sender/index.d.ts',
     },
     paths: {
       base: '/photos',

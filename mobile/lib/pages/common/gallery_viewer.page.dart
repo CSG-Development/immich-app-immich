@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:auto_route/auto_route.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
@@ -21,7 +20,6 @@ import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
-import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
@@ -64,7 +62,6 @@ class GalleryViewerPage extends HookConsumerWidget {
     final currentIndex = useValueNotifier(initialIndex);
     final loadAsset = renderList.loadAsset;
     final isPlayingMotionVideo = ref.watch(isPlayingMotionVideoProvider);
-    final isCasting = ref.watch(castProvider.select((c) => c.isCasting));
 
     final videoPlayerKeys = useRef<Map<int, GlobalKey>>({});
 
@@ -120,36 +117,6 @@ class GalleryViewerPage extends HookConsumerWidget {
       },
       const [],
     );
-
-    useEffect(() {
-      final asset = loadAsset(currentIndex.value);
-
-      if (asset.isRemote) {
-        ref.read(castProvider.notifier).loadMedia(asset, false);
-      } else {
-        if (isCasting) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              ref.read(castProvider.notifier).stop();
-              context.scaffoldMessenger.showSnackBar(
-                SnackBar(
-                  duration: const Duration(seconds: 1),
-                  content: Text(
-                    "local_asset_cast_failed".tr(),
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      color: context.primaryColor,
-                    ),
-                  ),
-                ),
-              );
-            }
-          });
-        }
-      }
-      return null;
-    }, [
-      ref.watch(castProvider).isCasting,
-    ]);
 
     void showInfo() {
       final asset = ref.read(currentAssetProvider);
@@ -236,7 +203,7 @@ class GalleryViewerPage extends HookConsumerWidget {
       });
     });
 
-    PhotoViewGalleryPageOptions buildImage(Asset asset) {
+    PhotoViewGalleryPageOptions buildImage(BuildContext context, Asset asset) {
       return PhotoViewGalleryPageOptions(
         onDragStart: (_, details, __) {
           localPosition.value = details.localPosition;
@@ -256,8 +223,7 @@ class GalleryViewerPage extends HookConsumerWidget {
         heroAttributes: _getHeroAttributes(asset),
         filterQuality: FilterQuality.high,
         tightMode: true,
-        initialScale: PhotoViewComputedScale.contained * 0.99,
-        minScale: PhotoViewComputedScale.contained * 0.99,
+        minScale: PhotoViewComputedScale.contained,
         errorBuilder: (context, error, stackTrace) => ImmichImage(
           asset,
           fit: BoxFit.contain,
@@ -272,9 +238,9 @@ class GalleryViewerPage extends HookConsumerWidget {
         onDragUpdate: (_, details, __) => handleSwipeUpDown(details),
         heroAttributes: _getHeroAttributes(asset),
         filterQuality: FilterQuality.high,
-        initialScale: PhotoViewComputedScale.contained * 0.99,
+        initialScale: 1.0,
         maxScale: 1.0,
-        minScale: PhotoViewComputedScale.contained * 0.99,
+        minScale: 1.0,
         basePosition: Alignment.center,
         child: SizedBox(
           width: context.width,
@@ -312,7 +278,7 @@ class GalleryViewerPage extends HookConsumerWidget {
       }
 
       if (newAsset.isImage && !isPlayingMotionVideo) {
-        return buildImage(newAsset);
+        return buildImage(context, newAsset);
       }
       return buildVideo(context, newAsset);
     }
@@ -389,30 +355,6 @@ class GalleryViewerPage extends HookConsumerWidget {
                 Timer(const Duration(milliseconds: 400), () {
                   precacheNextImage(next);
                 });
-
-                context.scaffoldMessenger.hideCurrentSnackBar();
-
-                // send image to casting if the server has it
-                if (newAsset.isRemote) {
-                  ref.read(castProvider.notifier).loadMedia(newAsset, false);
-                } else {
-                  context.scaffoldMessenger.clearSnackBars();
-
-                  if (isCasting) {
-                    ref.read(castProvider.notifier).stop();
-                    context.scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        duration: const Duration(seconds: 2),
-                        content: Text(
-                          "local_asset_cast_failed".tr(),
-                          style: context.textTheme.bodyLarge?.copyWith(
-                            color: context.primaryColor,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                }
               },
               builder: buildAsset,
             ),

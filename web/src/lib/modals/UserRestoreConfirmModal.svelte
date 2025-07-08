@@ -1,30 +1,37 @@
 <script lang="ts">
   import FormatMessage from '$lib/components/i18n/format-message.svelte';
+  import ConfirmDialog from '$lib/components/shared-components/dialog/confirm-dialog.svelte';
   import { handleError } from '$lib/utils/handle-error';
-  import { restoreUserAdmin, type UserAdminResponseDto, type UserResponseDto } from '@immich/sdk';
-  import { Button, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';
-  import { mdiDeleteRestore } from '@mdi/js';
+  import { restoreUserAdmin, type UserResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
 
   interface Props {
     user: UserResponseDto;
-    onClose: (user?: UserAdminResponseDto) => void;
+    onClose: (confirmed?: true) => void;
   }
 
   let { user, onClose }: Props = $props();
 
   const handleRestoreUser = async () => {
     try {
-      const result = await restoreUserAdmin({ id: user.id });
-      onClose(result);
+      const { deletedAt } = await restoreUserAdmin({ id: user.id });
+
+      if (deletedAt === undefined) {
+        onClose(true);
+      }
     } catch (error) {
       handleError(error, $t('errors.unable_to_restore_user'));
     }
   };
 </script>
 
-<Modal title={$t('restore_user')} {onClose} icon={mdiDeleteRestore} size="small">
-  <ModalBody>
+<ConfirmDialog
+  title={$t('restore_user')}
+  confirmText={$t('continue')}
+  confirmColor="success"
+  onClose={(confirmed) => (confirmed ? handleRestoreUser() : onClose())}
+>
+  {#snippet promptSnippet()}
     <p>
       <FormatMessage key="admin.user_restore_description" values={{ user: user.name }}>
         {#snippet children({ message })}
@@ -32,16 +39,5 @@
         {/snippet}
       </FormatMessage>
     </p>
-  </ModalBody>
-
-  <ModalFooter>
-    <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>
-        {$t('cancel')}
-      </Button>
-      <Button shape="round" color="primary" fullWidth onclick={() => handleRestoreUser()}>
-        {$t('restore')}
-      </Button>
-    </HStack>
-  </ModalFooter>
-</Modal>
+  {/snippet}
+</ConfirmDialog>

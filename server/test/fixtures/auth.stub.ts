@@ -1,4 +1,4 @@
-import { AuthSession } from 'src/database';
+import { Session } from 'src/database';
 import { AuthDto } from 'src/dtos/auth.dto';
 
 const authUser = {
@@ -26,7 +26,7 @@ export const authStub = {
     user: authUser.user1,
     session: {
       id: 'token-id',
-    } as AuthSession,
+    } as Session,
   }),
   user2: Object.freeze<AuthDto>({
     user: {
@@ -39,7 +39,7 @@ export const authStub = {
     },
     session: {
       id: 'token-id',
-    } as AuthSession,
+    } as Session,
   }),
   adminSharedLink: Object.freeze({
     user: authUser.admin,

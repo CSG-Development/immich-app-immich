@@ -11,10 +11,8 @@ import {
   SearchPeopleDto,
   SearchPlacesDto,
   SearchResponseDto,
-  SearchStatisticsResponseDto,
   SearchSuggestionRequestDto,
   SmartSearchDto,
-  StatisticsSearchDto,
 } from 'src/dtos/search.dto';
 import { Auth, Authenticated } from 'src/middleware/auth.guard';
 import { SearchService } from 'src/services/search.service';
@@ -29,13 +27,6 @@ export class SearchController {
   @Authenticated()
   searchAssets(@Auth() auth: AuthDto, @Body() dto: MetadataSearchDto): Promise<SearchResponseDto> {
     return this.service.searchMetadata(auth, dto);
-  }
-
-  @Post('statistics')
-  @HttpCode(HttpStatus.OK)
-  @Authenticated()
-  searchAssetStatistics(@Auth() auth: AuthDto, @Body() dto: StatisticsSearchDto): Promise<SearchStatisticsResponseDto> {
-    return this.service.searchStatistics(auth, dto);
   }
 
   @Post('random')

@@ -38,6 +38,7 @@ export class AuditRepository {
     return records.map(({ entityId }) => entityId);
   }
 
+  @GenerateSql({ params: [DummyValue.DATE] })
   async removeBefore(before: Date): Promise<void> {
     await this.db.deleteFrom('audit').where('createdAt', '<', before).execute();
   }

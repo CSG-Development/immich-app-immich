@@ -1,4 +1,3 @@
-// dart format width=80
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -14,7 +13,10 @@ part of 'router.dart';
 /// [ActivitiesPage]
 class ActivitiesRoute extends PageRouteInfo<void> {
   const ActivitiesRoute({List<PageRouteInfo>? children})
-      : super(ActivitiesRoute.name, initialChildren: children);
+      : super(
+          ActivitiesRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'ActivitiesRoute';
 
@@ -130,7 +132,10 @@ class AlbumAssetSelectionRouteArgs {
 /// [AlbumOptionsPage]
 class AlbumOptionsRoute extends PageRouteInfo<void> {
   const AlbumOptionsRoute({List<PageRouteInfo>? children})
-      : super(AlbumOptionsRoute.name, initialChildren: children);
+      : super(
+          AlbumOptionsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AlbumOptionsRoute';
 
@@ -151,7 +156,10 @@ class AlbumPreviewRoute extends PageRouteInfo<AlbumPreviewRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           AlbumPreviewRoute.name,
-          args: AlbumPreviewRouteArgs(key: key, album: album),
+          args: AlbumPreviewRouteArgs(
+            key: key,
+            album: album,
+          ),
           initialChildren: children,
         );
 
@@ -161,13 +169,19 @@ class AlbumPreviewRoute extends PageRouteInfo<AlbumPreviewRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<AlbumPreviewRouteArgs>();
-      return AlbumPreviewPage(key: args.key, album: args.album);
+      return AlbumPreviewPage(
+        key: args.key,
+        album: args.album,
+      );
     },
   );
 }
 
 class AlbumPreviewRouteArgs {
-  const AlbumPreviewRouteArgs({this.key, required this.album});
+  const AlbumPreviewRouteArgs({
+    this.key,
+    required this.album,
+  });
 
   final Key? key;
 
@@ -189,7 +203,10 @@ class AlbumSharedUserSelectionRoute
     List<PageRouteInfo>? children,
   }) : super(
           AlbumSharedUserSelectionRoute.name,
-          args: AlbumSharedUserSelectionRouteArgs(key: key, assets: assets),
+          args: AlbumSharedUserSelectionRouteArgs(
+            key: key,
+            assets: assets,
+          ),
           initialChildren: children,
         );
 
@@ -199,13 +216,19 @@ class AlbumSharedUserSelectionRoute
     name,
     builder: (data) {
       final args = data.argsAs<AlbumSharedUserSelectionRouteArgs>();
-      return AlbumSharedUserSelectionPage(key: args.key, assets: args.assets);
+      return AlbumSharedUserSelectionPage(
+        key: args.key,
+        assets: args.assets,
+      );
     },
   );
 }
 
 class AlbumSharedUserSelectionRouteArgs {
-  const AlbumSharedUserSelectionRouteArgs({this.key, required this.assets});
+  const AlbumSharedUserSelectionRouteArgs({
+    this.key,
+    required this.assets,
+  });
 
   final Key? key;
 
@@ -226,7 +249,10 @@ class AlbumViewerRoute extends PageRouteInfo<AlbumViewerRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           AlbumViewerRoute.name,
-          args: AlbumViewerRouteArgs(key: key, albumId: albumId),
+          args: AlbumViewerRouteArgs(
+            key: key,
+            albumId: albumId,
+          ),
           initialChildren: children,
         );
 
@@ -236,13 +262,19 @@ class AlbumViewerRoute extends PageRouteInfo<AlbumViewerRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<AlbumViewerRouteArgs>();
-      return AlbumViewerPage(key: args.key, albumId: args.albumId);
+      return AlbumViewerPage(
+        key: args.key,
+        albumId: args.albumId,
+      );
     },
   );
 }
 
 class AlbumViewerRouteArgs {
-  const AlbumViewerRouteArgs({this.key, required this.albumId});
+  const AlbumViewerRouteArgs({
+    this.key,
+    required this.albumId,
+  });
 
   final Key? key;
 
@@ -258,7 +290,10 @@ class AlbumViewerRouteArgs {
 /// [AlbumsPage]
 class AlbumsRoute extends PageRouteInfo<void> {
   const AlbumsRoute({List<PageRouteInfo>? children})
-      : super(AlbumsRoute.name, initialChildren: children);
+      : super(
+          AlbumsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AlbumsRoute';
 
@@ -274,7 +309,10 @@ class AlbumsRoute extends PageRouteInfo<void> {
 /// [AllMotionPhotosPage]
 class AllMotionPhotosRoute extends PageRouteInfo<void> {
   const AllMotionPhotosRoute({List<PageRouteInfo>? children})
-      : super(AllMotionPhotosRoute.name, initialChildren: children);
+      : super(
+          AllMotionPhotosRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AllMotionPhotosRoute';
 
@@ -290,7 +328,10 @@ class AllMotionPhotosRoute extends PageRouteInfo<void> {
 /// [AllPeoplePage]
 class AllPeopleRoute extends PageRouteInfo<void> {
   const AllPeopleRoute({List<PageRouteInfo>? children})
-      : super(AllPeopleRoute.name, initialChildren: children);
+      : super(
+          AllPeopleRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AllPeopleRoute';
 
@@ -306,7 +347,10 @@ class AllPeopleRoute extends PageRouteInfo<void> {
 /// [AllPlacesPage]
 class AllPlacesRoute extends PageRouteInfo<void> {
   const AllPlacesRoute({List<PageRouteInfo>? children})
-      : super(AllPlacesRoute.name, initialChildren: children);
+      : super(
+          AllPlacesRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AllPlacesRoute';
 
@@ -322,7 +366,10 @@ class AllPlacesRoute extends PageRouteInfo<void> {
 /// [AllVideosPage]
 class AllVideosRoute extends PageRouteInfo<void> {
   const AllVideosRoute({List<PageRouteInfo>? children})
-      : super(AllVideosRoute.name, initialChildren: children);
+      : super(
+          AllVideosRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AllVideosRoute';
 
@@ -343,7 +390,10 @@ class AppLogDetailRoute extends PageRouteInfo<AppLogDetailRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           AppLogDetailRoute.name,
-          args: AppLogDetailRouteArgs(key: key, logMessage: logMessage),
+          args: AppLogDetailRouteArgs(
+            key: key,
+            logMessage: logMessage,
+          ),
           initialChildren: children,
         );
 
@@ -353,13 +403,19 @@ class AppLogDetailRoute extends PageRouteInfo<AppLogDetailRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<AppLogDetailRouteArgs>();
-      return AppLogDetailPage(key: args.key, logMessage: args.logMessage);
+      return AppLogDetailPage(
+        key: args.key,
+        logMessage: args.logMessage,
+      );
     },
   );
 }
 
 class AppLogDetailRouteArgs {
-  const AppLogDetailRouteArgs({this.key, required this.logMessage});
+  const AppLogDetailRouteArgs({
+    this.key,
+    required this.logMessage,
+  });
 
   final Key? key;
 
@@ -375,7 +431,10 @@ class AppLogDetailRouteArgs {
 /// [AppLogPage]
 class AppLogRoute extends PageRouteInfo<void> {
   const AppLogRoute({List<PageRouteInfo>? children})
-      : super(AppLogRoute.name, initialChildren: children);
+      : super(
+          AppLogRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'AppLogRoute';
 
@@ -391,7 +450,10 @@ class AppLogRoute extends PageRouteInfo<void> {
 /// [ArchivePage]
 class ArchiveRoute extends PageRouteInfo<void> {
   const ArchiveRoute({List<PageRouteInfo>? children})
-      : super(ArchiveRoute.name, initialChildren: children);
+      : super(
+          ArchiveRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'ArchiveRoute';
 
@@ -407,7 +469,10 @@ class ArchiveRoute extends PageRouteInfo<void> {
 /// [BackupAlbumSelectionPage]
 class BackupAlbumSelectionRoute extends PageRouteInfo<void> {
   const BackupAlbumSelectionRoute({List<PageRouteInfo>? children})
-      : super(BackupAlbumSelectionRoute.name, initialChildren: children);
+      : super(
+          BackupAlbumSelectionRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'BackupAlbumSelectionRoute';
 
@@ -423,7 +488,10 @@ class BackupAlbumSelectionRoute extends PageRouteInfo<void> {
 /// [BackupControllerPage]
 class BackupControllerRoute extends PageRouteInfo<void> {
   const BackupControllerRoute({List<PageRouteInfo>? children})
-      : super(BackupControllerRoute.name, initialChildren: children);
+      : super(
+          BackupControllerRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'BackupControllerRoute';
 
@@ -439,7 +507,10 @@ class BackupControllerRoute extends PageRouteInfo<void> {
 /// [BackupOptionsPage]
 class BackupOptionsRoute extends PageRouteInfo<void> {
   const BackupOptionsRoute({List<PageRouteInfo>? children})
-      : super(BackupOptionsRoute.name, initialChildren: children);
+      : super(
+          BackupOptionsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'BackupOptionsRoute';
 
@@ -455,7 +526,10 @@ class BackupOptionsRoute extends PageRouteInfo<void> {
 /// [ChangePasswordPage]
 class ChangePasswordRoute extends PageRouteInfo<void> {
   const ChangePasswordRoute({List<PageRouteInfo>? children})
-      : super(ChangePasswordRoute.name, initialChildren: children);
+      : super(
+          ChangePasswordRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'ChangePasswordRoute';
 
@@ -476,7 +550,10 @@ class CreateAlbumRoute extends PageRouteInfo<CreateAlbumRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           CreateAlbumRoute.name,
-          args: CreateAlbumRouteArgs(key: key, assets: assets),
+          args: CreateAlbumRouteArgs(
+            key: key,
+            assets: assets,
+          ),
           initialChildren: children,
         );
 
@@ -486,15 +563,20 @@ class CreateAlbumRoute extends PageRouteInfo<CreateAlbumRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<CreateAlbumRouteArgs>(
-        orElse: () => const CreateAlbumRouteArgs(),
+          orElse: () => const CreateAlbumRouteArgs());
+      return CreateAlbumPage(
+        key: args.key,
+        assets: args.assets,
       );
-      return CreateAlbumPage(key: args.key, assets: args.assets);
     },
   );
 }
 
 class CreateAlbumRouteArgs {
-  const CreateAlbumRouteArgs({this.key, this.assets});
+  const CreateAlbumRouteArgs({
+    this.key,
+    this.assets,
+  });
 
   final Key? key;
 
@@ -516,7 +598,11 @@ class CropImageRoute extends PageRouteInfo<CropImageRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           CropImageRoute.name,
-          args: CropImageRouteArgs(key: key, image: image, asset: asset),
+          args: CropImageRouteArgs(
+            key: key,
+            image: image,
+            asset: asset,
+          ),
           initialChildren: children,
         );
 
@@ -526,7 +612,11 @@ class CropImageRoute extends PageRouteInfo<CropImageRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<CropImageRouteArgs>();
-      return CropImagePage(key: args.key, image: args.image, asset: args.asset);
+      return CropImagePage(
+        key: args.key,
+        image: args.image,
+        asset: args.asset,
+      );
     },
   );
 }
@@ -612,7 +702,10 @@ class EditImageRouteArgs {
 /// [FailedBackupStatusPage]
 class FailedBackupStatusRoute extends PageRouteInfo<void> {
   const FailedBackupStatusRoute({List<PageRouteInfo>? children})
-      : super(FailedBackupStatusRoute.name, initialChildren: children);
+      : super(
+          FailedBackupStatusRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'FailedBackupStatusRoute';
 
@@ -628,7 +721,10 @@ class FailedBackupStatusRoute extends PageRouteInfo<void> {
 /// [FavoritesPage]
 class FavoritesRoute extends PageRouteInfo<void> {
   const FavoritesRoute({List<PageRouteInfo>? children})
-      : super(FavoritesRoute.name, initialChildren: children);
+      : super(
+          FavoritesRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'FavoritesRoute';
 
@@ -636,22 +732,6 @@ class FavoritesRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const FavoritesPage();
-    },
-  );
-}
-
-/// generated route for
-/// [FeatInDevPage]
-class FeatInDevRoute extends PageRouteInfo<void> {
-  const FeatInDevRoute({List<PageRouteInfo>? children})
-      : super(FeatInDevRoute.name, initialChildren: children);
-
-  static const String name = 'FeatInDevRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const FeatInDevPage();
     },
   );
 }
@@ -666,7 +746,11 @@ class FilterImageRoute extends PageRouteInfo<FilterImageRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           FilterImageRoute.name,
-          args: FilterImageRouteArgs(key: key, image: image, asset: asset),
+          args: FilterImageRouteArgs(
+            key: key,
+            image: image,
+            asset: asset,
+          ),
           initialChildren: children,
         );
 
@@ -713,7 +797,10 @@ class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           FolderRoute.name,
-          args: FolderRouteArgs(key: key, folder: folder),
+          args: FolderRouteArgs(
+            key: key,
+            folder: folder,
+          ),
           initialChildren: children,
         );
 
@@ -722,16 +809,21 @@ class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<FolderRouteArgs>(
-        orElse: () => const FolderRouteArgs(),
+      final args =
+          data.argsAs<FolderRouteArgs>(orElse: () => const FolderRouteArgs());
+      return FolderPage(
+        key: args.key,
+        folder: args.folder,
       );
-      return FolderPage(key: args.key, folder: args.folder);
     },
   );
 }
 
 class FolderRouteArgs {
-  const FolderRouteArgs({this.key, this.folder});
+  const FolderRouteArgs({
+    this.key,
+    this.folder,
+  });
 
   final Key? key;
 
@@ -811,7 +903,10 @@ class GalleryViewerRouteArgs {
 /// [HeaderSettingsPage]
 class HeaderSettingsRoute extends PageRouteInfo<void> {
   const HeaderSettingsRoute({List<PageRouteInfo>? children})
-      : super(HeaderSettingsRoute.name, initialChildren: children);
+      : super(
+          HeaderSettingsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'HeaderSettingsRoute';
 
@@ -827,7 +922,10 @@ class HeaderSettingsRoute extends PageRouteInfo<void> {
 /// [LibraryPage]
 class LibraryRoute extends PageRouteInfo<void> {
   const LibraryRoute({List<PageRouteInfo>? children})
-      : super(LibraryRoute.name, initialChildren: children);
+      : super(
+          LibraryRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'LibraryRoute';
 
@@ -843,7 +941,10 @@ class LibraryRoute extends PageRouteInfo<void> {
 /// [LocalAlbumsPage]
 class LocalAlbumsRoute extends PageRouteInfo<void> {
   const LocalAlbumsRoute({List<PageRouteInfo>? children})
-      : super(LocalAlbumsRoute.name, initialChildren: children);
+      : super(
+          LocalAlbumsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'LocalAlbumsRoute';
 
@@ -856,79 +957,13 @@ class LocalAlbumsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [LocalMediaSummaryPage]
-class LocalMediaSummaryRoute extends PageRouteInfo<void> {
-  const LocalMediaSummaryRoute({List<PageRouteInfo>? children})
-      : super(LocalMediaSummaryRoute.name, initialChildren: children);
-
-  static const String name = 'LocalMediaSummaryRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const LocalMediaSummaryPage();
-    },
-  );
-}
-
-/// generated route for
-/// [LocalTimelinePage]
-class LocalTimelineRoute extends PageRouteInfo<LocalTimelineRouteArgs> {
-  LocalTimelineRoute({
-    Key? key,
-    required String albumId,
-    List<PageRouteInfo>? children,
-  }) : super(
-          LocalTimelineRoute.name,
-          args: LocalTimelineRouteArgs(key: key, albumId: albumId),
-          initialChildren: children,
-        );
-
-  static const String name = 'LocalTimelineRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<LocalTimelineRouteArgs>();
-      return LocalTimelinePage(key: args.key, albumId: args.albumId);
-    },
-  );
-}
-
-class LocalTimelineRouteArgs {
-  const LocalTimelineRouteArgs({this.key, required this.albumId});
-
-  final Key? key;
-
-  final String albumId;
-
-  @override
-  String toString() {
-    return 'LocalTimelineRouteArgs{key: $key, albumId: $albumId}';
-  }
-}
-
-/// generated route for
-/// [LockedPage]
-class LockedRoute extends PageRouteInfo<void> {
-  const LockedRoute({List<PageRouteInfo>? children})
-      : super(LockedRoute.name, initialChildren: children);
-
-  static const String name = 'LockedRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const LockedPage();
-    },
-  );
-}
-
-/// generated route for
 /// [LoginPage]
 class LoginRoute extends PageRouteInfo<void> {
   const LoginRoute({List<PageRouteInfo>? children})
-      : super(LoginRoute.name, initialChildren: children);
+      : super(
+          LoginRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'LoginRoute';
 
@@ -936,22 +971,6 @@ class LoginRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const LoginPage();
-    },
-  );
-}
-
-/// generated route for
-/// [MainTimelinePage]
-class MainTimelineRoute extends PageRouteInfo<void> {
-  const MainTimelineRoute({List<PageRouteInfo>? children})
-      : super(MainTimelineRoute.name, initialChildren: children);
-
-  static const String name = 'MainTimelineRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const MainTimelinePage();
     },
   );
 }
@@ -978,8 +997,7 @@ class MapLocationPickerRoute extends PageRouteInfo<MapLocationPickerRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<MapLocationPickerRouteArgs>(
-        orElse: () => const MapLocationPickerRouteArgs(),
-      );
+          orElse: () => const MapLocationPickerRouteArgs());
       return MapLocationPickerPage(
         key: args.key,
         initialLatLng: args.initialLatLng,
@@ -1007,10 +1025,16 @@ class MapLocationPickerRouteArgs {
 /// generated route for
 /// [MapPage]
 class MapRoute extends PageRouteInfo<MapRouteArgs> {
-  MapRoute({Key? key, LatLng? initialLocation, List<PageRouteInfo>? children})
-      : super(
+  MapRoute({
+    Key? key,
+    LatLng? initialLocation,
+    List<PageRouteInfo>? children,
+  }) : super(
           MapRoute.name,
-          args: MapRouteArgs(key: key, initialLocation: initialLocation),
+          args: MapRouteArgs(
+            key: key,
+            initialLocation: initialLocation,
+          ),
           initialChildren: children,
         );
 
@@ -1019,16 +1043,21 @@ class MapRoute extends PageRouteInfo<MapRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<MapRouteArgs>(
-        orElse: () => const MapRouteArgs(),
+      final args =
+          data.argsAs<MapRouteArgs>(orElse: () => const MapRouteArgs());
+      return MapPage(
+        key: args.key,
+        initialLocation: args.initialLocation,
       );
-      return MapPage(key: args.key, initialLocation: args.initialLocation);
     },
   );
 }
 
 class MapRouteArgs {
-  const MapRouteArgs({this.key, this.initialLocation});
+  const MapRouteArgs({
+    this.key,
+    this.initialLocation,
+  });
 
   final Key? key;
 
@@ -1165,7 +1194,10 @@ class PartnerDetailRoute extends PageRouteInfo<PartnerDetailRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           PartnerDetailRoute.name,
-          args: PartnerDetailRouteArgs(key: key, partner: partner),
+          args: PartnerDetailRouteArgs(
+            key: key,
+            partner: partner,
+          ),
           initialChildren: children,
         );
 
@@ -1175,13 +1207,19 @@ class PartnerDetailRoute extends PageRouteInfo<PartnerDetailRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<PartnerDetailRouteArgs>();
-      return PartnerDetailPage(key: args.key, partner: args.partner);
+      return PartnerDetailPage(
+        key: args.key,
+        partner: args.partner,
+      );
     },
   );
 }
 
 class PartnerDetailRouteArgs {
-  const PartnerDetailRouteArgs({this.key, required this.partner});
+  const PartnerDetailRouteArgs({
+    this.key,
+    required this.partner,
+  });
 
   final Key? key;
 
@@ -1197,7 +1235,10 @@ class PartnerDetailRouteArgs {
 /// [PartnerPage]
 class PartnerRoute extends PageRouteInfo<void> {
   const PartnerRoute({List<PageRouteInfo>? children})
-      : super(PartnerRoute.name, initialChildren: children);
+      : super(
+          PartnerRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'PartnerRoute';
 
@@ -1213,7 +1254,10 @@ class PartnerRoute extends PageRouteInfo<void> {
 /// [PeopleCollectionPage]
 class PeopleCollectionRoute extends PageRouteInfo<void> {
   const PeopleCollectionRoute({List<PageRouteInfo>? children})
-      : super(PeopleCollectionRoute.name, initialChildren: children);
+      : super(
+          PeopleCollectionRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'PeopleCollectionRoute';
 
@@ -1229,7 +1273,10 @@ class PeopleCollectionRoute extends PageRouteInfo<void> {
 /// [PermissionOnboardingPage]
 class PermissionOnboardingRoute extends PageRouteInfo<void> {
   const PermissionOnboardingRoute({List<PageRouteInfo>? children})
-      : super(PermissionOnboardingRoute.name, initialChildren: children);
+      : super(
+          PermissionOnboardingRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'PermissionOnboardingRoute';
 
@@ -1297,7 +1344,10 @@ class PersonResultRouteArgs {
 /// [PhotosPage]
 class PhotosRoute extends PageRouteInfo<void> {
   const PhotosRoute({List<PageRouteInfo>? children})
-      : super(PhotosRoute.name, initialChildren: children);
+      : super(
+          PhotosRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'PhotosRoute';
 
@@ -1307,45 +1357,6 @@ class PhotosRoute extends PageRouteInfo<void> {
       return const PhotosPage();
     },
   );
-}
-
-/// generated route for
-/// [PinAuthPage]
-class PinAuthRoute extends PageRouteInfo<PinAuthRouteArgs> {
-  PinAuthRoute({
-    Key? key,
-    bool createPinCode = false,
-    List<PageRouteInfo>? children,
-  }) : super(
-          PinAuthRoute.name,
-          args: PinAuthRouteArgs(key: key, createPinCode: createPinCode),
-          initialChildren: children,
-        );
-
-  static const String name = 'PinAuthRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<PinAuthRouteArgs>(
-        orElse: () => const PinAuthRouteArgs(),
-      );
-      return PinAuthPage(key: args.key, createPinCode: args.createPinCode);
-    },
-  );
-}
-
-class PinAuthRouteArgs {
-  const PinAuthRouteArgs({this.key, this.createPinCode = false});
-
-  final Key? key;
-
-  final bool createPinCode;
-
-  @override
-  String toString() {
-    return 'PinAuthRouteArgs{key: $key, createPinCode: $createPinCode}';
-  }
 }
 
 /// generated route for
@@ -1370,8 +1381,7 @@ class PlacesCollectionRoute extends PageRouteInfo<PlacesCollectionRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<PlacesCollectionRouteArgs>(
-        orElse: () => const PlacesCollectionRouteArgs(),
-      );
+          orElse: () => const PlacesCollectionRouteArgs());
       return PlacesCollectionPage(
         key: args.key,
         currentLocation: args.currentLocation,
@@ -1381,7 +1391,10 @@ class PlacesCollectionRoute extends PageRouteInfo<PlacesCollectionRouteArgs> {
 }
 
 class PlacesCollectionRouteArgs {
-  const PlacesCollectionRouteArgs({this.key, this.currentLocation});
+  const PlacesCollectionRouteArgs({
+    this.key,
+    this.currentLocation,
+  });
 
   final Key? key;
 
@@ -1397,7 +1410,10 @@ class PlacesCollectionRouteArgs {
 /// [RecentlyTakenPage]
 class RecentlyTakenRoute extends PageRouteInfo<void> {
   const RecentlyTakenRoute({List<PageRouteInfo>? children})
-      : super(RecentlyTakenRoute.name, initialChildren: children);
+      : super(
+          RecentlyTakenRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'RecentlyTakenRoute';
 
@@ -1405,22 +1421,6 @@ class RecentlyTakenRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const RecentlyTakenPage();
-    },
-  );
-}
-
-/// generated route for
-/// [RemoteMediaSummaryPage]
-class RemoteMediaSummaryRoute extends PageRouteInfo<void> {
-  const RemoteMediaSummaryRoute({List<PageRouteInfo>? children})
-      : super(RemoteMediaSummaryRoute.name, initialChildren: children);
-
-  static const String name = 'RemoteMediaSummaryRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const RemoteMediaSummaryPage();
     },
   );
 }
@@ -1434,7 +1434,10 @@ class SearchRoute extends PageRouteInfo<SearchRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           SearchRoute.name,
-          args: SearchRouteArgs(key: key, prefilter: prefilter),
+          args: SearchRouteArgs(
+            key: key,
+            prefilter: prefilter,
+          ),
           initialChildren: children,
         );
 
@@ -1443,16 +1446,21 @@ class SearchRoute extends PageRouteInfo<SearchRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<SearchRouteArgs>(
-        orElse: () => const SearchRouteArgs(),
+      final args =
+          data.argsAs<SearchRouteArgs>(orElse: () => const SearchRouteArgs());
+      return SearchPage(
+        key: args.key,
+        prefilter: args.prefilter,
       );
-      return SearchPage(key: args.key, prefilter: args.prefilter);
     },
   );
 }
 
 class SearchRouteArgs {
-  const SearchRouteArgs({this.key, this.prefilter});
+  const SearchRouteArgs({
+    this.key,
+    this.prefilter,
+  });
 
   final Key? key;
 
@@ -1468,7 +1476,10 @@ class SearchRouteArgs {
 /// [SettingsPage]
 class SettingsRoute extends PageRouteInfo<void> {
   const SettingsRoute({List<PageRouteInfo>? children})
-      : super(SettingsRoute.name, initialChildren: children);
+      : super(
+          SettingsRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'SettingsRoute';
 
@@ -1489,7 +1500,10 @@ class SettingsSubRoute extends PageRouteInfo<SettingsSubRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           SettingsSubRoute.name,
-          args: SettingsSubRouteArgs(section: section, key: key),
+          args: SettingsSubRouteArgs(
+            section: section,
+            key: key,
+          ),
           initialChildren: children,
         );
 
@@ -1499,13 +1513,19 @@ class SettingsSubRoute extends PageRouteInfo<SettingsSubRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<SettingsSubRouteArgs>();
-      return SettingsSubPage(args.section, key: args.key);
+      return SettingsSubPage(
+        args.section,
+        key: args.key,
+      );
     },
   );
 }
 
 class SettingsSubRouteArgs {
-  const SettingsSubRouteArgs({required this.section, this.key});
+  const SettingsSubRouteArgs({
+    required this.section,
+    this.key,
+  });
 
   final SettingSection section;
 
@@ -1526,7 +1546,10 @@ class ShareIntentRoute extends PageRouteInfo<ShareIntentRouteArgs> {
     List<PageRouteInfo>? children,
   }) : super(
           ShareIntentRoute.name,
-          args: ShareIntentRouteArgs(key: key, attachments: attachments),
+          args: ShareIntentRouteArgs(
+            key: key,
+            attachments: attachments,
+          ),
           initialChildren: children,
         );
 
@@ -1536,13 +1559,19 @@ class ShareIntentRoute extends PageRouteInfo<ShareIntentRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<ShareIntentRouteArgs>();
-      return ShareIntentPage(key: args.key, attachments: args.attachments);
+      return ShareIntentPage(
+        key: args.key,
+        attachments: args.attachments,
+      );
     },
   );
 }
 
 class ShareIntentRouteArgs {
-  const ShareIntentRouteArgs({this.key, required this.attachments});
+  const ShareIntentRouteArgs({
+    this.key,
+    required this.attachments,
+  });
 
   final Key? key;
 
@@ -1580,8 +1609,7 @@ class SharedLinkEditRoute extends PageRouteInfo<SharedLinkEditRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<SharedLinkEditRouteArgs>(
-        orElse: () => const SharedLinkEditRouteArgs(),
-      );
+          orElse: () => const SharedLinkEditRouteArgs());
       return SharedLinkEditPage(
         key: args.key,
         existingLink: args.existingLink,
@@ -1618,7 +1646,10 @@ class SharedLinkEditRouteArgs {
 /// [SharedLinkPage]
 class SharedLinkRoute extends PageRouteInfo<void> {
   const SharedLinkRoute({List<PageRouteInfo>? children})
-      : super(SharedLinkRoute.name, initialChildren: children);
+      : super(
+          SharedLinkRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'SharedLinkRoute';
 
@@ -1634,7 +1665,10 @@ class SharedLinkRoute extends PageRouteInfo<void> {
 /// [SplashScreenPage]
 class SplashScreenRoute extends PageRouteInfo<void> {
   const SplashScreenRoute({List<PageRouteInfo>? children})
-      : super(SplashScreenRoute.name, initialChildren: children);
+      : super(
+          SplashScreenRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'SplashScreenRoute';
 
@@ -1650,7 +1684,10 @@ class SplashScreenRoute extends PageRouteInfo<void> {
 /// [TabControllerPage]
 class TabControllerRoute extends PageRouteInfo<void> {
   const TabControllerRoute({List<PageRouteInfo>? children})
-      : super(TabControllerRoute.name, initialChildren: children);
+      : super(
+          TabControllerRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'TabControllerRoute';
 
@@ -1666,7 +1703,10 @@ class TabControllerRoute extends PageRouteInfo<void> {
 /// [TrashPage]
 class TrashRoute extends PageRouteInfo<void> {
   const TrashRoute({List<PageRouteInfo>? children})
-      : super(TrashRoute.name, initialChildren: children);
+      : super(
+          TrashRoute.name,
+          initialChildren: children,
+        );
 
   static const String name = 'TrashRoute';
 

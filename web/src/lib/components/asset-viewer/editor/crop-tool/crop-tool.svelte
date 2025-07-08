@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import {
     cropAspectRatio,
     cropImageScale,
@@ -9,12 +10,11 @@
     rotateDegrees,
     type CropAspectRatio,
   } from '$lib/stores/asset-editor.store';
-  import { IconButton } from '@immich/ui';
   import { mdiBackupRestore, mdiCropFree, mdiRotateLeft, mdiRotateRight, mdiSquareOutline } from '@mdi/js';
-  import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
-  import CropPreset from './crop-preset.svelte';
   import { onImageLoad } from './image-loading';
+  import { tick } from 'svelte';
+  import CropPreset from './crop-preset.svelte';
 
   let rotateHorizontal = $derived([90, 270].includes($normaizedRorateDegrees));
   const icon_16_9 = `M200-280q-33 0-56.5-23.5T120-360v-240q0-33 23.5-56.5T200-680h560q33 0 56.5 23.5T840-600v240q0 33-23.5 56.5T760-280H200Zm0-80h560v-240H200v240Zm0 0v-240 240Z`;
@@ -148,25 +148,7 @@
     <h2>{$t('editor_crop_tool_h2_rotation').toUpperCase()}</h2>
   </div>
   <ul class="flex-wrap flex-row flex gap-x-6 gap-y-4 justify-center">
-    <li>
-      <IconButton
-        shape="round"
-        variant="ghost"
-        color="secondary"
-        aria-label={$t('anti_clockwise')}
-        onclick={() => rotate(false)}
-        icon={mdiRotateLeft}
-      />
-    </li>
-    <li>
-      <IconButton
-        shape="round"
-        variant="ghost"
-        color="secondary"
-        aria-label={$t('clockwise')}
-        onclick={() => rotate(true)}
-        icon={mdiRotateRight}
-      />
-    </li>
+    <li><CircleIconButton title={$t('anti_clockwise')} onclick={() => rotate(false)} icon={mdiRotateLeft} /></li>
+    <li><CircleIconButton title={$t('clockwise')} onclick={() => rotate(true)} icon={mdiRotateRight} /></li>
   </ul>
 </div>

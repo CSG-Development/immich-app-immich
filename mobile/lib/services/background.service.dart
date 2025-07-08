@@ -20,6 +20,7 @@ import 'package:immich_mobile/interfaces/backup_album.interface.dart';
 import 'package:immich_mobile/models/backup/backup_candidate.model.dart';
 import 'package:immich_mobile/models/backup/current_upload_asset.model.dart';
 import 'package:immich_mobile/models/backup/error_upload_asset.model.dart';
+import 'package:immich_mobile/models/backup/success_upload_asset.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
@@ -33,7 +34,7 @@ import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/diff.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
+import 'package:immich_mobile/utils/http_ssl_cert_override.dart';
 import 'package:path_provider_foundation/path_provider_foundation.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
 
@@ -360,7 +361,7 @@ class BackgroundService {
       ],
     );
 
-    HttpSSLOptions.apply();
+    HttpOverrides.global = HttpSSLCertOverride();
     ref
         .read(apiServiceProvider)
         .setAccessToken(SecureStore.get(SecureStoreKey.accessToken));
@@ -490,6 +491,7 @@ class BackgroundService {
       _cancellationToken!,
       pmProgressHandler: pmProgressHandler,
       onSuccess: (result) => _onAssetUploaded(
+        result: result,
         shouldNotify: notifyTotalProgress,
       ),
       onProgress: (bytes, totalBytes) =>
@@ -511,6 +513,7 @@ class BackgroundService {
   }
 
   void _onAssetUploaded({
+    required SuccessUploadAsset result,
     bool shouldNotify = false,
   }) async {
     if (!shouldNotify) {

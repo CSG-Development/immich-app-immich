@@ -1,32 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
 import { OnJob } from 'src/decorators';
-import { BulkIdsDto } from 'src/dtos/asset-ids.response.dto';
 import { mapAsset } from 'src/dtos/asset-response.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { DuplicateResponseDto } from 'src/dtos/duplicate.dto';
-import { AssetVisibility, JobName, JobStatus, QueueName } from 'src/enum';
+import { AssetFileType, AssetVisibility, JobName, JobStatus, QueueName } from 'src/enum';
 import { AssetDuplicateResult } from 'src/repositories/search.repository';
 import { BaseService } from 'src/services/base.service';
 import { JobItem, JobOf } from 'src/types';
+import { getAssetFile } from 'src/utils/asset.util';
 import { isDuplicateDetectionEnabled } from 'src/utils/misc';
 
 @Injectable()
 export class DuplicateService extends BaseService {
   async getDuplicates(auth: AuthDto): Promise<DuplicateResponseDto[]> {
-    const duplicates = await this.duplicateRepository.getAll(auth.user.id);
+    const duplicates = await this.assetRepository.getDuplicates(auth.user.id);
     return duplicates.map(({ duplicateId, assets }) => ({
       duplicateId,
       assets: assets.map((asset) => mapAsset(asset, { auth })),
     }));
-  }
-
-  async delete(auth: AuthDto, id: string): Promise<void> {
-    await this.duplicateRepository.delete(auth.user.id, id);
-  }
-
-  async deleteAll(auth: AuthDto, dto: BulkIdsDto) {
-    await this.duplicateRepository.deleteAll(auth.user.id, dto.ids);
   }
 
   @OnJob({ name: JobName.QUEUE_DUPLICATE_DETECTION, queue: QueueName.DUPLICATE_DETECTION })
@@ -73,14 +65,15 @@ export class DuplicateService extends BaseService {
       return JobStatus.SKIPPED;
     }
 
-    if (asset.visibility === AssetVisibility.HIDDEN) {
+    if (asset.visibility == AssetVisibility.HIDDEN) {
       this.logger.debug(`Asset ${id} is not visible, skipping`);
       return JobStatus.SKIPPED;
     }
 
-    if (asset.visibility === AssetVisibility.LOCKED) {
-      this.logger.debug(`Asset ${id} is locked, skipping`);
-      return JobStatus.SKIPPED;
+    const previewFile = getAssetFile(asset.files || [], AssetFileType.PREVIEW);
+    if (!previewFile) {
+      this.logger.warn(`Asset ${id} is missing preview image`);
+      return JobStatus.FAILED;
     }
 
     if (!asset.embedding) {
@@ -88,7 +81,7 @@ export class DuplicateService extends BaseService {
       return JobStatus.FAILED;
     }
 
-    const duplicateAssets = await this.duplicateRepository.search({
+    const duplicateAssets = await this.searchRepository.searchDuplicates({
       assetId: asset.id,
       embedding: asset.embedding,
       maxDistance: machineLearning.duplicateDetection.maxDistance,
@@ -131,11 +124,7 @@ export class DuplicateService extends BaseService {
       .map((duplicate) => duplicate.assetId);
     assetIdsToUpdate.push(asset.id);
 
-    await this.duplicateRepository.merge({
-      targetId: targetDuplicateId,
-      assetIds: assetIdsToUpdate,
-      sourceIds: duplicateIds,
-    });
+    await this.assetRepository.updateDuplicates({ targetDuplicateId, assetIds: assetIdsToUpdate, duplicateIds });
     return assetIdsToUpdate;
   }
 }

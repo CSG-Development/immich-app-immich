@@ -244,6 +244,7 @@ async def load(model: InferenceModel) -> InferenceModel:
 
 async def idle_shutdown_task() -> None:
     while True:
+        log.debug("Checking for inactivity...")
         if (
             last_called is not None
             and not active_requests

@@ -47,6 +47,7 @@ export class PartnerRepository {
       .executeTakeFirst();
   }
 
+  @GenerateSql({ params: [{ sharedWithId: DummyValue.UUID, sharedById: DummyValue.UUID }] })
   create(values: Insertable<Partners>) {
     return this.db
       .insertInto('partners')

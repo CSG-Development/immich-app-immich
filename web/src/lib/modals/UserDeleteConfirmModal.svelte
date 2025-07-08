@@ -1,15 +1,15 @@
 <script lang="ts">
+  import Checkbox from '$lib/components/elements/checkbox.svelte';
   import FormatMessage from '$lib/components/i18n/format-message.svelte';
-  import ConfirmModal from '$lib/modals/ConfirmModal.svelte';
+  import ConfirmDialog from '$lib/components/shared-components/dialog/confirm-dialog.svelte';
   import { serverConfig } from '$lib/stores/server-config.store';
   import { handleError } from '$lib/utils/handle-error';
-  import { deleteUserAdmin, type UserAdminResponseDto, type UserResponseDto } from '@immich/sdk';
-  import { Checkbox, Label } from '@immich/ui';
+  import { deleteUserAdmin, type UserResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
 
   interface Props {
     user: UserResponseDto;
-    onClose: (user?: UserAdminResponseDto) => void;
+    onClose: (confirmed?: true) => void;
   }
 
   let { user, onClose }: Props = $props();
@@ -20,12 +20,14 @@
 
   const handleDeleteUser = async () => {
     try {
-      const result = await deleteUserAdmin({
+      const { deletedAt } = await deleteUserAdmin({
         id: user.id,
         userAdminDeleteDto: { force: forceDelete },
       });
 
-      onClose(result);
+      if (deletedAt !== undefined) {
+        onClose(true);
+      }
     } catch (error) {
       handleError(error, $t('errors.unable_to_delete_user'));
     }
@@ -37,7 +39,7 @@
   };
 </script>
 
-<ConfirmModal
+<ConfirmDialog
   title={$t('delete_user')}
   confirmText={forceDelete ? $t('permanently_delete') : $t('delete')}
   onClose={(confirmed) => (confirmed ? handleDeleteUser() : onClose())}
@@ -66,18 +68,20 @@
         </p>
       {/if}
 
-      <div class="flex justify-center items-center gap-2">
+      <div class="flex justify-center m-4 gap-2">
         <Checkbox
           id="queue-user-deletion-checkbox"
-          color="secondary"
+          label={$t('admin.user_delete_immediately_checkbox')}
+          labelClass="text-sm dark:text-immich-dark-fg"
           bind:checked={forceDelete}
-          onCheckedChange={() => (deleteButtonDisabled = forceDelete)}
+          onchange={() => {
+            deleteButtonDisabled = forceDelete;
+          }}
         />
-        <Label label={$t('admin.user_delete_immediately_checkbox')} for="queue-user-deletion-checkbox" />
       </div>
 
       {#if forceDelete}
-        <p class="text-danger">{$t('admin.force_delete_user_warning')}</p>
+        <p class="text-immich-error">{$t('admin.force_delete_user_warning')}</p>
 
         <p class="immich-form-label text-sm" id="confirm-user-desc">
           {$t('admin.confirm_email_below', { values: { email: user.email } })}
@@ -94,4 +98,4 @@
       {/if}
     </div>
   {/snippet}
-</ConfirmModal>
+</ConfirmDialog>

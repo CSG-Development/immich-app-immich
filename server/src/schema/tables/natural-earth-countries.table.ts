@@ -1,6 +1,6 @@
 import { Column, PrimaryGeneratedColumn, Table } from 'src/sql-tools';
 
-@Table({ name: 'naturalearth_countries', primaryConstraintName: 'naturalearth_countries_pkey' })
+@Table({ name: 'naturalearth_countries' })
 export class NaturalEarthCountriesTable {
   @PrimaryGeneratedColumn({ strategy: 'identity' })
   id!: number;

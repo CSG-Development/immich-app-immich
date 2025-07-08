@@ -89,7 +89,7 @@ export interface SystemConfig {
     buttonText: string;
     clientId: string;
     clientSecret: string;
-    defaultStorageQuota: number | null;
+    defaultStorageQuota: number;
     enabled: boolean;
     issuerUrl: string;
     mobileOverrideEnabled: boolean;
@@ -254,7 +254,7 @@ export const defaults = Object.freeze<SystemConfig>({
     buttonText: 'Login with OAuth',
     clientId: '',
     clientSecret: '',
-    defaultStorageQuota: null,
+    defaultStorageQuota: 0,
     enabled: false,
     issuerUrl: '',
     mobileOverrideEnabled: false,

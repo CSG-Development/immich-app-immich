@@ -14,31 +14,25 @@ class ActivityStatisticsResponseDto {
   /// Returns a new [ActivityStatisticsResponseDto] instance.
   ActivityStatisticsResponseDto({
     required this.comments,
-    required this.likes,
   });
 
   int comments;
 
-  int likes;
-
   @override
   bool operator ==(Object other) => identical(this, other) || other is ActivityStatisticsResponseDto &&
-    other.comments == comments &&
-    other.likes == likes;
+    other.comments == comments;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (comments.hashCode) +
-    (likes.hashCode);
+    (comments.hashCode);
 
   @override
-  String toString() => 'ActivityStatisticsResponseDto[comments=$comments, likes=$likes]';
+  String toString() => 'ActivityStatisticsResponseDto[comments=$comments]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'comments'] = this.comments;
-      json[r'likes'] = this.likes;
     return json;
   }
 
@@ -52,7 +46,6 @@ class ActivityStatisticsResponseDto {
 
       return ActivityStatisticsResponseDto(
         comments: mapValueOfType<int>(json, r'comments')!,
-        likes: mapValueOfType<int>(json, r'likes')!,
       );
     }
     return null;
@@ -101,7 +94,6 @@ class ActivityStatisticsResponseDto {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'comments',
-    'likes',
   };
 }
 

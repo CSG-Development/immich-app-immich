@@ -1,10 +1,10 @@
 <script lang="ts">
-  import SearchPeople from '$lib/components/faces-page/people-search.svelte';
   import { type PersonResponseDto } from '@immich/sdk';
-  import { t } from 'svelte-i18n';
   import FaceThumbnail from './face-thumbnail.svelte';
+  import SearchPeople from '$lib/components/faces-page/people-search.svelte';
+  import { t } from 'svelte-i18n';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import { mdiSwapVertical } from '@mdi/js';
-  import { IconButton } from '@immich/ui';
 
   interface Props {
     screenHeight: number;
@@ -32,17 +32,15 @@
   </div>
 
   {#if handleSearch}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
+    <CircleIconButton
       icon={mdiSwapVertical}
       onclick={() => {
         sortBySimilarirty = !sortBySimilarirty;
         handleSearch(sortBySimilarirty);
       }}
-      aria-label={$t('sort_people_by_similarity')}
-    />
+      color="neutral"
+      title={$t('sort_people_by_similarity')}
+    ></CircleIconButton>
   {/if}
 </div>
 

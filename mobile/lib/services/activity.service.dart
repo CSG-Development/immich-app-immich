@@ -1,10 +1,10 @@
+import 'package:immich_mobile/interfaces/activity_api.interface.dart';
 import 'package:immich_mobile/mixins/error_logger.mixin.dart';
 import 'package:immich_mobile/models/activities/activity.model.dart';
-import 'package:immich_mobile/repositories/activity_api.repository.dart';
 import 'package:logging/logging.dart';
 
 class ActivityService with ErrorLoggerMixin {
-  final ActivityApiRepository _activityApiRepository;
+  final IActivityApiRepository _activityApiRepository;
 
   @override
   final Logger logger = Logger("ActivityService");

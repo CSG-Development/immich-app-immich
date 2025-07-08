@@ -1,24 +1,24 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:immich_mobile/domain/interfaces/user.interface.dart';
+import 'package:immich_mobile/domain/interfaces/user_api.interface.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
-import 'package:immich_mobile/infrastructure/repositories/user.repository.dart';
-import 'package:immich_mobile/infrastructure/repositories/user_api.repository.dart';
 import 'package:logging/logging.dart';
 
 class UserService {
   final Logger _log = Logger("UserService");
-  final IsarUserRepository _isarUserRepository;
-  final UserApiRepository _userApiRepository;
+  final IUserRepository _userRepository;
+  final IUserApiRepository _userApiRepository;
   final StoreService _storeService;
 
   UserService({
-    required IsarUserRepository isarUserRepository,
-    required UserApiRepository userApiRepository,
+    required IUserRepository userRepository,
+    required IUserApiRepository userApiRepository,
     required StoreService storeService,
-  })  : _isarUserRepository = isarUserRepository,
+  })  : _userRepository = userRepository,
         _userApiRepository = userApiRepository,
         _storeService = storeService;
 
@@ -38,7 +38,7 @@ class UserService {
     final user = await _userApiRepository.getMyUser();
     if (user == null) return null;
     await _storeService.put(StoreKey.currentUser, user);
-    await _isarUserRepository.update(user);
+    await _userRepository.update(user);
     return user;
   }
 
@@ -50,7 +50,7 @@ class UserService {
       );
       final updatedUser = getMyUser().copyWith(profileImagePath: path);
       await _storeService.put(StoreKey.currentUser, updatedUser);
-      await _isarUserRepository.update(updatedUser);
+      await _userRepository.update(updatedUser);
       return path;
     } catch (e) {
       _log.warning("Failed to upload profile image", e);
@@ -59,10 +59,10 @@ class UserService {
   }
 
   Future<List<UserDto>> getAll() async {
-    return await _isarUserRepository.getAll();
+    return await _userRepository.getAll();
   }
 
   Future<void> deleteAll() {
-    return _isarUserRepository.deleteAll();
+    return _userRepository.deleteAll();
   }
 }

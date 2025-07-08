@@ -28,7 +28,6 @@ class PersonResultPage extends HookConsumerWidget {
     showEditNameDialog() {
       showDialog(
         context: context,
-        useRootNavigator: false,
         builder: (BuildContext context) {
           return PersonNameEditForm(
             personId: personId,

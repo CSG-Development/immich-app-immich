@@ -23,7 +23,9 @@ extension LogOnError<T> on AsyncValue<T> {
 
       if (!skip) {
         return onLoading?.call() ??
-            const Center(child: ImmichLoadingIndicator());
+            const Center(
+              child: ImmichLoadingIndicator(),
+            );
       }
     }
 

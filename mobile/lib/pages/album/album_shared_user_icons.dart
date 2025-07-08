@@ -36,7 +36,7 @@ class AlbumSharedUserIcons extends HookConsumerWidget {
       child: SizedBox(
         height: 50,
         child: ListView.builder(
-          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          padding: const EdgeInsets.only(left: 16),
           scrollDirection: Axis.horizontal,
           itemBuilder: ((context, index) {
             return Padding(

@@ -31,7 +31,7 @@ export class ActivityService extends BaseService {
 
   async getStatistics(auth: AuthDto, dto: ActivityDto): Promise<ActivityStatisticsResponseDto> {
     await this.requireAccess({ auth, permission: Permission.ALBUM_READ, ids: [dto.albumId] });
-    return await this.activityRepository.getStatistics({ albumId: dto.albumId, assetId: dto.assetId });
+    return { comments: await this.activityRepository.getStatistics({ albumId: dto.albumId, assetId: dto.assetId }) };
   }
 
   async create(auth: AuthDto, dto: ActivityCreateDto): Promise<MaybeDuplicate<ActivityResponseDto>> {

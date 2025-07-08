@@ -17,7 +17,6 @@ class SessionResponseDto {
     required this.current,
     required this.deviceOS,
     required this.deviceType,
-    this.expiresAt,
     required this.id,
     required this.updatedAt,
   });
@@ -30,14 +29,6 @@ class SessionResponseDto {
 
   String deviceType;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? expiresAt;
-
   String id;
 
   String updatedAt;
@@ -48,7 +39,6 @@ class SessionResponseDto {
     other.current == current &&
     other.deviceOS == deviceOS &&
     other.deviceType == deviceType &&
-    other.expiresAt == expiresAt &&
     other.id == id &&
     other.updatedAt == updatedAt;
 
@@ -59,12 +49,11 @@ class SessionResponseDto {
     (current.hashCode) +
     (deviceOS.hashCode) +
     (deviceType.hashCode) +
-    (expiresAt == null ? 0 : expiresAt!.hashCode) +
     (id.hashCode) +
     (updatedAt.hashCode);
 
   @override
-  String toString() => 'SessionResponseDto[createdAt=$createdAt, current=$current, deviceOS=$deviceOS, deviceType=$deviceType, expiresAt=$expiresAt, id=$id, updatedAt=$updatedAt]';
+  String toString() => 'SessionResponseDto[createdAt=$createdAt, current=$current, deviceOS=$deviceOS, deviceType=$deviceType, id=$id, updatedAt=$updatedAt]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -72,11 +61,6 @@ class SessionResponseDto {
       json[r'current'] = this.current;
       json[r'deviceOS'] = this.deviceOS;
       json[r'deviceType'] = this.deviceType;
-    if (this.expiresAt != null) {
-      json[r'expiresAt'] = this.expiresAt;
-    } else {
-    //  json[r'expiresAt'] = null;
-    }
       json[r'id'] = this.id;
       json[r'updatedAt'] = this.updatedAt;
     return json;
@@ -95,7 +79,6 @@ class SessionResponseDto {
         current: mapValueOfType<bool>(json, r'current')!,
         deviceOS: mapValueOfType<String>(json, r'deviceOS')!,
         deviceType: mapValueOfType<String>(json, r'deviceType')!,
-        expiresAt: mapValueOfType<String>(json, r'expiresAt'),
         id: mapValueOfType<String>(json, r'id')!,
         updatedAt: mapValueOfType<String>(json, r'updatedAt')!,
       );

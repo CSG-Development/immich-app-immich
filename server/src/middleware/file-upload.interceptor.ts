@@ -88,8 +88,7 @@ export class FileUploadInterceptor implements NestInterceptor {
     if (handler) {
       await new Promise<void>((resolve, reject) => {
         const next: NextFunction = (error) => (error ? reject(transformException(error)) : resolve());
-        const maybePromise = handler(context_.getRequest(), context_.getResponse(), next);
-        Promise.resolve(maybePromise).catch((error) => reject(error));
+        handler(context_.getRequest(), context_.getResponse(), next);
       });
     } else {
       this.logger.warn(`Skipping invalid file upload route: ${route}`);

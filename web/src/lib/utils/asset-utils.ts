@@ -6,11 +6,8 @@ import { notificationController, NotificationType } from '$lib/components/shared
 import { AppRoute } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { downloadManager } from '$lib/managers/download-manager.svelte';
-import type { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
-import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
-import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
 import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
+import { assetsSnapshot, isSelectingAllAssets, type AssetStore } from '$lib/stores/assets-store.svelte';
 import { preferences } from '$lib/stores/user.store';
 import { downloadRequest, withError } from '$lib/utils';
 import { createAlbum } from '$lib/utils/album-utils';
@@ -20,7 +17,6 @@ import { navigate } from '$lib/utils/navigation';
 import {
   addAssetsToAlbum as addAssets,
   AssetVisibility,
-  bulkTagAssets,
   createStack,
   deleteAssets,
   deleteStacks,
@@ -28,6 +24,7 @@ import {
   getBaseUrl,
   getDownloadInfo,
   getStack,
+  tagAssets as tagAllAssets,
   untagAssets,
   updateAsset,
   updateAssets,
@@ -53,20 +50,16 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
     key: authManager.key,
   });
   const count = result.filter(({ success }) => success).length;
-  const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
   const $t = get(t);
 
   if (showNotification) {
-    let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
-    if (count > 0) {
-      message = $t('assets_added_to_album_count', { values: { count } });
-    } else if (duplicateErrorCount > 0) {
-      message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
-    }
     notificationController.show({
       type: NotificationType.Info,
       timeout: 5000,
-      message,
+      message:
+        count > 0
+          ? $t('assets_added_to_album_count', { values: { count } })
+          : $t('assets_were_part_of_album_count', { values: { count: assetIds.length } }),
       button: {
         text: $t('view_album'),
         onClick() {
@@ -86,7 +79,9 @@ export const tagAssets = async ({
   tagIds: string[];
   showNotification?: boolean;
 }) => {
-  await bulkTagAssets({ tagBulkAssetsDto: { tagIds, assetIds } });
+  for (const tagId of tagIds) {
+    await tagAllAssets({ id: tagId, bulkIdsDto: { ids: assetIds } });
+  }
 
   if (showNotification) {
     const $t = await getFormatter();
@@ -130,37 +125,23 @@ export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[])
   }
   const $t = get(t);
   // for reasons beyond me <ComponentProps<typeof FormatBoldMessage>> doesn't work, even though it's (afaik) exactly this object
-  if (album.assets.length === 0) {
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message: $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } }),
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
-        },
+  notificationController.show<{ key: Translations; values: InterpolationValues }>({
+    type: NotificationType.Info,
+    timeout: 5000,
+    component: {
+      type: FormatBoldMessage,
+      props: {
+        key: 'assets_added_to_name_count',
+        values: { count: assetIds.length, name: albumName, hasName: !!albumName },
       },
-    });
-  } else {
-    notificationController.show<{ key: Translations; values: InterpolationValues }>({
-      type: NotificationType.Info,
-      timeout: 5000,
-      component: {
-        type: FormatBoldMessage,
-        props: {
-          key: 'assets_added_to_name_count',
-          values: { count: album.assets.length, name: albumName, hasName: !!albumName },
-        },
+    },
+    button: {
+      text: $t('view_album'),
+      onClick() {
+        return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
       },
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
-        },
-      },
-    });
-  }
+    },
+  });
   return album;
 };
 
@@ -386,7 +367,7 @@ export const getAssetType = (type: AssetTypeEnum) => {
   }
 };
 
-export const getSelectedAssets = (assets: TimelineAsset[], user: UserResponseDto | null): string[] => {
+export const getSelectedAssets = (assets: AssetResponseDto[], user: UserResponseDto | null): string[] => {
   const ids = [...assets].filter((a) => user && a.ownerId === user.id).map((a) => a.id);
 
   const numberOfIssues = [...assets].filter((a) => user && a.ownerId !== user.id).length;
@@ -405,7 +386,7 @@ export type StackResponse = {
   toDeleteIds: string[];
 };
 
-export const stackAssets = async (assets: { id: string }[], showNotification = true): Promise<StackResponse> => {
+export const stackAssets = async (assets: AssetResponseDto[], showNotification = true): Promise<StackResponse> => {
   if (assets.length < 2) {
     return { stack: undefined, toDeleteIds: [] };
   }
@@ -423,6 +404,10 @@ export const stackAssets = async (assets: { id: string }[], showNotification = t
           onClick: () => navigate({ targetRoute: 'current', assetId: stack.primaryAssetId }),
         },
       });
+    }
+
+    for (const [index, asset] of assets.entries()) {
+      asset.stack = index === 0 ? { id: stack.id, assetCount: stack.assets.length, primaryAssetId: asset.id } : null;
     }
 
     return {
@@ -485,7 +470,7 @@ export const keepThisDeleteOthers = async (keepAsset: AssetResponseDto, stack: S
   }
 };
 
-export const selectAllAssets = async (timelineManager: TimelineManager, assetInteraction: AssetInteraction) => {
+export const selectAllAssets = async (assetStore: AssetStore, assetInteraction: AssetInteraction) => {
   if (get(isSelectingAllAssets)) {
     // Selection is already ongoing
     return;
@@ -493,16 +478,16 @@ export const selectAllAssets = async (timelineManager: TimelineManager, assetInt
   isSelectingAllAssets.set(true);
 
   try {
-    for (const monthGroup of timelineManager.months) {
-      await timelineManager.loadMonthGroup(monthGroup.yearMonth);
+    for (const bucket of assetStore.buckets) {
+      await assetStore.loadBucket(bucket.bucketDate);
 
       if (!get(isSelectingAllAssets)) {
         assetInteraction.clearMultiselect();
         break; // Cancelled
       }
-      assetInteraction.selectAssets(assetsSnapshot([...monthGroup.assetsIterator()]));
+      assetInteraction.selectAssets(assetsSnapshot(bucket.getAssets()));
 
-      for (const dateGroup of monthGroup.dayGroups) {
+      for (const dateGroup of bucket.dateGroups) {
         assetInteraction.addGroupToMultiselectGroup(dateGroup.groupTitle);
       }
     }
@@ -541,29 +526,30 @@ export const toggleArchive = async (asset: AssetResponseDto) => {
   return asset;
 };
 
-export const archiveAssets = async (assets: { id: string }[], visibility: AssetVisibility) => {
+export const archiveAssets = async (assets: AssetResponseDto[], archive: boolean) => {
+  const isArchived = archive;
   const ids = assets.map(({ id }) => id);
   const $t = get(t);
 
   try {
     if (ids.length > 0) {
       await updateAssets({
-        assetBulkUpdateDto: { ids, visibility },
+        assetBulkUpdateDto: { ids, visibility: isArchived ? AssetVisibility.Archive : AssetVisibility.Timeline },
       });
     }
 
+    for (const asset of assets) {
+      asset.isArchived = isArchived;
+    }
+
     notificationController.show({
-      message:
-        visibility === AssetVisibility.Archive
-          ? $t('archived_count', { values: { count: ids.length } })
-          : $t('unarchived_count', { values: { count: ids.length } }),
+      message: isArchived
+        ? $t('archived_count', { values: { count: ids.length } })
+        : $t('unarchived_count', { values: { count: ids.length } }),
       type: NotificationType.Info,
     });
   } catch (error) {
-    handleError(
-      error,
-      $t('errors.unable_to_archive_unarchive', { values: { archived: visibility === AssetVisibility.Archive } }),
-    );
+    handleError(error, $t('errors.unable_to_archive_unarchive', { values: { archived: isArchived } }));
   }
 
   return ids;

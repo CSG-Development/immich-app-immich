@@ -30,12 +30,15 @@ class AlbumDateRange extends ConsumerWidget {
     final (startDate, endDate, shared) = data;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0),
+      padding: shared
+          ? const EdgeInsets.only(
+              left: 16.0,
+              bottom: 0.0,
+            )
+          : const EdgeInsets.only(left: 16.0, bottom: 8.0),
       child: Text(
         _getDateRangeText(startDate, endDate),
-        style: context.textTheme.labelLarge?.copyWith(
-          color: context.colorScheme.onSurfaceVariant,
-        ),
+        style: context.textTheme.labelLarge,
       ),
     );
   }

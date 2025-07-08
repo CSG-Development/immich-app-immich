@@ -8,11 +8,9 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/albums/asset_selection_page_result.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/album/album_title.provider.dart';
-import 'package:immich_mobile/providers/album/album_viewer.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/album/album_action_filled_button.dart';
 import 'package:immich_mobile/widgets/album/album_title_text_field.dart';
-import 'package:immich_mobile/widgets/album/album_viewer_editable_description.dart';
 import 'package:immich_mobile/widgets/album/shared_album_thumbnail_image.dart';
 
 @RoutePage()
@@ -30,7 +28,6 @@ class CreateAlbumPage extends HookConsumerWidget {
     final albumTitleController =
         useTextEditingController.fromValue(TextEditingValue.empty);
     final albumTitleTextFieldFocusNode = useFocusNode();
-    final albumDescriptionTextFieldFocusNode = useFocusNode();
     final isAlbumTitleTextFieldFocus = useState(false);
     final isAlbumTitleEmpty = useState(true);
     final selectedAssets = useState<Set<Asset>>(
@@ -39,7 +36,6 @@ class CreateAlbumPage extends HookConsumerWidget {
 
     void onBackgroundTapped() {
       albumTitleTextFieldFocusNode.unfocus();
-      albumDescriptionTextFieldFocusNode.unfocus();
       isAlbumTitleTextFieldFocus.value = false;
 
       if (albumTitleController.text.isEmpty) {
@@ -77,19 +73,6 @@ class CreateAlbumPage extends HookConsumerWidget {
           albumTitleTextFieldFocusNode: albumTitleTextFieldFocusNode,
           albumTitleController: albumTitleController,
           isAlbumTitleTextFieldFocus: isAlbumTitleTextFieldFocus,
-        ),
-      );
-    }
-
-    buildDescriptionInputField() {
-      return Padding(
-        padding: const EdgeInsets.only(
-          right: 10,
-          left: 10,
-        ),
-        child: AlbumViewerEditableDescription(
-          albumDescription: '',
-          descriptionFocusNode: albumDescriptionTextFieldFocusNode,
         ),
       );
     }
@@ -195,18 +178,18 @@ class CreateAlbumPage extends HookConsumerWidget {
       return const SliverToBoxAdapter();
     }
 
-    Future<void> createAlbum() async {
+    createNonSharedAlbum() async {
       onBackgroundTapped();
       var newAlbum = await ref.watch(albumProvider.notifier).createAlbum(
-            ref.read(albumTitleProvider),
+            ref.watch(albumTitleProvider),
             selectedAssets.value,
           );
 
       if (newAlbum != null) {
-        ref.read(albumProvider.notifier).refreshRemoteAlbums();
+        ref.watch(albumProvider.notifier).refreshRemoteAlbums();
         selectedAssets.value = {};
-        ref.read(albumTitleProvider.notifier).clearAlbumTitle();
-        ref.read(albumViewerProvider.notifier).disableEditAlbum();
+        ref.watch(albumTitleProvider.notifier).clearAlbumTitle();
+
         context.replaceRoute(AlbumViewerRoute(albumId: newAlbum.id));
       }
     }
@@ -228,8 +211,9 @@ class CreateAlbumPage extends HookConsumerWidget {
         ).tr(),
         actions: [
           TextButton(
-            onPressed:
-                albumTitleController.text.isNotEmpty ? createAlbum : null,
+            onPressed: albumTitleController.text.isNotEmpty
+                ? createNonSharedAlbum
+                : null,
             child: Text(
               'create'.tr(),
               style: TextStyle(
@@ -253,11 +237,10 @@ class CreateAlbumPage extends HookConsumerWidget {
               pinned: true,
               floating: false,
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(125.0),
+                preferredSize: const Size.fromHeight(96.0),
                 child: Column(
                   children: [
                     buildTitleInputField(),
-                    buildDescriptionInputField(),
                     if (selectedAssets.value.isNotEmpty) buildControlButton(),
                   ],
                 ),

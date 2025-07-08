@@ -42,7 +42,7 @@ ThemeData getThemeData({
       titleTextStyle: TextStyle(
         color: colorScheme.primary,
         fontFamily: _getFontFamilyFromLocale(locale),
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
         fontSize: 18,
       ),
       backgroundColor:
@@ -54,28 +54,28 @@ ThemeData getThemeData({
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontSize: 26,
+        fontWeight: FontWeight.bold,
       ),
       displayMedium: TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
       displaySmall: TextStyle(
         fontSize: 12,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
       titleSmall: TextStyle(
         fontSize: 16.0,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
       titleMedium: TextStyle(
         fontSize: 18.0,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
       titleLarge: TextStyle(
         fontSize: 26.0,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(

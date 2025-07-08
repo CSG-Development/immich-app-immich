@@ -18,7 +18,6 @@ class AlbumViewerAppbar extends HookConsumerWidget
     super.key,
     required this.userId,
     required this.titleFocusNode,
-    required this.descriptionFocusNode,
     this.onAddPhotos,
     this.onAddUsers,
     required this.onActivities,
@@ -26,7 +25,6 @@ class AlbumViewerAppbar extends HookConsumerWidget
 
   final String userId;
   final FocusNode titleFocusNode;
-  final FocusNode descriptionFocusNode;
   final void Function()? onAddPhotos;
   final void Function()? onAddUsers;
   final void Function() onActivities;
@@ -50,7 +48,6 @@ class AlbumViewerAppbar extends HookConsumerWidget
 
     final albumViewer = ref.watch(albumViewerProvider);
     final newAlbumTitle = albumViewer.editTitleText;
-    final newAlbumDescription = albumViewer.editDescriptionText;
     final isEditAlbum = albumViewer.isEditAlbum;
 
     final comments = album.shared
@@ -280,37 +277,20 @@ class AlbumViewerAppbar extends HookConsumerWidget
       if (isEditAlbum) {
         return IconButton(
           onPressed: () async {
-            if (newAlbumTitle.isNotEmpty) {
-              bool isSuccess = await ref
-                  .watch(albumViewerProvider.notifier)
-                  .changeAlbumTitle(album, newAlbumTitle);
-              if (!isSuccess) {
-                ImmichToast.show(
-                  context: context,
-                  msg: "album_viewer_appbar_share_err_title".tr(),
-                  gravity: ToastGravity.BOTTOM,
-                  toastType: ToastType.error,
-                );
-              }
-              titleFocusNode.unfocus();
-            } else if (newAlbumDescription.isNotEmpty) {
-              bool isSuccessDescription = await ref
-                  .watch(albumViewerProvider.notifier)
-                  .changeAlbumDescription(album, newAlbumDescription);
-              if (!isSuccessDescription) {
-                ImmichToast.show(
-                  context: context,
-                  msg: "album_viewer_appbar_share_err_description".tr(),
-                  gravity: ToastGravity.BOTTOM,
-                  toastType: ToastType.error,
-                );
-              }
-              descriptionFocusNode.unfocus();
-            } else {
-              titleFocusNode.unfocus();
-              descriptionFocusNode.unfocus();
-              ref.read(albumViewerProvider.notifier).disableEditAlbum();
+            bool isSuccess = await ref
+                .watch(albumViewerProvider.notifier)
+                .changeAlbumTitle(album, newAlbumTitle);
+
+            if (!isSuccess) {
+              ImmichToast.show(
+                context: context,
+                msg: "album_viewer_appbar_share_err_title".tr(),
+                gravity: ToastGravity.BOTTOM,
+                toastType: ToastType.error,
+              );
             }
+
+            titleFocusNode.unfocus();
           },
           icon: const Icon(Icons.check_rounded),
           splashRadius: 25,
@@ -326,7 +306,6 @@ class AlbumViewerAppbar extends HookConsumerWidget
 
     return AppBar(
       elevation: 0,
-      backgroundColor: context.scaffoldBackgroundColor,
       leading: buildLeadingButton(),
       centerTitle: false,
       actions: [

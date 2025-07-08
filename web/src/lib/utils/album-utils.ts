@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { resolveRoute } from '$app/paths';
+import { dialogController } from '$lib/components/shared-components/dialog/dialog';
 import { AppRoute } from '$lib/constants';
-import { modalManager } from '$lib/managers/modal-manager.svelte';
 import {
   AlbumFilter,
   AlbumGroupBy,
@@ -214,7 +214,7 @@ export const confirmAlbumDelete = async (album: AlbumResponseDto) => {
   const description = $t('album_delete_confirmation_description');
   const prompt = `${confirmation} ${description}`;
 
-  return modalManager.showDialog({ prompt });
+  return dialogController.show({ prompt });
 };
 
 interface AlbumSortOption {

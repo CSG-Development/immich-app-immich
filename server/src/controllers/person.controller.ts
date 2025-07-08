@@ -27,9 +27,7 @@ export class PersonController {
   constructor(
     private service: PersonService,
     private logger: LoggingRepository,
-  ) {
-    this.logger.setContext(PersonController.name);
-  }
+  ) {}
 
   @Get()
   @Authenticated({ permission: Permission.PERSON_READ })

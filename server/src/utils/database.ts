@@ -18,6 +18,7 @@ import postgres, { Notice } from 'postgres';
 import { columns, Exif, Person } from 'src/database';
 import { DB } from 'src/db';
 import { AssetFileType, AssetVisibility, DatabaseExtension, DatabaseSslMode } from 'src/enum';
+import { TimeBucketSize } from 'src/repositories/asset.repository';
 import { AssetSearchBuilderOptions } from 'src/repositories/search.repository';
 import { DatabaseConnectionParams, VectorExtension } from 'src/types';
 
@@ -152,12 +153,17 @@ export function toJson<DB, TB extends keyof DB & string, T extends TB | Expressi
 }
 
 export const ASSET_CHECKSUM_CONSTRAINT = 'UQ_assets_owner_checksum';
+// TODO come up with a better query that only selects the fields we need
 
 export function withDefaultVisibility<O>(qb: SelectQueryBuilder<DB, 'assets', O>) {
-  return qb.where('assets.visibility', 'in', [sql.lit(AssetVisibility.ARCHIVE), sql.lit(AssetVisibility.TIMELINE)]);
+  return qb.where((qb) =>
+    qb.or([
+      qb('assets.visibility', '=', AssetVisibility.TIMELINE),
+      qb('assets.visibility', '=', AssetVisibility.ARCHIVE),
+    ]),
+  );
 }
 
-// TODO come up with a better query that only selects the fields we need
 export function withExif<O>(qb: SelectQueryBuilder<DB, 'assets', O>) {
   return qb
     .leftJoin('exif', 'assets.id', 'exif.assetId')
@@ -227,20 +233,6 @@ export function hasPeople<O>(qb: SelectQueryBuilder<DB, 'assets', O>, personIds:
   );
 }
 
-export function inAlbums<O>(qb: SelectQueryBuilder<DB, 'assets', O>, albumIds: string[]) {
-  return qb.innerJoin(
-    (eb) =>
-      eb
-        .selectFrom('albums_assets_assets')
-        .select('assetsId')
-        .where('albumsId', '=', anyUuid(albumIds!))
-        .groupBy('assetsId')
-        .having((eb) => eb.fn.count('albumsId').distinct(), '=', albumIds.length)
-        .as('has_album'),
-    (join) => join.onRef('has_album.assetsId', '=', 'assets.id'),
-  );
-}
-
 export function hasTags<O>(qb: SelectQueryBuilder<DB, 'assets', O>, tagIds: string[]) {
   return qb.innerJoin(
     (eb) =>
@@ -278,8 +270,8 @@ export function withTags(eb: ExpressionBuilder<DB, 'assets'>) {
   ).as('tags');
 }
 
-export function truncatedDate<O>() {
-  return sql<O>`date_trunc(${sql.lit('MONTH')}, "localDateTime" AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'`;
+export function truncatedDate<O>(size: TimeBucketSize) {
+  return sql<O>`date_trunc(${size}, "localDateTime" at time zone 'UTC') at time zone 'UTC'`;
 }
 
 export function withTagId<O>(qb: SelectQueryBuilder<DB, 'assets', O>, tagId: string) {
@@ -293,7 +285,6 @@ export function withTagId<O>(qb: SelectQueryBuilder<DB, 'assets', O>, tagId: str
     ),
   );
 }
-
 const joinDeduplicationPlugin = new DeduplicateJoinsPlugin();
 /** TODO: This should only be used for search-related queries, not as a general purpose query builder */
 
@@ -304,8 +295,8 @@ export function searchAssetBuilder(kysely: Kysely<DB>, options: AssetSearchBuild
   return kysely
     .withPlugin(joinDeduplicationPlugin)
     .selectFrom('assets')
+    .selectAll('assets')
     .where('assets.visibility', '=', visibility)
-    .$if(!!options.albumIds && options.albumIds.length > 0, (qb) => inAlbums(qb, options.albumIds!))
     .$if(!!options.tagIds && options.tagIds.length > 0, (qb) => hasTags(qb, options.tagIds!))
     .$if(!!options.personIds && options.personIds.length > 0, (qb) => hasPeople(qb, options.personIds!))
     .$if(!!options.createdBefore, (qb) => qb.where('assets.createdAt', '<=', options.createdBefore!))
@@ -382,7 +373,7 @@ export function searchAssetBuilder(kysely: Kysely<DB>, options: AssetSearchBuild
     .$if(options.isMotion !== undefined, (qb) =>
       qb.where('assets.livePhotoVideoId', options.isMotion ? 'is not' : 'is', null),
     )
-    .$if(!!options.isNotInAlbum && (!options.albumIds || options.albumIds.length === 0), (qb) =>
+    .$if(!!options.isNotInAlbum, (qb) =>
       qb.where((eb) =>
         eb.not(eb.exists((eb) => eb.selectFrom('albums_assets_assets').whereRef('assetsId', '=', 'assets.id'))),
       ),
@@ -392,28 +383,14 @@ export function searchAssetBuilder(kysely: Kysely<DB>, options: AssetSearchBuild
     .$if(!options.withDeleted, (qb) => qb.where('assets.deletedAt', 'is', null));
 }
 
-export type ReindexVectorIndexOptions = { indexName: string; lists?: number };
+type VectorIndexOptions = { vectorExtension: VectorExtension; table: string; indexName: string };
 
-type VectorIndexQueryOptions = { table: string; vectorExtension: VectorExtension } & ReindexVectorIndexOptions;
-
-export function vectorIndexQuery({ vectorExtension, table, indexName, lists }: VectorIndexQueryOptions): string {
+export function vectorIndexQuery({ vectorExtension, table, indexName }: VectorIndexOptions): string {
   switch (vectorExtension) {
-    case DatabaseExtension.VECTORCHORD: {
-      return `
-        CREATE INDEX IF NOT EXISTS ${indexName} ON ${table} USING vchordrq (embedding vector_cosine_ops) WITH (options = $$
-        residual_quantization = false
-        [build.internal]
-        lists = [${lists ?? 1}]
-        spherical_centroids = true
-        build_threads = 4
-        sampling_factor = 1024
-        $$)`;
-    }
     case DatabaseExtension.VECTORS: {
       return `
         CREATE INDEX IF NOT EXISTS ${indexName} ON ${table}
         USING vectors (embedding vector_cos_ops) WITH (options = $$
-        optimizing.optimizing_threads = 4
         [indexing.hnsw]
         m = 16
         ef_construction = 300

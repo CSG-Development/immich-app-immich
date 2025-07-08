@@ -123,7 +123,7 @@ The default configuration looks like this:
     "buttonText": "Login with OAuth",
     "clientId": "",
     "clientSecret": "",
-    "defaultStorageQuota": null,
+    "defaultStorageQuota": 0,
     "enabled": false,
     "issuerUrl": "",
     "mobileOverrideEnabled": false,

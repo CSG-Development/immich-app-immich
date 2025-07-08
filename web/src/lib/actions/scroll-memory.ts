@@ -1,4 +1,3 @@
-import { resolveRoute } from '$app/paths';
 import { navigating } from '$app/stores';
 import { AppRoute, SessionStorageKey } from '$lib/constants';
 import { handlePromiseError } from '$lib/utils';
@@ -74,7 +73,7 @@ export function scrollMemory(
 export function scrollMemoryClearer(_node: HTMLElement, { routeStartsWith, beforeClear }: Options) {
   const unsubscribeNavigating = navigating.subscribe((navigation) => {
     // Forget scroll position from main page if going somewhere else.
-    if (navigation?.to && !navigation?.to.url.pathname.startsWith(resolveRoute(routeStartsWith, {}))) {
+    if (navigation?.to && !navigation?.to.url.pathname.startsWith(routeStartsWith)) {
       beforeClear?.();
       sessionStorage.removeItem(SessionStorageKey.SCROLL_POSITION);
     }

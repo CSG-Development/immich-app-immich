@@ -202,6 +202,7 @@ describe('/asset', () => {
         {
           name: 'Marie Curie',
           birthDate: null,
+          thumbnailPath: '',
           isHidden: false,
           faces: [
             {
@@ -218,6 +219,7 @@ describe('/asset', () => {
         {
           name: 'Pierre Curie',
           birthDate: null,
+          thumbnailPath: '',
           isHidden: false,
           faces: [
             {

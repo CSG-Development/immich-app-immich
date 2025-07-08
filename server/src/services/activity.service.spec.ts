@@ -54,13 +54,13 @@ describe(ActivityService.name, () => {
   });
 
   describe('getStatistics', () => {
-    it('should get the comment and like count', async () => {
+    it('should get the comment count', async () => {
       const [albumId, assetId] = newUuids();
 
-      mocks.activity.getStatistics.mockResolvedValue({ comments: 1, likes: 3 });
+      mocks.activity.getStatistics.mockResolvedValue(1);
       mocks.access.album.checkOwnerAccess.mockResolvedValue(new Set([albumId]));
 
-      await expect(sut.getStatistics(factory.auth(), { assetId, albumId })).resolves.toEqual({ comments: 1, likes: 3 });
+      await expect(sut.getStatistics(factory.auth(), { assetId, albumId })).resolves.toEqual({ comments: 1 });
     });
   });
 

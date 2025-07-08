@@ -9,6 +9,7 @@ import { NotificationSearchDto } from 'src/dtos/notification.dto';
 export class NotificationRepository {
   constructor(@InjectKysely() private db: Kysely<DB>) {}
 
+  @GenerateSql({ params: [DummyValue.UUID] })
   cleanup() {
     return this.db
       .deleteFrom('notifications')

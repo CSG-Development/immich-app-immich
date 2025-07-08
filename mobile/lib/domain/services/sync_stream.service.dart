@@ -1,8 +1,10 @@
+// ignore_for_file: avoid-passing-async-when-sync-expected
+
 import 'dart:async';
 
 import 'package:immich_mobile/domain/interfaces/sync_api.interface.dart';
+import 'package:immich_mobile/domain/interfaces/sync_stream.interface.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
-import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -10,12 +12,12 @@ class SyncStreamService {
   final Logger _logger = Logger('SyncStreamService');
 
   final ISyncApiRepository _syncApiRepository;
-  final SyncStreamRepository _syncStreamRepository;
+  final ISyncStreamRepository _syncStreamRepository;
   final bool Function()? _cancelChecker;
 
   SyncStreamService({
     required ISyncApiRepository syncApiRepository,
-    required SyncStreamRepository syncStreamRepository,
+    required ISyncStreamRepository syncStreamRepository,
     bool Function()? cancelChecker,
   })  : _syncApiRepository = syncApiRepository,
         _syncStreamRepository = syncStreamRepository,
@@ -57,9 +59,11 @@ class SyncStreamService {
 
   Future<void> _handleSyncData(
     SyncEntityType type,
-    Iterable<Object> data,
+    // ignore: avoid-dynamic
+    Iterable<dynamic> data,
   ) async {
     _logger.fine("Processing sync data for $type of length ${data.length}");
+    // ignore: prefer-switch-expression
     switch (type) {
       case SyncEntityType.userV1:
         return _syncStreamRepository.updateUsersV1(data.cast());

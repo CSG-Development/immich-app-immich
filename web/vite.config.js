@@ -1,6 +1,5 @@
 import { enhancedImages } from '@sveltejs/enhanced-img';
 import { sveltekit } from '@sveltejs/kit/vite';
-import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import path from 'node:path';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -36,8 +35,6 @@ export default defineConfig({
     allowedHosts: true,
   },
   plugins: [
-    enhancedImages(),
-    tailwindcss(),
     sveltekit(),
     process.env.BUILD_STATS === 'true'
       ? visualizer({
@@ -45,6 +42,7 @@ export default defineConfig({
           filename: 'stats.html',
         })
       : undefined,
+    enhancedImages(),
     svelteTesting(),
   ],
   optimizeDeps: {

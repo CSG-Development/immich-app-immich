@@ -118,7 +118,7 @@ describe('/admin/users', () => {
       });
     }
 
-    it('should accept `isAdmin`', async () => {
+    it('should ignore `isAdmin`', async () => {
       const { status, body } = await request(app)
         .post(`/admin/users`)
         .send({
@@ -130,7 +130,7 @@ describe('/admin/users', () => {
         .set('Authorization', `Bearer ${admin.accessToken}`);
       expect(body).toMatchObject({
         email: 'user5@immich.cloud',
-        isAdmin: true,
+        isAdmin: false,
         shouldChangePassword: true,
       });
       expect(status).toBe(201);
@@ -163,15 +163,14 @@ describe('/admin/users', () => {
       });
     }
 
-    it('should allow a non-admin to become an admin', async () => {
-      const user = await utils.userSetup(admin.accessToken, createUserDto.create('admin2'));
+    it('should not allow a non-admin to become an admin', async () => {
       const { status, body } = await request(app)
-        .put(`/admin/users/${user.userId}`)
+        .put(`/admin/users/${nonAdmin.userId}`)
         .send({ isAdmin: true })
         .set('Authorization', `Bearer ${admin.accessToken}`);
 
       expect(status).toBe(200);
-      expect(body).toMatchObject({ isAdmin: true });
+      expect(body).toMatchObject({ isAdmin: false });
     });
 
     it('ignores updates to profileImagePath', async () => {

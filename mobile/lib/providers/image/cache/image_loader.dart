@@ -37,7 +37,8 @@ class ImageLoader {
       } else if (result is FileInfo) {
         // We have the file
         final buffer = await ui.ImmutableBuffer.fromFilePath(result.file.path);
-        return decode(buffer);
+        final decoded = await decode(buffer);
+        return decoded;
       }
     }
 

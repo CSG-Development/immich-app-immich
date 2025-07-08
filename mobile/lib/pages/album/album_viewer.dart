@@ -10,12 +10,10 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/albums/asset_selection_page_result.model.dart';
 import 'package:immich_mobile/pages/album/album_control_button.dart';
 import 'package:immich_mobile/pages/album/album_date_range.dart';
-import 'package:immich_mobile/pages/album/album_description.dart';
 import 'package:immich_mobile/pages/album/album_shared_user_icons.dart';
 import 'package:immich_mobile/pages/album/album_title.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/album/current_album.provider.dart';
-import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/timeline.provider.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
@@ -37,7 +35,6 @@ class AlbumViewer extends HookConsumerWidget {
     }
 
     final titleFocusNode = useFocusNode();
-    final descriptionFocusNode = useFocusNode();
     final userId = ref.watch(authProvider).userId;
     final isMultiselecting = ref.watch(multiselectProvider);
     final isProcessing = useProcessingOverlay();
@@ -96,7 +93,6 @@ class AlbumViewer extends HookConsumerWidget {
 
     onActivitiesPressed() {
       if (album.remoteId != null) {
-        ref.read(currentAssetProvider.notifier).set(null);
         context.pushRoute(
           const ActivitiesRoute(),
         );
@@ -108,44 +104,23 @@ class AlbumViewer extends HookConsumerWidget {
         MultiselectGrid(
           key: const ValueKey("albumViewerMultiselectGrid"),
           renderListProvider: albumTimelineProvider(album.id),
-          topWidget: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  context.primaryColor.withValues(alpha: 0.06),
-                  context.primaryColor.withValues(alpha: 0.04),
-                  Colors.indigo.withValues(alpha: 0.02),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.3, 0.7, 1.0],
+          topWidget: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AlbumTitle(
+                key: const ValueKey("albumTitle"),
+                titleFocusNode: titleFocusNode,
               ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 32),
-                const AlbumDateRange(),
-                AlbumTitle(
-                  key: const ValueKey("albumTitle"),
-                  titleFocusNode: titleFocusNode,
+              const AlbumDateRange(),
+              const AlbumSharedUserIcons(),
+              if (album.isRemote)
+                AlbumControlButton(
+                  key: const ValueKey("albumControlButton"),
+                  onAddPhotosPressed: onAddPhotosPressed,
+                  onAddUsersPressed: onAddUsersPressed,
                 ),
-                AlbumDescription(
-                  key: const ValueKey("albumDescription"),
-                  descriptionFocusNode: descriptionFocusNode,
-                ),
-                const AlbumSharedUserIcons(),
-                if (album.isRemote)
-                  AlbumControlButton(
-                    key: const ValueKey("albumControlButton"),
-                    onAddPhotosPressed: onAddPhotosPressed,
-                    onAddUsersPressed: onAddUsersPressed,
-                  ),
-                const SizedBox(height: 8),
-              ],
-            ),
+            ],
           ),
           onRemoveFromAlbum: onRemoveFromAlbumPressed,
           editEnabled: album.ownerId == userId,
@@ -159,7 +134,6 @@ class AlbumViewer extends HookConsumerWidget {
           child: AlbumViewerAppbar(
             key: const ValueKey("albumViewerAppbar"),
             titleFocusNode: titleFocusNode,
-            descriptionFocusNode: descriptionFocusNode,
             userId: userId,
             onAddPhotos: onAddPhotosPressed,
             onAddUsers: onAddUsersPressed,

@@ -1,20 +1,20 @@
 <script lang="ts">
   import { resolveRoute } from '$app/paths';
+  import { page } from '$app/state';
   import { focusTrap } from '$lib/actions/focus-trap';
+  import Button from '$lib/components/elements/buttons/button.svelte';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import AvatarEditModal from '$lib/modals/AvatarEditModal.svelte';
-  import HelpAndFeedbackModal from '$lib/modals/HelpAndFeedbackModal.svelte';
   import { user } from '$lib/stores/user.store';
-  import { userInteraction } from '$lib/stores/user.svelte';
-  import { getAboutInfo, type ServerAboutResponseDto } from '@immich/sdk';
-  import { Button, IconButton } from '@immich/ui';
-  import { mdiCog, mdiLogout, mdiPencil } from '@mdi/js';
-  import { onMount } from 'svelte';
+  import { handleError } from '$lib/utils/handle-error';
+  import { deleteProfileImage, updateMyUser, type UserAvatarColor } from '@immich/sdk';
+  import { mdiCog, mdiLogout, mdiPencil, mdiWrench } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
+  import { NotificationType, notificationController } from '../notification/notification';
   import UserAvatar from '../user-avatar.svelte';
+  import AvatarSelector from './avatar-selector.svelte';
 
   interface Props {
     onLogout: () => void;
@@ -23,36 +23,48 @@
 
   let { onLogout, onClose = () => {} }: Props = $props();
 
-  let info: ServerAboutResponseDto | undefined = $state();
+  let isShowSelectAvatar = $state(false);
 
-  onMount(async () => {
-    info = userInteraction.aboutInfo ?? (await getAboutInfo());
-  });
+  const handleSaveProfile = async (color: UserAvatarColor) => {
+    try {
+      if ($user.profileImagePath !== '') {
+        await deleteProfileImage();
+      }
+
+      $user = await updateMyUser({ userUpdateMeDto: { avatarColor: color } });
+      isShowSelectAvatar = false;
+
+      notificationController.show({
+        message: $t('saved_profile'),
+        type: NotificationType.Info,
+      });
+    } catch (error) {
+      handleError(error, $t('errors.unable_to_save_profile'));
+    }
+  };
 </script>
 
 <div
   in:fade={{ duration: 100 }}
   out:fade={{ duration: 100 }}
   id="account-info-panel"
-  class="absolute z-1 end-[25px] top-[75px] w-[min(360px,100vw-50px)] rounded-3xl bg-gray-200 shadow-lg dark:border dark:border-immich-dark-gray dark:bg-immich-dark-gray"
+  class="absolute end-[25px] top-[75px] z-[100] w-[min(360px,100vw-50px)] rounded-3xl bg-gray-200 shadow-lg dark:border dark:border-immich-dark-gray dark:bg-immich-dark-gray"
   use:focusTrap
 >
   <div
-    class="mx-4 mt-4 flex flex-col items-center justify-center gap-4 rounded-t-3xl bg-white p-4 dark:bg-immich-dark-primary/10"
+    class="mx-4 mt-4 flex flex-col items-center justify-center gap-4 rounded-3xl bg-white p-4 dark:bg-immich-dark-primary/10"
   >
     <div class="relative">
       <UserAvatar user={$user} size="xl" />
-      <div class="absolute bottom-0 end-0 rounded-full w-6 h-6">
-        <IconButton
+      <div class="absolute z-10 bottom-0 end-0 rounded-full w-6 h-6">
+        <CircleIconButton
           color="primary"
           icon={mdiPencil}
-          aria-label={$t('edit_avatar')}
-          size="tiny"
-          shape="round"
-          onclick={async () => {
-            onClose();
-            await modalManager.show(AvatarEditModal);
-          }}
+          title={$t('edit_avatar')}
+          class="border"
+          size="12"
+          padding="2"
+          onclick={() => (isShowSelectAvatar = true)}
         />
       </div>
     </div>
@@ -67,11 +79,10 @@
       <Button
         href={resolveRoute(AppRoute.USER_SETTINGS, {})}
         onclick={onClose}
-        size="small"
-        color="secondary"
-        variant="ghost"
-        shape="round"
-        class="border dark:border-immich-dark-gray dark:bg-gray-500 dark:hover:bg-immich-dark-primary/50 hover:bg-immich-primary/10 dark:text-white"
+        color="dark-gray"
+        size="sm"
+        shadow={false}
+        border
       >
         <div class="flex place-content-center place-items-center text-center gap-2 px-2">
           <Icon path={mdiCog} size="18" ariaHidden />
@@ -82,25 +93,17 @@
   </div>
 
   <div class="mb-4 flex flex-col">
-    <Button
-      class="m-1 mx-4 rounded-none rounded-b-3xl bg-white p-3 dark:bg-immich-dark-primary/10"
-      onclick={onLogout}
-      leadingIcon={mdiLogout}
-      variant="ghost"
-      color="secondary">{$t('sign_out')}</Button
-    >
-
     <button
       type="button"
-      class="text-center mt-4 underline text-xs text-immich-primary dark:text-immich-dark-primary"
-      onclick={async () => {
-        onClose();
-        if (info) {
-          await modalManager.show(HelpAndFeedbackModal, { info });
-        }
-      }}
+      class="flex w-full place-content-center place-items-center gap-2 py-3 font-medium text-gray-500 hover:bg-immich-primary/10 dark:text-gray-300"
+      onclick={onLogout}
     >
-      {$t('support_and_feedback')}
-    </button>
+      <Icon path={mdiLogout} size={24} />
+      {$t('sign_out')}</button
+    >
   </div>
 </div>
+
+{#if isShowSelectAvatar}
+  <AvatarSelector user={$user} onClose={() => (isShowSelectAvatar = false)} onChoose={handleSaveProfile} />
+{/if}

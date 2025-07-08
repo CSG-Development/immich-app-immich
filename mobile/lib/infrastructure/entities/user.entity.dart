@@ -78,7 +78,7 @@ class User {
 class UserEntity extends Table with DriftDefaultsMixin {
   const UserEntity();
 
-  TextColumn get id => text()();
+  BlobColumn get id => blob()();
   TextColumn get name => text()();
   BoolColumn get isAdmin => boolean().withDefault(const Constant(false))();
   TextColumn get email => text()();

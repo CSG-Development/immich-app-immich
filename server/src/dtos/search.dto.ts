@@ -37,6 +37,12 @@ class BaseSearchDto {
   @ValidateAssetVisibility({ optional: true })
   visibility?: AssetVisibility;
 
+  @ValidateBoolean({ optional: true })
+  withDeleted?: boolean;
+
+  @ValidateBoolean({ optional: true })
+  withExif?: boolean;
+
   @ValidateDate({ optional: true })
   createdBefore?: Date;
 
@@ -86,6 +92,13 @@ class BaseSearchDto {
   @Optional({ nullable: true, emptyToNull: true })
   lensModel?: string | null;
 
+  @IsInt()
+  @Min(1)
+  @Max(1000)
+  @Type(() => Number)
+  @Optional()
+  size?: number;
+
   @ValidateBoolean({ optional: true })
   isNotInAlbum?: boolean;
 
@@ -95,9 +108,6 @@ class BaseSearchDto {
   @ValidateUUID({ each: true, optional: true })
   tagIds?: string[];
 
-  @ValidateUUID({ each: true, optional: true })
-  albumIds?: string[];
-
   @Optional()
   @IsInt()
   @Max(5)
@@ -105,22 +115,7 @@ class BaseSearchDto {
   rating?: number;
 }
 
-class BaseSearchWithResultsDto extends BaseSearchDto {
-  @ValidateBoolean({ optional: true })
-  withDeleted?: boolean;
-
-  @ValidateBoolean({ optional: true })
-  withExif?: boolean;
-
-  @IsInt()
-  @Min(1)
-  @Max(1000)
-  @Type(() => Number)
-  @Optional()
-  size?: number;
-}
-
-export class RandomSearchDto extends BaseSearchWithResultsDto {
+export class RandomSearchDto extends BaseSearchDto {
   @ValidateBoolean({ optional: true })
   withStacked?: boolean;
 
@@ -184,14 +179,7 @@ export class MetadataSearchDto extends RandomSearchDto {
   page?: number;
 }
 
-export class StatisticsSearchDto extends BaseSearchDto {
-  @IsString()
-  @IsNotEmpty()
-  @Optional()
-  description?: string;
-}
-
-export class SmartSearchDto extends BaseSearchWithResultsDto {
+export class SmartSearchDto extends BaseSearchDto {
   @IsString()
   @IsNotEmpty()
   query!: string;
@@ -309,11 +297,6 @@ class SearchAssetResponseDto {
 export class SearchResponseDto {
   albums!: SearchAlbumResponseDto;
   assets!: SearchAssetResponseDto;
-}
-
-export class SearchStatisticsResponseDto {
-  @ApiProperty({ type: 'integer' })
-  total!: number;
 }
 
 class SearchExploreItem {

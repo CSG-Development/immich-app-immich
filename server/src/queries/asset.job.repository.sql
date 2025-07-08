@@ -8,14 +8,30 @@ select
   "duplicateId",
   "stackId",
   "visibility",
-  "smart_search"."embedding"
+  "smart_search"."embedding",
+  (
+    select
+      coalesce(json_agg(agg), '[]')
+    from
+      (
+        select
+          "asset_files"."id",
+          "asset_files"."path",
+          "asset_files"."type"
+        from
+          "asset_files"
+        where
+          "asset_files"."assetId" = "assets"."id"
+          and "asset_files"."type" = $1
+      ) as agg
+  ) as "files"
 from
   "assets"
   left join "smart_search" on "assets"."id" = "smart_search"."assetId"
 where
-  "assets"."id" = $1::uuid
+  "assets"."id" = $2::uuid
 limit
-  $2
+  $3
 
 -- AssetJobRepository.getForSidecarWriteJob
 select
@@ -183,11 +199,18 @@ select
   "assets"."id"
 from
   "assets"
-  inner join "smart_search" on "assets"."id" = "smart_search"."assetId"
-  inner join "asset_job_status" as "job_status" on "job_status"."assetId" = "assets"."id"
+  inner join "asset_job_status" as "job_status" on "assetId" = "assets"."id"
 where
-  "assets"."deletedAt" is null
-  and "assets"."visibility" in ('archive', 'timeline')
+  "assets"."visibility" != $1
+  and "assets"."deletedAt" is null
+  and "job_status"."previewAt" is not null
+  and not exists (
+    select
+    from
+      "smart_search"
+    where
+      "assetId" = "assets"."id"
+  )
   and "job_status"."duplicatesDetectedAt" is null
 
 -- AssetJobRepository.streamForEncodeClip
@@ -349,7 +372,7 @@ from
       "assets" as "stacked"
     where
       "stacked"."deletedAt" is not null
-      and "stacked"."visibility" = $1
+      and "stacked"."visibility" != $1
       and "stacked"."stackId" = "asset_stack"."id"
     group by
       "asset_stack"."id"

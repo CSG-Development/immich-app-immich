@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { SCROLL_PROPERTIES } from '$lib/components/shared-components/album-selection/album-selection-utils';
   import { getAssetThumbnailUrl } from '$lib/utils';
-  import { normalizeSearchString } from '$lib/utils/string-utils.js';
   import { type AlbumResponseDto } from '@immich/sdk';
-  import type { Action } from 'svelte/action';
+  import { normalizeSearchString } from '$lib/utils/string-utils.js';
   import AlbumListItemDetails from './album-list-item-details.svelte';
+  import type { Action } from 'svelte/action';
+  import { SCROLL_PROPERTIES } from '$lib/components/shared-components/album-selection/album-selection-utils';
 
   interface Props {
     album: AlbumResponseDto;
@@ -52,7 +52,7 @@
       <img
         src={getAssetThumbnailUrl(album.albumThumbnailAssetId)}
         alt={album.albumName}
-        class="h-full w-full rounded-xl object-cover transition-all duration-300 hover:shadow-lg"
+        class="z-0 h-full w-full rounded-xl object-cover transition-all duration-300 hover:shadow-lg"
         data-testid="album-image"
         draggable="false"
       />

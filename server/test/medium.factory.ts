@@ -4,11 +4,9 @@ import { DateTime } from 'luxon';
 import { createHash, randomBytes } from 'node:crypto';
 import { Writable } from 'node:stream';
 import { AssetFace } from 'src/database';
-import { Albums, AssetJobStatus, Assets, DB, FaceSearch, Person, Sessions } from 'src/db';
-import { AuthDto } from 'src/dtos/auth.dto';
-import { AssetType, AssetVisibility, SourceType, SyncRequestType } from 'src/enum';
+import { AssetJobStatus, Assets, DB, FaceSearch, Person, Sessions } from 'src/db';
+import { AssetType, AssetVisibility, SourceType } from 'src/enum';
 import { ActivityRepository } from 'src/repositories/activity.repository';
-import { AlbumUserRepository } from 'src/repositories/album-user.repository';
 import { AlbumRepository } from 'src/repositories/album.repository';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository';
 import { AssetRepository } from 'src/repositories/asset.repository';
@@ -30,10 +28,9 @@ import { UserRepository } from 'src/repositories/user.repository';
 import { VersionHistoryRepository } from 'src/repositories/version-history.repository';
 import { UserTable } from 'src/schema/tables/user.table';
 import { BaseService } from 'src/services/base.service';
-import { SyncService } from 'src/services/sync.service';
 import { RepositoryInterface } from 'src/types';
-import { factory, newDate, newEmbedding, newUuid } from 'test/small.factory';
-import { automock, ServiceOverrides, wait } from 'test/utils';
+import { newDate, newEmbedding, newUuid } from 'test/small.factory';
+import { automock, ServiceOverrides } from 'test/utils';
 import { Mocked } from 'vitest';
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('base64');
@@ -42,7 +39,6 @@ const sha256 = (value: string) => createHash('sha256').update(value).digest('bas
 type RepositoriesTypes = {
   activity: ActivityRepository;
   album: AlbumRepository;
-  albumUser: AlbumUserRepository;
   asset: AssetRepository;
   assetJob: AssetJobRepository;
   config: ConfigRepository;
@@ -78,61 +74,6 @@ export type Context<R extends RepositoryOptions, S extends BaseService> = {
   mocks: ContextRepositoryMocks<R>;
   repos: ContextRepositories<R>;
   getRepository<T extends keyof RepositoriesTypes>(key: T): RepositoriesTypes[T];
-};
-
-export type SyncTestOptions = {
-  db: Kysely<DB>;
-};
-
-export const newSyncAuthUser = () => {
-  const user = mediumFactory.userInsert();
-  const session = mediumFactory.sessionInsert({ userId: user.id });
-
-  const auth = factory.auth({
-    session,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
-  });
-
-  return {
-    auth,
-    session,
-    user,
-    create: async (db: Kysely<DB>) => {
-      await new UserRepository(db).create(user);
-      await new SessionRepository(db).create(session);
-    },
-  };
-};
-
-export const newSyncTest = (options: SyncTestOptions) => {
-  const { sut, mocks, repos, getRepository } = newMediumService(SyncService, {
-    database: options.db,
-    repos: {
-      sync: 'real',
-      session: 'real',
-    },
-  });
-
-  const testSync = async (auth: AuthDto, types: SyncRequestType[]) => {
-    const stream = mediumFactory.syncStream();
-    // Wait for 2ms to ensure all updates are available and account for setTimeout inaccuracy
-    await wait(2);
-    await sut.stream(auth, stream, { types });
-
-    return stream.getResponse();
-  };
-
-  return {
-    sut,
-    mocks,
-    repos,
-    getRepository,
-    testSync,
-  };
 };
 
 export const newMediumService = <R extends RepositoryOptions, S extends BaseService>(
@@ -184,14 +125,6 @@ export const getRepository = <K extends keyof RepositoriesTypes>(key: K, db: Kys
       return new ActivityRepository(db);
     }
 
-    case 'album': {
-      return new AlbumRepository(db);
-    }
-
-    case 'albumUser': {
-      return new AlbumUserRepository(db);
-    }
-
     case 'asset': {
       return new AssetRepository(db);
     }
@@ -237,7 +170,7 @@ export const getRepository = <K extends keyof RepositoriesTypes>(key: K, db: Kys
     }
 
     case 'search': {
-      return new SearchRepository(db);
+      return new SearchRepository(db, new ConfigRepository());
     }
 
     case 'session': {
@@ -390,7 +323,6 @@ export const asDeps = (repositories: ServiceOverrides) => {
     repositories.crypto || getRepositoryMock('crypto'),
     repositories.database || getRepositoryMock('database'),
     repositories.downloadRepository,
-    repositories.duplicateRepository,
     repositories.email || getRepositoryMock('email'),
     repositories.event,
     repositories.job || getRepositoryMock('job'),
@@ -444,19 +376,6 @@ const assetInsert = (asset: Partial<Insertable<Assets>> = {}) => {
   return {
     ...defaults,
     ...asset,
-    id,
-  };
-};
-
-const albumInsert = (album: Partial<Insertable<Albums>> & { ownerId: string }) => {
-  const id = album.id || newUuid();
-  const defaults: Omit<Insertable<Albums>, 'ownerId'> = {
-    albumName: 'Album',
-  };
-
-  return {
-    ...defaults,
-    ...album,
     id,
   };
 };
@@ -583,7 +502,6 @@ export const mediumFactory = {
   assetInsert,
   assetFaceInsert,
   assetJobStatusInsert,
-  albumInsert,
   faceInsert,
   personInsert,
   sessionInsert,

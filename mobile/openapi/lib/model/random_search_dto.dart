@@ -13,7 +13,6 @@ part of openapi.api;
 class RandomSearchDto {
   /// Returns a new [RandomSearchDto] instance.
   RandomSearchDto({
-    this.albumIds = const [],
     this.city,
     this.country,
     this.createdAfter,
@@ -46,8 +45,6 @@ class RandomSearchDto {
     this.withPeople,
     this.withStacked,
   });
-
-  List<String> albumIds;
 
   String? city;
 
@@ -255,7 +252,6 @@ class RandomSearchDto {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is RandomSearchDto &&
-    _deepEquality.equals(other.albumIds, albumIds) &&
     other.city == city &&
     other.country == country &&
     other.createdAfter == createdAfter &&
@@ -291,7 +287,6 @@ class RandomSearchDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (albumIds.hashCode) +
     (city == null ? 0 : city!.hashCode) +
     (country == null ? 0 : country!.hashCode) +
     (createdAfter == null ? 0 : createdAfter!.hashCode) +
@@ -325,11 +320,10 @@ class RandomSearchDto {
     (withStacked == null ? 0 : withStacked!.hashCode);
 
   @override
-  String toString() => 'RandomSearchDto[albumIds=$albumIds, city=$city, country=$country, createdAfter=$createdAfter, createdBefore=$createdBefore, deviceId=$deviceId, isEncoded=$isEncoded, isFavorite=$isFavorite, isMotion=$isMotion, isNotInAlbum=$isNotInAlbum, isOffline=$isOffline, lensModel=$lensModel, libraryId=$libraryId, make=$make, model=$model, personIds=$personIds, rating=$rating, size=$size, state=$state, tagIds=$tagIds, takenAfter=$takenAfter, takenBefore=$takenBefore, trashedAfter=$trashedAfter, trashedBefore=$trashedBefore, type=$type, updatedAfter=$updatedAfter, updatedBefore=$updatedBefore, visibility=$visibility, withDeleted=$withDeleted, withExif=$withExif, withPeople=$withPeople, withStacked=$withStacked]';
+  String toString() => 'RandomSearchDto[city=$city, country=$country, createdAfter=$createdAfter, createdBefore=$createdBefore, deviceId=$deviceId, isEncoded=$isEncoded, isFavorite=$isFavorite, isMotion=$isMotion, isNotInAlbum=$isNotInAlbum, isOffline=$isOffline, lensModel=$lensModel, libraryId=$libraryId, make=$make, model=$model, personIds=$personIds, rating=$rating, size=$size, state=$state, tagIds=$tagIds, takenAfter=$takenAfter, takenBefore=$takenBefore, trashedAfter=$trashedAfter, trashedBefore=$trashedBefore, type=$type, updatedAfter=$updatedAfter, updatedBefore=$updatedBefore, visibility=$visibility, withDeleted=$withDeleted, withExif=$withExif, withPeople=$withPeople, withStacked=$withStacked]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'albumIds'] = this.albumIds;
     if (this.city != null) {
       json[r'city'] = this.city;
     } else {
@@ -489,9 +483,6 @@ class RandomSearchDto {
       final json = value.cast<String, dynamic>();
 
       return RandomSearchDto(
-        albumIds: json[r'albumIds'] is Iterable
-            ? (json[r'albumIds'] as Iterable).cast<String>().toList(growable: false)
-            : const [],
         city: mapValueOfType<String>(json, r'city'),
         country: mapValueOfType<String>(json, r'country'),
         createdAfter: mapDateTime(json, r'createdAfter', r''),

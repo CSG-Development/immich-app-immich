@@ -80,7 +80,6 @@ select
         where
           "albums_assets_assets"."albumsId" = "albums"."id"
           and "assets"."deletedAt" is null
-          and "assets"."visibility" in ('archive', 'timeline')
         order by
           "assets"."fileCreatedAt" desc
       ) as "asset"
@@ -179,8 +178,7 @@ from
   "assets"
   inner join "albums_assets_assets" as "album_assets" on "album_assets"."assetsId" = "assets"."id"
 where
-  "assets"."visibility" in ('archive', 'timeline')
-  and "album_assets"."albumsId" in ($1)
+  "album_assets"."albumsId" in ($1)
   and "assets"."deletedAt" is null
 group by
   "album_assets"."albumsId"
@@ -393,11 +391,6 @@ where
   )
 order by
   "albums"."createdAt" desc
-
--- AlbumRepository.removeAssetsFromAll
-delete from "albums_assets_assets"
-where
-  "albums_assets_assets"."assetsId" in ($1)
 
 -- AlbumRepository.getAssetIds
 select

@@ -6,11 +6,9 @@ abstract interface class IStoreRepository implements IDatabaseRepository {
 
   Future<T?> tryGet<T>(StoreKey<T> key);
 
-  Future<List<StoreDto<Object>>> getAll();
-
   Stream<T?> watch<T>(StoreKey<T> key);
 
-  Stream<StoreDto<Object>> watchAll();
+  Stream<StoreUpdateEvent> watchAll();
 
   Future<bool> update<T>(StoreKey<T> key, T value);
 

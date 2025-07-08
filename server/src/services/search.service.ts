@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { LRUMap } from 'mnemonist';
 import { AssetMapOptions, AssetResponseDto, MapAsset, mapAsset } from 'src/dtos/asset-response.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { mapPerson, PersonResponseDto } from 'src/dtos/person.dto';
@@ -11,22 +10,17 @@ import {
   SearchPeopleDto,
   SearchPlacesDto,
   SearchResponseDto,
-  SearchStatisticsResponseDto,
   SearchSuggestionRequestDto,
   SearchSuggestionType,
   SmartSearchDto,
-  StatisticsSearchDto,
 } from 'src/dtos/search.dto';
-import { AssetOrder, AssetVisibility } from 'src/enum';
+import { AssetOrder } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
-import { requireElevatedPermission } from 'src/utils/access';
 import { getMyPartnerIds } from 'src/utils/asset.util';
 import { isSmartSearchEnabled } from 'src/utils/misc';
 
 @Injectable()
 export class SearchService extends BaseService {
-  private embeddingCache = new LRUMap<string, string>(100);
-
   async searchPerson(auth: AuthDto, dto: SearchPeopleDto): Promise<PersonResponseDto[]> {
     const people = await this.personRepository.getByName(auth.user.id, dto.name, { withHidden: dto.withHidden });
     return people.map((person) => mapPerson(person));
@@ -46,11 +40,9 @@ export class SearchService extends BaseService {
   }
 
   async searchMetadata(auth: AuthDto, dto: MetadataSearchDto): Promise<SearchResponseDto> {
-    if (dto.visibility === AssetVisibility.LOCKED) {
-      requireElevatedPermission(auth);
-    }
-
     let checksum: Buffer | undefined;
+    const userIds = await this.getUserIdsToSearch(auth);
+
     if (dto.checksum) {
       const encoding = dto.checksum.length === 28 ? 'base64' : 'hex';
       checksum = Buffer.from(dto.checksum, encoding);
@@ -58,7 +50,6 @@ export class SearchService extends BaseService {
 
     const page = dto.page ?? 1;
     const size = dto.size || 250;
-    const userIds = await this.getUserIdsToSearch(auth);
     const { hasNextPage, items } = await this.searchRepository.searchMetadata(
       { page, size },
       {
@@ -72,50 +63,28 @@ export class SearchService extends BaseService {
     return this.mapResponse(items, hasNextPage ? (page + 1).toString() : null, { auth });
   }
 
-  async searchStatistics(auth: AuthDto, dto: StatisticsSearchDto): Promise<SearchStatisticsResponseDto> {
-    const userIds = await this.getUserIdsToSearch(auth);
-
-    return await this.searchRepository.searchStatistics({
-      ...dto,
-      userIds,
-    });
-  }
-
   async searchRandom(auth: AuthDto, dto: RandomSearchDto): Promise<AssetResponseDto[]> {
-    if (dto.visibility === AssetVisibility.LOCKED) {
-      requireElevatedPermission(auth);
-    }
-
     const userIds = await this.getUserIdsToSearch(auth);
     const items = await this.searchRepository.searchRandom(dto.size || 250, { ...dto, userIds });
     return items.map((item) => mapAsset(item, { auth }));
   }
 
   async searchSmart(auth: AuthDto, dto: SmartSearchDto): Promise<SearchResponseDto> {
-    if (dto.visibility === AssetVisibility.LOCKED) {
-      requireElevatedPermission(auth);
-    }
-
     const { machineLearning } = await this.getConfig({ withCache: false });
     if (!isSmartSearchEnabled(machineLearning)) {
       throw new BadRequestException('Smart search is not enabled');
     }
 
-    const userIds = this.getUserIdsToSearch(auth);
-    const key = machineLearning.clip.modelName + dto.query + dto.language;
-    let embedding = this.embeddingCache.get(key);
-    if (!embedding) {
-      embedding = await this.machineLearningRepository.encodeText(machineLearning.urls, dto.query, {
-        modelName: machineLearning.clip.modelName,
-        language: dto.language,
-      });
-      this.embeddingCache.set(key, embedding);
-    }
+    const userIds = await this.getUserIdsToSearch(auth);
+    const embedding = await this.machineLearningRepository.encodeText(machineLearning.urls, dto.query, {
+      modelName: machineLearning.clip.modelName,
+      language: dto.language,
+    });
     const page = dto.page ?? 1;
     const size = dto.size || 100;
     const { hasNextPage, items } = await this.searchRepository.searchSmart(
       { page, size },
-      { ...dto, userIds: await userIds, embedding },
+      { ...dto, userIds, embedding },
     );
 
     return this.mapResponse(items, hasNextPage ? (page + 1).toString() : null, { auth });

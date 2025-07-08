@@ -1,11 +1,10 @@
+// ignore_for_file: avoid-unsafe-collection-methods
+
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/domain/utils/background_sync.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/android_device_asset.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
@@ -14,16 +13,14 @@ import 'package:immich_mobile/entities/ios_device_asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/device_asset.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
-import 'package:immich_mobile/infrastructure/entities/local_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
-import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/utils/diff.dart';
 import 'package:isar/isar.dart';
 // ignore: import_rule_photo_manager
 import 'package:photo_manager/photo_manager.dart';
 
-const int targetVersion = 12;
+const int targetVersion = 10;
 
 Future<void> migrateDatabaseIfNeeded(Isar db) async {
   final int version = Store.get(StoreKey.version, targetVersion);
@@ -48,22 +45,8 @@ Future<void> migrateDatabaseIfNeeded(Isar db) async {
     await _migrateDeviceAsset(db);
   }
 
-  if (version < 12 && (!kReleaseMode)) {
-    final backgroundSync = BackgroundSyncManager();
-    await backgroundSync.syncLocal();
-    final drift = Drift();
-    await _migrateDeviceAssetToSqlite(db, drift);
-    await drift.close();
-  }
-
-  final shouldTruncate = version < 8 || version < targetVersion;
-
+  final shouldTruncate = version < 8 && version < targetVersion;
   if (shouldTruncate) {
-    if (targetVersion == 12) {
-      await Store.put(StoreKey.version, targetVersion);
-      return;
-    }
-
     await _migrateTo(db, targetVersion);
   }
 }
@@ -169,36 +152,6 @@ Future<void> _migrateDeviceAsset(Isar db) async {
   await db.writeTxn(() async {
     await db.deviceAssetEntitys.putAll(toAdd);
   });
-}
-
-Future<void> _migrateDeviceAssetToSqlite(Isar db, Drift drift) async {
-  try {
-    final isarDeviceAssets =
-        await db.deviceAssetEntitys.where().sortByAssetId().findAll();
-    await drift.batch((batch) {
-      for (final deviceAsset in isarDeviceAssets) {
-        final companion = LocalAssetEntityCompanion(
-          updatedAt: Value(deviceAsset.modifiedTime),
-          id: Value(deviceAsset.assetId),
-          checksum: Value(base64.encode(deviceAsset.hash)),
-        );
-        batch.insert<$LocalAssetEntityTable, LocalAssetEntityData>(
-          drift.localAssetEntity,
-          companion,
-          onConflict: DoUpdate(
-            (_) => companion,
-            where: (old) => old.updatedAt.equals(deviceAsset.modifiedTime),
-          ),
-        );
-      }
-    });
-  } catch (error) {
-    if (kDebugMode) {
-      debugPrint(
-        "[MIGRATION] Error while migrating device assets to SQLite: $error",
-      );
-    }
-  }
 }
 
 class _DeviceAsset {

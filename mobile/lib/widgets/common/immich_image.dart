@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -75,32 +76,39 @@ class ImmichImage extends StatelessWidget {
       );
     }
 
-    final imageProviderInstance = ImmichImage.imageProvider(
-      asset: asset,
-      width: context.width,
-      height: context.height,
-    );
-
     return OctoImage(
       fadeInDuration: const Duration(milliseconds: 0),
-      fadeOutDuration: const Duration(milliseconds: 100),
+      fadeOutDuration: const Duration(milliseconds: 200),
       placeholderBuilder: (context) {
         if (placeholder != null) {
+          // Use the gray box placeholder
           return placeholder!;
         }
+        // No placeholder
         return const SizedBox();
       },
-      image: imageProviderInstance,
+      image: ImmichImage.imageProvider(
+        asset: asset,
+        width: context.width,
+        height: context.height,
+      ),
       width: width,
       height: height,
       fit: fit,
       errorBuilder: (context, error, stackTrace) {
-        imageProviderInstance.evict();
-
+        if (error is PlatformException &&
+            error.code == "The asset not found!") {
+          debugPrint(
+            "Asset ${asset?.localId} does not exist anymore on device!",
+          );
+        } else {
+          debugPrint(
+            "Error getting thumb for assetId=${asset?.localId}: $error",
+          );
+        }
         return Icon(
           Icons.image_not_supported_outlined,
-          size: 32,
-          color: Colors.red[200],
+          color: context.primaryColor,
         );
       },
     );

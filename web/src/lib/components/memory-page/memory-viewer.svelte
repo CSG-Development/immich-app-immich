@@ -5,12 +5,10 @@
   import { intersectionObserver } from '$lib/actions/intersection-observer';
   import { resizeObserver } from '$lib/actions/resize-observer';
   import { shortcuts } from '$lib/actions/shortcut';
-  import MemoryPhotoViewer from '$lib/components/memory-page/memory-photo-viewer.svelte';
-  import MemoryVideoViewer from '$lib/components/memory-page/memory-video-viewer.svelte';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
   import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
   import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
   import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
   import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
   import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
@@ -27,17 +25,16 @@
     NotificationType,
   } from '$lib/components/shared-components/notification/notification';
   import { AppRoute, QueryParameter } from '$lib/constants';
-  import { authManager } from '$lib/managers/auth-manager.svelte';
-  import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { type Viewport } from '$lib/stores/assets-store.svelte';
   import { type MemoryAsset, memoryStore } from '$lib/stores/memory.store.svelte';
   import { locale, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
   import { preferences } from '$lib/stores/user.store';
-  import { getAssetThumbnailUrl, handlePromiseError, memoryLaneTitle } from '$lib/utils';
+  import { getAssetPlaybackUrl, getAssetThumbnailUrl, handlePromiseError, memoryLaneTitle } from '$lib/utils';
   import { cancelMultiselect } from '$lib/utils/asset-utils';
-  import { fromISODateTimeUTC, toTimelineAsset } from '$lib/utils/timeline-util';
-  import { AssetMediaSize, getAssetInfo } from '@immich/sdk';
+  import { fromLocalDateTime } from '$lib/utils/timeline-util';
+  import { AssetMediaSize, type AssetResponseDto, AssetTypeEnum } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
   import {
     mdiCardsOutline,
@@ -61,6 +58,7 @@
   import { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
   import { Tween } from 'svelte/motion';
+  import { fade } from 'svelte/transition';
 
   let memoryGallery: HTMLElement | undefined = $state();
   let memoryWrapper: HTMLElement | undefined = $state();
@@ -69,11 +67,6 @@
   let playerInitialized = $state(false);
   let paused = $state(false);
   let current = $state<MemoryAsset | undefined>(undefined);
-  let currentMemoryAssetFull = $derived.by(async () =>
-    current?.asset ? await getAssetInfo({ id: current.asset.id, key: authManager.key }) : undefined,
-  );
-  let currentTimelineAssets = $derived(current?.memory.assets.map((asset) => toTimelineAsset(asset)) || []);
-
   let isSaved = $derived(current?.memory.isSaved);
   let viewerHeight = $state(0);
 
@@ -84,8 +77,8 @@
   const assetInteraction = new AssetInteraction();
   let progressBarController: Tween<number> | undefined = $state(undefined);
   let videoPlayer: HTMLVideoElement | undefined = $state();
-  const asHref = (asset: { id: string }) => `?${QueryParameter.ID}=${asset.id}`;
-  const handleNavigate = async (asset?: { id: string }) => {
+  const asHref = (asset: AssetResponseDto) => `?${QueryParameter.ID}=${asset.id}`;
+  const handleNavigate = async (asset?: AssetResponseDto) => {
     if ($isViewing) {
       return asset;
     }
@@ -96,9 +89,9 @@
 
     await goto(asHref(asset));
   };
-  const setProgressDuration = (asset: TimelineAsset) => {
-    if (asset.isVideo) {
-      const timeParts = asset.duration!.split(':').map(Number);
+  const setProgressDuration = (asset: AssetResponseDto) => {
+    if (asset.type === AssetTypeEnum.Video) {
+      const timeParts = asset.duration.split(':').map(Number);
       const durationInMilliseconds = (timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2]) * 1000;
       progressBarController = new Tween<number>(0, {
         duration: (from: number, to: number) => (to ? durationInMilliseconds * (to - from) : 0),
@@ -114,8 +107,7 @@
   const handleNextMemory = () => handleNavigate(current?.nextMemory?.assets[0]);
   const handlePreviousMemory = () => handleNavigate(current?.previousMemory?.assets[0]);
   const handleEscape = async () => goto(resolveRoute(AppRoute.PHOTOS, {}));
-  const handleSelectAll = () =>
-    assetInteraction.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
+  const handleSelectAll = () => assetInteraction.selectAssets(current?.memory.assets || []);
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
     // leaving these log statements here as comments. Very useful to figure out what's going on during dev!
     // console.log(`handleAction[${callingContext}] called with: ${action}`);
@@ -132,7 +124,7 @@
           await progressBarController.set(1);
         } catch (error) {
           // this may happen if browser blocks auto-play of the video on first page load. This can either be a setting
-          // or just default in certain browsers on page load without any DOM interaction by user.
+          // or just defaut in certain browsers on page load without any DOM interaction by user.
           console.error(`handleAction[${callingContext}] videoPlayer play problem: ${error}`);
           paused = true;
           await progressBarController.set(0);
@@ -248,7 +240,7 @@
   };
 
   const initPlayer = () => {
-    const isVideoAssetButPlayerHasNotLoadedYet = current && current.asset.isVideo && !videoPlayer;
+    const isVideoAssetButPlayerHasNotLoadedYet = current && current.asset.type === AssetTypeEnum.Video && !videoPlayer;
     if (playerInitialized || isVideoAssetButPlayerHasNotLoadedYet) {
       return;
     }
@@ -261,7 +253,12 @@
     playerInitialized = true;
   };
 
-  afterNavigate(({ from, to }) => {
+  afterNavigate(({ from, to, type }) => {
+    if (type === 'enter') {
+      // afterNavigate triggers twice on first page load (once when mounted with 'enter' and then a second time
+      // with the actual 'goto' to URL).
+      return;
+    }
     memoryStore.initialize().then(
       () => {
         let target = null;
@@ -296,7 +293,7 @@
   });
 </script>
 
-<svelte:document
+<svelte:window
   use:shortcuts={$isViewing
     ? []
     : [
@@ -309,21 +306,13 @@
 />
 
 {#if assetInteraction.selectionActive}
-  <div class="sticky top-0 z-1 dark">
+  <div class="sticky top-0 z-[90]">
     <AssetSelectControlBar
-      forceDark
       assets={assetInteraction.selectedAssets}
       clearSelect={() => cancelMultiselect(assetInteraction)}
     >
       <CreateSharedLink />
-      <IconButton
-        shape="round"
-        color="secondary"
-        variant="ghost"
-        aria-label={$t('select_all')}
-        icon={mdiSelectAll}
-        onclick={handleSelectAll}
-      />
+      <CircleIconButton title={$t('select_all')} icon={mdiSelectAll} onclick={handleSelectAll} />
 
       <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
         <AddToAlbum />
@@ -335,7 +324,6 @@
       <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
         <DownloadAction menuItem />
         <ChangeDate menuItem />
-        <ChangeDescription menuItem />
         <ChangeLocation menuItem />
         <ArchiveAction menuItem unarchive={assetInteraction.isAllArchived} onArchive={handleDeleteOrArchiveAssets} />
         {#if $preferences.tags.enabled && assetInteraction.isAllUserOwned}
@@ -364,16 +352,12 @@
       {/snippet}
 
       <div class="flex place-content-center place-items-center gap-2 overflow-hidden">
-        <div class="w-[50px] dark">
-          <IconButton
-            shape="round"
-            variant="ghost"
-            color="secondary"
-            aria-label={paused ? $t('play_memories') : $t('pause_memories')}
-            icon={paused ? mdiPlay : mdiPause}
-            onclick={() => handlePromiseError(handleAction('PlayPauseButtonClick', paused ? 'play' : 'pause'))}
-          />
-        </div>
+        <CircleIconButton
+          title={paused ? $t('play_memories') : $t('pause_memories')}
+          icon={paused ? mdiPlay : mdiPause}
+          onclick={() => handlePromiseError(handleAction('PlayPauseButtonClick', paused ? 'play' : 'pause'))}
+          class="hover:text-black"
+        />
 
         {#each current.memory.assets as asset, index (asset.id)}
           <a class="relative w-full py-2" href={asHref(asset)} aria-label={$t('view')}>
@@ -387,23 +371,17 @@
             {(current.assetIndex + 1).toLocaleString($locale)}/{current.memory.assets.length.toLocaleString($locale)}
           </p>
         </div>
-
-        <div class="w-[50px] dark">
-          <IconButton
-            shape="round"
-            variant="ghost"
-            color="secondary"
-            aria-label={$videoViewerMuted ? $t('unmute_memories') : $t('mute_memories')}
-            icon={$videoViewerMuted ? mdiVolumeOff : mdiVolumeHigh}
-            onclick={() => ($videoViewerMuted = !$videoViewerMuted)}
-          />
-        </div>
+        <CircleIconButton
+          title={$videoViewerMuted ? $t('unmute_memories') : $t('mute_memories')}
+          icon={$videoViewerMuted ? mdiVolumeOff : mdiVolumeHigh}
+          onclick={() => ($videoViewerMuted = !$videoViewerMuted)}
+        />
       </div>
     </ControlAppBar>
 
     {#if galleryInView}
       <div
-        class="fixed top-10 start-1/2 -translate-x-1/2 transition-opacity dark z-1"
+        class="fixed top-20 z-30 start-1/2 -translate-x-1/2 transition-opacity"
         class:opacity-0={!galleryInView}
         class:opacity-100={galleryInView}
       >
@@ -412,20 +390,14 @@
           onclick={() => memoryWrapper?.scrollIntoView({ behavior: 'smooth' })}
           disabled={!galleryInView}
         >
-          <IconButton
-            shape="round"
-            color="secondary"
-            aria-label={$t('hide_gallery')}
-            icon={mdiChevronUp}
-            onclick={() => {}}
-          />
+          <CircleIconButton title={$t('hide_gallery')} icon={mdiChevronUp} color="light" onclick={() => {}} />
         </button>
       </div>
     {/if}
     <!-- Viewer -->
     <section class="overflow-hidden pt-32 md:pt-20" bind:clientHeight={viewerHeight}>
       <div
-        class="ms-[-100%] box-border flex h-[calc(100vh-224px)] md:h-[calc(100vh-180px)] w-[300%] items-center justify-center gap-10 overflow-hidden"
+        class="ms-[-100%] box-border flex h-[calc(100vh_-_224px)] md:h-[calc(100vh_-_180px)] w-[300%] items-center justify-center gap-10 overflow-hidden"
       >
         <!-- PREVIOUS MEMORY -->
         <div class="h-1/2 w-[20vw] rounded-2xl {current.previousMemory ? 'opacity-25 hover:opacity-70' : 'opacity-0'}">
@@ -467,20 +439,34 @@
         >
           <div class="relative h-full w-full rounded-2xl bg-black">
             {#key current.asset.id}
-              {#if current.asset.isVideo}
-                <MemoryVideoViewer
-                  asset={current.asset}
-                  bind:videoPlayer
-                  videoViewerMuted={$videoViewerMuted}
-                  videoViewerVolume={$videoViewerVolume}
-                />
-              {:else}
-                <MemoryPhotoViewer asset={current.asset} />
-              {/if}
+              <div transition:fade class="h-full w-full">
+                {#if current.asset.type === AssetTypeEnum.Video}
+                  <video
+                    bind:this={videoPlayer}
+                    autoplay
+                    playsinline
+                    class="h-full w-full rounded-2xl object-contain transition-all"
+                    src={getAssetPlaybackUrl({ id: current.asset.id })}
+                    poster={getAssetThumbnailUrl({ id: current.asset.id, size: AssetMediaSize.Preview })}
+                    draggable="false"
+                    muted={$videoViewerMuted}
+                    volume={$videoViewerVolume}
+                    transition:fade
+                  ></video>
+                {:else}
+                  <img
+                    class="h-full w-full rounded-2xl object-contain transition-all"
+                    src={getAssetThumbnailUrl({ id: current.asset.id, size: AssetMediaSize.Preview })}
+                    alt={current.asset.exifInfo?.description}
+                    draggable="false"
+                    transition:fade
+                  />
+                {/if}
+              </div>
             {/key}
 
             <div
-              class="absolute bottom-0 end-0 p-2 transition-all flex h-full justify-between flex-col items-end gap-2 dark"
+              class="absolute bottom-0 end-0 p-2 transition-all flex h-full justify-between flex-col items-end gap-2"
               class:opacity-0={galleryInView}
               class:opacity-100={!galleryInView}
             >
@@ -492,7 +478,7 @@
                   color="secondary"
                   aria-label={isSaved ? $t('unfavorite') : $t('favorite')}
                   onclick={() => handleSaveMemory()}
-                  class="w-[48px] h-[48px]"
+                  class="text-white dark:text-white w-[48px] h-[48px]"
                 />
                 <!-- <IconButton
                   icon={mdiShareVariantOutline}
@@ -504,11 +490,13 @@
                 /> -->
                 <ButtonContextMenu
                   icon={mdiDotsVertical}
+                  padding="3"
                   title={$t('menu')}
                   onclick={() => handlePromiseError(handleAction('ContextMenuClick', 'pause'))}
                   direction="left"
-                  size="medium"
+                  size="20"
                   align="bottom-right"
+                  class="text-white dark:text-white"
                 >
                   <MenuOption onClick={() => handleDeleteMemory()} text={$t('remove_memory')} icon={mdiCardsOutline} />
                   <MenuOption
@@ -528,33 +516,28 @@
                   color="secondary"
                   variant="ghost"
                   shape="round"
+                  class="text-white dark:text-white"
                 />
               </div>
             </div>
             <!-- CONTROL BUTTONS -->
             {#if current.previous}
-              <div class="absolute top-1/2 start-0 ms-4 dark">
-                <IconButton
-                  shape="round"
-                  aria-label={$t('previous_memory')}
+              <div class="absolute top-1/2 start-0 ms-4">
+                <CircleIconButton
+                  title={$t('previous_memory')}
                   icon={mdiChevronLeft}
-                  variant="ghost"
-                  color="secondary"
-                  size="giant"
+                  color="dark"
                   onclick={handlePreviousAsset}
                 />
               </div>
             {/if}
 
             {#if current.next}
-              <div class="absolute top-1/2 end-0 me-4 dark">
-                <IconButton
-                  shape="round"
-                  aria-label={$t('next_memory')}
+              <div class="absolute top-1/2 end-0 me-4">
+                <CircleIconButton
+                  title={$t('next_memory')}
                   icon={mdiChevronRight}
-                  variant="ghost"
-                  color="secondary"
-                  size="giant"
+                  color="dark"
                   onclick={handleNextAsset}
                 />
               </div>
@@ -562,15 +545,13 @@
 
             <div class="absolute start-8 top-4 text-sm font-medium text-white">
               <p>
-                {fromISODateTimeUTC(current.memory.assets[0].localDateTime).toLocaleString(DateTime.DATE_FULL, {
+                {fromLocalDateTime(current.memory.assets[0].localDateTime).toLocaleString(DateTime.DATE_FULL, {
                   locale: $locale,
                 })}
               </p>
               <p>
-                {#await currentMemoryAssetFull then asset}
-                  {asset?.exifInfo?.city || ''}
-                  {asset?.exifInfo?.country || ''}
-                {/await}
+                {current.asset.exifInfo?.city || ''}
+                {current.asset.exifInfo?.country || ''}
               </p>
             </div>
           </div>
@@ -613,20 +594,18 @@
     </section>
   {/if}
 </section>
-
 {#if current}
   <!-- GALLERY VIEWER -->
   <section class="bg-immich-dark-gray p-4">
     <div
-      class="sticky mb-10 flex place-content-center place-items-center transition-all dark"
+      class="sticky mb-10 flex place-content-center place-items-center transition-all"
       class:opacity-0={galleryInView}
       class:opacity-100={!galleryInView}
     >
-      <IconButton
-        shape="round"
-        color="secondary"
-        aria-label={$t('show_gallery')}
+      <CircleIconButton
+        title={$t('show_gallery')}
         icon={mdiChevronDown}
+        color="light"
         onclick={() => memoryGallery?.scrollIntoView({ behavior: 'smooth' })}
       />
     </div>
@@ -643,7 +622,7 @@
       <GalleryViewer
         onNext={handleNextAsset}
         onPrevious={handlePreviousAsset}
-        assets={currentTimelineAssets}
+        assets={current.memory.assets}
         viewport={galleryViewport}
         {assetInteraction}
         slidingWindowOffset={viewerHeight}

@@ -1,15 +1,12 @@
 import _ from 'lodash';
 import { UserPreferencesUpdateDto } from 'src/dtos/user-preferences.dto';
-import { AssetOrder, UserMetadataKey } from 'src/enum';
+import { UserMetadataKey } from 'src/enum';
 import { DeepPartial, UserMetadataItem, UserPreferences } from 'src/types';
 import { HumanReadableSize } from 'src/utils/bytes';
 import { getKeysDeep } from 'src/utils/misc';
 
 const getDefaultPreferences = (): UserPreferences => {
   return {
-    albums: {
-      defaultAssetOrder: AssetOrder.DESC,
-    },
     folders: {
       enabled: false,
       sidebarWeb: false,
@@ -44,9 +41,6 @@ const getDefaultPreferences = (): UserPreferences => {
     purchase: {
       showSupportBadge: true,
       hideBuyButtonUntil: new Date(2022, 1, 12).toISOString(),
-    },
-    cast: {
-      gCastEnabled: false,
     },
   };
 };

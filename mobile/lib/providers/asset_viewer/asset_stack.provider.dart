@@ -39,6 +39,6 @@ final assetStackStateProvider = StateNotifierProvider.autoDispose
 );
 
 @riverpod
-int assetStackIndex(Ref _) {
+int assetStackIndex(Ref ref, Asset asset) {
   return -1;
 }

@@ -8,11 +8,6 @@ import 'package:immich_mobile/domain/models/log.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:logging/logging.dart';
 
-/// Service responsible for handling application logging.
-///
-/// It listens to Dart's [Logger.root], buffers logs in memory (optionally),
-/// writes them to a persistent [ILogRepository], and manages log levels
-/// via [IStoreRepository]
 class LogService {
   final ILogRepository _logRepository;
   final IStoreRepository _storeRepository;
@@ -23,10 +18,18 @@ class LogService {
   /// This is useful when logging in quick succession, as it increases performance
   /// and reduces NAND wear. However, it may cause the logs to be lost in case of a crash / in isolates.
   final bool _shouldBuffer;
-
   Timer? _flushTimer;
 
   late final StreamSubscription<LogRecord> _logSubscription;
+
+  LogService._(
+    this._logRepository,
+    this._storeRepository,
+    this._shouldBuffer,
+  ) {
+    // Listen to log messages and write them to the database
+    _logSubscription = Logger.root.onRecord.listen(_writeLogToDatabase);
+  }
 
   static LogService? _instance;
   static LogService get I {
@@ -41,7 +44,10 @@ class LogService {
     required IStoreRepository storeRepository,
     bool shouldBuffer = true,
   }) async {
-    _instance ??= await create(
+    if (_instance != null) {
+      return _instance!;
+    }
+    _instance = await create(
       logRepository: logRepository,
       storeRepository: storeRepository,
       shouldBuffer: shouldBuffer,
@@ -55,28 +61,55 @@ class LogService {
     bool shouldBuffer = true,
   }) async {
     final instance = LogService._(logRepository, storeRepository, shouldBuffer);
+    // Truncate logs to 250
     await logRepository.truncate(limit: kLogTruncateLimit);
-    final level = await instance._storeRepository.tryGet(StoreKey.logLevel) ??
-        LogLevel.info.index;
-    Logger.root.level = Level.LEVELS.elementAtOrNull(level) ?? Level.INFO;
+    // Get log level from store
+    final level = await instance._storeRepository.tryGet(StoreKey.logLevel);
+    if (level != null) {
+      Logger.root.level = Level.LEVELS.elementAtOrNull(level) ?? Level.INFO;
+    }
     return instance;
   }
 
-  LogService._(
-    this._logRepository,
-    this._storeRepository,
-    this._shouldBuffer,
-  ) {
-    _logSubscription = Logger.root.onRecord.listen(_handleLogRecord);
+  Future<void> setlogLevel(LogLevel level) async {
+    await _storeRepository.insert(StoreKey.logLevel, level.index);
+    Logger.root.level = level.toLevel();
   }
 
-  void _handleLogRecord(LogRecord r) {
+  Future<List<LogMessage>> getMessages() async {
+    final logsFromDb = await _logRepository.getAll();
+    if (_msgBuffer.isNotEmpty) {
+      return [..._msgBuffer.reversed, ...logsFromDb];
+    }
+    return logsFromDb;
+  }
+
+  Future<void> clearLogs() async {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    _msgBuffer.clear();
+    await _logRepository.deleteAll();
+  }
+
+  /// Flush pending log messages to persistent storage
+  void flush() {
+    if (_flushTimer == null) {
+      return;
+    }
+    _flushTimer!.cancel();
+    // TODO: Rename enable this after moving to sqlite - #16504
+    // await _flushBufferToDatabase();
+  }
+
+  Future<void> dispose() {
+    _flushTimer?.cancel();
+    _logSubscription.cancel();
+    return _flushBufferToDatabase();
+  }
+
+  void _writeLogToDatabase(LogRecord r) {
     if (kDebugMode) {
-      debugPrint(
-        '[${r.level.name}] [${r.time}] [${r.loggerName}] ${r.message}'
-        '${r.error == null ? '' : '\nError: ${r.error}'}'
-        '${r.stackTrace == null ? '' : '\nStack: ${r.stackTrace}'}',
-      );
+      debugPrint('[${r.level.name}] [${r.time}] ${r.message}');
     }
 
     final record = LogMessage(
@@ -92,44 +125,14 @@ class LogService {
       _msgBuffer.add(record);
       _flushTimer ??= Timer(
         const Duration(seconds: 5),
-        () => unawaited(flushBuffer()),
+        () => unawaited(_flushBufferToDatabase()),
       );
     } else {
       unawaited(_logRepository.insert(record));
     }
   }
 
-  Future<void> setLogLevel(LogLevel level) async {
-    await _storeRepository.insert(StoreKey.logLevel, level.index);
-    Logger.root.level = level.toLevel();
-  }
-
-  Future<List<LogMessage>> getMessages() async {
-    final logsFromDb = await _logRepository.getAll();
-    return [..._msgBuffer.reversed, ...logsFromDb];
-  }
-
-  Future<void> clearLogs() async {
-    _flushTimer?.cancel();
-    _flushTimer = null;
-    _msgBuffer.clear();
-    await _logRepository.deleteAll();
-  }
-
-  void flush() {
-    _flushTimer?.cancel();
-    // TODO: Rename enable this after moving to sqlite - #16504
-    // await _flushBufferToDatabase();
-  }
-
-  Future<void> dispose() {
-    _flushTimer?.cancel();
-    _logSubscription.cancel();
-    return flushBuffer();
-  }
-
-  // TOOD: Move this to private once Isar is removed
-  Future<void> flushBuffer() async {
+  Future<void> _flushBufferToDatabase() async {
     _flushTimer = null;
     final buffer = [..._msgBuffer];
     _msgBuffer.clear();

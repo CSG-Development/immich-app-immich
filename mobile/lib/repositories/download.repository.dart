@@ -1,16 +1,21 @@
 import 'package:background_downloader/background_downloader.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/interfaces/download.interface.dart';
 import 'package:immich_mobile/utils/download.dart';
 
 final downloadRepositoryProvider = Provider((ref) => DownloadRepository());
 
-class DownloadRepository {
+class DownloadRepository implements IDownloadRepository {
+  @override
   void Function(TaskStatusUpdate)? onImageDownloadStatus;
 
+  @override
   void Function(TaskStatusUpdate)? onVideoDownloadStatus;
 
+  @override
   void Function(TaskStatusUpdate)? onLivePhotoDownloadStatus;
 
+  @override
   void Function(TaskProgressUpdate)? onTaskProgress;
 
   DownloadRepository() {
@@ -33,18 +38,22 @@ class DownloadRepository {
     );
   }
 
-  Future<List<bool>> downloadAll(List<DownloadTask> tasks) {
-    return FileDownloader().enqueueAll(tasks);
+  @override
+  Future<bool> download(DownloadTask task) {
+    return FileDownloader().enqueue(task);
   }
 
+  @override
   Future<void> deleteAllTrackingRecords() {
     return FileDownloader().database.deleteAllRecords();
   }
 
+  @override
   Future<bool> cancel(String id) {
     return FileDownloader().cancelTaskWithId(id);
   }
 
+  @override
   Future<List<TaskRecord>> getLiveVideoTasks() {
     return FileDownloader().database.allRecordsWithStatus(
           TaskStatus.complete,
@@ -52,6 +61,7 @@ class DownloadRepository {
         );
   }
 
+  @override
   Future<void> deleteRecordsWithIds(List<String> ids) {
     return FileDownloader().database.deleteRecordsWithIds(ids);
   }

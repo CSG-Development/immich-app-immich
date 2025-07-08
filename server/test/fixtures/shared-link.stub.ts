@@ -70,7 +70,6 @@ const assetResponse: AssetResponseDto = {
   isTrashed: false,
   libraryId: 'library-id',
   hasMetadata: true,
-  visibility: AssetVisibility.TIMELINE,
 };
 
 const assetResponseWithoutMetadata = {

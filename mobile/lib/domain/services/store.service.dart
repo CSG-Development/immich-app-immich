@@ -3,17 +3,15 @@ import 'dart:async';
 import 'package:immich_mobile/domain/interfaces/store.interface.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 
-/// Provides access to a persistent key-value store with an in-memory cache.
-/// Listens for repository changes to keep the cache updated.
 class StoreService {
   final IStoreRepository _storeRepository;
 
-  /// In-memory cache. Keys are [StoreKey.id]
-  final Map<int, Object?> _cache = {};
-  late final StreamSubscription<StoreDto> _storeUpdateSubscription;
+  final Map<int, dynamic> _cache = {};
+  late final StreamSubscription<StoreUpdateEvent> _storeUpdateSubscription;
 
-  StoreService._({required IStoreRepository storeRepository})
-      : _storeRepository = storeRepository;
+  StoreService._({
+    required IStoreRepository storeRepository,
+  }) : _storeRepository = storeRepository;
 
   // TODO: Temporary typedef to make minimal changes. Remove this and make the presentation layer access store through a provider
   static StoreService? _instance;
@@ -25,6 +23,7 @@ class StoreService {
   }
 
   // TODO: Replace the implementation with the one from create after removing the typedef
+  /// Initializes the store with the given [storeRepository]
   static Future<StoreService> init({
     required IStoreRepository storeRepository,
   }) async {
@@ -32,6 +31,7 @@ class StoreService {
     return _instance!;
   }
 
+  /// Initializes the store with the given [storeRepository]
   static Future<StoreService> create({
     required IStoreRepository storeRepository,
   }) async {
@@ -41,14 +41,16 @@ class StoreService {
     return instance;
   }
 
+  /// Fills the cache with the values from the DB
   Future<void> _populateCache() async {
-    final storeValues = await _storeRepository.getAll();
-    for (StoreDto storeValue in storeValues) {
-      _cache[storeValue.key.id] = storeValue.value;
+    for (StoreKey key in StoreKey.values) {
+      final storeValue = await _storeRepository.tryGet(key);
+      _cache[key.id] = storeValue;
     }
   }
 
-  StreamSubscription<StoreDto> _listenForChange() =>
+  /// Listens for changes in the DB and updates the cache
+  StreamSubscription<StoreUpdateEvent> _listenForChange() =>
       _storeRepository.watchAll().listen((event) {
         _cache[event.key.id] = event.value;
       });
@@ -59,11 +61,11 @@ class StoreService {
     _cache.clear();
   }
 
-  /// Returns the cached value for [key], or `null`
-  T? tryGet<T>(StoreKey<T> key) => _cache[key.id] as T?;
+  /// Returns the stored value for the given key (possibly null)
+  T? tryGet<T>(StoreKey<T> key) => _cache[key.id];
 
-  /// Returns the stored value for [key] or [defaultValue].
-  /// Throws [StoreKeyNotFoundException] if value and [defaultValue] are null.
+  /// Returns the stored value for the given key or if null the [defaultValue]
+  /// Throws a [StoreKeyNotFoundException] if both are null
   T get<T>(StoreKey<T> key, [T? defaultValue]) {
     final value = tryGet(key) ?? defaultValue;
     if (value == null) {
@@ -72,23 +74,23 @@ class StoreService {
     return value;
   }
 
-  /// Stores the [value] for the [key]. Skips write if value hasn't changed.
+  /// Asynchronously stores the value in the Store
   Future<void> put<U extends StoreKey<T>, T>(U key, T value) async {
     if (_cache[key.id] == value) return;
     await _storeRepository.insert(key, value);
     _cache[key.id] = value;
   }
 
-  /// Returns a stream that emits the value for [key] on change.
+  /// Watches a specific key for changes
   Stream<T?> watch<T>(StoreKey<T> key) => _storeRepository.watch(key);
 
-  /// Removes the value for [key]
+  /// Removes the value asynchronously from the Store
   Future<void> delete<T>(StoreKey<T> key) async {
     await _storeRepository.delete(key);
     _cache.remove(key.id);
   }
 
-  /// Clears all values from thw store (cache and DB)
+  /// Clears all values from this store (cache and DB)
   Future<void> clear() async {
     await _storeRepository.deleteAll();
     _cache.clear();

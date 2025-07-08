@@ -140,11 +140,7 @@ class DownloadStateNotifier extends StateNotifier<DownloadState> {
     });
   }
 
-  Future<List<bool>> downloadAllAsset(List<Asset> assets) async {
-    return await _downloadService.downloadAll(assets);
-  }
-
-  void downloadAsset(Asset asset) async {
+  void downloadAsset(Asset asset, BuildContext context) async {
     await _downloadService.download(asset);
   }
 
@@ -186,7 +182,6 @@ class DownloadStateNotifier extends StateNotifier<DownloadState> {
         return const ShareDialog();
       },
       barrierDismissible: false,
-      useRootNavigator: false,
     );
   }
 }

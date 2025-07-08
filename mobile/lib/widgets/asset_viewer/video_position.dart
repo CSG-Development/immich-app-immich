@@ -6,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_controls_provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
-import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/widgets/asset_viewer/formatted_duration.dart';
 
 class VideoPosition extends HookConsumerWidget {
@@ -14,16 +13,9 @@ class VideoPosition extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCasting = ref.watch(castProvider).isCasting;
-
-    final (position, duration) = isCasting
-        ? ref.watch(
-            castProvider.select((c) => (c.currentTime, c.duration)),
-          )
-        : ref.watch(
-            videoPlaybackValueProvider.select((v) => (v.position, v.duration)),
-          );
-
+    final (position, duration) = ref.watch(
+      videoPlaybackValueProvider.select((v) => (v.position, v.duration)),
+    );
     final wasPlaying = useRef<bool>(true);
     return duration == Duration.zero
         ? const _VideoPositionPlaceholder()
@@ -65,22 +57,15 @@ class VideoPosition extends HookConsumerWidget {
                         }
                       },
                       onChanged: (value) {
-                        final seekToDuration = (duration * (value / 100.0));
-
-                        if (isCasting) {
-                          ref
-                              .read(castProvider.notifier)
-                              .seekTo(seekToDuration);
-                          return;
-                        }
-
+                        final inSeconds =
+                            (duration * (value / 100.0)).inSeconds;
+                        final position = inSeconds.toDouble();
                         ref
                             .read(videoPlayerControlsProvider.notifier)
-                            .position = seekToDuration.inSeconds.toDouble();
-
+                            .position = position;
                         // This immediately updates the slider position without waiting for the video to update
                         ref.read(videoPlaybackValueProvider.notifier).position =
-                            seekToDuration;
+                            Duration(seconds: inSeconds);
                       },
                     ),
                   ),

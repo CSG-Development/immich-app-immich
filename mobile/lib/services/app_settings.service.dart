@@ -105,7 +105,7 @@ class AppSettingsService {
     return Store.get(setting.storeKey, setting.defaultValue);
   }
 
-  Future<void> setSetting<T>(AppSettingsEnum<T> setting, T value) {
-    return Store.put(setting.storeKey, value);
+  void setSetting<T>(AppSettingsEnum<T> setting, T value) {
+    Store.put(setting.storeKey, value);
   }
 }

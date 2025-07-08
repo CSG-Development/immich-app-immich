@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/interfaces/download.interface.dart';
 import 'package:immich_mobile/interfaces/file_media.interface.dart';
 import 'package:immich_mobile/models/download/livephotos_medatada.model.dart';
 import 'package:immich_mobile/repositories/download.repository.dart';
@@ -22,7 +23,7 @@ final downloadServiceProvider = Provider(
 );
 
 class DownloadService {
-  final DownloadRepository _downloadRepository;
+  final IDownloadRepository _downloadRepository;
   final IFileMediaRepository _fileMediaRepository;
   final Logger _log = Logger("DownloadService");
   void Function(TaskStatusUpdate)? onImageDownloadStatus;
@@ -158,19 +159,9 @@ class DownloadService {
     return await FileDownloader().cancelTaskWithId(id);
   }
 
-  Future<List<bool>> downloadAll(List<Asset> assets) async {
-    return await _downloadRepository
-        .downloadAll(assets.expand(_createDownloadTasks).toList());
-  }
-
   Future<void> download(Asset asset) async {
-    final tasks = _createDownloadTasks(asset);
-    await _downloadRepository.downloadAll(tasks);
-  }
-
-  List<DownloadTask> _createDownloadTasks(Asset asset) {
     if (asset.isImage && asset.livePhotoVideoId != null && Platform.isIOS) {
-      return [
+      await _downloadRepository.download(
         _buildDownloadTask(
           asset.remoteId!,
           asset.fileName,
@@ -180,6 +171,9 @@ class DownloadService {
             id: asset.remoteId!,
           ).toJson(),
         ),
+      );
+
+      await _downloadRepository.download(
         _buildDownloadTask(
           asset.livePhotoVideoId!,
           asset.fileName
@@ -191,20 +185,16 @@ class DownloadService {
             id: asset.remoteId!,
           ).toJson(),
         ),
-      ];
+      );
+    } else {
+      await _downloadRepository.download(
+        _buildDownloadTask(
+          asset.remoteId!,
+          asset.fileName,
+          group: asset.isImage ? downloadGroupImage : downloadGroupVideo,
+        ),
+      );
     }
-
-    if (asset.remoteId == null) {
-      return [];
-    }
-
-    return [
-      _buildDownloadTask(
-        asset.remoteId!,
-        asset.fileName,
-        group: asset.isImage ? downloadGroupImage : downloadGroupVideo,
-      ),
-    ];
   }
 
   DownloadTask _buildDownloadTask(

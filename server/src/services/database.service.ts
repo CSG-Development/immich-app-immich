@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import semver from 'semver';
-import { EXTENSION_NAMES, VECTOR_EXTENSIONS } from 'src/constants';
+import { EXTENSION_NAMES } from 'src/constants';
 import { OnEvent } from 'src/decorators';
 import { BootstrapEventPriority, DatabaseExtension, DatabaseLock, VectorIndex } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
 import { VectorExtension } from 'src/types';
 
-type CreateFailedArgs = { name: string; extension: string };
+type CreateFailedArgs = { name: string; extension: string; otherName: string };
 type UpdateFailedArgs = { name: string; extension: string; availableVersion: string };
-type DropFailedArgs = { name: string; extension: string };
 type RestartRequiredArgs = { name: string; availableVersion: string };
 type NightlyVersionArgs = { name: string; extension: string; version: string };
 type OutOfRangeArgs = { name: string; extension: string; version: string; range: string };
@@ -26,25 +25,24 @@ const messages = {
   outOfRange: ({ name, version, range }: OutOfRangeArgs) =>
     `The ${name} extension version is ${version}, but Immich only supports ${range}.
     Please change ${name} to a compatible version in the Postgres instance.`,
-  createFailed: ({ name, extension }: CreateFailedArgs) =>
+  createFailed: ({ name, extension, otherName }: CreateFailedArgs) =>
     `Failed to activate ${name} extension.
     Please ensure the Postgres instance has ${name} installed.
 
     If the Postgres instance already has ${name} installed, Immich may not have the necessary permissions to activate it.
-    In this case, please run 'CREATE EXTENSION IF NOT EXISTS ${extension} CASCADE' manually as a superuser.
-    See https://immich.app/docs/guides/database-queries for how to query the database.`,
+    In this case, please run 'CREATE EXTENSION IF NOT EXISTS ${extension}' manually as a superuser.
+    See https://immich.app/docs/guides/database-queries for how to query the database.
+
+    Alternatively, if your Postgres instance has ${otherName}, you may use this instead by setting the environment variable 'DB_VECTOR_EXTENSION=${otherName}'.
+    Note that switching between the two extensions after a successful startup is not supported.
+    The exception is if your version of Immich prior to upgrading was 1.90.2 or earlier.
+    In this case, you may set either extension now, but you will not be able to switch to the other extension following a successful startup.`,
   updateFailed: ({ name, extension, availableVersion }: UpdateFailedArgs) =>
     `The ${name} extension can be updated to ${availableVersion}.
     Immich attempted to update the extension, but failed to do so.
     This may be because Immich does not have the necessary permissions to update the extension.
 
     Please run 'ALTER EXTENSION ${extension} UPDATE' manually as a superuser.
-    See https://immich.app/docs/guides/database-queries for how to query the database.`,
-  dropFailed: ({ name, extension }: DropFailedArgs) =>
-    `The ${name} extension is no longer needed, but could not be dropped.
-    This may be because Immich does not have the necessary permissions to drop the extension.
-
-    Please run 'DROP EXTENSION ${extension};' manually as a superuser.
     See https://immich.app/docs/guides/database-queries for how to query the database.`,
   restartRequired: ({ name, availableVersion }: RestartRequiredArgs) =>
     `The ${name} extension has been updated to ${availableVersion}.
@@ -69,12 +67,12 @@ export class DatabaseService extends BaseService {
     }
 
     await this.databaseRepository.withLock(DatabaseLock.Migrations, async () => {
-      const extension = await this.databaseRepository.getVectorExtension();
+      const envData = this.configRepository.getEnv();
+      const extension = envData.database.vectorExtension;
       const name = EXTENSION_NAMES[extension];
       const extensionRange = this.databaseRepository.getExtensionVersionRange(extension);
 
-      const extensionVersions = await this.databaseRepository.getExtensionVersions(VECTOR_EXTENSIONS);
-      const { installedVersion, availableVersion } = extensionVersions.find((v) => v.name === extension) ?? {};
+      const { availableVersion, installedVersion } = await this.databaseRepository.getExtensionVersion(extension);
       if (!availableVersion) {
         throw new Error(messages.notInstalled(name));
       }
@@ -99,30 +97,12 @@ export class DatabaseService extends BaseService {
         throw new Error(messages.invalidDowngrade({ name, extension, availableVersion, installedVersion }));
       }
 
-      try {
-        await this.databaseRepository.reindexVectorsIfNeeded([VectorIndex.CLIP, VectorIndex.FACE]);
-      } catch (error) {
-        this.logger.warn(
-          'Could not run vector reindexing checks. If the extension was updated, please restart the Postgres instance. If you are upgrading directly from a version below 1.107.2, please upgrade to 1.107.2 first.',
-        );
-        throw error;
-      }
-
-      for (const { name: dbName, installedVersion } of extensionVersions) {
-        const isDepended = dbName === DatabaseExtension.VECTOR && extension === DatabaseExtension.VECTORCHORD;
-        if (dbName !== extension && installedVersion && !isDepended) {
-          await this.dropExtension(dbName);
-        }
-      }
+      await this.checkReindexing();
 
       const { database } = this.configRepository.getEnv();
       if (!database.skipMigrations) {
         await this.databaseRepository.runMigrations();
       }
-      await Promise.all([
-        this.databaseRepository.prewarm(VectorIndex.CLIP),
-        this.databaseRepository.prewarm(VectorIndex.FACE),
-      ]);
     });
   }
 
@@ -130,8 +110,10 @@ export class DatabaseService extends BaseService {
     try {
       await this.databaseRepository.createExtension(extension);
     } catch (error) {
+      const otherExtension =
+        extension === DatabaseExtension.VECTORS ? DatabaseExtension.VECTOR : DatabaseExtension.VECTORS;
       const name = EXTENSION_NAMES[extension];
-      this.logger.fatal(messages.createFailed({ name, extension }));
+      this.logger.fatal(messages.createFailed({ name, extension, otherName: EXTENSION_NAMES[otherExtension] }));
       throw error;
     }
   }
@@ -149,12 +131,20 @@ export class DatabaseService extends BaseService {
     }
   }
 
-  private async dropExtension(extension: DatabaseExtension) {
+  private async checkReindexing() {
     try {
-      await this.databaseRepository.dropExtension(extension);
+      if (await this.databaseRepository.shouldReindex(VectorIndex.CLIP)) {
+        await this.databaseRepository.reindex(VectorIndex.CLIP);
+      }
+
+      if (await this.databaseRepository.shouldReindex(VectorIndex.FACE)) {
+        await this.databaseRepository.reindex(VectorIndex.FACE);
+      }
     } catch (error) {
-      const name = EXTENSION_NAMES[extension];
-      this.logger.warn(messages.dropFailed({ name, extension }), error);
+      this.logger.warn(
+        'Could not run vector reindexing checks. If the extension was updated, please restart the Postgres instance.',
+      );
+      throw error;
     }
   }
 }

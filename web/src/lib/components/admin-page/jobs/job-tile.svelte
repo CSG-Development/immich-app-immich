@@ -1,9 +1,9 @@
 <script lang="ts">
   import Badge from '$lib/components/elements/badge.svelte';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { JobCommand, type JobCommandDto, type JobCountsDto, type QueueStatusDto } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
   import {
     mdiAlertCircle,
     mdiAllInclusive,
@@ -71,24 +71,24 @@
         </span>
         <div class="flex gap-2">
           {#if jobCounts.failed > 0}
-            <Badge>
+            <Badge color="primary">
               <div class="flex flex-row gap-1">
                 <span class="text-sm">
                   {$t('admin.jobs_failed', { values: { jobCount: jobCounts.failed.toLocaleString($locale) } })}
                 </span>
-                <IconButton
+                <CircleIconButton
                   color="primary"
                   icon={mdiClose}
-                  aria-label={$t('clear_message')}
-                  size="tiny"
-                  shape="round"
+                  title={$t('clear_message')}
+                  size="12"
+                  padding="1"
                   onclick={() => onCommand({ command: JobCommand.ClearFailed, force: false })}
                 />
               </div>
             </Badge>
           {/if}
           {#if jobCounts.delayed > 0}
-            <Badge>
+            <Badge color="secondary">
               <span class="text-sm">
                 {$t('admin.jobs_delayed', { values: { jobCount: jobCounts.delayed.toLocaleString($locale) } })}
               </span>

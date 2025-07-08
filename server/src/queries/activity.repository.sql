@@ -23,9 +23,9 @@ from
       ) as "dummy"
   ) as "user" on true
   left join "assets" on "assets"."id" = "activity"."assetId"
+  and "assets"."deletedAt" is null
 where
   "activity"."albumId" = $1
-  and "assets"."deletedAt" is null
 order by
   "activity"."createdAt" asc
 
@@ -62,26 +62,14 @@ where
 
 -- ActivityRepository.getStatistics
 select
-  count(*) filter (
-    where
-      "activity"."isLiked" = $1
-  ) as "comments",
-  count(*) filter (
-    where
-      "activity"."isLiked" = $2
-  ) as "likes"
+  count(*) as "count"
 from
   "activity"
   inner join "users" on "users"."id" = "activity"."userId"
   and "users"."deletedAt" is null
   left join "assets" on "assets"."id" = "activity"."assetId"
 where
-  "activity"."assetId" = $3
-  and "activity"."albumId" = $4
-  and (
-    (
-      "assets"."deletedAt" is null
-      and "assets"."visibility" != 'locked'
-    )
-    or "assets"."id" is null
-  )
+  "activity"."assetId" = $1
+  and "activity"."albumId" = $2
+  and "activity"."isLiked" = $3
+  and "assets"."deletedAt" is null

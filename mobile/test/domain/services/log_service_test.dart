@@ -74,7 +74,7 @@ void main() {
     setUp(() async {
       when(() => mockStoreRepo.insert<int>(StoreKey.logLevel, any()))
           .thenAnswer((_) async => true);
-      await sut.setLogLevel(LogLevel.shout);
+      await sut.setlogLevel(LogLevel.shout);
     });
 
     test('Updates the log level in store', () {

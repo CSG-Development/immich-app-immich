@@ -5,7 +5,6 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/models/server_info/server_info.model.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -17,7 +16,6 @@ class AppBarServerInfo extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(localeProvider);
     ServerInfo serverInfoState = ref.watch(serverInfoProvider);
 
     final appInfo = useState({});

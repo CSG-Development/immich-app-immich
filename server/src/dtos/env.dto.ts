@@ -154,9 +154,9 @@ export class EnvDto {
   @Optional()
   DB_USERNAME?: string;
 
-  @IsEnum(['pgvector', 'pgvecto.rs', 'vectorchord'])
+  @IsEnum(['pgvector', 'pgvecto.rs'])
   @Optional()
-  DB_VECTOR_EXTENSION?: 'pgvector' | 'pgvecto.rs' | 'vectorchord';
+  DB_VECTOR_EXTENSION?: 'pgvector' | 'pgvecto.rs';
 
   @IsString()
   @Optional()
