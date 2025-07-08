@@ -11,10 +11,10 @@
 *.ipa
 *.zip
 
-*.g.dart
-*.gen.dart
-*.gr.dart
-*.freezed.dart
+# *.g.dart
+# *.gen.dart
+# *.gr.dart
+# *.freezed.dart
 
 # IntelliJ related
 *.iml
@@ -64,4 +64,4 @@ libisar.so
 .fvm/
 
 # Translation file
-lib/generated/
+# lib/generated/
