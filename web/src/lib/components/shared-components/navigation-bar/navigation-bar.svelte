@@ -6,8 +6,8 @@
   import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
+  import CastButton from '$lib/cast/cast-button.svelte';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
-  import HelpAndFeedbackModal from '$lib/components/shared-components/help-and-feedback-modal.svelte';
   import NotificationPanel from '$lib/components/shared-components/navigation-bar/notification-panel.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
   import { AppRoute } from '$lib/constants';
@@ -18,45 +18,36 @@
   import { featureFlags } from '$lib/stores/server-config.store';
   import { sidebarStore } from '$lib/stores/sidebar.svelte';
   import { user } from '$lib/stores/user.store';
-  import { userInteraction } from '$lib/stores/user.svelte';
-  import { getAboutInfo, type ServerAboutResponseDto } from '@immich/sdk';
   import { Button, IconButton, Logo } from '@immich/ui';
-  import { mdiBellBadge, mdiBellOutline, mdiHelpCircleOutline, mdiMagnify, mdiMenu, mdiTrayArrowUp } from '@mdi/js';
-  import { onMount } from 'svelte';
+  import { mdiBellBadge, mdiBellOutline, mdiMagnify, mdiMenu, mdiTrayArrowUp } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import ThemeButton from '../theme-button.svelte';
   import UserAvatar from '../user-avatar.svelte';
   import AccountInfoPanel from './account-info-panel.svelte';
+
   interface Props {
     showUploadButton?: boolean;
-    onUploadClick: () => void;
+    onUploadClick?: () => void;
+    // TODO: remove once this is only used in <AppShellHeader>
+    noBorder?: boolean;
   }
 
-  let { showUploadButton = true, onUploadClick }: Props = $props();
+  let { showUploadButton = true, onUploadClick, noBorder = false }: Props = $props();
 
   let shouldShowAccountInfoPanel = $state(false);
-  let shouldShowHelpPanel = $state(false);
   let shouldShowNotificationPanel = $state(false);
   let innerWidth: number = $state(0);
   const hasUnreadNotifications = $derived(notificationManager.notifications.length > 0);
-
-  let info: ServerAboutResponseDto | undefined = $state();
-
-  onMount(async () => {
-    info = userInteraction.aboutInfo ?? (await getAboutInfo());
-  });
 </script>
 
 <svelte:window bind:innerWidth />
 
-{#if shouldShowHelpPanel && info}
-  <HelpAndFeedbackModal onClose={() => (shouldShowHelpPanel = false)} {info} />
-{/if}
-
-<nav id="dashboard-navbar" class="z-auto max-md:h-[var(--navbar-height-md)] h-[var(--navbar-height)] w-dvw text-sm">
+<nav id="dashboard-navbar" class="max-md:h-(--navbar-height-md) h-(--navbar-height) w-dvw text-sm">
   <SkipLink text={$t('skip_to_content')} />
   <div
-    class="grid h-full grid-cols-[theme(spacing.32)_auto] items-center border-b bg-immich-bg py-2 dark:border-b-immich-dark-gray dark:bg-immich-dark-bg sidebar:grid-cols-[theme(spacing.64)_auto]"
+    class="grid h-full grid-cols-[--spacing(32)_auto] items-center py-2 sidebar:grid-cols-[--spacing(64)_auto] {noBorder
+      ? ''
+      : 'border-b'}"
   >
     <div class="flex flex-row gap-1 mx-4 items-center">
       <IconButton
@@ -108,7 +99,7 @@
           />
         {/if}
 
-        {#if !page.url.pathname.includes('/admin') && showUploadButton}
+        {#if !page.url.pathname.includes('/admin') && showUploadButton && onUploadClick}
           <Button
             leadingIcon={mdiTrayArrowUp}
             onclick={onUploadClick}
@@ -131,23 +122,7 @@
           />
         {/if}
 
-        <ThemeButton padding="2" />
-
-        <div
-          use:clickOutside={{
-            onEscape: () => (shouldShowHelpPanel = false),
-          }}
-        >
-          <IconButton
-            shape="round"
-            color="secondary"
-            variant="ghost"
-            size="medium"
-            icon={mdiHelpCircleOutline}
-            onclick={() => (shouldShowHelpPanel = !shouldShowHelpPanel)}
-            aria-label={$t('support_and_feedback')}
-          />
-        </div>
+        <ThemeButton />
 
         <div
           use:clickOutside={{
@@ -170,6 +145,8 @@
           {/if}
         </div>
 
+        <CastButton />
+
         <div
           use:clickOutside={{
             onOutclick: () => (shouldShowAccountInfoPanel = false),
@@ -183,12 +160,15 @@
             title={`${$user.name} (${$user.email})`}
           >
             {#key $user}
-              <UserAvatar user={$user} size="md" showTitle={false} interactive />
+              <UserAvatar user={$user} size="md" noTitle interactive />
             {/key}
           </button>
 
           {#if shouldShowAccountInfoPanel}
-            <AccountInfoPanel onLogout={() => authManager.logout()} />
+            <AccountInfoPanel
+              onLogout={() => authManager.logout()}
+              onClose={() => (shouldShowAccountInfoPanel = false)}
+            />
           {/if}
         </div>
       </section>

@@ -7,8 +7,8 @@ import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
 
-export const load = (async () => {
-  await authenticate();
+export const load = (async ({ url }) => {
+  await authenticate(url);
   if (!get(user).shouldChangePassword) {
     redirect(302, resolveRoute(AppRoute.PHOTOS, {}));
   }

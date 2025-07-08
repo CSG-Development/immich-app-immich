@@ -16,7 +16,11 @@ SECURITY_GROUP_ID = "group.com.seagate.curator"
 BUNDLE_ID_PROD = "com.seagate.curator.stxphotos.ios"
 BUNDLE_ID_DEV = "com.seagate.curator.stxphotos.ios.dev"
 SHARE_EXTENSION_SUFFIX = "ShareExtension"
+WIDGET_EXTENSION_SUFFIX = "WidgetExtension"
 
+ID_APP = :app
+ID_SHARE_EXTENSION = :share_extension
+ID_WIDGET_EXTENSION = :widget_extension
 
 lane :build_prod_appstore do |options|
     local_create_app_exact(
@@ -104,6 +108,10 @@ def local_create_app(
         target_name: "ShareExtension",
         bundle_identifier: "#{bundle_identifier}.#{SHARE_EXTENSION_SUFFIX}",
     )
+    app_definition.add_target(
+        target_name: "WidgetExtension",
+        bundle_identifier: "#{bundle_identifier}.#{WIDGET_EXTENSION_SUFFIX}",
+    )
 
 # If several targets are present, usually app group or shared keychain are required to be updated too.
     update_plist(
@@ -148,14 +156,35 @@ end
 #######################
 
 def create_profile(
-    is_app:,
+    id_type:,
     is_prod:,
     adhoc:
 )
-  app_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
-  app_id = is_app ? app_id : "#{app_id}.#{SHARE_EXTENSION_SUFFIX}"
-  provisioning_name = "#{APP_NAME} :: #{is_app ? "App" : "ShareExtension"} :: #{is_prod ? "Prod" : "Dev"} :: #{adhoc ? "AdHoc" : "AppStore"} -- Bundle ID: #{app_id}"
+  base_id = is_prod ? BUNDLE_ID_PROD : BUNDLE_ID_DEV
+
+  app_id = case id_type
+           when ID_APP
+             base_id
+           when ID_SHARE_EXTENSION
+             "#{base_id}.#{SHARE_EXTENSION_SUFFIX}"
+           when ID_WIDGET_EXTENSION
+             "#{base_id}.#{WIDGET_EXTENSION_SUFFIX}"
+           else
+             UI.user_error!("Unknown id_type: #{id_type}")
+           end
+
+  type_name = case id_type
+              when ID_APP
+                "App"
+              when ID_SHARE_EXTENSION
+                "ShareExtension"
+              when ID_WIDGET_EXTENSION
+                "WidgetExtension"
+              end
+
+  provisioning_name = "#{APP_NAME} :: #{type_name} :: #{is_prod ? "Prod" : "Dev"} :: #{adhoc ? "AdHoc" : "AppStore"} -- Bundle ID: #{app_id}"
   UI.message("Creating profile: #{provisioning_name}")
+
   sigh(
     adhoc: adhoc,
     force: true,
@@ -169,11 +198,12 @@ end
 def create_profiles(
   is_prod:
 )
-  create_profile(is_app: true,  is_prod: is_prod, adhoc: true)
-  create_profile(is_app: false, is_prod: is_prod, adhoc: true)
-  create_profile(is_app: true,  is_prod: is_prod, adhoc: false)
-  create_profile(is_app: false, is_prod: is_prod, adhoc: false)
+  [ID_APP, ID_SHARE_EXTENSION, ID_WIDGET_EXTENSION].each do |id_type|
+    create_profile(id_type: id_type, is_prod: is_prod, adhoc: true)
+    create_profile(id_type: id_type, is_prod: is_prod, adhoc: false)
+  end
 end
+
 lane :GenerateProvisioningProfiles do
   UI.user_error!("Error: Missing FASTLANE_USER") unless ENV["FASTLANE_USER"]
   UI.user_error!("Error: Missing FASTLANE_SESSION") unless ENV["FASTLANE_SESSION"]

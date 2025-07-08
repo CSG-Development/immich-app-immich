@@ -8,6 +8,8 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/local_auth.provider.dart';
+import 'package:immich_mobile/repositories/biometric.repository.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
@@ -45,6 +47,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     final serverUrl = Store.tryGet(StoreKey.serverUrl);
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     final accessToken = SecureStore.tryGet(SecureStoreKey.accessToken);
+    final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
 
     bool isAuthSuccess = false;
 
@@ -76,43 +79,36 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       return;
     }
 
-    // Check if biometric authentication is enabled
-    final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
-
-    if (enableBiometric) {
-      if (!mounted) return;
-      
-      // Try biometric authentication up to 3 times
-      int attempts = 0;
-      bool authSuccess = false;
-      
-      while (attempts < 3 && !authSuccess) {
-        final localAuthService = LocalAuthService();
-        final isBiometricAvailable = await localAuthService.isBiometricAvailable();
-        
-        if (isBiometricAvailable) {
-          authSuccess = await localAuthService.authenticateWithBiometrics();
-          if (authSuccess) {
-            proceedToMainScreen();
-            return;
-          }
-        }
-        attempts++;
+    void proceedToMainScreen() async {
+      if (context.router.current.name != ShareIntentRoute.name) {
+        context.replaceRoute(const TabControllerRoute());
       }
-      
-      // If all attempts failed, logout user
-      if (!authSuccess) {
-        ref.read(authProvider.notifier).logout();
-        context.replaceRoute(const LoginRoute());
-        return;
-      }
-    } else {
-      proceedToMainScreen();
     }
-  }
 
-  void proceedToMainScreen() async {
-    context.replaceRoute(const TabControllerRoute());
+    // if (enableBiometric && ref.read(localAuthProvider).canAuthenticate) {
+    //   // Try biometric authentication up to 3 times
+    //   int attempts = 0;
+    //   bool authSuccess = false;
+      
+    //   while (attempts < 3 && !authSuccess) {
+    //     authSuccess = await ref.read(biometricRepositoryProvider).authenticate(null);
+    //     if (authSuccess) {
+    //       proceedToMainScreen();
+    //       return;
+    //     }
+    //     attempts++;
+    //   }
+      
+    //   // If all attempts failed, logout user
+    //   if (!authSuccess) {
+    //     ref.read(authProvider.notifier).logout();
+    //     context.replaceRoute(const LoginRoute());
+    //     return;
+    //   }
+    // } else {
+    //   proceedToMainScreen();
+    // }
+    proceedToMainScreen();
 
     final hasPermission =
         await ref.read(galleryPermissionNotifier.notifier).hasPermission;
