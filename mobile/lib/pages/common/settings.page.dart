@@ -50,11 +50,11 @@ enum SettingSection {
     Icons.interests_outlined,
     "preferences_settings_subtitle",
   ),
-  security(
-    'security_settings_title',
-    Icons.lock_outline,
-    "security_settings_subtitle",
-  ),
+  // security(
+  //   'security_settings_title',
+  //   Icons.lock_outline,
+  //   "security_settings_subtitle",
+  // ),
   timeline(
     'asset_list_settings_title',
     Icons.auto_awesome_mosaic_outlined,
@@ -73,7 +73,7 @@ enum SettingSection {
         SettingSection.networking => const NetworkingSettings(),
         SettingSection.notifications => const NotificationSetting(),
         SettingSection.preferences => const PreferenceSetting(),
-        SettingSection.security => const SecuritySettings(),
+        // SettingSection.security => const SecuritySettings(),
         SettingSection.timeline => const AssetListSettings(),
       };
 
