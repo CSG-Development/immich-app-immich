@@ -39,6 +39,13 @@
   import { mdiDotsVertical, mdiPlus } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import type { PageData } from './$types';
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
   let { isViewing: showAssetViewer } = assetViewingStore;
   const timelineManager = new TimelineManager();
@@ -88,7 +95,13 @@
   });
 </script>
 
-<UserPageLayout hideNavbar={assetInteraction.selectionActive} showUploadButton scrollbar={false}>
+<UserPageLayout
+  hideNavbar={assetInteraction.selectionActive}
+  title={data.meta.title}
+  description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+  showUploadButton
+  scrollbar={false}
+>
   <AssetGrid
     enableRouting={true}
     {timelineManager}

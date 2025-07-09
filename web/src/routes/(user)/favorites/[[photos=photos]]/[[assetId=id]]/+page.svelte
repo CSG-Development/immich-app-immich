@@ -50,7 +50,12 @@
   };
 </script>
 
-<UserPageLayout hideNavbar={assetInteraction.selectionActive} title={data.meta.title} scrollbar={false}>
+<UserPageLayout
+  hideNavbar={assetInteraction.selectionActive}
+  title={data.meta.title}
+  description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+  scrollbar={false}
+>
   <AssetGrid
     enableRouting={true}
     withStacked={true}

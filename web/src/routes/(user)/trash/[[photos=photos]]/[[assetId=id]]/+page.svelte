@@ -93,7 +93,12 @@
 </script>
 
 {#if $featureFlags.loaded && $featureFlags.trash}
-  <UserPageLayout hideNavbar={assetInteraction.selectionActive} title={data.meta.title} scrollbar={false}>
+  <UserPageLayout
+    hideNavbar={assetInteraction.selectionActive}
+    description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+    title={data.meta.title}
+    scrollbar={false}
+  >
     {#snippet buttons()}
       <HStack gap={0}>
         <Button
