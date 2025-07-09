@@ -51,7 +51,12 @@
   };
 </script>
 
-<UserPageLayout hideNavbar={assetInteraction.selectionActive} title={data.meta.title} scrollbar={false}>
+<UserPageLayout
+  hideNavbar={assetInteraction.selectionActive}
+  title={data.meta.title}
+  description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+  scrollbar={false}
+>
   {#snippet buttons()}
     <Button size="small" variant="ghost" color="primary" leadingIcon={mdiLockOutline} onclick={handleLock}>
       {$t('lock')}
