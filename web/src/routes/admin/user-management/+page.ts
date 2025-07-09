@@ -1,18 +1,7 @@
-// import { authenticate, requestServerInfo } from '$lib/utils/auth';
-// import { getFormatter } from '$lib/utils/i18n';
-// import { searchUsersAdmin } from '@immich/sdk';
-// import type { PageLoad } from './$types';
-//
-// export const load = (async () => {
-//   await authenticate({ admin: true });
-//   await requestServerInfo();
-//   const allUsers = await searchUsersAdmin({ withDeleted: true });
-//   const $t = await getFormatter();
-//
-//   return {
-//     allUsers,
-//     meta: {
-//       title: $t('admin.user_management'),
-//     },
-//   };
-// }) satisfies PageLoad;
+/* eslint-disable unicorn/no-empty-file */
+/* import { AppRoute } from '$lib/constants';
+import { redirect } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { resolveRoute } from '$app/paths';
+
+export const load = (() => redirect(307, resolveRoute(AppRoute.ADMIN_USERS, {}))) satisfies PageLoad; */

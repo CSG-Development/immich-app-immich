@@ -197,33 +197,33 @@ class LoginForm extends HookConsumerWidget {
         } else {
           if (!context.mounted) return;
 
-          // Show dialog to prompt user to add biometric authentication
-          final shouldAddBiometric = await showDialog<bool>(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('login_form_add_security_title').tr(),
-                content: const Text('login_form_add_security_content').tr(),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('login_form_not_now').tr(),
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                  TextButton(
-                    child: const Text('common_yes').tr(),
-                    onPressed: () => Navigator.of(context).pop(true),
-                  ),
-                ],
-              );
-            },
-          );
+          // // Show dialog to prompt user to add biometric authentication
+          // final shouldAddBiometric = await showDialog<bool>(
+          //   context: context,
+          //   builder: (BuildContext context) {
+          //     return AlertDialog(
+          //       title: const Text('login_form_add_security_title').tr(),
+          //       content: const Text('login_form_add_security_content').tr(),
+          //       actions: <Widget>[
+          //         TextButton(
+          //           child: const Text('login_form_not_now').tr(),
+          //           onPressed: () => Navigator.of(context).pop(false),
+          //         ),
+          //         TextButton(
+          //           child: const Text('common_yes').tr(),
+          //           onPressed: () => Navigator.of(context).pop(true),
+          //         ),
+          //       ],
+          //     );
+          //   },
+          // );
 
-          if (!context.mounted) return;
+          // if (!context.mounted) return;
 
-          if (shouldAddBiometric == true) {
-            // Save biometric settings
-            await Store.put(StoreKey.enableBiometric, true);
-          }
+          // if (shouldAddBiometric == true) {
+          //   // Save biometric settings
+          //   await Store.put(StoreKey.enableBiometric, true);
+          // }
 
           context.replaceRoute(const TabControllerRoute());
         }

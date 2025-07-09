@@ -156,6 +156,7 @@ export class JobRepository {
   }
 
   async queueAll(items: JobItem[]): Promise<void> {
+    this.logger.debug(`queueAll called with ${items.length} items`);
     if (items.length === 0) {
       return;
     }
@@ -173,11 +174,13 @@ export class JobRepository {
       if (job.options?.jobId) {
         // need to use add() instead of addBulk() for jobId deduplication
         promises.push(this.getQueue(queueName).add(item.name, item.data, job.options));
+        this.logger.debug(`Job with id ${job.options?.jobId} pushed to promises`);
       } else {
         itemsByQueue[queueName] = itemsByQueue[queueName] || [];
         itemsByQueue[queueName].push(job);
       }
     }
+    this.logger.debug(`After a for loop itemsByQueue dictionary looks the following way: ${JSON.stringify(itemsByQueue)}`);
 
     for (const [queueName, jobs] of Object.entries(itemsByQueue)) {
       const queue = this.getQueue(queueName as QueueName);
@@ -188,6 +191,7 @@ export class JobRepository {
   }
 
   async queue(item: JobItem): Promise<void> {
+    this.logger.debug(`Job queued: ${JSON.stringify(item)}`);
     return this.queueAll([item]);
   }
 

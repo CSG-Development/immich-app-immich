@@ -131,6 +131,7 @@ export class AssetMediaService extends BaseService {
     sidecarFile?: UploadFile,
   ): Promise<AssetMediaResponseDto> {
     try {
+      this.logger.debug(`uploadAsset called with dto: ${JSON.stringify(dto)}, file: ${JSON.stringify(file)}, sidecarFile: ${JSON.stringify(sidecarFile)}`);
       await this.requireAccess({
         auth,
         permission: Permission.ASSET_UPLOAD,
@@ -418,9 +419,11 @@ export class AssetMediaService extends BaseService {
       duration: dto.duration || null,
       visibility: dto.visibility ?? AssetVisibility.TIMELINE,
       livePhotoVideoId: dto.livePhotoVideoId,
-      originalFileName: file.originalName,
+      originalFileName: dto.filename || file.originalName,
       sidecarPath: sidecarFile?.originalPath,
     });
+
+    this.logger.debug(`asset-media.service.create created asset: ${JSON.stringify(asset)}`);
 
     if (sidecarFile) {
       await this.storageRepository.utimes(sidecarFile.originalPath, new Date(), new Date(dto.fileModifiedAt));
@@ -429,6 +432,7 @@ export class AssetMediaService extends BaseService {
     await this.assetRepository.upsertExif({ assetId: asset.id, fileSizeInByte: file.size });
     await this.jobRepository.queue({ name: JobName.METADATA_EXTRACTION, data: { id: asset.id, source: 'upload' } });
 
+    this.logger.debug(`asset-media.service.create ready to return asset: ${JSON.stringify(asset)}`);
     return asset;
   }
 

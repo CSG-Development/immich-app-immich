@@ -23,7 +23,7 @@ platform :android do
       build_type: 'Release',
       properties: {
         "android.injected.version.code" => 1,
-        "android.injected.version.name" => "1.0.2",
+        "android.injected.version.name" => "1.0.3",
       }
     )
     upload_to_play_store(skip_upload_apk: true, skip_upload_images: true, skip_upload_screenshots: true, aab: '../build/app/outputs/bundle/release/app-release.aab', track: 'beta')
@@ -36,10 +36,29 @@ platform :android do
       build_type: 'Release',
       properties: {
         "android.injected.version.code" => 1,
-        "android.injected.version.name" => "1.0.2",
+        "android.injected.version.name" => "1.0.3",
       }
     )
     upload_to_play_store(skip_upload_apk: true, skip_upload_images: true, skip_upload_screenshots: true, aab: '../build/app/outputs/bundle/release/app-release.aab')
+  end
+
+  desc "Deploy a new version to the Google Play"
+  lane :deploy do |options|
+    aab_path=options[:aab_path]
+    package_name=options[:package_name]
+    json_key=options[:json_key]
+
+    upload_to_play_store(
+      track: "internal", # or alpha, beta, production
+      aab: aab_path,
+      json_key: json_key,
+      release_status: "draft",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+      package_name: package_name
+    )
   end
 
 end

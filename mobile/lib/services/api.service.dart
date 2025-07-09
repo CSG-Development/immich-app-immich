@@ -12,6 +12,7 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
+import 'package:immich_mobile/utils/user_agent.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 
 class PerformanceHttpClient extends BaseClient {
@@ -85,6 +86,7 @@ class ApiService implements Authentication {
   late StacksApi stacksApi;
   late ViewApi viewApi;
   late MemoriesApi memoriesApi;
+  late SessionsApi sessionsApi;
 
   ApiService() {
     _httpClient = PerformanceHttpClient(Client(), _performance);
@@ -101,6 +103,7 @@ class ApiService implements Authentication {
 
   setEndpoint(String endpoint) {
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
+    _setUserAgentHeader();
     _apiClient.client = _httpClient;
     if (_accessToken != null) {
       setAccessToken(_accessToken!);
@@ -124,6 +127,12 @@ class ApiService implements Authentication {
     stacksApi = StacksApi(_apiClient);
     viewApi = ViewApi(_apiClient);
     memoriesApi = MemoriesApi(_apiClient);
+    sessionsApi = SessionsApi(_apiClient);
+  }
+
+  Future<void> _setUserAgentHeader() async {
+    final userAgent = await getUserAgentString();
+    _apiClient.addDefaultHeader('User-Agent', userAgent);
   }
 
   Future<String> resolveAndSetEndpoint(String serverUrl) async {
