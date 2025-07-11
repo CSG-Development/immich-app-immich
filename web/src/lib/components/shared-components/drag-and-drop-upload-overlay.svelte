@@ -2,7 +2,6 @@
   import { page } from '$app/state';
   import { shouldIgnoreEvent } from '$lib/actions/shortcut';
   import { authManager } from '$lib/managers/auth-manager.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { isAlbumsRoute, isLockedFolderRoute } from '$lib/utils/navigation';
@@ -169,7 +168,7 @@
     transition:fade={{ duration: 250 }}
     ondragover={onDragOver}
   >
-    <Logo class="m-16 h-36 animate-bounce bg-transparent" variant="icon" appTheme={themeManager.value} />
+    <Logo class="m-16 h-36 animate-bounce bg-transparent" variant="icon" />
     <div class="text-2xl">{$t('drop_files_to_upload')}</div>
   </div>
 {/if}

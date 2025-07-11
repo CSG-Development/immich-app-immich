@@ -12,7 +12,6 @@
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
   import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { notificationManager } from '$lib/stores/notification-manager.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
@@ -73,7 +72,6 @@
         <Logo
           class={mobileDevice.isFullSidebar ? 'max-md:h-[48px] h-[50px]' : 'max-md:h-[35px] h-[35px]'}
           variant={mobileDevice.isFullSidebar ? 'inline' : 'icon'}
-          appTheme={themeManager.value}
         />
       </a>
     </div>

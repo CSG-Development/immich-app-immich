@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { IconButton, Logo } from '@immich/ui';
   import { mdiClose } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -28,7 +27,7 @@
 <div class="flex place-items-center justify-between px-5 pb-3">
   <div class="flex gap-2 place-items-center">
     {#if showLogo}
-      <Logo class="h-[40px]" variant="icon" appTheme={themeManager.value} />
+      <Logo class="h-[40px]" variant="icon" />
     {:else if icon}
       <Icon path={icon} size={24} ariaHidden={true} class="text-immich-primary dark:text-immich-dark-primary" />
     {/if}

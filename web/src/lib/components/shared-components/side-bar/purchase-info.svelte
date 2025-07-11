@@ -6,7 +6,6 @@
   import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
   import { AppRoute } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import PurchaseModal from '$lib/modals/PurchaseModal.svelte';
   import { purchaseStore } from '$lib/stores/purchase.store';
   import { preferences } from '$lib/stores/user.store';
@@ -96,7 +95,7 @@
       <div class="flex justify-between w-full place-items-center place-content-center">
         <div class="flex place-items-center place-content-center gap-1">
           <div class="h-6 w-6">
-            <Logo class="h-[24px]" variant="icon" appTheme={themeManager.value} />
+            <Logo class="h-[24px]" variant="icon" />
           </div>
           <p class="flex text-immich-primary dark:text-immich-dark-primary font-medium">
             {$t('purchase_button_buy_immich')}
@@ -128,7 +127,7 @@
     >
       <div class="flex justify-between place-items-center">
         <div class="h-10 w-10">
-          <Logo class="h-[32px]" variant="icon" appTheme={themeManager.value} />
+          <Logo class="h-[32px]" variant="icon" />
         </div>
         <IconButton
           shape="round"

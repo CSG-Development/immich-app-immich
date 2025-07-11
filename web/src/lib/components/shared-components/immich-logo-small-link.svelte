@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { Logo } from '@immich/ui';
 </script>
@@ -8,6 +7,5 @@
   <Logo
     class={`${mobileDevice.maxMd ? 'h-[35px] ms-[5px]' : 'h-[50px]'} max-w-none md:w-auto md:max-w-full`}
     variant={mobileDevice.maxMd ? 'icon' : 'inline'}
-    appTheme={themeManager.value}
   />
 </a>
