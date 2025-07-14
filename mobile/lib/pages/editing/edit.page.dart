@@ -177,6 +177,24 @@ class EditImagePage extends ConsumerWidget {
               children: <Widget>[
                 IconButton(
                   icon: Icon(
+                    Icons.crop_rotate_rounded,
+                    color: context.themeData.iconTheme.color,
+                    size: 25,
+                  ),
+                  onPressed: () {
+                    context.pushRoute(
+                      EditorImageRoute(asset: asset, image: image),
+                    );
+                  },
+                ),
+                Text("editor".tr(), style: context.textTheme.displayMedium),
+              ],
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(
                     Icons.filter,
                     color: context.themeData.iconTheme.color,
                     size: 25,
