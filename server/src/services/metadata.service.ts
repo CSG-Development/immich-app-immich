@@ -166,6 +166,7 @@ export class MetadataService extends BaseService {
 
   @OnJob({ name: JobName.QUEUE_METADATA_EXTRACTION, queue: QueueName.METADATA_EXTRACTION })
   async handleQueueMetadataExtraction(job: JobOf<JobName.QUEUE_METADATA_EXTRACTION>): Promise<JobStatus> {
+    this.logger.debug(`MetadataService.handleQueueMetadataExtraction() called with job: ${JSON.stringify(job)}`);
     const { force } = job;
 
     let queue: { name: JobName.METADATA_EXTRACTION; data: { id: string } }[] = [];
@@ -184,12 +185,14 @@ export class MetadataService extends BaseService {
 
   @OnJob({ name: JobName.METADATA_EXTRACTION, queue: QueueName.METADATA_EXTRACTION })
   async handleMetadataExtraction(data: JobOf<JobName.METADATA_EXTRACTION>) {
+    this.logger.debug(`MetadataService.handleMetadataExtraction() called with data: ${JSON.stringify(data)}`);
     const [{ metadata, reverseGeocoding }, asset] = await Promise.all([
       this.getConfig({ withCache: true }),
       this.assetJobRepository.getForMetadataExtraction(data.id),
     ]);
 
     if (!asset) {
+      this.logger.warn(`No asset found for data: ${JSON.stringify(data)}`);
       return;
     }
 

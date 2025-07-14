@@ -34,6 +34,7 @@ export class JobRepository {
   }
 
   setup(services: ClassConstructor<unknown>[]) {
+    this.logger.debug('JobRepository.setup() method called');
     const reflector = this.moduleRef.get(Reflector, { strict: false });
 
     // discovery
@@ -72,6 +73,7 @@ export class JobRepository {
 
     // no missing handlers
     for (const [jobKey, jobName] of Object.entries(JobName)) {
+      this.logger.debug(`JobRepository.setup() check for ${jobKey}:${jobName}`);
       const item = this.handlers[jobName];
       if (!item) {
         const errorMessage = `Failed to find job handler for Job.${jobKey} ("${jobName}")`;
@@ -188,6 +190,7 @@ export class JobRepository {
     }
 
     await Promise.all(promises);
+    this.logger.debug(`queueAll successfully executed for ${promises.length} promises created from ${items.map((el) => el.name)} jobs`);
   }
 
   async queue(item: JobItem): Promise<void> {
