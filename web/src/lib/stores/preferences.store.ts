@@ -5,7 +5,6 @@ import { persisted } from 'svelte-persisted-store';
 
 export interface ThemeSetting {
   value: Theme;
-  system: boolean;
 }
 
 // Locale to use for formatting dates, numbers, etc.

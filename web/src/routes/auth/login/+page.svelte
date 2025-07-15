@@ -27,7 +27,7 @@
   let oauthLoading = $state(true);
 
   const onSuccess = async (user: LoginResponseDto) => {
-    await goto(resolveRoute(data.continueUrl, {}), { invalidateAll: true });
+    await goto(data.continueUrl, { invalidateAll: true });
     eventManager.emit('auth.login', user);
   };
 
