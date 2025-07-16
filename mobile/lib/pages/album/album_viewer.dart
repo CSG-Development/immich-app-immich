@@ -25,6 +25,8 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/pages/album/album_item_count.dart';
 
 class AlbumViewer extends HookConsumerWidget {
   const AlbumViewer({super.key});
@@ -132,6 +134,7 @@ class AlbumViewer extends HookConsumerWidget {
                   key: const ValueKey("albumTitle"),
                   titleFocusNode: titleFocusNode,
                 ),
+                AlbumItemCount(count: album.assets.length),
                 AlbumDescription(
                   key: const ValueKey("albumDescription"),
                   descriptionFocusNode: descriptionFocusNode,
