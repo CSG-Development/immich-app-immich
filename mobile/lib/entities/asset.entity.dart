@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
+import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/extensions/string_extensions.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.dart'
     as entity;
@@ -47,7 +48,8 @@ class Asset {
         stackCount = remote.stack?.assetCount ?? 0,
         stackId = remote.stack?.id,
         thumbhash = remote.thumbhash,
-        visibility = getVisibility(remote.visibility);
+        visibility = getVisibility(remote.visibility),
+        tags = remote.tags.map((t) => Tag.fromDto(t)).toList();
 
   Asset({
     this.id = Isar.autoIncrement,
@@ -74,7 +76,8 @@ class Asset {
     this.isOffline = false,
     this.thumbhash,
     this.visibility = AssetVisibilityEnum.timeline,
-  });
+    List<Tag>? tags,
+  }) : tags = tags ?? [];
 
   @ignore
   AssetEntity? _local;
@@ -178,6 +181,9 @@ class Asset {
 
   @Enumerated(EnumType.ordinal)
   AssetVisibilityEnum visibility;
+
+  @ignore
+  List<Tag> tags = [];
 
   /// Returns null if the asset has no sync access to the exif info
   @ignore
@@ -306,7 +312,8 @@ class Asset {
         isTrashed == other.isTrashed &&
         stackCount == other.stackCount &&
         stackPrimaryAssetId == other.stackPrimaryAssetId &&
-        stackId == other.stackId;
+        stackId == other.stackId &&
+        tags == other.tags;
   }
 
   @override
@@ -332,7 +339,8 @@ class Asset {
       isTrashed.hashCode ^
       stackCount.hashCode ^
       stackPrimaryAssetId.hashCode ^
-      stackId.hashCode;
+      stackId.hashCode ^
+      tags.hashCode;
 
   /// Returns `true` if this [Asset] can updated with values from parameter [a]
   bool canUpdate(Asset a) {
@@ -460,6 +468,7 @@ class Asset {
     int? stackCount,
     String? thumbhash,
     AssetVisibilityEnum? visibility,
+    List<Tag>? tags,
   }) =>
       Asset(
         id: id ?? this.id,
@@ -486,9 +495,13 @@ class Asset {
         stackCount: stackCount ?? this.stackCount,
         thumbhash: thumbhash ?? this.thumbhash,
         visibility: visibility ?? this.visibility,
+        tags: tags ?? this.tags,
       );
 
-  Future<void> put(Isar db) async {
+  Future<void> put(Isar db, {List<Tag>? tags}) async {
+    if (tags != null) {
+      this.tags = tags;
+    }
     await db.assets.put(this);
     if (exifInfo != null) {
       await db.exifInfos
@@ -551,6 +564,7 @@ class Asset {
   "isTrashed": $isTrashed,
   "isOffline": $isOffline,
   "visibility": "$visibility",
+  "tags": $tags,
 }""";
   }
 
