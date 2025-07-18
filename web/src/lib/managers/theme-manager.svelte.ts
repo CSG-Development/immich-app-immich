@@ -35,10 +35,6 @@ class ThemeManager {
 
   isDark = $derived(this.value === Theme.Dark);
 
-  constructor() {
-    eventManager.on('app.init', () => this.#onAppInit());
-  }
-
   setSystem() {
     this.#update(getDefaultTheme());
   }
@@ -49,18 +45,6 @@ class ThemeManager {
 
   toggleTheme() {
     this.#update(this.value === Theme.Dark ? Theme.Light : Theme.Dark);
-  }
-
-  #onAppInit() {
-    /*  globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener(
-      'change',
-      () => {
-        if (this.theme.system) {
-          this.#update('system');
-        }
-      },
-      { passive: true },
-    ); */
   }
 
   #update(value: Theme) {
