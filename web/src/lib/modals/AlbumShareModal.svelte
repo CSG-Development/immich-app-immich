@@ -2,6 +2,7 @@
   import AlbumSharedLink from '$lib/components/album-page/album-shared-link.svelte';
   import Dropdown from '$lib/components/elements/dropdown.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
+  import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import { AppRoute } from '$lib/constants';
   import QrCodeModal from '$lib/modals/QrCodeModal.svelte';
   import { makeSharedLinkUrl } from '$lib/utils';
@@ -19,7 +20,6 @@
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import UserAvatar from '../components/shared-components/user-avatar.svelte';
-
   interface Props {
     album: AlbumResponseDto;
     onClose: (result?: { action: 'sharedLink' } | { action: 'sharedUsers'; data: AlbumUserAddDto[] }) => void;
@@ -113,11 +113,17 @@
         </div>
       {/if}
 
-      {#if users.length + Object.keys(selectedUsers).length === 0}
-        <p class="p-5 text-sm">
-          {$t('album_share_no_users')}
-        </p>
-      {/if}
+      {#await searchUsers()}
+        <div class="w-full flex justify-center">
+          <LoadingSpinner />
+        </div>
+      {:then}
+        {#if users.length + Object.keys(selectedUsers).length === 0}
+          <p class="p-5 text-sm">
+            {$t('album_share_no_users')}
+          </p>
+        {/if}
+      {/await}
 
       <div class="immich-scrollbar max-h-[500px] overflow-y-auto">
         {#if users.length > 0 && users.length !== Object.keys(selectedUsers).length}
