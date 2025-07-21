@@ -28,6 +28,7 @@
   let { album, onClose }: Props = $props();
 
   let users: UserResponseDto[] = $state([]);
+  let isLoading: boolean = $state(false);
   let selectedUsers: Record<string, { user: UserResponseDto; role: AlbumUserRole }> = $state({});
 
   let sharedLinkUrl = $state('');
@@ -43,6 +44,7 @@
 
   let sharedLinks: SharedLinkResponseDto[] = $state([]);
   onMount(async () => {
+    isLoading = true;
     sharedLinks = await getAllSharedLinks({ albumId: album.id });
     const data = await searchUsers();
 
@@ -53,6 +55,8 @@
     for (const sharedUser of album.albumUsers) {
       users = users.filter((user) => user.id !== sharedUser.user.id);
     }
+
+    isLoading = false;
   });
 
   const handleToggle = (user: UserResponseDto) => {
@@ -113,17 +117,15 @@
         </div>
       {/if}
 
-      {#await searchUsers()}
+      {#if isLoading}
         <div class="w-full flex justify-center">
           <LoadingSpinner />
         </div>
-      {:then}
-        {#if users.length + Object.keys(selectedUsers).length === 0}
-          <p class="p-5 text-sm">
-            {$t('album_share_no_users')}
-          </p>
-        {/if}
-      {/await}
+      {:else if users.length + Object.keys(selectedUsers).length === 0}
+        <p class="p-5 text-sm">
+          {$t('album_share_no_users')}
+        </p>
+      {/if}
 
       <div class="immich-scrollbar max-h-[500px] overflow-y-auto">
         {#if users.length > 0 && users.length !== Object.keys(selectedUsers).length}
