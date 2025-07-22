@@ -149,6 +149,8 @@ PODS:
     - GoogleUtilities/Privacy
   - home_widget (0.0.1):
     - Flutter
+  - http_proxy (0.0.1):
+    - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
   - integration_test (0.0.1):
@@ -247,6 +249,7 @@ DEPENDENCIES:
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
+  - http_proxy (from `.symlinks/plugins/http_proxy/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
@@ -329,6 +332,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/geolocator_apple/ios"
   home_widget:
     :path: ".symlinks/plugins/home_widget/ios"
+  http_proxy:
+    :path: ".symlinks/plugins/http_proxy/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   integration_test:
@@ -402,6 +407,7 @@ SPEC CHECKSUMS:
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
+  http_proxy: 6e9876b8b0d8bd9378a526bf49c51d8df64e891e
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   isar_flutter_libs: bc909e72c3d756c2759f14c8776c13b5b0556e26
