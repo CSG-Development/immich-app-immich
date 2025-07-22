@@ -354,6 +354,19 @@ class AlbumService {
     return false;
   }
 
+  Future<bool> updateAfterDeletedRemote(
+    Album album,
+    Iterable<Asset> assets,
+  ) async {
+    try {
+      await _updateAssets(album.id, remove: assets.toList());
+      return true;
+    } catch (e) {
+      debugPrint("Error removeAssetFromAlbum ${e.toString()}");
+    }
+    return false;
+  }
+
   Future<bool> removeUser(
     Album album,
     UserDto user,

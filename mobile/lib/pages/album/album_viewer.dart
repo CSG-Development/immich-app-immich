@@ -58,6 +58,21 @@ class AlbumViewer extends HookConsumerWidget {
       return isSuccess;
     }
 
+    Future<bool> onDeletedRemote(Iterable<Asset> assets) async {
+      final bool isSuccess =
+          await ref.read(albumProvider.notifier).updateAfterDeletedRemote(album, assets);
+
+      if (!isSuccess) {
+        ImmichToast.show(
+          context: context,
+          msg: "album_viewer_appbar_share_err_remove".tr(),
+          toastType: ToastType.error,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+      return isSuccess;
+    }
+
     /// Find out if the assets in album exist on the device
     /// If they exist, add to selected asset state to show they are already selected.
     void onAddPhotosPressed() async {
@@ -150,6 +165,7 @@ class AlbumViewer extends HookConsumerWidget {
             ),
           ),
           onRemoveFromAlbum: onRemoveFromAlbumPressed,
+          updateAfterDeletedRemote: onDeletedRemote,
           editEnabled: album.ownerId == userId,
         ),
         AnimatedPositioned(
