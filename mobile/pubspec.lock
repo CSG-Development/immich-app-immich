@@ -829,6 +829,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  flutter_user_certificates_android:
+    dependency: transitive
+    description:
+      name: flutter_user_certificates_android
+      sha256: "084b44d1a1bed7fce7b39873d7ab67cbc3892677840899ef495d8827ef0422e9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   flutter_web_auth_2:
     dependency: "direct main"
     description:
@@ -999,6 +1007,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  http_proxy:
+    dependency: "direct main"
+    description:
+      name: http_proxy
+      sha256: "1fd2f5357e018a20a2ba7b0c97d83dea65b19e1a793ea0ee7c0fbade8768843a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.3"
   image:
     dependency: transitive
     description:
