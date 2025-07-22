@@ -106,6 +106,10 @@ class AlbumNotifier extends StateNotifier<List<Album>> {
     return await albumService.removeAsset(album, assets);
   }
 
+  Future<bool> updateAfterDeletedRemote(Album album, Iterable<Asset> assets) async {
+    return await albumService.updateAfterDeletedRemote(album, assets);
+  }
+
   Future<bool> setActivitystatus(
     Album album,
     bool enabled,

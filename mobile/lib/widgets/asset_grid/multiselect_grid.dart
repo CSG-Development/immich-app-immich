@@ -37,6 +37,7 @@ class MultiselectGrid extends HookConsumerWidget {
     this.onRefresh,
     this.buildLoadingIndicator,
     this.onRemoveFromAlbum,
+    this.updateAfterDeletedRemote,
     this.topWidget,
     this.stackEnabled = false,
     this.dragScrollLabelEnabled = true,
@@ -54,6 +55,7 @@ class MultiselectGrid extends HookConsumerWidget {
   final Future<void> Function()? onRefresh;
   final Widget Function()? buildLoadingIndicator;
   final Future<bool> Function(Iterable<Asset>)? onRemoveFromAlbum;
+  final Future<bool> Function(Iterable<Asset>)? updateAfterDeletedRemote;
   final Widget? topWidget;
   final bool stackEnabled;
   final bool dragScrollLabelEnabled;
@@ -296,6 +298,7 @@ class MultiselectGrid extends HookConsumerWidget {
                   shouldDeletePermanently: shouldDeletePermanently,
                 );
         if (isDeleted) {
+          updateAfterDeletedRemote!(toDelete);
           ImmichToast.show(
             context: context,
             msg: shouldDeletePermanently
