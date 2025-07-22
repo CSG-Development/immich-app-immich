@@ -87,6 +87,7 @@ class ApiService implements Authentication {
   late ViewApi viewApi;
   late MemoriesApi memoriesApi;
   late SessionsApi sessionsApi;
+  late TagsApi tagsApi;
 
   ApiService() {
     _httpClient = PerformanceHttpClient(Client(), _performance);
@@ -128,6 +129,7 @@ class ApiService implements Authentication {
     viewApi = ViewApi(_apiClient);
     memoriesApi = MemoriesApi(_apiClient);
     sessionsApi = SessionsApi(_apiClient);
+    tagsApi = TagsApi(_apiClient);
   }
 
   Future<void> _setUserAgentHeader() async {
