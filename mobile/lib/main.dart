@@ -28,13 +28,14 @@ import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
 import 'package:immich_mobile/utils/download.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
+// import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/utils/migration.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:http_proxy/http_proxy.dart';
 
 void main() async {
   ImmichWidgetsBinding();
@@ -47,7 +48,9 @@ void main() async {
   // Warm-up isolate pool for worker manager
   await workerManager.init(dynamicSpawning: true);
   await migrateDatabaseIfNeeded(db);
-  HttpSSLOptions.apply();
+  HttpProxy httpProxy = await HttpProxy.createHttpProxy();
+  HttpOverrides.global = httpProxy;
+  // HttpSSLOptions.apply();
 
   // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
   // await telemetryChannel.invokeMethod('init', ['test']);
