@@ -33,6 +33,20 @@ class _TagsPicker extends HookConsumerWidget {
     final allTags = ref.watch(tagsNotifierProvider);
     final selectedTags = useState<Set<Tag>>({});
     final TextEditingController controller = useTextEditingController();
+    final focusNode = useFocusNode();
+    final isInputFocused = useState(false);
+
+    useEffect(
+      () {
+        void listener() {
+          isInputFocused.value = focusNode.hasFocus;
+        }
+
+        focusNode.addListener(listener);
+        return () => focusNode.removeListener(listener);
+      },
+      [focusNode],
+    );
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
@@ -65,11 +79,13 @@ class _TagsPicker extends HookConsumerWidget {
                   ),
                 );
               }).toList(),
-              onChanged: (tag) {
-                if (tag != null) {
-                  selectedTags.value = {...selectedTags.value, tag};
-                }
-              },
+              onChanged: isInputFocused.value
+                  ? null
+                  : (tag) {
+                      if (tag != null) {
+                        selectedTags.value = {...selectedTags.value, tag};
+                      }
+                    },
               borderRadius: BorderRadius.circular(12),
               dropdownColor: context.colorScheme.surfaceContainerHigh,
             ),
@@ -105,6 +121,10 @@ class _TagsPicker extends HookConsumerWidget {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
+              focusNode: focusNode,
+              onTapOutside: (event) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
               decoration: InputDecoration(
                 labelText: 'Or enter new tag',
                 labelStyle: context.textTheme.bodyLarge?.copyWith(
