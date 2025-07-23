@@ -131,7 +131,9 @@ export class AssetMediaService extends BaseService {
     sidecarFile?: UploadFile,
   ): Promise<AssetMediaResponseDto> {
     try {
-      this.logger.debug(`uploadAsset called with dto: ${JSON.stringify(dto)}, file: ${JSON.stringify(file)}, sidecarFile: ${JSON.stringify(sidecarFile)}`);
+      this.logger.debug(
+        `uploadAsset called with dto: ${JSON.stringify(dto)}, file: ${JSON.stringify(file)}, sidecarFile: ${JSON.stringify(sidecarFile)}`,
+      );
       await this.requireAccess({
         auth,
         permission: Permission.ASSET_UPLOAD,

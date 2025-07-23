@@ -182,7 +182,9 @@ export class JobRepository {
         itemsByQueue[queueName].push(job);
       }
     }
-    this.logger.debug(`After a for loop itemsByQueue dictionary looks the following way: ${JSON.stringify(itemsByQueue)}`);
+    this.logger.debug(
+      `After a for loop itemsByQueue dictionary looks the following way: ${JSON.stringify(itemsByQueue)}`,
+    );
 
     for (const [queueName, jobs] of Object.entries(itemsByQueue)) {
       const queue = this.getQueue(queueName as QueueName);
@@ -190,7 +192,9 @@ export class JobRepository {
     }
 
     await Promise.all(promises);
-    this.logger.debug(`queueAll successfully executed for ${promises.length} promises created from ${items.map((el) => el.name)} jobs`);
+    this.logger.debug(
+      `queueAll successfully executed for ${promises.length} promises created from ${items.map((el) => el.name)} jobs`,
+    );
   }
 
   async queue(item: JobItem): Promise<void> {
