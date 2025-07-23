@@ -79,7 +79,7 @@
 {#if sharedLinkUrl}
   <QrCodeModal title={$t('view_link')} onClose={() => (sharedLinkUrl = '')} value={sharedLinkUrl} />
 {:else}
-  <Modal size="small" title={$t('share')} {onClose}>
+  <Modal size="small" title={$t('share')} {onClose} class="overflow-visible">
     <ModalBody>
       {#if Object.keys(selectedUsers).length > 0}
         <div class="mb-2 py-2 sticky">
@@ -109,6 +109,8 @@
                     options={roleOptions}
                     render={({ title, icon }) => ({ title, icon })}
                     onSelect={({ value }) => handleChangeRole(user, value)}
+                    position="bottom-right"
+                    class="!min-w-[180px]"
                   />
                 </div>
               {/key}
