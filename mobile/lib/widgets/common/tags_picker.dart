@@ -10,24 +10,26 @@ Future<List<Tag>?> showTagsPicker({
   required BuildContext context,
   required WidgetRef ref,
 }) async {
-  // Fetch all tags if not already loaded
-  final tagsNotifier = ref.read(tagsNotifierProvider.notifier);
-  final allTags = ref.read(tagsNotifierProvider);
-  if (allTags.isEmpty) {
-    await tagsNotifier.fetchAllTags();
-  }
   return showDialog<List<Tag>?>(
     context: context,
     builder: (context) => _TagsPicker(ref: ref),
   );
 }
 
-class _TagsPicker extends HookWidget {
+class _TagsPicker extends HookConsumerWidget {
   final WidgetRef ref;
   const _TagsPicker({required this.ref});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(
+      () {
+        ref.read(tagsNotifierProvider.notifier).fetchAllTags();
+        return null;
+      },
+      [],
+    );
+
     final allTags = ref.watch(tagsNotifierProvider);
     final selectedTags = useState<Set<Tag>>({});
     final TextEditingController controller = useTextEditingController();
