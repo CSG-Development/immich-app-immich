@@ -13,6 +13,7 @@ class Asset extends BaseAsset {
   final String? localId;
   final String? thumbHash;
   final AssetVisibility visibility;
+  final List<Tag> tags;
 
   const Asset({
     required this.id,
@@ -28,6 +29,7 @@ class Asset extends BaseAsset {
     super.isFavorite = false,
     this.thumbHash,
     this.visibility = AssetVisibility.timeline,
+    this.tags = const [],
   });
 
   @override
@@ -49,6 +51,7 @@ class Asset extends BaseAsset {
    isFavorite: $isFavorite,
     thumbHash: ${thumbHash ?? "<NA>"},
     visibility: $visibility,
+    tags: $tags,
  }''';
   }
 
@@ -60,7 +63,8 @@ class Asset extends BaseAsset {
         id == other.id &&
         localId == other.localId &&
         thumbHash == other.thumbHash &&
-        visibility == other.visibility;
+        visibility == other.visibility &&
+        listEquals(tags, other.tags);
   }
 
   @override
@@ -69,5 +73,6 @@ class Asset extends BaseAsset {
       id.hashCode ^
       localId.hashCode ^
       thumbHash.hashCode ^
-      visibility.hashCode;
+      visibility.hashCode ^
+      Object.hashAll(tags);
 }

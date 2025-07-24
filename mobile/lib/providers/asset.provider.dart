@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -178,16 +179,35 @@ class AssetNotifier extends StateNotifier<bool> {
   ) {
     return _assetService.setVisibility(selection, visibility);
   }
+
+  Future<void> addTagsToAssets(List<Asset> asset, List<Tag> tags) {
+    return _assetService.addTagsToAssets(asset, tags);
+  }
+
+  Future<void> removeTagsFromAsset(Asset asset, List<Tag> tags) {
+    return _assetService.removeTagsFromAsset(asset, tags);
+  }
 }
 
 final assetDetailProvider =
     StreamProvider.autoDispose.family<Asset, Asset>((ref, asset) async* {
   final assetService = ref.watch(assetServiceProvider);
   yield await assetService.loadExif(asset);
-
   await for (final asset in assetService.watchAsset(asset.id)) {
     if (asset != null) {
       yield await ref.watch(assetServiceProvider).loadExif(asset);
+    }
+  }
+});
+
+final assetDetailProviderTag =
+    StreamProvider.autoDispose.family<Asset, Asset>((ref, asset) async* {
+  final assetService = ref.watch(assetServiceProvider);
+  yield await assetService.loadTags(asset.copyWith());
+
+  await for (final asset in assetService.watchAsset(asset.id)) {
+    if (asset != null) {
+      yield await assetService.loadTags(asset.copyWith());
     }
   }
 });

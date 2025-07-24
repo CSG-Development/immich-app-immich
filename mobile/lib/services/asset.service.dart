@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/interfaces/exif.interface.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
+import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
@@ -188,6 +189,26 @@ class AssetService {
         // TODO implement local exif info parsing
       }
     }
+    return a;
+  }
+
+  /// Loads tags
+  Future<Asset> loadTags(Asset a) async {
+      if (a.isRemote) {
+        final dto = await _apiService.assetsApi.getAssetInfo(a.remoteId!);
+        if (dto != null) {
+          final newTags = dto.tags.map(Tag.fromDto).toList();
+          a.tags = newTags;
+          if (newTags != a.tags) {
+            if (a.isInDb) {
+              await _assetRepository
+                  .transaction(() => _assetRepository.update(a));
+            } else {
+              debugPrint("[loadTags] parameter Asset is not from DB!");
+            }
+          }
+        }
+      }
     return a;
   }
 
@@ -551,6 +572,50 @@ class AssetService {
       asset.visibility = visibility;
       return asset;
     }).toList();
+
+    await _assetRepository.updateAll(updatedAssets);
+  }
+
+  /// Removes a tag from the given assets and updates the repository/server as needed.
+  Future<void> removeTagsFromAsset(Asset asset, List<Tag> tags) async {
+    final remoteId = asset.remoteId;
+    if (remoteId == null) {
+      return;
+    }
+
+    await _apiService.tagsApi.untagAssets(
+      tags.first.id,
+      BulkIdsDto(ids: [remoteId]),
+    );
+
+    final tagIdsToRemove = tags.map((t) => t.id).toSet();
+    final newTags =
+        asset.tags.where((t) => !tagIdsToRemove.contains(t.id)).toList();
+    final updatedAsset = asset.copyWith(tags: newTags);
+
+    await _assetRepository.updateAll([updatedAsset]);
+  }
+
+  /// Adds a tag to the given assets and updates the repository/server as needed.
+  Future<void> addTagsToAssets(List<Asset> assets, List<Tag> tags) async {
+    final List<String> remoteIds = [];
+    final List<Asset> updatedAssets = [];
+    for (var i = 0; i < assets.length; i++) {
+      final remoteId = assets[i].remoteId;
+      if (remoteId != null) {
+        remoteIds.add(remoteId);
+        updatedAssets.add(assets[i].copyWith(tags: [...assets[i].tags, ...tags]));
+      }
+    }
+    if (remoteIds.isEmpty) {
+      return;
+    }
+    await _apiService.tagsApi.bulkTagAssets(
+      TagBulkAssetsDto(
+        assetIds: remoteIds,
+        tagIds: tags.map((t) => t.id).toList(),
+      ),
+    );
 
     await _assetRepository.updateAll(updatedAssets);
   }

@@ -22,26 +22,33 @@ class ModalManager {
     ...props: OptionalParamIfEmpty<Omit<T, 'onClose'>>
   ) {
     let modal: object = {};
-    let onClose: (...args: [StripValueIfOptional<K>]) => Promise<void>;
+    let closeModal: (...args: [StripValueIfOptional<K>]) => void;
 
-    const deferred = new Promise<StripValueIfOptional<K>>((resolve) => {
-      onClose = async (...args: [StripValueIfOptional<K>]) => {
-        await unmount(modal);
+    const onClosePromise = new Promise<StripValueIfOptional<K>>((resolve) => {
+      closeModal = (...args: [StripValueIfOptional<K>]) => {
         resolve(args?.[0]);
+        // Use setTimeout to avoid unmount during Svelte update cycle
+        setTimeout(() => {
+          try {
+            void unmount(modal);
+          } catch (error) {
+            console.error('Failed to unmount modal:', error);
+          }
+        }, 0);
       };
 
       modal = mount(Component, {
         target: document.body,
         props: {
           ...((props?.[0] ?? {}) as T),
-          onClose,
+          onClose: closeModal,
         },
       });
     });
 
     return {
-      onClose: deferred,
-      close: (...args: [StripValueIfOptional<K>]) => onClose(args[0]),
+      onClose: onClosePromise,
+      close: (...args: [StripValueIfOptional<K>]) => closeModal(args[0]),
     };
   }
 

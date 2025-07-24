@@ -15,7 +15,7 @@
   import { closeWebsocketConnection, openWebsocketConnection } from '$lib/stores/websocket';
   import { copyToClipboard } from '$lib/utils';
   import { isAssetViewerRoute } from '$lib/utils/navigation';
-  import { setTranslations } from '@immich/ui';
+  import { initializeTheme, setTranslations } from '@immich/ui';
   import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { run } from 'svelte/legacy';
@@ -48,6 +48,8 @@
   });
 
   eventManager.emit('app.init');
+
+  initializeTheme();
 
   beforeNavigate(({ from, to }) => {
     if (isAssetViewerRoute(from) && isAssetViewerRoute(to)) {

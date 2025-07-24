@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
@@ -103,12 +104,55 @@ class PhotosPage extends HookConsumerWidget {
       }
     }
 
+    Widget buildAssetCountWidget() {
+      final timelineUsers = ref.watch(timelineUsersIdsProvider);
+      final currentUser = ref.watch(currentUserProvider);
+      final renderListAsync = ref.watch(
+        timelineUsers.length > 1
+            ? multiUsersTimelineProvider(timelineUsers)
+            : singleUserTimelineProvider(currentUser?.id),
+      );
+      return renderListAsync.when(
+        data: (renderList) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Icon(Icons.photo_library_outlined, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'items_count'.t(
+                  context: context,
+                  args: {
+                    'count': renderList.totalAssets,
+                  },
+                ),
+                style: context.textTheme.bodyLarge,
+              ),
+            ],
+          ),
+        ),
+        loading: () => const SizedBox.shrink(),
+        error: (e, _) => const SizedBox.shrink(),
+      );
+    }
+
+    final showMemories = currentUser != null && currentUser.memoryEnabled;
+    final Widget topWidget = showMemories
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const MemoryLane(),
+              buildAssetCountWidget(),
+            ],
+          )
+        : buildAssetCountWidget();
+
     return Stack(
       children: [
         MultiselectGrid(
-          topWidget: (currentUser != null && currentUser.memoryEnabled)
-              ? const MemoryLane()
-              : const SizedBox(),
+          topWidget: topWidget,
           renderListProvider: timelineUsers.length > 1
               ? multiUsersTimelineProvider(timelineUsers)
               : singleUserTimelineProvider(currentUser?.id),

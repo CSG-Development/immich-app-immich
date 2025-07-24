@@ -9,7 +9,6 @@ import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/local_auth.provider.dart';
-import 'package:immich_mobile/repositories/biometric.repository.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
@@ -85,30 +84,31 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       }
     }
 
-    // if (enableBiometric && ref.read(localAuthProvider).canAuthenticate) {
-    //   // Try biometric authentication up to 3 times
-    //   int attempts = 0;
-    //   bool authSuccess = false;
+    final canAuthenticate = (await ref.read(localAuthServiceProvider).getStatus()).canAuthenticate;
+
+    if (enableBiometric && canAuthenticate) {
+      // Try biometric authentication up to 3 times
+      int attempts = 0;
+      bool authSuccess = false;
       
-    //   while (attempts < 3 && !authSuccess) {
-    //     authSuccess = await ref.read(biometricRepositoryProvider).authenticate(null);
-    //     if (authSuccess) {
-    //       proceedToMainScreen();
-    //       return;
-    //     }
-    //     attempts++;
-    //   }
+      while (attempts < 3 && !authSuccess) {
+        authSuccess = await ref.read(localAuthProvider.notifier).authenticate(context, null);
+        if (authSuccess) {
+          proceedToMainScreen();
+          return;
+        }
+        attempts++;
+      }
       
-    //   // If all attempts failed, logout user
-    //   if (!authSuccess) {
-    //     ref.read(authProvider.notifier).logout();
-    //     context.replaceRoute(const LoginRoute());
-    //     return;
-    //   }
-    // } else {
-    //   proceedToMainScreen();
-    // }
-    proceedToMainScreen();
+      // If all attempts failed, logout user
+      if (!authSuccess) {
+        ref.read(authProvider.notifier).logout();
+        context.replaceRoute(const LoginRoute());
+        return;
+      }
+    } else {
+      proceedToMainScreen();
+    }
 
     final hasPermission =
         await ref.read(galleryPermissionNotifier.notifier).hasPermission;
@@ -121,11 +121,12 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
+      backgroundColor: Color(0xFF05070E),
+      body: SizedBox.expand(
         child: Image(
-          image: AssetImage('assets/immich-logo.png'),
-          width: 80,
-          filterQuality: FilterQuality.high,
+          image: AssetImage('assets/immich-splash.png'),
+          filterQuality: FilterQuality.medium,
+          fit: BoxFit.contain,
         ),
       ),
     );

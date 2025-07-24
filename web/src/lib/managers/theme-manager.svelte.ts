@@ -6,7 +6,6 @@ import { Theme } from '@immich/ui';
 
 export interface ThemeSetting {
   value: Theme;
-  system: boolean;
 }
 
 const getDefaultTheme = () => {
@@ -19,8 +18,8 @@ const getDefaultTheme = () => {
 
 class ThemeManager {
   #theme = new PersistedLocalStorage<ThemeSetting>(
-    'color-theme',
-    { value: getDefaultTheme(), system: false },
+    'immich-ui-theme',
+    { value: getDefaultTheme() },
     {
       valid: (value): value is ThemeSetting => {
         return Object.values(Theme).includes((value as ThemeSetting)?.value);
@@ -36,12 +35,8 @@ class ThemeManager {
 
   isDark = $derived(this.value === Theme.Dark);
 
-  constructor() {
-    eventManager.on('app.init', () => this.#onAppInit());
-  }
-
-  setSystem(system: boolean) {
-    this.#update(system ? 'system' : getDefaultTheme());
+  setSystem() {
+    this.#update(getDefaultTheme());
   }
 
   setTheme(theme: Theme) {
@@ -52,21 +47,8 @@ class ThemeManager {
     this.#update(this.value === Theme.Dark ? Theme.Light : Theme.Dark);
   }
 
-  #onAppInit() {
-    globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener(
-      'change',
-      () => {
-        if (this.theme.system) {
-          this.#update('system');
-        }
-      },
-      { passive: true },
-    );
-  }
-
-  #update(value: Theme | 'system') {
-    const theme: ThemeSetting =
-      value === 'system' ? { system: true, value: getDefaultTheme() } : { system: false, value };
+  #update(value: Theme) {
+    const theme: ThemeSetting = { value };
 
     if (theme.value === Theme.Light) {
       document.documentElement.classList.remove('dark');

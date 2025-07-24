@@ -2,6 +2,7 @@
   import AlbumSharedLink from '$lib/components/album-page/album-shared-link.svelte';
   import Dropdown from '$lib/components/elements/dropdown.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
+  import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import { AppRoute } from '$lib/constants';
   import QrCodeModal from '$lib/modals/QrCodeModal.svelte';
   import { makeSharedLinkUrl } from '$lib/utils';
@@ -19,7 +20,6 @@
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import UserAvatar from '../components/shared-components/user-avatar.svelte';
-
   interface Props {
     album: AlbumResponseDto;
     onClose: (result?: { action: 'sharedLink' } | { action: 'sharedUsers'; data: AlbumUserAddDto[] }) => void;
@@ -28,6 +28,7 @@
   let { album, onClose }: Props = $props();
 
   let users: UserResponseDto[] = $state([]);
+  let isLoading: boolean = $state(false);
   let selectedUsers: Record<string, { user: UserResponseDto; role: AlbumUserRole }> = $state({});
 
   let sharedLinkUrl = $state('');
@@ -43,6 +44,7 @@
 
   let sharedLinks: SharedLinkResponseDto[] = $state([]);
   onMount(async () => {
+    isLoading = true;
     sharedLinks = await getAllSharedLinks({ albumId: album.id });
     const data = await searchUsers();
 
@@ -53,6 +55,8 @@
     for (const sharedUser of album.albumUsers) {
       users = users.filter((user) => user.id !== sharedUser.user.id);
     }
+
+    isLoading = false;
   });
 
   const handleToggle = (user: UserResponseDto) => {
@@ -75,7 +79,7 @@
 {#if sharedLinkUrl}
   <QrCodeModal title={$t('view_link')} onClose={() => (sharedLinkUrl = '')} value={sharedLinkUrl} />
 {:else}
-  <Modal size="small" title={$t('share')} {onClose}>
+  <Modal size="small" title={$t('share')} {onClose} class="overflow-visible">
     <ModalBody>
       {#if Object.keys(selectedUsers).length > 0}
         <div class="mb-2 py-2 sticky">
@@ -105,6 +109,8 @@
                     options={roleOptions}
                     render={({ title, icon }) => ({ title, icon })}
                     onSelect={({ value }) => handleChangeRole(user, value)}
+                    position="bottom-right"
+                    class="!min-w-[180px]"
                   />
                 </div>
               {/key}
@@ -113,7 +119,11 @@
         </div>
       {/if}
 
-      {#if users.length + Object.keys(selectedUsers).length === 0}
+      {#if isLoading}
+        <div class="w-full flex justify-center">
+          <LoadingSpinner />
+        </div>
+      {:else if users.length + Object.keys(selectedUsers).length === 0}
         <p class="p-5 text-sm">
           {$t('album_share_no_users')}
         </p>

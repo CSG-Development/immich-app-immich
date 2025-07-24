@@ -12,29 +12,33 @@ class SecuritySettings extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localAuthService = ref.watch(localAuthProvider);
+    final localAuthState = ref.watch(localAuthProvider);
     final enableBiometric = useAppSettingsState(AppSettingsEnum.enableBiometric);
 
     onEnableBiometricChange(value) async {
       if (value) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('security_settings_biometric_not_available').tr(),
-          ),
-        );
-        return;
+        if (!localAuthState.canAuthenticate) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('security_settings_biometric_not_available').tr(),
+            ),
+          );
+          return;
+        }
       }
       enableBiometric.value = value;
     }
 
-    return SettingsSubPageScaffold(settings: [
+    final securitySettings = [
       SettingsSwitchListTile(
-        enabled: localAuthService.canAuthenticate,
         valueNotifier: enableBiometric,
         title: 'biometric_switch'.tr(),
         subtitle: 'biometric_subtitle'.tr(),
         onChanged: onEnableBiometricChange,
       ),
-    ]);
+    ];
+
+    return SettingsSubPageScaffold(settings: securitySettings);
   }
 }
