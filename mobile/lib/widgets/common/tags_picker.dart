@@ -10,27 +10,43 @@ Future<List<Tag>?> showTagsPicker({
   required BuildContext context,
   required WidgetRef ref,
 }) async {
-  // Fetch all tags if not already loaded
-  final tagsNotifier = ref.read(tagsNotifierProvider.notifier);
-  final allTags = ref.read(tagsNotifierProvider);
-  if (allTags.isEmpty) {
-    await tagsNotifier.fetchAllTags();
-  }
   return showDialog<List<Tag>?>(
     context: context,
     builder: (context) => _TagsPicker(ref: ref),
   );
 }
 
-class _TagsPicker extends HookWidget {
+class _TagsPicker extends HookConsumerWidget {
   final WidgetRef ref;
   const _TagsPicker({required this.ref});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(
+      () {
+        ref.read(tagsNotifierProvider.notifier).fetchAllTags();
+        return null;
+      },
+      [],
+    );
+
     final allTags = ref.watch(tagsNotifierProvider);
     final selectedTags = useState<Set<Tag>>({});
     final TextEditingController controller = useTextEditingController();
+    final focusNode = useFocusNode();
+    final isInputFocused = useState(false);
+
+    useEffect(
+      () {
+        void listener() {
+          isInputFocused.value = focusNode.hasFocus;
+        }
+
+        focusNode.addListener(listener);
+        return () => focusNode.removeListener(listener);
+      },
+      [focusNode],
+    );
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
@@ -63,11 +79,13 @@ class _TagsPicker extends HookWidget {
                   ),
                 );
               }).toList(),
-              onChanged: (tag) {
-                if (tag != null) {
-                  selectedTags.value = {...selectedTags.value, tag};
-                }
-              },
+              onChanged: isInputFocused.value
+                  ? null
+                  : (tag) {
+                      if (tag != null) {
+                        selectedTags.value = {...selectedTags.value, tag};
+                      }
+                    },
               borderRadius: BorderRadius.circular(12),
               dropdownColor: context.colorScheme.surfaceContainerHigh,
             ),
@@ -103,6 +121,10 @@ class _TagsPicker extends HookWidget {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
+              focusNode: focusNode,
+              onTapOutside: (event) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
               decoration: InputDecoration(
                 labelText: 'Or enter new tag',
                 labelStyle: context.textTheme.bodyLarge?.copyWith(
