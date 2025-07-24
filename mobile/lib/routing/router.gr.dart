@@ -609,6 +609,54 @@ class EditImageRouteArgs {
 }
 
 /// generated route for
+/// [EditorImagePage]
+class EditorImageRoute extends PageRouteInfo<EditorImageRouteArgs> {
+  EditorImageRoute({
+    Key? key,
+    required Image image,
+    required Asset asset,
+    List<PageRouteInfo>? children,
+  }) : super(
+         EditorImageRoute.name,
+         args: EditorImageRouteArgs(key: key, image: image, asset: asset),
+         initialChildren: children,
+       );
+
+  static const String name = 'EditorImageRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<EditorImageRouteArgs>();
+      return EditorImagePage(
+        key: args.key,
+        image: args.image,
+        asset: args.asset,
+      );
+    },
+  );
+}
+
+class EditorImageRouteArgs {
+  const EditorImageRouteArgs({
+    this.key,
+    required this.image,
+    required this.asset,
+  });
+
+  final Key? key;
+
+  final Image image;
+
+  final Asset asset;
+
+  @override
+  String toString() {
+    return 'EditorImageRouteArgs{key: $key, image: $image, asset: $asset}';
+  }
+}
+
+/// generated route for
 /// [FailedBackupStatusPage]
 class FailedBackupStatusRoute extends PageRouteInfo<void> {
   const FailedBackupStatusRoute({List<PageRouteInfo>? children})
