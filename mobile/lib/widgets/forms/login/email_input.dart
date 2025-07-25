@@ -15,6 +15,7 @@ class EmailInput extends StatelessWidget {
 
   String? _validateInput(String? email) {
     if (email == null || email == '') return null;
+    if (email.length < 5) return null;
     if (email.endsWith(' ')) return 'login_form_err_trailing_whitespace'.tr();
     if (email.startsWith(' ')) return 'login_form_err_leading_whitespace'.tr();
     if (email.contains(' ') || !email.contains('@')) {

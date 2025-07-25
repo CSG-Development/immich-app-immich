@@ -116,6 +116,18 @@ ThemeData getThemeData({
         ),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: colorScheme.error,
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: colorScheme.error,
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+      ),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
           color: colorScheme.outlineVariant,
