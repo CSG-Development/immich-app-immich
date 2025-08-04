@@ -1,5 +1,6 @@
 from immich_ml.config import clean_name
 from immich_ml.schemas import ModelSource
+from ..config import log
 
 _OPENCLIP_MODELS = {
     "RN101__openai",
@@ -72,6 +73,10 @@ _INSIGHTFACE_MODELS = {
     "buffalo_s",
     "buffalo_m",
     "buffalo_l",
+}
+
+_FACENET_MODELS = {
+    "facenet-pytorch",
 }
 
 
@@ -148,9 +153,11 @@ WEBLATE_TO_FLORES200 = {
 
 def get_model_source(model_name: str) -> ModelSource | None:
     cleaned_name = clean_name(model_name)
-
     if cleaned_name in _INSIGHTFACE_MODELS:
         return ModelSource.INSIGHTFACE
+
+    if cleaned_name in _FACENET_MODELS:
+        return ModelSource.FACENET
 
     if cleaned_name in _MCLIP_MODELS:
         return ModelSource.MCLIP

@@ -4,11 +4,13 @@ import os
 import signal
 import threading
 import time
+import inspect
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import partial
 from typing import Any, AsyncGenerator, Callable, Iterator
 from zipfile import BadZipFile
+from facenet_pytorch import InceptionResnetV1
 
 import orjson
 from fastapi import Depends, FastAPI, File, Form, HTTPException
@@ -21,6 +23,8 @@ from starlette.formparsers import MultiPartParser
 from immich_ml.models import get_model_deps
 from immich_ml.models.base import InferenceModel
 from immich_ml.models.transforms import decode_pil
+from immich_ml.models.facial_recognition.detection import FaceDetector
+from immich_ml.models.facial_recognition.recognition import FaceRecognizer
 
 from .config import PreloadModelData, log, settings
 from .models.cache import ModelCache
@@ -191,7 +195,12 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
             except KeyError:
                 message = f"Task {entry['task']} of type {entry['type']} depends on output of {dep}"
                 raise HTTPException(400, message)
-        model = await load(model)
+        if model.model_name == "facenet-pytorch" and entry["type"] == ModelType.DETECTION:
+            model = FaceDetector(model_name=model.model_name)
+        elif model.model_name == "facenet-pytorch" and entry["type"] == ModelType.RECOGNITION:
+            model = FaceRecognizer(model_name=model.model_name)
+        else:
+            model = await load(model)
         output = await run(model.predict, *inputs, **entry["options"])
         outputs[model.identity] = output
         response[entry["task"]] = output
@@ -219,10 +228,15 @@ async def load(model: InferenceModel) -> InferenceModel:
 
     def _load(model: InferenceModel) -> InferenceModel:
         if model.load_attempts > 1:
-            raise HTTPException(500, f"Failed to load model '{model.model_name}'")
+            raise HTTPException(500, f"Failed to load model '{model}'")
         with lock:
             try:
-                model.load()
+                # Only download if needed
+                if model.model_name not in ["facenet-pytorch"]:
+                    model.load()
+                else:
+                    log.info(f"Skipping download for internal model: '{model.model_name}'")
+                # model.load()
             except FileNotFoundError as e:
                 if model.model_format == ModelFormat.ONNX:
                     raise e

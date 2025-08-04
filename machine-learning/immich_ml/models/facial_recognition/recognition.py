@@ -1,15 +1,12 @@
 from pathlib import Path
 from typing import Any
-
+import torch
+import cv2
+from torchvision import transforms
 import numpy as np
-import onnx
-import onnxruntime as ort
-# from insightface.model_zoo import ArcFaceONNX
-from facenet_pytorch import InceptionResnetV1
-# from insightface.utils.face_align import norm_crop
 from numpy.typing import NDArray
-# from onnx.tools.update_model_dims import update_inputs_outputs_dims
 from PIL import Image
+import onnxruntime as ort
 
 from immich_ml.config import log, settings
 from immich_ml.models.base import InferenceModel
@@ -23,6 +20,8 @@ from immich_ml.schemas import (
     ModelType,
 )
 
+from facenet_pytorch import InceptionResnetV1
+
 
 class FaceRecognizer(InferenceModel):
     depends = [(ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)]
@@ -34,8 +33,9 @@ class FaceRecognizer(InferenceModel):
         self.batch_size = max_batch_size if max_batch_size else self._batch_size_default
 
     def _load(self) -> ModelSession:
-        self.model = InceptionResnetV1(pretrained='vggface2').eval().to("cuda:0")
-        return self._make_session("facenet-pytorch::InceptionResnetV1")
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+        return None
 #         session = self._make_session(self.model_path)
 #         if (not self.batch_size or self.batch_size > 1) and str(session.get_inputs()[0].shape[0]) != "batch":
 #             self._add_batch_axis(self.model_path)
@@ -45,6 +45,9 @@ class FaceRecognizer(InferenceModel):
 #             session=session,
 #         )
 #         return session
+    def download(self) -> None:
+        # Override base download method to do nothing
+        log.info(f"Skipping download for FaceRecognizer ({self.model_name})")
 
     def _predict(
         self, inputs: NDArray[np.uint8] | bytes | Image.Image, faces: FaceDetectionOutput, **kwargs: Any
@@ -57,6 +60,7 @@ class FaceRecognizer(InferenceModel):
         return self.postprocess(faces, embeddings)
 
     def _predict_batch(self, cropped_faces: list[NDArray[np.uint8]]) -> NDArray[np.float32]:
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
 #         if not self.batch_size or len(cropped_faces) <= self.batch_size:
 #             embeddings: NDArray[np.float32] = self.model.get_feat(cropped_faces)
 #             return embeddings
@@ -70,7 +74,7 @@ class FaceRecognizer(InferenceModel):
             transforms.Normalize(mean=[0.5]*3, std=[0.5]*3),  # Scale to [-1,1]
         ])
 
-        batch = torch.stack([preprocess(Image.fromarray(face)) for face in cropped_faces]).to("cuda:0")
+        batch = torch.stack([preprocess(Image.fromarray(face)) for face in cropped_faces]).to(device)
         with torch.no_grad():
             embeddings = self.model(batch)
 

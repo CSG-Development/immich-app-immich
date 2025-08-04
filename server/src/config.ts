@@ -228,7 +228,7 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     facialRecognition: {
       enabled: true,
-      modelName: 'buffalo_l',
+      modelName: 'facenet-pytorch',
       minScore: 0.7,
       maxDistance: 0.5,
       minFaces: 3,
