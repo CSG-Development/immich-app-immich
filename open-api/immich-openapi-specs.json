@@ -578,9 +578,9 @@
         ]
       }
     },
-    "/admin/users/{id}/restore": {
-      "post": {
-        "operationId": "restoreUserAdmin",
+    "/admin/users/{id}/statistics": {
+      "get": {
+        "operationId": "getUserStatisticsAdmin",
         "parameters": [
           {
             "name": "id",
@@ -590,6 +590,30 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "isFavorite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isTrashed",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AssetVisibility"
+            }
           }
         ],
         "responses": {
@@ -597,7 +621,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserAdminResponseDto"
+                  "$ref": "#/components/schemas/AssetStatsResponseDto"
                 }
               }
             },
@@ -7460,7 +7484,7 @@
   "info": {
     "title": "Immich",
     "description": "Immich API",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "contact": {}
   },
   "tags": [],
@@ -8781,6 +8805,26 @@
           "icq"
         ],
         "type": "string"
+      },
+      "CastResponse": {
+        "properties": {
+          "gCastEnabled": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gCastEnabled"
+        ],
+        "type": "object"
+      },
+      "CastUpdate": {
+        "properties": {
+          "gCastEnabled": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
       },
       "CheckExistingAssetsDto": {
         "properties": {
@@ -14087,6 +14131,23 @@
         },
         "required": [
           "authStatus"
+        ],
+        "type": "object"
+      },
+      "VersionCheckStateResponseDto": {
+        "properties": {
+          "checkedAt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "releaseVersion": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkedAt",
+          "releaseVersion"
         ],
         "type": "object"
       },

@@ -1,0 +1,21 @@
+{
+  "assets/demo.mp4": ["assets/demo.mp4"],
+  "assets/demo.png": ["assets/demo.png"],
+  "assets/frame.png": ["assets/frame.png"],
+  "assets/frame1.png": ["assets/frame1.png"],
+  "assets/google_fonts/NotoColorEmoji-Regular.ttf": ["assets/google_fonts/NotoColorEmoji-Regular.ttf"],
+  "flutter/packages/wakelock_plus/assets/no_sleep.js": ["flutter/packages/wakelock_plus/assets/no_sleep.js"],
+  "packages/cupertino_icons/assets/CupertinoIcons.ttf": ["packages/cupertino_icons/assets/CupertinoIcons.ttf"],
+  "packages/image_background_remover/assets/model.onnx": ["packages/image_background_remover/assets/model.onnx"],
+  "packages/media_kit/assets/web/hls1.4.10.js": ["packages/media_kit/assets/web/hls1.4.10.js"],
+  "packages/pro_image_editor/assets/fonts/ProImageEditorIcons.ttf": [
+    "packages/pro_image_editor/assets/fonts/ProImageEditorIcons.ttf"
+  ],
+  "packages/pro_image_editor/lib/shared/shaders/pixelate.frag": [
+    "packages/pro_image_editor/lib/shared/shaders/pixelate.frag"
+  ],
+  "packages/pro_image_editor/lib/web/web_worker.dart.js": ["packages/pro_image_editor/lib/web/web_worker.dart.js"],
+  "packages/pro_image_editor/lib/web/web_worker.dart.js.map": [
+    "flutter/packages/pro_image_editor/lib/web/web_worker.dart.js.map"
+  ]
+}
