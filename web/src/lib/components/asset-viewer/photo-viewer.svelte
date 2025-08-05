@@ -91,8 +91,6 @@
       : getAssetThumbnailUrl({ id, size: targetSize, cacheKey });
   };
 
-  console.log(asset);
-
   copyImage = async () => {
     if (!canCopyImageToClipboard()) {
       return;

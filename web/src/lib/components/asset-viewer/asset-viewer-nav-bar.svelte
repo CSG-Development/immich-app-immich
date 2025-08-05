@@ -100,7 +100,7 @@
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
 
-  const navigateToEditor = async () => await goto(resolveRoute(`${AppRoute.EDITOR}`, {}));
+  const navigateToEditor = async () => await goto(resolveRoute(`${AppRoute.EDITOR}?assetId=${asset.id}`, {}));
 
   // $: showEditorButton =
   //   isOwner &&

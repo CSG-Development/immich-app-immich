@@ -1,6 +1,10 @@
 <script>
   // @ts-nocheck
 
+  import { page } from '$app/state';
+  import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { urlToArrayBuffer } from '$lib/utils/asset-utils';
+  import { getBaseUrl } from '@immich/sdk';
   import { onMount } from 'svelte';
   /**
    * @type any
@@ -29,6 +33,14 @@
             assetBase: './flutter/',
           });
           await appRunner.runApp();
+
+          const key = authManager.key;
+          const assetId = page.url.searchParams.get('assetId');
+          const originalAsset = await urlToArrayBuffer(
+            getBaseUrl() + `/assets/${assetId}/original` + (key ? `?key=${key}` : ''),
+          );
+
+          globalThis.postMessage({ type: 'sendFile', file: originalAsset });
         },
       });
     }
