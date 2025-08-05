@@ -44,6 +44,7 @@
     mdiContentCopy,
     mdiDatabaseRefreshOutline,
     mdiDotsVertical,
+    mdiFileEditOutline,
     mdiHeadSyncOutline,
     mdiImageRefreshOutline,
     mdiImageSearch,
@@ -99,6 +100,8 @@
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
 
+  const navigateToEditor = async () => await goto(resolveRoute(`${AppRoute.EDITOR}`, {}));
+
   // $: showEditorButton =
   //   isOwner &&
   //   asset.type === AssetTypeEnum.Image &&
@@ -123,6 +126,17 @@
 
     {#if !asset.isTrashed && $user && !isLocked}
       <ShareAction {asset} />
+    {/if}
+    {#if asset.type === AssetTypeEnum.Image}
+      <IconButton
+        class="hidden sm:flex"
+        color="secondary"
+        variant="ghost"
+        shape="round"
+        icon={mdiFileEditOutline}
+        aria-label={$t('edit')}
+        onclick={navigateToEditor}
+      />
     {/if}
     {#if asset.isOffline}
       <IconButton
