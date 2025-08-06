@@ -8,7 +8,7 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
-  import { getBaseUrl } from '@immich/sdk';
+  import { getAssetInfo, getBaseUrl } from '@immich/sdk';
   import { onMount } from 'svelte';
   /**
    * @type any
@@ -17,11 +17,12 @@
   let flutterState;
   /* let asset = $state(undefined); */
 
+  const key = authManager.key;
+  const assetId = page.url.searchParams.get('assetId');
+
   const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
     flutterState = event.detail;
 
-    const key = authManager.key;
-    const assetId = page.url.searchParams.get('assetId');
     const originalAsset = await urlToArrayBuffer(
       getBaseUrl() + `/assets/${assetId}/original` + (key ? `?key=${key}` : ''),
     );
@@ -35,22 +36,10 @@
 
   const onEditingComplete = async () => {
     const uint8Array = flutterState.getImage();
-    let binaryString = '';
-    for (const element of uint8Array) {
-      // eslint-disable-next-line unicorn/prefer-code-point
-      binaryString += String.fromCharCode(element);
-    }
-    const base64String = btoa(binaryString);
 
-    const dataUrl = `data:image/jpeg;base64,${base64String}`;
-
-    const imgElement = document.createElement('img');
-    imgElement.src = dataUrl;
-    /* document.body.append(imgElement); */
-    console.log('onEditingComplete', dataUrl);
-    const resultFile = new File([uint8Array], 'test.jpg');
+    const asset = await getAssetInfo({ id: assetId, key: authManager.key });
+    const resultFile = new File([uint8Array], asset.originalFileName);
     const result = await fileUploadHandler({ files: [resultFile] });
-    console.log(result);
     await goto(resolveRoute(`${AppRoute.PHOTOS}/${result[0]}`, {}), { replaceState: true });
   };
 
