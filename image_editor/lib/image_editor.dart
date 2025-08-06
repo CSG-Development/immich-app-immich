@@ -158,11 +158,11 @@ class _ImageEditorState extends State<ImageEditor> {
       callbacks: ProImageEditorCallbacks(
         onImageEditingComplete: (bytes) async {
           widget.onImageEditingComplete(bytes);
-        },
-        onCloseEditor: (_) => widget.onCloseEditor(),
+        },        
         mainEditorCallbacks: MainEditorCallbacks(
           onUndo: _handleHistoryNavigation,
           onRedo: _handleHistoryNavigation,
+          /* onEscapeButton: (_) => widget.onCloseEditor(), */
         ),
       ),
       configs: ProImageEditorConfigs(

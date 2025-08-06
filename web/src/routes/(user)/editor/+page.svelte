@@ -1,9 +1,13 @@
 <script>
   // @ts-nocheck
 
+  import { goto } from '$app/navigation';
+  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
+  import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
+  import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { getBaseUrl } from '@immich/sdk';
   import { onMount } from 'svelte';
   /**
@@ -29,7 +33,7 @@
     flutterState.onEditorClosed(onEditorClosed);
   };
 
-  const onEditingComplete = () => {
+  const onEditingComplete = async () => {
     const uint8Array = flutterState.getImage();
     let binaryString = '';
     for (const element of uint8Array) {
@@ -42,8 +46,12 @@
 
     const imgElement = document.createElement('img');
     imgElement.src = dataUrl;
-    document.body.append(imgElement);
+    /* document.body.append(imgElement); */
     console.log('onEditingComplete', dataUrl);
+    const resultFile = new File([uint8Array], 'test.jpg');
+    const result = await fileUploadHandler({ files: [resultFile] });
+    console.log(result);
+    await goto(resolveRoute(`${AppRoute.PHOTOS}/${result[0]}`, {}), { replaceState: true });
   };
 
   const onEditorClosed = () => {
