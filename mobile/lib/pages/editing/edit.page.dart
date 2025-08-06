@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:image_editor/image_editor.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
@@ -89,131 +90,33 @@ class EditImagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("edit".tr()),
-        backgroundColor: context.scaffoldBackgroundColor,
-        leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            color: context.primaryColor,
-            size: 24,
-          ),
-          onPressed: () => context.navigator.popUntil((route) => route.isFirst),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: isEdited
-                ? () => _saveEditedImage(context, asset, image, ref)
-                : null,
-            child: Text(
-              "save_to_gallery".tr(),
-              style: TextStyle(
-                color: isEdited ? context.primaryColor : Colors.grey,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: context.scaffoldBackgroundColor,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: context.height * 0.7,
-            maxWidth: context.width * 0.9,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(7),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(7),
-              child: Image(
-                image: image.image,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        height: 70,
-        margin: const EdgeInsets.only(bottom: 60, right: 10, left: 10, top: 10),
-        decoration: BoxDecoration(
-          color: context.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(
-                    Icons.crop_rotate_rounded,
-                    color: context.themeData.iconTheme.color,
-                    size: 25,
-                  ),
-                  onPressed: () {
-                    context.pushRoute(
-                      CropImageRoute(asset: asset, image: image),
-                    );
-                  },
-                ),
-                Text("crop".tr(), style: context.textTheme.displayMedium),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(
-                    Icons.crop_rotate_rounded,
-                    color: context.themeData.iconTheme.color,
-                    size: 25,
-                  ),
-                  onPressed: () {
-                    context.pushRoute(
-                      EditorImageRoute(asset: asset, image: image),
-                    );
-                  },
-                ),
-                Text("editor".tr(), style: context.textTheme.displayMedium),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(
-                    Icons.filter,
-                    color: context.themeData.iconTheme.color,
-                    size: 25,
-                  ),
-                  onPressed: () {
-                    context.pushRoute(
-                      FilterImageRoute(
-                        asset: asset,
-                        image: image,
-                      ),
-                    );
-                  },
-                ),
-                Text("filter".tr(), style: context.textTheme.displayMedium),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return FutureBuilder<Uint8List>(
+          future: _imageToUint8List(image),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return ImageEditor(
+                imageBytes: snapshot.data!,
+                onImageEditingComplete: (bytes) {
+                  _saveEditedImage(context, asset, Image.memory(bytes), ref);
+                },
+                onCloseEditor: () {},
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            }
+
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+      },
     );
   }
 }
