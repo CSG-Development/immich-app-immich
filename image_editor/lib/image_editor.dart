@@ -167,7 +167,7 @@ class _ImageEditorState extends State<ImageEditor> {
       ),
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
-        mainEditor: MainEditorConfigs(
+        /* mainEditor: MainEditorConfigs(
           widgets: MainEditorWidgets(
             bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
               stream: rebuildStream,
@@ -180,7 +180,7 @@ class _ImageEditorState extends State<ImageEditor> {
               ),
             ),
           ),
-        ),
+        ), */
       ),
     );
   }

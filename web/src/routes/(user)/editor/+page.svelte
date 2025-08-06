@@ -10,6 +10,45 @@
    * @type any
    */
   let target;
+  let flutterState;
+  /* let asset = $state(undefined); */
+
+  const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
+    flutterState = event.detail;
+
+    const key = authManager.key;
+    const assetId = page.url.searchParams.get('assetId');
+    const originalAsset = await urlToArrayBuffer(
+      getBaseUrl() + `/assets/${assetId}/original` + (key ? `?key=${key}` : ''),
+    );
+
+    globalThis.postMessage({ type: 'sendFile', file: originalAsset });
+    flutterState.setImage(new Uint8Array(originalAsset));
+
+    flutterState.onEditingComplete(onEditingComplete);
+    flutterState.onEditorClosed(onEditorClosed);
+  };
+
+  const onEditingComplete = () => {
+    const uint8Array = flutterState.getImage();
+    let binaryString = '';
+    for (const element of uint8Array) {
+      // eslint-disable-next-line unicorn/prefer-code-point
+      binaryString += String.fromCharCode(element);
+    }
+    const base64String = btoa(binaryString);
+
+    const dataUrl = `data:image/jpeg;base64,${base64String}`;
+
+    const imgElement = document.createElement('img');
+    imgElement.src = dataUrl;
+    document.body.append(imgElement);
+    console.log('onEditingComplete', dataUrl);
+  };
+
+  const onEditorClosed = () => {
+    console.log('editorClosed');
+  };
 
   function loadFlutterScript() {
     return new Promise((resolve, reject) => {
@@ -33,15 +72,11 @@
             assetBase: './flutter/',
           });
           await appRunner.runApp();
-
-          const key = authManager.key;
-          const assetId = page.url.searchParams.get('assetId');
-          const originalAsset = await urlToArrayBuffer(
-            getBaseUrl() + `/assets/${assetId}/original` + (key ? `?key=${key}` : ''),
-          );
-
-          globalThis.postMessage({ type: 'sendFile', file: originalAsset });
         },
+      });
+
+      target.addEventListener('flutter-initialized', async (event) => {
+        await onFlutterAppLoaded(event);
       });
     }
   });
