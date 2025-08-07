@@ -75,7 +75,9 @@ dependencies:
   firebase_core: ^3.13.1
   firebase_crashlytics: ^4.3.6
   firebase_performance: ^0.10.1+6
-  pro_image_editor: ^9.13.0
+
+  image_editor:
+    path: ../image_editor
 
   native_video_player:
     git:
