@@ -1,7 +1,7 @@
 <script>
   // @ts-nocheck
 
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import { AppRoute } from '$lib/constants';
@@ -19,6 +19,12 @@
 
   const key = authManager.key;
   const assetId = page.url.searchParams.get('assetId');
+
+  let previousUrl = '';
+
+  afterNavigate((nav) => {
+    previousUrl = nav.from?.url.pathname || '';
+  });
 
   const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
     flutterState = event.detail;
@@ -43,8 +49,8 @@
     await goto(resolveRoute(`${AppRoute.PHOTOS}/${result[0]}`, {}), { replaceState: true });
   };
 
-  const onEditorClosed = () => {
-    console.log('editorClosed');
+  const onEditorClosed = async () => {
+    await goto(previousUrl, { replaceState: true });
   };
 
   function loadFlutterScript() {

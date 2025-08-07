@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolveRoute } from '$app/paths';
+  import { page } from '$app/state';
   import CastButton from '$lib/cast/cast-button.svelte';
   import type { OnAction, PreAction } from '$lib/components/asset-viewer/actions/action';
   import AddToAlbumAction from '$lib/components/asset-viewer/actions/add-to-album-action.svelte';
@@ -101,6 +102,7 @@
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
 
   const navigateToEditor = async () => await goto(resolveRoute(`${AppRoute.EDITOR}?assetId=${asset.id}`, {}));
+  const isGalleryUrl = (path: string) => page.url.pathname.includes(resolveRoute(path, {}));
 
   // $: showEditorButton =
   //   isOwner &&
@@ -127,7 +129,7 @@
     {#if !asset.isTrashed && $user && !isLocked}
       <ShareAction {asset} />
     {/if}
-    {#if asset.type === AssetTypeEnum.Image}
+    {#if asset.type === AssetTypeEnum.Image && (isGalleryUrl(AppRoute.PHOTOS) || isGalleryUrl(AppRoute.ALBUMS))}
       <IconButton
         class="hidden sm:flex"
         color="secondary"
