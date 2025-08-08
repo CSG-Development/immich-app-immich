@@ -52,7 +52,9 @@
   };
 
   const onEditorClosed = async () => {
-    await goto(previousUrl, { replaceState: true });
+    await (previousUrl
+      ? goto(previousUrl, { replaceState: true })
+      : goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true }));
   };
 
   function loadFlutterScript() {
