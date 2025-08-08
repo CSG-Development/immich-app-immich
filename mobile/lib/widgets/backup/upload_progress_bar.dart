@@ -42,7 +42,7 @@ class BackupUploadProgressBar extends ConsumerWidget {
             SizedBox(
               width: 110,
               child: Text(
-                "Immich Upload",
+                "Curator Photos Upload",
                 style: context.textTheme.labelSmall,
               ),
             ),
