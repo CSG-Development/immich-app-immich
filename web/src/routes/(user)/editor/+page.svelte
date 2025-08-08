@@ -46,7 +46,9 @@
     const asset = await getAssetInfo({ id: assetId, key: authManager.key });
     const resultFile = new File([uint8Array], asset.originalFileName);
     const result = await fileUploadHandler({ files: [resultFile] });
-    await goto(resolveRoute(`${AppRoute.PHOTOS}/${result[0]}`, {}), { replaceState: true });
+    if (result) {
+      await goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true });
+    }
   };
 
   const onEditorClosed = async () => {
