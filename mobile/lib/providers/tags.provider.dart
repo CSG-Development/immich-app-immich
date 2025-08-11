@@ -6,25 +6,43 @@ import 'package:immich_mobile/domain/models/tag.model.dart';
 final tagsServiceProvider =
     Provider<TagsService>((ref) => TagsService(ref.watch(apiServiceProvider)));
 
-class TagsNotifier extends StateNotifier<List<Tag>> {
+class TagsNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
   final TagsService _tagsService;
 
-  TagsNotifier(this._tagsService) : super([]);
+  TagsNotifier(this._tagsService) : super(const AsyncValue.loading());
 
   Future<void> fetchAllTags() async {
-    final tags = await _tagsService.fetchAllTags();
-    state = tags;
+    // Set loading before fetching
+    state = const AsyncValue.loading();
+    try {
+      final tags = await _tagsService.fetchAllTags();
+      state = AsyncValue.data(tags);
+    } catch (err, stack) {
+      state = AsyncValue.error(err, stack);
+    }
   }
 
-  Future<Tag?> addTag({required String name, String? color, String? parentId}) async {
-    final tag = await _tagsService.addTag(name: name, color: color, parentId: parentId);
-    if (tag != null) {
-      state = [...state, tag];
+  Future<Tag?> addTag({
+    required String name,
+    String? color,
+    String? parentId,
+  }) async {
+    try {
+      final tag =
+          await _tagsService.addTag(name: name, color: color, parentId: parentId);
+      if (tag != null) {
+        // Append new tag to current list if loaded
+        state.whenData((tags) => state = AsyncValue.data([...tags, tag]));
+      }
+      return tag;
+    } catch (err, stack) {
+      state = AsyncValue.error(err, stack);
+      return null;
     }
-    return tag;
   }
 }
 
-final tagsNotifierProvider = StateNotifierProvider<TagsNotifier, List<Tag>>(
+final tagsNotifierProvider =
+    StateNotifierProvider<TagsNotifier, AsyncValue<List<Tag>>>(
   (ref) => TagsNotifier(ref.watch(tagsServiceProvider)),
 );
