@@ -51,6 +51,8 @@ interface UploadRequestOptions {
   method?: 'POST' | 'PUT';
   data: FormData;
   onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
+  signal?: AbortSignal;
+  onAbort?: (reason?: string) => void;
 }
 
 export class AbortError extends Error {
@@ -70,7 +72,7 @@ class ApiError extends Error {
 }
 
 export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{ data: T; status: number }> => {
-  const { onUploadProgress: onProgress, data, url } = options;
+  const { onUploadProgress: onProgress, data, url, signal, onAbort } = options;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -86,6 +88,13 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
 
     if (onProgress) {
       xhr.upload.addEventListener('progress', (event) => onProgress(event));
+    }
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        onAbort?.(signal.reason);
+      });
     }
 
     xhr.open(options.method || 'POST', url);

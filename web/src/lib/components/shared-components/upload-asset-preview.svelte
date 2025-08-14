@@ -4,20 +4,9 @@
   import { AppRoute } from '$lib/constants';
   import type { UploadAsset } from '$lib/models/upload-asset';
   import { UploadState } from '$lib/models/upload-asset';
-  import { locale } from '$lib/stores/preferences.store';
   import { uploadAssetsStore } from '$lib/stores/upload';
-  import { getByteUnitString } from '$lib/utils/byte-units';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
-  import {
-    mdiAlertCircle,
-    mdiCheckCircle,
-    mdiCircleOutline,
-    mdiClose,
-    mdiLoading,
-    mdiOpenInNew,
-    mdiRestart,
-    mdiTrashCan,
-  } from '@mdi/js';
+  import { mdiAlertCircle, mdiCheckCircle, mdiClose, mdiLoading, mdiOpenInNew, mdiRestart, mdiTrashCan } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
 
@@ -41,15 +30,30 @@
       ? resolveRoute(`${AppRoute.TRASH}/${asset.assetId}`, {})
       : resolveRoute(`${AppRoute.PHOTOS}/${uploadAsset.assetId}`, {});
   };
+
+  const handleAbort = () => {
+    uploadAsset.controller?.abort();
+  };
 </script>
 
 <div in:fade={{ duration: 250 }} out:fade={{ duration: 100 }} class="flex flex-col rounded-lg text-xs p-2 gap-1">
   <div class="flex items-center gap-2">
     <div class="flex items-center justify-center">
       {#if uploadAsset.state === UploadState.PENDING}
-        <Icon path={mdiCircleOutline} size="24" class="text-primary" title={$t('pending')} />
+        <Icon path={mdiLoading} size="24" class="text-primary" title={$t('pending')} progress={0} />
       {:else if uploadAsset.state === UploadState.STARTED}
-        <Icon path={mdiLoading} size="24" spin class="text-primary" title={$t('asset_skipped')} />
+        {#if uploadAsset.message === $t('asset_uploading')}
+          <Icon
+            path={mdiLoading}
+            size="24"
+            class="text-primary"
+            title={$t('asset_uploading')}
+            progress={uploadAsset.progress}
+          />
+        {/if}
+        {#if uploadAsset.message === $t('asset_hashing')}
+          <Icon path={mdiLoading} size="24" class="text-primary" title={$t('asset_hashing')} spin progress={25} />
+        {/if}
       {:else if uploadAsset.state === UploadState.ERROR}
         <Icon path={mdiAlertCircle} size="24" class="text-danger" title={$t('error')} />
       {:else if uploadAsset.state === UploadState.DUPLICATED}
@@ -64,6 +68,11 @@
     </div>
     <!-- <span>[{getByteUnitString(uploadAsset.file.size, $locale)}]</span> -->
     <span class="grow break-all">{uploadAsset.file.name}</span>
+    {#if uploadAsset.state === UploadState.STARTED && uploadAsset.message === $t('asset_uploading')}
+      <button type="button" onclick={handleAbort} aria-hidden="true" tabindex={-1} title={$t('cancel_upload')}>
+        <Icon path={mdiClose} size="20" />
+      </button>
+    {/if}
 
     {#if uploadAsset.state === UploadState.DUPLICATED && uploadAsset.assetId}
       <div class="flex items-center justify-between gap-1">
@@ -93,7 +102,7 @@
     {/if}
   </div>
 
-  {#if uploadAsset.state === UploadState.STARTED}
+  <!-- {#if uploadAsset.state === UploadState.STARTED}
     <div class="text-black relative mt-[5px] h-[15px] w-full rounded-md bg-gray-300 dark:bg-immich-dark-gray">
       <div class="h-[15px] rounded-md bg-immich-primary transition-all" style={`width: ${uploadAsset.progress}%`}></div>
       <p class="absolute top-0 h-full w-full text-center text-[10px]">
@@ -104,7 +113,7 @@
         {/if}
       </p>
     </div>
-  {/if}
+  {/if} -->
 
   {#if uploadAsset.state === UploadState.ERROR}
     <div class="flex flex-row justify-between">

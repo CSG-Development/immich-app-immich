@@ -53,9 +53,13 @@ export class ExecutorQueue {
     });
   }
 
-  private taskFinished(): void {
+  taskFinished(cancelRun?: boolean): void {
     this.running--;
-    this.tryRun();
+    if (!cancelRun) {
+      this.tryRun();
+    } else {
+      this.queue.shift();
+    }
   }
 
   private tryRun() {

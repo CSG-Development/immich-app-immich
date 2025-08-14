@@ -423,3 +423,7 @@ export enum ToggleVisibility {
 }
 
 export const assetViewerFadeDuration: number = 150;
+
+export const ErrorTexts = {
+  CANCEL_ALL: 'Cancel all',
+};
