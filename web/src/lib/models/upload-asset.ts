@@ -19,4 +19,5 @@ export type UploadAsset = {
   speed?: number;
   error?: unknown;
   message?: string;
+  controller?: AbortController;
 };
