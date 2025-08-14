@@ -40,7 +40,7 @@
   <div class="flex items-center gap-2">
     <div class="flex items-center justify-center">
       {#if uploadAsset.state === UploadState.PENDING}
-        <Icon path={mdiLoading} size="24" class="text-primary" title={$t('pending')} progress={0} />
+        <Icon path={mdiLoading} size="24" class="text-primary" title={$t('asset_hashing')} spin progress={25} />
       {:else if uploadAsset.state === UploadState.STARTED}
         {#if uploadAsset.message === $t('asset_uploading')}
           <Icon
