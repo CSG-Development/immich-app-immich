@@ -29,6 +29,7 @@ import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart'
 import 'package:immich_mobile/widgets/asset_grid/control_bottom_app_bar.dart';
 import 'package:immich_mobile/widgets/asset_grid/immich_asset_grid.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class MultiselectGrid extends HookConsumerWidget {
   const MultiselectGrid({
@@ -49,6 +50,7 @@ class MultiselectGrid extends HookConsumerWidget {
     this.unfavorite = false,
     this.downloadEnabled = true,
     this.emptyIndicator,
+    this.visibleItemsListener,
   });
 
   final ProviderListenable<AsyncValue<RenderList>> renderListProvider;
@@ -67,6 +69,7 @@ class MultiselectGrid extends HookConsumerWidget {
   final bool unfavorite;
   final bool editEnabled;
   final Widget? emptyIndicator;
+  final Function(Iterable<ItemPosition>)? visibleItemsListener;
   Widget buildDefaultLoadingIndicator() =>
       const Center(child: CircularProgressIndicator());
 
@@ -508,6 +511,7 @@ class MultiselectGrid extends HookConsumerWidget {
                         topWidget: topWidget,
                         showStack: stackEnabled,
                         showDragScrollLabel: dragScrollLabelEnabled,
+                        visibleItemsListener: visibleItemsListener,
                       ),
                 error: (error, _) => Center(child: Text(error.toString())),
                 loading: buildLoadingIndicator ?? buildDefaultLoadingIndicator,

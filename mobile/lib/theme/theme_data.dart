@@ -45,8 +45,7 @@ ThemeData getThemeData({
         fontWeight: FontWeight.w600,
         fontSize: 18,
       ),
-      backgroundColor:
-          isDark ? colorScheme.surfaceContainer : colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       foregroundColor: colorScheme.primary,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -100,8 +99,8 @@ ThemeData getThemeData({
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor:
-          isDark ? colorScheme.surfaceContainer : colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      height: 68.0,
       labelTextStyle: const WidgetStatePropertyAll(
         TextStyle(
           fontSize: 14,
@@ -174,6 +173,7 @@ ThemeData getThemeData({
         ),
       ),
     ),
+    drawerTheme: DrawerThemeData(backgroundColor: colorScheme.surfaceContainer),
     dialogTheme: DialogThemeData(backgroundColor: colorScheme.surfaceContainer),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       // ignore: deprecated_member_use
@@ -199,11 +199,11 @@ ImmichTheme decolorizeSurfaces({
 }) {
   return ImmichTheme(
     light: theme.light.copyWith(
-      surface: const Color(0xFFf9f9f9),
+      surface: const Color(0xFFF0F1F5),
       onSurface: const Color(0xFF1b1b1b),
       surfaceContainerLowest: const Color(0xFFffffff),
       surfaceContainerLow: const Color(0xFFf3f3f3),
-      surfaceContainer: const Color(0xFFeeeeee),
+      surfaceContainer: const Color(0xFFf0f1f5),
       surfaceContainerHigh: const Color(0xFFe8e8e8),
       surfaceContainerHighest: const Color(0xFFe2e2e2),
       surfaceDim: const Color(0xFFdadada),
@@ -213,11 +213,11 @@ ImmichTheme decolorizeSurfaces({
       onInverseSurface: const Color(0xFFf1f1f1),
     ),
     dark: theme.dark.copyWith(
-      surface: const Color(0xFF131313),
+      surface: const Color(0xFF3D3E41),
       onSurface: const Color(0xFFE2E2E2),
-      surfaceContainerLowest: const Color(0xFF0E0E0E),
+      surfaceContainerLowest: const Color(0xFF1D1E21),
       surfaceContainerLow: const Color(0xFF1B1B1B),
-      surfaceContainer: const Color(0xFF1F1F1F),
+      surfaceContainer: const Color(0xFF3D3E41),
       surfaceContainerHigh: const Color(0xFF242424),
       surfaceContainerHighest: const Color(0xFF2E2E2E),
       surfaceDim: const Color(0xFF131313),

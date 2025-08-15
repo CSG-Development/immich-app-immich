@@ -116,33 +116,33 @@ class TabControllerPage extends HookConsumerWidget {
     ];
 
     Widget bottomNavigationBar(TabsRouter tabsRouter) {
-      return NavigationBar(
-        selectedIndex: tabsRouter.activeIndex,
-        onDestinationSelected: (index) =>
-            onNavigationSelected(tabsRouter, index),
-        destinations: navigationDestinations,
+      return MediaQuery.removePadding(
+        removeTop: true,
+        context: context,
+        child: NavigationBar(
+          selectedIndex: tabsRouter.activeIndex,
+          onDestinationSelected: (index) =>
+              onNavigationSelected(tabsRouter, index),
+          destinations: navigationDestinations,
+        ),
       );
     }
 
-    Widget navigationRail(TabsRouter tabsRouter) {
-      return NavigationRail(
-        destinations: navigationDestinations
-            .map(
-              (e) => NavigationRailDestination(
-                icon: e.icon,
-                label: Text(e.label),
-                selectedIcon: e.selectedIcon,
-              ),
-            )
-            .toList(),
-        onDestinationSelected: (index) =>
-            onNavigationSelected(tabsRouter, index),
-        selectedIndex: tabsRouter.activeIndex,
-        labelType: NavigationRailLabelType.all,
-        groupAlignment: 0.0,
+    Widget animatedBottomNavigationBar(TabsRouter tabsRouter) {
+      final isVisible = ref.watch(scrollNotifierProvider).isVisible;
+
+      return AnimatedSlide(
+        duration: const Duration(milliseconds: 200),
+        offset: isVisible ? Offset.zero : const Offset(0, 1),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isVisible ? 1 : 0,
+          child: bottomNavigationBar(tabsRouter),
+        ),
       );
     }
 
+    final isVisible = ref.watch(scrollNotifierProvider).isVisible;
     final multiselectEnabled = ref.watch(multiselectProvider);
     return AutoTabsRouter(
       inheritNavigatorObservers: true,
@@ -170,11 +170,22 @@ class TabControllerPage extends HookConsumerWidget {
           child: Scaffold(
             resizeToAvoidBottomInset: false,
             body: isScreenLandscape
-                ? Row(
+                ? Stack(
                     children: [
-                      navigationRail(tabsRouter),
-                      const VerticalDivider(),
-                      Expanded(child: heroedChild),
+                      Positioned.fill(child: heroedChild),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: AnimatedSlide(
+                          offset: isVisible ? Offset.zero : const Offset(0, 1),
+                          duration: const Duration(milliseconds: 200),
+                          child: Material(
+                            elevation: 3,
+                            child: animatedBottomNavigationBar(tabsRouter),
+                          ),
+                        ),
+                      ),
                     ],
                   )
                 : heroedChild,
