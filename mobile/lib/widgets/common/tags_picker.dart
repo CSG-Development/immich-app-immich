@@ -25,7 +25,11 @@ class _TagsPicker extends HookConsumerWidget {
     final tagsAsync = ref.watch(tagsNotifierProvider);
 
     final isLoading = tagsAsync.isLoading;
-    final allTags = tagsAsync.value ?? [];
+
+    final allTags = tagsAsync.maybeWhen(
+      data: (allTags) => allTags,
+      orElse: () => [],
+    );
 
     final searchController = useTextEditingController();
     final searchFocusNode = useFocusNode();
@@ -196,6 +200,8 @@ class _TagsPicker extends HookConsumerWidget {
             alignment: Alignment.topLeft,
             child: Material(
               elevation: 4,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: _maxDropdownHeight,
