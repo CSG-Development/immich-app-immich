@@ -20,7 +20,12 @@ class AssetTags extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final watchedAsset = ref.watch(assetDetailProviderTag(asset));
-    final List<Tag> tags = (watchedAsset.value ?? asset).tags;
+
+    final List<Tag> tags = watchedAsset.maybeWhen(
+      data: (assetData) => assetData.tags,
+      orElse: () => [],
+    );
+
     void addTag() async {
       await handleAddTags(ref, context, [asset]);
     }
