@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -30,12 +32,12 @@ final _onboardingSteps = [
     image: 'assets/onboarding-1.png',
     title: 'Keep your media in sync',
     description:
-        'Upload from your phone, access from your desktop. Immich keeps everything connected.',
+        'Upload from your phone, access from your desktop. Curator Photos keeps everything connected.',
   ),
   OnboardingStep(
     image: 'assets/onboarding-1.png',
     title: 'Relive the highlights',
-    description: 'Let Immich bring your memories back to life',
+    description: 'Let Curator Photos bring your memories back to life',
   ),
 ];
 
@@ -49,7 +51,29 @@ class CuratorOnboardingPage extends StatefulWidget {
 
 class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
   final PageController _pageController = PageController();
+  final List<ScrollController> _scrollControllers = [];
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollControllers.addAll(
+      List.generate(
+        _onboardingSteps.length,
+        (index) => ScrollController(),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _scrollControllers) {
+      controller.dispose();
+    }
+    _pageController.dispose();
+    super.dispose();
+  }
 
   void _nextPage() {
     if (_currentPage < _onboardingSteps.length - 1) {
@@ -66,94 +90,6 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
   void _finishOnboarding() {
     context.replaceRoute(const TabControllerRoute());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final isLandscape = media.orientation == Orientation.landscape;
-    final isTablet = media.size.shortestSide >= 600;
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/background.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _onboardingSteps.length,
-                    onPageChanged: (index) =>
-                        setState(() => _currentPage = index),
-                    itemBuilder: (context, index) {
-                      final step = _onboardingSteps[index];
-                      return isLandscape
-                          ? _buildScrollableStep(step, isTablet)
-                          : _buildFixedStep(step, isTablet);
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 60,
-                        child: TextButton(
-                          onPressed: _skip,
-                          child: const Text(
-                            "Skip",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 42),
-                      Row(
-                        children: List.generate(
-                          _onboardingSteps.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white54,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 42),
-                      SizedBox(
-                        width: 60,
-                        child: GestureDetector(
-                          onTap: _nextPage,
-                          child: SvgPicture.asset(
-                            'assets/arrow-forward.svg',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildFixedStep(OnboardingStep step, bool isTablet) {
@@ -174,7 +110,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
           textAlign: TextAlign.left,
           style: const TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
         ),
@@ -184,7 +120,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
           textAlign: TextAlign.left,
           style: const TextStyle(
             fontSize: 16,
-            color: Colors.white70,
+            color: Colors.white,
           ),
         ),
       ],
@@ -198,8 +134,9 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
     );
   }
 
-  Widget _buildScrollableStep(OnboardingStep step, bool isTablet) {
+  Widget _buildScrollableStep(OnboardingStep step, bool isTablet, int index) {
     final imageHeight = isTablet ? 312.0 : 120.0;
+    final scrollController = _scrollControllers[index];
 
     Widget content = Column(
       mainAxisAlignment:
@@ -224,7 +161,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
         Text(
           step.description,
           textAlign: TextAlign.left,
-          style: const TextStyle(fontSize: 16, color: Colors.white70),
+          style: const TextStyle(fontSize: 16, color: Colors.white),
         ),
       ],
     );
@@ -242,6 +179,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
     }
 
     return SingleChildScrollView(
+      controller: scrollController,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 312),
@@ -250,6 +188,121 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
             child: content,
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final isLandscape = media.orientation == Orientation.landscape;
+    final isTablet = media.size.shortestSide >= 600;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _onboardingSteps.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (isLandscape &&
+                            !isTablet &&
+                            _scrollControllers[index].hasClients) {
+                          _scrollControllers[index].jumpTo(0);
+                        }
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final step = _onboardingSteps[index];
+                      return isLandscape
+                          ? _buildScrollableStep(step, isTablet, index)
+                          : _buildFixedStep(step, isTablet);
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    22.0,
+                    22.0,
+                    22.0,
+                    min(MediaQuery.of(context).padding.bottom, 22.0),
+                  ),
+                  child: SizedBox(
+                    height: 48.0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 60,
+                          child: _currentPage < _onboardingSteps.length - 1
+                              ? TextButton(
+                                  onPressed: _skip,
+                                  child: const Text(
+                                    "Skip",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox(),
+                        ),
+                        const SizedBox(width: 42),
+                        Row(
+                          children: List.generate(
+                            _onboardingSteps.length,
+                            (index) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentPage == index
+                                    ? Colors.white
+                                    : Colors.white54,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 42),
+                        SizedBox(
+                          width: 60,
+                          child: GestureDetector(
+                            onTap: _nextPage,
+                            child: _currentPage < _onboardingSteps.length - 1
+                                ? SvgPicture.asset(
+                                    'assets/arrow-forward.svg',
+                                  )
+                                : const Text(
+                                    "Done",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
