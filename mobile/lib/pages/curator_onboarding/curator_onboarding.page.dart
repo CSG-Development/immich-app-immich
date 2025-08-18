@@ -208,7 +208,6 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
             ),
           ),
           SafeArea(
-            bottom: false,
             child: Column(
               children: [
                 Expanded(
@@ -233,70 +232,63 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    22.0,
-                    22.0,
-                    22.0,
-                    min(MediaQuery.of(context).padding.bottom, 22.0),
-                  ),
-                  child: SizedBox(
-                    height: 48.0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 60,
-                          child: _currentPage < _onboardingSteps.length - 1
-                              ? TextButton(
-                                  onPressed: _skip,
-                                  child: const Text(
-                                    "Skip",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
+                SizedBox(
+                  height: 68.0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 60,
+                        child: _currentPage < _onboardingSteps.length - 1
+                            ? TextButton(
+                                onPressed: _skip,
+                                child: const Text(
+                                  "Skip",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
                                   ),
-                                )
-                              : const SizedBox(),
-                        ),
-                        const SizedBox(width: 42),
-                        Row(
-                          children: List.generate(
-                            _onboardingSteps.length,
-                            (index) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _currentPage == index
-                                    ? Colors.white
-                                    : Colors.white54,
-                              ),
+                                ),
+                              )
+                            : const SizedBox(),
+                      ),
+                      const SizedBox(width: 42),
+                      Row(
+                        children: List.generate(
+                          _onboardingSteps.length,
+                          (index) => Container(
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 4),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentPage == index
+                                  ? Colors.white
+                                  : Colors.white54,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 42),
-                        SizedBox(
-                          width: 60,
-                          child: GestureDetector(
-                            onTap: _nextPage,
-                            child: _currentPage < _onboardingSteps.length - 1
-                                ? SvgPicture.asset(
-                                    'assets/arrow-forward.svg',
-                                  )
-                                : const Text(
-                                    "Done",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
+                      ),
+                      const SizedBox(width: 42),
+                      SizedBox(
+                        width: 60,
+                        child: GestureDetector(
+                          onTap: _nextPage,
+                          child: _currentPage < _onboardingSteps.length - 1
+                              ? SvgPicture.asset(
+                                  'assets/arrow-forward.svg',
+                                )
+                              : const Text(
+                                  "Done",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
                                   ),
-                          ),
+                                ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
