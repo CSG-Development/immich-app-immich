@@ -134,6 +134,9 @@ ThemeData getThemeData({
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       labelStyle: TextStyle(
+        color: isDark ? const Color(0xDEFFFFFF) : const Color(0xDE000000),
+      ),
+      floatingLabelStyle: TextStyle(
         color: colorScheme.primary,
       ),
       hintStyle: const TextStyle(
