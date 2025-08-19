@@ -1,31 +1,19 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:immich_mobile/widgets/forms/login/input_decorations.dart';
 
-class EmailInput extends StatefulWidget {
+class EmailInput extends StatelessWidget {
   final TextEditingController controller;
-  final FocusNode focusNode;
+  final FocusNode? focusNode;
   final Function()? onSubmit;
-  final bool hasExternalError;
 
   const EmailInput({
     super.key,
     required this.controller,
-    required this.focusNode,
+    this.focusNode,
     this.onSubmit,
-    this.hasExternalError = false,
   });
 
-  @override
-  State<EmailInput> createState() => _EmailInputState();
-}
-
-class _EmailInputState extends State<EmailInput> {
   String? _validateInput(String? email) {
-    if (widget.hasExternalError) {
-      return '';
-    }
-
     if (email == null || email == '') return null;
     if (email.length < 5) return null;
     if (email.endsWith(' ')) return 'login_form_err_trailing_whitespace'.tr();
@@ -40,23 +28,22 @@ class _EmailInputState extends State<EmailInput> {
   Widget build(BuildContext context) {
     return TextFormField(
       autofocus: true,
-      controller: widget.controller,
-      decoration: LoginInputDecorations.baseDecoration(
-        context: context,
+      controller: controller,
+      decoration: InputDecoration(
         labelText: 'email'.tr(),
+        border: const OutlineInputBorder(),
         hintText: 'login_form_email_hint'.tr(),
-        focusNode: widget.focusNode,
-      ).copyWith(
-        errorStyle: widget.hasExternalError 
-            ? const TextStyle(height: 0)
-            : null,
+        hintStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 14,
+        ),
       ),
       validator: _validateInput,
       autovalidateMode: AutovalidateMode.always,
       autofillHints: const [AutofillHints.email],
       keyboardType: TextInputType.emailAddress,
-      onFieldSubmitted: (_) => widget.onSubmit?.call(),
-      focusNode: widget.focusNode,
+      onFieldSubmitted: (_) => onSubmit?.call(),
+      focusNode: focusNode,
       textInputAction: TextInputAction.next,
     );
   }
