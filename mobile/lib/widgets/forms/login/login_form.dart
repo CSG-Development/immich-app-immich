@@ -226,7 +226,7 @@ class LoginForm extends HookConsumerWidget {
             }
           }
 
-          context.replaceRoute(const TabControllerRoute());
+          context.replaceRoute(const CuratorOnboardingRoute());
         }
       } catch (error) {
         ImmichToast.show(

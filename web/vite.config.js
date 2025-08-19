@@ -38,7 +38,13 @@ export default defineConfig({
   },
   plugins: [
     viteStaticCopy({
-      targets: [{ src: 'flutter_app/**', dest: 'flutter' }],
+      targets: [
+        { src: 'flutter_app/**', dest: 'flutter' },
+        {
+          src: 'flutter_app/build/web/assets/**',
+          dest: 'assets',
+        },
+      ],
     }),
     enhancedImages(),
     tailwindcss(),

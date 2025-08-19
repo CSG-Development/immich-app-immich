@@ -1,132 +1,152 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/tag.model.dart';
-import 'package:immich_mobile/providers/tags.provider.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/tags.provider.dart';
 
 Future<List<Tag>?> showTagsPicker({
   required BuildContext context,
   required WidgetRef ref,
-}) async {
-  return showDialog<List<Tag>?>(
-    context: context,
-    builder: (context) => _TagsPicker(ref: ref),
-  );
-}
+}) =>
+    showDialog<List<Tag>?>(
+      context: context,
+      builder: (context) => _TagsPicker(ref: ref),
+    );
 
 class _TagsPicker extends HookConsumerWidget {
   final WidgetRef ref;
+  static const double _maxDropdownHeight = 200;
+
   const _TagsPicker({required this.ref});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tagsAsync = ref.watch(tagsNotifierProvider);
+
+    final isLoading = tagsAsync.isLoading;
+
+    final allTags = tagsAsync.maybeWhen(
+      data: (allTags) => allTags,
+      orElse: () => [],
+    );
+
+    final searchController = useTextEditingController();
+    final searchFocusNode = useFocusNode();
+    final fieldKey = useMemoized(() => GlobalKey());
+
+    final availableOptions = useState<List<Tag>>(List.from(allTags));
+    final filteredOptions = useState<List<Tag>>(List.from(allTags));
+    final selectedTags = useState<List<Tag>>([]);
+
     useEffect(
       () {
-        ref.read(tagsNotifierProvider.notifier).fetchAllTags();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(tagsNotifierProvider.notifier).fetchAllTags();
+        });
         return null;
       },
       [],
     );
 
-    final allTags = ref.watch(tagsNotifierProvider);
-    final selectedTags = useState<Set<Tag>>({});
-    final TextEditingController controller = useTextEditingController();
-    final focusNode = useFocusNode();
-    final isInputFocused = useState(false);
+    useEffect(
+      () {
+        availableOptions.value = List.from(allTags);
+        filteredOptions.value = List.from(allTags);
+        return null;
+      },
+      [allTags],
+    );
 
     useEffect(
       () {
         void listener() {
-          isInputFocused.value = focusNode.hasFocus;
+          if (searchFocusNode.hasFocus && !isLoading) {
+            _filterOptions('', availableOptions, filteredOptions);
+          }
         }
 
-        focusNode.addListener(listener);
-        return () => focusNode.removeListener(listener);
+        searchFocusNode.addListener(listener);
+        return () => searchFocusNode.removeListener(listener);
       },
-      [focusNode],
+      [searchFocusNode, isLoading],
     );
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      title: Text(
-        'Add Tag',
-        style: context.textTheme.titleLarge,
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButton<Tag>(
-              isExpanded: true,
-              value: null,
-              hint: Text(
-                'Select existing tag',
-                style: context.textTheme.bodyLarge?.copyWith(
-                  color: context.colorScheme.onSurfaceVariant,
-                ),
+    void addTag(Tag tag) {
+      if (!selectedTags.value.any((t) => t.name == tag.name)) {
+        selectedTags.value = [...selectedTags.value, tag];
+      }
+      if (!availableOptions.value.any((t) => t.name == tag.name)) {
+        availableOptions.value = [...availableOptions.value, tag];
+      }
+      searchController.clear();
+      FocusScope.of(context).unfocus();
+      _filterOptions('', availableOptions, filteredOptions);
+    }
+
+    void removeTag(Tag tag) {
+      selectedTags.value =
+          selectedTags.value.where((t) => t.name != tag.name).toList();
+    }
+
+    double getFieldWidth() {
+      final renderBox =
+          fieldKey.currentContext?.findRenderObject() as RenderBox?;
+      return renderBox?.size.width ?? 200;
+    }
+
+    Widget buildSearchField() {
+      return RawAutocomplete<Tag>(
+        textEditingController: searchController,
+        focusNode: searchFocusNode,
+        optionsBuilder: (value) {
+          if (isLoading) return const Iterable<Tag>.empty();
+
+          final input = value.text.trim();
+          final allOptions = [...filteredOptions.value];
+
+          if (input.isNotEmpty &&
+              !availableOptions.value
+                  .any((t) => t.name.toLowerCase() == input.toLowerCase())) {
+            allOptions.insert(
+              0,
+              Tag(
+                id: '',
+                name: input,
+                value: '',
+                color: null,
+                parentId: null,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
               ),
-              items: allTags.map((tag) {
-                return DropdownMenuItem<Tag>(
-                  value: tag,
-                  child: Text(
-                    tag.name,
-                    style: context.textTheme.bodyLarge,
-                  ),
-                );
-              }).toList(),
-              onChanged: isInputFocused.value
-                  ? null
-                  : (tag) {
-                      if (tag != null) {
-                        selectedTags.value = {...selectedTags.value, tag};
-                      }
-                    },
-              borderRadius: BorderRadius.circular(12),
-              dropdownColor: context.colorScheme.surfaceContainerHigh,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: selectedTags.value
-                  .map(
-                    (tag) => Chip(
-                      label: Text(
-                        tag.name,
-                        style: context.textTheme.labelLarge?.copyWith(
-                          color: context.colorScheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      backgroundColor: context.colorScheme.primary,
-                      shape: const StadiumBorder(),
-                      deleteIcon: Icon(
-                        Icons.close,
-                        color: context.colorScheme.onPrimary,
-                        size: 20,
-                      ),
-                      onDeleted: () {
-                        selectedTags.value =
-                            selectedTags.value.where((t) => t != tag).toSet();
-                      },
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            TextField(
+            );
+          }
+
+          return allOptions.where(
+            (option) => option.name.toLowerCase().contains(input.toLowerCase()),
+          );
+        },
+        displayStringForOption: (tag) => tag.name,
+        onSelected: addTag,
+        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+          return Container(
+            key: fieldKey,
+            child: TextField(
               controller: controller,
               focusNode: focusNode,
-              onTapOutside: (event) {
-                FocusManager.instance.primaryFocus?.unfocus();
-              },
               decoration: InputDecoration(
-                labelText: 'Or enter new tag',
+                hintText:
+                    isLoading ? 'Loading tags...' : 'Search or create tag',
+                prefixIcon: isLoading
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : const Icon(Icons.search),
                 labelStyle: context.textTheme.bodyLarge?.copyWith(
                   color: context.colorScheme.primary,
                 ),
@@ -155,73 +175,221 @@ class _TagsPicker extends HookConsumerWidget {
                   horizontal: 20,
                 ),
               ),
-              style: context.textTheme.bodyLarge,
+              onChanged: (q) =>
+                  _filterOptions(q, availableOptions, filteredOptions),
               onSubmitted: (value) {
-                final tagName = value.trim();
-                if (tagName.isNotEmpty) {
-                  final existing =
-                      allTags.firstWhereOrNull((t) => t.name == tagName);
-                  if (existing != null) {
-                    selectedTags.value = {...selectedTags.value, existing};
-                  } else {
-                    // Will be created on submit
-                    selectedTags.value = {
-                      ...selectedTags.value,
-                      Tag(
-                        id: '',
-                        name: tagName,
-                        value: '',
-                        color: null,
-                        parentId: null,
-                        createdAt: DateTime.now(),
-                        updatedAt: DateTime.now(),
-                      ),
-                    };
-                  }
-                  controller.clear();
+                if (value.trim().isNotEmpty) {
+                  final newTag = Tag(
+                    id: '',
+                    name: value.trim(),
+                    value: '',
+                    color: null,
+                    parentId: null,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  );
+                  addTag(newTag);
                 }
               },
+              enabled: !isLoading,
             ),
-          ],
-        ),
-      ),
-      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      actions: [
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: _maxDropdownHeight,
+                  minWidth: getFieldWidth(),
+                  maxWidth: getFieldWidth(),
+                ),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: options.length,
+                  itemBuilder: (_, index) {
+                    final option = options.elementAt(index);
+                    return ListTile(
+                      title: Text(option.name),
+                      onTap: () {
+                        addTag(option);
+                        onSelected(option);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    Widget buildSelectedTags() {
+      if (selectedTags.value.isEmpty) return const SizedBox.shrink();
+
+      return Wrap(
+        spacing: 8,
+        children: selectedTags.value
+            .map(
+              (tag) => Chip(
+                label: Text(
+                  tag.name,
+                  style: context.textTheme.labelLarge?.copyWith(
+                    color: context.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                backgroundColor: context.colorScheme.primary,
+                shape: const StadiumBorder(),
+                deleteIcon: Icon(
+                  Icons.close,
+                  color: context.colorScheme.onPrimary,
+                  size: 20,
+                ),
+                onDeleted: () => removeTag(tag),
+              ),
+            )
+            .toList(),
+      );
+    }
+
+    Widget buildDialogContent() {
+      if (isLoading && allTags.isEmpty) {
+        return const SizedBox(
+          height: 80,
+          child: Center(
+            child: SizedBox(
+              height: 40,
+              width: 40,
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          buildSearchField(),
+          const SizedBox(height: 12),
+          buildSelectedTags(),
+        ],
+      );
+    }
+
+    List<Widget> buildActions() {
+      return [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: context.textTheme.bodyLarge?.copyWith(
-              color: context.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: isLoading
+              ? null
+              : () async {
+                  final tagsToReturn = <Tag>[];
+                  for (final tag in selectedTags.value) {
+                    if (tag.id.isEmpty) {
+                      final created = await ref
+                          .read(tagsNotifierProvider.notifier)
+                          .addTag(name: tag.name);
+                      if (created != null) tagsToReturn.add(created);
+                    } else {
+                      tagsToReturn.add(tag);
+                    }
+                  }
+                  Navigator.pop(context, tagsToReturn);
+                },
+          child: const Text('Add Tags'),
+        ),
+      ];
+    }
+
+    Widget buildActionBar() {
+      return Container(
+        color: Theme.of(context).colorScheme.surface,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: buildActions(),
+        ),
+      );
+    }
+
+    Widget buildLandscapeDialog() {
+      return Dialog(
+        insetPadding: EdgeInsets.zero,
+        child: SafeArea(
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('Add Tags'),
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              body: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: buildDialogContent(),
+                    ),
+                  ),
+                  buildActionBar(),
+                ],
+              ),
             ),
           ),
         ),
-        TextButton(
-          onPressed: () async {
-            final tagsToReturn = <Tag>[];
-            for (final tag in selectedTags.value) {
-              if (tag.id.isEmpty) {
-                // New tag, create it
-                final created = await ref
-                    .read(tagsNotifierProvider.notifier)
-                    .addTag(name: tag.name);
-                if (created != null) tagsToReturn.add(created);
-              } else {
-                tagsToReturn.add(tag);
-              }
-            }
-            Navigator.of(context).pop(tagsToReturn);
-          },
-          child: Text(
-            'Add',
-            style: context.textTheme.bodyLarge?.copyWith(
-              color: context.primaryColor,
-              fontWeight: FontWeight.w600,
+      );
+    }
+
+    Widget buildPortraitDialog() {
+      return GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: AlertDialog(
+          title: const Text('Add Tags'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 400,
             ),
+            child: buildDialogContent(),
           ),
+          actions: buildActions(),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40.0),
         ),
-      ],
-    );
+      );
+    }
+
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    return isLandscape ? buildLandscapeDialog() : buildPortraitDialog();
+  }
+
+  static void _filterOptions(
+    String query,
+    ValueNotifier<List<Tag>> available,
+    ValueNotifier<List<Tag>> filtered,
+  ) {
+    if (query.isEmpty) {
+      filtered.value = List.from(available.value);
+    } else {
+      filtered.value = available.value
+          .where(
+            (option) => option.name.toLowerCase().contains(query.toLowerCase()),
+          )
+          .toList();
+    }
   }
 }

@@ -86,6 +86,18 @@ final Map<ImmichColorPreset, ImmichTheme> _themePresets = {
       dynamicSchemeVariant: DynamicSchemeVariant.neutral,
     ),
   ),
+  ImmichColorPreset.curator: ImmichTheme(
+    light: ColorScheme.fromSeed(
+      seedColor: curatorBrandColorLight,
+    ).copyWith(
+      primary: curatorBrandColorLight,
+      onSurface: const Color.fromARGB(255, 34, 31, 32),
+    ),
+    dark: ColorScheme.fromSeed(
+      seedColor: curatorBrandColorDark,
+      brightness: Brightness.dark,
+    ).copyWith(primary: curatorBrandColorDark),
+  ),
 };
 
 extension ImmichColorModeExtension on ImmichColorPreset {

@@ -1,3 +1,4 @@
+import { ErrorTexts } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { UploadState } from '$lib/models/upload-asset';
 import { uploadAssetsStore } from '$lib/stores/upload';
@@ -91,6 +92,7 @@ export const openFileUploadDialog = async (options: FileUploadParam = {}) => {
 
 type FileUploadHandlerParams = Omit<FileUploaderParams, 'deviceAssetId' | 'assetFile'> & {
   files: File[];
+  signal?: AbortSignal;
 };
 
 export const fileUploadHandler = async ({
@@ -102,13 +104,15 @@ export const fileUploadHandler = async ({
   const extensions = await getExtensions();
   const promises = [];
   for (const file of files) {
+    const controller = new AbortController();
+    const signal = controller.signal;
     const name = file.name.toLowerCase();
     if (extensions.some((extension) => name.endsWith(extension))) {
       const deviceAssetId = getDeviceAssetId(file);
-      uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId });
+      uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId, controller });
       promises.push(
         uploadExecutionQueue.addTask(() =>
-          fileUploader({ assetFile: file, deviceAssetId, albumId, replaceAssetId, isLockedAssets }),
+          fileUploader({ assetFile: file, deviceAssetId, albumId, replaceAssetId, isLockedAssets, signal }),
         ),
       );
     }
@@ -128,6 +132,7 @@ type FileUploaderParams = {
   replaceAssetId?: string;
   isLockedAssets?: boolean;
   deviceAssetId: string;
+  signal?: AbortSignal;
 };
 
 // TODO: should probably use the @api SDK
@@ -137,11 +142,17 @@ async function fileUploader({
   albumId,
   replaceAssetId,
   isLockedAssets = false,
+  signal,
 }: FileUploaderParams): Promise<string | undefined> {
   const fileCreatedAt = new Date(assetFile.lastModified).toISOString();
   const $t = get(t);
 
   uploadAssetsStore.markStarted(deviceAssetId);
+
+  const onAbort = (reason?: string) => {
+    uploadExecutionQueue.taskFinished(!!reason && reason === ErrorTexts.CANCEL_ALL);
+    uploadAssetsStore.removeItem(deviceAssetId);
+  };
 
   try {
     const formData = new FormData();
@@ -175,7 +186,10 @@ async function fileUploader({
 
         const {
           results: [checkUploadResult],
-        } = await checkBulkUpload({ assetBulkUploadCheckDto: { assets: [{ id: assetFile.name, checksum }] } });
+        } = await checkBulkUpload(
+          { assetBulkUploadCheckDto: { assets: [{ id: assetFile.name, checksum }] } },
+          { signal },
+        );
         if (checkUploadResult.action === Action.Reject && checkUploadResult.assetId) {
           responseData = {
             status: AssetMediaStatus.Duplicate,
@@ -196,6 +210,8 @@ async function fileUploader({
           method: 'PUT',
           data: formData,
           onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
+          signal,
+          onAbort,
         });
         responseData = response.data;
       } else {
@@ -203,6 +219,8 @@ async function fileUploader({
           url: getBaseUrl() + '/assets' + (key ? `?key=${key}` : ''),
           data: formData,
           onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
+          signal,
+          onAbort,
         });
 
         if (![200, 201].includes(response.status)) {
@@ -239,9 +257,11 @@ async function fileUploader({
 
     return responseData.id;
   } catch (error) {
-    const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
-    uploadAssetsStore.track('error');
-    uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
-    return;
+    if (!signal || !signal.aborted) {
+      const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
+      uploadAssetsStore.track('error');
+      uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
+      return;
+    }
   }
 }

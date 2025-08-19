@@ -22,7 +22,7 @@ class SearchFilterChip extends StatelessWidget {
         onTap: onTap,
         child: Card(
           elevation: 0,
-          color: context.primaryColor.withValues(alpha: .5),
+          color: context.colorScheme.surfaceContainerLowest,
           shape: StadiumBorder(
             side: BorderSide(color: context.colorScheme.secondaryContainer),
           ),
@@ -47,6 +47,7 @@ class SearchFilterChip extends StatelessWidget {
       onTap: onTap,
       child: Card(
         elevation: 0,
+        color: context.colorScheme.surfaceContainerLowest,
         shape: StadiumBorder(
           side: BorderSide(color: context.colorScheme.outline.withAlpha(15)),
         ),

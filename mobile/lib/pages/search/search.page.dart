@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,10 +11,12 @@ import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/search/paginated_search.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
+import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 import 'package:immich_mobile/widgets/search/search_filter/camera_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/display_option_picker.dart';
@@ -23,6 +26,7 @@ import 'package:immich_mobile/widgets/search/search_filter/media_type_picker.dar
 import 'package:immich_mobile/widgets/search/search_filter/people_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/search_filter_chip.dart';
 import 'package:immich_mobile/widgets/search/search_filter/search_filter_utils.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 @RoutePage()
 class SearchPage extends HookConsumerWidget {
@@ -526,8 +530,17 @@ class SearchPage extends HookConsumerWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
+      drawer: const CuratorAppBarDrawer(),
       appBar: AppBar(
         automaticallyImplyLeading: true,
+        titleSpacing: 0.0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
+        ),
+        toolbarHeight: 64.0,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -722,6 +735,16 @@ class SearchPage extends HookConsumerWidget {
           else
             SearchResultGrid(
               onScrollEnd: loadMoreSearchResult,
+              onScroll: (notification) {
+                ref
+                    .read(scrollNotifierProvider)
+                    .handleScrollNotification(notification);
+              },
+              visibleItemsListener: (position) {
+                ref
+                    .read(scrollNotifierProvider)
+                    .handleItemPositionsChange(position);
+              },
               isSearching: isSearching.value,
             ),
         ],
@@ -733,12 +756,15 @@ class SearchPage extends HookConsumerWidget {
 class SearchResultGrid extends StatelessWidget {
   final VoidCallback onScrollEnd;
   final bool isSearching;
+  final Function(ScrollNotification notification)? onScroll;
+  final Function(Iterable<ItemPosition>)? visibleItemsListener;
 
-  const SearchResultGrid({
-    super.key,
-    required this.onScrollEnd,
-    this.isSearching = false,
-  });
+  const SearchResultGrid(
+      {super.key,
+      required this.onScrollEnd,
+      this.isSearching = false,
+      this.onScroll,
+      this.visibleItemsListener});
 
   @override
   Widget build(BuildContext context) {
@@ -771,10 +797,13 @@ class SearchResultGrid extends StatelessWidget {
             favoriteEnabled: true,
             stackEnabled: false,
             dragScrollLabelEnabled: false,
+            visibleItemsListener: visibleItemsListener,
             emptyIndicator: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: !isSearching
-                  ? const SearchEmptyContent()
+                  ? SearchEmptyContent(
+                      onScroll: onScroll,
+                    )
                   : const SizedBox.shrink(),
             ),
           ),
@@ -785,12 +814,18 @@ class SearchResultGrid extends StatelessWidget {
 }
 
 class SearchEmptyContent extends StatelessWidget {
-  const SearchEmptyContent({super.key});
+  final Function(ScrollNotification notification)? onScroll;
+  const SearchEmptyContent({super.key, this.onScroll});
 
   @override
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
-      onNotification: (_) => true,
+      onNotification: (notification) {
+        if (onScroll != null) {
+          onScroll!(notification);
+        }
+        return true;
+      },
       child: ListView(
         shrinkWrap: false,
         children: [

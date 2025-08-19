@@ -7,6 +7,7 @@ import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/generated/intl_keys.g.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/partner.provider.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
@@ -14,7 +15,8 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:immich_mobile/widgets/album/album_thumbnail_card.dart';
-import 'package:immich_mobile/widgets/common/immich_app_bar.dart';
+import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
+import 'package:immich_mobile/widgets/common/curator_app_bar.dart';
 import 'package:immich_mobile/widgets/common/user_avatar.dart';
 import 'package:immich_mobile/widgets/map/map_thumbnail.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -29,64 +31,73 @@ class LibraryPage extends ConsumerWidget {
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
 
     return Scaffold(
-      appBar: const ImmichAppBar(),
+      drawer: const CuratorAppBarDrawer(),
+      appBar: const CuratorAppBar(),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Row(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            ref.read(scrollNotifierProvider).handleScrollNotification(notification);
+            return false;
+          },
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Row(
+                  children: [
+                    ActionButton(
+                      onPressed: () =>
+                          context.pushRoute(const FavoritesRoute()),
+                      icon: Icons.favorite_outline_rounded,
+                      label: IntlKeys.favorites.tr(),
+                    ),
+                    const SizedBox(width: 8),
+                    ActionButton(
+                      onPressed: () => context.pushRoute(const ArchiveRoute()),
+                      icon: Icons.archive_outlined,
+                      label: IntlKeys.archived.tr(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
                 children: [
                   ActionButton(
-                    onPressed: () => context.pushRoute(const FavoritesRoute()),
-                    icon: Icons.favorite_outline_rounded,
-                    label: IntlKeys.favorites.tr(),
+                    onPressed: () => context.pushRoute(const SharedLinkRoute()),
+                    icon: Icons.link_outlined,
+                    label: IntlKeys.shared_links.tr(),
                   ),
-                  const SizedBox(width: 8),
-                  ActionButton(
-                    onPressed: () => context.pushRoute(const ArchiveRoute()),
-                    icon: Icons.archive_outlined,
-                    label: IntlKeys.archived.tr(),
-                  ),
+                  SizedBox(width: trashEnabled ? 8 : 0),
+                  trashEnabled
+                      ? ActionButton(
+                          onPressed: () =>
+                              context.pushRoute(const TrashRoute()),
+                          icon: Icons.delete_outline_rounded,
+                          label: IntlKeys.trash.tr(),
+                        )
+                      : const SizedBox.shrink(),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                ActionButton(
-                  onPressed: () => context.pushRoute(const SharedLinkRoute()),
-                  icon: Icons.link_outlined,
-                  label: IntlKeys.shared_links.tr(),
-                ),
-                SizedBox(width: trashEnabled ? 8 : 0),
-                trashEnabled
-                    ? ActionButton(
-                        onPressed: () => context.pushRoute(const TrashRoute()),
-                        icon: Icons.delete_outline_rounded,
-                        label: IntlKeys.trash.tr(),
-                      )
-                    : const SizedBox.shrink(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                PeopleCollectionCard(),
-                PlacesCollectionCard(),
-                LocalAlbumsCollectionCard(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const QuickAccessButtons(),
-            const SizedBox(
-              height: 32,
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  PeopleCollectionCard(),
+                  PlacesCollectionCard(),
+                  LocalAlbumsCollectionCard(),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const QuickAccessButtons(),
+              const SizedBox(
+                height: 32,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -450,7 +461,7 @@ class ActionButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          backgroundColor: context.colorScheme.surfaceContainerLow,
+          backgroundColor: context.colorScheme.surfaceContainerLowest,
           alignment: Alignment.centerLeft,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(25)),
