@@ -35,14 +35,11 @@ export default defineConfig({
       '/photos/custom.css': upstream,
     },
     allowedHosts: true,
-    fs: {
-      allow: ['flutter_app/build/web'],
-    },
   },
   plugins: [
     viteStaticCopy({
       targets: [
-        { src: 'flutter_app/**', dest: 'flutter' },
+        { src: 'flutter_app/build/web/**', dest: 'flutter' },
         {
           src: 'flutter_app/build/web/assets/**',
           dest: 'assets',
