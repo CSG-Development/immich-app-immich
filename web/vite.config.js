@@ -36,7 +36,7 @@ export default defineConfig({
     },
     allowedHosts: true,
     fs: {
-      allow: ['../flutter-app/build/web'],
+      allow: ['flutter_app/build/web'],
     },
   },
   plugins: [
