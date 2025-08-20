@@ -198,7 +198,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
                                     ? context.primaryColor
                                     : context.colorScheme.onSurface
                                         .withAlpha(100),
-                                fontFamily: 'Inconsolata',
                               ),
                             ),
                       trailing: IconButton(
@@ -221,7 +220,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
                                     ? context.primaryColor
                                     : context.colorScheme.onSurface
                                         .withAlpha(100),
-                                fontFamily: 'Inconsolata',
                               ),
                             ),
                       trailing: IconButton(
