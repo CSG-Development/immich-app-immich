@@ -47,7 +47,6 @@ class PinInput extends StatelessWidget {
       textStyle: TextStyle(
         fontSize: 24,
         color: context.colorScheme.onSurface,
-        fontFamily: 'Overpass Mono',
       ),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Radius.circular(19)),

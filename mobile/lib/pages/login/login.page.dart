@@ -43,7 +43,6 @@ class LoginPage extends HookConsumerWidget {
                   style: TextStyle(
                     color: context.colorScheme.onSurfaceSecondary,
                     fontWeight: FontWeight.bold,
-                    fontFamily: "Inconsolata",
                   ),
                 ),
                 // const Text(' '),
@@ -53,7 +52,6 @@ class LoginPage extends HookConsumerWidget {
                 //     style: TextStyle(
                 //       color: context.primaryColor,
                 //       fontWeight: FontWeight.bold,
-                //       fontFamily: "Inconsolata",
                 //     ),
                 //   ),
                 //   onTap: () {

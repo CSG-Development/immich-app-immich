@@ -101,12 +101,15 @@ class AlbumsPage extends HookConsumerWidget {
           },
           child: NotificationListener<ScrollNotification>(
             onNotification: (notification) {
-              ref.read(scrollNotifierProvider).handleScrollNotification(notification);
+              ref
+                  .read(scrollNotifierProvider)
+                  .handleScrollNotification(notification);
               return false;
             },
             child: ListView(
               shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               children: [
                 Container(
                   decoration: BoxDecoration(
@@ -309,7 +312,9 @@ class QuickFilterButton extends StatelessWidget {
       onPressed: onTap,
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.all(
-          isSelected ? context.colorScheme.primary : context.colorScheme.surfaceContainerLowest,
+          isSelected
+              ? context.colorScheme.primary
+              : context.colorScheme.surfaceContainerLowest,
         ),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(

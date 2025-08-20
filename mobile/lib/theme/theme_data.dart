@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 
 class ImmichTheme {
@@ -29,10 +28,8 @@ ThemeData getThemeData({
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: colorScheme.surfaceContainer,
     ),
-    fontFamily: _getFontFamilyFromLocale(locale),
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
-        fontFamily: _getFontFamilyFromLocale(locale),
         color: colorScheme.primary,
         fontWeight: FontWeight.bold,
       ),
@@ -41,7 +38,6 @@ ThemeData getThemeData({
     appBarTheme: AppBarTheme(
       titleTextStyle: TextStyle(
         color: colorScheme.primary,
-        fontFamily: _getFontFamilyFromLocale(locale),
         fontWeight: FontWeight.w600,
         fontSize: 18,
       ),
@@ -173,7 +169,8 @@ ThemeData getThemeData({
         ),
       ),
     ),
-    drawerTheme: DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
+    drawerTheme:
+        DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
     dialogTheme: DialogThemeData(backgroundColor: colorScheme.surfaceContainer),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       // ignore: deprecated_member_use
@@ -227,12 +224,4 @@ ImmichTheme decolorizeSurfaces({
       onInverseSurface: const Color(0xFF303030),
     ),
   );
-}
-
-String? _getFontFamilyFromLocale(Locale locale) {
-  if (localesNotSupportedByOverpass.contains(locale)) {
-    // Let Flutter use the default font
-    return null;
-  }
-  return 'Overpass';
 }
