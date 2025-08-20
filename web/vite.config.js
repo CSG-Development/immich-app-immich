@@ -35,6 +35,9 @@ export default defineConfig({
       '/photos/custom.css': upstream,
     },
     allowedHosts: true,
+    fs: {
+      allow: ['../flutter-app/build/web'],
+    },
   },
   plugins: [
     viteStaticCopy({
