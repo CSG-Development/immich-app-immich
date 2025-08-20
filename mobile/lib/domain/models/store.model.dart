@@ -71,7 +71,8 @@ enum StoreKey<T> {
   photoManagerCustomFilter<bool>._(1000),
 
   // Seagate
-  enableBiometric<bool>._(2000);
+  enableBiometric<bool>._(2000),
+  onboardingWasShown<bool>._(2001);
 
   const StoreKey._(this.id);
   final int id;

@@ -197,7 +197,6 @@ class LoginForm extends HookConsumerWidget {
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
         } else {
-
           if (localAuthState.canAuthenticate) {
             // Show dialog to prompt user to add biometric authentication
             final shouldAddBiometric = await showDialog<bool>(
@@ -226,7 +225,13 @@ class LoginForm extends HookConsumerWidget {
             }
           }
 
-          context.replaceRoute(const CuratorOnboardingRoute());
+          final onboardingWasShown =
+              Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+          if (onboardingWasShown) {
+            context.replaceRoute(const TabControllerRoute());
+          } else {
+            context.replaceRoute(const CuratorOnboardingRoute());
+          }
         }
       } catch (error) {
         ImmichToast.show(
