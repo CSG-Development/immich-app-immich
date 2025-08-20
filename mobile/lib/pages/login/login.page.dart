@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/extensions/theme_extensions.dart';
-import 'package:immich_mobile/widgets/forms/login/login_form.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 @RoutePage()
@@ -29,39 +28,30 @@ class LoginPage extends HookConsumerWidget {
     );
 
     return Scaffold(
-      body: LoginForm(),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'v${appVersion.value}',
-                  style: TextStyle(
-                    color: context.colorScheme.onSurfaceSecondary,
-                    fontWeight: FontWeight.bold,
+      body: Stack(
+        children: [
+          CuratorLoginForm(),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.settings,
+                    size: 24.0,
+                    color: context.isDarkTheme
+                        ? const Color(0xDEFFFFFF)
+                        : const Color(0xDE000000),
                   ),
+                  onPressed: () => context.pushRoute(const SettingsRoute()),
                 ),
-                // const Text(' '),
-                // GestureDetector(
-                //   child: Text(
-                //     'Logs',
-                //     style: TextStyle(
-                //       color: context.primaryColor,
-                //       fontWeight: FontWeight.bold,
-                //     ),
-                //   ),
-                //   onTap: () {
-                //     context.pushRoute(const AppLogRoute());
-                //   },
-                // ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
