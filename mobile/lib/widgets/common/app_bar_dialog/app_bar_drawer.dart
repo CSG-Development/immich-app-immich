@@ -260,13 +260,16 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: isLandscape
           ? SafeArea(
-              child: SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height,
-                  ),
-                  child: IntrinsicHeight(
-                    child: drawerContent,
+              child: Container(
+                decoration: BoxDecoration(color: context.colorScheme.surfaceContainer),
+                child: SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height,
+                    ),
+                    child: IntrinsicHeight(
+                      child: drawerContent,
+                    ),
                   ),
                 ),
               ),

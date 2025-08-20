@@ -173,7 +173,7 @@ ThemeData getThemeData({
         ),
       ),
     ),
-    drawerTheme: DrawerThemeData(backgroundColor: colorScheme.surfaceContainer),
+    drawerTheme: DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
     dialogTheme: DialogThemeData(backgroundColor: colorScheme.surfaceContainer),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       // ignore: deprecated_member_use
