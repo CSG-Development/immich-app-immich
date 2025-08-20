@@ -258,11 +258,12 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
 
     return Drawer(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: isLandscape
-          ? SafeArea(
-              child: Container(
-                decoration: BoxDecoration(color: context.colorScheme.surfaceContainer),
-                child: SingleChildScrollView(
+      child: SafeArea(
+        child: Container(
+          decoration:
+              BoxDecoration(color: context.colorScheme.surfaceContainer),
+          child: isLandscape
+              ? SingleChildScrollView(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: MediaQuery.of(context).size.height,
@@ -271,10 +272,10 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                       child: drawerContent,
                     ),
                   ),
-                ),
-              ),
-            )
-          : drawerContent,
+                )
+              : drawerContent,
+        ),
+      ),
     );
   }
 }
