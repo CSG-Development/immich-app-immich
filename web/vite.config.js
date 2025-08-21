@@ -5,7 +5,6 @@ import { svelteTesting } from '@testing-library/svelte/vite';
 import path from 'node:path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 const upstream = {
   target: process.env.IMMICH_SERVER_URL || 'http://immich-server:2283/',
@@ -37,7 +36,7 @@ export default defineConfig({
     allowedHosts: true,
   },
   plugins: [
-    viteStaticCopy({
+    /* viteStaticCopy({
       targets: [
         { src: 'flutter_app/build/web/**', dest: 'flutter' },
         {
@@ -45,7 +44,7 @@ export default defineConfig({
           dest: 'assets',
         },
       ],
-    }),
+    }), */
     enhancedImages(),
     tailwindcss(),
     sveltekit(),
