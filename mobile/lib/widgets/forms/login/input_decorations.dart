@@ -6,20 +6,34 @@ class LoginInputDecorations {
     required BuildContext context,
     required String labelText,
     required String hintText,
-    required FocusNode focusNode,
     Widget? suffixIcon,
     int errorMaxLines = 1,
+    bool isError = false,
   }) {
     final bool isDarkTheme = context.isDarkTheme;
+    final Color resolvedErrorColor = const Color(0xFFF44336);
+    final Color resolvedLabelColor =
+        isDarkTheme ? const Color(0xDEFFFFFF) : const Color(0xDE000000);
+    final Color resolvedHintColor =
+        isDarkTheme ? const Color(0xFF858585) : const Color(0xFF7A7A7A);
 
     return InputDecoration(
       labelText: labelText,
       border: const OutlineInputBorder(),
+      enabledBorder: isError
+          ? OutlineInputBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(15.0)),
+              borderSide: BorderSide(
+                width: 1.0,
+                color: resolvedErrorColor,
+              ),
+            )
+          : null,
       focusedBorder: OutlineInputBorder(
         borderRadius: const BorderRadius.all(Radius.circular(15.0)),
         borderSide: BorderSide(
           width: 2.0,
-          color: Theme.of(context).primaryColor,
+          color: isError ? resolvedErrorColor : Theme.of(context).primaryColor,
         ),
       ),
       hintText: hintText,
@@ -28,22 +42,26 @@ class LoginInputDecorations {
       hintStyle: TextStyle(
         fontWeight: FontWeight.normal,
         fontSize: 14,
-        color: isDarkTheme ? const Color(0xDEFFFFFF) : const Color(0xDE000000),
+        color: isError ? resolvedErrorColor : resolvedHintColor,
       ),
-      labelStyle: TextStyle(
-        color: focusNode.hasFocus
-            ? Theme.of(context).colorScheme.primary
-            : isDarkTheme
-                ? const Color(0xDEFFFFFF)
-                : const Color(0xDE000000),
-      ),
-      floatingLabelStyle: TextStyle(
-        color: focusNode.hasFocus
-            ? Theme.of(context).colorScheme.primary
-            : isDarkTheme
-                ? const Color(0xDEFFFFFF)
-                : const Color(0xDE000000),
-      ),
+      labelStyle: WidgetStateTextStyle.resolveWith((states) {
+        if (isError) {
+          return TextStyle(color: resolvedErrorColor);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return TextStyle(color: Theme.of(context).colorScheme.primary);
+        }
+        return TextStyle(color: resolvedLabelColor);
+      }),
+      floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
+        if (isError || states.contains(WidgetState.error)) {
+          return TextStyle(color: resolvedErrorColor);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return TextStyle(color: Theme.of(context).colorScheme.primary);
+        }
+        return TextStyle(color: resolvedLabelColor);
+      }),
       floatingLabelBehavior: FloatingLabelBehavior.always,
     );
   }
