@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
@@ -37,6 +38,10 @@ class LoginPage extends HookConsumerWidget {
             right: 0,
             child: AppBar(
               backgroundColor: Colors.transparent,
+              elevation: 0,
+              systemOverlayStyle: context.isDarkTheme
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
               actions: [
                 IconButton(
                   icon: Icon(

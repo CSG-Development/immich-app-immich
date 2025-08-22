@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/widgets/forms/login/input_decorations.dart';
+import 'package:immich_mobile/widgets/forms/login/trim_formatter.dart';
 
-class PasswordInput extends StatefulHookConsumerWidget {
+class PasswordInput extends HookConsumerWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  final Function()? onSubmit;
+  final VoidCallback? onSubmit;
   final bool hasExternalError;
 
   const PasswordInput({
@@ -19,30 +20,21 @@ class PasswordInput extends StatefulHookConsumerWidget {
   });
 
   @override
-  ConsumerState<PasswordInput> createState() => _PasswordInputState();
-}
-
-class _PasswordInputState extends ConsumerState<PasswordInput> {
-  String? _validateInput(String? email) {
-    if (widget.hasExternalError) {
-      return '';
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isPasswordVisible = useState<bool>(false);
 
     return TextFormField(
       obscureText: !isPasswordVisible.value,
-      controller: widget.controller,
+      controller: controller,
+      inputFormatters: const [TrimFormatter()],
       decoration: LoginInputDecorations.baseDecoration(
         context: context,
         labelText: 'password'.tr(),
-        hintText: 'login_form_password_hint'.tr(),
-        focusNode: widget.focusNode,
+        hintText: 'curator.login_form_password_hint'.tr(),
         suffixIcon: IconButton(
+          style: IconButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           onPressed: () => isPasswordVisible.value = !isPasswordVisible.value,
           icon: Icon(
             isPasswordVisible.value
@@ -50,15 +42,13 @@ class _PasswordInputState extends ConsumerState<PasswordInput> {
                 : Icons.visibility_sharp,
           ),
         ),
-      ).copyWith(
-        errorStyle: widget.hasExternalError ? const TextStyle(height: 0) : null,
+        isError: hasExternalError,
       ),
-      validator: _validateInput,
       autovalidateMode: AutovalidateMode.always,
       autofillHints: const [AutofillHints.password],
       keyboardType: TextInputType.text,
-      onFieldSubmitted: (_) => widget.onSubmit?.call(),
-      focusNode: widget.focusNode,
+      onFieldSubmitted: (_) => onSubmit?.call(),
+      focusNode: focusNode,
       textInputAction: TextInputAction.go,
     );
   }

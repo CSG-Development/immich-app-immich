@@ -46,69 +46,77 @@ class CuratorLoginForm extends HookConsumerWidget {
     final serverEndpointFocusNode = useFocusNode();
 
     final isLoading = useState<bool>(false);
-    final warningMessage = useState<String?>(null);
-    final hasEmailError = useState<bool>(false);
-    final hasPasswordError = useState<bool>(false);
-    final isFormValid = useState<bool>(false);
+    final hasPreviousLoginFailed = useState<bool>(false);
+    final warningMessage = useMemoized(() => ValueNotifier<String?>(null));
+    final hasEmailError = useMemoized(() => ValueNotifier<bool>(false));
+    final hasPasswordError = useMemoized(() => ValueNotifier<bool>(false));
 
-    final loginFormKey = GlobalKey<FormState>();
+    final formKey =
+        useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
     final serverEndpoint = useState<String?>(null);
     final serverInfo = ref.watch(serverInfoProvider);
     final localAuthState = ref.watch(localAuthProvider);
 
-    // Track form validity
+    void clearAllErrors() {
+      if (warningMessage.value != null) {
+        warningMessage.value = null;
+      }
+      if (hasEmailError.value) {
+        hasEmailError.value = false;
+      }
+      if (hasPasswordError.value) {
+        hasPasswordError.value = false;
+      }
+      if (hasPreviousLoginFailed.value) {
+        hasPreviousLoginFailed.value = false;
+      }
+    }
+
+    bool areRequiredFieldsFilled() => emailController.text.isNotEmpty &&
+        passwordController.text.isNotEmpty &&
+        serverEndpointController.text.isNotEmpty;
+
     useEffect(
       () {
-        void checkFormValidity() {
-          final isValid = emailController.text.isNotEmpty &&
-              passwordController.text.isNotEmpty &&
-              serverEndpointController.text.isNotEmpty;
-          isFormValid.value = isValid;
+        void onFocusChange() {
+          final shouldClear = warningMessage.value != null ||
+              hasEmailError.value ||
+              hasPasswordError.value ||
+              hasPreviousLoginFailed.value;
+          if (!shouldClear) return;
+          if (emailFocusNode.hasFocus ||
+              passwordFocusNode.hasFocus ||
+              serverEndpointFocusNode.hasFocus) {
+            clearAllErrors();
+          }
         }
 
-        emailController.addListener(checkFormValidity);
-        passwordController.addListener(checkFormValidity);
-        serverEndpointController.addListener(checkFormValidity);
+        emailFocusNode.addListener(onFocusChange);
+        passwordFocusNode.addListener(onFocusChange);
+        serverEndpointFocusNode.addListener(onFocusChange);
 
         return () {
-          emailController.removeListener(checkFormValidity);
-          passwordController.removeListener(checkFormValidity);
-          serverEndpointController.removeListener(checkFormValidity);
+          emailFocusNode.removeListener(onFocusChange);
+          passwordFocusNode.removeListener(onFocusChange);
+          serverEndpointFocusNode.removeListener(onFocusChange);
         };
       },
       [],
     );
 
-    // Clear warning and errors when inputs change
     useEffect(
       () {
-        void listener() {
-          if (warningMessage.value != null) {
-            warningMessage.value = null;
-          }
-          if (hasEmailError.value) {
-            hasEmailError.value = false;
-          }
-          if (hasPasswordError.value) {
-            hasPasswordError.value = false;
-          }
-        }
-
-        emailController.addListener(listener);
-        passwordController.addListener(listener);
-        serverEndpointController.addListener(listener);
-
         return () {
-          emailController.removeListener(listener);
-          passwordController.removeListener(listener);
-          serverEndpointController.removeListener(listener);
+          warningMessage.dispose();
+          hasEmailError.dispose();
+          hasPasswordError.dispose();
         };
       },
       [],
     );
 
-    Future<void> checkVersionMismatch() async {
+    Future<void> updateVersionCompatibilityWarning() async {
       try {
         final packageInfo = await PackageInfo.fromPlatform();
         final appVersion = packageInfo.version;
@@ -135,29 +143,28 @@ class CuratorLoginForm extends HookConsumerWidget {
           warningMessage.value = null;
         }
       } catch (error) {
-        warningMessage.value = 'login_form_version_check_error'.tr();
+        warningMessage.value = 'curator.login_form_version_check_error'.tr();
       }
     }
 
-    Future<void> getServerAuthSettings() async {
-      warningMessage.value = null;
-      hasEmailError.value = false;
-      hasPasswordError.value = false;
+    Future<void> fetchServerAuthSettings() async {
+      clearAllErrors();
 
-      final sanitizeServerUrl = sanitizeUrl(serverEndpointController.text);
-      final serverUrl = punycodeEncodeUrl(sanitizeServerUrl);
+      final sanitizedServerUrl = sanitizeUrl(serverEndpointController.text);
+      final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
 
-      if (serverUrl.isEmpty) {
+      if (normalizedServerUrl.isEmpty) {
         warningMessage.value = "login_form_server_empty".tr();
         return;
       }
 
       try {
-        final endpoint =
-            await ref.read(authProvider.notifier).validateServerUrl(serverUrl);
+        final endpoint = await ref
+            .read(authProvider.notifier)
+            .validateServerUrl(normalizedServerUrl);
 
         await ref.read(serverInfoProvider.notifier).getServerInfo();
-        await checkVersionMismatch();
+        await updateVersionCompatibilityWarning();
 
         serverEndpoint.value = endpoint;
       } on ApiException catch (e) {
@@ -180,40 +187,62 @@ class CuratorLoginForm extends HookConsumerWidget {
       [],
     );
 
-    void populateTestLoginInfo() async {
+    void populateDevCredentials() async {
       const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
       await dotenv.load(fileName: '.env.$env');
       final serverUrl = dotenv.env['DEV_SERVER_URL'];
       final email = dotenv.env['DEV_EMAIL'];
       final password = dotenv.env['DEV_PASSWORD'];
 
-      warningMessage.value = null;
-      hasEmailError.value = false;
-      hasPasswordError.value = false;
+      clearAllErrors();
       emailController.text = email ?? '';
       passwordController.text = password ?? '';
       serverEndpointController.text = serverUrl ?? '';
     }
 
+    String? validateEmail(String email) {
+      final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+      if (!simpleEmailPattern.hasMatch(email)) {
+        return 'login_form_err_invalid_email'.tr();
+      }
+      return null;
+    }
+
     Future<void> login() async {
-      // Don't proceed if form isn't valid
-      if (!isFormValid.value) return;
+      if (hasPreviousLoginFailed.value) {
+        return;
+      }
+      if (!areRequiredFieldsFilled()) {
+        return;
+      }
 
       TextInput.finishAutofillContext();
       FocusScope.of(context).unfocus();
-      warningMessage.value = null;
-      hasEmailError.value = false;
-      hasPasswordError.value = false;
 
-      // First validate the form fields
-      if (!loginFormKey.currentState!.validate()) {
+      final emailValidationError = validateEmail(emailController.text);
+
+      if (emailValidationError != null) {
+        hasEmailError.value = true;
+        warningMessage.value = emailValidationError;
+        hasPreviousLoginFailed.value = true;
+        return;
+      }
+
+      if (!areRequiredFieldsFilled()) {
+        hasPreviousLoginFailed.value = true;
+        return;
+      }
+
+      clearAllErrors();
+
+      if (!formKey.currentState!.validate()) {
         return;
       }
 
       isLoading.value = true;
 
       try {
-        await getServerAuthSettings();
+        await fetchServerAuthSettings();
 
         invalidateAllApiRepositoryProviders(ref);
 
@@ -260,57 +289,63 @@ class CuratorLoginForm extends HookConsumerWidget {
           }
         }
       } on ApiException catch (e) {
-        if (e.code == 401) {
+        if (e.code == 400 || e.code == 401) {
           hasEmailError.value = true;
           hasPasswordError.value = true;
-          warningMessage.value = 'Incorrect email or password';
+          warningMessage.value = 'incorrect_email_or_password'.tr();
         } else {
           warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
         }
+        hasPreviousLoginFailed.value = true;
       } catch (error) {
         warningMessage.value = "login_form_failed_login".tr();
+        hasPreviousLoginFailed.value = true;
       } finally {
         isLoading.value = false;
       }
     }
 
-    buildVersionCompatWarning() {
-      if (warningMessage.value == null) {
-        return [const SizedBox.shrink()];
-      }
-
-      return [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0x1FF44336),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    Widget buildWarningBanner() {
+      return ValueListenableBuilder<String?>(
+        valueListenable: warningMessage,
+        builder: (_, message, __) {
+          if (message == null) {
+            return const SizedBox.shrink();
+          }
+          return Column(
             children: [
-              const Icon(Icons.error, color: Color(0xFFF44336)),
-              const SizedBox(width: 16.0),
-              Expanded(
-                child: Text(warningMessage.value!),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0x1FF44336),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error, color: Color(0xFFF44336)),
+                    const SizedBox(width: 16.0),
+                    Expanded(
+                      child: Text(message),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 24.0),
             ],
-          ),
-        ),
-        const SizedBox(height: 24.0),
-      ];
+          );
+        },
+      );
     }
 
-    Widget buildServerEndpointInputField() {
+    Widget buildServerEndpointAutocomplete() {
       return LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          double maxWidth = constraints.maxWidth;
+          final double maxWidth = constraints.maxWidth;
           return RawAutocomplete<String>(
             textEditingController: serverEndpointController,
             focusNode: serverEndpointFocusNode,
-            optionsBuilder: (value) {
-              return ['1', '2', '3'];
-            },
+            optionsBuilder: (value) => ['1', '2', '3'],
             displayStringForOption: (value) => value,
             onSelected: (value) => {},
             fieldViewBuilder:
@@ -319,10 +354,9 @@ class CuratorLoginForm extends HookConsumerWidget {
                 controller: serverEndpointController,
                 focusNode: serverEndpointFocusNode,
                 onSubmit: passwordFocusNode.requestFocus,
-                padding: EdgeInsets.zero,
               );
             },
-            optionsViewBuilder: (context, onSelected, options) {
+            optionsViewBuilder: (context, _, options) {
               return Align(
                 alignment: Alignment.topLeft,
                 child: Material(
@@ -359,29 +393,37 @@ class CuratorLoginForm extends HookConsumerWidget {
       );
     }
 
-    Widget buildLogin() {
+    Widget buildLoginForm() {
       return Form(
-        key: loginFormKey,
+        key: formKey,
         child: AutofillGroup(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              EmailInput(
-                controller: emailController,
-                focusNode: emailFocusNode,
-                onSubmit: serverEndpointFocusNode.requestFocus,
-                hasExternalError: hasEmailError.value,
+              ValueListenableBuilder<bool>(
+                valueListenable: hasEmailError,
+                builder: (_, emailError, __) {
+                  return EmailInput(
+                    controller: emailController,
+                    focusNode: emailFocusNode,
+                    onSubmit: serverEndpointFocusNode.requestFocus,
+                    hasExternalError: emailError,
+                  );
+                },
               ),
               const SizedBox(height: 32.0),
-              buildServerEndpointInputField(),
+              buildServerEndpointAutocomplete(),
               const SizedBox(height: 32.0),
-              PasswordInput(
-                controller: passwordController,
-                focusNode: passwordFocusNode,
-                onSubmit: isFormValid.value
-                    ? login
-                    : null, // Only allow submit if form is valid
-                hasExternalError: hasPasswordError.value,
+              ValueListenableBuilder<bool>(
+                valueListenable: hasPasswordError,
+                builder: (_, passwordError, __) {
+                  return PasswordInput(
+                    controller: passwordController,
+                    focusNode: passwordFocusNode,
+                    onSubmit: login,
+                    hasExternalError: passwordError,
+                  );
+                },
               ),
               const SizedBox(height: 24.0),
               GestureDetector(
@@ -389,7 +431,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Text(
-                    'Reset Password',
+                    'reset_password'.tr(),
                     style: TextStyle(
                       color: Theme.of(context).primaryColor,
                       fontSize: 14.0,
@@ -399,21 +441,33 @@ class CuratorLoginForm extends HookConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24.0),
-              ...buildVersionCompatWarning(),
+              buildWarningBanner(),
               SizedBox(
                 height: 100.0,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     isLoading.value
-                        ? const LoadingIcon(
-                            key: ValueKey("loading"),
-                            text: 'Logging in to your account',
+                        ? LoadingIcon(
+                            key: const ValueKey("loading"),
+                            text: 'curator.login_form_loading_text'.tr(),
                           )
-                        : LoginButton(
-                            onPressed: isFormValid.value ? login : () {},
-                            withIcon: false,
-                            isDisabled: !isFormValid.value,
+                        : AnimatedBuilder(
+                            animation: Listenable.merge([
+                              emailController,
+                              passwordController,
+                              serverEndpointController,
+                              hasPreviousLoginFailed,
+                            ]),
+                            builder: (_, __) {
+                              final canSubmit = areRequiredFieldsFilled() &&
+                                  !hasPreviousLoginFailed.value;
+                              return LoginButton(
+                                onPressed: canSubmit ? login : () {},
+                                withIcon: false,
+                                isDisabled: !canSubmit,
+                              );
+                            },
                           ),
                   ],
                 ),
@@ -426,12 +480,12 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     Widget buildLogo(BuildContext context) {
       return GestureDetector(
-        onDoubleTap: () => populateTestLoginInfo(),
+        onDoubleTap: () => populateDevCredentials(),
         child: SvgPicture.asset(
           context.isDarkTheme
               ? 'assets/curator-photos-logo-dark.svg'
               : 'assets/curator-photos-logo-light.svg',
-          height: 40,
+          height: 52,
         ),
       );
     }
@@ -449,7 +503,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                   children: [
                     buildLogo(context),
                     const SizedBox(height: 24.0),
-                    buildLogin(),
+                    buildLoginForm(),
                   ],
                 ),
               ),
