@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -179,13 +180,19 @@ class CuratorLoginForm extends HookConsumerWidget {
       [],
     );
 
-    void populateTestLoginInfo() {
+    void populateTestLoginInfo() async {
+      const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
+      await dotenv.load(fileName: '.env.$env');
+      final serverUrl = dotenv.env['DEV_SERVER_URL'];
+      final email = dotenv.env['DEV_EMAIL'];
+      final password = dotenv.env['DEV_PASSWORD'];
+
       warningMessage.value = null;
       hasEmailError.value = false;
       hasPasswordError.value = false;
-      emailController.text = 'demo@immich.app';
-      passwordController.text = 'demo';
-      serverEndpointController.text = 'https://demo.immich.app';
+      emailController.text = email ?? '';
+      passwordController.text = password ?? '';
+      serverEndpointController.text = serverUrl ?? '';
     }
 
     Future<void> login() async {
