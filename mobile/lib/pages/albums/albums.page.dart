@@ -17,7 +17,6 @@ import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.da
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/album/album_thumbnail_card.dart';
-import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 import 'package:immich_mobile/widgets/common/curator_app_bar.dart';
 import 'package:immich_mobile/widgets/common/immich_thumbnail.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
@@ -78,7 +77,6 @@ class AlbumsPage extends HookConsumerWidget {
     }
 
     return Scaffold(
-      drawer: const CuratorAppBarDrawer(),
       appBar: CuratorAppBar(
         showUploadButton: false,
         actions: [

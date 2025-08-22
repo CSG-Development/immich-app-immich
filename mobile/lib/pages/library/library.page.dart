@@ -15,7 +15,6 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:immich_mobile/widgets/album/album_thumbnail_card.dart';
-import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 import 'package:immich_mobile/widgets/common/curator_app_bar.dart';
 import 'package:immich_mobile/widgets/common/user_avatar.dart';
 import 'package:immich_mobile/widgets/map/map_thumbnail.dart';
@@ -31,7 +30,6 @@ class LibraryPage extends ConsumerWidget {
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
 
     return Scaffold(
-      drawer: const CuratorAppBarDrawer(),
       appBar: const CuratorAppBar(),
       body: SafeArea(
         child: Padding(

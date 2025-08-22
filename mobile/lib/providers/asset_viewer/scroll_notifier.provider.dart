@@ -12,7 +12,7 @@ class ScrollNotifier with ChangeNotifier {
     notifyListeners();
   }
 
-  bool _isVisible = true;
+  bool _isVisible = false;
   double _lastOffset = 0;
 
   bool get isVisible => _isVisible;
@@ -43,10 +43,5 @@ class ScrollNotifier with ChangeNotifier {
       notifyListeners();
     }
     _lastOffset = current;
-  }
-
-  void setIsVisible(bool isVisible) {
-    _isVisible = isVisible;
-    notifyListeners();
   }
 }
