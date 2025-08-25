@@ -11,7 +11,7 @@ class LoginInputDecorations {
     bool isError = false,
   }) {
     final bool isDarkTheme = context.isDarkTheme;
-    final Color resolvedErrorColor = const Color(0xFFF44336);
+    final Color resolvedErrorColor = isDarkTheme ? const Color(0xFFF28F8C): const Color(0xFFF44336);
     final Color resolvedLabelColor =
         isDarkTheme ? const Color(0xDEFFFFFF) : const Color(0xDE000000);
     final Color resolvedHintColor =

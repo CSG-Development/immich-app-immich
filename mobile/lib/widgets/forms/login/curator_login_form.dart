@@ -50,6 +50,8 @@ class CuratorLoginForm extends HookConsumerWidget {
     final warningMessage = useMemoized(() => ValueNotifier<String?>(null));
     final hasEmailError = useMemoized(() => ValueNotifier<bool>(false));
     final hasPasswordError = useMemoized(() => ValueNotifier<bool>(false));
+    final hasServerEndpointError =
+        useMemoized(() => ValueNotifier<bool>(false));
 
     final formKey =
         useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
@@ -68,12 +70,16 @@ class CuratorLoginForm extends HookConsumerWidget {
       if (hasPasswordError.value) {
         hasPasswordError.value = false;
       }
+      if (hasServerEndpointError.value) {
+        hasServerEndpointError.value = false;
+      }
       if (hasPreviousLoginFailed.value) {
         hasPreviousLoginFailed.value = false;
       }
     }
 
-    bool areRequiredFieldsFilled() => emailController.text.isNotEmpty &&
+    bool areRequiredFieldsFilled() =>
+        emailController.text.isNotEmpty &&
         passwordController.text.isNotEmpty &&
         serverEndpointController.text.isNotEmpty;
 
@@ -83,6 +89,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           final shouldClear = warningMessage.value != null ||
               hasEmailError.value ||
               hasPasswordError.value ||
+              hasServerEndpointError.value ||
               hasPreviousLoginFailed.value;
           if (!shouldClear) return;
           if (emailFocusNode.hasFocus ||
@@ -111,6 +118,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           warningMessage.dispose();
           hasEmailError.dispose();
           hasPasswordError.dispose();
+          hasServerEndpointError.dispose();
         };
       },
       [],
@@ -147,7 +155,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    Future<void> fetchServerAuthSettings() async {
+    Future<bool> fetchServerAuthSettings() async {
       clearAllErrors();
 
       final sanitizedServerUrl = sanitizeUrl(serverEndpointController.text);
@@ -155,7 +163,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       if (normalizedServerUrl.isEmpty) {
         warningMessage.value = "login_form_server_empty".tr();
-        return;
+        return false;
       }
 
       try {
@@ -167,12 +175,16 @@ class CuratorLoginForm extends HookConsumerWidget {
         await updateVersionCompatibilityWarning();
 
         serverEndpoint.value = endpoint;
+        return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
+        return false;
       } on HandshakeException {
         warningMessage.value = 'login_form_handshake_exception'.tr();
+        return false;
       } catch (e) {
         warningMessage.value = 'login_form_server_error'.tr();
+        return false;
       }
     }
 
@@ -208,6 +220,18 @@ class CuratorLoginForm extends HookConsumerWidget {
       return null;
     }
 
+    String? validateServerEndpoint(String url) {
+      final parsedUrl = Uri.tryParse(sanitizeUrl(url));
+      if (parsedUrl == null ||
+          !parsedUrl.isAbsolute ||
+          !parsedUrl.scheme.startsWith("http") ||
+          parsedUrl.host.isEmpty) {
+        return 'login_form_err_invalid_url'.tr();
+      }
+
+      return null;
+    }
+
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -218,6 +242,16 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       TextInput.finishAutofillContext();
       FocusScope.of(context).unfocus();
+
+      final serverEndpointValidationError =
+          validateServerEndpoint(serverEndpointController.text);
+
+      if (serverEndpointValidationError != null) {
+        hasServerEndpointError.value = true;
+        warningMessage.value = serverEndpointValidationError;
+        hasPreviousLoginFailed.value = true;
+        return;
+      }
 
       final emailValidationError = validateEmail(emailController.text);
 
@@ -242,7 +276,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       isLoading.value = true;
 
       try {
-        await fetchServerAuthSettings();
+        final isServerValid = await fetchServerAuthSettings();
+
+        if (!isServerValid) {
+          return;
+        }
 
         invalidateAllApiRepositoryProviders(ref);
 
@@ -292,7 +330,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (e.code == 400 || e.code == 401) {
           hasEmailError.value = true;
           hasPasswordError.value = true;
-          warningMessage.value = 'incorrect_email_or_password'.tr();
+          warningMessage.value = 'errors.incorrect_email_or_password'.tr();
         } else {
           warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
         }
@@ -323,7 +361,12 @@ class CuratorLoginForm extends HookConsumerWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error, color: Color(0xFFF44336)),
+                    Icon(
+                      Icons.error,
+                      color: context.isDarkTheme
+                          ? const Color(0xFFF28F8C)
+                          : const Color(0xFFF44336),
+                    ),
                     const SizedBox(width: 16.0),
                     Expanded(
                       child: Text(message),
@@ -345,18 +388,34 @@ class CuratorLoginForm extends HookConsumerWidget {
           return RawAutocomplete<String>(
             textEditingController: serverEndpointController,
             focusNode: serverEndpointFocusNode,
-            optionsBuilder: (value) => ['1', '2', '3'],
-            displayStringForOption: (value) => value,
-            onSelected: (value) => {},
-            fieldViewBuilder:
-                (context, controller, focusNode, onFieldSubmitted) {
-              return ServerEndpointInput(
-                controller: serverEndpointController,
-                focusNode: serverEndpointFocusNode,
-                onSubmit: passwordFocusNode.requestFocus,
+            optionsBuilder: (value) {
+              const allOptions = ['1', '2', '3'];
+              final input = value.text.trim();
+              if (input.isEmpty) return allOptions;
+              return allOptions.where(
+                (option) => option.toLowerCase().contains(input.toLowerCase()),
               );
             },
-            optionsViewBuilder: (context, _, options) {
+            displayStringForOption: (value) => value,
+            onSelected: (value) {
+              serverEndpointController.text = value;
+              passwordFocusNode.requestFocus();
+            },
+            fieldViewBuilder:
+                (context, controller, focusNode, onFieldSubmitted) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: hasServerEndpointError,
+                builder: (_, serverError, __) {
+                  return ServerEndpointInput(
+                    controller: serverEndpointController,
+                    focusNode: serverEndpointFocusNode,
+                    onSubmit: passwordFocusNode.requestFocus,
+                    hasExternalError: serverError,
+                  );
+                },
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
               return Align(
                 alignment: Alignment.topLeft,
                 child: Material(
@@ -378,8 +437,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                         return ListTile(
                           title: Text(option),
                           onTap: () {
-                            serverEndpointController.text = option;
-                            passwordFocusNode.requestFocus();
+                            onSelected(option);
                           },
                         );
                       },
