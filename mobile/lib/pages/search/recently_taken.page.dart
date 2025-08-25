@@ -22,9 +22,11 @@ class RecentlyTakenPage extends HookConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios_rounded),
         ),
       ),
-      body: recents.widgetWhen(
-        onData: (searchResponse) => ImmichAssetGrid(
-          assets: searchResponse,
+      body: SafeArea(
+        child: recents.widgetWhen(
+          onData: (searchResponse) => ImmichAssetGrid(
+            assets: searchResponse,
+          ),
         ),
       ),
     );
