@@ -49,54 +49,56 @@ class PlacesCollectionPage extends HookConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        shrinkWrap: true,
-        children: [
-          if (search.value == null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                height: 200,
-                width: context.width,
-                child: MapThumbnail(
-                  onTap: (_, __) => context
-                      .pushRoute(MapRoute(initialLocation: currentLocation)),
-                  zoom: 8,
-                  centre: currentLocation ??
-                      const LatLng(
-                        21.44950,
-                        -157.91959,
-                      ),
-                  showAttribution: false,
-                  themeMode:
-                      context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+      body: SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            if (search.value == null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SizedBox(
+                  height: 200,
+                  width: context.width,
+                  child: MapThumbnail(
+                    onTap: (_, __) => context
+                        .pushRoute(MapRoute(initialLocation: currentLocation)),
+                    zoom: 8,
+                    centre: currentLocation ??
+                        const LatLng(
+                          21.44950,
+                          -157.91959,
+                        ),
+                    showAttribution: false,
+                    themeMode:
+                        context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+                  ),
                 ),
               ),
+            places.when(
+              data: (places) {
+                if (search.value != null) {
+                  places = places.where((place) {
+                    return place.label
+                        .toLowerCase()
+                        .contains(search.value!.toLowerCase());
+                  }).toList();
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: places.length,
+                  itemBuilder: (context, index) {
+                    final place = places[index];
+        
+                    return PlaceTile(id: place.id, name: place.label);
+                  },
+                );
+              },
+              error: (error, stask) => const Text('Error getting places'),
+              loading: () => const Center(child: CircularProgressIndicator()),
             ),
-          places.when(
-            data: (places) {
-              if (search.value != null) {
-                places = places.where((place) {
-                  return place.label
-                      .toLowerCase()
-                      .contains(search.value!.toLowerCase());
-                }).toList();
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: places.length,
-                itemBuilder: (context, index) {
-                  final place = places[index];
-
-                  return PlaceTile(id: place.id, name: place.label);
-                },
-              );
-            },
-            error: (error, stask) => const Text('Error getting places'),
-            loading: () => const Center(child: CircularProgressIndicator()),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

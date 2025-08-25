@@ -156,7 +156,9 @@ class PartnerPage extends HookConsumerWidget {
           ),
         ],
       ),
-      body: buildUserList(partners),
+      body: SafeArea(
+        child: buildUserList(partners),
+      ),
     );
   }
 }

@@ -168,129 +168,131 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
         ).tr(),
         elevation: 0,
       ),
-      body: CustomScrollView(
-        physics: const ClampingScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8.0,
-                    horizontal: 16.0,
-                  ),
-                  child: Text(
-                    "backup_album_selection_page_selection_info",
-                    style: context.textTheme.titleSmall,
-                  ).tr(),
-                ),
-                // Selected Album Chips
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Wrap(
-                    children: [
-                      ...buildSelectedAlbumNameChip(),
-                      ...buildExcludedAlbumNameChip(),
-                    ],
-                  ),
-                ),
-
-                SettingsSwitchListTile(
-                  valueNotifier: enableSyncUploadAlbum,
-                  title: "sync_albums".tr(),
-                  subtitle: "sync_upload_album_setting_subtitle".tr(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  titleStyle: context.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  subtitleStyle: context.textTheme.labelLarge?.copyWith(
-                    color: context.colorScheme.primary,
-                  ),
-                  onChanged: handleSyncAlbumToggle,
-                ),
-
-                ListTile(
-                  title: Text(
-                    "backup_album_selection_page_albums_device".tr(
-                      namedArgs: {
-                        'count': ref
-                            .watch(backupProvider)
-                            .availableAlbums
-                            .length
-                            .toString(),
-                      },
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const ClampingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8.0,
+                      horizontal: 16.0,
                     ),
-                    style: context.textTheme.titleSmall,
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
-                      "backup_album_selection_page_albums_tap",
-                      style: context.textTheme.labelLarge?.copyWith(
-                        color: context.primaryColor,
-                      ),
+                      "backup_album_selection_page_selection_info",
+                      style: context.textTheme.titleSmall,
                     ).tr(),
                   ),
-                  trailing: IconButton(
-                    splashRadius: 16,
-                    icon: Icon(
-                      Icons.info,
-                      size: 20,
-                      color: context.primaryColor,
+                  // Selected Album Chips
+        
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Wrap(
+                      children: [
+                        ...buildSelectedAlbumNameChip(),
+                        ...buildExcludedAlbumNameChip(),
+                      ],
                     ),
-                    onPressed: () {
-                      // show the dialog
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 5,
-                            title: Text(
-                              'backup_album_selection_page_selection_info',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: context.primaryColor,
-                              ),
-                            ).tr(),
-                            content: SingleChildScrollView(
-                              child: ListBody(
-                                children: [
-                                  const Text(
-                                    'backup_album_selection_page_assets_scatter',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                    ),
-                                  ).tr(),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
                   ),
-                ),
-
-                // buildSearchBar(),
-              ],
+        
+                  SettingsSwitchListTile(
+                    valueNotifier: enableSyncUploadAlbum,
+                    title: "sync_albums".tr(),
+                    subtitle: "sync_upload_album_setting_subtitle".tr(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    titleStyle: context.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    subtitleStyle: context.textTheme.labelLarge?.copyWith(
+                      color: context.colorScheme.primary,
+                    ),
+                    onChanged: handleSyncAlbumToggle,
+                  ),
+        
+                  ListTile(
+                    title: Text(
+                      "backup_album_selection_page_albums_device".tr(
+                        namedArgs: {
+                          'count': ref
+                              .watch(backupProvider)
+                              .availableAlbums
+                              .length
+                              .toString(),
+                        },
+                      ),
+                      style: context.textTheme.titleSmall,
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        "backup_album_selection_page_albums_tap",
+                        style: context.textTheme.labelLarge?.copyWith(
+                          color: context.primaryColor,
+                        ),
+                      ).tr(),
+                    ),
+                    trailing: IconButton(
+                      splashRadius: 16,
+                      icon: Icon(
+                        Icons.info,
+                        size: 20,
+                        color: context.primaryColor,
+                      ),
+                      onPressed: () {
+                        // show the dialog
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 5,
+                              title: Text(
+                                'backup_album_selection_page_selection_info',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: context.primaryColor,
+                                ),
+                              ).tr(),
+                              content: SingleChildScrollView(
+                                child: ListBody(
+                                  children: [
+                                    const Text(
+                                      'backup_album_selection_page_assets_scatter',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ).tr(),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+        
+                  // buildSearchBar(),
+                ],
+              ),
             ),
-          ),
-          SliverLayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.crossAxisExtent > 600) {
-                return buildAlbumSelectionGrid();
-              } else {
-                return buildAlbumSelectionList();
-              }
-            },
-          ),
-        ],
+            SliverLayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.crossAxisExtent > 600) {
+                  return buildAlbumSelectionGrid();
+                } else {
+                  return buildAlbumSelectionList();
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
