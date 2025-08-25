@@ -126,7 +126,9 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
     }
   }
 
-  void _onAssetUploaded(SuccessUploadAsset result) {
+  void _onAssetUploaded(SuccessUploadAsset result) async {
+    await ref.read(backupServiceProvider).handlePostUploadAssetUpdate(result, ref);
+    
     state = state.copyWith(successfulUploads: state.successfulUploads + 1);
     _backupProvider.updateDiskInfo();
   }
