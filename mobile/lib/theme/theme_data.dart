@@ -111,17 +111,17 @@ ThemeData getThemeData({
         ),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
-      focusedErrorBorder: const OutlineInputBorder(
+      focusedErrorBorder: OutlineInputBorder(
         borderSide: BorderSide(
-          color: Color(0xFFF44336),
+          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
         ),
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
-      errorBorder: const OutlineInputBorder(
+      errorBorder: OutlineInputBorder(
         borderSide: BorderSide(
-          color: Color(0xFFF44336),
+          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
         ),
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
