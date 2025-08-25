@@ -40,26 +40,6 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       [],
     );
 
-    useEffect(
-      () {
-        final scrollNotifierProviderRef = ref.read(scrollNotifierProvider);
-        final prev = scrollNotifierProviderRef.isVisible;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (prev == true) {
-            scrollNotifierProviderRef.setIsVisible(false);
-          }
-        });
-
-        return () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            scrollNotifierProviderRef.setIsVisible(prev);
-          });
-        };
-      },
-      [],
-    );
-
     Widget buildActionButton(
       IconData icon,
       String text,

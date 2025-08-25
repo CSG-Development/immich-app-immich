@@ -105,7 +105,7 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
         builder: (context) {
           return IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+            onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
           );
         },
       ),
