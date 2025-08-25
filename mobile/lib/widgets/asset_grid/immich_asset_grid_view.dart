@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:auto_route/auto_route.dart';
@@ -8,6 +9,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
@@ -262,6 +264,20 @@ class ImmichAssetGridViewState extends ConsumerState<ImmichAssetGridView> {
           (ModalRoute.of(context)?.settings.name == AlbumViewerRoute.name);
     }
 
+    // Determine the appropriate scroll physics
+    ScrollPhysics getScrollPhysics() {
+      if (_scrollPhysics != null) {
+        return _scrollPhysics!;
+      }
+      
+      // Use iOS-appropriate physics when not in drag mode
+      if (Platform.isIOS) {
+        return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+      } else {
+        return const ClampingScrollPhysics();
+      }
+    }
+
     final listWidget = ScrollablePositionedList.builder(
       padding: EdgeInsets.only(
         top: appBarOffset() ? 60 : 0,
@@ -269,7 +285,7 @@ class ImmichAssetGridViewState extends ConsumerState<ImmichAssetGridView> {
       ),
       itemBuilder: _itemBuilder,
       itemPositionsListener: _itemPositionsListener,
-      physics: _scrollPhysics,
+      physics: getScrollPhysics(),
       itemScrollController: _itemScrollController,
       scrollOffsetController: _scrollOffsetController,
       itemCount: widget.renderList.elements.length +
