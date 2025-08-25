@@ -20,6 +20,8 @@ import 'package:immich_mobile/models/backup/error_upload_asset.model.dart';
 import 'package:immich_mobile/models/backup/success_upload_asset.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
+import 'package:immich_mobile/providers/memory.provider.dart';
+import 'package:immich_mobile/providers/timeline.provider.dart';
 import 'package:immich_mobile/repositories/album_media.repository.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
@@ -468,6 +470,36 @@ class BackupService {
     }
 
     return !anyErrors;
+  }
+
+  /// Updates the asset in the database after successful upload and invalidates relevant providers
+  Future<void> handlePostUploadAssetUpdate(
+    SuccessUploadAsset result,
+    Ref ref,
+  ) async {
+    if (result.isDuplicate) {
+      return; // No need to update for duplicates
+    }
+
+    // Find the existing asset in the database by ownerId and checksum
+    final existingAsset = await ref.read(assetRepositoryProvider).getByOwnerIdChecksum(
+      result.candidate.asset.ownerId,
+      result.candidate.asset.checksum,
+    );
+    
+    if (existingAsset != null) {
+      // Update the existing asset with the new remoteId
+      final updatedAsset = existingAsset.copyWith(
+        remoteId: result.remoteAssetId,
+      );
+      
+      // Update the asset in the database
+      await ref.read(assetRepositoryProvider).update(updatedAsset);
+      
+      // Invalidate providers to refresh the UI
+      ref.invalidate(memoryFutureProvider);
+      ref.invalidate(singleUserTimelineProvider(existingAsset.ownerId.toString()));
+    }
   }
 
   Future<String?> uploadLivePhotoVideo(

@@ -578,6 +578,8 @@ class BackupNotifier extends StateNotifier<BackUpState> {
             .toSet(),
       );
     } else {
+      await ref.read(backupServiceProvider).handlePostUploadAssetUpdate(result, ref);
+      
       state = state.copyWith(
         selectedAlbumsBackupAssetsIds: {
           ...state.selectedAlbumsBackupAssetsIds,
