@@ -68,6 +68,14 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       );
     }
 
+    buildAppLogButton() {
+      return buildActionButton(
+        Icons.assignment_outlined,
+        "profile_drawer_app_logs",
+        () => context.pushRoute(const AppLogRoute()),
+      );
+    }
+
     Widget buildSignOutButton() {
       return buildActionButton(
         Icons.logout_rounded,
@@ -211,6 +219,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             ),
           ),
         ),
+        buildAppLogButton(),
         buildSettingButton(),
         buildSignOutButton(),
         Expanded(
