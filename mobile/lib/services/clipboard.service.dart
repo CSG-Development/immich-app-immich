@@ -19,9 +19,6 @@ import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:immich_mobile/widgets/common/immich_toast.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:easy_localization/easy_localization.dart';
 
 final clipboardServiceProvider = Provider(
   (ref) => ClipboardService(
@@ -87,23 +84,11 @@ class ClipboardService {
               filePath = tempFile.path;
               tempFiles.add(tempFile);
             } else {
-              ImmichToast.show(
-                context: context,
-                msg: 'copy_to_clipboard_download_failed'
-                    .tr(namedArgs: {'fileName': asset.fileName}),
-                toastType: ToastType.error,
-                gravity: ToastGravity.BOTTOM,
-              );
+              // Silent error handling
               continue;
             }
           } catch (e) {
-            ImmichToast.show(
-              context: context,
-              msg: 'copy_to_clipboard_download_failed'
-                  .tr(namedArgs: {'fileName': asset.fileName}),
-              toastType: ToastType.error,
-              gravity: ToastGravity.BOTTOM,
-            );
+            // Silent error handling
             continue;
           }
         }
@@ -114,12 +99,7 @@ class ClipboardService {
       }
 
       if (filePaths.isEmpty) {
-        ImmichToast.show(
-          context: context,
-          msg: 'copy_to_clipboard_no_accessible_files'.tr(),
-          toastType: ToastType.error,
-          gravity: ToastGravity.BOTTOM,
-        );
+        // Silent error handling
         return;
       }
 
@@ -128,13 +108,6 @@ class ClipboardService {
       final result = await clipboardApi.copyPhotosToClipboard(filePaths);
 
       if (result.success) {
-        ImmichToast.show(
-          context: context,
-          msg: 'copy_to_clipboard_success'
-              .tr(namedArgs: {'count': result.photoCount.toString()}),
-          gravity: ToastGravity.BOTTOM,
-        );
-        
         try {
           final clipboardNotifier = ref.read(clipboardProvider.notifier);
           clipboardNotifier.notifyItemsCopiedToClipboard();
@@ -156,14 +129,6 @@ class ClipboardService {
           }
         });
       } else {
-        ImmichToast.show(
-          context: context,
-          msg: 'copy_to_clipboard_error'
-              .tr(namedArgs: {'error': result.error ?? 'Unknown error'}),
-          toastType: ToastType.error,
-          gravity: ToastGravity.BOTTOM,
-        );
-
         // Clean up immediately on error
         for (final tempFile in tempFiles) {
           try {
@@ -176,12 +141,7 @@ class ClipboardService {
         }
       }
     } catch (e) {
-      ImmichToast.show(
-        context: context,
-        msg: 'copy_to_clipboard_error'.tr(namedArgs: {'error': e.toString()}),
-        toastType: ToastType.error,
-        gravity: ToastGravity.BOTTOM,
-      );
+      // Silent error handling
 
       // Clean up immediately on error
       for (final tempFile in tempFiles) {
@@ -333,7 +293,12 @@ class ClipboardService {
       // Process each asset for duplication
       for (final asset in selectedAssets) {
         try {
-          final result = await _duplicateSingleAsset(context, ref, asset, clipboardService);
+          final result = await _duplicateSingleAsset(
+            context,
+            ref,
+            asset,
+            clipboardService,
+          );
           if (result != null) {
             savedAssets.add(result);
           } else {
@@ -409,7 +374,9 @@ class ClipboardService {
             throw Exception('Failed to download asset for duplication');
           }
         } catch (e) {
-          throw Exception('Failed to prepare asset for duplication: ${e.toString()}');
+          throw Exception(
+            'Failed to prepare asset for duplication: ${e.toString()}',
+          );
         }
       }
 
@@ -439,7 +406,11 @@ class ClipboardService {
       }
 
       // Upload duplicated file directly to server
-      final uploadResult = await clipboardService._uploadFileDirectly(sourceFile, fileName, stats);
+      final uploadResult = await clipboardService._uploadFileDirectly(
+        sourceFile,
+        fileName,
+        stats,
+      );
 
       // Clean up temporary file if it was created
       if (asset.isRemote && sourceFile.path.contains('duplicate_')) {

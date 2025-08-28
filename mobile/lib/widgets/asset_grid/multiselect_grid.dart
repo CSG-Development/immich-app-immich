@@ -311,39 +311,16 @@ class MultiselectGrid extends HookConsumerWidget {
         if (result.success) {
           if (result.hasErrors) {
             // Partial success with errors
-            ImmichToast.show(
-              context: context,
-              msg: 'duplicate_partial_success'.tr(namedArgs: {
-                'success': result.savedCount.toString(),
-                'errors': result.errorCount.toString(),
-              },),
-              toastType: ToastType.error,
-              gravity: ToastGravity.BOTTOM,
-            );
+            // Silent error handling
           } else {
             // Complete success
-            ImmichToast.show(
-              context: context,
-              msg: 'duplicate_success'.tr(namedArgs: {'count': result.savedCount.toString()}),
-              gravity: ToastGravity.BOTTOM,
-            );
           }
         } else {
           // Complete failure
-          ImmichToast.show(
-            context: context,
-            msg: 'duplicate_error'.tr(namedArgs: {'error': result.errors.first}),
-            toastType: ToastType.error,
-            gravity: ToastGravity.BOTTOM,
-          );
+          // Silent error handling
         }
       } catch (e) {
-        ImmichToast.show(
-          context: context,
-          msg: 'duplicate_error'.tr(namedArgs: {'error': e.toString()}),
-          toastType: ToastType.error,
-          gravity: ToastGravity.BOTTOM,
-        );
+        // Silent error handling
       } finally {
         processing.value = false;
         selectionEnabledHook.value = false;

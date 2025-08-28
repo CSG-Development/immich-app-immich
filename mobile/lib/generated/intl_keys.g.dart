@@ -2618,4 +2618,7 @@ abstract class IntlKeys {
       'curator.login.form.loading.text';
   static const curator_login_form_version_check_error =
       'curator.login.form.version.check.error';
+  static const paste = 'paste';
+  static const pasting = 'pasting';
+  static const duplicate = 'duplicate';
 }
