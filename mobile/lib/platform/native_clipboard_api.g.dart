@@ -14,20 +14,21 @@ PlatformException _createConnectionError(String channelName) {
     message: 'Unable to establish connection on channel: "$channelName".',
   );
 }
+
 bool _deepEquals(Object? a, Object? b) {
   if (a is List && b is List) {
     return a.length == b.length &&
         a.indexed
-        .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
+            .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
   }
   if (a is Map && b is Map) {
-    return a.length == b.length && a.entries.every((MapEntry<Object?, Object?> entry) =>
-        (b as Map<Object?, Object?>).containsKey(entry.key) &&
-        _deepEquals(entry.value, b[entry.key]));
+    return a.length == b.length &&
+        a.entries.every((MapEntry<Object?, Object?> entry) =>
+            (b as Map<Object?, Object?>).containsKey(entry.key) &&
+            _deepEquals(entry.value, b[entry.key]));
   }
   return a == b;
 }
-
 
 /// Represents a photo file that can be copied to clipboard
 class ClipboardPhoto {
@@ -56,7 +57,8 @@ class ClipboardPhoto {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static ClipboardPhoto decode(Object result) {
     result as List<Object?>;
@@ -82,8 +84,7 @@ class ClipboardPhoto {
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList())
-;
+  int get hashCode => Object.hashAll(_toList());
 }
 
 /// Result of clipboard operations
@@ -109,7 +110,8 @@ class ClipboardResult {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static ClipboardResult decode(Object result) {
     result as List<Object?>;
@@ -134,10 +136,8 @@ class ClipboardResult {
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList())
-;
+  int get hashCode => Object.hashAll(_toList());
 }
-
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -146,10 +146,10 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is ClipboardPhoto) {
+    } else if (value is ClipboardPhoto) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    }    else if (value is ClipboardResult) {
+    } else if (value is ClipboardResult) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
     } else {
@@ -160,9 +160,9 @@ class _PigeonCodec extends StandardMessageCodec {
   @override
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
-      case 129: 
+      case 129:
         return ClipboardPhoto.decode(readValue(buffer)!);
-      case 130: 
+      case 130:
         return ClipboardResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -174,9 +174,11 @@ class NativeClipboardApi {
   /// Constructor for [NativeClipboardApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  NativeClipboardApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+  NativeClipboardApi(
+      {BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
       : pigeonVar_binaryMessenger = binaryMessenger,
-        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+        pigeonVar_messageChannelSuffix =
+            messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -186,13 +188,16 @@ class NativeClipboardApi {
   /// Copy photos to the system clipboard
   /// Returns success status and any error message
   Future<ClipboardResult> copyPhotosToClipboard(List<String> filePaths) async {
-    final String pigeonVar_channelName = 'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.copyPhotosToClipboard$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.copyPhotosToClipboard$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel =
+        BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[filePaths]);
+    final Future<Object?> pigeonVar_sendFuture =
+        pigeonVar_channel.send(<Object?>[filePaths]);
     final List<Object?>? pigeonVar_replyList =
         await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
@@ -216,8 +221,10 @@ class NativeClipboardApi {
   /// Get photos from the system clipboard
   /// Returns list of photo file paths if available
   Future<List<String>> getPhotosFromClipboard() async {
-    final String pigeonVar_channelName = 'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getPhotosFromClipboard$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getPhotosFromClipboard$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel =
+        BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -246,8 +253,10 @@ class NativeClipboardApi {
   /// Check if there are photos in the clipboard
   /// Returns true if photos are available
   Future<bool> hasPhotosInClipboard() async {
-    final String pigeonVar_channelName = 'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.hasPhotosInClipboard$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.hasPhotosInClipboard$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel =
+        BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -276,8 +285,10 @@ class NativeClipboardApi {
   /// Get clipboard photo metadata
   /// Returns list of photo information if available
   Future<List<ClipboardPhoto>> getClipboardPhotoMetadata() async {
-    final String pigeonVar_channelName = 'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getClipboardPhotoMetadata$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getClipboardPhotoMetadata$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel =
+        BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -306,8 +317,10 @@ class NativeClipboardApi {
   /// Clear the system clipboard
   /// Returns true if clipboard was cleared successfully
   Future<bool> clearClipboard() async {
-    final String pigeonVar_channelName = 'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.clearClipboard$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.clearClipboard$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel =
+        BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,

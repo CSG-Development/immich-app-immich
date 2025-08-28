@@ -8,8 +8,8 @@ build:
 pigeon:
 	dart run pigeon --input pigeon/native_sync_api.dart
 	dart format lib/platform/native_sync_api.g.dart
-	dart run pigeon --input pigeon/platform_apis.dart
-	dart format lib/platform/platform_apis.g.dart
+	dart run pigeon --input pigeon/native_clipboard_api.dart
+	dart format lib/platform/native_clipboard_api.g.dart
 	# Fix duplicate class declarations between generated Pigeon files
 	./scripts/fix_pigeon_duplicates.sh
 
