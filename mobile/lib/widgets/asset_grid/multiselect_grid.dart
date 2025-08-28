@@ -22,6 +22,7 @@ import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/album.service.dart';
+import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/services/stack.service.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
@@ -279,6 +280,68 @@ class MultiselectGrid extends HookConsumerWidget {
         ImmichToast.show(
           context: context,
           msg: msg,
+          gravity: ToastGravity.BOTTOM,
+        );
+      } finally {
+        processing.value = false;
+        selectionEnabledHook.value = false;
+      }
+    }
+
+    void onCopyToClipboard() async {
+      await ClipboardService.copyToClipboard(
+        context,
+        ref,
+        selection.value,
+      );
+      // Update selection state after copy operation completes
+      selectionEnabledHook.value = false;
+    }
+
+    void onDuplicate() async {
+      processing.value = true;
+      try {
+        // Use the new direct duplication method
+        final result = await ClipboardService.duplicateAssets(
+          context,
+          ref,
+          selection.value,
+        );
+        
+        if (result.success) {
+          if (result.hasErrors) {
+            // Partial success with errors
+            ImmichToast.show(
+              context: context,
+              msg: 'duplicate_partial_success'.tr(namedArgs: {
+                'success': result.savedCount.toString(),
+                'errors': result.errorCount.toString(),
+              },),
+              toastType: ToastType.error,
+              gravity: ToastGravity.BOTTOM,
+            );
+          } else {
+            // Complete success
+            ImmichToast.show(
+              context: context,
+              msg: 'duplicate_success'.tr(namedArgs: {'count': result.savedCount.toString()}),
+              gravity: ToastGravity.BOTTOM,
+            );
+          }
+        } else {
+          // Complete failure
+          ImmichToast.show(
+            context: context,
+            msg: 'duplicate_error'.tr(namedArgs: {'error': result.errors.first}),
+            toastType: ToastType.error,
+            gravity: ToastGravity.BOTTOM,
+          );
+        }
+      } catch (e) {
+        ImmichToast.show(
+          context: context,
+          msg: 'duplicate_error'.tr(namedArgs: {'error': e.toString()}),
+          toastType: ToastType.error,
           gravity: ToastGravity.BOTTOM,
         );
       } finally {
@@ -545,6 +608,8 @@ class MultiselectGrid extends HookConsumerWidget {
                       () => onRemoveFromAlbum!(selection.value),
                     )
                   : null,
+              onCopyToClipboard: () async => onCopyToClipboard(),
+              onDuplicate: () async => onDuplicate(),
             ),
         ],
       ),
