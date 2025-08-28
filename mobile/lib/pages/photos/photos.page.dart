@@ -19,6 +19,7 @@ import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
 import 'package:immich_mobile/widgets/common/curator_app_bar.dart';
 import 'package:immich_mobile/widgets/common/immich_loading_indicator.dart';
 import 'package:immich_mobile/widgets/memories/memory_lane.dart';
+import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
 
 @RoutePage()
 class PhotosPage extends HookConsumerWidget {
@@ -151,6 +152,7 @@ class PhotosPage extends HookConsumerWidget {
         : buildAssetCountWidget();
 
     return Scaffold(
+      floatingActionButton: const ClipboardPasteButton(),
       body: Stack(
         children: [
           MultiselectGrid(

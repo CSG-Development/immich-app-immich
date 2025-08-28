@@ -129,6 +129,17 @@
       android:name="androidx.startup.InitializationProvider"
       android:authorities="${applicationId}.androidx-startup"
       tools:node="remove" />
+    
+    <!-- FileProvider for clipboard functionality -->
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="com.seagate.curator.stxphotos.android.fileprovider"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+    </provider>
   </application>
 
 

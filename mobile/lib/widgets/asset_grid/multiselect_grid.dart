@@ -22,6 +22,7 @@ import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/album.service.dart';
+import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/services/stack.service.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
@@ -287,6 +288,45 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
+    void onCopyToClipboard() async {
+      await ClipboardService.copyToClipboard(
+        context,
+        ref,
+        selection.value,
+      );
+      // Update selection state after copy operation completes
+      selectionEnabledHook.value = false;
+    }
+
+    void onDuplicate() async {
+      processing.value = true;
+      try {
+        // Use the new direct duplication method
+        final result = await ClipboardService.duplicateAssets(
+          context,
+          ref,
+          selection.value,
+        );
+        
+        if (result.success) {
+          if (result.hasErrors) {
+            // Partial success with errors
+            // Silent error handling
+          } else {
+            // Complete success
+          }
+        } else {
+          // Complete failure
+          // Silent error handling
+        }
+      } catch (e) {
+        // Silent error handling
+      } finally {
+        processing.value = false;
+        selectionEnabledHook.value = false;
+      }
+    }
+
     void onDeleteRemote([bool shouldDeletePermanently = false]) async {
       processing.value = true;
       try {
@@ -545,6 +585,8 @@ class MultiselectGrid extends HookConsumerWidget {
                       () => onRemoveFromAlbum!(selection.value),
                     )
                   : null,
+              onCopyToClipboard: () async => onCopyToClipboard(),
+              onDuplicate: () async => onDuplicate(),
             ),
         ],
       ),
