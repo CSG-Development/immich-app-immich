@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
@@ -36,7 +35,6 @@ import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
-
 
 void main() async {
   ImmichWidgetsBinding();
@@ -66,11 +64,6 @@ void main() async {
 }
 
 Future<void> initApp() async {
-  const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-  await dotenv.load(fileName: '.env.$env');
-  final backendUrl = dotenv.env['BACKEND_URL'];
-  debugPrint(backendUrl);
-
   await EasyLocalization.ensureInitialized();
   await initializeDateFormatting();
 

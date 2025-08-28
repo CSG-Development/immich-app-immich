@@ -706,6 +706,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -851,6 +852,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -882,6 +884,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -971,6 +974,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1102,6 +1106,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1227,6 +1232,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
