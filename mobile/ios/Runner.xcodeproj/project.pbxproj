@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -19,6 +19,8 @@
 		CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */; };
 		CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CE8353CC2DEEE8B800C413E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */; };
+		CE83EA602E603F5E00CEDFEF /* ClipboardMessages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */; };
+		CE83EA612E603F5E00CEDFEF /* ClipboardMessagesImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */; };
 		CEFC4ED82E0DA30600C94B12 /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CEFC4ED92E0DA30600C94B12 /* telemetry.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D218389C4A4C4693F141F7D1 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */; };
@@ -108,6 +110,8 @@
 		CDE1EAD0A3CF9D6EFE285FFF /* Pods-Runner.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"; sourceTree = "<group>"; };
 		CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryWrapperPlugin.swift; sourceTree = "<group>"; };
 		CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMessages.g.swift; sourceTree = "<group>"; };
+		CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMessagesImpl.swift; sourceTree = "<group>"; };
 		CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = telemetry.xcframework; sourceTree = "<group>"; };
 		E0E99CDC17B3EB7FA8BA2332 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		F0B57D382DF764BD00DC5BCC /* WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -271,6 +275,7 @@
 				FA9973382CF6DF4B000EF859 /* Runner.entitlements */,
 				65DD438629917FAD0047FFA8 /* BackgroundSync */,
 				FAC7416727DB9F5500C668D8 /* RunnerProfile.entitlements */,
+				CE83EA5F2E603F5E00CEDFEF /* Clipboard */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -281,6 +286,15 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		CE83EA5F2E603F5E00CEDFEF /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */,
+				CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */,
+			);
+			path = Clipboard;
 			sourceTree = "<group>";
 		};
 		FAC6F8B62D287F120078CB2F /* ShareExtension */ = {
@@ -559,6 +573,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				65F32F31299BD2F800CE9261 /* BackgroundServicePlugin.swift in Sources */,
+				CE83EA602E603F5E00CEDFEF /* ClipboardMessages.g.swift in Sources */,
+				CE83EA612E603F5E00CEDFEF /* ClipboardMessagesImpl.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				65F32F33299D349D00CE9261 /* BackgroundSyncWorker.swift in Sources */,

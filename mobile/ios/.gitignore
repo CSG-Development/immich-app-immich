@@ -4,7 +4,7 @@
 *.moved-aside
 *.pbxuser
 *.perspectivev3
-**/*sync/
+# **/*sync/
 .sconsign.dblite
 .tags*
 **/.vagrant/

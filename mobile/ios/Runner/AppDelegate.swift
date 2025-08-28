@@ -27,6 +27,8 @@ import UIKit
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
     NativeSyncApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: NativeSyncApiImpl())
 
+    NativeClipboardApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: ClipboardMessagesImpl())
+
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in
       if !registry.hasPlugin("org.cocoapods.path-provider-foundation") {
         PathProviderPlugin.register(with: registry.registrar(forPlugin: "org.cocoapods.path-provider-foundation")!)
