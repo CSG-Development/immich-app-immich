@@ -1,6 +1,6 @@
 {
   "name": "curator-photos-web",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "license": "GNU Affero General Public License version 3",
   "type": "module",
   "scripts": {

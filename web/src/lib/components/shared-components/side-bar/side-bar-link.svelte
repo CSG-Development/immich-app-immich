@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import Icon from '$lib/components/elements/icon.svelte';
   import { mdiChevronDown, mdiChevronLeft } from '@mdi/js';
@@ -28,7 +28,8 @@
     dropdownOpen = $bindable(false),
   }: Props = $props();
 
-  let routePath = $derived(resolveRoute(routeId, {}));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let routePath = $derived(resolve(routeId as any));
 
   $effect(() => {
     isSelected = (page.route.id?.match(/^\/(admin|\(user\))\/[^/]*/) || [])[0] === routeId;

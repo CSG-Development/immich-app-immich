@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { autoGrowHeight } from '$lib/actions/autogrow';
   import { shortcut } from '$lib/actions/shortcut';
   import Icon from '$lib/components/elements/icon.svelte';
@@ -151,7 +151,7 @@
               {#if assetId === undefined && reaction.assetId}
                 <a
                   class="aspect-square w-[75px] h-[75px]"
-                  href={resolveRoute(`${AppRoute.ALBUMS}/${albumId}/photos/${reaction.assetId}`, {})}
+                  href={resolve(`${AppRoute.ALBUMS}/${albumId}/photos/${reaction.assetId}`)}
                 >
                   <img
                     class="rounded-lg w-[75px] h-[75px] object-cover"
@@ -204,7 +204,7 @@
                 {#if assetId === undefined && reaction.assetId}
                   <a
                     class="aspect-square w-[75px] h-[75px]"
-                    href={resolveRoute(`${AppRoute.ALBUMS}/${albumId}/photos/${reaction.assetId}`, {})}
+                    href={resolve(`${AppRoute.ALBUMS}/${albumId}/photos/${reaction.assetId}`)}
                   >
                     <img
                       class="rounded-lg w-[75px] h-[75px] object-cover"

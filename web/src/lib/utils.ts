@@ -1,4 +1,4 @@
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { NotificationType, notificationController } from '$lib/components/shared-components/notification/notification';
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -268,8 +268,7 @@ export const copyToClipboard = async (secret: string) => {
 };
 
 export const makeSharedLinkUrl = (key: string) => {
-  return new URL(resolveRoute(`/share/${key}`, {}), get(serverConfig).externalDomain || globalThis.location.origin)
-    .href;
+  return new URL(resolve(`/share/${key}`), get(serverConfig).externalDomain || globalThis.location.origin).href;
 };
 
 export const oauth = {

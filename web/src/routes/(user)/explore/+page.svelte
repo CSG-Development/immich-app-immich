@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
@@ -48,7 +48,7 @@
       <div class="flex justify-between">
         <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('people')}</p>
         <a
-          href={resolveRoute(AppRoute.PEOPLE, {})}
+          href={resolve(AppRoute.PEOPLE)}
           class="pe-4 text-sm font-medium hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
           draggable="false">{$t('view_all')}</a
         >
@@ -56,7 +56,7 @@
       <SingleGridRow class="grid md:grid-auto-fill-28 grid-auto-fill-20 gap-x-4">
         {#snippet children({ itemCount })}
           {#each people.slice(0, itemCount) as person (person.id)}
-            <a href={resolveRoute(`${AppRoute.PEOPLE}/${person.id}`, {})} class="text-center relative">
+            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative">
               <ImageThumbnail
                 circle
                 shadow
@@ -82,7 +82,7 @@
       <div class="flex justify-between">
         <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('places')}</p>
         <a
-          href={resolveRoute(AppRoute.PLACES, {})}
+          href={resolve(AppRoute.PLACES)}
           class="pe-4 text-sm font-medium hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
           draggable="false">{$t('view_all')}</a
         >
@@ -92,7 +92,7 @@
           {#each places.slice(0, itemCount) as item (item.data.id)}
             <a
               class="relative"
-              href={resolveRoute(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`, {})}
+              href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`)}
               draggable="false"
             >
               <div class="flex justify-center overflow-hidden rounded-xl brightness-75 filter">

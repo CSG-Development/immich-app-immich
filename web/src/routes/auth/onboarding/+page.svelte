@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/stores';
   import OnboardingCard from '$lib/components/onboarding-page/onboarding-card.svelte';
   import OnboardingHello from '$lib/components/onboarding-page/onboarding-hello.svelte';
@@ -114,10 +114,7 @@
       await goto(AppRoute.PHOTOS);
     } else {
       await goto(
-        resolveRoute(
-          `${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[nextStepIndex].name}`,
-          {},
-        ),
+        resolve(AppRoute.AUTH_ONBOARDING) + `?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[nextStepIndex].name}`,
       );
     }
   };
@@ -128,10 +125,8 @@
     }
 
     await goto(
-      resolveRoute(
-        `${AppRoute.AUTH_ONBOARDING}?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[previousStepIndex].name}`,
-        {},
-      ),
+      resolve(AppRoute.AUTH_ONBOARDING) +
+        `?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[previousStepIndex].name}`,
     );
   };
 

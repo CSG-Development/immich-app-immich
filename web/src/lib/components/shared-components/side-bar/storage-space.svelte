@@ -46,7 +46,7 @@
 </script>
 
 <div
-  class="storage-status p-4 bg-gray-100 dark:bg-immich-dark-primary/10 ms-4 rounded-lg text-sm min-w-52"
+  class="bg-light dark:bg-bg storage-status p-4 bg-gray-100 dark:bg-immich-dark-primary/10 ms-4 rounded-lg text-sm min-w-52"
   title={$t('storage_usage', {
     values: {
       used: getByteUnitString(usedBytes, $locale, 3),

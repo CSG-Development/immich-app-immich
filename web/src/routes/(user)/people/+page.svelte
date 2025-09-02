@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/stores';
   import { focusTrap } from '$lib/actions/focus-trap';
   import { scrollMemory } from '$lib/actions/scroll-memory';
@@ -218,7 +218,7 @@
 
   const handleMergePeople = async (detail: PersonResponseDto) => {
     await goto(
-      `${resolveRoute(AppRoute.PEOPLE, {})}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolveRoute(AppRoute.PEOPLE, {})}`,
+      `${resolve(AppRoute.PEOPLE)}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolve(AppRoute.PEOPLE)}`,
     );
   };
 

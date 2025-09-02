@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import DetailPanelDescription from '$lib/components/asset-viewer/detail-panel-description.svelte';
   import DetailPanelLocation from '$lib/components/asset-viewer/detail-panel-location.svelte';
   import DetailPanelRating from '$lib/components/asset-viewer/detail-panel-star-rating.svelte';
@@ -137,7 +137,7 @@
   };
 
   const getAssetFolderHref = (asset: AssetResponseDto) => {
-    const folderUrl = new URL(resolveRoute(AppRoute.FOLDERS, {}), globalThis.location.href);
+    const folderUrl = new URL(resolve(AppRoute.FOLDERS), globalThis.location.href);
     // Remove the last part of the path to get the parent path
     const assetParentPath = getParentPath(asset.originalPath);
     folderUrl.searchParams.set(QueryParameter.PATH, assetParentPath);
@@ -241,12 +241,9 @@
           {#if showingHiddenPeople || !person.isHidden}
             <a
               class="w-[90px]"
-              href="${resolveRoute(
-                AppRoute.PEOPLE,
-                {},
-              )}/${person.id}?${QueryParameter.PREVIOUS_ROUTE}=${currentAlbum?.id
-                ? `${resolveRoute(AppRoute.ALBUMS, {})}/${currentAlbum?.id}`
-                : resolveRoute(AppRoute.PHOTOS, {})}"
+              href="${resolve(AppRoute.PEOPLE)}/${person.id}?${QueryParameter.PREVIOUS_ROUTE}=${currentAlbum?.id
+                ? `${resolve(AppRoute.ALBUMS)}/${currentAlbum?.id}`
+                : resolve(AppRoute.PHOTOS)}"
               onfocus={() => ($boundingBoxesArray = people[index].faces)}
               onblur={() => ($boundingBoxesArray = [])}
               onmouseover={() => ($boundingBoxesArray = people[index].faces)}
@@ -433,7 +430,7 @@
           {#if asset.exifInfo?.make || asset.exifInfo?.model}
             <p>
               <a
-                href="{resolveRoute(AppRoute.SEARCH, {})}?{getMetadataSearchQuery({
+                href="{resolve(AppRoute.SEARCH)}?{getMetadataSearchQuery({
                   ...(asset.exifInfo?.make ? { make: asset.exifInfo.make } : {}),
                   ...(asset.exifInfo?.model ? { model: asset.exifInfo.model } : {}),
                 })}"
@@ -450,7 +447,7 @@
             <div class="flex gap-2 text-sm">
               <p>
                 <a
-                  href="{resolveRoute(AppRoute.SEARCH, {})}?{getMetadataSearchQuery({
+                  href="{resolve(AppRoute.SEARCH)}?{getMetadataSearchQuery({
                     lensModel: asset.exifInfo.lensModel,
                   })}"
                   title="{$t('search_for')} {asset.exifInfo.lensModel}"
@@ -516,7 +513,7 @@
         simplified
         useLocationPin
         showSimpleControls={!showEditFaces}
-        onOpenInMapView={() => goto(resolveRoute(`${AppRoute.MAP}#12.5/${latlng.lat}/${latlng.lng}`, {}))}
+        onOpenInMapView={() => goto(resolve(`${AppRoute.MAP}#12.5/${latlng.lat}/${latlng.lng}`))}
       >
         {#snippet popup({ marker })}
           {@const { lat, lon } = marker}
@@ -557,7 +554,7 @@
   <section class="px-6 pt-6 dark:text-immich-dark-fg">
     <p class="pb-4 text-sm">{$t('appears_in').toUpperCase()}</p>
     {#each albums as album (album.id)}
-      <a href={resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {})}>
+      <a href={resolve(`${AppRoute.ALBUMS}/${album.id}`)}>
         <div class="flex gap-4 pt-2 hover:cursor-pointer items-center">
           <div>
             <img

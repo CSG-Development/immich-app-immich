@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { focusOutside } from '$lib/actions/focus-outside';
   import { shortcuts } from '$lib/actions/shortcut';
   import { AppRoute } from '$lib/constants';
@@ -46,7 +46,7 @@
 
     closeDropdown();
     searchStore.isSearchEnabled = false;
-    await goto(resolveRoute(`${AppRoute.SEARCH}?${params}`, {}));
+    await goto(resolve(`${AppRoute.SEARCH}?${params}`));
   };
 
   const clearSearchTerm = (searchTerm: string) => {
@@ -220,7 +220,7 @@
     draggable="false"
     autocomplete="off"
     class="select-text text-sm"
-    action={resolveRoute(AppRoute.SEARCH, {})}
+    action={resolve(AppRoute.SEARCH)}
     onreset={() => (value = '')}
     {onsubmit}
     onfocusin={onFocusIn}

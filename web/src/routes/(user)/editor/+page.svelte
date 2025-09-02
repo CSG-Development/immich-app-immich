@@ -2,7 +2,7 @@
   // @ts-nocheck
 
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -46,14 +46,14 @@
     const asset = await getAssetInfo({ id: assetId, key: authManager.key });
     const resultFile = new File([uint8Array], asset.originalFileName);
     await fileUploadHandler({ files: [resultFile] }).then(async () => {
-      await goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true });
+      await goto(resolve(AppRoute.PHOTOS), { replaceState: true });
     });
   };
 
   const onEditorClosed = async () => {
     await (previousUrl
       ? goto(previousUrl, { replaceState: true })
-      : goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true }));
+      : goto(resolve(AppRoute.PHOTOS), { replaceState: true }));
   };
 
   function loadFlutterScript() {

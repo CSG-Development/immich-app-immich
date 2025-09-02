@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/stores';
   import { clickOutside } from '$lib/actions/click-outside';
   import { listNavigation } from '$lib/actions/list-navigation';
@@ -86,7 +86,7 @@
 
   let viewMode: PersonPageViewMode = $state(PersonPageViewMode.VIEW_ASSETS);
   let isEditingName = $state(false);
-  let previousRoute: string = $state(resolveRoute(AppRoute.EXPLORE, {}));
+  let previousRoute: string = $state(resolve(AppRoute.EXPLORE));
   let people: PersonResponseDto[] = [];
   let personMerge1: PersonResponseDto | undefined = $state();
   let personMerge2: PersonResponseDto | undefined = $state();
@@ -244,7 +244,7 @@
       await updateAssetCount();
       return;
     }
-    await goto(resolveRoute(`${AppRoute.PEOPLE}/${personToBeMergedInto.id}`, {}), { replaceState: true });
+    await goto(resolve(`${AppRoute.PEOPLE}/${personToBeMergedInto.id}`), { replaceState: true });
   };
 
   const handleSuggestPeople = async (person2: PersonResponseDto) => {

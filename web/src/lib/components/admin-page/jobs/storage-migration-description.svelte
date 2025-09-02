@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import FormatMessage from '$lib/components/i18n/format-message.svelte';
   import { AppRoute, OpenSettingQueryParameterValue, QueryParameter } from '$lib/constants';
   import { t } from 'svelte-i18n';
@@ -11,10 +11,8 @@
 >
   {#snippet children({ message })}
     <a
-      href={resolveRoute(
-        `${AppRoute.ADMIN_SETTINGS}?${QueryParameter.IS_OPEN}=${OpenSettingQueryParameterValue.STORAGE_TEMPLATE}`,
-        {},
-      )}
+      href={resolve(AppRoute.ADMIN_SETTINGS) +
+        `?${QueryParameter.IS_OPEN}=${OpenSettingQueryParameterValue.STORAGE_TEMPLATE}`}
       class="text-immich-primary dark:text-immich-dark-primary"
     >
       {message}

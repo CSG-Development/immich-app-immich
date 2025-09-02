@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import Portal from '$lib/components/shared-components/portal/portal.svelte';
   import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
@@ -76,7 +76,7 @@
 <div class="license-status ps-4 text-sm">
   {#if $isPurchased && $preferences.purchase.showSupportBadge}
     <button
-      onclick={() => goto(resolveRoute(`${AppRoute.USER_SETTINGS}?isOpen=user-purchase-settings`, {}))}
+      onclick={() => goto(resolve(AppRoute.USER_SETTINGS) + '?isOpen=user-purchase-settings')}
       class="w-full"
       type="button"
     >

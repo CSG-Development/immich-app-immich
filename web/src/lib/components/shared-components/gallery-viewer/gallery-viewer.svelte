@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
   import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
@@ -299,7 +299,7 @@
 
       const shortcuts: ShortcutOptions[] = [
         { shortcut: { key: '?', shift: true }, onShortcut: handleOpenShortcutModal },
-        { shortcut: { key: '/' }, onShortcut: () => goto(resolveRoute(AppRoute.EXPLORE, {})) },
+        { shortcut: { key: '/' }, onShortcut: () => goto(resolve(AppRoute.EXPLORE)) },
         { shortcut: { key: 'A', ctrl: true }, onShortcut: () => selectAllAssets() },
         { shortcut: { key: 'ArrowRight' }, preventDefault: false, onShortcut: focusNextAsset },
         { shortcut: { key: 'ArrowLeft' }, preventDefault: false, onShortcut: focusPreviousAsset },
@@ -412,7 +412,7 @@
           1,
         );
         if (assets.length === 0) {
-          await goto(resolveRoute(AppRoute.PHOTOS, {}));
+          await goto(resolve(AppRoute.PHOTOS));
         } else if (currentViewAssetIndex === assets.length) {
           await handlePrevious();
         } else {

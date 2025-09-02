@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { AppRoute } from '$lib/constants';
 import { modalManager } from '$lib/managers/modal-manager.svelte';
 import {
@@ -41,7 +41,7 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
 export const createAlbumAndRedirect = async (name?: string, assetIds?: string[]) => {
   const newAlbum = await createAlbum(name, assetIds);
   if (newAlbum) {
-    await goto(resolveRoute(`${AppRoute.ALBUMS}/${newAlbum.id}`, {}));
+    await goto(resolve(`${AppRoute.ALBUMS}/${newAlbum.id}`));
   }
 };
 
