@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { intersectionObserver } from '$lib/actions/intersection-observer';
   import { resizeObserver } from '$lib/actions/resize-observer';
@@ -113,7 +113,7 @@
   const handlePreviousAsset = () => handleNavigate(current?.previous?.asset);
   const handleNextMemory = () => handleNavigate(current?.nextMemory?.assets[0]);
   const handlePreviousMemory = () => handleNavigate(current?.previousMemory?.assets[0]);
-  const handleEscape = async () => goto(resolveRoute(AppRoute.PHOTOS, {}));
+  const handleEscape = async () => goto(resolve(AppRoute.PHOTOS));
   const handleSelectAll = () =>
     assetInteraction.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
@@ -236,7 +236,7 @@
 
   const init = (target: Page | NavigationTarget | null) => {
     if (memoryStore.memories.length === 0) {
-      return handlePromiseError(goto(resolveRoute(AppRoute.PHOTOS, {})));
+      return handlePromiseError(goto(resolve(AppRoute.PHOTOS)));
     }
 
     current = loadFromParams(target);
@@ -354,7 +354,7 @@
   use:resizeObserver={({ height, width }) => ((viewport.height = height), (viewport.width = width))}
 >
   {#if current}
-    <ControlAppBar onClose={() => goto(resolveRoute(AppRoute.PHOTOS, {}))} forceDark multiRow>
+    <ControlAppBar onClose={() => goto(resolve(AppRoute.PHOTOS))} forceDark multiRow>
       {#snippet leading()}
         {#if current}
           <p class="text-lg">
@@ -522,7 +522,7 @@
 
               <div>
                 <IconButton
-                  href={resolveRoute(`${AppRoute.PHOTOS}?at=${current.asset.id}`, {})}
+                  href={resolve(`${AppRoute.PHOTOS}?at=${current.asset.id}`)}
                   icon={mdiImageSearch}
                   aria-label={$t('view_in_timeline')}
                   color="secondary"

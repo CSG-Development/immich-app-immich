@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
   import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
@@ -45,10 +45,11 @@
   const assetInteraction = new AssetInteraction();
 
   const handleNavigateToFolder = (folderName: string) =>
-    navigateToView(joinPaths(resolveRoute(data.tree.path, {}), folderName));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    navigateToView(joinPaths(resolve(data.tree.path as any), folderName));
 
   const getLinkForPath = (path: string) => {
-    const url = new URL(resolveRoute(AppRoute.FOLDERS, {}), globalThis.location.href);
+    const url = new URL(resolve(AppRoute.FOLDERS), globalThis.location.href);
     url.searchParams.set(QueryParameter.PATH, path);
     return url.href;
   };

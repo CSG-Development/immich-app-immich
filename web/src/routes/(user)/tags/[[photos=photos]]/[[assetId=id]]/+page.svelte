@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
   import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
@@ -44,7 +44,7 @@
   const handleNavigation = (tag: string) => navigateToView(joinPaths(data.path, tag));
 
   const getLink = (path: string) => {
-    const url = new URL(resolveRoute(AppRoute.TAGS, {}), globalThis.location.href);
+    const url = new URL(resolve(AppRoute.TAGS), globalThis.location.href);
     url.searchParams.set(QueryParameter.PATH, path);
     return url.href;
   };

@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
   import CastButton from '$lib/cast/cast-button.svelte';
@@ -41,7 +41,7 @@
 
 <svelte:window bind:innerWidth />
 
-<nav id="dashboard-navbar" class="max-md:h-(--navbar-height-md) h-(--navbar-height) w-dvw text-sm">
+<nav id="dashboard-navbar" class="max-md:h-(--navbar-height-md) h-(--navbar-height) w-dvw text-sm bg-light">
   <SkipLink text={$t('skip_to_content')} />
   <div
     class="grid h-full grid-cols-[--spacing(32)_auto] items-center py-2 sidebar:grid-cols-[--spacing(64)_auto] {noBorder
@@ -68,7 +68,7 @@
         }}
         class="sidebar:hidden"
       />
-      <a data-sveltekit-preload-data="hover" href={resolveRoute(AppRoute.PHOTOS, {})}>
+      <a data-sveltekit-preload-data="hover" href={resolve(AppRoute.PHOTOS)}>
         <Logo
           class={mobileDevice.isFullSidebar ? 'max-md:h-[48px] h-[50px]' : 'max-md:h-[35px] h-[35px]'}
           variant={mobileDevice.isFullSidebar ? 'inline' : 'icon'}
@@ -90,7 +90,7 @@
             variant="ghost"
             size="medium"
             icon={mdiMagnify}
-            href={resolveRoute(AppRoute.SEARCH, {})}
+            href={resolve(AppRoute.SEARCH)}
             id="search-button"
             class="sm:hidden"
             aria-label={$t('go_to_search')}

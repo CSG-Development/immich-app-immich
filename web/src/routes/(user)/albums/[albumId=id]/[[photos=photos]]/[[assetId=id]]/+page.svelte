@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, onNavigate } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
   import CastButton from '$lib/cast/cast-button.svelte';
   import AlbumDescription from '$lib/components/album-page/album-description.svelte';
@@ -101,7 +101,7 @@
 
   let oldAt: AssetGridRouteSearchParams | null | undefined = $state();
 
-  let backUrl: string = $state(resolveRoute(AppRoute.ALBUMS, {}));
+  let backUrl: string = $state(resolve(AppRoute.ALBUMS));
   let viewMode: AlbumPageViewMode = $state(AlbumPageViewMode.VIEW);
   let isCreatingSharedAlbum = $state(false);
   let isShowActivity = $state(false);
@@ -119,15 +119,15 @@
     }
 
     if (isAlbumsRoute(route) || isPeopleRoute(route)) {
-      url = resolveRoute(AppRoute.ALBUMS, {});
+      url = resolve(AppRoute.ALBUMS);
     }
 
-    backUrl = url || resolveRoute(AppRoute.ALBUMS, {});
+    backUrl = url || resolve(AppRoute.ALBUMS);
 
-    if (backUrl === resolveRoute(AppRoute.SHARING, {}) && album.albumUsers.length === 0 && !album.hasSharedLink) {
+    if (backUrl === resolve(AppRoute.SHARING) && album.albumUsers.length === 0 && !album.hasSharedLink) {
       isCreatingSharedAlbum = true;
-    } else if (backUrl === resolveRoute(AppRoute.SHARED_LINKS, {})) {
-      backUrl = history.state?.backUrl || resolveRoute(AppRoute.ALBUMS, {});
+    } else if (backUrl === resolve(AppRoute.SHARED_LINKS)) {
+      backUrl = history.state?.backUrl || resolve(AppRoute.ALBUMS);
     }
   });
 

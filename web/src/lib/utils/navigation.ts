@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { page } from '$app/stores';
 import { AppRoute } from '$lib/constants';
 import { getAssetInfo } from '@immich/sdk';
@@ -32,7 +32,7 @@ function currentUrlWithoutAsset() {
   // This contains special casing for the /photos/:assetId route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
   return isPhotosRoute($page.route.id)
-    ? resolveRoute(AppRoute.PHOTOS, {}) + $page.url.search
+    ? resolve(AppRoute.PHOTOS) + $page.url.search
     : $page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + $page.url.search;
 }
 
@@ -46,7 +46,7 @@ export function currentUrlReplaceAssetId(assetId: string) {
   // this contains special casing for the /photos/:assetId photos route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
   return isPhotosRoute($page.route.id)
-    ? resolveRoute(`${AppRoute.PHOTOS}/${assetId}${searchparams}`, {})
+    ? resolve(`${AppRoute.PHOTOS}/${assetId}${searchparams}`)
     : `${$page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
 }
 

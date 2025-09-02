@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { focusOutside } from '$lib/actions/focus-outside';
   import Icon from '$lib/components/elements/icon.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
@@ -41,10 +41,7 @@
   use:focusOutside={{ onFocusOut: () => (showVerticalDots = false) }}
 >
   <a
-    href="{resolveRoute(AppRoute.PEOPLE, {})}/{person.id}?{QueryParameter.PREVIOUS_ROUTE}={resolveRoute(
-      AppRoute.PEOPLE,
-      {},
-    )}"
+    href="{resolve(AppRoute.PEOPLE)}/{person.id}?{QueryParameter.PREVIOUS_ROUTE}={resolve(AppRoute.PEOPLE)}"
     draggable="false"
     onfocus={() => (showVerticalDots = true)}
   >

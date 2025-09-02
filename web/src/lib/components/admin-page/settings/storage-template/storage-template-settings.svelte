@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import FormatMessage from '$lib/components/i18n/format-message.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import SettingButtonsRow from '$lib/components/shared-components/settings/setting-buttons-row.svelte';
@@ -267,7 +267,7 @@
                     >
                       {#snippet children({ message })}
                         <a
-                          href={resolveRoute(AppRoute.ADMIN_JOBS, {})}
+                          href={resolve(AppRoute.ADMIN_JOBS)}
                           class="text-immich-primary dark:text-immich-dark-primary"
                         >
                           {message}

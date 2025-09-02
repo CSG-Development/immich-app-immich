@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import Icon from '$lib/components/elements/icon.svelte';
   import { ActionQueryParameterValue, AppRoute, QueryParameter } from '$lib/constants';
@@ -44,7 +44,7 @@
   const handleSwapPeople = async () => {
     [person, selectedPeople[0]] = [selectedPeople[0], person];
     page.url.searchParams.set(QueryParameter.ACTION, ActionQueryParameterValue.MERGE);
-    await goto(resolveRoute(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`, {}));
+    await goto(resolve(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`));
   };
 
   const onSelect = async (selected: PersonResponseDto) => {

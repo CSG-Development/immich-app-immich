@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { OnboardingRole } from '$lib/models/onboarding-role';
   import { serverConfig } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
@@ -9,8 +8,8 @@
   let userRole = $derived($user.isAdmin && !$serverConfig.isOnboarded ? OnboardingRole.SERVER : OnboardingRole.USER);
 </script>
 
-<div class="gap-4">
-  <Logo class="h-[100px] mb-2" variant="icon" appTheme={themeManager.value} />
+<div class="gap-4 flex flex-col">
+  <Logo class="h-[100px] mb-2" variant="icon" />
   <p class="font-medium mb-6 text-6xl text-immich-primary dark:text-immich-dark-primary">
     {$t('onboarding_welcome_user', { values: { user: $user.name } })}
   </p>
