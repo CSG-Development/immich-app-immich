@@ -69,7 +69,6 @@ class AppLogDetailPage extends HookConsumerWidget {
                   style: const TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.bold,
-                    fontFamily: "Inconsolata",
                   ),
                 ),
               ),
@@ -108,7 +107,6 @@ class AppLogDetailPage extends HookConsumerWidget {
                   style: const TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.bold,
-                    fontFamily: "Inconsolata",
                   ),
                 ),
               ),

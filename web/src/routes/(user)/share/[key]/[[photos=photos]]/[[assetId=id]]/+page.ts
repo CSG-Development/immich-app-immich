@@ -16,7 +16,7 @@ export const load = (async ({ params, url }) => {
     setSharedLink(sharedLink);
     const assetCount = sharedLink.assets.length;
     const assetId = sharedLink.album?.albumThumbnailAssetId || sharedLink.assets[0]?.id;
-    const assetPath = assetId ? getAssetThumbnailUrl(assetId) : '/feature-panel.png';
+    const assetPath = assetId ? getAssetThumbnailUrl(assetId) : 'static/feature-panel.png';
 
     return {
       sharedLink,

@@ -299,48 +299,50 @@ class BackupControllerPage extends HookConsumerWidget {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 16, bottom: 32),
-            child: ListView(
-              // crossAxisAlignment: CrossAxisAlignment.start,
-              children: hasAnyAlbum
-                  ? [
-                      buildFolderSelectionTile(),
-                      BackupInfoCard(
-                        title: "total".tr(),
-                        subtitle: "backup_controller_page_total_sub".tr(),
-                        info: ref.watch(backupProvider).availableAlbums.isEmpty
-                            ? "..."
-                            : "${backupState.allUniqueAssets.length}",
-                      ),
-                      BackupInfoCard(
-                        title: "backup_controller_page_backup".tr(),
-                        subtitle: "backup_controller_page_backup_sub".tr(),
-                        info: ref.watch(backupProvider).availableAlbums.isEmpty
-                            ? "..."
-                            : "${backupState.selectedAlbumsBackupAssetsIds.length}",
-                      ),
-                      BackupInfoCard(
-                        title: "backup_controller_page_remainder".tr(),
-                        subtitle: "backup_controller_page_remainder_sub".tr(),
-                        info: ref.watch(backupProvider).availableAlbums.isEmpty
-                            ? "..."
-                            : "${max(0, backupState.allUniqueAssets.length - backupState.selectedAlbumsBackupAssetsIds.length)}",
-                      ),
-                      const Divider(),
-                      const CurrentUploadingAssetInfoBox(),
-                      if (!hasExclusiveAccess) buildBackgroundBackupInfo(),
-                      buildBackupButton(),
-                    ]
-                  : [
-                      buildFolderSelectionTile(),
-                      if (!didGetBackupInfo.value) buildLoadingIndicator(),
-                    ],
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16, bottom: 32),
+              child: ListView(
+                // crossAxisAlignment: CrossAxisAlignment.start,
+                children: hasAnyAlbum
+                    ? [
+                        buildFolderSelectionTile(),
+                        BackupInfoCard(
+                          title: "total".tr(),
+                          subtitle: "backup_controller_page_total_sub".tr(),
+                          info: ref.watch(backupProvider).availableAlbums.isEmpty
+                              ? "..."
+                              : "${backupState.allUniqueAssets.length}",
+                        ),
+                        BackupInfoCard(
+                          title: "backup_controller_page_backup".tr(),
+                          subtitle: "backup_controller_page_backup_sub".tr(),
+                          info: ref.watch(backupProvider).availableAlbums.isEmpty
+                              ? "..."
+                              : "${backupState.selectedAlbumsBackupAssetsIds.length}",
+                        ),
+                        BackupInfoCard(
+                          title: "backup_controller_page_remainder".tr(),
+                          subtitle: "backup_controller_page_remainder_sub".tr(),
+                          info: ref.watch(backupProvider).availableAlbums.isEmpty
+                              ? "..."
+                              : "${max(0, backupState.allUniqueAssets.length - backupState.selectedAlbumsBackupAssetsIds.length)}",
+                        ),
+                        const Divider(),
+                        const CurrentUploadingAssetInfoBox(),
+                        if (!hasExclusiveAccess) buildBackgroundBackupInfo(),
+                        buildBackupButton(),
+                      ]
+                    : [
+                        buildFolderSelectionTile(),
+                        if (!didGetBackupInfo.value) buildLoadingIndicator(),
+                      ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

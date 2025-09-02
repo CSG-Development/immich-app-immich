@@ -22,7 +22,7 @@
 
 <style>
   [data-skeleton] {
-    background-image: url('/light_skeleton.png');
+    background-image: url('static/light_skeleton.png');
     background-repeat: repeat;
     background-size: 235px, 235px;
   }
@@ -32,7 +32,7 @@
     }
   }
   :global(.dark) [data-skeleton] {
-    background-image: url('/dark_skeleton.png');
+    background-image: url('static/dark_skeleton.png');
   }
   @keyframes delayedVisibility {
     to {

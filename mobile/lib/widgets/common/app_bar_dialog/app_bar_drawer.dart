@@ -40,26 +40,6 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       [],
     );
 
-    useEffect(
-      () {
-        final scrollNotifierProviderRef = ref.read(scrollNotifierProvider);
-        final prev = scrollNotifierProviderRef.isVisible;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (prev == true) {
-            scrollNotifierProviderRef.setIsVisible(false);
-          }
-        });
-
-        return () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            scrollNotifierProviderRef.setIsVisible(prev);
-          });
-        };
-      },
-      [],
-    );
-
     Widget buildActionButton(
       IconData icon,
       String text,
@@ -85,6 +65,14 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
           context.pop();
           context.pushRoute(const SettingsRoute());
         },
+      );
+    }
+
+    buildAppLogButton() {
+      return buildActionButton(
+        Icons.assignment_outlined,
+        "profile_drawer_app_logs",
+        () => context.pushRoute(const AppLogRoute()),
       );
     }
 
@@ -231,6 +219,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             ),
           ),
         ),
+        buildAppLogButton(),
         buildSettingButton(),
         buildSignOutButton(),
         Expanded(
@@ -258,20 +247,24 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
 
     return Drawer(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: isLandscape
-          ? SafeArea(
-              child: SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height,
+      child: SafeArea(
+        child: Container(
+          decoration:
+              BoxDecoration(color: context.colorScheme.surfaceContainer),
+          child: isLandscape
+              ? SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height,
+                    ),
+                    child: IntrinsicHeight(
+                      child: drawerContent,
+                    ),
                   ),
-                  child: IntrinsicHeight(
-                    child: drawerContent,
-                  ),
-                ),
-              ),
-            )
-          : drawerContent,
+                )
+              : drawerContent,
+        ),
+      ),
     );
   }
 }

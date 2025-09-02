@@ -6,13 +6,13 @@
 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <link rel="shortcut icon" type="image/x-icon" href="/photos/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/photos/favicon-16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/photos/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/photos/favicon-48.png" />
-    <link rel="icon" type="image/png" sizes="96x96" href="/photos/favicon-96.png" />
-    <link rel="icon" type="image/png" sizes="144x144" href="/photos/favicon-144.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/photos/apple-icon-180.png" />
+    <link rel="shortcut icon" type="image/x-icon" href="/photos/static/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/photos/static/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/photos/static/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/photos/static/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/photos/static/favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="144x144" href="/photos/static/favicon-144.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/photos/static/apple-icon-180.png" />
     <link rel="preload" as="font" type="font/ttf" href="%app.font%" crossorigin="anonymous" />
     <link rel="preload" as="font" type="font/ttf" href="%app.monofont%" crossorigin="anonymous" />
     %sveltekit.head%
@@ -91,14 +91,14 @@
       }
     </script>
 
-    <link rel="stylesheet" href="/photos/custom.css" />
-  </head>
+    <link rel="stylesheet" href="/photos/static/custom.css" />
 
-  <noscript
-    class="absolute z-1000 flex h-screen w-screen place-content-center place-items-center bg-immich-bg dark:bg-immich-dark-bg dark:text-immich-dark-fg"
-  >
-    To use Curator Photos, you must enable JavaScript or use a JavaScript compatible browser.
-  </noscript>
+    <noscript
+      class="absolute z-1000 flex h-screen w-screen place-content-center place-items-center bg-immich-bg dark:bg-immich-dark-bg dark:text-immich-dark-fg"
+    >
+      To use Curator Photos, you must enable JavaScript or use a JavaScript compatible browser.
+    </noscript>
+  </head>
 
   <body class="bg-light text-dark">
     <div id="stencil">

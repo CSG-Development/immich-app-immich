@@ -1,8 +1,8 @@
-import 'dart:math';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
 
 class OnboardingStep {
@@ -88,7 +88,8 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
   void _skip() => _finishOnboarding();
 
-  void _finishOnboarding() {
+  void _finishOnboarding() async {
+    await Store.put(StoreKey.onboardingWasShown, true);
     context.replaceRoute(const TabControllerRoute());
   }
 
@@ -257,8 +258,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
                         children: List.generate(
                           _onboardingSteps.length,
                           (index) => Container(
-                            margin:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(

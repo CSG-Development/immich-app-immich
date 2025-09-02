@@ -40,6 +40,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
   final void Function()? onRemoveFromAlbum;
   final void Function()? onToggleLocked;
   final void Function()? onDownload;
+  final Future<void> Function()? onCopyToClipboard;
+  final void Function()? onDuplicate;
 
   final bool enabled;
   final bool unfavorite;
@@ -63,6 +65,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
     this.onEditLocation,
     this.onRemoveFromAlbum,
     this.onToggleLocked,
+    this.onCopyToClipboard,
+    this.onDuplicate,
     this.selectionAssetState = const AssetSelectionState(),
     this.enabled = true,
     this.unarchive = false,
@@ -166,6 +170,24 @@ class ControlBottomAppBar extends HookConsumerWidget {
               iconData: Icons.download,
               label: "download".tr(),
               onPressed: onDownload,
+            ),
+          ),
+        if (onCopyToClipboard != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 90),
+            child: ControlBoxButton(
+              iconData: Icons.copy_outlined,
+              label: "copy_to_clipboard".tr(),
+              onPressed: onCopyToClipboard,
+            ),
+          ),
+        if (onDuplicate != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 90),
+            child: ControlBoxButton(
+              iconData: Icons.content_copy,
+              label: "duplicate".tr(),
+              onPressed: onDuplicate,
             ),
           ),
         if (hasLocal && hasRemote && onDelete != null && !isInLockedView)

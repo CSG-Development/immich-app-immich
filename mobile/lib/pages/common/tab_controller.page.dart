@@ -11,6 +11,7 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
+import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 
 @RoutePage()
 class TabControllerPage extends HookConsumerWidget {
@@ -169,6 +170,7 @@ class TabControllerPage extends HookConsumerWidget {
               !didPop ? tabsRouter.setActiveIndex(0) : null,
           child: Scaffold(
             resizeToAvoidBottomInset: false,
+            drawer: const CuratorAppBarDrawer(),
             body: isScreenLandscape
                 ? Stack(
                     children: [

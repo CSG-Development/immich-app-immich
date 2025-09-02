@@ -101,10 +101,12 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: false,
       titleSpacing: 0.0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: () {
-          Scaffold.of(context).openDrawer();
+      leading: Builder(
+        builder: (context) {
+          return IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
+          );
         },
       ),
       title: SvgPicture.asset(

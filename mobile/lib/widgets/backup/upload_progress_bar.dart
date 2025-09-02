@@ -55,7 +55,7 @@ class BackupUploadProgressBar extends ConsumerWidget {
           ),
           Text(
             " ${uploadProgress.toStringAsFixed(0)}%",
-            style: const TextStyle(fontSize: 12, fontFamily: "OverpassMono"),
+            style: const TextStyle(fontSize: 12),
           ),
         ],
       ),

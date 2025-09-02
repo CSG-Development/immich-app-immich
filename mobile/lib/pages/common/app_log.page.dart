@@ -128,7 +128,6 @@ class AppLogPage extends HookConsumerWidget {
               style: TextStyle(
                 fontSize: 14.0,
                 color: context.colorScheme.onSurface,
-                fontFamily: "Inconsolata",
               ),
             ),
             subtitle: Text(

@@ -38,9 +38,9 @@ abstract class IntlKeys {
   static const added_to_favorites_count = 'added_to_favorites_count';
   static const admin_add_exclusion_pattern_description =
       'admin.add.exclusion.pattern.description';
-  static const admin_admin_user = 'admin.admin.user';
   static const admin_asset_offline_description =
       'admin.asset.offline.description';
+  static const admin_admin_user = 'admin.admin.user';
   static const admin_authentication_settings = 'admin.authentication.settings';
   static const admin_authentication_settings_description =
       'admin.authentication.settings.description';
@@ -419,6 +419,8 @@ abstract class IntlKeys {
   static const admin_theme_settings = 'admin.theme.settings';
   static const admin_theme_settings_description =
       'admin.theme.settings.description';
+  static const admin_these_files_matched_by_checksum =
+      'admin.these.files.matched.by.checksum';
   static const admin_thumbnail_generation_job =
       'admin.thumbnail.generation.job';
   static const admin_thumbnail_generation_job_description =
@@ -726,7 +728,6 @@ abstract class IntlKeys {
   static const assets = 'assets';
   static const assets_added_count = 'assets_added_count';
   static const assets_added_to_album_count = 'assets_added_to_album_count';
-  static const assets_added_to_name_count = 'assets_added_to_name_count';
   static const assets_cannot_be_added_to_album_count =
       'assets_cannot_be_added_to_album_count';
   static const assets_count = 'assets_count';
@@ -890,6 +891,8 @@ abstract class IntlKeys {
   static const bulk_trash_duplicates_confirmation =
       'bulk_trash_duplicates_confirmation';
   static const buy = 'buy';
+  static const cache_settings_album_thumbnails =
+      'cache_settings_album_thumbnails';
   static const cache_settings_clear_cache_button =
       'cache_settings_clear_cache_button';
   static const cache_settings_clear_cache_button_title =
@@ -911,6 +914,7 @@ abstract class IntlKeys {
   static const cache_settings_statistics_title =
       'cache_settings_statistics_title';
   static const cache_settings_subtitle = 'cache_settings_subtitle';
+  static const cache_settings_thumbnail_size = 'cache_settings_thumbnail_size';
   static const cache_settings_tile_subtitle = 'cache_settings_tile_subtitle';
   static const cache_settings_tile_title = 'cache_settings_tile_title';
   static const cache_settings_title = 'cache_settings_title';
@@ -918,7 +922,9 @@ abstract class IntlKeys {
   static const camera_brand = 'camera_brand';
   static const camera_model = 'camera_model';
   static const cancel = 'cancel';
+  static const cancel_all = 'cancel_all';
   static const cancel_search = 'cancel_search';
+  static const cancel_upload = 'cancel_upload';
   static const canceled = 'canceled';
   static const cannot_merge_people = 'cannot_merge_people';
   static const cannot_undo_this_action = 'cannot_undo_this_action';
@@ -2537,6 +2543,16 @@ abstract class IntlKeys {
   static const version = 'version';
   static const version_announcement_closing = 'version_announcement_closing';
   static const version_announcement_message = 'version_announcement_message';
+  static const version_announcement_overlay_release_notes =
+      'version_announcement_overlay_release_notes';
+  static const version_announcement_overlay_text_1 =
+      'version_announcement_overlay_text_1';
+  static const version_announcement_overlay_text_2 =
+      'version_announcement_overlay_text_2';
+  static const version_announcement_overlay_text_3 =
+      'version_announcement_overlay_text_3';
+  static const version_announcement_overlay_title =
+      'version_announcement_overlay_title';
   static const version_history = 'version_history';
   static const version_history_item = 'version_history_item';
   static const video = 'video';
@@ -2577,4 +2593,32 @@ abstract class IntlKeys {
       'you_dont_have_any_shared_links';
   static const your_wifi_name = 'your_wifi_name';
   static const zoom_image = 'zoom_image';
+  static const common_cancel = 'common_cancel';
+  static const common_continue = 'common_continue';
+  static const common_no = 'common_no';
+  static const common_yes = 'common_yes';
+  static const login_form_add_security_title = 'login_form_add_security_title';
+  static const login_form_add_security_content =
+      'login_form_add_security_content';
+  static const login_form_not_now = 'login_form_not_now';
+  static const security_settings_biometric_not_available =
+      'security_settings_biometric_not_available';
+  static const biometric_switch = 'biometric_switch';
+  static const biometric_subtitle = 'biometric_subtitle';
+  static const security_settings_title = 'security_settings_title';
+  static const security_settings_subtitle = 'security_settings_subtitle';
+  static const curator_login_form_email_hint = 'curator.login.form.email.hint';
+  static const curator_login_form_endpoint_url =
+      'curator.login.form.endpoint.url';
+  static const curator_login_form_endpoint_hint =
+      'curator.login.form.endpoint.hint';
+  static const curator_login_form_password_hint =
+      'curator.login.form.password.hint';
+  static const curator_login_form_loading_text =
+      'curator.login.form.loading.text';
+  static const curator_login_form_version_check_error =
+      'curator.login.form.version.check.error';
+  static const paste = 'paste';
+  static const pasting = 'pasting';
+  static const duplicate = 'duplicate';
 }
