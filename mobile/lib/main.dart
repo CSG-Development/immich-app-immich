@@ -35,11 +35,13 @@ import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
 void main() async {
   ImmichWidgetsBinding();
 
   await Firebase.initializeApp();
+  await FirebasePerformanceWrapper.initialize();
 
   final db = await Bootstrap.initIsar();
   await Bootstrap.initDomain(db);
