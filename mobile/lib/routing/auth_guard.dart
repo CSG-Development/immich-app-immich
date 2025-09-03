@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
@@ -19,7 +19,7 @@ class AuthGuard extends AutoRouteGuard {
 
     try {
       // Look in the store for an access token
-      SecureStore.get(SecureStoreKey.accessToken);
+      Store.get(StoreKey.accessToken);
 
       // Validate the access token with the server
       final res = await _apiService.authenticationApi.validateAccessToken();

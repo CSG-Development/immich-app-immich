@@ -5,42 +5,43 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:immich_mobile/utils/user_agent.dart';
 import 'package:firebase_performance/firebase_performance.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
 class PerformanceHttpClient extends BaseClient {
   final Client _inner;
-  final FirebasePerformance _performance;
 
-  PerformanceHttpClient(this._inner, this._performance);
+  PerformanceHttpClient(this._inner);
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
-    final trace = _performance.newHttpMetric(
+    final trace = FirebasePerformanceWrapper.newHttpMetric(
       request.url.toString(),
       HttpMethod.values.firstWhere(
         (method) => method.toString().split('.').last.toUpperCase() == request.method,
         orElse: () => HttpMethod.Get,
       ),
     );
-    await trace.start();
+    
+    // Use no-op trace if Firebase is not available
+    final httpMetric = trace ?? NoOpHttpMetric();
+    await httpMetric.start();
 
     try {
       final response = await _inner.send(request);
-      trace.httpResponseCode = response.statusCode;
-      trace.responseContentType = response.headers['content-type'];
-      trace.responsePayloadSize = int.tryParse(response.headers['content-length'] ?? '0');
-      await trace.stop();
+      httpMetric.httpResponseCode = response.statusCode;
+      httpMetric.responseContentType = response.headers['content-type'];
+      httpMetric.responsePayloadSize = int.tryParse(response.headers['content-length'] ?? '0');
+      await httpMetric.stop();
       return response;
     } on TlsException catch (e) {
-      await trace.stop();
+      await httpMetric.stop();
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'TLS/SSL communication failed: ${request.method} ${request.url}',
@@ -48,7 +49,7 @@ class PerformanceHttpClient extends BaseClient {
         StackTrace.current,
       );
     } on SocketException catch (e) {
-      await trace.stop();
+      await httpMetric.stop();
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'Socket operation failed: ${request.method} ${request.url}',
@@ -56,7 +57,7 @@ class PerformanceHttpClient extends BaseClient {
         StackTrace.current,
       );
     } catch (e) {
-      await trace.stop();
+      await httpMetric.stop();
       rethrow;
     }
   }
@@ -64,7 +65,6 @@ class PerformanceHttpClient extends BaseClient {
 
 class ApiService implements Authentication {
   late ApiClient _apiClient;
-  final _performance = FirebasePerformance.instance;
   late final PerformanceHttpClient _httpClient;
 
   late UsersApi usersApi;
@@ -90,7 +90,7 @@ class ApiService implements Authentication {
   late TagsApi tagsApi;
 
   ApiService() {
-    _httpClient = PerformanceHttpClient(Client(), _performance);
+    _httpClient = PerformanceHttpClient(Client());
     // The below line ensures that the api clients are initialized when the service is instantiated
     // This is required to avoid late initialization errors when the clients are access before the endpoint is resolved
     setEndpoint('');
@@ -171,7 +171,7 @@ class ApiService implements Authentication {
   }
 
   Future<bool> _isEndpointAvailable(String serverUrl) async {
-    final trace = _performance.newTrace('endpoint_availability');
+    final trace = FirebasePerformanceWrapper.newTrace('endpoint_availability') ?? NoOpTrace();
     await trace.start();
 
     if (!serverUrl.endsWith('/api')) {
@@ -202,8 +202,6 @@ class ApiService implements Authentication {
 
   // Temporary
   Future<String> _getWellKnownEndpoint(String baseUrl) async {
-    final Client client = Client();
-
     try {
       // var headers = {"Accept": "application/json"};
       // headers.addAll(getRequestHeaders());
@@ -234,7 +232,7 @@ class ApiService implements Authentication {
 
   Future<void> setAccessToken(String accessToken) async {
     _accessToken = accessToken;
-    await SecureStore.put(SecureStoreKey.accessToken, accessToken);
+    await Store.put(StoreKey.accessToken, accessToken);
   }
 
   Future<void> setDeviceInfoHeader() async {
@@ -257,7 +255,7 @@ class ApiService implements Authentication {
   }
 
   static Map<String, String> getRequestHeaders() {
-    var accessToken = SecureStore.get(SecureStoreKey.accessToken, "");
+    var accessToken = Store.get(StoreKey.accessToken, "");
     var customHeadersStr = Store.get(StoreKey.customHeaders, "");
     var header = <String, String>{};
     if (accessToken.isNotEmpty) {

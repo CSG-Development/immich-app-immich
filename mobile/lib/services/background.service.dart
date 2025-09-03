@@ -7,15 +7,12 @@ import 'dart:ui' show DartPluginRegistrant, IsolateNameServer, PluginUtilities;
 import 'package:cancellation_token_http/http.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/interfaces/backup_album.interface.dart';
 import 'package:immich_mobile/models/backup/backup_candidate.model.dart';
@@ -77,11 +74,6 @@ class BackgroundService {
   /// Enqueues the background service
   Future<bool> enableService({bool immediate = false}) async {
     try {
-      Firebase.initializeApp().catchError((e) {
-        debugPrint("Error initializing Firebase: $e");
-        return Firebase.app();
-      });
-
       final callback = PluginUtilities.getCallbackHandle(_nativeEntry)!;
       final String title =
           "backup_background_service_default_notification".tr();
@@ -369,7 +361,7 @@ class BackgroundService {
     HttpSSLOptions.apply();
     ref
         .read(apiServiceProvider)
-        .setAccessToken(SecureStore.get(SecureStoreKey.accessToken));
+        .setAccessToken(Store.get(StoreKey.accessToken));
     await ref.read(authServiceProvider).setOpenApiServiceEndpoint();
     if (kDebugMode) {
       debugPrint(
@@ -650,11 +642,6 @@ enum IosBackgroundTask { fetch, processing }
 void _nativeEntry() {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
-
-  Firebase.initializeApp().catchError((e) {
-    debugPrint("Error initializing Firebase: $e");
-    return Firebase.app();
-  });
 
   BackgroundService backgroundService = BackgroundService();
   backgroundService._setupBackgroundCallHandler();
