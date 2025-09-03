@@ -1,6 +1,7 @@
 import BackgroundTasks
 import Flutter
 import network_info_plus
+import package_info_plus
 import path_provider_foundation
 import permission_handler_apple
 import photo_manager
@@ -48,6 +49,10 @@ import UIKit
 
       if !registry.hasPlugin("org.cocoapods.network-info-plus") {
         FPPNetworkInfoPlusPlugin.register(with: registry.registrar(forPlugin: "org.cocoapods.network-info-plus")!)
+      }
+
+      if !registry.hasPlugin("org.cocoapods.package-info-plus") {
+        FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "org.cocoapods.package-info-plus")!)
       }
     }
 
