@@ -9,6 +9,7 @@
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { getAssetInfo, getBaseUrl } from '@immich/sdk';
+  import { LoadingSpinner } from '@immich/ui';
   import { onMount } from 'svelte';
   /**
    * @type any
@@ -66,6 +67,8 @@
     });
   }
 
+  let isFlutterLoading = $state(true);
+
   onMount(async () => {
     await loadFlutterScript();
 
@@ -77,6 +80,7 @@
             hostElement: target,
             assetBase: './flutter/',
           });
+          isFlutterLoading = false;
           await appRunner.runApp();
         },
       });
@@ -88,7 +92,11 @@
   });
 </script>
 
-<div class="flutter_target" bind:this={target}></div>
+<div class="flutter_target flex justify-center items-center" bind:this={target}>
+  {#if isFlutterLoading}
+    <LoadingSpinner size="giant" />
+  {/if}
+</div>
 
 <style>
   .flutter_target {
