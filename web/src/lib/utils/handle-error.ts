@@ -19,17 +19,21 @@ export function getServerErrorMessage(error: unknown) {
   return data?.message || error.message;
 }
 
-export function handleError(error: unknown, message: string) {
-  if ((error as Error)?.name === 'AbortError') {
+interface ApiError extends Error {
+  status: number;
+}
+
+export function handleError(error: ApiError, message: string) {
+  if (error?.name === 'AbortError') {
     return;
   }
 
-  console.error(`[handleError]: ${message}`, error, (error as Error)?.stack);
+  console.error(`[handleError]: ${message}`, error, error?.stack);
 
   try {
     let serverMessage = getServerErrorMessage(error);
     if (serverMessage) {
-      serverMessage = `${String(serverMessage).slice(0, 75)}\n(Curator Photos Server Error)`;
+      serverMessage = `${String(serverMessage).slice(0, 75)}\n${error?.status >= 500 ? '(Curator Photos Server Error)' : ''}`;
     }
 
     const errorMessage = serverMessage || message;
