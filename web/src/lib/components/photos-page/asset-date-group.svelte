@@ -49,21 +49,6 @@
   let isMouseOverGroup = $state(false);
   let hoveredDayGroup = $state();
 
-  const a = $derived(filterIntersecting(monthGroup.dayGroups));
-
-  $effect(() => {
-    if (a) {
-      for (const b of a) {
-        const c = b.viewerAssets;
-        if (c) {
-          for (const d of c) {
-            console.log(d.id);
-          }
-        }
-      }
-    }
-  });
-
   const transitionDuration = $derived.by(() =>
     monthGroup.timelineManager.suspendTransitions && !$isUploading ? 0 : 150,
   );
