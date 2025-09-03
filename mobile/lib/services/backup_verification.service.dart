@@ -7,11 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/interfaces/exif.interface.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/utils/exif.converter.dart';
 import 'package:immich_mobile/interfaces/asset.interface.dart';
@@ -84,7 +82,7 @@ class BackupVerificationService {
         (
           deleteCandidates: deleteCandidates.slice(0, half),
           originals: originals.slice(0, half),
-          auth: SecureStore.get(SecureStoreKey.accessToken),
+          auth: Store.get(StoreKey.accessToken),
           endpoint: Store.get(StoreKey.serverEndpoint),
           rootIsolateToken: isolateToken,
           fileMediaRepository: _fileMediaRepository,
@@ -95,7 +93,7 @@ class BackupVerificationService {
         (
           deleteCandidates: deleteCandidates.slice(half),
           originals: originals.slice(half),
-          auth: SecureStore.get(SecureStoreKey.accessToken),
+          auth: Store.get(StoreKey.accessToken),
           endpoint: Store.get(StoreKey.serverEndpoint),
           rootIsolateToken: isolateToken,
           fileMediaRepository: _fileMediaRepository,
@@ -108,7 +106,7 @@ class BackupVerificationService {
         (
           deleteCandidates: deleteCandidates,
           originals: originals,
-          auth: SecureStore.get(SecureStoreKey.accessToken),
+          auth: Store.get(StoreKey.accessToken),
           endpoint: Store.get(StoreKey.serverEndpoint),
           rootIsolateToken: isolateToken,
           fileMediaRepository: _fileMediaRepository,

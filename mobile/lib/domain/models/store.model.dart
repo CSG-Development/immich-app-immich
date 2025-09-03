@@ -13,7 +13,7 @@ enum StoreKey<T> {
   backupRequireCharging<bool>._(7),
   backupTriggerDelay<int>._(8),
   serverUrl<String>._(10),
-  // accessToken<String>._(11),
+  accessToken<String>._(11),
   serverEndpoint<String>._(12),
   autoBackup<bool>._(13),
   backgroundBackup<bool>._(14),
