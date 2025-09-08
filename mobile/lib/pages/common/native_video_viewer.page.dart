@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -12,11 +13,13 @@ import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_controls_provider.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/asset.service.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/utils/debounce.dart';
 import 'package:immich_mobile/utils/hooks/interval_hook.dart';
 import 'package:immich_mobile/widgets/asset_viewer/custom_video_player_controls.dart';
@@ -62,15 +65,19 @@ class NativeVideoViewerPage extends HookConsumerWidget {
     final log = Logger('NativeVideoViewerPage');
 
     final isCasting = ref.watch(castProvider.select((c) => c.isCasting));
+    final isAirPlayEnabled = ref.watch(airplayProvider);
+    final isPreparingAirPlay = useState(false);
+    final isSourceReady = useState(false);
 
-    Future<VideoSource?> createSource() async {
+    Future<VideoSource?> createSource(bool airPlayActive) async {
       if (!context.mounted) {
         return null;
       }
 
       try {
         final local = asset.local;
-        if (local != null && asset.livePhotoVideoId == null) {
+        // Only use local file directly for actual videos, not photos
+        if (local != null && asset.livePhotoVideoId == null && asset.isVideo) {
           final file = await local.file;
           if (file == null) {
             throw Exception('No file found for the video');
@@ -81,6 +88,42 @@ class NativeVideoViewerPage extends HookConsumerWidget {
             type: VideoSourceType.file,
           );
           return source;
+        }
+
+        // Check if AirPlay is connected
+        final isAirPlayConnected = airPlayActive ? true : await AirplayService.isAirPlayConnected();
+        if (isAirPlayConnected) {
+          String? localPath;
+          
+          if (asset.isVideo) {
+            // Download video for AirPlay (remote videos only)
+            if (asset.isRemote && asset.local == null) {
+              localPath = await AirplayService.downloadVideoForAirPlay(asset, ref);
+            }
+          } else if (asset.isImage) {
+            // Convert photo to video for AirPlay (both local and remote)
+            localPath = await AirplayService.convertPhotoToVideoForAirPlay(asset, ref);
+            if (localPath == null) {
+              // Disable AirPlay mode if conversion fails
+              ref.read(airplayProvider.notifier).disableAirPlayMode();
+            }
+          }
+          
+          if (localPath != null) {
+            final source = await VideoSource.init(
+              path: localPath,
+              type: VideoSourceType.file,
+            );
+            return source;
+          }
+          // If download/conversion fails, fall back to network URL
+        }
+
+        // For local photos without AirPlay, we can't create a video source
+        // This should not happen as local photos should only be in video player when AirPlay is active
+        if (asset.isImage && asset.isLocal) {
+          log.warning('Local photo in video player without AirPlay - this should not happen');
+          return null;
         }
 
         // Use a network URL for the video player controller
@@ -108,7 +151,56 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       }
     }
 
-    final videoSource = useMemoized<Future<VideoSource?>>(() => createSource());
+    final videoSource = useMemoized<Future<VideoSource?>>(
+      () => createSource(isAirPlayEnabled),
+      [isAirPlayEnabled],
+    );
+
+    // When AirPlay turns on, prepare local media
+    useEffect(() {
+      final needsPreparation = isAirPlayEnabled && ((asset.isVideo && asset.isRemote && asset.local == null) || asset.isImage);
+      if (needsPreparation) {
+        isPreparingAirPlay.value = true;
+        isSourceReady.value = false;
+        // Dispose current controller so AVPlayer rebinds to AirPlay route
+        final c = controller.value;
+        if (c != null) {
+          try {
+            // Stop the controller
+            c.stop();
+          } catch (_) {}
+          controller.value = null;
+        }
+      } else {
+        isPreparingAirPlay.value = false;
+      }
+      return null;
+    }, [isAirPlayEnabled]);
+
+    // Reload controller when source resolves
+    useEffect(() {
+      isSourceReady.value = false;
+      () async {
+        final src = await videoSource;
+        if (!context.mounted) return;
+        if (src != null) {
+          if (controller.value != null) {
+            await controller.value!.loadVideoSource(src);
+            // Auto-play after swapping to local AirPlay source
+            if (isAirPlayEnabled && asset.isVideo) {
+              try {
+                await controller.value!.play();
+              } catch (_) {}
+            }
+          }
+          // Mark as ready after successful source load
+          isSourceReady.value = true;
+          isPreparingAirPlay.value = false;
+        }
+      }();
+      return null;
+    }, [videoSource]);
+
     final aspectRatio = useState<double?>(asset.aspectRatio);
     useMemoized(
       () async {
@@ -200,6 +292,22 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       try {
         await videoController.play();
         await videoController.setVolume(0.9);
+        isSourceReady.value = true;
+        isPreparingAirPlay.value = false;
+        
+        // For photos, pause immediately to show static frame
+        if (asset.isImage) {
+          // Small delay to ensure video starts, then pause
+          Timer(const Duration(milliseconds: 500), () async {
+            if (context.mounted) {
+              try {
+                await videoController.pause();
+              } catch (e) {
+                // Ignore pause errors
+              }
+            }
+          });
+        }
       } catch (error) {
         log.severe('Error playing video: $error');
       }
@@ -216,6 +324,8 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       if (videoPlayback.state == VideoPlaybackState.playing) {
         // Sync with the controls playing
         WakelockPlus.enable();
+        isSourceReady.value = true;
+        isPreparingAirPlay.value = false;
       } else {
         // Sync with the controls pause
         WakelockPlus.disable();
@@ -278,9 +388,33 @@ class NativeVideoViewerPage extends HookConsumerWidget {
     }
 
     void initController(NativeVideoPlayerController nc) async {
-      if (controller.value != null || !context.mounted) {
+      if (!context.mounted) {
         return;
       }
+        // If a controller already exists, re-bind listeners
+      if (controller.value != null) {
+        final old = controller.value!;
+        removeListeners(old);
+        controller.value = nc;
+        nc.onPlaybackPositionChanged.addListener(onPlaybackPositionChanged);
+        nc.onPlaybackStatusChanged.addListener(onPlaybackStatusChanged);
+        nc.onPlaybackReady.addListener(onPlaybackReady);
+        nc.onPlaybackEnded.addListener(onPlaybackEnded);
+
+        final loopVideo = ref
+            .read(appSettingsServiceProvider)
+            .getSetting<bool>(AppSettingsEnum.loopVideo);
+        nc.setLoop(loopVideo);
+
+        final source = await videoSource;
+        if (source != null) {
+          await nc.loadVideoSource(source).catchError((error) {
+            log.severe('Error loading video source (rebind): $error');
+          });
+        }
+        return;
+      }
+
       ref.read(videoPlayerControlsProvider.notifier).reset();
       ref.read(videoPlaybackValueProvider.notifier).reset();
 
@@ -404,15 +538,28 @@ class NativeVideoViewerPage extends HookConsumerWidget {
                 key: ValueKey(asset),
                 aspectRatio: aspectRatio.value!,
                 child: isCurrent
+                    && (!isAirPlayEnabled || isSourceReady.value)
                     ? NativeVideoPlayerView(
-                        key: ValueKey(asset),
+                        key: ValueKey('${asset.id}_${isAirPlayEnabled ? 'airplay' : 'direct'}'),
                         onViewReady: initController,
                       )
                     : null,
               ),
             ),
           ),
-        if (showControls) const Center(child: CustomVideoPlayerControls()),
+        if (asset.isImage && ((isAirPlayEnabled && !isSourceReady.value) || isPreparingAirPlay.value))
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+          ),
+        if (showControls && !(isAirPlayEnabled && !isSourceReady.value) && !isPreparingAirPlay.value)
+          const Center(child: CustomVideoPlayerControls()),
       ],
     );
   }

@@ -16,6 +16,7 @@ import 'package:immich_mobile/providers/notification_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/services/background.service.dart';
 import 'package:isar/isar.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -124,6 +125,9 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     await Isar.getInstance()?.close();
     // no guarantee this is called at all
     _ref.read(manualUploadProvider.notifier).cancelBackup();
+    
+    // Clean up AirPlay temporary files
+    await AirplayService.cleanupTempFiles();
   }
 
   void handleAppHidden() {

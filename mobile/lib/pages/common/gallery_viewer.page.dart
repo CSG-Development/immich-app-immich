@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
@@ -16,13 +17,14 @@ import 'package:immich_mobile/pages/common/download_panel.dart';
 import 'package:immich_mobile/pages/common/gallery_stacked_children.dart';
 import 'package:immich_mobile/pages/common/native_video_viewer.page.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_stack.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
-import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
 import 'package:immich_mobile/widgets/asset_viewer/advanced_bottom_sheet.dart';
@@ -73,36 +75,6 @@ class GalleryViewerPage extends HookConsumerWidget {
       return videoPlayerKeys.value[id]!;
     }
 
-    Future<void> precacheNextImage(int index) async {
-      if (!context.mounted) {
-        return;
-      }
-
-      void onError(Object exception, StackTrace? stackTrace) {
-        // swallow error silently
-        log.severe('Error precaching next image: $exception, $stackTrace');
-      }
-
-      try {
-        if (index < totalAssets.value && index >= 0) {
-          final asset = loadAsset(index);
-          await precacheImage(
-            ImmichImage.imageProvider(
-              asset: asset,
-              width: context.width,
-              height: context.height,
-            ),
-            context,
-            onError: onError,
-          );
-        }
-      } catch (e) {
-        // swallow error silently
-        log.severe('Error precaching next image: $e');
-        context.maybePop();
-      }
-    }
-
     useEffect(
       () {
         if (ref.read(showControlsProvider)) {
@@ -110,11 +82,6 @@ class GalleryViewerPage extends HookConsumerWidget {
         } else {
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
         }
-
-        // Delay this a bit so we can finish loading the page
-        Timer(const Duration(milliseconds: 400), () {
-          precacheNextImage(currentIndex.value + 1);
-        });
 
         return null;
       },
@@ -265,11 +232,97 @@ class GalleryViewerPage extends HookConsumerWidget {
       );
     }
 
+    Widget _buildLoadingThumbnail(Asset asset) {
+      if (asset.isLocal && asset.local != null) {
+        // For local photos, use FutureBuilder to handle async file loading
+        return FutureBuilder<File?>(
+          future: asset.local!.file,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return Image(
+                key: ValueKey(asset),
+                image: FileImage(snapshot.data!),
+                fit: BoxFit.contain,
+                height: 250, // Use fixed size for loading thumbnail
+                width: 250,
+                alignment: Alignment.center,
+              );
+            } else {
+              // Show loading or fallback
+              return Container(
+                height: 250,
+                width: 250,
+                color: Colors.black,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
+        );
+      } else {
+        // For remote photos, use ImmichThumbnail
+        return ImmichThumbnail(
+          key: ValueKey(asset),
+          asset: asset,
+          fit: BoxFit.contain,
+        );
+      }
+    }
+
+    Widget _buildVideoImage(BuildContext context, Asset asset) {
+      if (asset.isLocal && asset.local != null) {
+        // For local photos, use FutureBuilder to handle async file loading
+        return FutureBuilder<File?>(
+          future: asset.local!.file,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return Image(
+                key: ValueKey(asset),
+                image: FileImage(snapshot.data!),
+                fit: BoxFit.contain,
+                height: context.height,
+                width: context.width,
+                alignment: Alignment.center,
+              );
+            } else {
+              // Show loading or fallback
+              return Container(
+                height: context.height,
+                width: context.width,
+                color: Colors.black,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
+        );
+      } else {
+        // For remote photos, use ImmichImage.imageProvider
+        return Image(
+          key: ValueKey(asset),
+          image: ImmichImage.imageProvider(
+            asset: asset,
+            width: context.width,
+            height: context.height,
+          ),
+          fit: BoxFit.contain,
+          height: context.height,
+          width: context.width,
+          alignment: Alignment.center,
+        );
+      }
+    }
+
     PhotoViewGalleryPageOptions buildVideo(BuildContext context, Asset asset) {
       return PhotoViewGalleryPageOptions.customChild(
         onDragStart: (_, details, __) =>
             localPosition.value = details.localPosition,
         onDragUpdate: (_, details, __) => handleSwipeUpDown(details),
+        onTapDown: (_, __, ___) {
+          ref.read(showControlsProvider.notifier).toggle();
+        },
         heroAttributes: _getHeroAttributes(asset),
         filterQuality: FilterQuality.high,
         initialScale: PhotoViewComputedScale.contained * 0.99,
@@ -282,18 +335,8 @@ class GalleryViewerPage extends HookConsumerWidget {
           child: NativeVideoViewerPage(
             key: getVideoPlayerKey(asset.id),
             asset: asset,
-            image: Image(
-              key: ValueKey(asset),
-              image: ImmichImage.imageProvider(
-                asset: asset,
-                width: context.width,
-                height: context.height,
-              ),
-              fit: BoxFit.contain,
-              height: context.height,
-              width: context.width,
-              alignment: Alignment.center,
-            ),
+            image: _buildVideoImage(context, asset),
+            showControls: true,
           ),
         ),
       );
@@ -311,7 +354,17 @@ class GalleryViewerPage extends HookConsumerWidget {
         }
       }
 
+      // Check if AirPlay is connected and this is an image
+      final isAirPlayConnected = ref.watch(airplayProvider);
       if (newAsset.isImage && !isPlayingMotionVideo) {
+        // If AirPlay is connected, use video player for any image (local or remote)
+        if (isAirPlayConnected) {
+          // Pre-convert photo in background for seamless experience
+          AirplayService.preConvertPhotoForAirPlay(newAsset, ref);
+          
+          return buildVideo(context, newAsset);
+        }
+        // Otherwise, use regular photo view
         return buildImage(newAsset);
       }
       return buildVideo(context, newAsset);
@@ -338,6 +391,12 @@ class GalleryViewerPage extends HookConsumerWidget {
                   ref.read(showControlsProvider.notifier).show =
                       !isZoomed.value;
                 }
+                
+                // Force show controls when AirPlay is active
+                final isAirPlayConnected = ref.read(airplayProvider);
+                if (isAirPlayConnected) {
+                  ref.read(showControlsProvider.notifier).show = true;
+                }
               },
               gaplessPlayback: true,
               loadingBuilder: (context, event, index) {
@@ -352,11 +411,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                           sigmaY: 10,
                         ),
                       ),
-                      ImmichThumbnail(
-                        key: ValueKey(asset),
-                        asset: asset,
-                        fit: BoxFit.contain,
-                      ),
+                      _buildLoadingThumbnail(asset),
                     ],
                   ),
                 );
@@ -371,10 +426,6 @@ class GalleryViewerPage extends HookConsumerWidget {
               itemCount: totalAssets.value,
               scrollDirection: Axis.horizontal,
               onPageChanged: (value) {
-                final next = currentIndex.value < value ? value + 1 : value - 1;
-
-                ref.read(hapticFeedbackProvider.notifier).selectionClick();
-
                 final newAsset = loadAsset(value);
 
                 currentIndex.value = value;
@@ -384,11 +435,6 @@ class GalleryViewerPage extends HookConsumerWidget {
                 if (newAsset.isVideo || newAsset.isMotionPhoto) {
                   ref.read(videoPlaybackValueProvider.notifier).reset();
                 }
-
-                // Wait for page change animation to finish, then precache the next image
-                Timer(const Duration(milliseconds: 400), () {
-                  precacheNextImage(next);
-                });
 
                 context.scaffoldMessenger.hideCurrentSnackBar();
 
