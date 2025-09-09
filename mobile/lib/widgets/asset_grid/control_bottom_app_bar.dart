@@ -157,9 +157,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
           ),
         if (hasRemote && onFavorite != null)
           ControlBoxButton(
-            iconData: unfavorite
-                ? Icons.favorite_border_rounded
-                : Icons.favorite_rounded,
+            iconData:
+                unfavorite ? Icons.favorite_border_rounded : Icons.favorite_rounded,
             label: (unfavorite ? "unfavorite" : "favorite").tr(),
             onPressed: enabled ? onFavorite : null,
           ),

@@ -649,10 +649,11 @@ class MultiselectGrid extends HookConsumerWidget {
               onUpload: onUpload,
               enabled: !processing.value,
               selectionAssetState: selectionAssetState.value,
+              // Unfilled heart only when all selected are favorites; otherwise filled
+              unfavorite: selection.value.isNotEmpty && selection.value.every((a) => a.isFavorite),
               onStack: stackEnabled ? onStack : null,
               onEditTime: editEnabled ? onEditTime : null,
               onEditLocation: editEnabled ? onEditLocation : null,
-              unfavorite: unfavorite,
               unarchive: unarchive,
               onToggleLocked: onToggleLockedVisibility,
               onRemoveFromAlbum: onRemoveFromAlbum != null
