@@ -23,17 +23,17 @@ interface ApiError extends Error {
   status: number;
 }
 
-export function handleError(error: ApiError, message: string) {
-  if (error?.name === 'AbortError') {
+export function handleError(error: unknown, message: string) {
+  if ((error as ApiError)?.name === 'AbortError') {
     return;
   }
 
-  console.error(`[handleError]: ${message}`, error, error?.stack);
+  console.error(`[handleError]: ${message}`, error, (error as ApiError)?.stack);
 
   try {
     let serverMessage = getServerErrorMessage(error);
     if (serverMessage) {
-      serverMessage = `${String(serverMessage).slice(0, 75)}\n${error?.status >= 500 ? '(Curator Photos Server Error)' : ''}`;
+      serverMessage = `${String(serverMessage).slice(0, 75)}\n${(error as ApiError)?.status >= 500 ? '(Curator Photos Server Error)' : ''}`;
     }
 
     const errorMessage = serverMessage || message;

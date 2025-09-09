@@ -93,6 +93,9 @@
           <Badge rounded="full"><span class="text-xs px-1">{$t('password')}</span></Badge>
         {/if}
       </div>
+      {#if link.slug}
+        <Badge rounded="full"><span class="text-xs px-1">{$t('custom_url')}</span></Badge>
+      {/if}
     </div>
   </svelte:element>
   <div class="flex flex-auto flex-col place-content-center place-items-end text-end ms-4">

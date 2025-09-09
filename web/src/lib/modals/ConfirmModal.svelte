@@ -5,6 +5,7 @@
 
   interface Props {
     title?: string;
+    icon?: string | boolean;
     prompt?: string;
     confirmText?: string;
     confirmColor?: Color;
@@ -16,7 +17,8 @@
 
   let {
     title = $t('confirm'),
-    prompt = $t('are_you_sure_to_do_this'),
+    icon,
+    prompt = $t('prompt_default'),
     confirmText = $t('confirm'),
     confirmColor = 'danger',
     disabled = false,
@@ -30,7 +32,7 @@
   };
 </script>
 
-<Modal {title} onClose={() => onClose(false)} {size}>
+<Modal {title} onClose={() => onClose(false)} {size} {icon}>
   <ModalBody>
     {#if promptSnippet}{@render promptSnippet()}{:else}
       <p>{prompt}</p>

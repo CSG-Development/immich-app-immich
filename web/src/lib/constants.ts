@@ -11,6 +11,7 @@ export enum AssetAction {
   UNSTACK = 'unstack',
   KEEP_THIS_DELETE_OTHERS = 'keep-this-delete-others',
   SET_STACK_PRIMARY_ASSET = 'set-stack-primary-asset',
+  REMOVE_ASSET_FROM_STACK = 'remove-asset-from-stack',
   SET_VISIBILITY_LOCKED = 'set-visibility-locked',
   SET_VISIBILITY_TIMELINE = 'set-visibility-timeline',
 }
@@ -21,6 +22,7 @@ export enum AppRoute {
   ADMIN_SETTINGS = '/admin/system-settings',
   ADMIN_STATS = '/admin/server-status',
   ADMIN_JOBS = '/admin/jobs-status',
+  ADMIN_REPAIR = '/admin/repair',
 
   ALBUMS = '/albums',
   LIBRARIES = '/libraries',
@@ -49,6 +51,8 @@ export enum AppRoute {
 
   UTILITIES = '/utilities',
   DUPLICATES = '/utilities/duplicates',
+  LARGE_FILES = '/utilities/large-files',
+  GEOLOCATION = '/utilities/geolocation',
 
   FOLDERS = '/folders',
   TAGS = '/tags',

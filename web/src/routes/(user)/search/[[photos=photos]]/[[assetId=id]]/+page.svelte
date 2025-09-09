@@ -51,9 +51,9 @@
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
 
-  const MAX_ASSET_COUNT = 5000;
   let { isViewing: showAssetViewer } = assetViewingStore;
   const viewport: Viewport = $state({ width: 0, height: 0 });
+  let searchResultsElement: HTMLElement | undefined = $state();
 
   // The GalleryViewer pushes it's own history state, which causes weird
   // behavior for history.back(). To prevent that we store the previous page
@@ -150,10 +150,7 @@
 
   // eslint-disable-next-line svelte/valid-prop-names-in-kit-pages
   export const loadNextPage = async (force?: boolean) => {
-    if (!nextPage || searchResultAssets.length >= MAX_ASSET_COUNT) {
-      return;
-    }
-    if (isLoading && !force) {
+    if (!nextPage || (isLoading && !force)) {
       return;
     }
     isLoading = true;
@@ -234,7 +231,10 @@
     return personNames.join(', ');
   }
 
-  async function getTagNames(tagIds: string[]) {
+  async function getTagNames(tagIds: string[] | null) {
+    if (tagIds === null) {
+      return $t('untagged');
+    }
     const tagNames = await Promise.all(
       tagIds.map(async (tagId) => {
         const tag = await getTagById({ id: tagId });
@@ -328,9 +328,9 @@
   >
     {#each getObjectKeys(terms) as searchKey (searchKey)}
       {@const value = terms[searchKey]}
-      <div class="flex place-content-center place-items-center text-xs">
+      <div class="flex place-content-center place-items-center items-stretch text-xs">
         <div
-          class="bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
+          class="flex items-center justify-center bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
           {value === true ? 'rounded-full' : 'rounded-s-full'}"
         >
           {getHumanReadableSearchKey(searchKey as keyof SearchTerms)}
@@ -344,7 +344,7 @@
               {#await getPersonName(value) then personName}
                 {personName}
               {/await}
-            {:else if searchKey === 'tagIds' && Array.isArray(value)}
+            {:else if searchKey === 'tagIds' && (Array.isArray(value) || value === null)}
               {#await getTagNames(value) then tagNames}
                 {tagNames}
               {/await}
@@ -361,9 +361,10 @@
 {/if}
 
 <section
-  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4"
+  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4 max-h-screen"
   bind:clientHeight={viewport.height}
   bind:clientWidth={viewport.width}
+  bind:this={searchResultsElement}
 >
   {#if searchResultAlbums.length > 0}
     <section>
@@ -383,8 +384,8 @@
         onIntersected={loadNextPage}
         showArchiveIcon={true}
         {viewport}
-        pageHeaderOffset={54}
         onReload={onSearchQueryUpdate}
+        slidingWindowOffset={searchResultsElement.offsetTop}
       />
     {:else if !isLoading}
       <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">

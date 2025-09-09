@@ -22,33 +22,27 @@ class ModalManager {
     ...props: OptionalParamIfEmpty<Omit<T, 'onClose'>>
   ) {
     let modal: object = {};
-    let closeModal: (...args: [StripValueIfOptional<K>]) => void;
+    let onClose: (...args: [StripValueIfOptional<K>]) => Promise<void>;
 
-    const onClosePromise = new Promise<StripValueIfOptional<K>>((resolve) => {
-      closeModal = (...args: [StripValueIfOptional<K>]) => {
-        resolve(args?.[0]);
-        // Use setTimeout to avoid unmount during Svelte update cycle
-        setTimeout(() => {
-          try {
-            void unmount(modal);
-          } catch (error) {
-            console.error('Failed to unmount modal:', error);
-          }
-        }, 0);
+    const deferred = new Promise<StripValueIfOptional<K>>((resolve) => {
+      onClose = async (...args: [StripValueIfOptional<K>]) => {
+        await unmount(modal);
+        // make sure bits-ui clean up finishes before resolving
+        setTimeout(() => resolve(args?.[0]), 10);
       };
 
       modal = mount(Component, {
         target: document.body,
         props: {
           ...((props?.[0] ?? {}) as T),
-          onClose: closeModal,
+          onClose,
         },
       });
     });
 
     return {
-      onClose: onClosePromise,
-      close: (...args: [StripValueIfOptional<K>]) => closeModal(args[0]),
+      onClose: deferred,
+      close: (...args: [StripValueIfOptional<K>]) => onClose(args[0]),
     };
   }
 
