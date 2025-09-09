@@ -84,13 +84,20 @@ class ControlBottomAppBar extends HookConsumerWidget {
     final albums = ref.watch(albumProvider).where((a) => a.isRemote).toList();
     final sharedAlbums =
         ref.watch(albumProvider).where((a) => a.shared).toList();
+    // Base minimum extent of the bottom sheet
     const bottomPadding = 0.24;
     final scrollController = useDraggableScrollController();
     final isInLockedView = ref.watch(inLockedViewProvider);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Increase the minimum size in landscape for local-only selections so the action
+    // row is fully visible without a tiny scroll.
+    final double minSize =
+        (selectionAssetState.hasLocalOnly && isLandscape) ? 0.34 : bottomPadding;
 
     void minimize() {
       scrollController.animateTo(
-        bottomPadding,
+        minSize,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -339,27 +346,27 @@ class ControlBottomAppBar extends HookConsumerWidget {
 
     getInitialSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.35;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     getMaxChildSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.65;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     return DraggableScrollableSheet(
       initialChildSize: getInitialSize(),
-      minChildSize: bottomPadding,
+      minChildSize: minSize,
       maxChildSize: getMaxChildSize(),
       snap: true,
       controller: scrollController,
