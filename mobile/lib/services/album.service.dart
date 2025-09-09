@@ -199,6 +199,13 @@ class AlbumService {
     return changes;
   }
 
+  /// Refresh a single remote album by its remoteId and update it in local DB
+  Future<void> refreshAlbumByRemoteId(String remoteId) async {
+    final updated = await _albumApiRepository.get(remoteId);
+    await _entityService.fillAlbumWithDatabaseEntities(updated);
+    await _albumRepository.update(updated);
+  }
+
   Future<Album?> createAlbum(
     String albumName,
     Iterable<Asset> assets, [

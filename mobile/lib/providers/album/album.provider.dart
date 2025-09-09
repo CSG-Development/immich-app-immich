@@ -32,6 +32,10 @@ class AlbumNotifier extends StateNotifier<List<Album>> {
     ref.read(isRefreshingRemoteAlbumProvider.notifier).state = false;
   }
 
+  Future<void> refreshAlbumByRemoteId(String remoteId) async {
+    await albumService.refreshAlbumByRemoteId(remoteId);
+  }
+
   Future<void> refreshDeviceAlbums() => albumService.refreshDeviceAlbums();
 
   Future<bool> deleteAlbum(Album album) => albumService.deleteAlbum(album);
