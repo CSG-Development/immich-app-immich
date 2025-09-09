@@ -326,13 +326,26 @@ class _TagsPicker extends HookConsumerWidget {
 
     Widget buildLandscapeDialog() {
       return Dialog(
-        insetPadding: EdgeInsets.zero,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: SafeArea(
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Scaffold(
+              resizeToAvoidBottomInset: true,
               appBar: AppBar(
-                title: const Text('Add Tags'),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                title: Text(
+                  'Add Tags',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
                 leading: IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
@@ -359,7 +372,12 @@ class _TagsPicker extends HookConsumerWidget {
       return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: AlertDialog(
-          title: const Text('Add Tags'),
+          title: Text(
+            'Add Tags',
+            style: context.textTheme.titleMedium?.copyWith(
+              color: context.colorScheme.onSurface,
+            ),
+          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: 400,
