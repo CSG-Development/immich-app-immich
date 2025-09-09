@@ -315,7 +315,12 @@ class ControlBottomAppBar extends HookConsumerWidget {
               onPressed: enabled ? onRemoveFromAlbum : null,
             ),
           ),
-        if (selectionAssetState.hasLocal)
+        // Upload button rules:
+        // - show for local-only
+        // - show for merged but trashed (to restore)
+        // - hide for merged (not trashed)
+        if ((selectionAssetState.hasLocalOnly ||
+                selectionAssetState.hasMergedTrashed))
           ControlBoxButton(
             iconData: Icons.backup_outlined,
             label: "upload".tr(),

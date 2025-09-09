@@ -59,8 +59,14 @@ class AlbumViewer extends HookConsumerWidget {
     }
 
     Future<bool> onDeletedRemote(Iterable<Asset> assets) async {
-      final bool isSuccess =
-          await ref.read(albumProvider.notifier).updateAfterDeletedRemote(album, assets);
+      // Only update album membership after remote deletion for remote albums.
+      // For local device albums, keep membership so restored assets reappear.
+      if (!album.isRemote) {
+        return true;
+      }
+      final bool isSuccess = await ref
+          .read(albumProvider.notifier)
+          .updateAfterDeletedRemote(album, assets);
 
       if (!isSuccess) {
         ImmichToast.show(
