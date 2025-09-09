@@ -8,7 +8,6 @@
   import NavigationLoadingBar from '$lib/components/shared-components/navigation-loading-bar.svelte';
   import NotificationList from '$lib/components/shared-components/notification/notification-list.svelte';
   import UploadPanel from '$lib/components/shared-components/upload-panel.svelte';
-  import VersionAnnouncementBox from '$lib/components/shared-components/version-announcement-box.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { serverConfig } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
@@ -123,7 +122,3 @@
 <DownloadPanel />
 <UploadPanel />
 <NotificationList />
-
-{#if $user?.isAdmin}
-  <VersionAnnouncementBox />
-{/if}

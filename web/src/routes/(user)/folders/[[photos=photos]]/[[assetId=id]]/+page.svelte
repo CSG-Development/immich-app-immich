@@ -44,9 +44,7 @@
 
   const assetInteraction = new AssetInteraction();
 
-  const handleNavigateToFolder = (folderName: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    navigateToView(joinPaths(resolve(data.tree.path as any), folderName));
+  const handleNavigateToFolder = (folderName: string) => navigateToView(joinPaths(data.tree.path, folderName));
 
   const getLinkForPath = (path: string) => {
     const url = new URL(resolve(AppRoute.FOLDERS), globalThis.location.href);
@@ -105,6 +103,7 @@
     {#if data.pathAssets && data.pathAssets.length > 0}
       <div bind:clientHeight={viewport.height} bind:clientWidth={viewport.width} class="mt-2">
         <GalleryViewer
+          initialAssetId={data.asset?.id}
           assets={data.pathAssets}
           {assetInteraction}
           {viewport}
@@ -118,7 +117,7 @@
 </UserPageLayout>
 
 {#if assetInteraction.selectionActive}
-  <div class="fixed z-[910] top-0 start-0 w-full">
+  <div class="fixed top-0 start-0 w-full">
     <AssetSelectControlBar
       assets={assetInteraction.selectedAssets}
       clearSelect={() => cancelMultiselect(assetInteraction)}

@@ -55,6 +55,7 @@
         console.error('Error [login-form] [oauth.callback]', error);
         oauthError = getServerErrorMessage(error) || $t('errors.unable_to_complete_oauth_login');
         oauthLoading = false;
+        return;
       }
     }
 

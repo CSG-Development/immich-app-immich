@@ -15,7 +15,7 @@
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { addSharedLinkAssets, getAssetInfo, type SharedLinkResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiArrowLeft, mdiFileImagePlusOutline, mdiFolderDownloadOutline, mdiSelectAll } from '@mdi/js';
+  import { mdiArrowLeft, mdiDownload, mdiFileImagePlusOutline, mdiSelectAll } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import AssetViewer from '../asset-viewer/asset-viewer.svelte';
   import DownloadAction from '../photos-page/actions/download-action.svelte';
@@ -55,11 +55,11 @@
         ? openFileUploadDialog()
         : fileUploadHandler({ files }));
       const data = await addSharedLinkAssets({
+        ...authManager.params,
         id: sharedLink.id,
         assetIdsDto: {
           assetIds: results.filter((id) => !!id) as string[],
         },
-        key: authManager.key,
       });
 
       const added = data.filter((item) => item.success).length;
@@ -136,7 +136,7 @@
               variant="ghost"
               aria-label={$t('download')}
               onclick={downloadAssets}
-              icon={mdiFolderDownloadOutline}
+              icon={mdiDownload}
             />
           {/if}
         {/snippet}
@@ -146,7 +146,7 @@
       <GalleryViewer {assets} {assetInteraction} {viewport} />
     </section>
   {:else if assets.length === 1}
-    {#await getAssetInfo({ id: assets[0].id, key: authManager.key }) then asset}
+    {#await getAssetInfo({ ...authManager.params, id: assets[0].id }) then asset}
       <AssetViewer
         {asset}
         showCloseButton={false}

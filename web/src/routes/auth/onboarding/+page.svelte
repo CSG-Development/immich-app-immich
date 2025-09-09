@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/stores';
+  import OnboardingBackup from '$lib/components/onboarding-page/onboarding-backup.svelte';
   import OnboardingCard from '$lib/components/onboarding-page/onboarding-card.svelte';
   import OnboardingHello from '$lib/components/onboarding-page/onboarding-hello.svelte';
   import OnboardingLocale from '$lib/components/onboarding-page/onboarding-language.svelte';
@@ -14,7 +15,7 @@
   import { retrieveServerConfig, retrieveSystemConfig, serverConfig } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { setUserOnboarding, updateAdminOnboarding } from '@immich/sdk';
-  import { mdiHarddisk, mdiIncognito, mdiThemeLightDark, mdiTranslate } from '@mdi/js';
+  import { mdiCloudCheckOutline, mdiHarddisk, mdiIncognito, mdiThemeLightDark, mdiTranslate } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
 
@@ -69,6 +70,13 @@
       title: $t('admin.storage_template_settings'),
       icon: mdiHarddisk,
     },
+    {
+      name: 'backup',
+      component: OnboardingBackup,
+      role: OnboardingRole.SERVER,
+      title: $t('admin.backup_onboarding_title'),
+      icon: mdiCloudCheckOutline,
+    },
   ]);
 
   let index = $state(0);
@@ -111,7 +119,7 @@
         onboardingDto: { isOnboarded: true },
       });
 
-      await goto(AppRoute.PHOTOS);
+      await goto(resolve(AppRoute.PHOTOS));
     } else {
       await goto(
         resolve(AppRoute.AUTH_ONBOARDING) + `?${QueryParameter.ONBOARDING_STEP}=${onboardingSteps[nextStepIndex].name}`,

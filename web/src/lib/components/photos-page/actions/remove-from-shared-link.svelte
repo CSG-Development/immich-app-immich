@@ -3,11 +3,11 @@
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { removeSharedLinkAssets, type SharedLinkResponseDto } from '@immich/sdk';
+  import { IconButton } from '@immich/ui';
   import { mdiDeleteOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { NotificationType, notificationController } from '../../shared-components/notification/notification';
   import { getAssetControlContext } from '../asset-select-control-bar.svelte';
-  import { IconButton } from '@immich/ui';
 
   interface Props {
     sharedLink: SharedLinkResponseDto;
@@ -30,11 +30,11 @@
 
     try {
       const results = await removeSharedLinkAssets({
+        ...authManager.params,
         id: sharedLink.id,
         assetIdsDto: {
           assetIds: [...getAssets()].map((asset) => asset.id),
         },
-        key: authManager.key,
       });
 
       for (const result of results) {

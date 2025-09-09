@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import Icon from '$lib/components/elements/icon.svelte';
   import { Theme } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
@@ -55,6 +56,7 @@
     popup?: import('svelte').Snippet<[{ marker: MapMarkerResponseDto }]>;
     rounded?: boolean;
     showSimpleControls?: boolean;
+    autoFitBounds?: boolean;
   }
 
   let {
@@ -72,9 +74,21 @@
     popup,
     rounded = false,
     showSimpleControls = true,
+    autoFitBounds = true,
   }: Props = $props();
 
-  const initialCenter = center;
+  // Calculate initial bounds from markers once during initialization
+  const initialBounds = (() => {
+    if (!autoFitBounds || center || zoom !== undefined || !mapMarkers || mapMarkers.length === 0) {
+      return undefined;
+    }
+
+    const bounds = new maplibregl.LngLatBounds();
+    for (const marker of mapMarkers) {
+      bounds.extend([marker.lon, marker.lat]);
+    }
+    return bounds;
+  })();
 
   let map: maplibregl.Map | undefined = $state();
   let marker: maplibregl.Marker | null = null;
@@ -188,7 +202,7 @@
 
     return await getMapMarkers(
       {
-        isArchived: includeArchived && undefined,
+        isArchived: includeArchived || undefined,
         isFavorite: onlyFavorites || undefined,
         fileCreatedAfter: fileCreatedAfter || undefined,
         fileCreatedBefore,
@@ -212,6 +226,17 @@
       }
     }
   };
+
+  afterNavigate(() => {
+    if (map) {
+      map.resize();
+
+      if (globalThis.location.hash) {
+        const hashChangeEvent = new HashChangeEvent('hashchange');
+        globalThis.dispatchEvent(hashChangeEvent);
+      }
+    }
+  });
 
   onMount(async () => {
     if (!mapMarkers) {
@@ -265,7 +290,9 @@
   style=""
   class="h-full {rounded ? 'rounded-2xl' : 'rounded-none'}"
   {zoom}
-  center={initialCenter}
+  {center}
+  bounds={initialBounds}
+  fitBoundsOptions={{ padding: 50, maxZoom: 15 }}
   attributionControl={false}
   diffStyleUpdates={true}
   onload={(event) => {
@@ -315,7 +342,7 @@
         features: mapMarkers?.map((marker) => asFeature(marker)) ?? [],
       }}
       id="geojson"
-      cluster={{ radius: 35, maxZoom: 17 }}
+      cluster={{ radius: 35, maxZoom: 18 }}
     >
       <MarkerLayer
         applyToClusters

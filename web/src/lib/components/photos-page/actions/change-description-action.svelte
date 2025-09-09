@@ -1,6 +1,6 @@
 <script lang="ts">
   import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import AssetUpdateDecriptionConfirmModal from '$lib/modals/AssetUpdateDecriptionConfirmModal.svelte';
+  import AssetUpdateDescriptionConfirmModal from '$lib/modals/AssetUpdateDescriptionConfirmModal.svelte';
   import { user } from '$lib/stores/user.store';
   import { getSelectedAssets } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
@@ -18,7 +18,7 @@
   const { clearSelect, getOwnedAssets } = getAssetControlContext();
 
   const handleUpdateDescription = async () => {
-    const description = await modalManager.show(AssetUpdateDecriptionConfirmModal);
+    const description = await modalManager.show(AssetUpdateDescriptionConfirmModal);
     if (description) {
       const ids = getSelectedAssets(getOwnedAssets(), $user);
 

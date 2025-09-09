@@ -14,6 +14,7 @@
   let password = $state('');
   let confirmPassword = $state('');
   let name = $state('');
+  let loading = $state(false);
   let errorMessage = $derived(
     password === confirmPassword || confirmPassword.length === 0 ? '' : $t('password_does_not_match'),
   );
@@ -28,10 +29,11 @@
   const onSubmit = async (event: Event) => {
     event.preventDefault();
 
-    if (!valid) {
+    if (!valid || loading) {
       return;
     }
 
+    loading = true;
     errorMessage = '';
 
     try {
@@ -41,6 +43,8 @@
     } catch (error) {
       handleError(error, $t('errors.unable_to_create_admin_account'));
       errorMessage = $t('errors.unable_to_create_admin_account');
+    } finally {
+      loading = false;
     }
   };
 </script>
@@ -71,6 +75,8 @@
       <Alert color="danger" title={errorMessage} size="medium" class="mt-4" />
     {/if}
 
-    <Button class="mt-4" type="submit" size="giant" shape="round" fullWidth disabled={!valid}>{$t('sign_up')}</Button>
+    <Button class="mt-4" type="submit" size="giant" shape="round" fullWidth disabled={!valid || loading} {loading}
+      >{$t('sign_up')}</Button
+    >
   </form>
 </AuthPageLayout>
