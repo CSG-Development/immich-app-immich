@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
@@ -16,9 +17,22 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
+
+class FilenameParts {
+  final String baseName;
+  final int? suffix;
+  final String extPart; // includes dot or empty
+  FilenameParts(this.baseName, this.suffix, this.extPart);
+}
+
+class BaseSuffix {
+  final String base;
+  final int? suffix;
+  BaseSuffix(this.base, this.suffix);
+}
 
 final clipboardServiceProvider = Provider(
   (ref) => ClipboardService(
@@ -217,6 +231,7 @@ class ClipboardService {
         savedCount: savedAssets.length,
         errorCount: errors.length,
         errors: errors,
+        newAssets: savedAssets,
       );
     } catch (e) {
       return ClipboardPasteResult(
@@ -290,20 +305,35 @@ class ClipboardService {
       // Get the clipboard service instance to access instance methods
       final clipboardService = ref.read(clipboardServiceProvider);
 
+      // Track per-base-name next starting suffix within this batch to avoid collisions
+      final Map<String, int> nextSuffixPerBase = {};
+
       // Process each asset for duplication
       for (final asset in selectedAssets) {
         try {
+          // Determine a unique starting suffix for this asset within the batch
+          final baseAndSuffix = _parseBaseAndSuffix(asset.fileName);
+          final base = baseAndSuffix.base;
+          final existingSuffix = baseAndSuffix.suffix;
+          final startFromBatch = nextSuffixPerBase[base] ?? 1;
+          final startFromName = (existingSuffix ?? 0) + 1;
+          final startingSuffix = math.max(startFromBatch, startFromName);
+
           final result = await _duplicateSingleAsset(
             context,
             ref,
             asset,
             clipboardService,
+            startingSuffix: startingSuffix,
           );
           if (result != null) {
             savedAssets.add(result);
           } else {
             errors.add('Failed to duplicate ${asset.fileName}');
           }
+
+          // Reserve the next suffix for this base within the batch
+          nextSuffixPerBase[base] = startingSuffix + 1;
         } catch (e) {
           errors.add('Error duplicating ${asset.fileName}: ${e.toString()}');
         }
@@ -320,6 +350,7 @@ class ClipboardService {
         savedCount: savedAssets.length,
         errorCount: errors.length,
         errors: errors,
+        newAssets: savedAssets,
       );
     } catch (e) {
       return ClipboardPasteResult(
@@ -336,8 +367,9 @@ class ClipboardService {
     BuildContext context,
     WidgetRef ref,
     Asset asset,
-    ClipboardService clipboardService,
-  ) async {
+    ClipboardService clipboardService, {
+    int? startingSuffix,
+  }) async {
     try {
       File? sourceFile;
       String? fileName;
@@ -410,6 +442,7 @@ class ClipboardService {
         sourceFile,
         fileName,
         stats,
+        startingSuffix: startingSuffix,
       );
 
       // Clean up temporary file if it was created
@@ -431,32 +464,37 @@ class ClipboardService {
   Future<Asset?> _uploadFileDirectly(
     File file,
     String fileName,
-    FileStat stats,
-  ) async {
-    // Try original file first
-    var uploadResult = await _uploadFile(file, fileName, stats);
+    FileStat stats, {
+    int? startingSuffix,
+  }) async {
+    // Increment filename first without attempting the original name
+    final parts = _splitNameAndSuffix(fileName);
+    final baseName = parts.baseName;
+    final currentSuffix = parts.suffix; // nullable
+    final extPart = parts.extPart; // includes leading dot or empty
 
-    // If duplicate detected, try with modified file
-    if (uploadResult == null) {
-      // Try up to 3 different unique versions to ensure success
+    int start = startingSuffix ?? (currentSuffix ?? 0) + 1;
+    // For each candidate name, attempt a few content modifications to alter hash
+    for (int suffix = start; suffix < start + 50; suffix++) {
+      final candidate = '${baseName}-${suffix}${extPart}';
+
+      // Try up to 3 modified variants
       for (int attempt = 1; attempt <= 3; attempt++) {
         final modifiedFile =
             await _createUniqueVersion(file, fileName, attempt: attempt);
         if (modifiedFile != null) {
-          uploadResult = await _uploadFile(modifiedFile, fileName, stats);
-
-          // Clean up modified file
-          await modifiedFile.delete();
-
-          // If successful, break out of the loop
-          if (uploadResult != null) {
-            break;
+          final result = await _uploadFile(modifiedFile, candidate, stats);
+          try {
+            await modifiedFile.delete();
+          } catch (_) {}
+          if (result != null) {
+            return result;
           }
         }
       }
     }
 
-    return uploadResult;
+    return null;
   }
 
   /// Upload a specific file to server
@@ -505,7 +543,7 @@ class ClipboardService {
 
         if (remoteId != null) {
           if (status == 'duplicate') {
-            return null; // This will trigger the duplicate handling in _uploadFileDirectly
+            return null; // This will trigger trying another candidate name
           } else {
             // Create a basic Asset object (this will be enhanced by the server)
             // The actual asset details will be fetched when the UI refreshes
@@ -535,129 +573,105 @@ class ClipboardService {
     }
   }
 
-  /// Create a unique version of the file by modifying EXIF/metadata
+  // Content modification helpers to alter checksum while preserving image visually
   Future<File?> _createUniqueVersion(
     File originalFile,
     String fileName, {
     int attempt = 1,
   }) async {
     try {
-      // Read the original image
       final bytes = await originalFile.readAsBytes();
       final image = img.decodeImage(bytes);
+      if (image == null) return null;
 
-      if (image == null) {
-        return null;
-      }
+      final modified = _modifyImageToMakeUnique(image, attempt: attempt);
 
-      // Create a modified version by adding multiple unique watermarks
-      final modifiedImage = _modifyImageToMakeUnique(image, attempt: attempt);
-
-      // Encode back to bytes with different quality based on attempt to ensure uniqueness
-      // More aggressive quality changes for higher attempts
+      // Slight quality variation to further change bytes
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       int quality;
       if (attempt == 1) {
-        quality = 94 + (timestamp % 3); // 94, 95, or 96
+        quality = 96 - (timestamp % 3); // 96..94
       } else if (attempt == 2) {
-        quality = 92 + (timestamp % 5); // 92, 93, 94, 95, or 96
+        quality = 93 - (timestamp % 3); // 93..91
       } else {
-        quality = 90 + (timestamp % 7); // 90, 91, 92, 93, 94, 95, or 96
+        quality = 90 - (timestamp % 3); // 90..88
       }
-      final modifiedBytes = img.encodeJpg(modifiedImage, quality: quality);
+      final encoded = img.encodeJpg(modified, quality: quality.clamp(80, 100));
 
-      // Create temporary file with timestamp-based naming for uniqueness
-      // More aggressive naming for higher attempts
       final tempDir = await getTemporaryDirectory();
-      String uniqueId;
-      if (attempt == 1) {
-        uniqueId = '${timestamp}_${(timestamp * 7) % 1000000}';
-      } else if (attempt == 2) {
-        uniqueId =
-            '${timestamp}_${(timestamp * 11) % 1000000}_${(timestamp * 13) % 1000}';
-      } else {
-        uniqueId =
-            '${timestamp}_${(timestamp * 17) % 1000000}_${(timestamp * 19) % 1000}_${(timestamp * 23) % 100}';
-      }
-      final tempFile = File('${tempDir.path}/unique_${uniqueId}_$fileName');
-      await tempFile.writeAsBytes(modifiedBytes);
-
+      final tempFile = File(
+        '${tempDir.path}/unique_${timestamp}_${attempt}_$fileName',
+      );
+      await tempFile.writeAsBytes(encoded);
       return tempFile;
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  /// Modify image to make it unique (add watermark, modify EXIF, etc.)
   img.Image _modifyImageToMakeUnique(img.Image image, {int attempt = 1}) {
-    // Create a more unique modification by adding multiple subtle changes
-    // This ensures each copy/paste operation generates a different checksum
+    final width = image.width;
+    final height = image.height;
+    if (width < 2 || height < 2) return image;
 
-    if (image.width > 10 && image.height > 10) {
-      // Add multiple tiny, nearly invisible watermarks in different locations
-      // Use different colors and positions to ensure uniqueness
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final points = <List<int>>[
+      [width - 1, 0],
+      [0, height - 1],
+      [
+        ((ts * (attempt + 3)) % width).toInt(),
+        ((ts * (attempt + 5)) % height).toInt()
+      ],
+    ];
 
-      // Watermark 1: Top-right corner (nearly transparent white)
-      final watermark1 = img.ColorRgba8(255, 255, 255, 1);
-      image.setPixel(image.width - 1, 0, watermark1);
+    for (final p in points) {
+      final x = p[0].clamp(0, width - 1);
+      final y = p[1].clamp(0, height - 1);
+      final color = img.ColorRgba8(
+        (5 * attempt) % 256,
+        (3 * attempt) % 256,
+        (7 * attempt) % 256,
+        1,
+      );
+      image.setPixel(x, y, color);
+    }
+    return image;
+  }
 
-      // Watermark 2: Bottom-left corner (nearly transparent black)
-      final watermark2 = img.ColorRgba8(0, 0, 0, 1);
-      image.setPixel(0, image.height - 1, watermark2);
-
-      // Watermark 3: Center area (nearly transparent blue)
-      final watermark3 = img.ColorRgba8(0, 0, 255, 1);
-      final centerX = (image.width / 2).floor();
-      final centerY = (image.height / 2).floor();
-      if (centerX < image.width && centerY < image.height) {
-        image.setPixel(centerX, centerY, watermark3);
-      }
-
-      // Watermark 4: Random position based on current timestamp and attempt number
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final randomX = ((timestamp * (attempt + 1)) % (image.width - 5))
-          .clamp(5, image.width - 5);
-      final randomY = ((timestamp * (7 + attempt * 3)) % (image.height - 5))
-          .clamp(5, image.height - 5);
-      final watermark4 = img.ColorRgba8(255, 0, 255, 1); // Magenta
-      image.setPixel(randomX, randomY, watermark4);
-
-      // Watermark 5: Another random position with different calculation based on attempt
-      final randomX2 = ((timestamp * (13 + attempt * 5)) % (image.width - 10))
-          .clamp(10, image.width - 10);
-      final randomY2 = ((timestamp * (17 + attempt * 7)) % (image.height - 10))
-          .clamp(10, image.height - 10);
-      final watermark5 = img.ColorRgba8(0, 255, 0, 1); // Green
-      image.setPixel(randomX2, randomY2, watermark5);
-
-      // Watermark 6: Additional watermark based on attempt number (more aggressive for higher attempts)
-      if (attempt > 1) {
-        final extraX = ((timestamp * (23 + attempt * 11)) % (image.width - 15))
-            .clamp(15, image.width - 15);
-        final extraY = ((timestamp * (29 + attempt * 13)) % (image.height - 15))
-            .clamp(15, image.height - 15);
-        final extraColor = img.ColorRgba8(255, 255, 0, 1); // Yellow
-        image.setPixel(extraX, extraY, extraColor);
-      }
-
-      // Watermark 7: Even more aggressive for attempt 3
-      if (attempt > 2) {
-        final aggressiveX =
-            ((timestamp * (31 + attempt * 17)) % (image.width - 20))
-                .clamp(20, image.width - 20);
-        final aggressiveY =
-            ((timestamp * (37 + attempt * 19)) % (image.height - 20))
-                .clamp(20, image.height - 20);
-        final aggressiveColor = img.ColorRgba8(255, 128, 0, 1); // Orange
-        image.setPixel(aggressiveX, aggressiveY, aggressiveColor);
-      }
-    } else if (image.width > 1 && image.height > 1) {
-      // For very small images, just add a single watermark
-      final watermarkColor = img.ColorRgba8(255, 255, 255, 1);
-      image.setPixel(image.width - 1, 0, watermarkColor);
+  FilenameParts _splitNameAndSuffix(String originalName) {
+    final dotIndex = originalName.lastIndexOf('.');
+    String namePart;
+    String extPart;
+    if (dotIndex <= 0) {
+      namePart = originalName;
+      extPart = '';
+    } else {
+      namePart = originalName.substring(0, dotIndex);
+      extPart = originalName.substring(dotIndex);
     }
 
-    return image;
+    final match = RegExp(r'^(.*?)-(\d+)$').firstMatch(namePart);
+    if (match != null) {
+      final base = match.group(1) ?? namePart;
+      final numStr = match.group(2);
+      final suffix = int.tryParse(numStr ?? '');
+      return FilenameParts(base, suffix, extPart);
+    }
+    return FilenameParts(namePart, null, extPart);
+  }
+
+  static BaseSuffix _parseBaseAndSuffix(String originalName) {
+    final dotIndex = originalName.lastIndexOf('.');
+    final namePart =
+        dotIndex <= 0 ? originalName : originalName.substring(0, dotIndex);
+    final match = RegExp(r'^(.*?)-(\d+)$').firstMatch(namePart);
+    if (match != null) {
+      final base = match.group(1) ?? namePart;
+      final numStr = match.group(2);
+      final suffix = int.tryParse(numStr ?? '');
+      return BaseSuffix(base, suffix);
+    }
+    return BaseSuffix(namePart, null);
   }
 
   /// Refresh UI after paste operations
@@ -669,13 +683,83 @@ class ClipboardService {
   /// Check if file is an image
   bool _isImageFile(String fileName) {
     final extension = fileName.toLowerCase();
-    return extension.contains(RegExp(r'\.(jpg|jpeg|png|gif|heic|webp|bmp)$'));
+    return extension
+        .contains(RegExp(r'\.(jpg|jpeg|png|gif|heic|heif|webp|bmp|dng)$'));
   }
 
   /// Check if file is a video
   bool _isVideoFile(String fileName) {
     final extension = fileName.toLowerCase();
     return extension.contains(RegExp(r'\.(mp4|mov|avi|mkv|wmv|flv|webm)$'));
+  }
+
+  /// Whether duplicate is supported for all selected assets
+  static bool isDuplicateSupportedForSelection(Set<Asset> assets) {
+    if (assets.isEmpty) return false;
+
+    // Allow only image formats we can safely process into a unique copy
+    // Unsupported: RAW and special formats (e.g., dng, heic, heif), videos, unknowns
+    final supportedImageExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp)");
+
+    for (final asset in assets) {
+      final name = asset.fileName.toLowerCase();
+
+      // Disallow videos
+      if (name.endsWith('.mp4') ||
+          name.endsWith('.mov') ||
+          name.endsWith('.avi') ||
+          name.endsWith('.mkv') ||
+          name.endsWith('.wmv') ||
+          name.endsWith('.flv') ||
+          name.endsWith('.webm')) {
+        return false;
+      }
+
+      // Disallow formats we cannot uniquely modify
+      if (name.endsWith('.dng') ||
+          name.endsWith('.heic') ||
+          name.endsWith('.heif') ||
+          name.endsWith('.avif')) {
+        return false;
+      }
+
+      // Require supported image formats
+      if (!supportedImageExtensions.hasMatch(name)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Whether copy-to-clipboard is supported for the current selection
+  /// We currently support copying only images (not videos or unsupported formats)
+  static bool isCopySupportedForSelection(Set<Asset> assets) {
+    if (assets.isEmpty) return false;
+
+    final supportedImageExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)");
+
+    for (final asset in assets) {
+      final name = asset.fileName.toLowerCase();
+
+      // Exclude videos
+      if (name.endsWith('.mp4') ||
+          name.endsWith('.mov') ||
+          name.endsWith('.avi') ||
+          name.endsWith('.mkv') ||
+          name.endsWith('.wmv') ||
+          name.endsWith('.flv') ||
+          name.endsWith('.webm')) {
+        return false;
+      }
+
+      // Require recognized image formats
+      if (!supportedImageExtensions.hasMatch(name)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
@@ -685,12 +769,14 @@ class ClipboardPasteResult {
   final int savedCount;
   final int errorCount;
   final List<String> errors;
+  final List<Asset> newAssets;
 
   const ClipboardPasteResult({
     required this.success,
     required this.savedCount,
     required this.errorCount,
     required this.errors,
+    this.newAssets = const [],
   });
 
   bool get hasErrors => errorCount > 0;

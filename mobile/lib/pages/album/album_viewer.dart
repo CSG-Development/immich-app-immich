@@ -130,6 +130,16 @@ class AlbumViewer extends HookConsumerWidget {
         MultiselectGrid(
           key: const ValueKey("albumViewerMultiselectGrid"),
           renderListProvider: albumTimelineProvider(album.id),
+          onAfterDuplicate: (newAssets) async {
+            // Link newly duplicated assets to this album
+            await ref.read(albumProvider.notifier).addAssets(album, newAssets);
+            // Perform a canonical refresh to prevent duplicate album entries
+            if (album.remoteId != null) {
+              await ref.read(albumProvider.notifier).refreshRemoteAlbums();
+            } else {
+              await ref.read(albumProvider.notifier).refreshDeviceAlbums();
+            }
+          },
           topWidget: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
