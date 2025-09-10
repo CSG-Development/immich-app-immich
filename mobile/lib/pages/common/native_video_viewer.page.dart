@@ -23,6 +23,7 @@ import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/utils/debounce.dart';
 import 'package:immich_mobile/utils/hooks/interval_hook.dart';
 import 'package:immich_mobile/widgets/asset_viewer/custom_video_player_controls.dart';
+import 'package:immich_mobile/widgets/asset_viewer/airplay_loader.dart';
 import 'package:logging/logging.dart';
 import 'package:native_video_player/native_video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -156,9 +157,9 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       [isAirPlayEnabled],
     );
 
-    // When AirPlay turns on, prepare local media
+    // When AirPlay turns on, prepare local media (iOS only)
     useEffect(() {
-      final needsPreparation = isAirPlayEnabled && ((asset.isVideo && asset.isRemote && asset.local == null) || asset.isImage);
+      final needsPreparation = Platform.isIOS && isAirPlayEnabled && ((asset.isVideo && asset.isRemote && asset.local == null) || asset.isImage);
       if (needsPreparation) {
         isPreparingAirPlay.value = true;
         isSourceReady.value = false;
@@ -523,6 +524,8 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       }
     });
 
+    final showAirplayOverlay = Platform.isIOS && isAirPlayEnabled && (!isSourceReady.value || isPreparingAirPlay.value);
+
     return Stack(
       children: [
         // This remains under the video to avoid flickering
@@ -538,7 +541,7 @@ class NativeVideoViewerPage extends HookConsumerWidget {
                 key: ValueKey(asset),
                 aspectRatio: aspectRatio.value!,
                 child: isCurrent
-                    && (!isAirPlayEnabled || isSourceReady.value)
+                    && (!Platform.isIOS || !isAirPlayEnabled || isSourceReady.value)
                     ? NativeVideoPlayerView(
                         key: ValueKey('${asset.id}_${isAirPlayEnabled ? 'airplay' : 'direct'}'),
                         onViewReady: initController,
@@ -547,18 +550,16 @@ class NativeVideoViewerPage extends HookConsumerWidget {
               ),
             ),
           ),
-        if (asset.isImage && ((isAirPlayEnabled && !isSourceReady.value) || isPreparingAirPlay.value))
+        if (showAirplayOverlay)
           Positioned.fill(
             child: IgnorePointer(
               child: Container(
                 color: Colors.black26,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const AirplayLoader(),
               ),
             ),
           ),
-        if (showControls && !(isAirPlayEnabled && !isSourceReady.value) && !isPreparingAirPlay.value)
+        if (showControls && !showAirplayOverlay)
           const Center(child: CustomVideoPlayerControls()),
       ],
     );
