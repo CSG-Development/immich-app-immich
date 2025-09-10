@@ -30,3 +30,15 @@
 -keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
 
 ##---------------End: proguard configuration for Gson  ----------
+ 
+##---------------Begin: ffmpeg-kit keep rules  ----------
+# Keep all ffmpeg-kit classes to prevent R8/ProGuard from stripping JNI entry points
+-keep class com.antonkarpenko.ffmpegkit.** { *; }
+-keep class com.arthenica.ffmpegkit.** { *; }
+-keep class com.arthenica.mobileffmpeg.** { *; }
+
+# Don't warn about ffmpeg-kit internals
+-dontwarn com.antonkarpenko.ffmpegkit.**
+-dontwarn com.arthenica.ffmpegkit.**
+-dontwarn com.arthenica.mobileffmpeg.**
+##---------------End: ffmpeg-kit keep rules  ----------

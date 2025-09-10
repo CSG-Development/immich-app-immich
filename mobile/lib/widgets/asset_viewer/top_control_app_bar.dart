@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,7 +11,9 @@ import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/widgets/asset_viewer/cast_dialog.dart';
 import 'package:immich_mobile/widgets/asset_viewer/motion_photo_button.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
@@ -193,6 +197,19 @@ class TopControlAppBar extends HookConsumerWidget {
       );
     }
 
+    Widget buildAirPlayButton() {
+      return IconButton(
+        onPressed: () async {
+          AirplayService.showAirPlayMenu();
+        },
+        icon: Icon(
+          Icons.airplay,
+          size: 20.0,
+          color: ref.watch(airplayProvider) ? context.primaryColor : Colors.grey[200],
+        ),
+      );
+    }
+
     bool isInHomePage = ref.read(tabProvider.notifier).state == TabEnum.home;
     bool? isInTrash = ref.read(currentAssetProvider)?.isTrashed;
 
@@ -219,6 +236,7 @@ class TopControlAppBar extends HookConsumerWidget {
           buildAddToAlbumButton(),
         if (isCasting || (asset.isRemote && websocketConnected))
           buildCastButton(),
+        if (Platform.isIOS) buildAirPlayButton(),
         if (asset.isTrashed) buildRestoreButton(),
         if (album != null && album.shared && !isInLockedView)
           buildActivitiesButton(),

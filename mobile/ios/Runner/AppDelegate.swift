@@ -7,6 +7,7 @@ import permission_handler_apple
 import photo_manager
 import shared_preferences_foundation
 import UIKit
+import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -18,6 +19,26 @@ import UIKit
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     }
+    
+    func startAirPlayManager(flutterViewController: FlutterViewController) {
+            let airPlayChannel = FlutterMethodChannel(name: "stxphotos/airplay", binaryMessenger: flutterViewController.binaryMessenger)
+            AirPlayManager.shared.methodChannel = airPlayChannel
+            airPlayChannel.setMethodCallHandler { [weak self] (call, result) in
+                if (call.method == "showAirPlayMenu") {
+                    AirPlayManager.shared.setWindow(self?.window)
+                    AirPlayManager.shared.showAirPlayMenu()
+                    result(nil)
+                } else if (call.method == "isAirPlayConnected"){
+                    result(AirPlayManager.shared.isAirPlayActive())
+                } else {
+                    result(FlutterMethodNotImplemented)
+                }
+            }
+            AirPlayManager.shared.startObservingRoutesChange()
+        }
+
+
+    configureAudioSession()
 
     GeneratedPluginRegistrant.register(with: self)
     BackgroundServicePlugin.registerBackgroundProcessing()
@@ -30,6 +51,8 @@ import UIKit
 
     NativeClipboardApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: ClipboardMessagesImpl())
 
+    startAirPlayManager(flutterViewController: controller)
+    
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in
       if !registry.hasPlugin("org.cocoapods.path-provider-foundation") {
         PathProviderPlugin.register(with: registry.registrar(forPlugin: "org.cocoapods.path-provider-foundation")!)
@@ -58,4 +81,17 @@ import UIKit
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+}
+
+private func configureAudioSession() {
+    do {
+        try AVAudioSession.sharedInstance().setCategory(
+            .playback,
+            mode: .moviePlayback,
+            policy: .longFormVideo,
+            options: [.allowAirPlay, .allowBluetooth, .allowBluetoothA2DP]
+        )
+        try AVAudioSession.sharedInstance().setActive(true)
+    } catch {
+    }
 }
