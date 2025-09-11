@@ -42,6 +42,7 @@ class MultiselectGrid extends HookConsumerWidget {
     this.onRemoveFromAlbum,
     this.updateAfterDeletedRemote,
     this.topWidget,
+    this.onAfterDuplicate,
     this.stackEnabled = false,
     this.dragScrollLabelEnabled = true,
     this.archiveEnabled = false,
@@ -61,6 +62,7 @@ class MultiselectGrid extends HookConsumerWidget {
   final Future<bool> Function(Iterable<Asset>)? onRemoveFromAlbum;
   final Future<bool> Function(Iterable<Asset>)? updateAfterDeletedRemote;
   final Widget? topWidget;
+  final Future<void> Function(List<Asset> newAssets)? onAfterDuplicate;
   final bool stackEnabled;
   final bool dragScrollLabelEnabled;
   final bool archiveEnabled;
@@ -356,6 +358,9 @@ class MultiselectGrid extends HookConsumerWidget {
         );
         
         if (result.success) {
+          if (onAfterDuplicate != null && result.newAssets.isNotEmpty) {
+            await onAfterDuplicate!(result.newAssets);
+          }
           if (result.hasErrors) {
             // Partial success with errors
             // Silent error handling
@@ -661,8 +666,12 @@ class MultiselectGrid extends HookConsumerWidget {
                       () => onRemoveFromAlbum!(selection.value),
                     )
                   : null,
-              onCopyToClipboard: () async => onCopyToClipboard(),
-              onDuplicate: () async => onDuplicate(),
+              onCopyToClipboard: ClipboardService.isCopySupportedForSelection(selection.value)
+                  ? () async => onCopyToClipboard()
+                  : null,
+              onDuplicate: ClipboardService.isDuplicateSupportedForSelection(selection.value)
+                  ? () async => onDuplicate()
+                  : null,
             ),
         ],
       ),
