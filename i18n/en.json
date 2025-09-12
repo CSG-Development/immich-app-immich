@@ -1020,7 +1020,9 @@
     "unable_to_update_settings": "Unable to update settings",
     "unable_to_update_timeline_display_status": "Unable to update timeline display status",
     "unable_to_update_user": "Unable to update user",
-    "unable_to_upload_file": "Unable to upload file"
+    "unable_to_upload_file": "Unable to upload file",
+    "unable_to_upload_file_type": "Upload failed. This file type is not supported.",
+    "unsupported_file_type_notification": "Unable to upload file <b>{filename}</b>. The selected file type is not supported."
   },
   "exif": "Exif",
   "exif_bottom_sheet_description": "Add Description...",

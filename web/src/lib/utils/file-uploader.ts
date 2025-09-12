@@ -1,10 +1,11 @@
+import FormatMsg from '$lib/components/shared-components/format-msg.svelte';
 import { ErrorTexts } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { UploadState } from '$lib/models/upload-asset';
 import { uploadAssetsStore } from '$lib/stores/upload';
 import { uploadRequest } from '$lib/utils';
-import { addAssetsToAlbum } from '$lib/utils/asset-utils';
+import { addAssetsToAlbum, isWebSupportedImageMimeType } from '$lib/utils/asset-utils';
 import { ExecutorQueue } from '$lib/utils/executor-queue';
 import { asQueryString } from '$lib/utils/shared-links';
 import {
@@ -207,19 +208,23 @@ async function fileUploader({
         });
         responseData = response.data;
       } else {
-        const response = await uploadRequest<AssetMediaResponseDto>({
-          url: getBaseUrl() + '/assets' + (queryParams ? `?${queryParams}` : ''),
-          data: formData,
-          onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
-          signal,
-          onAbort,
-        });
+        if (isWebSupportedImageMimeType(assetFile.type)) {
+          const response = await uploadRequest<AssetMediaResponseDto>({
+            url: getBaseUrl() + '/assets' + (queryParams ? `?${queryParams}` : ''),
+            data: formData,
+            onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
+            signal,
+            onAbort,
+          });
 
-        if (![200, 201].includes(response.status)) {
-          throw new Error($t('errors.unable_to_upload_file'));
+          if (![200, 201].includes(response.status)) {
+            throw new Error($t('errors.unable_to_upload_file'));
+          }
+
+          responseData = response.data;
+        } else {
+          throw new Error($t('errors.unable_to_upload_file_type'));
         }
-
-        responseData = response.data;
       }
     }
 
@@ -250,9 +255,22 @@ async function fileUploader({
     return responseData.id;
   } catch (error) {
     if (!signal || !signal.aborted) {
-      const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
-      uploadAssetsStore.track('error');
-      uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
+      if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
+        const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {
+          type: FormatMsg,
+          props: {
+            key: 'errors.unsupported_file_type_notification',
+            values: { filename: assetFile.name },
+          },
+        });
+        uploadAssetsStore.track('error');
+        uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.UNSUPPORTED_TYPE, error: errorMessage });
+      } else {
+        const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
+        uploadAssetsStore.track('error');
+        uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
+      }
+
       return;
     }
   }

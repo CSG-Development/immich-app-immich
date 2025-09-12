@@ -1,4 +1,5 @@
 import { isHttpError } from '@immich/sdk';
+import type { Component } from 'svelte';
 import { notificationController, NotificationType } from '../components/shared-components/notification/notification';
 
 export function getServerErrorMessage(error: unknown) {
@@ -23,7 +24,7 @@ interface ApiError extends Error {
   status: number;
 }
 
-export function handleError(error: unknown, message: string) {
+export function handleError(error: unknown, message: string, component?: Component) {
   if ((error as ApiError)?.name === 'AbortError') {
     return;
   }
@@ -38,7 +39,11 @@ export function handleError(error: unknown, message: string) {
 
     const errorMessage = serverMessage || message;
 
-    notificationController.show({ message: errorMessage, type: NotificationType.Error });
+    notificationController.show({
+      message: errorMessage,
+      type: NotificationType.Error,
+      ...(!!component ? { component } : {}),
+    });
 
     return errorMessage;
   } catch (error) {
