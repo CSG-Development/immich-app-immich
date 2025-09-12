@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:auto_route/auto_route.dart';
@@ -271,29 +272,33 @@ class MapPage extends HookConsumerWidget {
           ? Scaffold(
               extendBodyBehindAppBar: true,
               appBar: MapAppBar(selectedAssets: selectedAssets),
-              body: Stack(
-                children: [
-                  _MapWithMarker(
-                    initialLocation: initialLocation,
-                    style: style,
-                    selectedMarker: selectedMarker,
-                    onMapCreated: onMapCreated,
-                    onMapMoved: onMapMoved,
-                    onMapClicked: onMarkerClicked,
-                    onStyleLoaded: reloadLayers,
-                    onMarkerTapped: onMarkerTapped,
-                  ),
-                  // Should be a part of the body and not scaffold::bottomsheet for the
-                  // location button to be hit testable
-                  MapBottomSheet(
-                    mapEventStream: bottomSheetStreamController.stream,
-                    onGridAssetChanged: onBottomSheetScrolled,
-                    onZoomToAsset: onZoomToAsset,
-                    onAssetsSelected: onAssetsSelected,
-                    onZoomToLocation: onZoomToLocation,
-                    selectedAssets: selectedAssets,
-                  ),
-                ],
+              body: SafeArea(
+                top: false,
+                bottom: _isAndroid3ButtonNav(context),
+                child: Stack(
+                  children: [
+                    _MapWithMarker(
+                      initialLocation: initialLocation,
+                      style: style,
+                      selectedMarker: selectedMarker,
+                      onMapCreated: onMapCreated,
+                      onMapMoved: onMapMoved,
+                      onMapClicked: onMarkerClicked,
+                      onStyleLoaded: reloadLayers,
+                      onMarkerTapped: onMarkerTapped,
+                    ),
+                    // Should be a part of the body and not scaffold::bottomsheet for the
+                    // location button to be hit testable
+                    MapBottomSheet(
+                      mapEventStream: bottomSheetStreamController.stream,
+                      onGridAssetChanged: onBottomSheetScrolled,
+                      onZoomToAsset: onZoomToAsset,
+                      onAssetsSelected: onAssetsSelected,
+                      onZoomToLocation: onZoomToLocation,
+                      selectedAssets: selectedAssets,
+                    ),
+                  ],
+                ),
               ),
             )
           // Two-pane
@@ -346,6 +351,18 @@ class MapPage extends HookConsumerWidget {
             ),
     );
   }
+}
+
+/// Detects if the current Android device is using 3-button navigation
+/// instead of gesture navigation
+bool _isAndroid3ButtonNav(BuildContext context) {
+  if (!Platform.isAndroid) return false;
+  // Ignore when keyboard is visible
+  if (MediaQuery.viewInsetsOf(context).bottom > 0) return false;
+
+  final viewPaddingBottom = MediaQuery.viewPaddingOf(context).bottom;
+  // Android 2-button and 3-button nav bars are typically >= 24 logical px
+  return viewPaddingBottom >= 24.0;
 }
 
 class _AssetMarkerMeta {
