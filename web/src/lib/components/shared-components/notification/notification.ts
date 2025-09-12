@@ -53,11 +53,13 @@ export const isComponentNotification = <T extends Props>(
   return 'component' in notification;
 };
 
+type ShowOptions<T extends Props = any> = NotificationOptions | ComponentNotificationOptions<T>;
+
 function createNotificationList() {
   const notificationList = writable<(Notification | ComponentNotification)[]>([]);
   let count = 1;
 
-  const show = <T>(options: T extends Props ? ComponentNotificationOptions<T> : NotificationOptions) => {
+  const show = <T extends Props>(options: ShowOptions<T>) => {
     notificationList.update((currentList) => {
       currentList.push({
         id: count++,

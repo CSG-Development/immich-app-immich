@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
   import { ErrorTexts } from '$lib/constants';
+  import { UploadState } from '$lib/models/upload-asset';
   import { locale } from '$lib/stores/preferences.store';
   import { uploadAssetsStore } from '$lib/stores/upload';
   import { uploadExecutionQueue } from '$lib/utils/file-uploader';
@@ -26,6 +27,10 @@
   };
 
   let isDisabled = $derived(false);
+
+  const isLoading =
+    $isUploading &&
+    $uploadAssetsStore.some((asset) => asset.state === UploadState.PENDING || asset.state === UploadState.STARTED);
 
   $effect(() => {
     if ($isUploading) {
@@ -80,7 +85,7 @@
                 },
               })}
             </p>
-            <p class="immich-form-label text-xs">
+            <p class="immich-form-label text-xs w-[190px]">
               {$t('upload_status_uploaded')}
               <span class="text-success">{$stats.success.toLocaleString($locale)}</span>
               -
@@ -150,10 +155,10 @@
           {/each}
         </div>
         <div class="flex items-baseline">
-          {#if $isUploading}
+          {#if isLoading}
             <span {...$uploadAssetsStore.length === 1 && { class: 'ml-auto mr-auto' }}>{$t('asset_uploading')}</span>
           {/if}
-          {#if $isUploading && $uploadAssetsStore.length > 1}
+          {#if isLoading && $uploadAssetsStore.length > 1}
             <Button
               type="button"
               size="small"

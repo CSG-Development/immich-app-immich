@@ -369,6 +369,15 @@ if (isSafari) {
 /**
  * Returns true if the asset is an image supported by web browsers, false otherwise
  */
+
+export function isWebSupportedImageMimeType(type: string): boolean {
+  if (!type) {
+    return false;
+  }
+
+  return supportedImageMimeTypes.has(type);
+}
+
 export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
   if (!asset.originalMimeType) {
     return false;
