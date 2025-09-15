@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -118,15 +121,39 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF05070E),
-      body: SizedBox.expand(
-        child: Image(
-          image: AssetImage('assets/immich-splash.png'),
-          filterQuality: FilterQuality.medium,
-          fit: BoxFit.contain,
+    final isAndroid = Platform.isAndroid;
+    final backgroundColor = isAndroid
+        ? const Color(0xFF05070E)
+        : Theme.of(context).colorScheme.surface;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _splashOverlayStyle(context),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: const SizedBox.expand(
+          child: Image(
+            image: AssetImage('assets/immich-splash.png'),
+            filterQuality: FilterQuality.medium,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
   }
+}
+
+SystemUiOverlayStyle _splashOverlayStyle(BuildContext context) {
+  // Splash is dark; prefer light icons. Keep gesture nav edge-to-edge.
+  Color navColor = Colors.transparent;
+  Brightness iconBrightness = Brightness.light;
+
+  if (Platform.isAndroid) {
+    // Force dark nav bar on splash for all Android modes
+    navColor = const Color(0xFF000000);
+  }
+
+  return SystemUiOverlayStyle(
+    systemNavigationBarColor: navColor,
+    systemNavigationBarIconBrightness: iconBrightness,
+  );
 }
