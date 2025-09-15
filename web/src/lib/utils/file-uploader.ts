@@ -93,21 +93,18 @@ export const fileUploadHandler = async ({
   replaceAssetId,
   isLockedAssets = false,
 }: FileUploadHandlerParams): Promise<string[]> => {
-  const extensions = uploadManager.getExtensions();
   const promises = [];
   for (const file of files) {
     const controller = new AbortController();
     const signal = controller.signal;
     const name = file.name.toLowerCase();
-    if (extensions.some((extension) => name.endsWith(extension))) {
-      const deviceAssetId = getDeviceAssetId(file);
-      uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId, controller });
-      promises.push(
-        uploadExecutionQueue.addTask(() =>
-          fileUploader({ assetFile: file, deviceAssetId, albumId, replaceAssetId, isLockedAssets, signal }),
-        ),
-      );
-    }
+    const deviceAssetId = getDeviceAssetId(file);
+    uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId, controller });
+    promises.push(
+      uploadExecutionQueue.addTask(() =>
+        fileUploader({ assetFile: file, deviceAssetId, albumId, replaceAssetId, isLockedAssets, signal }),
+      ),
+    );
   }
 
   const results = await Promise.all(promises);
@@ -164,8 +161,14 @@ async function fileUploader({
       formData.append('visibility', AssetVisibility.Locked);
     }
 
+    const extensions = uploadManager.getExtensions();
+
     let responseData: { id: string; status: AssetMediaStatus; isTrashed?: boolean } | undefined;
-    if (crypto?.subtle?.digest && !authManager.isSharedLink) {
+    if (
+      crypto?.subtle?.digest &&
+      !authManager.isSharedLink &&
+      extensions.some((extension) => assetFile.name.toLowerCase().endsWith(extension))
+    ) {
       uploadAssetsStore.updateItem(deviceAssetId, { message: $t('asset_hashing') });
       await tick();
       try {
