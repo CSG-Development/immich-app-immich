@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'search_filter.provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<String>> getSearchSuggestions(
   Ref ref,
   SearchSuggestionType type, {

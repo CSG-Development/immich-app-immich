@@ -7,7 +7,7 @@ part of 'search_filter.provider.dart';
 // **************************************************************************
 
 String _$getSearchSuggestionsHash() =>
-    r'bc30a65e8fcb273cbd07bab876baf67bcc794737';
+    r'a1a971072002dbfe3cfa3cd05c688b8a355234a8';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -85,8 +85,7 @@ class GetSearchSuggestionsFamily extends Family<AsyncValue<List<String>>> {
 }
 
 /// See also [getSearchSuggestions].
-class GetSearchSuggestionsProvider
-    extends AutoDisposeFutureProvider<List<String>> {
+class GetSearchSuggestionsProvider extends FutureProvider<List<String>> {
   /// See also [getSearchSuggestions].
   GetSearchSuggestionsProvider(
     SearchSuggestionType type, {
@@ -162,7 +161,7 @@ class GetSearchSuggestionsProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<String>> createElement() {
+  FutureProviderElement<List<String>> createElement() {
     return _GetSearchSuggestionsProviderElement(this);
   }
 
@@ -191,7 +190,7 @@ class GetSearchSuggestionsProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin GetSearchSuggestionsRef on AutoDisposeFutureProviderRef<List<String>> {
+mixin GetSearchSuggestionsRef on FutureProviderRef<List<String>> {
   /// The parameter `type` of this provider.
   SearchSuggestionType get type;
 
@@ -209,8 +208,7 @@ mixin GetSearchSuggestionsRef on AutoDisposeFutureProviderRef<List<String>> {
 }
 
 class _GetSearchSuggestionsProviderElement
-    extends AutoDisposeFutureProviderElement<List<String>>
-    with GetSearchSuggestionsRef {
+    extends FutureProviderElement<List<String>> with GetSearchSuggestionsRef {
   _GetSearchSuggestionsProviderElement(super.provider);
 
   @override
