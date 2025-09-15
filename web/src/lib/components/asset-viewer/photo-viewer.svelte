@@ -13,7 +13,7 @@
   import { SlideshowLook, SlideshowState, slideshowLookCssMapping, slideshowStore } from '$lib/stores/slideshow.store';
   import { photoZoomState } from '$lib/stores/zoom-image.store';
   import { getAssetOriginalUrl, getAssetThumbnailUrl, handlePromiseError } from '$lib/utils';
-  import { canCopyImageToClipboard, copyImageToClipboard, isWebCompatibleImage } from '$lib/utils/asset-utils';
+  import { canCopyImageToClipboard, copyImageToClipboard, isWebCompatibleAsset } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { getBoundingBox } from '$lib/utils/people-utils';
   import { cancelImageUrl } from '$lib/utils/sw-messaging';
@@ -148,7 +148,7 @@
 
   const targetImageSize = $derived.by(() => {
     if ($alwaysLoadOriginalFile || forceUseOriginal || originalImageLoaded) {
-      return isWebCompatibleImage(asset) ? 'original' : AssetMediaSize.Fullsize;
+      return isWebCompatibleAsset(asset) ? 'original' : AssetMediaSize.Fullsize;
     }
 
     return AssetMediaSize.Preview;
