@@ -1510,6 +1510,10 @@ abstract class IntlKeys {
       'errors.unable.to.update.timeline.display.status';
   static const errors_unable_to_update_user = 'errors.unable.to.update.user';
   static const errors_unable_to_upload_file = 'errors.unable.to.upload.file';
+  static const errors_unable_to_upload_file_type =
+      'errors.unable.to.upload.file.type';
+  static const errors_unsupported_file_type_notification =
+      'errors.unsupported.file.type.notification';
   static const exif = 'exif';
   static const exif_bottom_sheet_description = 'exif_bottom_sheet_description';
   static const exif_bottom_sheet_description_error =
@@ -2803,6 +2807,7 @@ abstract class IntlKeys {
       'curator.login.form.loading.text';
   static const curator_login_form_version_check_error =
       'curator.login.form.version.check.error';
+  static const curator_search_no_result = 'curator.search.no.result';
   static const paste = 'paste';
   static const pasting = 'pasting';
   static const duplicate = 'duplicate';

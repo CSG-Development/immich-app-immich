@@ -96,7 +96,7 @@ class SearchPage extends HookConsumerWidget {
 
       if (!hasResult) {
         context.showSnackBar(
-          searchInfoSnackBar('search_no_result'.tr()),
+          searchInfoSnackBar('curator.search_no_result'.tr()),
         );
       }
 

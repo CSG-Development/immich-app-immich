@@ -36460,7 +36460,11 @@ class CodegenLoader extends AssetLoader {
       "unable_to_update_timeline_display_status":
           "Unable to update timeline display status",
       "unable_to_update_user": "Unable to update user",
-      "unable_to_upload_file": "Unable to upload file"
+      "unable_to_upload_file": "Unable to upload file",
+      "unable_to_upload_file_type":
+          "Upload failed. This file type is not supported.",
+      "unsupported_file_type_notification":
+          "Unable to upload file <b>{filename}</b>. The selected file type is not supported."
     },
     "exif": "Exif",
     "exif_bottom_sheet_description": "Add Description...",
@@ -37735,7 +37739,9 @@ class CodegenLoader extends AssetLoader {
       "login_form_endpoint_hint": "No device detected",
       "login_form_password_hint": "Enter password",
       "login_form_loading_text": "Logging in to your account",
-      "login_form_version_check_error": "Error checking version compatibility"
+      "login_form_version_check_error": "Error checking version compatibility",
+      "search_no_result":
+          "No results found. Try different search terms or filters."
     },
     "paste": "Paste",
     "pasting": "Pasting...",
