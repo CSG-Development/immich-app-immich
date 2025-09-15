@@ -35168,6 +35168,7 @@ class CodegenLoader extends AssetLoader {
     "add_a_location": "Add a location",
     "add_a_name": "Add a name",
     "add_a_title": "Add a title",
+    "add_birthday": "Add a birthday",
     "add_endpoint": "Add endpoint",
     "add_exclusion_pattern": "Add exclusion pattern",
     "add_import_path": "Add import path",
@@ -35181,6 +35182,9 @@ class CodegenLoader extends AssetLoader {
     "add_to_album": "Add to album",
     "add_to_album_bottom_sheet_added": "Added to {album}",
     "add_to_album_bottom_sheet_already_exists": "Already in {album}",
+    "add_to_album_toggle": "Toggle selection for {album}",
+    "add_to_albums": "Add to albums",
+    "add_to_albums_count": "Add to albums ({count})",
     "add_to_shared_album": "Add to shared album",
     "add_url": "Add URL",
     "added_to_archive": "Added to archive",
@@ -35189,9 +35193,9 @@ class CodegenLoader extends AssetLoader {
     "admin": {
       "add_exclusion_pattern_description":
           "Add exclusion patterns. Globbing using *, **, and ? is supported. To ignore all files in any directory named \"Raw\", use \"**/Raw/**\". To ignore all files ending in \".tif\", use \"**/*.tif\". To ignore an absolute path, use \"/path/to/ignore/**\".",
+      "admin_user": "Admin User",
       "asset_offline_description":
           "This external library asset is no longer found on disk and has been moved to trash. If the file was moved within the library, check your timeline for the new corresponding asset. To restore this asset, please ensure that the file path below can be accessed by Curator Photos and scan the library.",
-      "admin_user": "Admin User",
       "authentication_settings": "Authentication Settings",
       "authentication_settings_description":
           "Manage password, OAuth, and other authentication settings",
@@ -35203,6 +35207,18 @@ class CodegenLoader extends AssetLoader {
       "backup_database": "Create Database Dump",
       "backup_database_enable_description": "Enable database dumps",
       "backup_keep_last_amount": "Amount of previous dumps to keep",
+      "backup_onboarding_1_description":
+          "offsite copy in the cloud or at another physical location.",
+      "backup_onboarding_2_description":
+          "local copies on different devices. This includes the main files and a backup of those files locally.",
+      "backup_onboarding_3_description":
+          "total copies of your data, including the original files. This includes 1 offsite copy and 2 local copies.",
+      "backup_onboarding_description":
+          "A <backblaze-link>3-2-1 backup strategy</backblaze-link> is recommended to protect your data. You should keep copies of your uploaded photos/videos as well as the Curator Photos database for a comprehensive backup solution.",
+      "backup_onboarding_footer":
+          "For more information about backing up Curator Photos, please refer to the <link>documentation</link>.",
+      "backup_onboarding_parts_title": "A 3-2-1 backup includes:",
+      "backup_onboarding_title": "Backups",
       "backup_settings": "Database Dump Settings",
       "backup_settings_description": "Manage database dump settings.",
       "cleared_jobs": "Cleared jobs for: {job}",
@@ -35376,6 +35392,26 @@ class CodegenLoader extends AssetLoader {
       "migration_job": "Migration",
       "migration_job_description":
           "Migrate thumbnails for assets and faces to the latest folder structure",
+      "nightly_tasks_cluster_faces_setting_description":
+          "Run facial recognition on newly detected faces",
+      "nightly_tasks_cluster_new_faces_setting": "Cluster new faces",
+      "nightly_tasks_database_cleanup_setting": "Database cleanup tasks",
+      "nightly_tasks_database_cleanup_setting_description":
+          "Clean up old, expired data from the database",
+      "nightly_tasks_generate_memories_setting": "Generate memories",
+      "nightly_tasks_generate_memories_setting_description":
+          "Create new memories from assets",
+      "nightly_tasks_missing_thumbnails_setting": "Generate missing thumbnails",
+      "nightly_tasks_missing_thumbnails_setting_description":
+          "Queue assets without thumbnails for thumbnail generation",
+      "nightly_tasks_settings": "Nightly Tasks Settings",
+      "nightly_tasks_settings_description": "Manage nightly tasks",
+      "nightly_tasks_start_time_setting": "Start time",
+      "nightly_tasks_start_time_setting_description":
+          "The time at which the server starts running the nightly tasks",
+      "nightly_tasks_sync_quota_usage_setting": "Sync quota usage",
+      "nightly_tasks_sync_quota_usage_setting_description":
+          "Update user storage quota, based on current usage",
       "no_paths_added": "No paths added",
       "no_pattern_added": "No pattern added",
       "note_apply_storage_label_previous_assets":
@@ -35422,6 +35458,9 @@ class CodegenLoader extends AssetLoader {
       "oauth_mobile_redirect_uri_override": "Mobile redirect URI override",
       "oauth_mobile_redirect_uri_override_description":
           "Enable when OAuth provider does not allow a mobile URI, like ''{callback}''",
+      "oauth_role_claim": "Role Claim",
+      "oauth_role_claim_description":
+          "Automatically grant admin access based on the presence of this claim. The claim may have either 'user' or 'admin'.",
       "oauth_settings": "OAuth",
       "oauth_settings_description": "Manage OAuth login settings",
       "oauth_settings_more_details":
@@ -35619,6 +35658,11 @@ class CodegenLoader extends AssetLoader {
           "Number of days to keep the assets in trash before permanently removing them",
       "trash_settings": "Trash Settings",
       "trash_settings_description": "Manage trash settings",
+      "unlink_all_oauth_accounts": "Unlink all OAuth accounts",
+      "unlink_all_oauth_accounts_description":
+          "Remember to unlink all OAuth accounts before migrating to a new provider.",
+      "unlink_all_oauth_accounts_prompt":
+          "Are you sure you want to unlink all OAuth accounts? This will reset the OAuth ID for each user and cannot be undone.",
       "user_cleanup_job": "User cleanup",
       "user_delete_delay":
           "<b>{user}</b>'s account and assets will be scheduled for permanent deletion in {delay, plural, one {# day} other {# days}}.",
@@ -35655,17 +35699,22 @@ class CodegenLoader extends AssetLoader {
     "admin_password": "Admin Password",
     "administration": "Administration",
     "advanced": "Advanced",
+    "advanced_settings_beta_timeline_subtitle": "Try the new app experience",
+    "advanced_settings_beta_timeline_title": "Beta Timeline",
     "advanced_settings_enable_alternate_media_filter_subtitle":
         "Use this option to filter media during sync based on alternate criteria. Only try this if you have issues with the app detecting all albums.",
     "advanced_settings_enable_alternate_media_filter_title":
         "[EXPERIMENTAL] Use alternate device album sync filter",
     "advanced_settings_log_level_title": "Log level: {level}",
     "advanced_settings_prefer_remote_subtitle":
-        "Some devices are painfully slow to load thumbnails from assets on the device. Activate this setting to load remote images instead.",
+        "Some devices are painfully slow to load thumbnails from local assets. Activate this setting to load remote images instead.",
     "advanced_settings_prefer_remote_title": "Prefer remote images",
     "advanced_settings_proxy_headers_subtitle":
         "Define proxy headers Curator Photos should send with each network request",
     "advanced_settings_proxy_headers_title": "Proxy Headers",
+    "advanced_settings_readonly_mode_subtitle":
+        "Enables the read-only mode where the photos can be only viewed, things like selecting multiple images, sharing, casting, delete are all disabled. Enable/Disable read-only via user avatar from the main screen",
+    "advanced_settings_readonly_mode_title": "Read-only Mode",
     "advanced_settings_self_signed_ssl_subtitle":
         "Skips SSL certificate verification for the server endpoint. Required for self-signed certificates.",
     "advanced_settings_self_signed_ssl_title":
@@ -35690,6 +35739,7 @@ class CodegenLoader extends AssetLoader {
         "Are you sure you want to delete the album {album}?",
     "album_delete_confirmation_description":
         "If this album is shared, other users will not be able to access it anymore.",
+    "album_deleted": "Album deleted",
     "album_info_card_backup_album_excluded": "EXCLUDED",
     "album_info_card_backup_album_included": "INCLUDED",
     "album_info_updated": "Album info updated",
@@ -35699,6 +35749,7 @@ class CodegenLoader extends AssetLoader {
     "album_options": "Album options",
     "album_remove_user": "Remove user?",
     "album_remove_user_confirmation": "Are you sure you want to remove {user}?",
+    "album_search_not_found": "No albums found matching your search",
     "album_share_no_users":
         "Looks like you have shared this album with all users or you don't have any user to share with.",
     "album_updated": "Album updated",
@@ -35726,6 +35777,7 @@ class CodegenLoader extends AssetLoader {
         "Initial asset sort order when creating new albums.",
     "albums_feature_description":
         "Collections of assets that can be shared with other users.",
+    "albums_on_device_count": "Albums on device ({count})",
     "all": "All",
     "all_albums": "All albums",
     "all_people": "All people",
@@ -35746,7 +35798,9 @@ class CodegenLoader extends AssetLoader {
     "app_bar_signout_dialog_title": "Sign out",
     "app_settings": "App Settings",
     "appears_in": "Appears in",
+    "apply_count": "Apply ({count, number})",
     "archive": "Archive",
+    "archive_action_prompt": "{count} added to Archive",
     "archive_or_unarchive_photo": "Archive or unarchive photo",
     "archive_page_no_archived_assets": "No archived assets found",
     "archive_page_title": "Archive ({count})",
@@ -35789,8 +35843,12 @@ class CodegenLoader extends AssetLoader {
         "Added {count, plural, one {# asset} other {# assets}}",
     "assets_added_to_album_count":
         "Added {count, plural, one {# asset} other {# assets}} to the album",
+    "assets_added_to_albums_count":
+        "Added {assetTotal, plural, one {# asset} other {# assets}} to {albumTotal, plural, one {# album} other {# albums}}",
     "assets_cannot_be_added_to_album_count":
         "{count, plural, one {Asset} other {Assets}} cannot be added to the album",
+    "assets_cannot_be_added_to_albums":
+        "{count, plural, one {Asset} other {Assets}} cannot be added to any of the albums",
     "assets_count": "{count, plural, one {# asset} other {# assets}}",
     "assets_deleted_permanently": "{count} asset(s) deleted permanently",
     "assets_deleted_permanently_from_server":
@@ -35819,6 +35877,8 @@ class CodegenLoader extends AssetLoader {
         "{count} asset(s) trashed from the Curator Photos server",
     "assets_were_part_of_album_count":
         "{count, plural, one {Asset was} other {Assets were}} already part of the album",
+    "assets_were_part_of_albums_count":
+        "{count, plural, one {Asset was} other {Assets were}} already part of the albums",
     "authorized_devices": "Authorized Devices",
     "automatic_endpoint_switching_subtitle":
         "Connect locally over designated Wi-Fi when available and use alternative connections elsewhere",
@@ -35829,6 +35889,7 @@ class CodegenLoader extends AssetLoader {
     "background_location_permission": "Background location permission",
     "background_location_permission_content":
         "In order to switch networks when running in the background, Curator Photos must *always* have precise location access so the app can read the Wi-Fi network's name",
+    "backup": "Backup",
     "backup_album_selection_page_albums_device": "Albums on device ({count})",
     "backup_album_selection_page_albums_tap":
         "Tap to include, double tap to exclude",
@@ -35911,10 +35972,14 @@ class CodegenLoader extends AssetLoader {
         "Upload already in progress. Try after sometime",
     "backup_manual_success": "Success",
     "backup_manual_title": "Upload status",
+    "backup_options": "Backup Options",
     "backup_options_page_title": "Backup options",
     "backup_setting_subtitle":
         "Manage background and foreground upload settings",
+    "backup_settings_subtitle": "Manage upload settings",
     "backward": "Backward",
+    "beta_sync": "Beta Sync Status",
+    "beta_sync_subtitle": "Manage the new sync system",
     "biometric_auth_enabled": "Biometric authentication enabled",
     "biometric_locked_out": "You are locked out of biometric authentication",
     "biometric_no_options": "No biometric options available",
@@ -35941,7 +36006,7 @@ class CodegenLoader extends AssetLoader {
         "Clears the app's cache. This will significantly impact the app's performance until the cache has rebuilt.",
     "cache_settings_duplicated_assets_clear_button": "CLEAR",
     "cache_settings_duplicated_assets_subtitle":
-        "Photos and videos that are black listed by the app",
+        "Photos and videos that are ignore listed by the app",
     "cache_settings_duplicated_assets_title": "Duplicated Assets ({count})",
     "cache_settings_statistics_album": "Library thumbnails",
     "cache_settings_statistics_full": "Full images",
@@ -35962,6 +36027,7 @@ class CodegenLoader extends AssetLoader {
     "cancel_search": "Cancel search",
     "cancel_upload": "Cancel upload",
     "canceled": "Canceled",
+    "canceling": "Canceling",
     "cannot_merge_people": "Cannot merge people",
     "cannot_undo_this_action": "You cannot undo this action!",
     "cannot_update_the_description": "Cannot update the description",
@@ -35996,6 +36062,7 @@ class CodegenLoader extends AssetLoader {
     "clear": "Clear",
     "clear_all": "Clear all",
     "clear_all_recent_searches": "Clear all recent searches",
+    "clear_file_cache": "Clear File Cache",
     "clear_message": "Clear message",
     "clear_value": "Clear value",
     "client_cert_dialog_msg_confirm": "OK",
@@ -36072,6 +36139,7 @@ class CodegenLoader extends AssetLoader {
     "create_new_user": "Create new user",
     "create_shared_album_page_share_add_assets": "ADD ASSETS",
     "create_shared_album_page_share_select_photos": "Select Photos",
+    "create_shared_link": "Create shared link",
     "create_tag": "Create tag",
     "create_tag_description":
         "Create a new tag. For nested tags, please enter the full path of the tag including forward slashes.",
@@ -36086,6 +36154,7 @@ class CodegenLoader extends AssetLoader {
     "custom_locale": "Custom Locale",
     "custom_locale_description":
         "Format dates and numbers based on the language and the region",
+    "custom_url": "Custom URL",
     "daily_title_text_date": "E, MMM dd",
     "daily_title_text_date_year": "E, MMM dd, yyyy",
     "dark": "Dark",
@@ -36097,6 +36166,7 @@ class CodegenLoader extends AssetLoader {
     "date_of_birth_saved": "Date of birth saved successfully",
     "date_range": "Date range",
     "day": "Day",
+    "days": "Days",
     "deduplicate_all": "Deduplicate All",
     "deduplication_criteria_1": "Image size in bytes",
     "deduplication_criteria_2": "Count of EXIF data",
@@ -36107,6 +36177,9 @@ class CodegenLoader extends AssetLoader {
     "default_locale_description":
         "Format dates and numbers based on your browser locale",
     "delete": "Delete",
+    "delete_action_confirmation_message":
+        "Are you sure you want to delete this asset? This action will move the asset to the server's trash and will prompt if you want to delete it locally",
+    "delete_action_prompt": "{count} deleted",
     "delete_album": "Delete album",
     "delete_api_key_prompt": "Are you sure you want to delete this API key?",
     "delete_dialog_alert":
@@ -36125,9 +36198,12 @@ class CodegenLoader extends AssetLoader {
     "delete_key": "Delete key",
     "delete_library": "Delete Library",
     "delete_link": "Delete link",
+    "delete_local_action_prompt": "{count} deleted locally",
     "delete_local_dialog_ok_backed_up_only": "Delete Backed Up Only",
     "delete_local_dialog_ok_force": "Delete Anyway",
     "delete_others": "Delete others",
+    "delete_permanently": "Delete permanently",
+    "delete_permanently_action_prompt": "{count} deleted permanently",
     "delete_shared_link": "Delete shared link",
     "delete_shared_link_dialog_title": "Delete Shared Link",
     "delete_tag": "Delete tag",
@@ -36140,6 +36216,7 @@ class CodegenLoader extends AssetLoader {
     "description_input_hint_text": "Add description...",
     "description_input_submit_error":
         "Error updating description, check the log for more details",
+    "deselect_all": "Deselect All",
     "details": "Details",
     "direction": "Direction",
     "disabled": "Disabled",
@@ -36158,6 +36235,7 @@ class CodegenLoader extends AssetLoader {
     "documentation": "Documentation",
     "done": "Done",
     "download": "Download",
+    "download_action_prompt": "Downloading {count} assets",
     "download_canceled": "Download canceled",
     "download_complete": "Download complete",
     "download_enqueue": "Download enqueued",
@@ -36188,8 +36266,12 @@ class CodegenLoader extends AssetLoader {
     "edit": "Edit",
     "edit_album": "Edit album",
     "edit_avatar": "Edit avatar",
+    "edit_birthday": "Edit birthday",
     "edit_date": "Edit date",
     "edit_date_and_time": "Edit date and time",
+    "edit_date_and_time_action_prompt": "{count} date and time edited",
+    "edit_date_and_time_by_offset": "Change date by offset",
+    "edit_date_and_time_by_offset_interval": "New date range: {from} - {to}",
     "edit_description": "Edit description",
     "edit_description_prompt": "Please select a new description:",
     "edit_exclusion_pattern": "Edit exclusion pattern",
@@ -36199,6 +36281,7 @@ class CodegenLoader extends AssetLoader {
     "edit_key": "Edit key",
     "edit_link": "Edit link",
     "edit_location": "Edit location",
+    "edit_location_action_prompt": "{count} location edited",
     "edit_location_dialog_title": "Location",
     "edit_name": "Edit name",
     "edit_people": "Edit people",
@@ -36218,6 +36301,7 @@ class CodegenLoader extends AssetLoader {
     "empty_trash_confirmation":
         "Are you sure you want to empty the trash? This will remove all the assets in trash permanently from Curator Photos.\nYou cannot undo this action!",
     "enable": "Enable",
+    "enable_backup": "Enable Backup",
     "enable_biometric_auth_description":
         "Enter your PIN code to enable biometric authentication",
     "enabled": "Enabled",
@@ -36269,6 +36353,7 @@ class CodegenLoader extends AssetLoader {
       "failed_to_load_notifications": "Failed to load notifications",
       "failed_to_load_people": "Failed to load people",
       "failed_to_remove_product_key": "Failed to remove product key",
+      "failed_to_reset_pin_code": "Failed to reset PIN code",
       "failed_to_stack_assets": "Failed to stack assets",
       "failed_to_unstack_assets": "Failed to un-stack assets",
       "failed_to_update_notification_status":
@@ -36281,6 +36366,7 @@ class CodegenLoader extends AssetLoader {
           "Profile pictures cannot have transparent pixels. Please zoom in and/or move the image.",
       "quota_higher_than_disk_size":
           "You set a quota higher than the disk size",
+      "something_went_wrong": "Something went wrong",
       "unable_to_add_album_users": "Unable to add users to album",
       "unable_to_add_assets_to_shared_link":
           "Unable to add assets to shared link",
@@ -36378,6 +36464,7 @@ class CodegenLoader extends AssetLoader {
     },
     "exif": "Exif",
     "exif_bottom_sheet_description": "Add Description...",
+    "exif_bottom_sheet_description_error": "Error updating description",
     "exif_bottom_sheet_details": "DETAILS",
     "exif_bottom_sheet_location": "LOCATION",
     "exif_bottom_sheet_people": "PEOPLE",
@@ -36399,6 +36486,8 @@ class CodegenLoader extends AssetLoader {
     "explorer": "Explorer",
     "export": "Export",
     "export_as_json": "Export as JSON",
+    "export_database": "Export Database",
+    "export_database_description": "Export the SQLite database",
     "extension": "Extension",
     "external": "External",
     "external_libraries": "External Libraries",
@@ -36411,6 +36500,7 @@ class CodegenLoader extends AssetLoader {
     "failed_to_load_assets": "Failed to load assets",
     "failed_to_load_folder": "Failed to load folder",
     "favorite": "Favorite",
+    "favorite_action_prompt": "{count} added to Favorites",
     "favorite_or_unfavorite_photo": "Favorite or unfavorite photo",
     "favorites": "Favorites",
     "favorites_page_no_favorites": "No favorite assets found",
@@ -36425,17 +36515,27 @@ class CodegenLoader extends AssetLoader {
     "filter_people": "Filter people",
     "filter_places": "Filter places",
     "find_them_fast": "Find them fast by name with search",
+    "first": "First",
     "fix_incorrect_match": "Fix incorrect match",
     "folder": "Folder",
     "folder_not_found": "Folder not found",
     "folders": "Folders",
     "folders_feature_description":
         "Browsing the folder view for the photos and videos on the file system",
+    "forgot_pin_code_question": "Forgot your PIN?",
     "forward": "Forward",
     "gcast_enabled": "Google Cast",
     "gcast_enabled_description":
         "This feature loads external resources from Google in order to work.",
     "general": "General",
+    "geolocation_instruction_all_have_location":
+        "All assets for this date already have location data. Try showing all assets or select a different date",
+    "geolocation_instruction_location":
+        "Click on an asset with GPS coordinates to use its location, or select a location directly from the map",
+    "geolocation_instruction_no_date":
+        "Select a date to manage location data for photos and videos from that day",
+    "geolocation_instruction_no_photos":
+        "No photos or videos found for this date. Select a different date to show them",
     "get_help": "Get Help",
     "get_wifiname_error":
         "Could not get Wi-Fi name. Make sure you have granted the necessary permissions and are connected to a Wi-Fi network",
@@ -36443,6 +36543,8 @@ class CodegenLoader extends AssetLoader {
     "go_back": "Go back",
     "go_to_folder": "Go to folder",
     "go_to_search": "Go to search",
+    "gps": "GPS",
+    "gps_missing": "No GPS",
     "grant_permission": "Grant permission",
     "group_albums_by": "Group albums by...",
     "group_country": "Group by country",
@@ -36453,6 +36555,9 @@ class CodegenLoader extends AssetLoader {
     "haptic_feedback_switch": "Enable haptic feedback",
     "haptic_feedback_title": "Haptic Feedback",
     "has_quota": "Has quota",
+    "hash_asset": "Hash asset",
+    "hashed_assets": "Hashed assets",
+    "hashing": "Hashing",
     "header_settings_add_header_tip": "Add Header",
     "header_settings_field_validator_msg": "Value cannot be empty",
     "header_settings_header_name_input": "Header name",
@@ -36496,7 +36601,9 @@ class CodegenLoader extends AssetLoader {
         "Can only upload a maximum of 30 assets at a time, skipping",
     "host": "Host",
     "hour": "Hour",
+    "hours": "Hours",
     "id": "ID",
+    "idle": "Idle",
     "ignore_icloud_photos": "Ignore iCloud photos",
     "ignore_icloud_photos_description":
         "Photos that are stored on iCloud will not be uploaded to the Curator Photos server",
@@ -36568,10 +36675,13 @@ class CodegenLoader extends AssetLoader {
     "language_no_results_title": "No languages found",
     "language_search_hint": "Search languages...",
     "language_setting_description": "Select your preferred language",
+    "large_files": "Large Files",
+    "last": "Last",
     "last_seen": "Last seen",
     "latest_version": "Latest Version",
     "latitude": "Latitude",
     "leave": "Leave",
+    "leave_album": "Leave album",
     "lens_model": "Lens model",
     "let_others_respond": "Let others respond",
     "level": "Level",
@@ -36583,7 +36693,9 @@ class CodegenLoader extends AssetLoader {
     "library_page_sort_created": "Created date",
     "library_page_sort_last_modified": "Last modified",
     "library_page_sort_title": "Album title",
+    "licenses": "Licenses",
     "light": "Light",
+    "like": "Like",
     "like_deleted": "Like deleted",
     "link_motion_video": "Link motion video",
     "link_options": "Link options",
@@ -36592,8 +36704,10 @@ class CodegenLoader extends AssetLoader {
     "list": "List",
     "loading": "Loading",
     "loading_search_results_failed": "Loading search results failed",
+    "local": "Local",
     "local_asset_cast_failed":
         "Unable to cast an asset that is not uploaded to the server",
+    "local_assets": "Local Assets",
     "local_network": "Local network",
     "local_network_sheet_info":
         "The app will connect to the server through this URL when using the specified Wi-Fi network",
@@ -36653,6 +36767,7 @@ class CodegenLoader extends AssetLoader {
         "You're using a development version; we strongly recommend using a release version!",
     "main_menu": "Main menu",
     "make": "Make",
+    "manage_geolocation": "Manage location",
     "manage_shared_links": "Manage shared links",
     "manage_sharing_with_partners": "Manage sharing with partners",
     "manage_the_app_settings": "Manage the app settings",
@@ -36661,8 +36776,11 @@ class CodegenLoader extends AssetLoader {
     "manage_your_devices": "Manage your logged-in devices",
     "manage_your_oauth_connection": "Manage your OAuth connection",
     "map": "Map",
-    "map_assets_in_bound": "{count} photo",
-    "map_assets_in_bounds": "{count} photos",
+    "map_assets_in_bound_legacy": "{count} photo",
+    "map_assets_in_bounds_legacy": "{count} photos",
+    "map_no_assets_in_bounds_legacy": "No photos in this area",
+    "map_assets_in_bounds":
+        "{count, plural, =0 {No photos in this area} one {# photo} other {# photos}}",
     "map_cannot_get_user_location": "Cannot get user's location",
     "map_location_dialog_yes": "Yes",
     "map_location_picker_page_use_location": "Use this location",
@@ -36671,7 +36789,6 @@ class CodegenLoader extends AssetLoader {
     "map_location_service_disabled_title": "Location Service disabled",
     "map_marker_for_images": "Map marker for images taken in {city}, {country}",
     "map_marker_with_image": "Map marker with image",
-    "map_no_assets_in_bounds": "No photos in this area",
     "map_no_location_permission_content":
         "Location permission is needed to display assets from your current location. Do you want to allow it now?",
     "map_no_location_permission_title": "Location Permission denied",
@@ -36711,6 +36828,7 @@ class CodegenLoader extends AssetLoader {
         "Merged {count, plural, one {# person} other {# people}}",
     "minimize": "Minimize",
     "minute": "Minute",
+    "minutes": "Minutes",
     "missing": "Missing",
     "model": "Model",
     "month": "Month",
@@ -36718,6 +36836,7 @@ class CodegenLoader extends AssetLoader {
     "more": "More",
     "move": "Move",
     "move_off_locked_folder": "Move out of locked folder",
+    "move_to_lock_folder_action_prompt": "{count} added to the locked folder",
     "move_to_locked_folder": "Move to locked folder",
     "move_to_locked_folder_confirmation":
         "These photos and video will be removed from all albums, and only viewable from the locked folder",
@@ -36734,6 +36853,10 @@ class CodegenLoader extends AssetLoader {
     "my_albums": "My albums",
     "name": "Name",
     "name_or_nickname": "Name or nickname",
+    "network_requirement_photos_upload": "Use cellular data to backup photos",
+    "network_requirement_videos_upload": "Use cellular data to backup videos",
+    "network_requirements_updated":
+        "Network requirements changed, resetting backup queue",
     "networking_settings": "Networking",
     "networking_subtitle": "Manage the server endpoint settings",
     "never": "Never",
@@ -36777,6 +36900,7 @@ class CodegenLoader extends AssetLoader {
     "no_results_description": "Try a synonym or more general keyword",
     "no_shared_albums_message":
         "Create an album to share photos and videos with people in your network",
+    "no_uploads_in_progress": "No uploads in progress",
     "not_in_any_album": "Not in any album",
     "not_selected": "Not selected",
     "note_apply_storage_label_to_previously_uploaded assets":
@@ -36795,6 +36919,7 @@ class CodegenLoader extends AssetLoader {
     "oauth": "OAuth",
     "official_immich_resources": "Official Curator Photos Resources",
     "offline": "Offline",
+    "offset": "Offset",
     "ok": "Ok",
     "oldest_first": "Oldest first",
     "on_this_device": "On this device",
@@ -36821,6 +36946,7 @@ class CodegenLoader extends AssetLoader {
     "original": "original",
     "other": "Other",
     "other_devices": "Other devices",
+    "other_entities": "Other entities",
     "other_variables": "Other variables",
     "owned": "Owned",
     "owner": "Owner",
@@ -36888,6 +37014,10 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_request":
         "Curator Photos requires permission to view your photos and videos.",
     "person": "Person",
+    "person_age_months": "{months, plural, one {# month} other {# months}} old",
+    "person_age_year_months":
+        "1 year, {months, plural, one {# month} other {# months}} old",
+    "person_age_years": "{years, plural, other {# years}} old",
     "person_birthdate": "Born on {date}",
     "person_hidden": "{name}{hidden, select, true { (hidden)} other {}}",
     "photo_shared_all_users":
@@ -36933,6 +37063,8 @@ class CodegenLoader extends AssetLoader {
     "profile_drawer_client_server_up_to_date":
         "Client and Server are up-to-date",
     "profile_drawer_github": "GitHub",
+    "profile_drawer_readonly_mode":
+        "Read-only mode enabled. Double-tap the user avatar icon to exit.",
     "profile_drawer_server_out_of_date_major":
         "Server is out of date. Please update to the latest major version.",
     "profile_drawer_server_out_of_date_minor":
@@ -36966,7 +37098,7 @@ class CodegenLoader extends AssetLoader {
     "purchase_panel_info_1":
         "Building Curator Photos takes a lot of time and effort, and we have full-time engineers working on it to make it as good as we possibly can. Our mission is for open-source software and ethical business practices to become a sustainable income source for developers and to create a privacy-respecting ecosystem with real alternatives to exploitative cloud services.",
     "purchase_panel_info_2":
-        "As we’re committed not to add paywalls, this purchase will not grant you any additional features in Curator Photos. We rely on users like you to support Curator Photos’s ongoing development.",
+        "As we're committed not to add paywalls, this purchase will not grant you any additional features in Curator Photos. We rely on users like you to support Curator Photos's ongoing development.",
     "purchase_panel_title": "Support the project",
     "purchase_per_server": "Per server",
     "purchase_per_user": "Per user",
@@ -36981,12 +37113,15 @@ class CodegenLoader extends AssetLoader {
     "purchase_server_title": "Server",
     "purchase_settings_server_activated":
         "The server product key is managed by the admin",
+    "queue_status": "Queuing {count}/{total}",
     "rating": "Star rating",
     "rating_clear": "Clear rating",
     "rating_count": "{count, plural, one {# star} other {# stars}}",
     "rating_description": "Display the EXIF rating in the info panel",
     "reaction_options": "Reaction options",
     "read_changelog": "Read Changelog",
+    "readonly_mode_disabled": "Read-only mode disabled",
+    "readonly_mode_enabled": "Read-only mode enabled",
     "reassign": "Reassign",
     "reassigned_assets_to_existing_person":
         "Re-assigned {count, plural, one {# asset} other {# assets}} to {name, select, null {an existing person} other {{name}}}",
@@ -37011,6 +37146,8 @@ class CodegenLoader extends AssetLoader {
     "refreshing_faces": "Refreshing faces",
     "refreshing_metadata": "Refreshing metadata",
     "regenerating_thumbnails": "Regenerating thumbnails",
+    "remote": "Remote",
+    "remote_assets": "Remote Assets",
     "remove": "Remove",
     "remove_assets_album_confirmation":
         "Are you sure you want to remove {count, plural, one {# asset} other {# assets}} from the album?",
@@ -37020,7 +37157,10 @@ class CodegenLoader extends AssetLoader {
     "remove_custom_date_range": "Remove custom date range",
     "remove_deleted_assets": "Remove Deleted Assets",
     "remove_from_album": "Remove from album",
+    "remove_from_album_action_prompt": "{count} removed from the album",
     "remove_from_favorites": "Remove from favorites",
+    "remove_from_lock_folder_action_prompt":
+        "{count} removed from the locked folder",
     "remove_from_locked_folder": "Remove from locked folder",
     "remove_from_locked_folder_confirmation":
         "Are you sure you want to move these photos and videos out of the locked folder? They will be visible in your library.",
@@ -37053,19 +37193,31 @@ class CodegenLoader extends AssetLoader {
     "reset_password": "Reset password",
     "reset_people_visibility": "Reset people visibility",
     "reset_pin_code": "Reset PIN code",
+    "reset_pin_code_description":
+        "If you forgot your PIN code, you can contact the server administrator to reset it",
+    "reset_pin_code_success": "Successfully reset PIN code",
+    "reset_pin_code_with_password":
+        "You can always reset your PIN code with your password",
+    "reset_sqlite": "Reset SQLite Database",
+    "reset_sqlite_confirmation":
+        "Are you sure you want to reset the SQLite database? You will need to log out and log in again to resync the data",
+    "reset_sqlite_success": "Successfully reset the SQLite database",
     "reset_to_default": "Reset to default",
     "resolve_duplicates": "Resolve duplicates",
     "resolved_all_duplicates": "Resolved all duplicates",
     "restore": "Restore",
     "restore_all": "Restore all",
+    "restore_trash_action_prompt": "{count} restored from trash",
     "restore_user": "Restore user",
     "restored_asset": "Restored asset",
     "resume": "Resume",
     "retry_upload": "Retry upload",
     "review_duplicates": "Review duplicates",
+    "review_large_files": "Review large files",
     "role": "Role",
     "role_editor": "Editor",
     "role_viewer": "Viewer",
+    "running": "Running",
     "save": "Save",
     "save_to_gallery": "Save to gallery",
     "saved_api_key": "Saved API Key",
@@ -37154,6 +37306,7 @@ class CodegenLoader extends AssetLoader {
     "select_user_for_sharing_page_err_album": "Failed to create album",
     "selected": "Selected",
     "selected_count": "{count, plural, other {# selected}}",
+    "selected_gps_coordinates": "selected gps coordinates",
     "send_message": "Send message",
     "send_welcome_email": "Send welcome email",
     "server_endpoint": "Server Endpoint",
@@ -37209,6 +37362,7 @@ class CodegenLoader extends AssetLoader {
     "settings_saved": "Settings saved",
     "setup_pin_code": "Setup a PIN code",
     "share": "Share",
+    "share_action_prompt": "Shared {count} assets",
     "share_add_photos": "Add photos",
     "share_assets_selected": "{count} selected",
     "share_dialog_preparing": "Preparing...",
@@ -37232,6 +37386,8 @@ class CodegenLoader extends AssetLoader {
     "shared_link_clipboard_copied_massage": "Copied to clipboard",
     "shared_link_clipboard_text": "Link: {link}\nPassword: {password}",
     "shared_link_create_error": "Error while creating shared link",
+    "shared_link_custom_url_description":
+        "Access this shared link with a custom URL",
     "shared_link_edit_description_hint": "Enter the share description",
     "shared_link_edit_expire_after_option_day": "1 day",
     "shared_link_edit_expire_after_option_days": "{count} days",
@@ -37257,6 +37413,8 @@ class CodegenLoader extends AssetLoader {
     "shared_link_info_chip_metadata": "EXIF",
     "shared_link_manage_links": "Manage Shared links",
     "shared_link_options": "Shared link options",
+    "shared_link_password_description":
+        "Require a password to access this shared link",
     "shared_links": "Shared links",
     "shared_links_description": "Share photos and videos with a link",
     "shared_photos_and_videos_count":
@@ -37275,8 +37433,10 @@ class CodegenLoader extends AssetLoader {
     "shift_to_permanent_delete": "press ⇧ to permanently delete asset",
     "show_album_options": "Show album options",
     "show_albums": "Show albums",
+    "show_all_assets": "Show all assets",
     "show_all_people": "Show all people",
     "show_and_hide_people": "Show & hide people",
+    "show_assets_without_location": "Show assets without location",
     "show_file_location": "Show file location",
     "show_gallery": "Show gallery",
     "show_hidden_people": "Show hidden people",
@@ -37309,12 +37469,14 @@ class CodegenLoader extends AssetLoader {
     "sort_created": "Date created",
     "sort_items": "Number of items",
     "sort_modified": "Date modified",
+    "sort_newest": "Newest photo",
     "sort_oldest": "Oldest photo",
     "sort_people_by_similarity": "Sort people by similarity",
     "sort_recent": "Most recent photo",
     "sort_title": "Title",
     "source": "Source",
     "stack": "Stack",
+    "stack_action_prompt": "{count} stacked",
     "stack_duplicates": "Stack duplicates",
     "stack_select_one_photo": "Select one main photo for the stack",
     "stack_selected_photos": "Stack selected photos",
@@ -37336,6 +37498,7 @@ class CodegenLoader extends AssetLoader {
     "storage_quota": "Storage Quota",
     "storage_usage": "{used} of {available} used",
     "submit": "Submit",
+    "success": "Success",
     "suggestions": "Suggestions",
     "sunrise_on_the_beach": "Sunrise on the beach",
     "support": "Support",
@@ -37347,6 +37510,8 @@ class CodegenLoader extends AssetLoader {
     "sync_albums": "Sync albums",
     "sync_albums_manual_subtitle":
         "Sync all uploaded videos and photos to the selected backup albums",
+    "sync_local": "Sync Local",
+    "sync_remote": "Sync Remote",
     "sync_upload_album_setting_subtitle":
         "Create and upload your photos and videos to the selected albums on Curator Photos",
     "tag": "Tag",
@@ -37360,6 +37525,7 @@ class CodegenLoader extends AssetLoader {
     "tag_updated": "Updated tag: {tag}",
     "tagged_assets": "Tagged {count, plural, one {# asset} other {# assets}}",
     "tags": "Tags",
+    "tap_to_run_job": "Tap to run job",
     "template": "Template",
     "theme": "Theme",
     "theme_selection": "Theme selection",
@@ -37393,12 +37559,15 @@ class CodegenLoader extends AssetLoader {
     "to_change_password": "Change password",
     "to_favorite": "Favorite",
     "to_login": "Login",
+    "to_multi_select": "to multi-select",
     "to_parent": "Go to parent",
+    "to_select": "to select",
     "to_trash": "Trash",
     "toggle_settings": "Toggle settings",
     "total": "Total",
     "total_usage": "Total usage",
     "trash": "Trash",
+    "trash_action_prompt": "{count} moved to trash",
     "trash_all": "Trash All",
     "trash_count": "Trash {count, number}",
     "trash_delete_asset": "Trash/Delete Asset",
@@ -37419,9 +37588,11 @@ class CodegenLoader extends AssetLoader {
     "unable_to_change_pin_code": "Unable to change PIN code",
     "unable_to_setup_pin_code": "Unable to setup PIN code",
     "unarchive": "Unarchive",
+    "unarchive_action_prompt": "{count} removed from Archive",
     "unarchived_count": "{count, plural, other {Unarchived #}}",
     "undo": "Undo",
     "unfavorite": "Unfavorite",
+    "unfavorite_action_prompt": "{count} removed from Favorites",
     "unhide_person": "Unhide person",
     "unknown": "Unknown",
     "unknown_country": "Unknown Country",
@@ -37440,18 +37611,25 @@ class CodegenLoader extends AssetLoader {
     "unselect_all_duplicates": "Unselect all duplicates",
     "unselect_all_in": "Unselect all in {group}",
     "unstack": "Un-stack",
+    "unstack_action_prompt": "{count} unstacked",
     "unstacked_assets_count":
         "Un-stacked {count, plural, one {# asset} other {# assets}}",
+    "untagged": "Untagged",
     "up_next": "Up next",
+    "update_location_action_prompt":
+        "Update the location of {count} selected assets with:",
     "updated_at": "Updated",
     "updated_password": "Updated password",
     "upload": "Upload",
+    "upload_action_prompt": "{count} queued for upload",
     "upload_concurrency": "Upload concurrency",
+    "upload_details": "Upload Details",
     "upload_dialog_info":
         "Do you want to backup the selected Asset(s) to the server?",
     "upload_dialog_title": "Upload Asset",
     "upload_errors":
         "Upload completed with {count, plural, one {# error} other {# errors}}, refresh the page to see new upload assets.",
+    "upload_finished": "Upload finished",
     "upload_progress":
         "Remaining {remaining, number} - Processed {processed, number}/{total, number}",
     "upload_skipped_duplicates":
@@ -37463,11 +37641,13 @@ class CodegenLoader extends AssetLoader {
         "Upload success, refresh the page to see new upload assets.",
     "upload_to_immich": "Upload to Curator Photos ({count})",
     "uploading": "Uploading",
+    "uploading_media": "Uploading media",
     "url": "URL",
     "usage": "Usage",
     "use_biometric": "Use biometric",
     "use_current_connection": "use current connection",
     "use_custom_date_range": "Use custom date range instead",
+    "use_this_location": "Click to use location",
     "user": "User",
     "user_has_been_deleted": "This user has been deleted.",
     "user_id": "User ID",
@@ -37484,6 +37664,8 @@ class CodegenLoader extends AssetLoader {
     "user_usage_stats_description": "View account usage statistics",
     "username": "Username",
     "users": "Users",
+    "users_added_to_album_count":
+        "Added {count, plural, one {# user} other {# users}} to the album",
     "utilities": "Utilities",
     "validate": "Validate",
     "validate_endpoint_error": "Please enter a valid URL",
@@ -37492,14 +37674,6 @@ class CodegenLoader extends AssetLoader {
     "version_announcement_closing": "Your friend, Alex",
     "version_announcement_message":
         "Hi there! A new version of Curator Photos is available. Please take some time to read the <link>release notes</link> to ensure your setup is up-to-date to prevent any misconfigurations, especially if you use WatchTower or any mechanism that handles updating your Curator Photos instance automatically.",
-    "version_announcement_overlay_release_notes": "release notes",
-    "version_announcement_overlay_text_1":
-        "Hi friend, there is a new release of",
-    "version_announcement_overlay_text_2":
-        "please take your time to visit the ",
-    "version_announcement_overlay_text_3":
-        " and ensure your docker-compose and .env setup is up-to-date to prevent any misconfigurations, especially if you use WatchTower or any mechanism that handles updating your server application automatically.",
-    "version_announcement_overlay_title": "New Server Version Available 🎉",
     "version_history": "Version History",
     "version_history_item": "Installed {version} on {date}",
     "video": "Video",
@@ -37512,6 +37686,7 @@ class CodegenLoader extends AssetLoader {
     "view_album": "View Album",
     "view_all": "View All",
     "view_all_users": "View all users",
+    "view_details": "View Details",
     "view_in_timeline": "View in timeline",
     "view_link": "View link",
     "view_links": "View links",
