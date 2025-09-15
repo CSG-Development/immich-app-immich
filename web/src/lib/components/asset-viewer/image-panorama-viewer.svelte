@@ -1,7 +1,7 @@
 <script lang="ts">
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { getAssetOriginalUrl } from '$lib/utils';
-  import { isWebCompatibleImage } from '$lib/utils/asset-utils';
+  import { isWebCompatibleAsset } from '$lib/utils/asset-utils';
   import { AssetMediaSize, viewAsset, type AssetResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
@@ -25,7 +25,7 @@
   {:then [data, { default: PhotoSphereViewer }]}
     <PhotoSphereViewer
       panorama={data}
-      originalPanorama={isWebCompatibleImage(asset) ? getAssetOriginalUrl(asset.id) : undefined}
+      originalPanorama={isWebCompatibleAsset(asset) ? getAssetOriginalUrl(asset.id) : undefined}
     />
   {:catch}
     {$t('errors.failed_to_load_asset')}

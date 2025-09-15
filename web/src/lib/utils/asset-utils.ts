@@ -352,38 +352,49 @@ export function getAssetRatio(asset: AssetResponseDto) {
 }
 
 // list of supported image extensions from https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types excluding svg
-const supportedImageMimeTypes = new Set([
+const supportedAssetMimeTypes = new Set([
   'image/apng',
   'image/avif',
   'image/gif',
   'image/jpeg',
   'image/png',
   'image/webp',
+  'video/3gpp',
+  'video/x-msvideo',
+  'video/x-flv',
+  'video/x-m4v',
+  'video/x-matroska',
+  'video/mp2t',
+  'video/mp4',
+  'video/mpeg',
+  'video/quicktime',
+  'video/webm',
+  'video/x-ms-asf',
 ]);
 
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); // https://stackoverflow.com/a/23522755
 if (isSafari) {
-  supportedImageMimeTypes.add('image/heic').add('image/heif');
+  supportedAssetMimeTypes.add('image/heic').add('image/heif');
 }
 
 /**
  * Returns true if the asset is an image supported by web browsers, false otherwise
  */
 
-export function isWebSupportedImageMimeType(type: string): boolean {
+export function isWebSupportedAssetMimeType(type: string): boolean {
   if (!type) {
     return false;
   }
 
-  return supportedImageMimeTypes.has(type);
+  return supportedAssetMimeTypes.has(type);
 }
 
-export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
+export function isWebCompatibleAsset(asset: AssetResponseDto): boolean {
   if (!asset.originalMimeType) {
     return false;
   }
 
-  return supportedImageMimeTypes.has(asset.originalMimeType);
+  return supportedAssetMimeTypes.has(asset.originalMimeType);
 }
 
 export const getAssetType = (type: AssetTypeEnum) => {
