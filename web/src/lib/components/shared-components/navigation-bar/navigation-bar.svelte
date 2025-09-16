@@ -70,7 +70,7 @@
       />
       <a data-sveltekit-preload-data="hover" href={resolve(AppRoute.PHOTOS)}>
         <Logo
-          class={mobileDevice.isFullSidebar ? 'max-md:h-[48px] h-[50px]' : 'max-md:h-[35px] h-[35px]'}
+          class={mobileDevice.isFullSidebar ? '' : 'max-md:h-[35px] h-[35px]'}
           variant={mobileDevice.isFullSidebar ? 'inline' : 'icon'}
         />
       </a>
