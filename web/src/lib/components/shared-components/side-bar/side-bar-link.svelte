@@ -28,7 +28,7 @@
   }: Props = $props();
 
   $effect(() => {
-    isSelected = (page.url.pathname.match(/^\/(admin|user)\/[^/]*/) || [])[0] === href;
+    isSelected = page.url.pathname === href;
   });
 </script>
 
@@ -58,7 +58,7 @@
     aria-current={isSelected ? 'page' : undefined}
     class="flex w-full place-items-center gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary
     {isSelected
-      ? 'bg-immich-primary/10 text-immich-primary hover:bg-immich-primary/10 dark:bg-immich-dark-primary/10 dark:text-immich-dark-primary'
+      ? 'bg-immich-primary/10 text-immich-primary hover:bg-immich-primary/10 dark:bg-immich-dark-primary/24 dark:text-immich-dark-primary'
       : ''}"
   >
     <div class="flex w-full place-items-center gap-4 ps-5 overflow-hidden truncate">

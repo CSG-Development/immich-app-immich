@@ -31,7 +31,7 @@
   import { deleteAssets, updateStackedAssetInTimeline, updateUnstackedAssetInTimeline } from '$lib/utils/actions';
   import { archiveAssets, cancelMultiselect, selectAllAssets, stackAssets } from '$lib/utils/asset-utils';
   import { navigate } from '$lib/utils/navigation';
-  import { getTimes, toTimelineAsset, type ScrubberListener } from '$lib/utils/timeline-util';
+  import { getTimes, toTimelineAsset, type ScrubberListener, type TimelineYearMonth } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, type AlbumResponseDto, type PersonResponseDto } from '@immich/sdk';
   import { DateTime } from 'luxon';
   import { onMount, type Snippet } from 'svelte';
@@ -354,7 +354,7 @@
 
       const monthsLength = timelineManager.months.length;
       for (let i = -1; i < monthsLength + 1; i++) {
-        let monthGroup: TimelinePlainYearMonth | undefined;
+        let monthGroup: TimelineYearMonth | undefined;
         let monthGroupHeight = 0;
         if (i === -1) {
           // lead-in
