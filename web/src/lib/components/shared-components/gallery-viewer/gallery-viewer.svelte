@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
   import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
@@ -28,6 +28,7 @@
   import Portal from '../portal/portal.svelte';
 
   interface Props {
+    initialAssetId?: string;
     assets: (TimelineAsset | AssetResponseDto)[];
     assetInteraction: AssetInteraction;
     disableAssetSelect?: boolean;
@@ -45,6 +46,7 @@
   }
 
   let {
+    initialAssetId = undefined,
     assets = $bindable(),
     assetInteraction,
     disableAssetSelect = false,
@@ -118,7 +120,14 @@
     };
   });
 
-  let currentViewAssetIndex = 0;
+  let currentIndex = 0;
+  if (initialAssetId && assets.length > 0) {
+    const index = assets.findIndex(({ id }) => id === initialAssetId);
+    if (index !== -1) {
+      currentIndex = index;
+    }
+  }
+
   let shiftKeyIsDown = $state(false);
   let lastAssetMouseEvent: TimelineAsset | null = $state(null);
   let slidingWindow = $state({ top: 0, bottom: 0 });
@@ -137,13 +146,10 @@
 
   let lastIntersectedHeight = 0;
   $effect(() => {
-    // notify we got to (near) the end of scroll
-    const scrollPercentage =
-      ((slidingWindow.bottom - viewport.height) / (viewport.height - (document.scrollingElement?.clientHeight || 0))) *
-      100;
-
-    if (scrollPercentage > 90) {
-      const intersectedHeight = geometry?.containerHeight || 0;
+    // Intersect if there's only one viewport worth of assets left to scroll.
+    if (assetLayouts.containerHeight - slidingWindow.bottom <= viewport.height) {
+      // Notify we got to (near) the end of scroll.
+      const intersectedHeight = assetLayouts.containerHeight;
       if (lastIntersectedHeight !== intersectedHeight) {
         debouncedOnIntersected();
         lastIntersectedHeight = intersectedHeight;
@@ -151,8 +157,8 @@
     }
   });
   const viewAssetHandler = async (asset: TimelineAsset) => {
-    currentViewAssetIndex = assets.findIndex((a) => a.id == asset.id);
-    await setAssetId(assets[currentViewAssetIndex].id);
+    currentIndex = assets.findIndex((a) => a.id == asset.id);
+    await setAssetId(assets[currentIndex].id);
     await navigate({ targetRoute: 'current', assetId: $viewingAsset.id });
   };
 
@@ -291,7 +297,7 @@
     isShortcutModalOpen = false;
   };
 
-  let shortcutList = $derived(
+  const shortcutList = $derived(
     (() => {
       if ($isViewerOpen) {
         return [];
@@ -299,7 +305,7 @@
 
       const shortcuts: ShortcutOptions[] = [
         { shortcut: { key: '?', shift: true }, onShortcut: handleOpenShortcutModal },
-        { shortcut: { key: '/' }, onShortcut: () => goto(resolveRoute(AppRoute.EXPLORE, {})) },
+        { shortcut: { key: '/' }, onShortcut: () => goto(resolve(AppRoute.EXPLORE)) },
         { shortcut: { key: 'A', ctrl: true }, onShortcut: () => selectAllAssets() },
         { shortcut: { key: 'ArrowRight' }, preventDefault: false, onShortcut: focusNextAsset },
         { shortcut: { key: 'ArrowLeft' }, preventDefault: false, onShortcut: focusPreviousAsset },
@@ -325,12 +331,12 @@
       if (onNext) {
         asset = await onNext();
       } else {
-        if (currentViewAssetIndex >= assets.length - 1) {
+        if (currentIndex >= assets.length - 1) {
           return false;
         }
 
-        currentViewAssetIndex = currentViewAssetIndex + 1;
-        asset = currentViewAssetIndex < assets.length ? assets[currentViewAssetIndex] : undefined;
+        currentIndex = currentIndex + 1;
+        asset = currentIndex < assets.length ? assets[currentIndex] : undefined;
       }
 
       if (!asset) {
@@ -375,12 +381,12 @@
       if (onPrevious) {
         asset = await onPrevious();
       } else {
-        if (currentViewAssetIndex <= 0) {
+        if (currentIndex <= 0) {
           return false;
         }
 
-        currentViewAssetIndex = currentViewAssetIndex - 1;
-        asset = currentViewAssetIndex >= 0 ? assets[currentViewAssetIndex] : undefined;
+        currentIndex = currentIndex - 1;
+        asset = currentIndex >= 0 ? assets[currentIndex] : undefined;
       }
 
       if (!asset) {
@@ -412,11 +418,11 @@
           1,
         );
         if (assets.length === 0) {
-          await goto(resolveRoute(AppRoute.PHOTOS, {}));
-        } else if (currentViewAssetIndex === assets.length) {
+          await goto(resolve(AppRoute.PHOTOS));
+        } else if (currentIndex === assets.length) {
           await handlePrevious();
         } else {
-          await setAssetId(assets[currentViewAssetIndex].id);
+          await setAssetId(assets[currentIndex].id);
         }
         break;
       }

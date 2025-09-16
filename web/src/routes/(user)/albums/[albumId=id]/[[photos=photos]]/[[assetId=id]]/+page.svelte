@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, onNavigate } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
   import CastButton from '$lib/cast/cast-button.svelte';
   import AlbumDescription from '$lib/components/album-page/album-description.svelte';
@@ -77,7 +77,7 @@
     mdiCogOutline,
     mdiDeleteOutline,
     mdiDotsVertical,
-    mdiFolderDownloadOutline,
+    mdiDownload,
     mdiImageOutline,
     mdiImagePlusOutline,
     mdiLink,
@@ -101,7 +101,7 @@
 
   let oldAt: AssetGridRouteSearchParams | null | undefined = $state();
 
-  let backUrl: string = $state(resolveRoute(AppRoute.ALBUMS, {}));
+  let backUrl: string = $state(resolve(AppRoute.ALBUMS));
   let viewMode: AlbumPageViewMode = $state(AlbumPageViewMode.VIEW);
   let isCreatingSharedAlbum = $state(false);
   let isShowActivity = $state(false);
@@ -119,15 +119,15 @@
     }
 
     if (isAlbumsRoute(route) || isPeopleRoute(route)) {
-      url = resolveRoute(AppRoute.ALBUMS, {});
+      url = resolve(AppRoute.ALBUMS);
     }
 
-    backUrl = url || resolveRoute(AppRoute.ALBUMS, {});
+    backUrl = url || resolve(AppRoute.ALBUMS);
 
-    if (backUrl === resolveRoute(AppRoute.SHARING, {}) && album.albumUsers.length === 0 && !album.hasSharedLink) {
+    if (backUrl === resolve(AppRoute.SHARING) && album.albumUsers.length === 0 && !album.hasSharedLink) {
       isCreatingSharedAlbum = true;
-    } else if (backUrl === resolveRoute(AppRoute.SHARED_LINKS, {})) {
-      backUrl = history.state?.backUrl || resolveRoute(AppRoute.ALBUMS, {});
+    } else if (backUrl === resolve(AppRoute.SHARED_LINKS)) {
+      backUrl = history.state?.backUrl || resolve(AppRoute.ALBUMS);
     }
   });
 
@@ -406,7 +406,8 @@
     const sharedLink = await modalManager.show(SharedLinkCreateModal, { albumId: album.id });
 
     if (sharedLink) {
-      await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink.key) });
+      await refreshAlbum();
+      await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink) });
     }
   };
 
@@ -414,7 +415,7 @@
     const changed = await modalManager.show(AlbumUsersModal, { album });
 
     if (changed) {
-      album = await getAlbumInfo({ id: album.id, withoutAssets: true });
+      await refreshAlbum();
     }
   };
 
@@ -667,7 +668,7 @@
                 color="secondary"
                 aria-label={$t('download')}
                 onclick={handleDownloadAlbum}
-                icon={mdiFolderDownloadOutline}
+                icon={mdiDownload}
               />
             {/if}
 

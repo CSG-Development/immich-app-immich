@@ -84,13 +84,20 @@ class ControlBottomAppBar extends HookConsumerWidget {
     final albums = ref.watch(albumProvider).where((a) => a.isRemote).toList();
     final sharedAlbums =
         ref.watch(albumProvider).where((a) => a.shared).toList();
+    // Base minimum extent of the bottom sheet
     const bottomPadding = 0.24;
     final scrollController = useDraggableScrollController();
     final isInLockedView = ref.watch(inLockedViewProvider);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Increase the minimum size in landscape for local-only selections so the action
+    // row is fully visible without a tiny scroll.
+    final double minSize =
+        (selectionAssetState.hasLocalOnly && isLandscape) ? 0.34 : bottomPadding;
 
     void minimize() {
       scrollController.animateTo(
-        bottomPadding,
+        minSize,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -157,9 +164,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
           ),
         if (hasRemote && onFavorite != null)
           ControlBoxButton(
-            iconData: unfavorite
-                ? Icons.favorite_border_rounded
-                : Icons.favorite_rounded,
+            iconData:
+                unfavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
             label: (unfavorite ? "unfavorite" : "favorite").tr(),
             onPressed: enabled ? onFavorite : null,
           ),
@@ -315,7 +321,12 @@ class ControlBottomAppBar extends HookConsumerWidget {
               onPressed: enabled ? onRemoveFromAlbum : null,
             ),
           ),
-        if (selectionAssetState.hasLocal)
+        // Upload button rules:
+        // - show for local-only
+        // - show for merged but trashed (to restore)
+        // - hide for merged (not trashed)
+        if ((selectionAssetState.hasLocalOnly ||
+                selectionAssetState.hasMergedTrashed))
           ControlBoxButton(
             iconData: Icons.backup_outlined,
             label: "upload".tr(),
@@ -335,27 +346,27 @@ class ControlBottomAppBar extends HookConsumerWidget {
 
     getInitialSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.35;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     getMaxChildSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.65;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     return DraggableScrollableSheet(
       initialChildSize: getInitialSize(),
-      minChildSize: bottomPadding,
+      minChildSize: minSize,
       maxChildSize: getMaxChildSize(),
       snap: true,
       controller: scrollController,

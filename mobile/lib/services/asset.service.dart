@@ -511,6 +511,15 @@ class AssetService {
             return asset;
           });
 
+    // Force a quick sync right after deletion to avoid transient reappearance
+    // during the next scheduled sync cycle.
+    try {
+      log.fine("[deleteRemoteAssets] triggering immediate refreshRemoteAssets");
+      await refreshRemoteAssets();
+    } catch (e, s) {
+      log.warning("[deleteRemoteAssets] immediate refresh failed", e, s);
+    }
+
     await _assetRepository.transaction(() async {
       await _assetRepository.updateAll(payload.toList());
 

@@ -41,11 +41,21 @@
   --color-immich-bg: rgb(var(--immich-bg));
   --color-immich-fg: rgb(var(--immich-fg));
   --color-immich-gray: rgb(var(--immich-gray));
+  --color-immich-gray-search-bar: rgb(var(--immich-gray-search-bar));
+  --color-immich-gray-dark: rgb(var(--immich-gray-dark));
+  --color-immich-gray-border: rgb(var(--immich-gray-border));
+  --color-immich-gray-text: rgb(var(--immich-gray-text));
 
   --color-immich-dark-primary: rgb(var(--immich-dark-primary));
   --color-immich-dark-bg: rgb(var(--immich-dark-bg));
   --color-immich-dark-fg: rgb(var(--immich-dark-fg));
   --color-immich-dark-gray: rgb(var(--immich-dark-gray));
+  --color-immich-dark-gray-storage: rgb(var(--immich-dark-gray-storage));
+  --color-immich-dark-gray-card: rgb(var(--immich-dark-gray-card));
+  --color-immich-dark-gray-search-bar: rgb(var(--immich-dark-gray-search-bar));
+  --color-immich-dark-gray-light: rgb(var(--immich-dark-gray-light));
+  --color-immich-dark-gray-border: rgb(var(--immich-dark-gray-border));
+  --color-immich-dark-gray-text: rgb(var(--immich-dark-gray-text));
 }
 
 @theme {
@@ -65,15 +75,25 @@
 @layer base {
   :root {
     /* light */
-    --immich-primary: 66 80 175;
+    --immich-primary: 25 118 210;
     --immich-bg: 255 255 255;
     --immich-fg: 0 0 0;
+    --immich-gray-search-bar: 144 202 249;
+    --immich-gray-dark: 78 78 78;
+    --immich-gray-border: 224 224 224;
+    --immich-gray-text: 122 122 122;
 
     /* dark */
-    --immich-dark-primary: 172 203 250;
+    --immich-dark-primary: 100 181 246;
     --immich-dark-bg: 10 10 10;
     --immich-dark-fg: 229 231 235;
     --immich-dark-gray: 33 33 33;
+    --immich-dark-gray-storage: 29 30 33;
+    --immich-dark-gray-card: 38 39 41;
+    --immich-dark-gray-search-bar: 144 202 249;
+    --immich-dark-gray-light: 184 184 184;
+    --immich-dark-gray-border: 97 97 97;
+    --immich-dark-gray-text: 178 178 178;
   }
 
   *,
@@ -92,8 +112,8 @@
 
 @layer utilities {
   @font-face {
-    font-family: 'Overpass';
-    src: url('$lib/assets/fonts/overpass/Overpass.ttf') format('truetype-variations');
+    font-family: 'Roboto';
+    src: url('$lib/assets/fonts/roboto/Roboto.ttf') format('truetype-variations');
     font-weight: 1 999;
     font-style: normal;
     ascent-override: 106.25%;
@@ -101,8 +121,8 @@
   }
 
   @font-face {
-    font-family: 'Overpass Mono';
-    src: url('$lib/assets/fonts/overpass/OverpassMono.ttf') format('truetype-variations');
+    font-family: 'Roboto Mono';
+    src: url('$lib/assets/fonts/roboto/RobotoMono.ttf') format('truetype-variations');
     font-weight: 1 999;
     font-style: monospace;
     ascent-override: 106.25%;
@@ -110,7 +130,7 @@
   }
 
   :root {
-    font-family: 'Overpass', sans-serif;
+    font-family: 'Roboto', sans-serif;
     /* Used by layouts to ensure proper spacing between navbar and content */
     --navbar-height: calc(4.5rem + 4px);
     --navbar-height-md: calc(4.5rem + 4px - 14px);

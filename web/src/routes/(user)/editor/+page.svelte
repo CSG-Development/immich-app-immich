@@ -2,13 +2,14 @@
   // @ts-nocheck
 
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { getAssetInfo, getBaseUrl } from '@immich/sdk';
+  import { LoadingSpinner } from '@immich/ui';
   import { onMount } from 'svelte';
   /**
    * @type any
@@ -46,14 +47,14 @@
     const asset = await getAssetInfo({ id: assetId, key: authManager.key });
     const resultFile = new File([uint8Array], asset.originalFileName);
     await fileUploadHandler({ files: [resultFile] }).then(async () => {
-      await goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true });
+      await goto(resolve(AppRoute.PHOTOS), { replaceState: true });
     });
   };
 
   const onEditorClosed = async () => {
     await (previousUrl
       ? goto(previousUrl, { replaceState: true })
-      : goto(resolveRoute(AppRoute.PHOTOS, {}), { replaceState: true }));
+      : goto(resolve(AppRoute.PHOTOS), { replaceState: true }));
   };
 
   function loadFlutterScript() {
@@ -66,6 +67,8 @@
     });
   }
 
+  let isFlutterLoading = $state(true);
+
   onMount(async () => {
     await loadFlutterScript();
 
@@ -77,6 +80,7 @@
             hostElement: target,
             assetBase: './flutter/',
           });
+          isFlutterLoading = false;
           await appRunner.runApp();
         },
       });
@@ -88,7 +92,11 @@
   });
 </script>
 
-<div class="flutter_target" bind:this={target}></div>
+<div class="flutter_target flex justify-center items-center" bind:this={target}>
+  {#if isFlutterLoading}
+    <LoadingSpinner size="giant" />
+  {/if}
+</div>
 
 <style>
   .flutter_target {

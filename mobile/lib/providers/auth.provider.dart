@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auth_state.model.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
@@ -142,7 +140,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user = serverUser;
         await Store.put(StoreKey.deviceId, deviceId);
         await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
-        await SecureStore.put(SecureStoreKey.accessToken, accessToken);
+        await Store.put(StoreKey.accessToken, accessToken);
       }
     } on ApiException catch (error, stackTrace) {
       if (error.code == 401) {

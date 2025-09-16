@@ -10,6 +10,7 @@ import '../../fixtures/user.stub.dart';
 import '../../test_utils.dart';
 
 const _kTestDeviceId = "#TestDeviceId";
+const _kTestAccessToken = "#TestAccessToken";
 final _kTestBackupFailed = DateTime(2025, 2, 20, 11, 45);
 const _kTestVersion = 10;
 const _kTestColorfulInterface = false;
@@ -148,9 +149,9 @@ void main() {
           emits(
             StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
           ),
-          // emits(
-          //   const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
-          // ),
+          emits(
+            const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
+          ),
           emits(
             const StoreDto<Object>(
               StoreKey.colorfulInterface,

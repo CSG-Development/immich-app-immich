@@ -103,7 +103,8 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
 
                                 // Try to copy the file to a temporary location
                                 try {
-                                    val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.jpg")
+                                    val ext = filePath.substringAfterLast('.', "jpg")
+                                    val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.$ext")
                                     file.copyTo(tempFile, overwrite = true)
                                     filePaths.add(tempFile.absolutePath)
 
@@ -117,7 +118,20 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
                             try {
                                 val inputStream = context.contentResolver.openInputStream(uri)
                                 if (inputStream != null) {
-                                    val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.jpg")
+                                    val guessedExt = context.contentResolver.getType(uri)?.let { mime ->
+                                        when {
+                                            mime.endsWith("jpeg") -> "jpg"
+                                            mime.endsWith("png") -> "png"
+                                            mime.endsWith("gif") -> "gif"
+                                            mime.endsWith("heic") -> "heic"
+                                            mime.endsWith("heif") -> "heif"
+                                            mime.endsWith("webp") -> "webp"
+                                            mime.endsWith("bmp") -> "bmp"
+                                            mime.endsWith("x-adobe-dng") || mime.contains("dng") -> "dng"
+                                            else -> "jpg"
+                                        }
+                                    } ?: "jpg"
+                                    val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.$guessedExt")
                                     tempFile.outputStream().use { outputStream ->
                                         inputStream.copyTo(outputStream)
                                     }
@@ -142,7 +156,20 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
                         try {
                             val inputStream = context.contentResolver.openInputStream(uri)
                             if (inputStream != null) {
-                                val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.jpg")
+                                val guessedExt = context.contentResolver.getType(uri)?.let { mime ->
+                                    when {
+                                        mime.endsWith("jpeg") -> "jpg"
+                                        mime.endsWith("png") -> "png"
+                                        mime.endsWith("gif") -> "gif"
+                                        mime.endsWith("heic") -> "heic"
+                                        mime.endsWith("heif") -> "heif"
+                                        mime.endsWith("webp") -> "webp"
+                                        mime.endsWith("bmp") -> "bmp"
+                                        mime.endsWith("x-adobe-dng") || mime.contains("dng") -> "dng"
+                                        else -> "jpg"
+                                    }
+                                } ?: "jpg"
+                                val tempFile = File(context.cacheDir, "temp_clipboard_${System.currentTimeMillis()}.$guessedExt")
                                 tempFile.outputStream().use { outputStream ->
                                     inputStream.copyTo(outputStream)
                                 }

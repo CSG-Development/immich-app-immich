@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import MobileCoreServices
+import UniformTypeIdentifiers
 
 class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
     
@@ -19,25 +20,36 @@ class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
         pasteboard.urls = nil
         
         var imageItems: [UIImage] = []
-        var fileURLs: [URL] = []
+        var dataItems: [[String: Any]] = []
         
         for filePath in filePaths {
+            // Try to load as UIImage for third-party paste targets (e.g., Telegram)
             if let image = UIImage(contentsOfFile: filePath) {
                 imageItems.append(image)
-            }
-            
-            let fileURL = URL(fileURLWithPath: filePath)
-            if FileManager.default.fileExists(atPath: filePath) {
-                fileURLs.append(fileURL)
+                // Prefer JPEG representation for broader compatibility
+                if let jpegData = image.jpegData(compressionQuality: 0.95) {
+                    if #available(iOS 14.0, *) {
+                        dataItems.append([UTType.jpeg.identifier: jpegData])
+                    } else {
+                        dataItems.append([(kUTTypeJPEG as String): jpegData])
+                    }
+                } else if let pngData = image.pngData() {
+                    if #available(iOS 14.0, *) {
+                        dataItems.append([UTType.png.identifier: pngData])
+                    } else {
+                        dataItems.append([(kUTTypePNG as String): pngData])
+                    }
+                }
             }
         }
         
+        // Provide actual images for apps that expect images on the pasteboard
         if !imageItems.isEmpty {
             pasteboard.images = imageItems
         }
-        
-        if !fileURLs.isEmpty {
-            pasteboard.urls = fileURLs
+        // Also provide typed data items for apps that read raw data representations
+        if !dataItems.isEmpty {
+            pasteboard.setItems(dataItems, options: [.localOnly: true])
         }
         
         return ClipboardResult(success: true, error: nil, photoCount: Int64(imageItems.count))
@@ -47,24 +59,28 @@ class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
         let pasteboard = UIPasteboard.general
         var filePaths: [String] = []
         
-        if let images = pasteboard.images, !images.isEmpty {
-            for (index, image) in images.enumerated() {
-                if let data = image.jpegData(compressionQuality: 0.8) {
-                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("clipboard_image_\(index).jpg")
-                    try? data.write(to: tempURL)
-                    filePaths.append(tempURL.path)
+        if let urls = pasteboard.urls, !urls.isEmpty {
+            for url in urls {
+                let ext = url.pathExtension.lowercased()
+                if ["jpg","jpeg","png","gif","heic","heif","webp","bmp","dng"].contains(ext) {
+                    filePaths.append(url.path)
                 }
             }
         }
-        
-        if let urls = pasteboard.urls, !urls.isEmpty {
-            for url in urls {
-                if url.pathExtension.lowercased().contains("jpg") || 
-                   url.pathExtension.lowercased().contains("jpeg") ||
-                   url.pathExtension.lowercased().contains("png") ||
-                   url.pathExtension.lowercased().contains("gif") ||
-                   url.pathExtension.lowercased().contains("heic") {
-                    filePaths.append(url.path)
+        // If there are no accessible URLs but images exist, export images to temp files
+        if filePaths.isEmpty, let images = pasteboard.images, !images.isEmpty {
+            let tmpDir = NSTemporaryDirectory()
+            for (idx, image) in images.enumerated() {
+                // Save as JPEG for compatibility
+                if let data = image.jpegData(compressionQuality: 0.95) {
+                    let filename = "clipboard_\(Int(Date().timeIntervalSince1970))_\(idx).jpg"
+                    let fullPath = (tmpDir as NSString).appendingPathComponent(filename)
+                    do {
+                        try data.write(to: URL(fileURLWithPath: fullPath), options: .atomic)
+                        filePaths.append(fullPath)
+                    } catch {
+                        // skip on error
+                    }
                 }
             }
         }
@@ -84,30 +100,10 @@ class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
         let pasteboard = UIPasteboard.general
         var photos: [ClipboardPhoto] = []
         
-        if let images = pasteboard.images, !images.isEmpty {
-            for (index, image) in images.enumerated() {
-                if let data = image.jpegData(compressionQuality: 0.8) {
-                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("clipboard_image_\(index).jpg")
-                    try? data.write(to: tempURL)
-                    
-                    let photo = ClipboardPhoto(
-                        filePath: tempURL.path,
-                        fileName: "clipboard_image_\(index).jpg",
-                        fileSize: Int64(data.count),
-                        mimeType: "image/jpeg"
-                    )
-                    photos.append(photo)
-                }
-            }
-        }
-        
         if let urls = pasteboard.urls, !urls.isEmpty {
             for url in urls {
-                if url.pathExtension.lowercased().contains("jpg") || 
-                   url.pathExtension.lowercased().contains("jpeg") ||
-                   url.pathExtension.lowercased().contains("png") ||
-                   url.pathExtension.lowercased().contains("gif") ||
-                   url.pathExtension.lowercased().contains("heic") {
+                let ext = url.pathExtension.lowercased()
+                if ["jpg","jpeg","png","gif","heic","heif","webp","bmp","dng"].contains(ext) {
                     
                     let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
                     let fileSize = attributes?[.size] as? Int64 ?? 0
@@ -142,6 +138,8 @@ class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
             return "image/webp"
         case "bmp":
             return "image/bmp"
+        case "dng":
+            return "image/x-adobe-dng"
         default:
             return "image/*"
         }

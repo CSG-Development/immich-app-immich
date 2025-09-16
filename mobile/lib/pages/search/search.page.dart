@@ -96,7 +96,7 @@ class SearchPage extends HookConsumerWidget {
 
       if (!hasResult) {
         context.showSnackBar(
-          searchInfoSnackBar('search_no_result'.tr()),
+          searchInfoSnackBar('curator.search_no_result'.tr()),
         );
       }
 
@@ -530,13 +530,24 @@ class SearchPage extends HookConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
         titleSpacing: 0.0,
         leading: Builder(
           builder: (context) {
+            final canPop = AutoRouter.of(context).canPop();
             return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
+              icon: Icon(
+                canPop ? Icons.arrow_back_ios_rounded : Icons.menu,
+              ),
+              onPressed: () {
+                if (canPop) {
+                  context.maybePop();
+                } else {
+                  context
+                      .findRootAncestorStateOfType<ScaffoldState>()
+                      ?.openDrawer();
+                }
+              },
             );
           },
         ),

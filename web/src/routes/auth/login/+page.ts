@@ -2,7 +2,7 @@ import { AppRoute } from '$lib/constants';
 import { serverConfig } from '$lib/stores/server-config.store';
 import { getFormatter } from '$lib/utils/i18n';
 
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
@@ -13,7 +13,7 @@ export const load = (async ({ parent, url }) => {
 
   if (!isInitialized) {
     // Admin not registered
-    redirect(302, resolveRoute(AppRoute.AUTH_REGISTER, {}));
+    redirect(302, resolve(AppRoute.AUTH_REGISTER));
   }
 
   const $t = await getFormatter();

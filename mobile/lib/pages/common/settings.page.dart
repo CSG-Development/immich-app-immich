@@ -91,6 +91,16 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         centerTitle: false,
         title: const Text('settings').tr(),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.article_outlined,
+              color: context.primaryColor,
+            ),
+            tooltip: 'check_logs'.tr(),
+            onPressed: () => context.pushRoute(const AppLogRoute()),
+          ),
+        ],
       ),
       body: context.isMobile ? _MobileLayout() : _TabletLayout(),
     );

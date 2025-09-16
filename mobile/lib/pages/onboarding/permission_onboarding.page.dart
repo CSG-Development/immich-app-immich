@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
@@ -147,6 +148,15 @@ class PermissionOnboardingPage extends HookConsumerWidget {
         buildPermissionDenied()
     };
 
+    Widget buildLogo() {
+      return SvgPicture.asset(
+        context.isDarkTheme
+            ? 'assets/curator-photos-logo-dark.svg'
+            : 'assets/curator-photos-logo-light.svg',
+        height: 52,
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -156,10 +166,8 @@ class PermissionOnboardingPage extends HookConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const ImmichLogo(
-                  heroTag: 'logo',
-                ),
-                const ImmichTitleText(),
+                // const ImmichLogo(heroTag: 'logo'),
+                buildLogo(),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 500),
                   child: Padding(

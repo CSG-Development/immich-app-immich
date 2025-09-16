@@ -94,6 +94,12 @@ android {
         }
         release {
             shrinkResources true
+            // Ensure native libs from multiple dependencies don't conflict at runtime
+            packagingOptions {
+                jniLibs {
+                    pickFirst '**/libc++_shared.so'
+                }
+            }
             ndk {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
             }

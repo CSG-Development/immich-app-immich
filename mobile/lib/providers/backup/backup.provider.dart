@@ -5,11 +5,9 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/secure_store.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
-import 'package:immich_mobile/entities/secure_store.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/interfaces/backup_album.interface.dart';
 import 'package:immich_mobile/interfaces/file_media.interface.dart';
@@ -667,7 +665,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
 
   Future<void> _resumeBackup() async {
     // Check if user is login
-    final accessKey = SecureStore.tryGet(SecureStoreKey.accessToken);
+    final accessKey = Store.tryGet(StoreKey.accessToken);
 
     // User has been logged out return
     if (accessKey == null || !_authState.isAuthenticated) {

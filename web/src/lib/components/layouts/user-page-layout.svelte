@@ -60,17 +60,17 @@
   {/if}
 
   <main class="relative">
-    <div class="{scrollbarClass} absolute {hasTitleClass} w-full overflow-y-auto p-2" use:useActions={use}>
+    <div class="{scrollbarClass} absolute {hasTitleClass} w-full overflow-y-auto p-6" use:useActions={use}>
       {@render children?.()}
     </div>
     {#if title || buttons}
-      <div class="absolute flex h-16 w-full place-items-center justify-between border-b p-2 text-dark">
+      <div class="absolute flex h-16 w-full place-items-center justify-between border-b p-6 text-dark">
         <div class="flex gap-2 items-center">
           {#if title}
             <div class="font-medium outline-none" tabindex="-1" id={headerId}>{title}</div>
           {/if}
           {#if description}
-            <p class="text-sm text-gray-400 dark:text-gray-600">{description}</p>
+            <p class="text-sm text-black/[.60] dark:text-white/[.70]">{description}</p>
           {/if}
         </div>
         {@render buttons?.()}

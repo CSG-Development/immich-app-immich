@@ -1,9 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/material.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
 class PerformanceRouteObserver extends AutoRouterObserver {
-  final FirebasePerformance _performance = FirebasePerformance.instance;
   final Map<String, Trace> _traces = {};
 
   @override
@@ -11,13 +11,11 @@ class PerformanceRouteObserver extends AutoRouterObserver {
     super.didInitTabRoute(route, previousRoute);
     final currentName = route.name;
     
-    if (currentName != null) {
-      final currentTabName = currentName.replaceAll('Route', '');
-      if (!_traces.containsKey(currentTabName)) {
-        final trace = _performance.newTrace('screen_$currentTabName');
-        trace.start();
-        _traces[currentTabName] = trace;
-      }
+    final currentTabName = currentName.replaceAll('Route', '');
+    if (!_traces.containsKey(currentTabName)) {
+      final trace = FirebasePerformanceWrapper.newTrace('screen_$currentTabName') ?? NoOpTrace();
+      trace.start();
+      _traces[currentTabName] = trace;
     }
   }
 
@@ -27,7 +25,7 @@ class PerformanceRouteObserver extends AutoRouterObserver {
     
     // Special handling for SearchRoute
     if (route.settings.name == 'SearchRoute') {
-      final trace = _performance.newTrace('screen_Search');
+      final trace = FirebasePerformanceWrapper.newTrace('screen_Search') ?? NoOpTrace();
       trace.start();
       _traces['Search'] = trace;
       return;
@@ -66,7 +64,7 @@ class PerformanceRouteObserver extends AutoRouterObserver {
       }
     }
     if (newRoute?.settings.name == 'SearchRoute') {
-      final trace = _performance.newTrace('screen_Search');
+      final trace = FirebasePerformanceWrapper.newTrace('screen_Search') ?? NoOpTrace();
       trace.start();
       _traces['Search'] = trace;
       return;
@@ -83,18 +81,16 @@ class PerformanceRouteObserver extends AutoRouterObserver {
     final currentName = route.name;
 
     // Handle tab route names
-    final previousTabName = previousName?.replaceAll('Route', '');
-    final currentTabName = currentName?.replaceAll('Route', '');
+    final previousTabName = previousName.replaceAll('Route', '');
+    final currentTabName = currentName.replaceAll('Route', '');
     
-    if (previousTabName != null) {
-      final trace = _traces[previousTabName];
-      if (trace != null) {
-        trace.stop();
-        _traces.remove(previousTabName);
-      }
+    final trace = _traces[previousTabName];
+    if (trace != null) {
+      trace.stop();
+      _traces.remove(previousTabName);
     }
-    if (currentTabName != null && !_traces.containsKey(currentTabName)) {
-      final trace = _performance.newTrace('screen_$currentTabName');
+    if (!_traces.containsKey(currentTabName)) {
+      final trace = FirebasePerformanceWrapper.newTrace('screen_$currentTabName') ?? NoOpTrace();
       trace.start();
       _traces[currentTabName] = trace;
     }
@@ -103,7 +99,7 @@ class PerformanceRouteObserver extends AutoRouterObserver {
   void _startTrace(Route route) {
     final routeName = route.settings.name;
     if (routeName != null && !_traces.containsKey(routeName)) {
-      final trace = _performance.newTrace('screen_$routeName');
+      final trace = FirebasePerformanceWrapper.newTrace('screen_$routeName') ?? NoOpTrace();
       trace.start();
       _traces[routeName] = trace;
     }

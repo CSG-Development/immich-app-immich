@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { page } from '$app/stores';
 import { AppRoute } from '$lib/constants';
 import { getAssetInfo } from '@immich/sdk';
@@ -14,7 +14,8 @@ export const isExternalUrl = (url: string): boolean => {
 };
 
 export const isPhotosRoute = (route?: string | null) => !!route?.startsWith('/(user)/photos/[[assetId=id]]');
-export const isSharedLinkRoute = (route?: string | null) => !!route?.startsWith('/(user)/share/[key]');
+export const isSharedLinkRoute = (route?: string | null) =>
+  !!route?.startsWith('/(user)/share/[key]') || !!route?.startsWith('/(user)/s/[slug]');
 export const isSearchRoute = (route?: string | null) => !!route?.startsWith('/(user)/search');
 export const isAlbumsRoute = (route?: string | null) => !!route?.startsWith('/(user)/albums/[albumId=id]');
 export const isPeopleRoute = (route?: string | null) => !!route?.startsWith('/(user)/people/[personId]');
@@ -23,8 +24,8 @@ export const isLockedFolderRoute = (route?: string | null) => !!route?.startsWit
 export const isAssetViewerRoute = (target?: NavigationTarget | null) =>
   !!(target?.route.id?.endsWith('/[[assetId=id]]') && 'assetId' in (target?.params || {}));
 
-export function getAssetInfoFromParam({ assetId, key }: { assetId?: string; key?: string }) {
-  return assetId ? getAssetInfo({ id: assetId, key }) : undefined;
+export function getAssetInfoFromParam({ assetId, slug, key }: { assetId?: string; key?: string; slug?: string }) {
+  return assetId ? getAssetInfo({ id: assetId, slug, key }) : undefined;
 }
 
 function currentUrlWithoutAsset() {
@@ -32,7 +33,7 @@ function currentUrlWithoutAsset() {
   // This contains special casing for the /photos/:assetId route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
   return isPhotosRoute($page.route.id)
-    ? resolveRoute(AppRoute.PHOTOS, {}) + $page.url.search
+    ? resolve(AppRoute.PHOTOS) + $page.url.search
     : $page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + $page.url.search;
 }
 
@@ -46,7 +47,7 @@ export function currentUrlReplaceAssetId(assetId: string) {
   // this contains special casing for the /photos/:assetId photos route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
   return isPhotosRoute($page.route.id)
-    ? resolveRoute(`${AppRoute.PHOTOS}/${assetId}${searchparams}`, {})
+    ? resolve(`${AppRoute.PHOTOS}/${assetId}${searchparams}`)
     : `${$page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
 }
 
@@ -144,4 +145,17 @@ export const clearQueryParam = async (queryParam: string, url: URL) => {
     url.searchParams.delete(queryParam);
     await goto(url, { keepFocus: true });
   }
+};
+
+export const getQueryValue = (queryKey: string) => {
+  const url = globalThis.location.href;
+  const urlObject = new URL(url);
+  return urlObject.searchParams.get(queryKey);
+};
+
+export const setQueryValue = async (queryKey: string, queryValue: string) => {
+  const url = globalThis.location.href;
+  const urlObject = new URL(url);
+  urlObject.searchParams.set(queryKey, queryValue);
+  await goto(urlObject, { keepFocus: true });
 };

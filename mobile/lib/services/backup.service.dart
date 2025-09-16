@@ -29,6 +29,7 @@ import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/album.service.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/services/hash.service.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:path/path.dart' as p;
@@ -44,6 +45,7 @@ final backupServiceProvider = Provider(
     ref.watch(fileMediaRepositoryProvider),
     ref.watch(assetRepositoryProvider),
     ref.watch(assetMediaRepositoryProvider),
+    ref.watch(hashServiceProvider),
   ),
 );
 
@@ -57,6 +59,7 @@ class BackupService {
   final IFileMediaRepository _fileMediaRepository;
   final IAssetRepository _assetRepository;
   final IAssetMediaRepository _assetMediaRepository;
+  final HashService _hashService;
 
   BackupService(
     this._apiService,
@@ -66,6 +69,7 @@ class BackupService {
     this._fileMediaRepository,
     this._assetRepository,
     this._assetMediaRepository,
+    this._hashService,
   );
 
   Future<List<String>?> getDeviceBackupAsset() async {
@@ -280,6 +284,18 @@ class BackupService {
 
     for (final candidate in candidates) {
       final Asset asset = candidate.asset;
+      
+      if (asset.checksum.isEmpty) {
+        try {
+          final hashedAssets = await _hashService.hashAssets([asset]);
+          if (hashedAssets.isNotEmpty) {
+            candidate.asset = hashedAssets.first;
+          }
+        } catch (e) {
+          _log.warning("Failed to hash asset ${asset.fileName}: $e");
+        }
+      }
+      
       File? file;
       File? livePhotoFile;
 
@@ -499,6 +515,69 @@ class BackupService {
       // Invalidate providers to refresh the UI
       ref.invalidate(memoryFutureProvider);
       ref.invalidate(singleUserTimelineProvider(existingAsset.ownerId.toString()));
+    } else {
+      if (result.candidate.asset.localId != null) {
+        try {
+          final matchingAsset = await _findAssetByLocalId(
+            ref, 
+            result.candidate.asset.localId!,
+            result.candidate.asset.ownerId,
+          );
+          
+          if (matchingAsset != null) {
+            final updatedAsset = matchingAsset.copyWith(
+              remoteId: result.remoteAssetId,
+            );
+            
+            await ref.read(assetRepositoryProvider).update(updatedAsset);
+            
+            ref.invalidate(memoryFutureProvider);
+            ref.invalidate(singleUserTimelineProvider(matchingAsset.ownerId.toString()));
+          } else {
+            _log.warning("Asset not found in database for post-upload update: ${result.candidate.asset.fileName} (localId: ${result.candidate.asset.localId})");
+          }
+        } catch (e) {
+          _log.severe("Failed to find asset for post-upload update: ${result.candidate.asset.fileName}", e);
+        }
+      } else {
+        _log.warning("Cannot update asset - no localId available: ${result.candidate.asset.fileName}");
+      }
+    }
+  }
+
+  Future<Asset?> _findAssetByLocalId(
+    Ref ref,
+    String localId,
+    int ownerId,
+  ) async {
+    try {
+      final assets = await ref.read(assetRepositoryProvider).getAll(
+        ownerId: ownerId.toString(),
+        state: AssetState.local,
+        limit: 1,
+      );
+      
+      for (final asset in assets) {
+        if (asset.localId == localId) {
+          return asset;
+        }
+      }
+      
+      final allAssets = await ref.read(assetRepositoryProvider).getAll(
+        ownerId: ownerId.toString(),
+        limit: 100,
+      );
+      
+      for (final asset in allAssets) {
+        if (asset.localId == localId) {
+          return asset;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      _log.warning("Error finding asset by localId: $localId", e);
+      return null;
     }
   }
 

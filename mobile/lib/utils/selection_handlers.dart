@@ -84,14 +84,23 @@ Future<void> handleFavoriteAssets(
 }) async {
   if (selection.isNotEmpty) {
     shouldFavorite ??= !selection.every((a) => a.isFavorite);
-    await ref
-        .watch(assetProvider.notifier)
-        .toggleFavorite(selection, shouldFavorite);
 
-    final assetOrAssets = selection.length > 1 ? 'assets' : 'asset';
+    // Only operate on assets that actually need a change
+    final List<Asset> targets = shouldFavorite
+        ? selection.where((a) => !a.isFavorite).toList()
+        : selection.where((a) => a.isFavorite).toList();
+
+    if (targets.isEmpty) {
+      return;
+    }
+
+    await ref.watch(assetProvider.notifier).toggleFavorite(targets, shouldFavorite);
+
+    final int affectedCount = targets.length;
+    final assetOrAssets = affectedCount > 1 ? 'assets' : 'asset';
     final toastMessage = shouldFavorite
-        ? 'Added ${selection.length} $assetOrAssets to favorites'
-        : 'Removed ${selection.length} $assetOrAssets from favorites';
+        ? 'Added $affectedCount $assetOrAssets to favorites'
+        : 'Removed $affectedCount $assetOrAssets from favorites';
     if (context.mounted) {
       ImmichToast.show(
         context: context,

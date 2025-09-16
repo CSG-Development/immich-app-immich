@@ -181,10 +181,12 @@ class BackupControllerPage extends HookConsumerWidget {
               onPressed: () async {
                 await context.pushRoute(const BackupAlbumSelectionRoute());
                 // waited until returning from selection
+                if (!context.mounted) return;
                 await ref
                     .read(backupProvider.notifier)
                     .backupAlbumSelectionDone();
                 // waited until backup albums are stored in DB
+                if (!context.mounted) return;
                 ref.read(albumProvider.notifier).refreshDeviceAlbums();
               },
               child: const Text(

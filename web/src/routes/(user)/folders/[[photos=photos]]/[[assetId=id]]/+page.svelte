@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
   import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
@@ -44,11 +44,10 @@
 
   const assetInteraction = new AssetInteraction();
 
-  const handleNavigateToFolder = (folderName: string) =>
-    navigateToView(joinPaths(resolveRoute(data.tree.path, {}), folderName));
+  const handleNavigateToFolder = (folderName: string) => navigateToView(joinPaths(data.tree.path, folderName));
 
   const getLinkForPath = (path: string) => {
-    const url = new URL(resolveRoute(AppRoute.FOLDERS, {}), globalThis.location.href);
+    const url = new URL(resolve(AppRoute.FOLDERS), globalThis.location.href);
     url.searchParams.set(QueryParameter.PATH, path);
     return url.href;
   };
@@ -104,6 +103,7 @@
     {#if data.pathAssets && data.pathAssets.length > 0}
       <div bind:clientHeight={viewport.height} bind:clientWidth={viewport.width} class="mt-2">
         <GalleryViewer
+          initialAssetId={data.asset?.id}
           assets={data.pathAssets}
           {assetInteraction}
           {viewport}
@@ -117,7 +117,7 @@
 </UserPageLayout>
 
 {#if assetInteraction.selectionActive}
-  <div class="fixed z-[910] top-0 start-0 w-full">
+  <div class="fixed top-0 start-0 w-full">
     <AssetSelectControlBar
       assets={assetInteraction.selectedAssets}
       clearSelect={() => cancelMultiselect(assetInteraction)}

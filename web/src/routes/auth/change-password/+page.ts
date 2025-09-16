@@ -1,4 +1,4 @@
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { AppRoute } from '$lib/constants';
 import { user } from '$lib/stores/user.store';
 import { authenticate } from '$lib/utils/auth';
@@ -10,7 +10,7 @@ import type { PageLoad } from './$types';
 export const load = (async ({ url }) => {
   await authenticate(url);
   if (!get(user).shouldChangePassword) {
-    redirect(302, resolveRoute(AppRoute.PHOTOS, {}));
+    redirect(302, resolve(AppRoute.PHOTOS));
   }
 
   const $t = await getFormatter();

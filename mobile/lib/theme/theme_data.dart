@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 
@@ -46,6 +47,9 @@ ThemeData getThemeData({
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
+      systemOverlayStyle: isDark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(

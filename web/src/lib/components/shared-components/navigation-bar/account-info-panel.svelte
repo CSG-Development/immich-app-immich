@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { focusTrap } from '$lib/actions/focus-trap';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
@@ -65,7 +65,7 @@
 
     <div class="flex flex-col gap-1">
       <Button
-        href={resolveRoute(AppRoute.USER_SETTINGS, {})}
+        href={resolve(AppRoute.USER_SETTINGS)}
         onclick={onClose}
         size="small"
         color="secondary"

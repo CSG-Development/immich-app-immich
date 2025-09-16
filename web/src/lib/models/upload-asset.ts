@@ -4,6 +4,7 @@ export enum UploadState {
   DONE,
   ERROR,
   DUPLICATED,
+  UNSUPPORTED_TYPE,
 }
 
 export type UploadAsset = {

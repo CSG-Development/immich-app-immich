@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
   import { placesViewSettings } from '$lib/stores/preferences.store';
@@ -42,11 +42,7 @@
     <div class="flex flex-row flex-wrap gap-4">
       {#each places as item (item.id)}
         {@const city = item.exifInfo?.city}
-        <a
-          class="relative"
-          href={resolveRoute(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city })}`, {})}
-          draggable="false"
-        >
+        <a class="relative" href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city })}`)} draggable="false">
           <div
             class="flex w-[calc((100vw-(72px+5rem))/2)] max-w-[156px] justify-center overflow-hidden rounded-xl brightness-75 filter"
           >

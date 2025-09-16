@@ -23,6 +23,7 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/debounce.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/utils/map_utils.dart';
+import 'package:immich_mobile/utils/platform_ui.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/map/map_app_bar.dart';
@@ -347,6 +348,8 @@ class MapPage extends HookConsumerWidget {
     );
   }
 }
+
+// moved to PlatformUiUtils.isAndroidThreeButtonNavigation
 
 class _AssetMarkerMeta {
   final Point<num> point;

@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import FormatBoldMessage from '$lib/components/i18n/format-bold-message.svelte';
 import type { InterpolationValues } from '$lib/components/i18n/format-message';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
@@ -12,11 +12,12 @@ import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
 import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
 import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
 import { preferences } from '$lib/stores/user.store';
-import { downloadRequest, withError } from '$lib/utils';
+import { downloadRequest, sleep, withError } from '$lib/utils';
 import { createAlbum } from '$lib/utils/album-utils';
 import { getByteUnitString } from '$lib/utils/byte-units';
 import { getFormatter } from '$lib/utils/i18n';
 import { navigate } from '$lib/utils/navigation';
+import { asQueryString } from '$lib/utils/shared-links';
 import {
   addAssetsToAlbum as addAssets,
   AssetVisibility,
@@ -46,11 +47,11 @@ import { handleError } from './handle-error';
 
 export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
   const result = await addAssets({
+    ...authManager.params,
     id: albumId,
     bulkIdsDto: {
       ids: assetIds,
     },
-    key: authManager.key,
   });
   const count = result.filter(({ success }) => success).length;
   const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
@@ -70,7 +71,7 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${albumId}`, {}));
+          return goto(resolve(`${AppRoute.ALBUMS}/${albumId}`));
         },
       },
     });
@@ -138,7 +139,7 @@ export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[])
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
+          return goto(resolve(`${AppRoute.ALBUMS}/${album.id}`));
         },
       },
     });
@@ -156,7 +157,7 @@ export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[])
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
+          return goto(resolve(`${AppRoute.ALBUMS}/${album.id}`));
         },
       },
     });
@@ -200,7 +201,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
   const $preferences = get<UserPreferencesResponseDto | undefined>(preferences);
   const dto = { ...options, archiveSize: $preferences?.download.archiveSize };
 
-  const [error, downloadInfo] = await withError(() => getDownloadInfo({ downloadInfoDto: dto, key: authManager.key }));
+  const [error, downloadInfo] = await withError(() => getDownloadInfo({ ...authManager.params, downloadInfoDto: dto }));
   if (error) {
     const $t = get(t);
     handleError(error, $t('errors.unable_to_download_files'));
@@ -215,7 +216,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
     const archive = downloadInfo.archives[index];
     const suffix = downloadInfo.archives.length > 1 ? `+${index + 1}` : '';
     const archiveName = fileName.replace('.zip', `${suffix}-${DateTime.now().toFormat('yyyyLLdd_HHmmss')}.zip`);
-    const key = authManager.key;
+    const queryParams = asQueryString(authManager.params);
 
     let downloadKey = `${archiveName} `;
     if (downloadInfo.archives.length > 1) {
@@ -229,7 +230,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
       // TODO use sdk once it supports progress events
       const { data } = await downloadRequest({
         method: 'POST',
-        url: getBaseUrl() + '/download/archive' + (key ? `?key=${key}` : ''),
+        url: getBaseUrl() + '/download/archive' + (queryParams ? `?${queryParams}` : ''),
         data: { assetIds: archive.assetIds },
         signal: abort.signal,
         onDownloadProgress: (event) => downloadManager.update(downloadKey, event.loaded),
@@ -262,7 +263,7 @@ export const downloadFile = async (asset: AssetResponseDto) => {
   };
 
   if (asset.livePhotoVideoId) {
-    const motionAsset = await getAssetInfo({ id: asset.livePhotoVideoId, key: authManager.key });
+    const motionAsset = await getAssetInfo({ ...authManager.params, id: asset.livePhotoVideoId });
     if (!isAndroidMotionVideo(motionAsset) || get(preferences)?.download.includeEmbeddedVideos) {
       assets.push({
         filename: motionAsset.originalFileName,
@@ -272,16 +273,20 @@ export const downloadFile = async (asset: AssetResponseDto) => {
     }
   }
 
-  for (const { filename, id } of assets) {
-    try {
-      const key = authManager.key;
+  const queryParams = asQueryString(authManager.params);
 
+  for (const [i, { filename, id }] of assets.entries()) {
+    if (i !== 0) {
+      // play nice with Safari
+      await sleep(500);
+    }
+    try {
       notificationController.show({
         type: NotificationType.Info,
         message: $t('downloading_asset_filename', { values: { filename: asset.originalFileName } }),
       });
 
-      downloadUrl(getBaseUrl() + `/assets/${id}/original` + (key ? `?key=${key}` : ''), filename);
+      downloadUrl(getBaseUrl() + `/assets/${id}/original` + (queryParams ? `?${queryParams}` : ''), filename);
     } catch (error) {
       handleError(error, $t('errors.error_downloading', { values: { filename } }));
     }
@@ -319,9 +324,9 @@ export function isFlipped(orientation?: string | null) {
   return value && (isRotated270CW(value) || isRotated90CW(value));
 }
 
-export function getFileSize(asset: AssetResponseDto): string {
+export function getFileSize(asset: AssetResponseDto, maxPrecision = 4): string {
   const size = asset.exifInfo?.fileSizeInByte || 0;
-  return size > 0 ? getByteUnitString(size, undefined, 4) : 'Invalid Data';
+  return size > 0 ? getByteUnitString(size, undefined, maxPrecision) : 'Invalid Data';
 }
 
 export function getAssetResolution(asset: AssetResponseDto): string {
@@ -347,29 +352,49 @@ export function getAssetRatio(asset: AssetResponseDto) {
 }
 
 // list of supported image extensions from https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types excluding svg
-const supportedImageMimeTypes = new Set([
+const supportedAssetMimeTypes = new Set([
   'image/apng',
   'image/avif',
   'image/gif',
   'image/jpeg',
   'image/png',
   'image/webp',
+  'video/3gpp',
+  'video/x-msvideo',
+  'video/x-flv',
+  'video/x-m4v',
+  'video/x-matroska',
+  'video/mp2t',
+  'video/mp4',
+  'video/mpeg',
+  'video/quicktime',
+  'video/webm',
+  'video/x-ms-asf',
 ]);
 
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); // https://stackoverflow.com/a/23522755
 if (isSafari) {
-  supportedImageMimeTypes.add('image/heic').add('image/heif');
+  supportedAssetMimeTypes.add('image/heic').add('image/heif');
 }
 
 /**
  * Returns true if the asset is an image supported by web browsers, false otherwise
  */
-export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
+
+export function isWebSupportedAssetMimeType(type: string): boolean {
+  if (!type) {
+    return false;
+  }
+
+  return supportedAssetMimeTypes.has(type);
+}
+
+export function isWebCompatibleAsset(asset: AssetResponseDto): boolean {
   if (!asset.originalMimeType) {
     return false;
   }
 
-  return supportedImageMimeTypes.has(asset.originalMimeType);
+  return supportedAssetMimeTypes.has(asset.originalMimeType);
 }
 
 export const getAssetType = (type: AssetTypeEnum) => {

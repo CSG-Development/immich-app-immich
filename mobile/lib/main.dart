@@ -30,16 +30,19 @@ import 'package:immich_mobile/utils/cache/widgets_binding.dart';
 import 'package:immich_mobile/utils/download.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/utils/migration.dart';
+import 'package:immich_mobile/utils/platform_ui.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
 void main() async {
   ImmichWidgetsBinding();
 
   await Firebase.initializeApp();
+  await FirebasePerformanceWrapper.initialize();
 
   final db = await Bootstrap.initIsar();
   await Bootstrap.initDomain(db);
@@ -114,6 +117,8 @@ class ImmichApp extends ConsumerStatefulWidget {
 
 class ImmichAppState extends ConsumerState<ImmichApp>
     with WidgetsBindingObserver {
+  int? _androidSdkInt;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -153,6 +158,7 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     if (Platform.isAndroid) {
       // Android 8 does not support transparent app bars
       final info = await DeviceInfoPlugin().androidInfo;
+      _androidSdkInt = info.version.sdkInt;
       if (info.version.sdkInt <= 26) {
         overlayStyle = context.isDarkTheme
             ? SystemUiOverlayStyle.dark
@@ -235,7 +241,47 @@ class ImmichAppState extends ConsumerState<ImmichApp>
             AppNavigationObserver(ref: ref),
           ],
         ),
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: computeOverlayStyle(context),
+          child: SafeArea(
+            bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
+            top: false,
+            child: child!,
+          ),
+        ),
       ),
+    );
+  }
+}
+
+extension _SystemUiOverlayExt on ImmichAppState {
+  SystemUiOverlayStyle computeOverlayStyle(BuildContext context) {
+    final isDark = context.isDarkTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    Color navColor = Colors.transparent;
+    Brightness iconBrightness = isDark ? Brightness.light : Brightness.dark;
+
+    if (Platform.isAndroid) {
+      final isThreeButton = PlatformUiUtils.isAndroidThreeButtonNavigation(context);
+      final sdk = _androidSdkInt ?? 0;
+
+      if (sdk <= 26) {
+        // Android 8 and below: avoid transparency; use solid contrasting color
+        navColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+      } else if (isThreeButton) {
+        // For 3-button nav, paint bar to match theme surface
+        navColor = colorScheme.surface;
+      } else {
+        // Gesture nav: keep transparent for edge-to-edge
+        navColor = Colors.transparent;
+      }
+    }
+
+    return SystemUiOverlayStyle(
+      systemNavigationBarColor: navColor,
+      systemNavigationBarIconBrightness: iconBrightness,
+      // Keep status bar behavior as-is; Material handles status bar insets
     );
   }
 }

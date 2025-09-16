@@ -545,7 +545,9 @@
           </div>
         {/if}
         {#if segment.hasDot}
-          <div class="absolute end-3 bottom-0 h-[4px] w-[4px] rounded-full bg-gray-300"></div>
+          <div
+            class="absolute end-3 bottom-0 h-[4px] w-[4px] rounded-full bg-immich-gray-dark dark:bg-immich-dark-gray-light"
+          ></div>
         {/if}
       {/if}
     </div>

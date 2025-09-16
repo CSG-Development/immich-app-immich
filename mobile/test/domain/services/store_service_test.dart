@@ -9,6 +9,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../infrastructure/repository.mock.dart';
 
 const _kDeviceId = '#ThisIsADeviceId';
+const _kAccessToken = '#ThisIsAToken';
 const _kBackgroundBackup = false;
 const _kGroupAssetsBy = 2;
 final _kBackupFailedSince = DateTime.utc(2023);
@@ -29,7 +30,7 @@ void main() {
 
     when(() => mockStoreRepo.getAll()).thenAnswer(
       (_) async => [
-        // const StoreDto(StoreKey.accessToken, _kAccessToken),
+        const StoreDto(StoreKey.accessToken, _kAccessToken),
         const StoreDto(StoreKey.backgroundBackup, _kBackgroundBackup),
         const StoreDto(StoreKey.groupAssetsBy, _kGroupAssetsBy),
         StoreDto(StoreKey.backupFailedSince, _kBackupFailedSince),
@@ -48,7 +49,7 @@ void main() {
   group("Store Service Init:", () {
     test('Populates the internal cache on init', () {
       verify(() => mockStoreRepo.getAll()).called(1);
-      // expect(sut.tryGet(StoreKey.accessToken), _kAccessToken);
+      expect(sut.tryGet(StoreKey.accessToken), _kAccessToken);
       expect(sut.tryGet(StoreKey.backgroundBackup), _kBackgroundBackup);
       expect(sut.tryGet(StoreKey.groupAssetsBy), _kGroupAssetsBy);
       expect(sut.tryGet(StoreKey.backupFailedSince), _kBackupFailedSince);
@@ -56,15 +57,15 @@ void main() {
       expect(sut.tryGet(StoreKey.currentUser), isNull);
     });
 
-    // test('Listens to stream of store updates', () async {
-    //   final event = StoreDto(StoreKey.accessToken, _kAccessToken.toUpperCase());
-    //   controller.add(event);
+    test('Listens to stream of store updates', () async {
+      final event = StoreDto(StoreKey.accessToken, _kAccessToken.toUpperCase());
+      controller.add(event);
 
-    //   await pumpEventQueue();
+      await pumpEventQueue();
 
-    //   verify(() => mockStoreRepo.watchAll()).called(1);
-    //   expect(sut.tryGet(StoreKey.deviceId), _kDeviceId.toUpperCase());
-    // });
+      verify(() => mockStoreRepo.watchAll()).called(1);
+      expect(sut.tryGet(StoreKey.accessToken), _kAccessToken.toUpperCase());
+    });
   });
 
   group('Store Service get:', () {

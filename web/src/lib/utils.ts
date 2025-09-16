@@ -1,4 +1,4 @@
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { NotificationType, notificationController } from '$lib/components/shared-components/notification/notification';
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -37,6 +37,12 @@ interface DownloadRequestOptions<T = unknown> {
   onDownloadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
 }
 
+interface DateFormatter {
+  formatDate: (date: Date) => string;
+  formatTime: (date: Date) => string;
+  formatDateTime: (date: Date) => string;
+}
+
 export const initLanguage = async () => {
   const preferenceLang = get(lang);
   for (const { code, loader } of langs) {
@@ -70,6 +76,10 @@ class ApiError extends Error {
     super(message);
   }
 }
+
+export const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{ data: T; status: number }> => {
   const { onUploadProgress: onProgress, data, url, signal, onAbort } = options;
@@ -194,7 +204,7 @@ export const getAssetOriginalUrl = (options: string | AssetUrlOptions) => {
     options = { id: options };
   }
   const { id, cacheKey } = options;
-  return createUrl(getAssetOriginalPath(id), { key: authManager.key, c: cacheKey });
+  return createUrl(getAssetOriginalPath(id), { ...authManager.params, c: cacheKey });
 };
 
 export const getAssetThumbnailUrl = (options: string | (AssetUrlOptions & { size?: AssetMediaSize })) => {
@@ -202,7 +212,7 @@ export const getAssetThumbnailUrl = (options: string | (AssetUrlOptions & { size
     options = { id: options };
   }
   const { id, size, cacheKey } = options;
-  return createUrl(getAssetThumbnailPath(id), { size, key: authManager.key, c: cacheKey });
+  return createUrl(getAssetThumbnailPath(id), { ...authManager.params, size, c: cacheKey });
 };
 
 export const getAssetPlaybackUrl = (options: string | AssetUrlOptions) => {
@@ -210,7 +220,7 @@ export const getAssetPlaybackUrl = (options: string | AssetUrlOptions) => {
     options = { id: options };
   }
   const { id, cacheKey } = options;
-  return createUrl(getAssetPlaybackPath(id), { key: authManager.key, c: cacheKey });
+  return createUrl(getAssetPlaybackPath(id), { ...authManager.params, c: cacheKey });
 };
 
 export const getProfileImageUrl = (user: UserResponseDto) =>
@@ -267,9 +277,9 @@ export const copyToClipboard = async (secret: string) => {
   }
 };
 
-export const makeSharedLinkUrl = (key: string) => {
-  return new URL(resolveRoute(`/share/${key}`, {}), get(serverConfig).externalDomain || globalThis.location.origin)
-    .href;
+export const makeSharedLinkUrl = (sharedLink: SharedLinkResponseDto) => {
+  const path = sharedLink.slug ? resolve(`/s/${sharedLink.slug}` as any) : resolve(`/share/${sharedLink.key}`);
+  return new URL(path, get(serverConfig).externalDomain || globalThis.location.origin).href;
 };
 
 export const oauth = {
@@ -353,3 +363,35 @@ export const withError = async <T>(fn: () => Promise<T>): Promise<[undefined, T]
 
 // eslint-disable-next-line unicorn/prefer-code-point
 export const decodeBase64 = (data: string) => Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+
+export function createDateFormatter(localeCode: string | undefined): DateFormatter {
+  return {
+    formatDate: (date: Date): string =>
+      date.toLocaleString(localeCode, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+
+    formatTime: (date: Date): string =>
+      date.toLocaleString(localeCode, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }),
+
+    formatDateTime: (date: Date): string => {
+      const formattedDate = date.toLocaleString(localeCode, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const formattedTime = date.toLocaleString(localeCode, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      return `${formattedDate} ${formattedTime}`;
+    },
+  };
+}

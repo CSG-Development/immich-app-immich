@@ -253,9 +253,9 @@ class _MapSheetDragRegion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assetsInBoundsText = assetsInBoundCount > 0
-        ? "map_assets_in_bounds"
+        ? "map_assets_in_bounds_legacy"
             .tr(namedArgs: {'count': assetsInBoundCount.toString()})
-        : "map_no_assets_in_bounds".tr();
+        : "map_no_assets_in_bounds_legacy".tr();
 
     return SingleChildScrollView(
       controller: controller,

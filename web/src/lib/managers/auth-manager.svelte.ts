@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { page } from '$app/state';
 import { AppRoute } from '$lib/constants';
 import { eventManager } from '$lib/managers/event-manager.svelte';
@@ -7,7 +7,8 @@ import { isSharedLinkRoute } from '$lib/utils/navigation';
 import { logout } from '@immich/sdk';
 
 class AuthManager {
-  key = $derived(isSharedLinkRoute(page.route?.id) ? page.params.key : undefined);
+  isSharedLink = $derived(isSharedLinkRoute(page.route?.id));
+  params = $derived(this.isSharedLink ? { key: page.params.key, slug: page.params.slug } : {});
 
   async logout() {
     let redirectUri;
@@ -21,7 +22,7 @@ class AuthManager {
       console.log('Error logging out:', error);
     }
 
-    redirectUri = redirectUri ? resolveRoute(redirectUri, {}) : resolveRoute(AppRoute.AUTH_LOGIN, {});
+    redirectUri = redirectUri ? resolve(redirectUri as any) : resolve(AppRoute.AUTH_LOGIN);
 
     try {
       if (redirectUri.startsWith('/')) {

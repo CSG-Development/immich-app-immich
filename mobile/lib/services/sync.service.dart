@@ -826,6 +826,11 @@ class SyncService {
 
     for (final asset in assetsList) {
       if (asset.isTrashed) {
+        // Do not move local files to trash when only the remote copy is trashed.
+        // Keep local presence intact (show as not backed up in UI).
+        if (asset.isLocal) {
+          continue;
+        }
         final mediaUrl = await asset.local?.getMediaUrl();
         if (mediaUrl == null) {
           _log.warning(

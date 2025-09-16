@@ -1,8 +1,10 @@
 /// Key for each possible value in the `Store`.
 /// Defines the data type for each value
 enum SecureStoreKey<T> {
-  accessToken<String>._(0);
-
+  // Placeholder to keep enum non-empty
+  // Future secure values can be added here
+  _placeholder<String>._(0);
+  
   const SecureStoreKey._(this.id);
   final int id;
   Type get type => T;

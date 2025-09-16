@@ -65,9 +65,10 @@ class TimelineRepository extends DatabaseRepository {
     Album album,
     GroupAssetsBy groupAssetByOption,
   ) {
-    final query = album.assets
-        .filter()
-        .isTrashedEqualTo(false)
+    final base = album.assets.filter();
+    final query = (album.isLocal
+            ? base
+            : base.isTrashedEqualTo(false))
         .not()
         .visibilityEqualTo(AssetVisibilityEnum.locked);
 

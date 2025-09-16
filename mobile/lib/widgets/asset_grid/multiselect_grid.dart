@@ -17,6 +17,7 @@ import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/download.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
+import 'package:immich_mobile/providers/trash.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -41,6 +42,7 @@ class MultiselectGrid extends HookConsumerWidget {
     this.onRemoveFromAlbum,
     this.updateAfterDeletedRemote,
     this.topWidget,
+    this.onAfterDuplicate,
     this.stackEnabled = false,
     this.dragScrollLabelEnabled = true,
     this.archiveEnabled = false,
@@ -60,6 +62,7 @@ class MultiselectGrid extends HookConsumerWidget {
   final Future<bool> Function(Iterable<Asset>)? onRemoveFromAlbum;
   final Future<bool> Function(Iterable<Asset>)? updateAfterDeletedRemote;
   final Widget? topWidget;
+  final Future<void> Function(List<Asset> newAssets)? onAfterDuplicate;
   final bool stackEnabled;
   final bool dragScrollLabelEnabled;
   final bool archiveEnabled;
@@ -184,37 +187,7 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    void onDelete([bool force = false]) async {
-      processing.value = true;
-      try {
-        final toDelete = selection.value
-            .ownedOnly(
-              currentUser,
-              errorCallback: errorBuilder('home_page_delete_err_partner'.tr()),
-            )
-            .toList();
-        final isDeleted = await ref
-            .read(assetProvider.notifier)
-            .deleteAssets(toDelete, force: force);
-
-        if (isDeleted) {
-          ImmichToast.show(
-            context: context,
-            msg: force
-                ? 'assets_deleted_permanently'
-                    .tr(namedArgs: {'count': "${selection.value.length}"})
-                : 'assets_trashed'
-                    .tr(namedArgs: {'count': "${selection.value.length}"}),
-            gravity: ToastGravity.BOTTOM,
-          );
-          selectionEnabledHook.value = false;
-        }
-      } finally {
-        processing.value = false;
-      }
-    }
-
-    void onDeleteLocal(bool isMergedAsset) async {
+    Future<void> performDeleteLocal(bool isMergedAsset) async {
       processing.value = true;
       try {
         final localAssets = selection.value.where((a) => a.isLocal).toList();
@@ -247,6 +220,82 @@ class MultiselectGrid extends HookConsumerWidget {
       } finally {
         processing.value = false;
       }
+    }
+
+    void onDelete([bool force = false]) async {
+      final toDelete = selection.value
+          .ownedOnly(
+            currentUser,
+            errorCallback: errorBuilder('home_page_delete_err_partner'.tr()),
+          )
+          .toList();
+
+      final hasMerged = toDelete.any((a) => a.storage == AssetState.merged);
+
+      bool isDeleted = false;
+      if (force) {
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteAssets(toDelete, force: true);
+        } finally {
+          processing.value = false;
+        }
+      } else if (hasMerged) {
+        // Move to trash on server, then trigger system/local delete prompt
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteRemoteAssets(toDelete);
+        } finally {
+          processing.value = false;
+        }
+        if (isDeleted) {
+          await performDeleteLocal(true);
+        }
+      } else {
+        // Default: trash remote only
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteRemoteAssets(toDelete);
+        } finally {
+          processing.value = false;
+        }
+      }
+
+      if (isDeleted) {
+        if (updateAfterDeletedRemote != null) {
+          final deletedRemote = toDelete.where((a) => a.isRemote).toList();
+          if (deletedRemote.isNotEmpty) {
+            await updateAfterDeletedRemote!(deletedRemote);
+          }
+        }
+        if (force) {
+          ImmichToast.show(
+            context: context,
+            msg: 'assets_deleted_permanently'
+                .tr(namedArgs: {'count': "${selection.value.length}"}),
+            gravity: ToastGravity.BOTTOM,
+          );
+        } else {
+          ImmichToast.show(
+            context: context,
+            msg: 'assets_trashed'
+                .tr(namedArgs: {'count': "${selection.value.length}"}),
+            gravity: ToastGravity.BOTTOM,
+          );
+        }
+        selectionEnabledHook.value = false;
+      }
+    }
+
+    void onDeleteLocal(bool isMergedAsset) {
+      // Fire and forget for UI callback compatibility
+      unawaited(performDeleteLocal(isMergedAsset));
     }
 
     void onDownload() async {
@@ -309,6 +358,9 @@ class MultiselectGrid extends HookConsumerWidget {
         );
         
         if (result.success) {
+          if (onAfterDuplicate != null && result.newAssets.isNotEmpty) {
+            await onAfterDuplicate!(result.newAssets);
+          }
           if (result.hasErrors) {
             // Partial success with errors
             // Silent error handling
@@ -341,7 +393,9 @@ class MultiselectGrid extends HookConsumerWidget {
                   shouldDeletePermanently: shouldDeletePermanently,
                 );
         if (isDeleted) {
-          updateAfterDeletedRemote!(toDelete);
+          if (updateAfterDeletedRemote != null) {
+            await updateAfterDeletedRemote!(toDelete);
+          }
           ImmichToast.show(
             context: context,
             msg: shouldDeletePermanently
@@ -358,14 +412,40 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    void onUpload() {
+    void onUpload() async {
       processing.value = true;
       selectionEnabledHook.value = false;
       try {
-        ref.read(manualUploadProvider.notifier).uploadAssets(
-              context,
-              selection.value.where((a) => a.storage == AssetState.local),
-            );
+        // First, restore any selected assets that are trashed on the server
+        final trashedRemoteAssets = selection.value.where(
+          (a) => a.isTrashed && a.isRemote,
+        );
+        if (trashedRemoteAssets.isNotEmpty) {
+          final restored = await ref.read(trashProvider.notifier).restoreAssets(
+                trashedRemoteAssets,
+              );
+          if (restored) {
+            // As we don't have direct mapping here, try a lighter refresh by touching the current album if any
+            // Otherwise, perform full refresh as a fallback
+            try {
+              // No direct album linkage in selection context; fallback
+              await ref.read(albumProvider.notifier).refreshRemoteAlbums();
+            } catch (_) {
+              // ignore
+            }
+          }
+        }
+
+        // Then, upload local-only assets
+        final localOnly = selection.value.where(
+          (a) => a.storage == AssetState.local,
+        );
+        if (localOnly.isNotEmpty) {
+          await ref.read(manualUploadProvider.notifier).uploadAssets(
+                context,
+                localOnly,
+              );
+        }
       } finally {
         processing.value = false;
       }
@@ -574,10 +654,11 @@ class MultiselectGrid extends HookConsumerWidget {
               onUpload: onUpload,
               enabled: !processing.value,
               selectionAssetState: selectionAssetState.value,
+              // Unfilled heart only when all selected are favorites; otherwise filled
+              unfavorite: selection.value.isNotEmpty && selection.value.every((a) => a.isFavorite),
               onStack: stackEnabled ? onStack : null,
               onEditTime: editEnabled ? onEditTime : null,
               onEditLocation: editEnabled ? onEditLocation : null,
-              unfavorite: unfavorite,
               unarchive: unarchive,
               onToggleLocked: onToggleLockedVisibility,
               onRemoveFromAlbum: onRemoveFromAlbum != null
@@ -585,8 +666,12 @@ class MultiselectGrid extends HookConsumerWidget {
                       () => onRemoveFromAlbum!(selection.value),
                     )
                   : null,
-              onCopyToClipboard: () async => onCopyToClipboard(),
-              onDuplicate: () async => onDuplicate(),
+              onCopyToClipboard: ClipboardService.isCopySupportedForSelection(selection.value)
+                  ? () async => onCopyToClipboard()
+                  : null,
+              onDuplicate: ClipboardService.isDuplicateSupportedForSelection(selection.value)
+                  ? () async => onDuplicate()
+                  : null,
             ),
         ],
       ),

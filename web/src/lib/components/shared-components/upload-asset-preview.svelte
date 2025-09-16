@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
   import type { UploadAsset } from '$lib/models/upload-asset';
@@ -27,8 +27,8 @@
 
   const asLink = (asset: UploadAsset) => {
     return asset.isTrashed
-      ? resolveRoute(`${AppRoute.TRASH}/${asset.assetId}`, {})
-      : resolveRoute(`${AppRoute.PHOTOS}/${uploadAsset.assetId}`, {});
+      ? resolve(`${AppRoute.TRASH}/${asset.assetId}`)
+      : resolve(`${AppRoute.PHOTOS}/${uploadAsset.assetId}`);
   };
 
   const handleAbort = () => {
@@ -54,8 +54,8 @@
         {#if uploadAsset.message === $t('asset_hashing')}
           <Icon path={mdiLoading} size="24" class="text-primary" title={$t('asset_hashing')} spin progress={25} />
         {/if}
-      {:else if uploadAsset.state === UploadState.ERROR}
-        <Icon path={mdiAlertCircle} size="24" class="text-danger" title={$t('error')} />
+      {:else if uploadAsset.state === UploadState.ERROR || uploadAsset.state === UploadState.UNSUPPORTED_TYPE}
+        <Icon path={mdiAlertCircle} size="24" class="text-danger" title={String(uploadAsset.error)} />
       {:else if uploadAsset.state === UploadState.DUPLICATED}
         {#if uploadAsset.isTrashed}
           <Icon path={mdiTrashCan} size="24" class="text-gray-500" title={$t('asset_skipped_in_trash')} />
@@ -76,6 +76,7 @@
 
     {#if uploadAsset.state === UploadState.DUPLICATED && uploadAsset.assetId}
       <div class="flex items-center justify-between gap-1">
+        <!-- eslint-disable svelte/no-navigation-without-resolve  -->
         <a
           href={asLink(uploadAsset)}
           target="_blank"
@@ -90,6 +91,10 @@
           <Icon path={mdiClose} size="20" />
         </button>
       </div>
+    {:else if uploadAsset.state === UploadState.UNSUPPORTED_TYPE}
+      <button type="button" onclick={() => handleDismiss(uploadAsset)} class="" aria-hidden="true" tabindex={-1}>
+        <Icon path={mdiClose} size="20" />
+      </button>
     {:else if uploadAsset.state === UploadState.ERROR}
       <div class="flex items-center justify-between gap-1">
         <button type="button" onclick={() => handleRetry(uploadAsset)} class="" aria-hidden="true" tabindex={-1}>
@@ -115,11 +120,11 @@
     </div>
   {/if} -->
 
-  {#if uploadAsset.state === UploadState.ERROR}
+  <!-- {#if uploadAsset.state === UploadState.ERROR}
     <div class="flex flex-row justify-between">
       <p class="w-full rounded-md text-justify text-danger">
         {uploadAsset.error}
       </p>
     </div>
-  {/if}
+  {/if} -->
 </div>
