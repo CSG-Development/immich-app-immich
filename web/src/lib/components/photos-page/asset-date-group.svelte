@@ -157,7 +157,10 @@
         </div>
       {/if}
 
-      <span class="w-full truncate first-letter:capitalize" title={dayGroup.groupTitle}>
+      <span
+        class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]"
+        title={dayGroup.groupTitle}
+      >
         {dayGroup.groupTitle}
       </span>
     </div>

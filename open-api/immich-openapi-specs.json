@@ -7049,6 +7049,46 @@
         "tags": [
           "Users"
         ]
+      },
+      "put": {
+        "operationId": "updateMyUser",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateMeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAdminResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/users/me/license": {
@@ -7484,7 +7524,7 @@
   "info": {
     "title": "Immich",
     "description": "Immich API",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "contact": {}
   },
   "tags": [],
@@ -14122,6 +14162,29 @@
           "deleted"
         ],
         "type": "string"
+      },
+      "UserUpdateMeDto": {
+        "properties": {
+          "avatarColor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserAvatarColor"
+              }
+            ],
+            "nullable": true
+          },
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "type": "object"
       },
       "ValidateAccessTokenResponseDto": {
         "properties": {
