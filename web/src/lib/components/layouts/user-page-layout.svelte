@@ -6,6 +6,7 @@
   import { useActions, type ActionArray } from '$lib/actions/use-actions';
   import NavigationBar from '$lib/components/shared-components/navigation-bar/navigation-bar.svelte';
   import UserSidebar from '$lib/components/shared-components/side-bar/user-sidebar.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
   import type { Snippet } from 'svelte';
 
@@ -60,11 +61,16 @@
   {/if}
 
   <main class="relative">
-    <div class="{scrollbarClass} absolute {hasTitleClass} w-full overflow-y-auto p-6" use:useActions={use}>
+    <div
+      class={`${scrollbarClass} absolute ${hasTitleClass} w-full overflow-y-auto ${mobileDevice.maxMd ? 'p-2' : 'p-6'}`}
+      use:useActions={use}
+    >
       {@render children?.()}
     </div>
     {#if title || buttons}
-      <div class="absolute flex h-16 w-full place-items-center justify-between border-b p-6 text-dark">
+      <div
+        class={`absolute flex h-16 w-full place-items-center justify-between border-b ${mobileDevice.maxMd ? 'p-2' : 'p-6'} text-dark`}
+      >
         <div class="flex gap-2 items-center">
           {#if title}
             <div class="font-medium outline-none" tabindex="-1" id={headerId}>{title}</div>

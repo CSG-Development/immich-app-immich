@@ -16,7 +16,7 @@ import {
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { NextFunction, Response } from 'express';
 import { AuthDto } from 'src/dtos/auth.dto';
-import { LicenseKeyDto, LicenseResponseDto } from 'src/dtos/license.dto';
+import { LicenseResponseDto } from 'src/dtos/license.dto';
 import { OnboardingDto, OnboardingResponseDto } from 'src/dtos/onboarding.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageDto, CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
@@ -49,11 +49,11 @@ export class UserController {
     return this.service.getMe(auth);
   }
 
-  // @Put('me')
-  // @Authenticated()
-  // updateMyUser(@Auth() auth: AuthDto, @Body() dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
-  //   return this.service.updateMe(auth, dto);
-  // }
+  @Put('me')
+  @Authenticated()
+  updateMyUser(@Auth() auth: AuthDto, @Body() dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
+     return this.service.updateMe(auth, dto);
+  }
 
   @Get('me/preferences')
   @Authenticated()
