@@ -38,14 +38,15 @@ enum SettingSection {
     // SettingSection.advanced => const AdvancedSettings(),
     SettingSection.assetViewer => const AssetViewerSettings(),
     SettingSection.backup =>
-      Store.tryGet(StoreKey.betaTimeline) ?? false ? const DriftBackupSettings() : const BackupSettings(),
+      (Store.tryGet(StoreKey.betaTimeline) ?? false) ? const DriftBackupSettings() : const BackupSettings(),
     SettingSection.languages => const LanguageSettings(),
     SettingSection.networking => const NetworkingSettings(),
     SettingSection.notifications => const NotificationSetting(),
     SettingSection.preferences => const PreferenceSetting(),
-        SettingSection.security => const SecuritySettings(),
+    SettingSection.security => const SecuritySettings(),
     SettingSection.timeline => const AssetListSettings(),
     SettingSection.beta => const SyncStatusAndActions(),
+  };
 
   const SettingSection(this.title, this.icon, this.subtitle);
 }

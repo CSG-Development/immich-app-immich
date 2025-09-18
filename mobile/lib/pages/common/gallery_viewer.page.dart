@@ -409,12 +409,17 @@ class GalleryViewerPage extends HookConsumerWidget {
               gaplessPlayback: true,
               loadingBuilder: (context, event, index) {
                 final asset = loadAsset(index);
-                return ClipRect(
+                return SizedBox(
+                  width: context.width,
+                  height: context.height,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10)),
-                      buildLoadingThumbnail(asset),
+                      SizedBox.expand(child: buildLoadingThumbnail(asset)),
+                      BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: const SizedBox.expand(),
+                      ),
                     ],
                   ),
                 );
@@ -442,6 +447,11 @@ class GalleryViewerPage extends HookConsumerWidget {
                 if (newAsset.isVideo || newAsset.isMotionPhoto) {
                   ref.read(videoPlaybackValueProvider.notifier).reset();
                 }
+
+                // Wait for page change animation to finish, then precache the next image
+                Timer(const Duration(milliseconds: 400), () {
+                  precacheNextImage(next);
+                });
 
                 context.scaffoldMessenger.hideCurrentSnackBar();
 

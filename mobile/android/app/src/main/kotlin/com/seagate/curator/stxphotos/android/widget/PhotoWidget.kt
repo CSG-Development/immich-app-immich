@@ -1,4 +1,4 @@
-package app.alextran.immich.widget
+package com.seagate.curator.stxphotos.android.widget
 
 import android.content.Context
 import android.content.Intent
@@ -17,8 +17,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import app.alextran.immich.R
-import app.alextran.immich.widget.model.*
+import com.seagate.curator.stxphotos.android.R
+import com.seagate.curator.stxphotos.android.widget.model.*
 import java.io.File
 
 class PhotoWidget : GlanceAppWidget() {

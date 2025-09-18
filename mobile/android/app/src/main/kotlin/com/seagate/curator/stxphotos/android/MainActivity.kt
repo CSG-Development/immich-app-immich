@@ -4,15 +4,15 @@ import android.content.Context
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.NonNull
-import app.alextran.immich.background.BackgroundWorkerApiImpl
-import app.alextran.immich.background.BackgroundWorkerFgHostApi
-import app.alextran.immich.connectivity.ConnectivityApi
-import app.alextran.immich.connectivity.ConnectivityApiImpl
-import app.alextran.immich.images.ThumbnailApi
-import app.alextran.immich.images.ThumbnailsImpl
-import app.alextran.immich.sync.NativeSyncApi
-import app.alextran.immich.sync.NativeSyncApiImpl26
-import app.alextran.immich.sync.NativeSyncApiImpl30
+import com.seagate.curator.stxphotos.android.background.BackgroundWorkerApiImpl
+import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostApi
+import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApi
+import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApiImpl
+import com.seagate.curator.stxphotos.android.images.ThumbnailApi
+import com.seagate.curator.stxphotos.android.images.ThumbnailsImpl
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApi
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl26
+import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl30
 import com.seagate.curator.stxphotos.android.clipboard.NativeClipboardApi
 import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
 import com.seagate.curator.stxphotos.android.TelemetryWrapperPlugin
@@ -42,7 +42,7 @@ class MainActivity : FlutterFragmentActivity() {
       ThumbnailApi.setUp(messenger, ThumbnailsImpl(ctx))
       BackgroundWorkerFgHostApi.setUp(messenger, BackgroundWorkerApiImpl(ctx))
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
-      NativeClipboardApi.setUp(flutterEngine.dartExecutor.binaryMessenger, ClipboardMessagesImpl(this))
+      NativeClipboardApi.setUp(flutterEngine.dartExecutor.binaryMessenger, ClipboardMessagesImpl(ctx))
     }
   }
 }

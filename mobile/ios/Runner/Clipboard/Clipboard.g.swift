@@ -11,29 +11,11 @@ import Foundation
   #error("Unsupported platform.")
 #endif
 
-/// Error class for passing custom error details to Dart side.
-final class ClipboardPigeonError: Error {
-  let code: String
-  let message: String?
-  let details: Sendable?
-
-  init(code: String, message: String?, details: Sendable?) {
-    self.code = code
-    self.message = message
-    self.details = details
-  }
-
-  var localizedDescription: String {
-    return
-      "ClipboardPigeonError(code: \(code), message: \(message ?? "<nil>"), details: \(details ?? "<nil>")"
-  }
-}
-
-private func clipboardWrapResult(_ result: Any?) -> [Any?] {
+private func wrapResult(_ result: Any?) -> [Any?] {
   return [result]
 }
 
-private func clipboardWrapError(_ error: Any) -> [Any?] {
+private func wrapError(_ error: Any) -> [Any?] {
   if let pigeonError = error as? PigeonError {
     return [
       pigeonError.code,
@@ -55,18 +37,18 @@ private func clipboardWrapError(_ error: Any) -> [Any?] {
   ]
 }
 
-private func clipboardIsNullish(_ value: Any?) -> Bool {
+private func isNullish(_ value: Any?) -> Bool {
   return value is NSNull || value == nil
 }
 
-private func clipboardNilOrValue<T>(_ value: Any?) -> T? {
+private func nilOrValue<T>(_ value: Any?) -> T? {
   if value is NSNull { return nil }
   return value as! T?
 }
 
-func deepEqualsClipboardMessages(_ lhs: Any?, _ rhs: Any?) -> Bool {
-  let cleanLhs = clipboardNilOrValue(lhs) as Any?
-  let cleanRhs = clipboardNilOrValue(rhs) as Any?
+func deepEqualsClipboard(_ lhs: Any?, _ rhs: Any?) -> Bool {
+  let cleanLhs = nilOrValue(lhs) as Any?
+  let cleanRhs = nilOrValue(rhs) as Any?
   switch (cleanLhs, cleanRhs) {
   case (nil, nil):
     return true
@@ -83,7 +65,7 @@ func deepEqualsClipboardMessages(_ lhs: Any?, _ rhs: Any?) -> Bool {
   case let (cleanLhsArray, cleanRhsArray) as ([Any?], [Any?]):
     guard cleanLhsArray.count == cleanRhsArray.count else { return false }
     for (index, element) in cleanLhsArray.enumerated() {
-      if !deepEqualsClipboardMessages(element, cleanRhsArray[index]) {
+      if !deepEqualsClipboard(element, cleanRhsArray[index]) {
         return false
       }
     }
@@ -93,7 +75,7 @@ func deepEqualsClipboardMessages(_ lhs: Any?, _ rhs: Any?) -> Bool {
     guard cleanLhsDictionary.count == cleanRhsDictionary.count else { return false }
     for (key, cleanLhsValue) in cleanLhsDictionary {
       guard cleanRhsDictionary.index(forKey: key) != nil else { return false }
-      if !deepEqualsClipboardMessages(cleanLhsValue, cleanRhsDictionary[key]!) {
+      if !deepEqualsClipboard(cleanLhsValue, cleanRhsDictionary[key]!) {
         return false
       }
     }
@@ -105,16 +87,16 @@ func deepEqualsClipboardMessages(_ lhs: Any?, _ rhs: Any?) -> Bool {
   }
 }
 
-func deepHashClipboardMessages(value: Any?, hasher: inout Hasher) {
+func deepHashClipboard(value: Any?, hasher: inout Hasher) {
   if let valueList = value as? [AnyHashable] {
-     for item in valueList { deepHashClipboardMessages(value: item, hasher: &hasher) }
+     for item in valueList { deepHashClipboard(value: item, hasher: &hasher) }
      return
   }
 
   if let valueDict = value as? [AnyHashable: AnyHashable] {
     for key in valueDict.keys { 
       hasher.combine(key)
-      deepHashClipboardMessages(value: valueDict[key]!, hasher: &hasher)
+      deepHashClipboard(value: valueDict[key]!, hasher: &hasher)
     }
     return
   }
@@ -161,9 +143,9 @@ struct ClipboardPhoto: Hashable {
     ]
   }
   static func == (lhs: ClipboardPhoto, rhs: ClipboardPhoto) -> Bool {
-    return deepEqualsClipboardMessages(lhs.toList(), rhs.toList())  }
+    return deepEqualsClipboard(lhs.toList(), rhs.toList())  }
   func hash(into hasher: inout Hasher) {
-    deepHashClipboardMessages(value: toList(), hasher: &hasher)
+    deepHashClipboard(value: toList(), hasher: &hasher)
   }
 }
 
@@ -179,7 +161,7 @@ struct ClipboardResult: Hashable {
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> ClipboardResult? {
     let success = pigeonVar_list[0] as! Bool
-    let error: String? = clipboardNilOrValue(pigeonVar_list[1])
+    let error: String? = nilOrValue(pigeonVar_list[1])
     let photoCount = pigeonVar_list[2] as! Int64
 
     return ClipboardResult(
@@ -196,13 +178,13 @@ struct ClipboardResult: Hashable {
     ]
   }
   static func == (lhs: ClipboardResult, rhs: ClipboardResult) -> Bool {
-    return deepEqualsClipboardMessages(lhs.toList(), rhs.toList())  }
+    return deepEqualsClipboard(lhs.toList(), rhs.toList())  }
   func hash(into hasher: inout Hasher) {
-    deepHashClipboardMessages(value: toList(), hasher: &hasher)
+    deepHashClipboard(value: toList(), hasher: &hasher)
   }
 }
 
-private class ClipboardMessagesPigeonCodecReader: FlutterStandardReader {
+private class ClipboardPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
     case 129:
@@ -215,7 +197,7 @@ private class ClipboardMessagesPigeonCodecReader: FlutterStandardReader {
   }
 }
 
-private class ClipboardMessagesPigeonCodecWriter: FlutterStandardWriter {
+private class ClipboardPigeonCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
     if let value = value as? ClipboardPhoto {
       super.writeByte(129)
@@ -229,18 +211,18 @@ private class ClipboardMessagesPigeonCodecWriter: FlutterStandardWriter {
   }
 }
 
-private class ClipboardMessagesPigeonCodecReaderWriter: FlutterStandardReaderWriter {
+private class ClipboardPigeonCodecReaderWriter: FlutterStandardReaderWriter {
   override func reader(with data: Data) -> FlutterStandardReader {
-    return ClipboardMessagesPigeonCodecReader(data: data)
+    return ClipboardPigeonCodecReader(data: data)
   }
 
   override func writer(with data: NSMutableData) -> FlutterStandardWriter {
-    return ClipboardMessagesPigeonCodecWriter(data: data)
+    return ClipboardPigeonCodecWriter(data: data)
   }
 }
 
-class ClipboardMessagesPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
-  static let shared = ClipboardMessagesPigeonCodec(readerWriter: ClipboardMessagesPigeonCodecReaderWriter())
+class ClipboardPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
+  static let shared = ClipboardPigeonCodec(readerWriter: ClipboardPigeonCodecReaderWriter())
 }
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
@@ -264,22 +246,22 @@ protocol NativeClipboardApi {
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
 class NativeClipboardApiSetup {
-  static var codec: FlutterStandardMessageCodec { ClipboardMessagesPigeonCodec.shared }
+  static var codec: FlutterStandardMessageCodec { ClipboardPigeonCodec.shared }
   /// Sets up an instance of `NativeClipboardApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: NativeClipboardApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
     /// Copy photos to the system clipboard
     /// Returns success status and any error message
-    let copyPhotosToClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.copyPhotosToClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let copyPhotosToClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.copyPhotosToClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       copyPhotosToClipboardChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
         let filePathsArg = args[0] as! [String]
         do {
           let result = try api.copyPhotosToClipboard(filePaths: filePathsArg)
-          reply(clipboardWrapResult(result))
+          reply(wrapResult(result))
         } catch {
-          reply(clipboardWrapError(error))
+          reply(wrapError(error))
         }
       }
     } else {
@@ -287,14 +269,14 @@ class NativeClipboardApiSetup {
     }
     /// Get photos from the system clipboard
     /// Returns list of photo file paths if available
-    let getPhotosFromClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getPhotosFromClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getPhotosFromClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.getPhotosFromClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPhotosFromClipboardChannel.setMessageHandler { _, reply in
         do {
           let result = try api.getPhotosFromClipboard()
-          reply(clipboardWrapResult(result))
+          reply(wrapResult(result))
         } catch {
-          reply(clipboardWrapError(error))
+          reply(wrapError(error))
         }
       }
     } else {
@@ -302,14 +284,14 @@ class NativeClipboardApiSetup {
     }
     /// Check if there are photos in the clipboard
     /// Returns true if photos are available
-    let hasPhotosInClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.hasPhotosInClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let hasPhotosInClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.hasPhotosInClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       hasPhotosInClipboardChannel.setMessageHandler { _, reply in
         do {
           let result = try api.hasPhotosInClipboard()
-          reply(clipboardWrapResult(result))
+          reply(wrapResult(result))
         } catch {
-          reply(clipboardWrapError(error))
+          reply(wrapError(error))
         }
       }
     } else {
@@ -317,14 +299,14 @@ class NativeClipboardApiSetup {
     }
     /// Get clipboard photo metadata
     /// Returns list of photo information if available
-    let getClipboardPhotoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.getClipboardPhotoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getClipboardPhotoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.getClipboardPhotoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getClipboardPhotoMetadataChannel.setMessageHandler { _, reply in
         do {
           let result = try api.getClipboardPhotoMetadata()
-          reply(clipboardWrapResult(result))
+          reply(wrapResult(result))
         } catch {
-          reply(clipboardWrapError(error))
+          reply(wrapError(error))
         }
       }
     } else {
@@ -332,14 +314,14 @@ class NativeClipboardApiSetup {
     }
     /// Clear the system clipboard
     /// Returns true if clipboard was cleared successfully
-    let clearClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos_clipboard.NativeClipboardApi.clearClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.clearClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearClipboardChannel.setMessageHandler { _, reply in
         do {
           let result = try api.clearClipboard()
-          reply(clipboardWrapResult(result))
+          reply(wrapResult(result))
         } catch {
-          reply(clipboardWrapError(error))
+          reply(wrapError(error))
         }
       }
     } else {

@@ -117,7 +117,7 @@ class TabControllerPage extends HookConsumerWidget {
           opacity: isVisible ? 1 : 0,
           child: bottomNavigationBar(tabsRouter),
         ),
-      ),
+      );
     }
 
     Widget navigationRail(TabsRouter tabsRouter) {
@@ -159,7 +159,7 @@ class TabControllerPage extends HookConsumerWidget {
                           duration: const Duration(milliseconds: 200),
                           child: Material(
                             elevation: 3,
-                            child: animatedBottomNavigationBar(navigationRail(tabsRouter)),
+                            child: animatedBottomNavigationBar(tabsRouter),
                           ),
                         ),
                       ),

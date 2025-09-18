@@ -1,4 +1,4 @@
-package app.alextran.immich.widget.configure
+package com.seagate.curator.stxphotos.android.widget.configure
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -24,9 +24,9 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import app.alextran.immich.widget.ImageDownloadWorker
-import app.alextran.immich.widget.ImmichAPI
-import app.alextran.immich.widget.model.*
+import com.seagate.curator.stxphotos.android.widget.ImageDownloadWorker
+import com.seagate.curator.stxphotos.android.widget.ImmichAPI
+import com.seagate.curator.stxphotos.android.widget.model.*
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 

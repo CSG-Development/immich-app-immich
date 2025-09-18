@@ -1,4 +1,4 @@
-package app.alextran.immich.connectivity
+package com.seagate.curator.stxphotos.android.connectivity
 
 import android.content.Context
 import android.net.ConnectivityManager

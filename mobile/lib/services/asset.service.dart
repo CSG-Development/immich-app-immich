@@ -180,7 +180,7 @@ class AssetService {
               await _assetRepository
                   .transaction(() => _assetRepository.update(a));
             } else {
-              debugPrint("[loadTags] parameter Asset is not from DB!");
+              dPrint(() => "[loadTags] parameter Asset is not from DB!");
             }
           }
         }

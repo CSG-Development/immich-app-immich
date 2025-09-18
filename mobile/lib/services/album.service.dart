@@ -312,8 +312,8 @@ class AlbumService {
     try {
       await _updateAssets(album.id, remove: assets.toList());
       return true;
-    } catch (e) {
-      debugPrint("Error removeAssetFromAlbum ${e.toString()}");
+    } catch (error, stackTrace) {
+      _log.severe("Error removeAssetFromAlbum", error, stackTrace);
     }
     return false;
   }

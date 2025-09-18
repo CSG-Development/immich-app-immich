@@ -6,10 +6,10 @@ import 'package:pigeon/pigeon.dart';
     swiftOut: 'ios/Runner/Images/Thumbnails.g.swift',
     swiftOptions: SwiftOptions(includeErrorClass: false),
     kotlinOut:
-        'android/app/src/main/kotlin/app/alextran/immich/images/Thumbnails.g.kt',
-    kotlinOptions: KotlinOptions(package: 'app.alextran.immich.images'),
+        'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/images/Thumbnails.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.images'),
     dartOptions: DartOptions(),
-    dartPackageName: 'immich_mobile',
+    dartPackageName: 'curator_photos',
   ),
 )
 @HostApi()

@@ -5,10 +5,10 @@ import 'package:pigeon/pigeon.dart';
     dartOut: 'lib/platform/background_worker_api.g.dart',
     swiftOut: 'ios/Runner/Background/BackgroundWorker.g.swift',
     swiftOptions: SwiftOptions(includeErrorClass: false),
-    kotlinOut: 'android/app/src/main/kotlin/app/alextran/immich/background/BackgroundWorker.g.kt',
-    kotlinOptions: KotlinOptions(package: 'app.alextran.immich.background'),
+    kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/background/BackgroundWorker.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.background'),
     dartOptions: DartOptions(),
-    dartPackageName: 'immich_mobile',
+    dartPackageName: 'curator_photos',
   ),
 )
 @HostApi()

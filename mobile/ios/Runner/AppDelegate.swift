@@ -49,7 +49,6 @@ import AVFoundation
     BackgroundWorkerApiImpl.registerBackgroundWorkers()
 
     TelemetryWrapperPlugin.register(with: self.registrar(forPlugin: "TelemetryWrapperPlugin")!)
-    let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
     startAirPlayManager(flutterViewController: controller)
     
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in

@@ -692,7 +692,7 @@ class CropImageRouteArgs {
 /// [CuratorOnboardingPage]
 class CuratorOnboardingRoute extends PageRouteInfo<void> {
   const CuratorOnboardingRoute({List<PageRouteInfo>? children})
-      : super(CuratorOnboardingRoute.name, initialChildren: children);
+    : super(CuratorOnboardingRoute.name, initialChildren: children);
 
   static const String name = 'CuratorOnboardingRoute';
 
@@ -700,6 +700,835 @@ class CuratorOnboardingRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const CuratorOnboardingPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftActivitiesPage]
+class DriftActivitiesRoute extends PageRouteInfo<void> {
+  const DriftActivitiesRoute({List<PageRouteInfo>? children})
+    : super(DriftActivitiesRoute.name, initialChildren: children);
+
+  static const String name = 'DriftActivitiesRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftActivitiesPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftAlbumOptionsPage]
+class DriftAlbumOptionsRoute extends PageRouteInfo<void> {
+  const DriftAlbumOptionsRoute({List<PageRouteInfo>? children})
+    : super(DriftAlbumOptionsRoute.name, initialChildren: children);
+
+  static const String name = 'DriftAlbumOptionsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftAlbumOptionsPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftAlbumsPage]
+class DriftAlbumsRoute extends PageRouteInfo<void> {
+  const DriftAlbumsRoute({List<PageRouteInfo>? children})
+    : super(DriftAlbumsRoute.name, initialChildren: children);
+
+  static const String name = 'DriftAlbumsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftAlbumsPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftArchivePage]
+class DriftArchiveRoute extends PageRouteInfo<void> {
+  const DriftArchiveRoute({List<PageRouteInfo>? children})
+    : super(DriftArchiveRoute.name, initialChildren: children);
+
+  static const String name = 'DriftArchiveRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftArchivePage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftAssetSelectionTimelinePage]
+class DriftAssetSelectionTimelineRoute
+    extends PageRouteInfo<DriftAssetSelectionTimelineRouteArgs> {
+  DriftAssetSelectionTimelineRoute({
+    Key? key,
+    Set<BaseAsset> lockedSelectionAssets = const {},
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftAssetSelectionTimelineRoute.name,
+         args: DriftAssetSelectionTimelineRouteArgs(
+           key: key,
+           lockedSelectionAssets: lockedSelectionAssets,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftAssetSelectionTimelineRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftAssetSelectionTimelineRouteArgs>(
+        orElse: () => const DriftAssetSelectionTimelineRouteArgs(),
+      );
+      return DriftAssetSelectionTimelinePage(
+        key: args.key,
+        lockedSelectionAssets: args.lockedSelectionAssets,
+      );
+    },
+  );
+}
+
+class DriftAssetSelectionTimelineRouteArgs {
+  const DriftAssetSelectionTimelineRouteArgs({
+    this.key,
+    this.lockedSelectionAssets = const {},
+  });
+
+  final Key? key;
+
+  final Set<BaseAsset> lockedSelectionAssets;
+
+  @override
+  String toString() {
+    return 'DriftAssetSelectionTimelineRouteArgs{key: $key, lockedSelectionAssets: $lockedSelectionAssets}';
+  }
+}
+
+/// generated route for
+/// [DriftBackupAlbumSelectionPage]
+class DriftBackupAlbumSelectionRoute extends PageRouteInfo<void> {
+  const DriftBackupAlbumSelectionRoute({List<PageRouteInfo>? children})
+    : super(DriftBackupAlbumSelectionRoute.name, initialChildren: children);
+
+  static const String name = 'DriftBackupAlbumSelectionRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftBackupAlbumSelectionPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftBackupAssetDetailPage]
+class DriftBackupAssetDetailRoute extends PageRouteInfo<void> {
+  const DriftBackupAssetDetailRoute({List<PageRouteInfo>? children})
+    : super(DriftBackupAssetDetailRoute.name, initialChildren: children);
+
+  static const String name = 'DriftBackupAssetDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftBackupAssetDetailPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftBackupOptionsPage]
+class DriftBackupOptionsRoute extends PageRouteInfo<void> {
+  const DriftBackupOptionsRoute({List<PageRouteInfo>? children})
+    : super(DriftBackupOptionsRoute.name, initialChildren: children);
+
+  static const String name = 'DriftBackupOptionsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftBackupOptionsPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftBackupPage]
+class DriftBackupRoute extends PageRouteInfo<void> {
+  const DriftBackupRoute({List<PageRouteInfo>? children})
+    : super(DriftBackupRoute.name, initialChildren: children);
+
+  static const String name = 'DriftBackupRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftBackupPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftCreateAlbumPage]
+class DriftCreateAlbumRoute extends PageRouteInfo<void> {
+  const DriftCreateAlbumRoute({List<PageRouteInfo>? children})
+    : super(DriftCreateAlbumRoute.name, initialChildren: children);
+
+  static const String name = 'DriftCreateAlbumRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftCreateAlbumPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftCropImagePage]
+class DriftCropImageRoute extends PageRouteInfo<DriftCropImageRouteArgs> {
+  DriftCropImageRoute({
+    Key? key,
+    required Image image,
+    required BaseAsset asset,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftCropImageRoute.name,
+         args: DriftCropImageRouteArgs(key: key, image: image, asset: asset),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftCropImageRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftCropImageRouteArgs>();
+      return DriftCropImagePage(
+        key: args.key,
+        image: args.image,
+        asset: args.asset,
+      );
+    },
+  );
+}
+
+class DriftCropImageRouteArgs {
+  const DriftCropImageRouteArgs({
+    this.key,
+    required this.image,
+    required this.asset,
+  });
+
+  final Key? key;
+
+  final Image image;
+
+  final BaseAsset asset;
+
+  @override
+  String toString() {
+    return 'DriftCropImageRouteArgs{key: $key, image: $image, asset: $asset}';
+  }
+}
+
+/// generated route for
+/// [DriftEditImagePage]
+class DriftEditImageRoute extends PageRouteInfo<DriftEditImageRouteArgs> {
+  DriftEditImageRoute({
+    Key? key,
+    required BaseAsset asset,
+    required Image image,
+    required bool isEdited,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftEditImageRoute.name,
+         args: DriftEditImageRouteArgs(
+           key: key,
+           asset: asset,
+           image: image,
+           isEdited: isEdited,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftEditImageRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftEditImageRouteArgs>();
+      return DriftEditImagePage(
+        key: args.key,
+        asset: args.asset,
+        image: args.image,
+        isEdited: args.isEdited,
+      );
+    },
+  );
+}
+
+class DriftEditImageRouteArgs {
+  const DriftEditImageRouteArgs({
+    this.key,
+    required this.asset,
+    required this.image,
+    required this.isEdited,
+  });
+
+  final Key? key;
+
+  final BaseAsset asset;
+
+  final Image image;
+
+  final bool isEdited;
+
+  @override
+  String toString() {
+    return 'DriftEditImageRouteArgs{key: $key, asset: $asset, image: $image, isEdited: $isEdited}';
+  }
+}
+
+/// generated route for
+/// [DriftFavoritePage]
+class DriftFavoriteRoute extends PageRouteInfo<void> {
+  const DriftFavoriteRoute({List<PageRouteInfo>? children})
+    : super(DriftFavoriteRoute.name, initialChildren: children);
+
+  static const String name = 'DriftFavoriteRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftFavoritePage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftFilterImagePage]
+class DriftFilterImageRoute extends PageRouteInfo<DriftFilterImageRouteArgs> {
+  DriftFilterImageRoute({
+    Key? key,
+    required Image image,
+    required BaseAsset asset,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftFilterImageRoute.name,
+         args: DriftFilterImageRouteArgs(key: key, image: image, asset: asset),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftFilterImageRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftFilterImageRouteArgs>();
+      return DriftFilterImagePage(
+        key: args.key,
+        image: args.image,
+        asset: args.asset,
+      );
+    },
+  );
+}
+
+class DriftFilterImageRouteArgs {
+  const DriftFilterImageRouteArgs({
+    this.key,
+    required this.image,
+    required this.asset,
+  });
+
+  final Key? key;
+
+  final Image image;
+
+  final BaseAsset asset;
+
+  @override
+  String toString() {
+    return 'DriftFilterImageRouteArgs{key: $key, image: $image, asset: $asset}';
+  }
+}
+
+/// generated route for
+/// [DriftLibraryPage]
+class DriftLibraryRoute extends PageRouteInfo<void> {
+  const DriftLibraryRoute({List<PageRouteInfo>? children})
+    : super(DriftLibraryRoute.name, initialChildren: children);
+
+  static const String name = 'DriftLibraryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftLibraryPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftLocalAlbumsPage]
+class DriftLocalAlbumsRoute extends PageRouteInfo<void> {
+  const DriftLocalAlbumsRoute({List<PageRouteInfo>? children})
+    : super(DriftLocalAlbumsRoute.name, initialChildren: children);
+
+  static const String name = 'DriftLocalAlbumsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftLocalAlbumsPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftLockedFolderPage]
+class DriftLockedFolderRoute extends PageRouteInfo<void> {
+  const DriftLockedFolderRoute({List<PageRouteInfo>? children})
+    : super(DriftLockedFolderRoute.name, initialChildren: children);
+
+  static const String name = 'DriftLockedFolderRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftLockedFolderPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftMapPage]
+class DriftMapRoute extends PageRouteInfo<DriftMapRouteArgs> {
+  DriftMapRoute({
+    Key? key,
+    LatLng? initialLocation,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftMapRoute.name,
+         args: DriftMapRouteArgs(key: key, initialLocation: initialLocation),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftMapRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftMapRouteArgs>(
+        orElse: () => const DriftMapRouteArgs(),
+      );
+      return DriftMapPage(key: args.key, initialLocation: args.initialLocation);
+    },
+  );
+}
+
+class DriftMapRouteArgs {
+  const DriftMapRouteArgs({this.key, this.initialLocation});
+
+  final Key? key;
+
+  final LatLng? initialLocation;
+
+  @override
+  String toString() {
+    return 'DriftMapRouteArgs{key: $key, initialLocation: $initialLocation}';
+  }
+}
+
+/// generated route for
+/// [DriftMemoryPage]
+class DriftMemoryRoute extends PageRouteInfo<DriftMemoryRouteArgs> {
+  DriftMemoryRoute({
+    required List<DriftMemory> memories,
+    required int memoryIndex,
+    Key? key,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftMemoryRoute.name,
+         args: DriftMemoryRouteArgs(
+           memories: memories,
+           memoryIndex: memoryIndex,
+           key: key,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftMemoryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftMemoryRouteArgs>();
+      return DriftMemoryPage(
+        memories: args.memories,
+        memoryIndex: args.memoryIndex,
+        key: args.key,
+      );
+    },
+  );
+}
+
+class DriftMemoryRouteArgs {
+  const DriftMemoryRouteArgs({
+    required this.memories,
+    required this.memoryIndex,
+    this.key,
+  });
+
+  final List<DriftMemory> memories;
+
+  final int memoryIndex;
+
+  final Key? key;
+
+  @override
+  String toString() {
+    return 'DriftMemoryRouteArgs{memories: $memories, memoryIndex: $memoryIndex, key: $key}';
+  }
+}
+
+/// generated route for
+/// [DriftPartnerDetailPage]
+class DriftPartnerDetailRoute
+    extends PageRouteInfo<DriftPartnerDetailRouteArgs> {
+  DriftPartnerDetailRoute({
+    Key? key,
+    required PartnerUserDto partner,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPartnerDetailRoute.name,
+         args: DriftPartnerDetailRouteArgs(key: key, partner: partner),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPartnerDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPartnerDetailRouteArgs>();
+      return DriftPartnerDetailPage(key: args.key, partner: args.partner);
+    },
+  );
+}
+
+class DriftPartnerDetailRouteArgs {
+  const DriftPartnerDetailRouteArgs({this.key, required this.partner});
+
+  final Key? key;
+
+  final PartnerUserDto partner;
+
+  @override
+  String toString() {
+    return 'DriftPartnerDetailRouteArgs{key: $key, partner: $partner}';
+  }
+}
+
+/// generated route for
+/// [DriftPartnerPage]
+class DriftPartnerRoute extends PageRouteInfo<void> {
+  const DriftPartnerRoute({List<PageRouteInfo>? children})
+    : super(DriftPartnerRoute.name, initialChildren: children);
+
+  static const String name = 'DriftPartnerRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftPartnerPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftPeopleCollectionPage]
+class DriftPeopleCollectionRoute extends PageRouteInfo<void> {
+  const DriftPeopleCollectionRoute({List<PageRouteInfo>? children})
+    : super(DriftPeopleCollectionRoute.name, initialChildren: children);
+
+  static const String name = 'DriftPeopleCollectionRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftPeopleCollectionPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftPersonPage]
+class DriftPersonRoute extends PageRouteInfo<DriftPersonRouteArgs> {
+  DriftPersonRoute({
+    Key? key,
+    required DriftPerson person,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPersonRoute.name,
+         args: DriftPersonRouteArgs(key: key, person: person),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPersonRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPersonRouteArgs>();
+      return DriftPersonPage(key: args.key, person: args.person);
+    },
+  );
+}
+
+class DriftPersonRouteArgs {
+  const DriftPersonRouteArgs({this.key, required this.person});
+
+  final Key? key;
+
+  final DriftPerson person;
+
+  @override
+  String toString() {
+    return 'DriftPersonRouteArgs{key: $key, person: $person}';
+  }
+}
+
+/// generated route for
+/// [DriftPlaceDetailPage]
+class DriftPlaceDetailRoute extends PageRouteInfo<DriftPlaceDetailRouteArgs> {
+  DriftPlaceDetailRoute({
+    Key? key,
+    required String place,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPlaceDetailRoute.name,
+         args: DriftPlaceDetailRouteArgs(key: key, place: place),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPlaceDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPlaceDetailRouteArgs>();
+      return DriftPlaceDetailPage(key: args.key, place: args.place);
+    },
+  );
+}
+
+class DriftPlaceDetailRouteArgs {
+  const DriftPlaceDetailRouteArgs({this.key, required this.place});
+
+  final Key? key;
+
+  final String place;
+
+  @override
+  String toString() {
+    return 'DriftPlaceDetailRouteArgs{key: $key, place: $place}';
+  }
+}
+
+/// generated route for
+/// [DriftPlacePage]
+class DriftPlaceRoute extends PageRouteInfo<DriftPlaceRouteArgs> {
+  DriftPlaceRoute({
+    Key? key,
+    LatLng? currentLocation,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPlaceRoute.name,
+         args: DriftPlaceRouteArgs(key: key, currentLocation: currentLocation),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPlaceRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPlaceRouteArgs>(
+        orElse: () => const DriftPlaceRouteArgs(),
+      );
+      return DriftPlacePage(
+        key: args.key,
+        currentLocation: args.currentLocation,
+      );
+    },
+  );
+}
+
+class DriftPlaceRouteArgs {
+  const DriftPlaceRouteArgs({this.key, this.currentLocation});
+
+  final Key? key;
+
+  final LatLng? currentLocation;
+
+  @override
+  String toString() {
+    return 'DriftPlaceRouteArgs{key: $key, currentLocation: $currentLocation}';
+  }
+}
+
+/// generated route for
+/// [DriftRecentlyTakenPage]
+class DriftRecentlyTakenRoute extends PageRouteInfo<void> {
+  const DriftRecentlyTakenRoute({List<PageRouteInfo>? children})
+    : super(DriftRecentlyTakenRoute.name, initialChildren: children);
+
+  static const String name = 'DriftRecentlyTakenRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftRecentlyTakenPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftSearchPage]
+class DriftSearchRoute extends PageRouteInfo<DriftSearchRouteArgs> {
+  DriftSearchRoute({
+    Key? key,
+    SearchFilter? preFilter,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftSearchRoute.name,
+         args: DriftSearchRouteArgs(key: key, preFilter: preFilter),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftSearchRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftSearchRouteArgs>(
+        orElse: () => const DriftSearchRouteArgs(),
+      );
+      return DriftSearchPage(key: args.key, preFilter: args.preFilter);
+    },
+  );
+}
+
+class DriftSearchRouteArgs {
+  const DriftSearchRouteArgs({this.key, this.preFilter});
+
+  final Key? key;
+
+  final SearchFilter? preFilter;
+
+  @override
+  String toString() {
+    return 'DriftSearchRouteArgs{key: $key, preFilter: $preFilter}';
+  }
+}
+
+/// generated route for
+/// [DriftTrashPage]
+class DriftTrashRoute extends PageRouteInfo<void> {
+  const DriftTrashRoute({List<PageRouteInfo>? children})
+    : super(DriftTrashRoute.name, initialChildren: children);
+
+  static const String name = 'DriftTrashRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftTrashPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftUploadDetailPage]
+class DriftUploadDetailRoute extends PageRouteInfo<void> {
+  const DriftUploadDetailRoute({List<PageRouteInfo>? children})
+    : super(DriftUploadDetailRoute.name, initialChildren: children);
+
+  static const String name = 'DriftUploadDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftUploadDetailPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DriftUserSelectionPage]
+class DriftUserSelectionRoute
+    extends PageRouteInfo<DriftUserSelectionRouteArgs> {
+  DriftUserSelectionRoute({
+    Key? key,
+    required RemoteAlbum album,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftUserSelectionRoute.name,
+         args: DriftUserSelectionRouteArgs(key: key, album: album),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftUserSelectionRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftUserSelectionRouteArgs>();
+      return DriftUserSelectionPage(key: args.key, album: args.album);
+    },
+  );
+}
+
+class DriftUserSelectionRouteArgs {
+  const DriftUserSelectionRouteArgs({this.key, required this.album});
+
+  final Key? key;
+
+  final RemoteAlbum album;
+
+  @override
+  String toString() {
+    return 'DriftUserSelectionRouteArgs{key: $key, album: $album}';
+  }
+}
+
+/// generated route for
+/// [DriftVideoPage]
+class DriftVideoRoute extends PageRouteInfo<void> {
+  const DriftVideoRoute({List<PageRouteInfo>? children})
+    : super(DriftVideoRoute.name, initialChildren: children);
+
+  static const String name = 'DriftVideoRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DriftVideoPage();
     },
   );
 }

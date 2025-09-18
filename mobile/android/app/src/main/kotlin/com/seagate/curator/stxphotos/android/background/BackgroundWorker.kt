@@ -1,4 +1,4 @@
-package app.alextran.immich.background
+package com.seagate.curator.stxphotos.android.background
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,8 +13,8 @@ import androidx.core.app.NotificationCompat
 import androidx.work.ForegroundInfo
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
-import app.alextran.immich.MainActivity
-import app.alextran.immich.R
+import com.seagate.curator.stxphotos.android.MainActivity
+import com.seagate.curator.stxphotos.android.R
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import io.flutter.FlutterInjector

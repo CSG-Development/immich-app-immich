@@ -1,4 +1,4 @@
-package app.alextran.immich.widget
+package com.seagate.curator.stxphotos.android.widget
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -16,7 +16,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import app.alextran.immich.widget.model.*
+import com.seagate.curator.stxphotos.android.widget.model.*
 import java.time.LocalDate
 
 class ImageDownloadWorker(

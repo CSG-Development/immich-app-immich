@@ -2,7 +2,7 @@
 // See also: https://pub.dev/packages/pigeon
 @file:Suppress("UNCHECKED_CAST", "ArrayInDataClass")
 
-package app.alextran.immich.connectivity
+package com.seagate.curator.stxphotos.android.connectivity
 
 import android.util.Log
 import io.flutter.plugin.common.BasicMessageChannel
@@ -97,7 +97,7 @@ interface ConnectivityApi {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       val taskQueue = binaryMessenger.makeBackgroundTaskQueue()
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.ConnectivityApi.getCapabilities$separatedMessageChannelSuffix", codec, taskQueue)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.ConnectivityApi.getCapabilities$separatedMessageChannelSuffix", codec, taskQueue)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {

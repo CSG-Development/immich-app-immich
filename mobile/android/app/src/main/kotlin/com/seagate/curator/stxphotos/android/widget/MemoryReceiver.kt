@@ -1,17 +1,17 @@
-package app.alextran.immich.widget
+package com.seagate.curator.stxphotos.android.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import es.antonborri.home_widget.HomeWidgetPlugin
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import app.alextran.immich.widget.model.*
+import com.seagate.curator.stxphotos.android.widget.model.*
+import es.antonborri.home_widget.HomeWidgetPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class RandomReceiver : GlanceAppWidgetReceiver() {
+class MemoryReceiver : GlanceAppWidgetReceiver() {
   override val glanceAppWidget = PhotoWidget()
 
   override fun onUpdate(
@@ -22,25 +22,25 @@ class RandomReceiver : GlanceAppWidgetReceiver() {
     super.onUpdate(context, appWidgetManager, appWidgetIds)
 
     appWidgetIds.forEach { widgetID ->
-      ImageDownloadWorker.enqueuePeriodic(context, widgetID, WidgetType.RANDOM)
+      ImageDownloadWorker.enqueuePeriodic(context, widgetID, WidgetType.MEMORIES)
     }
   }
 
   override fun onReceive(context: Context, intent: Intent) {
     val fromMainApp = intent.getBooleanExtra(HomeWidgetPlugin.TRIGGERED_FROM_HOME_WIDGET, false)
-    val provider = ComponentName(context, RandomReceiver::class.java)
+    val provider = ComponentName(context, MemoryReceiver::class.java)
     val glanceIds = AppWidgetManager.getInstance(context).getAppWidgetIds(provider)
 
     // Launch coroutine to setup a single shot if the app requested the update
     if (fromMainApp) {
       glanceIds.forEach { widgetID ->
-        ImageDownloadWorker.singleShot(context, widgetID, WidgetType.RANDOM)
+        ImageDownloadWorker.singleShot(context, widgetID, WidgetType.MEMORIES)
       }
     }
 
     // make sure the periodic jobs are running
     glanceIds.forEach { widgetID ->
-      ImageDownloadWorker.enqueuePeriodic(context, widgetID, WidgetType.RANDOM)
+      ImageDownloadWorker.enqueuePeriodic(context, widgetID, WidgetType.MEMORIES)
     }
 
     super.onReceive(context, intent)
@@ -55,3 +55,4 @@ class RandomReceiver : GlanceAppWidgetReceiver() {
     }
   }
 }
+

@@ -1,4 +1,4 @@
-package app.alextran.immich.widget.model
+package com.seagate.curator.stxphotos.android.widget.model
 
 import android.graphics.Bitmap
 import androidx.datastore.preferences.core.*

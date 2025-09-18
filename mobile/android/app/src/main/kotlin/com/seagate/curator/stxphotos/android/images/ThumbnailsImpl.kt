@@ -1,4 +1,4 @@
-package app.alextran.immich.images
+package com.seagate.curator.stxphotos.android.images
 
 import android.content.ContentResolver
 import android.content.ContentUris

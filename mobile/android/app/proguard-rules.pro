@@ -36,7 +36,7 @@
 ##---------------End: proguard configuration for Gson  ----------
 
 # Keep all widget model classes and their fields for Gson
--keep class app.alextran.immich.widget.model.** { *; }
+-keep class com.seagate.curator.stxphotos.android.widget.model.** { *; }
  
 ##---------------Begin: ffmpeg-kit keep rules  ----------
 # Keep all ffmpeg-kit classes to prevent R8/ProGuard from stripping JNI entry points

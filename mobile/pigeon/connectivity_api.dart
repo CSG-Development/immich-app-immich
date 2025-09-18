@@ -5,10 +5,10 @@ import 'package:pigeon/pigeon.dart';
     dartOut: 'lib/platform/connectivity_api.g.dart',
     swiftOut: 'ios/Runner/Connectivity/Connectivity.g.swift',
     swiftOptions: SwiftOptions(includeErrorClass: false),
-    kotlinOut: 'android/app/src/main/kotlin/app/alextran/immich/connectivity/Connectivity.g.kt',
-    kotlinOptions: KotlinOptions(package: 'app.alextran.immich.connectivity'),
+    kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/connectivity/Connectivity.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.connectivity'),
     dartOptions: DartOptions(),
-    dartPackageName: 'immich_mobile',
+    dartPackageName: 'curator_photos',
   ),
 )
 enum NetworkCapability { cellular, wifi, vpn, unmetered }

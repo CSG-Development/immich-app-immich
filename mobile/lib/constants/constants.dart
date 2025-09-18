@@ -30,18 +30,18 @@ const int kTimelineAssetLoadBatchSize = 1024;
 const int kTimelineAssetLoadOppositeSize = 64;
 
 // Widget keys
-const String appShareGroupId = "group.app.immich.share";
+const String appShareGroupId = "group.com.seagate.curator.stxphotos.ios.share";
 const String kWidgetAuthToken = "widget_auth_token";
 const String kWidgetServerEndpoint = "widget_server_url";
 const String kWidgetCustomHeaders = "widget_custom_headers";
-const String appShareGroupId = "group.com.seagate.curator.stxphotos.ios.share";
 
 // add widget identifiers here for new widgets
 // these are used to force a widget refresh
 // (iOSName, androidFQDN)
 const List<(String, String)> kWidgetNames = [
-  ('com.seagate.curator.stxphotos.widget.random', 'com.seagate.curator.stxphotos.widget.random'),
-  ('com.seagate.curator.stxphotos.widget.memory', 'com.seagate.curator.stxphotos.widget.memory'),
+  // iOS widget name, Android fully-qualified AppWidgetProvider class name
+  ('com.seagate.curator.stxphotos.widget.random', 'com.seagate.curator.stxphotos.android.widget.RandomReceiver'),
+  ('com.seagate.curator.stxphotos.widget.memory', 'com.seagate.curator.stxphotos.android.widget.MemoryReceiver'),
 ];
 
 const double kUploadStatusFailed = -1.0;

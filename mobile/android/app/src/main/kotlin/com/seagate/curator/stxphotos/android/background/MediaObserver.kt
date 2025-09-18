@@ -1,4 +1,4 @@
-package app.alextran.immich.background
+package com.seagate.curator.stxphotos.android.background
 
 import android.content.Context
 import android.util.Log

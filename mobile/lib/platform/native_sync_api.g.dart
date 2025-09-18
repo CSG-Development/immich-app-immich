@@ -257,8 +257,7 @@ class NativeSyncApi {
   Future<bool> shouldFullSync() async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.shouldFullSync$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -286,8 +285,7 @@ class NativeSyncApi {
   Future<SyncDelta> getMediaChanges() async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.getMediaChanges$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -315,8 +313,7 @@ class NativeSyncApi {
   Future<void> checkpointSync() async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.checkpointSync$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -339,8 +336,7 @@ class NativeSyncApi {
   Future<void> clearSyncCheckpoint() async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.clearSyncCheckpoint$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -363,8 +359,7 @@ class NativeSyncApi {
   Future<List<String>> getAssetIdsForAlbum(String albumId) async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetIdsForAlbum$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -392,8 +387,7 @@ class NativeSyncApi {
   Future<List<PlatformAlbum>> getAlbums() async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.getAlbums$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -421,8 +415,7 @@ class NativeSyncApi {
   Future<int> getAssetsCountSince(String albumId, int timestamp) async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsCountSince$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -450,8 +443,7 @@ class NativeSyncApi {
   Future<List<PlatformAsset>> getAssetsForAlbum(String albumId, {int? updatedTimeCond}) async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsForAlbum$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
@@ -479,8 +471,7 @@ class NativeSyncApi {
   Future<List<Uint8List?>> hashPaths(List<String> paths) async {
     final String pigeonVar_channelName =
         'dev.flutter.pigeon.curator_photos.NativeSyncApi.hashPaths$pigeonVar_messageChannelSuffix';
-    final BasicMessageChannel<Object?> pigeonVar_channel =
-        BasicMessageChannel<Object?>(
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,

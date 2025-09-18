@@ -2,7 +2,7 @@
 // See also: https://pub.dev/packages/pigeon
 @file:Suppress("UNCHECKED_CAST", "ArrayInDataClass")
 
-package app.alextran.immich.background
+package com.seagate.curator.stxphotos.android.background
 
 import android.util.Log
 import io.flutter.plugin.common.BasicMessageChannel
@@ -74,7 +74,7 @@ interface BackgroundWorkerFgHostApi {
     fun setUp(binaryMessenger: BinaryMessenger, api: BackgroundWorkerFgHostApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFgHostApi.enable$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.enable$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
@@ -90,7 +90,7 @@ interface BackgroundWorkerFgHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFgHostApi.disable$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.disable$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
@@ -124,7 +124,7 @@ interface BackgroundWorkerBgHostApi {
     fun setUp(binaryMessenger: BinaryMessenger, api: BackgroundWorkerBgHostApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.onInitialized$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.onInitialized$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
@@ -140,7 +140,7 @@ interface BackgroundWorkerBgHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.showNotification$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.showNotification$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -159,7 +159,7 @@ interface BackgroundWorkerBgHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.close$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.close$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
@@ -188,7 +188,7 @@ class BackgroundWorkerFlutterApi(private val binaryMessenger: BinaryMessenger, p
   fun onIosUpload(isRefreshArg: Boolean, maxSecondsArg: Long?, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.onIosUpload$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onIosUpload$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(isRefreshArg, maxSecondsArg)) {
       if (it is List<*>) {
@@ -205,7 +205,7 @@ class BackgroundWorkerFlutterApi(private val binaryMessenger: BinaryMessenger, p
   fun onAndroidUpload(callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.onAndroidUpload$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onAndroidUpload$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(null) {
       if (it is List<*>) {
@@ -222,7 +222,7 @@ class BackgroundWorkerFlutterApi(private val binaryMessenger: BinaryMessenger, p
   fun cancel(callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.cancel$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.cancel$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(null) {
       if (it is List<*>) {

@@ -1,4 +1,4 @@
-package app.alextran.immich.widget.configure
+package com.seagate.curator.stxphotos.android.widget.configure
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

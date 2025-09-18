@@ -83,7 +83,7 @@ class BackgroundWorkerFgHostApiSetup {
   /// Sets up an instance of `BackgroundWorkerFgHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: BackgroundWorkerFgHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let enableChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFgHostApi.enable\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let enableChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.enable\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       enableChannel.setMessageHandler { _, reply in
         do {
@@ -96,7 +96,7 @@ class BackgroundWorkerFgHostApiSetup {
     } else {
       enableChannel.setMessageHandler(nil)
     }
-    let disableChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFgHostApi.disable\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let disableChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.disable\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       disableChannel.setMessageHandler { _, reply in
         do {
@@ -124,7 +124,7 @@ class BackgroundWorkerBgHostApiSetup {
   /// Sets up an instance of `BackgroundWorkerBgHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: BackgroundWorkerBgHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let onInitializedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.onInitialized\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let onInitializedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.onInitialized\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       onInitializedChannel.setMessageHandler { _, reply in
         do {
@@ -137,7 +137,7 @@ class BackgroundWorkerBgHostApiSetup {
     } else {
       onInitializedChannel.setMessageHandler(nil)
     }
-    let showNotificationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.showNotification\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let showNotificationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.showNotification\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       showNotificationChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -153,7 +153,7 @@ class BackgroundWorkerBgHostApiSetup {
     } else {
       showNotificationChannel.setMessageHandler(nil)
     }
-    let closeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.immich_mobile.BackgroundWorkerBgHostApi.close\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let closeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.close\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       closeChannel.setMessageHandler { _, reply in
         do {
@@ -185,7 +185,7 @@ class BackgroundWorkerFlutterApi: BackgroundWorkerFlutterApiProtocol {
     return BackgroundWorkerPigeonCodec.shared
   }
   func onIosUpload(isRefresh isRefreshArg: Bool, maxSeconds maxSecondsArg: Int64?, completion: @escaping (Result<Void, PigeonError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.onIosUpload\(messageChannelSuffix)"
+    let channelName: String = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onIosUpload\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([isRefreshArg, maxSecondsArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -203,7 +203,7 @@ class BackgroundWorkerFlutterApi: BackgroundWorkerFlutterApiProtocol {
     }
   }
   func onAndroidUpload(completion: @escaping (Result<Void, PigeonError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.onAndroidUpload\(messageChannelSuffix)"
+    let channelName: String = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onAndroidUpload\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage(nil) { response in
       guard let listResponse = response as? [Any?] else {
@@ -221,7 +221,7 @@ class BackgroundWorkerFlutterApi: BackgroundWorkerFlutterApiProtocol {
     }
   }
   func cancel(completion: @escaping (Result<Void, PigeonError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.immich_mobile.BackgroundWorkerFlutterApi.cancel\(messageChannelSuffix)"
+    let channelName: String = "dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.cancel\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage(nil) { response in
       guard let listResponse = response as? [Any?] else {

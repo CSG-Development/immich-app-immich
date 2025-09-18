@@ -89,11 +89,8 @@ class AppLogDetailPage extends HookConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: SelectableText(
-                  context1.toString(),
-                  style: const TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  logger.toString(),
+                  style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

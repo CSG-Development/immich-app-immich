@@ -14,8 +14,8 @@ class BackgroundWorkerApiImpl: BackgroundWorkerFgHostApi {
     print("BackgroundUploadImpl:disableUploadWorker Disabled background workers")
   }
   
-  private static let refreshTaskID = "app.alextran.immich.background.refreshUpload"
-  private static let processingTaskID = "app.alextran.immich.background.processingUpload"
+  private static let refreshTaskID = "com.seagate.curator.stxphotos.background.refreshUpload"
+  private static let processingTaskID = "com.seagate.curator.stxphotos.background.processingUpload"
 
   public static func registerBackgroundWorkers() {
       BGTaskScheduler.shared.register(
