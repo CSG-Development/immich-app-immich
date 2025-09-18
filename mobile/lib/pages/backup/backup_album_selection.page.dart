@@ -19,50 +19,33 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedBackupAlbums = ref.watch(backupProvider).selectedBackupAlbums;
     final excludedBackupAlbums = ref.watch(backupProvider).excludedBackupAlbums;
-    final enableSyncUploadAlbum =
-        useAppSettingsState(AppSettingsEnum.syncAlbums);
+    final enableSyncUploadAlbum = useAppSettingsState(AppSettingsEnum.syncAlbums);
     final isDarkTheme = context.isDarkTheme;
     final albums = ref.watch(backupProvider).availableAlbums;
 
-    useEffect(
-      () {
-        ref.watch(backupProvider.notifier).getBackupInfo();
-        return null;
-      },
-      [],
-    );
+    useEffect(() {
+      ref.watch(backupProvider.notifier).getBackupInfo();
+      return null;
+    }, []);
 
     buildAlbumSelectionList() {
       if (albums.isEmpty) {
-        return const SliverToBoxAdapter(
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
+        return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
       }
 
       return SliverPadding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            ((context, index) {
-              return AlbumInfoListTile(
-                album: albums[index],
-              );
-            }),
-            childCount: albums.length,
-          ),
+          delegate: SliverChildBuilderDelegate(((context, index) {
+            return AlbumInfoListTile(album: albums[index]);
+          }), childCount: albums.length),
         ),
       );
     }
 
     buildAlbumSelectionGrid() {
       if (albums.isEmpty) {
-        return const SliverToBoxAdapter(
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
+        return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
       }
 
       return SliverPadding(
@@ -75,9 +58,7 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
           ),
           itemCount: albums.length,
           itemBuilder: ((context, index) {
-            return AlbumInfoCard(
-              album: albums[index],
-            );
+            return AlbumInfoCard(album: albums[index]);
           }),
         ),
       );
@@ -85,8 +66,7 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
 
     buildSelectedAlbumNameChip() {
       return selectedBackupAlbums.map((album) {
-        void removeSelection() =>
-            ref.read(backupProvider.notifier).removeAlbumForBackup(album);
+        void removeSelection() => ref.read(backupProvider.notifier).removeAlbumForBackup(album);
 
         return Padding(
           padding: const EdgeInsets.only(right: 8.0),
@@ -103,10 +83,7 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
               ),
               backgroundColor: context.primaryColor,
               deleteIconColor: isDarkTheme ? Colors.black : Colors.white,
-              deleteIcon: const Icon(
-                Icons.cancel_rounded,
-                size: 15,
-              ),
+              deleteIcon: const Icon(Icons.cancel_rounded, size: 15),
               onDeleted: removeSelection,
             ),
           ),
@@ -117,9 +94,7 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
     buildExcludedAlbumNameChip() {
       return excludedBackupAlbums.map((album) {
         void removeSelection() {
-          ref
-              .watch(backupProvider.notifier)
-              .removeExcludedAlbumForBackup(album);
+          ref.watch(backupProvider.notifier).removeExcludedAlbumForBackup(album);
         }
 
         return GestureDetector(
@@ -129,18 +104,11 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
             child: Chip(
               label: Text(
                 album.name,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.scaffoldBackgroundColor,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 12, color: context.scaffoldBackgroundColor, fontWeight: FontWeight.bold),
               ),
               backgroundColor: Colors.red[300],
               deleteIconColor: context.scaffoldBackgroundColor,
-              deleteIcon: const Icon(
-                Icons.cancel_rounded,
-                size: 15,
-              ),
+              deleteIcon: const Icon(Icons.cancel_rounded, size: 15),
               onDeleted: removeSelection,
             ),
           ),
@@ -159,13 +127,8 @@ class BackupAlbumSelectionPage extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.maybePop(),
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-        ),
-        title: const Text(
-          "backup_album_selection_page_select_albums",
-        ).tr(),
+        leading: IconButton(onPressed: () => context.maybePop(), icon: const Icon(Icons.arrow_back_ios_rounded)),
+        title: const Text("backup_album_selection_page_select_albums").tr(),
         elevation: 0,
       ),
       body: SafeArea(

@@ -29,54 +29,34 @@ class EditImagePage extends ConsumerWidget {
   final Image image;
   final bool isEdited;
 
-  const EditImagePage({
-    super.key,
-    required this.asset,
-    required this.image,
-    required this.isEdited,
-  });
+  const EditImagePage({super.key, required this.asset, required this.image, required this.isEdited});
   Future<Uint8List> _imageToUint8List(Image image) async {
     final Completer<Uint8List> completer = Completer();
-    image.image.resolve(const ImageConfiguration()).addListener(
-          ImageStreamListener(
-            (ImageInfo info, bool _) {
-              info.image
-                  .toByteData(format: ImageByteFormat.png)
-                  .then((byteData) {
-                if (byteData != null) {
-                  completer.complete(byteData.buffer.asUint8List());
-                } else {
-                  completer.completeError('Failed to convert image to bytes');
-                }
-              });
-            },
-            onError: (exception, stackTrace) =>
-                completer.completeError(exception),
-          ),
+    image.image
+        .resolve(const ImageConfiguration())
+        .addListener(
+          ImageStreamListener((ImageInfo info, bool _) {
+            info.image.toByteData(format: ImageByteFormat.png).then((byteData) {
+              if (byteData != null) {
+                completer.complete(byteData.buffer.asUint8List());
+              } else {
+                completer.completeError('Failed to convert image to bytes');
+              }
+            });
+          }, onError: (exception, stackTrace) => completer.completeError(exception)),
         );
     return completer.future;
   }
 
-  Future<void> _saveEditedImage(
-    BuildContext context,
-    Asset asset,
-    Image image,
-    WidgetRef ref,
-  ) async {
+  Future<void> _saveEditedImage(BuildContext context, Asset asset, Image image, WidgetRef ref) async {
     try {
       final Uint8List imageData = await _imageToUint8List(image);
-      await ref.read(fileMediaRepositoryProvider).saveImage(
-            imageData,
-            title: "${p.withoutExtension(asset.fileName)}_edited.jpg",
-          );
+      await ref
+          .read(fileMediaRepositoryProvider)
+          .saveImage(imageData, title: "${p.withoutExtension(asset.fileName)}_edited.jpg");
       await ref.read(albumProvider.notifier).refreshDeviceAlbums();
       context.navigator.popUntil((route) => route.isFirst);
-      ImmichToast.show(
-        durationInSecond: 3,
-        context: context,
-        msg: 'Image Saved!',
-        gravity: ToastGravity.CENTER,
-      );
+      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.CENTER);
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,

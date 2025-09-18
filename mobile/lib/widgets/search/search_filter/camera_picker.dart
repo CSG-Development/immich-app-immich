@@ -33,12 +33,7 @@ class CameraPicker extends HookConsumerWidget {
       ),
     );
 
-    final models = ref.watch(
-      getSearchSuggestionsProvider(
-        SearchSuggestionType.cameraModel,
-        make: selectedMake.value,
-      ),
-    );
+    final models = ref.watch(getSearchSuggestionsProvider(SearchSuggestionType.cameraModel, make: selectedMake.value));
 
     // Show error toast if make suggestions fail to load
     final makeErrorToastShown = useState<bool>(false);
@@ -149,10 +144,7 @@ class CameraPicker extends HookConsumerWidget {
       leadingIcon: const Icon(Icons.camera),
       onSelected: (value) {
         selectedModel.value = value.toString();
-        onSelect({
-          'make': selectedMake.value,
-          'model': selectedModel.value,
-        });
+        onSelect({'make': selectedMake.value, 'model': selectedModel.value});
       },
     );
 
