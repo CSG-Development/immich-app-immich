@@ -263,10 +263,13 @@ class ImmichAppState extends ConsumerState<ImmichApp>
         ),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: computeOverlayStyle(context),
-          child: SafeArea(
-            bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
-            top: false,
-            child: child!,
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SafeArea(
+              bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
+              top: false,
+              child: child!,
+            ),
           ),
         ),
       ),
