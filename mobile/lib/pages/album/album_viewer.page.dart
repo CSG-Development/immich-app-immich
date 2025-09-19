@@ -24,6 +24,13 @@ class AlbumViewerPage extends HookConsumerWidget {
       albumFuture.whenData((value) => ref.read(currentAlbumProvider.notifier).set(value));
     });
 
-    return const Scaffold(body: AlbumViewer());
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          Future.microtask(() => ref.read(currentAlbumProvider.notifier).set(null));
+        }
+      },
+      child: const Scaffold(body: AlbumViewer()),
+    );
   }
 }
