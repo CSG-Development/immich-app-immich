@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/widgets/settings/advanced_settings.dart';
 import 'package:immich_mobile/widgets/settings/asset_list_settings/asset_list_settings.dart';
 import 'package:immich_mobile/widgets/settings/asset_viewer_settings/asset_viewer_settings.dart';
 import 'package:immich_mobile/widgets/settings/backup_settings/backup_settings.dart';
@@ -19,7 +21,7 @@ import 'package:immich_mobile/widgets/settings/settings_card.dart';
 import 'package:immich_mobile/widgets/settings/security_settings/security_settings.dart';
 
 enum SettingSection {
-  // advanced('advanced', Icons.build_outlined, "advanced_settings_tile_subtitle"),
+  advanced('advanced', Icons.build_outlined, "advanced_settings_tile_subtitle"),
   assetViewer('asset_viewer_settings_title', Icons.image_outlined, "asset_viewer_settings_subtitle"),
   backup('backup', Icons.cloud_upload_outlined, "backup_settings_subtitle"),
   languages('language', Icons.language, "setting_languages_subtitle"),
@@ -35,7 +37,7 @@ enum SettingSection {
   final IconData icon;
 
   Widget get widget => switch (this) {
-    // SettingSection.advanced => const AdvancedSettings(),
+    SettingSection.advanced => const AdvancedSettings(),
     SettingSection.assetViewer => const AssetViewerSettings(),
     SettingSection.backup =>
       (Store.tryGet(StoreKey.betaTimeline) ?? false) ? const DriftBackupSettings() : const BackupSettings(),
@@ -52,16 +54,41 @@ enum SettingSection {
 }
 
 @RoutePage()
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends HookWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     context.locale;
+    final showAdvancedSettings = useState(false);
+    final tapCount = useState(0);
+    Timer? resetTimer;
+
+    void handleTitleTap() {
+      tapCount.value++;
+      
+      // Cancel previous timer
+      resetTimer?.cancel();
+      
+      if (tapCount.value >= 5) {
+        showAdvancedSettings.value = true;
+        tapCount.value = 0;
+        return;
+      }
+      
+      // Reset tap count after 2 seconds
+      resetTimer = Timer(const Duration(seconds: 2), () {
+        tapCount.value = 0;
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
-        title: const Text('settings').tr(),
+        title: GestureDetector(
+          onTap: handleTitleTap,
+          child: const Text('settings').tr(),
+        ),
         actions: [
           IconButton(
             icon: Icon(
@@ -73,16 +100,22 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: context.isMobile ? const SafeArea(child: _MobileLayout()) : const SafeArea(child: _TabletLayout()),
+      body: context.isMobile 
+        ? SafeArea(child: _MobileLayout(showAdvancedSettings: showAdvancedSettings.value))
+        : SafeArea(child: _TabletLayout(showAdvancedSettings: showAdvancedSettings.value)),
     );
   }
 }
 
 class _MobileLayout extends StatelessWidget {
-  const _MobileLayout();
+  const _MobileLayout({required this.showAdvancedSettings});
+  
+  final bool showAdvancedSettings;
+  
   @override
   Widget build(BuildContext context) {
     final List<Widget> settings = SettingSection.values
+        .where((setting) => setting != SettingSection.advanced || showAdvancedSettings)
         .expand(
           (setting) => setting == SettingSection.beta
               ? [
@@ -113,10 +146,16 @@ class _MobileLayout extends StatelessWidget {
 }
 
 class _TabletLayout extends HookWidget {
-  const _TabletLayout();
+  const _TabletLayout({required this.showAdvancedSettings});
+  
+  final bool showAdvancedSettings;
+  
   @override
   Widget build(BuildContext context) {
-    final selectedSection = useState<SettingSection>(SettingSection.values.first);
+    final availableSections = SettingSection.values
+        .where((setting) => setting != SettingSection.advanced || showAdvancedSettings)
+        .toList();
+    final selectedSection = useState<SettingSection>(availableSections.first);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -125,7 +164,7 @@ class _TabletLayout extends HookWidget {
           flex: 2,
           child: CustomScrollView(
             slivers: [
-              ...SettingSection.values.map(
+              ...availableSections.map(
                 (s) => SliverToBoxAdapter(
                   child: ListTile(
                     title: Text(s.title).tr(),
