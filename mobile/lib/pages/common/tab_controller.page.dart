@@ -150,6 +150,7 @@ class TabControllerPage extends HookConsumerWidget {
             body: isScreenLandscape
                 ? Stack(
                     children: [
+                      Positioned.fill(child: child),
                       Positioned(
                         left: 0,
                         right: 0,
@@ -163,7 +164,6 @@ class TabControllerPage extends HookConsumerWidget {
                           ),
                         ),
                       ),
-                      Positioned.fill(child: child),
                     ],
                   )
                 : child,
