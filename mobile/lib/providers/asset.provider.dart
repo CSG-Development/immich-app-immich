@@ -5,6 +5,7 @@ import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/domain/services/user.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/providers/memory.provider.dart';
 import 'package:immich_mobile/services/album.service.dart';
@@ -74,10 +75,21 @@ class AssetNotifier extends StateNotifier<bool> {
         _ref.invalidate(memoryFutureProvider);
       }
 
+      // Trigger backup after local sync completes (if auto-backup is enabled)
+      if (newLocal) {
+        log.info("Local sync completed, triggering backup");
+        // ignore: discarded_futures
+        _ref.read(backupProvider.notifier).resumeBackup();
+      }
+
       log.info("Load assets: ${stopwatch.elapsedMilliseconds}ms");
     } catch (error) {
       // If there is error in getting the remote assets, still showing the new local assets
       await _albumService.refreshDeviceAlbums();
+      // Trigger backup after local sync completes even in error case
+      log.info("Local sync completed (error case), triggering backup");
+      // ignore: discarded_futures
+      _ref.read(backupProvider.notifier).resumeBackup();
     } finally {
       _getAllAssetInProgress = false;
       if (mounted) {

@@ -48,6 +48,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   }
 
   void resumeSession() async {
+    if (!mounted) return;
     final serverUrl = Store.tryGet(StoreKey.serverUrl);
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     final accessToken = Store.tryGet(StoreKey.accessToken);
@@ -85,30 +86,33 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
         onError: (exception) => {
           log.severe('Failed to update auth info with access token: $accessToken'),
           ref.read(authProvider.notifier).logout(),
-          context.replaceRoute(const LoginRoute()),
+          if (mounted) context.replaceRoute(const LoginRoute()),
         },
       );
     } else {
       log.severe('Missing crucial offline login info - Logging out completely');
       ref.read(authProvider.notifier).logout();
-      context.replaceRoute(const LoginRoute());
+      if (mounted) context.replaceRoute(const LoginRoute());
       return;
     }
 
     // clean install - change the default of the flag
     // current install not using beta timeline
-    if (context.router.current.name == SplashScreenRoute.name) {
+    if (mounted && context.router.current.name == SplashScreenRoute.name) {
       final needBetaMigration = Store.get(StoreKey.needBetaMigration, false);
       if (needBetaMigration) {
         await Store.put(StoreKey.needBetaMigration, false);
+        if (!mounted) return;
         context.router.replaceAll([ChangeExperienceRoute(switchingToBeta: true)]);
         return;
       }
 
+      if (!mounted) return;
       context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
     }
 
     void proceedToMainScreen() async {
+      if (!mounted) return;
       if (context.router.current.name != ShareIntentRoute.name) {
         context.replaceRoute(const TabControllerRoute());
       }
@@ -137,17 +141,19 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       // If all attempts failed, logout user
       if (!authSuccess) {
         ref.read(authProvider.notifier).logout();
-        context.replaceRoute(const LoginRoute());
+        if (mounted) context.replaceRoute(const LoginRoute());
         return;
       }
     } else {
       proceedToMainScreen();
     }
 
+    if (!mounted) return;
     final hasPermission = await ref.read(galleryPermissionNotifier.notifier).hasPermission;
     if (hasPermission) {
       // Resume backup (if enable) then navigate
-      ref.watch(backupProvider.notifier).resumeBackup();
+      if (!mounted) return;
+      ref.read(backupProvider.notifier).resumeBackup();
     }
   }
 

@@ -155,6 +155,14 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   void setAutoBackup(bool enabled) {
     Store.put(StoreKey.autoBackup, enabled);
     state = state.copyWith(autoBackup: enabled);
+    // If the user just enabled auto-backup, attempt to start it immediately
+    // respecting the same guards used on app resume.
+    if (enabled) {
+      // Fire and forget; internal guards prevent overlapping runs
+      // and ensure auth/permission checks.
+      // ignore: discarded_futures
+      _resumeBackup();
+    }
   }
 
   void configureBackgroundBackup({
