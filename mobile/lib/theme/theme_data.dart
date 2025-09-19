@@ -129,8 +129,8 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        // Set the predictive back transitions for Android.
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        // Use iOS-style transitions for Android (faster and smoother).
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
       },
     ),
   );
