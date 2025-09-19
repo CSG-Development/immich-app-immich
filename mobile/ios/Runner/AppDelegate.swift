@@ -41,16 +41,14 @@ import AVFoundation
     configureAudioSession()
 
     GeneratedPluginRegistrant.register(with: self)
+    let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
+    AppDelegate.registerPlugins(binaryMessenger: controller.binaryMessenger)
+    BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
+
     BackgroundServicePlugin.registerBackgroundProcessing()
+    BackgroundWorkerApiImpl.registerBackgroundWorkers()
 
     TelemetryWrapperPlugin.register(with: self.registrar(forPlugin: "TelemetryWrapperPlugin")!)
-    BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
-    
-    let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
-    NativeSyncApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: NativeSyncApiImpl())
-
-    NativeClipboardApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: ClipboardMessagesImpl())
-
     startAirPlayManager(flutterViewController: controller)
     
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in
@@ -80,6 +78,12 @@ import AVFoundation
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+  
+  public static func registerPlugins(binaryMessenger: FlutterBinaryMessenger) {
+    NativeSyncApiSetup.setUp(binaryMessenger: binaryMessenger, api: NativeSyncApiImpl())
+    ThumbnailApiSetup.setUp(binaryMessenger: binaryMessenger, api: ThumbnailApiImpl())
+    BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: BackgroundWorkerApiImpl())
   }
 }
 

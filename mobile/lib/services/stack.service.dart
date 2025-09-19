@@ -1,49 +1,40 @@
-import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/interfaces/asset.interface.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:openapi/api.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 
 class StackService {
-  StackService(this._api, this._assetRepository);
+  const StackService(this._api, this._assetRepository);
 
   final ApiService _api;
-  final IAssetRepository _assetRepository;
+  final AssetRepository _assetRepository;
 
   Future<StackResponseDto?> getStack(String stackId) async {
     try {
       return _api.stacksApi.getStack(stackId);
     } catch (error) {
-      debugPrint("Error while fetching stack: $error");
+      dPrint(() => "Error while fetching stack: $error");
     }
     return null;
   }
 
   Future<StackResponseDto?> createStack(List<String> assetIds) async {
     try {
-      return _api.stacksApi.createStack(
-        StackCreateDto(assetIds: assetIds),
-      );
+      return _api.stacksApi.createStack(StackCreateDto(assetIds: assetIds));
     } catch (error) {
-      debugPrint("Error while creating stack: $error");
+      dPrint(() => "Error while creating stack: $error");
     }
     return null;
   }
 
-  Future<StackResponseDto?> updateStack(
-    String stackId,
-    String primaryAssetId,
-  ) async {
+  Future<StackResponseDto?> updateStack(String stackId, String primaryAssetId) async {
     try {
-      return await _api.stacksApi.updateStack(
-        stackId,
-        StackUpdateDto(primaryAssetId: primaryAssetId),
-      );
+      return await _api.stacksApi.updateStack(stackId, StackUpdateDto(primaryAssetId: primaryAssetId));
     } catch (error) {
-      debugPrint("Error while updating stack children: $error");
+      dPrint(() => "Error while updating stack children: $error");
     }
     return null;
   }
@@ -61,17 +52,13 @@ class StackService {
 
         removeAssets.add(asset);
       }
-      await _assetRepository
-          .transaction(() => _assetRepository.updateAll(removeAssets));
+      await _assetRepository.transaction(() => _assetRepository.updateAll(removeAssets));
     } catch (error) {
-      debugPrint("Error while deleting stack: $error");
+      dPrint(() => "Error while deleting stack: $error");
     }
   }
 }
 
 final stackServiceProvider = Provider(
-  (ref) => StackService(
-    ref.watch(apiServiceProvider),
-    ref.watch(assetRepositoryProvider),
-  ),
+  (ref) => StackService(ref.watch(apiServiceProvider), ref.watch(assetRepositoryProvider)),
 );

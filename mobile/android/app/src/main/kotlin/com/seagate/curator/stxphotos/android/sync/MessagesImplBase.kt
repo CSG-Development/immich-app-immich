@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.database.getStringOrNull
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
@@ -28,19 +29,24 @@ open class NativeSyncApiImplBase(context: Context) {
       MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
     )
     const val BUCKET_SELECTION = "(${MediaStore.Files.FileColumns.BUCKET_ID} = ?)"
-    val ASSET_PROJECTION = arrayOf(
-      MediaStore.MediaColumns._ID,
-      MediaStore.MediaColumns.DATA,
-      MediaStore.MediaColumns.DISPLAY_NAME,
-      MediaStore.MediaColumns.DATE_TAKEN,
-      MediaStore.MediaColumns.DATE_ADDED,
-      MediaStore.MediaColumns.DATE_MODIFIED,
-      MediaStore.Files.FileColumns.MEDIA_TYPE,
-      MediaStore.MediaColumns.BUCKET_ID,
-      MediaStore.MediaColumns.WIDTH,
-      MediaStore.MediaColumns.HEIGHT,
-      MediaStore.MediaColumns.DURATION
-    )
+    val ASSET_PROJECTION = buildList {
+      add(MediaStore.MediaColumns._ID)
+      add(MediaStore.MediaColumns.DATA)
+      add(MediaStore.MediaColumns.DISPLAY_NAME)
+      add(MediaStore.MediaColumns.DATE_TAKEN)
+      add(MediaStore.MediaColumns.DATE_ADDED)
+      add(MediaStore.MediaColumns.DATE_MODIFIED)
+      add(MediaStore.Files.FileColumns.MEDIA_TYPE)
+      add(MediaStore.MediaColumns.BUCKET_ID)
+      add(MediaStore.MediaColumns.WIDTH)
+      add(MediaStore.MediaColumns.HEIGHT)
+      add(MediaStore.MediaColumns.DURATION)
+      add(MediaStore.MediaColumns.ORIENTATION)
+      // IS_FAVORITE is only available on Android 11 and above
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+        add(MediaStore.MediaColumns.IS_FAVORITE)
+      }
+    }.toTypedArray()
 
     const val HASH_BUFFER_SIZE = 2 * 1024 * 1024
   }
@@ -73,6 +79,9 @@ open class NativeSyncApiImplBase(context: Context) {
         val widthColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.WIDTH)
         val heightColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.HEIGHT)
         val durationColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION)
+        val orientationColumn =
+          c.getColumnIndexOrThrow(MediaStore.MediaColumns.ORIENTATION)
+        val favoriteColumn = c.getColumnIndex(MediaStore.MediaColumns.IS_FAVORITE)
 
         while (c.moveToNext()) {
           val id = c.getLong(idColumn).toString()
@@ -100,6 +109,8 @@ open class NativeSyncApiImplBase(context: Context) {
           val duration = if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE) 0
           else c.getLong(durationColumn) / 1000
           val bucketId = c.getString(bucketIdColumn)
+          val orientation = c.getInt(orientationColumn)
+          val isFavorite = if (favoriteColumn == -1) false else c.getInt(favoriteColumn) != 0
 
           val asset = PlatformAsset(
             id,
@@ -109,7 +120,9 @@ open class NativeSyncApiImplBase(context: Context) {
             modifiedAt,
             width,
             height,
-            duration
+            duration,
+            orientation.toLong(),
+            isFavorite,
           )
           yield(AssetResult.ValidAsset(asset, bucketId))
         }
@@ -152,7 +165,8 @@ open class NativeSyncApiImplBase(context: Context) {
           continue
         }
 
-        val name = cursor.getString(bucketNameColumn)
+        // MediaStore might return null for bucket name (commonly for the Root Directory), so default to "Internal Storage"
+        val name = cursor.getStringOrNull(bucketNameColumn) ?: "Internal Storage"
         val updatedAt = cursor.getLong(dateModified)
         albums.add(PlatformAlbum(id, name, updatedAt, false, 0))
         albumsCount[id] = 1

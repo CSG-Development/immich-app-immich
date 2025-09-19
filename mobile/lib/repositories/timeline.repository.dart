@@ -9,30 +9,17 @@ import 'package:immich_mobile/utils/hash.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
 import 'package:isar/isar.dart';
 
-final timelineRepositoryProvider =
-    Provider((ref) => TimelineRepository(ref.watch(dbProvider)));
+final timelineRepositoryProvider = Provider((ref) => TimelineRepository(ref.watch(dbProvider)));
 
 class TimelineRepository extends DatabaseRepository {
-  TimelineRepository(super.db);
+  const TimelineRepository(super.db);
 
   Future<List<String>> getTimelineUserIds(String id) {
-    return db.users
-        .filter()
-        .inTimelineEqualTo(true)
-        .or()
-        .idEqualTo(id)
-        .idProperty()
-        .findAll();
+    return db.users.filter().inTimelineEqualTo(true).or().idEqualTo(id).idProperty().findAll();
   }
 
   Stream<List<String>> watchTimelineUsers(String id) {
-    return db.users
-        .filter()
-        .inTimelineEqualTo(true)
-        .or()
-        .idEqualTo(id)
-        .idProperty()
-        .watch();
+    return db.users.filter().inTimelineEqualTo(true).or().idEqualTo(id).idProperty().watch();
   }
 
   Stream<RenderList> watchArchiveTimeline(String userId) {
@@ -61,10 +48,7 @@ class TimelineRepository extends DatabaseRepository {
     return _watchRenderList(query, GroupAssetsBy.none);
   }
 
-  Stream<RenderList> watchAlbumTimeline(
-    Album album,
-    GroupAssetsBy groupAssetByOption,
-  ) {
+  Stream<RenderList> watchAlbumTimeline(Album album, GroupAssetsBy groupAssetByOption) {
     final base = album.assets.filter();
     final query = (album.isLocal
             ? base
@@ -81,11 +65,7 @@ class TimelineRepository extends DatabaseRepository {
   }
 
   Stream<RenderList> watchTrashTimeline(String userId) {
-    final query = db.assets
-        .filter()
-        .ownerIdEqualTo(fastHash(userId))
-        .isTrashedEqualTo(true)
-        .sortByFileCreatedAtDesc();
+    final query = db.assets.filter().ownerIdEqualTo(fastHash(userId)).isTrashedEqualTo(true).sortByFileCreatedAtDesc();
 
     return _watchRenderList(query, GroupAssetsBy.none);
   }
@@ -103,10 +83,7 @@ class TimelineRepository extends DatabaseRepository {
     return _watchRenderList(query, GroupAssetsBy.none);
   }
 
-  Stream<RenderList> watchHomeTimeline(
-    String userId,
-    GroupAssetsBy groupAssetByOption,
-  ) {
+  Stream<RenderList> watchHomeTimeline(String userId, GroupAssetsBy groupAssetByOption) {
     final query = db.assets
         .where()
         .ownerIdEqualToAnyChecksum(fastHash(userId))
@@ -119,10 +96,7 @@ class TimelineRepository extends DatabaseRepository {
     return _watchRenderList(query, groupAssetByOption);
   }
 
-  Stream<RenderList> watchMultiUsersTimeline(
-    List<String> userIds,
-    GroupAssetsBy groupAssetByOption,
-  ) {
+  Stream<RenderList> watchMultiUsersTimeline(List<String> userIds, GroupAssetsBy groupAssetByOption) {
     final isarUserIds = userIds.map(fastHash).toList();
     final query = db.assets
         .where()
@@ -135,10 +109,7 @@ class TimelineRepository extends DatabaseRepository {
     return _watchRenderList(query, groupAssetByOption);
   }
 
-  Future<RenderList> getTimelineFromAssets(
-    List<Asset> assets,
-    GroupAssetsBy getGroupByOption,
-  ) {
+  Future<RenderList> getTimelineFromAssets(List<Asset> assets, GroupAssetsBy getGroupByOption) {
     return RenderList.fromAssets(assets, getGroupByOption);
   }
 
@@ -156,10 +127,7 @@ class TimelineRepository extends DatabaseRepository {
     return _watchRenderList(query, GroupAssetsBy.none);
   }
 
-  Stream<RenderList> watchLockedTimeline(
-    String userId,
-    GroupAssetsBy getGroupByOption,
-  ) {
+  Stream<RenderList> watchLockedTimeline(String userId, GroupAssetsBy getGroupByOption) {
     final query = db.assets
         .where()
         .ownerIdEqualToAnyChecksum(fastHash(userId))

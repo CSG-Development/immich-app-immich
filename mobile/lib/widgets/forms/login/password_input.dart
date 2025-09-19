@@ -36,11 +36,7 @@ class PasswordInput extends HookConsumerWidget {
             foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           onPressed: () => isPasswordVisible.value = !isPasswordVisible.value,
-          icon: Icon(
-            isPasswordVisible.value
-                ? Icons.visibility_off_sharp
-                : Icons.visibility_sharp,
-          ),
+          icon: Icon(isPasswordVisible.value ? Icons.visibility_off_sharp : Icons.visibility_sharp),
         ),
         isError: hasExternalError,
       ),

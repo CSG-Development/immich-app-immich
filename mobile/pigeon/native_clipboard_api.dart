@@ -3,16 +3,12 @@ import 'package:pigeon/pigeon.dart';
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/platform/native_clipboard_api.g.dart',
-
-    swiftOut: 'ios/Runner/Clipboard/ClipboardMessages.g.swift',
-    swiftOptions: SwiftOptions(),
-
-    kotlinOut:
-        'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/clipboard/ClipboardMessages.g.kt',
+    swiftOut: 'ios/Runner/Clipboard/Clipboard.g.swift',
+    swiftOptions: SwiftOptions(includeErrorClass: false),
+    kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/clipboard/Clipboard.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.clipboard'),
-
     dartOptions: DartOptions(),
-    dartPackageName: 'curator_photos_clipboard',
+    dartPackageName: 'curator_photos',
   ),
 )
 

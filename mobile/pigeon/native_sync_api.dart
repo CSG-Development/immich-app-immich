@@ -23,6 +23,8 @@ class PlatformAsset {
   final int? width;
   final int? height;
   final int durationInSeconds;
+  final int orientation;
+  final bool isFavorite;
 
   const PlatformAsset({
     required this.id,
@@ -33,6 +35,8 @@ class PlatformAsset {
     this.width,
     this.height,
     this.durationInSeconds = 0,
+    this.orientation = 0,
+    this.isFavorite = false,
   });
 }
 

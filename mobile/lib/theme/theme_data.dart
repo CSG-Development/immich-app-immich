@@ -10,10 +10,7 @@ class ImmichTheme {
   const ImmichTheme({required this.light, required this.dark});
 }
 
-ThemeData getThemeData({
-  required ColorScheme colorScheme,
-  required Locale locale,
-}) {
+ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale}) {
   final isDark = colorScheme.brightness == Brightness.dark;
 
   return ThemeData(
@@ -26,9 +23,7 @@ ThemeData getThemeData({
     scaffoldBackgroundColor: colorScheme.surface,
     splashColor: colorScheme.primary.withValues(alpha: 0.1),
     highlightColor: colorScheme.primary.withValues(alpha: 0.1),
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: colorScheme.surfaceContainer,
-    ),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: colorScheme.surfaceContainer),
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
         color: colorScheme.primary,
@@ -52,30 +47,12 @@ ThemeData getThemeData({
           : SystemUiOverlayStyle.dark,
     ),
     textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-      ),
-      displayMedium: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      displaySmall: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-      ),
-      titleSmall: TextStyle(
-        fontSize: 16.0,
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: TextStyle(
-        fontSize: 18.0,
-        fontWeight: FontWeight.w600,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 26.0,
-        fontWeight: FontWeight.w600,
-      ),
+      displayLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      displayMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      displaySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      titleSmall: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600),
+      titleLarge: TextStyle(fontSize: 26.0, fontWeight: FontWeight.w600),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -83,36 +60,20 @@ ThemeData getThemeData({
         foregroundColor: isDark ? Colors.black87 : Colors.white,
       ),
     ),
-    chipTheme: const ChipThemeData(
-      side: BorderSide.none,
-    ),
-    sliderTheme: const SliderThemeData(
-      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
-      trackHeight: 2.0,
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      type: BottomNavigationBarType.fixed,
-    ),
+    chipTheme: const ChipThemeData(side: BorderSide.none),
+    sliderTheme: const SliderThemeData(thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7), trackHeight: 2.0),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(type: BottomNavigationBarType.fixed),
     popupMenuTheme: const PopupMenuThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: colorScheme.surfaceContainerLowest,
       height: 68.0,
-      labelTextStyle: const WidgetStatePropertyAll(
-        TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: colorScheme.primary,
-        ),
+        borderSide: BorderSide(color: colorScheme.primary),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       focusedErrorBorder: OutlineInputBorder(
@@ -128,9 +89,7 @@ ThemeData getThemeData({
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: colorScheme.outlineVariant,
-        ),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       labelStyle: TextStyle(
@@ -139,41 +98,23 @@ ThemeData getThemeData({
       floatingLabelStyle: TextStyle(
         color: colorScheme.primary,
       ),
-      hintStyle: const TextStyle(
-        fontSize: 14.0,
-        fontWeight: FontWeight.normal,
-      ),
+      hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
     ),
-    textSelectionTheme: TextSelectionThemeData(
-      cursorColor: colorScheme.primary,
-    ),
+    textSelectionTheme: TextSelectionThemeData(cursorColor: colorScheme.primary),
     dropdownMenuTheme: DropdownMenuThemeData(
       menuStyle: const MenuStyle(
         shape: WidgetStatePropertyAll<OutlinedBorder>(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
-          ),
+          RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-          ),
-        ),
+        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorScheme.primary)),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
           borderRadius: const BorderRadius.all(Radius.circular(15)),
         ),
-        labelStyle: TextStyle(
-          color: colorScheme.primary,
-        ),
-        hintStyle: const TextStyle(
-          fontSize: 14.0,
-          fontWeight: FontWeight.normal,
-        ),
+        labelStyle: TextStyle(color: colorScheme.primary),
+        hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
       ),
     ),
     drawerTheme:
@@ -188,8 +129,8 @@ ThemeData getThemeData({
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        // Set the predictive back transitions for Android.
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        // Use iOS-style transitions for Android (faster and smoother).
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
       },
     ),
   );
@@ -198,9 +139,7 @@ ThemeData getThemeData({
 // This method replaces all surface shades in ImmichTheme to a static ones
 // as we are creating the colorscheme through seedColor the default surfaces are
 // tinted with primary color
-ImmichTheme decolorizeSurfaces({
-  required ImmichTheme theme,
-}) {
+ImmichTheme decolorizeSurfaces({required ImmichTheme theme}) {
   return ImmichTheme(
     light: theme.light.copyWith(
       surface: const Color(0xFFF0F1F5),

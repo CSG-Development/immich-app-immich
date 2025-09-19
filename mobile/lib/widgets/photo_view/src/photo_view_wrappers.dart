@@ -11,6 +11,7 @@ class ImageWrapper extends StatefulWidget {
     required this.imageProvider,
     required this.loadingBuilder,
     required this.backgroundDecoration,
+    required this.semanticLabel,
     required this.gaplessPlayback,
     required this.heroAttributes,
     required this.scaleStateChangedCallback,
@@ -34,6 +35,7 @@ class ImageWrapper extends StatefulWidget {
     required this.tightMode,
     required this.filterQuality,
     required this.disableGestures,
+    this.disableScaleGestures,
     required this.errorBuilder,
     required this.enablePanAlways,
     required this.index,
@@ -43,6 +45,7 @@ class ImageWrapper extends StatefulWidget {
   final LoadingBuilder? loadingBuilder;
   final ImageErrorWidgetBuilder? errorBuilder;
   final BoxDecoration backgroundDecoration;
+  final String? semanticLabel;
   final bool gaplessPlayback;
   final PhotoViewHeroAttributes? heroAttributes;
   final ValueChanged<PhotoViewScaleState>? scaleStateChangedCallback;
@@ -66,6 +69,7 @@ class ImageWrapper extends StatefulWidget {
   final bool? tightMode;
   final FilterQuality? filterQuality;
   final bool? disableGestures;
+  final bool? disableScaleGestures;
   final bool? enablePanAlways;
   final int index;
 
@@ -82,6 +86,7 @@ class _ImageWrapperState extends State<ImageWrapper> {
   Size? _imageSize;
   Object? _lastException;
   StackTrace? _lastStack;
+  bool _didLoadSynchronously = false;
 
   @override
   void dispose() {
@@ -105,9 +110,7 @@ class _ImageWrapperState extends State<ImageWrapper> {
 
   // retrieve image from the provider
   void _resolveImage() {
-    final ImageStream newStream = widget.imageProvider.resolve(
-      const ImageConfiguration(),
-    );
+    final ImageStream newStream = widget.imageProvider.resolve(const ImageConfiguration());
     _updateSourceStream(newStream);
   }
 
@@ -121,19 +124,18 @@ class _ImageWrapperState extends State<ImageWrapper> {
 
     void handleImageFrame(ImageInfo info, bool synchronousCall) {
       setupCB() {
-        _imageSize = Size(
-          info.image.width.toDouble(),
-          info.image.height.toDouble(),
-        );
+        _imageSize = Size(info.image.width.toDouble(), info.image.height.toDouble());
         _loading = false;
         _imageInfo = _imageInfo;
 
         _loadingProgress = null;
         _lastException = null;
         _lastStack = null;
+
+        _didLoadSynchronously = synchronousCall;
       }
 
-      synchronousCall ? setupCB() : setState(setupCB);
+      synchronousCall && !_didLoadSynchronously ? setupCB() : setState(setupCB);
     }
 
     void handleError(dynamic error, StackTrace? stackTrace) {
@@ -150,11 +152,7 @@ class _ImageWrapperState extends State<ImageWrapper> {
       }());
     }
 
-    _imageStreamListener = ImageStreamListener(
-      handleImageFrame,
-      onChunk: handleImageChunk,
-      onError: handleError,
-    );
+    _imageStreamListener = ImageStreamListener(handleImageFrame, onChunk: handleImageChunk, onError: handleError);
 
     return _imageStreamListener!;
   }
@@ -174,12 +172,36 @@ class _ImageWrapperState extends State<ImageWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return _buildLoading(context);
-    }
-
-    if (_lastException != null) {
-      return _buildError(context);
+    if (_loading || _lastException != null) {
+      return CustomChildWrapper(
+        childSize: null,
+        backgroundDecoration: widget.backgroundDecoration,
+        heroAttributes: widget.heroAttributes,
+        scaleStateChangedCallback: widget.scaleStateChangedCallback,
+        enableRotation: widget.enableRotation,
+        controller: widget.controller,
+        scaleStateController: widget.scaleStateController,
+        maxScale: widget.maxScale,
+        minScale: widget.minScale,
+        initialScale: widget.initialScale,
+        basePosition: widget.basePosition,
+        scaleStateCycle: widget.scaleStateCycle,
+        onTapUp: widget.onTapUp,
+        onTapDown: widget.onTapDown,
+        onDragStart: widget.onDragStart,
+        onDragEnd: widget.onDragEnd,
+        onDragUpdate: widget.onDragUpdate,
+        onScaleEnd: widget.onScaleEnd,
+        onLongPressStart: widget.onLongPressStart,
+        outerSize: widget.outerSize,
+        gestureDetectorBehavior: widget.gestureDetectorBehavior,
+        tightMode: widget.tightMode,
+        filterQuality: widget.filterQuality,
+        disableGestures: widget.disableGestures,
+        disableScaleGestures: true,
+        enablePanAlways: widget.enablePanAlways,
+        child: _loading ? _buildLoading(context) : _buildError(context),
+      );
     }
 
     final scaleBoundaries = ScaleBoundaries(
@@ -193,6 +215,7 @@ class _ImageWrapperState extends State<ImageWrapper> {
     return PhotoViewCore(
       imageProvider: widget.imageProvider,
       backgroundDecoration: widget.backgroundDecoration,
+      semanticLabel: widget.semanticLabel,
       gaplessPlayback: widget.gaplessPlayback,
       enableRotation: widget.enableRotation,
       heroAttributes: widget.heroAttributes,
@@ -212,6 +235,7 @@ class _ImageWrapperState extends State<ImageWrapper> {
       tightMode: widget.tightMode ?? false,
       filterQuality: widget.filterQuality ?? FilterQuality.none,
       disableGestures: widget.disableGestures ?? false,
+      disableScaleGestures: widget.disableScaleGestures ?? false,
       enablePanAlways: widget.enablePanAlways ?? false,
     );
   }
@@ -221,20 +245,14 @@ class _ImageWrapperState extends State<ImageWrapper> {
       return widget.loadingBuilder!(context, _loadingProgress, widget.index);
     }
 
-    return PhotoViewDefaultLoading(
-      event: _loadingProgress,
-    );
+    return PhotoViewDefaultLoading(event: _loadingProgress);
   }
 
-  Widget _buildError(
-    BuildContext context,
-  ) {
+  Widget _buildError(BuildContext context) {
     if (widget.errorBuilder != null) {
       return widget.errorBuilder!(context, _lastException!, _lastStack);
     }
-    return PhotoViewDefaultError(
-      decoration: widget.backgroundDecoration,
-    );
+    return PhotoViewDefaultError(decoration: widget.backgroundDecoration);
   }
 }
 
@@ -266,6 +284,7 @@ class CustomChildWrapper extends StatelessWidget {
     required this.tightMode,
     required this.filterQuality,
     required this.disableGestures,
+    this.disableScaleGestures,
     required this.enablePanAlways,
   });
 
@@ -296,6 +315,7 @@ class CustomChildWrapper extends StatelessWidget {
   final HitTestBehavior? gestureDetectorBehavior;
   final bool? tightMode;
   final FilterQuality? filterQuality;
+  final bool? disableScaleGestures;
   final bool? disableGestures;
   final bool? enablePanAlways;
 
@@ -330,6 +350,7 @@ class CustomChildWrapper extends StatelessWidget {
       tightMode: tightMode ?? false,
       filterQuality: filterQuality ?? FilterQuality.none,
       disableGestures: disableGestures ?? false,
+      disableScaleGestures: disableScaleGestures ?? false,
       enablePanAlways: enablePanAlways ?? false,
     );
   }

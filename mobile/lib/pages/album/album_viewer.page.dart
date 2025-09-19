@@ -21,11 +21,16 @@ class AlbumViewerPage extends HookConsumerWidget {
     ref.listen(assetSelectionTimelineProvider, (_, __) {});
 
     ref.listen(albumWatcher(albumId), (_, albumFuture) {
-      albumFuture.whenData(
-        (value) => ref.read(currentAlbumProvider.notifier).set(value),
-      );
+      albumFuture.whenData((value) => ref.read(currentAlbumProvider.notifier).set(value));
     });
 
-    return const Scaffold(body: AlbumViewer());
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          Future.microtask(() => ref.read(currentAlbumProvider.notifier).set(null));
+        }
+      },
+      child: const Scaffold(body: AlbumViewer()),
+    );
   }
 }
