@@ -90,7 +90,12 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
   void _finishOnboarding() async {
     await Store.put(StoreKey.onboardingWasShown, true);
-    context.replaceRoute(const TabControllerRoute());
+    final isBeta = Store.isBetaTimelineEnabled;
+    if (isBeta) {
+      context.replaceRoute(const TabShellRoute());
+    } else {
+      context.replaceRoute(const TabControllerRoute());
+    }
   }
 
   Widget _buildFixedStep(OnboardingStep step, bool isTablet) {
