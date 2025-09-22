@@ -108,12 +108,26 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       }
 
       if (!mounted) return;
-      context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
+      final accessToken = Store.tryGet(StoreKey.accessToken);
+      final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+      if (accessToken != null && !onboardingCompleted) {
+        context.replaceRoute(const CuratorOnboardingRoute());
+      } else {
+        context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
+      }
     }
 
     void proceedToMainScreen() async {
       if (!mounted) return;
       if (context.router.current.name != ShareIntentRoute.name) {
+        final hasToken = Store.tryGet(StoreKey.accessToken) != null;
+        if (hasToken) {
+          final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+          if (!onboardingCompleted) {
+            context.replaceRoute(const CuratorOnboardingRoute());
+            return;
+          }
+        }
         context.replaceRoute(const TabControllerRoute());
       }
     }

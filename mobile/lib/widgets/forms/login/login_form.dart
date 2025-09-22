@@ -37,8 +37,6 @@ import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
 
 class LoginForm extends HookConsumerWidget {
   LoginForm({super.key});
@@ -332,10 +330,17 @@ class LoginForm extends HookConsumerWidget {
             if (isBeta) {
               await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
               handleSyncFlow();
-              context.replaceRoute(const TabShellRoute());
-              return;
             }
-            context.replaceRoute(const TabControllerRoute());
+            final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+            if (onboardingWasShown) {
+              if (isBeta) {
+                context.replaceRoute(const TabShellRoute());
+              } else {
+                context.replaceRoute(const TabControllerRoute());
+              }
+            } else {
+              context.replaceRoute(const CuratorOnboardingRoute());
+            }
           }
         } catch (error, stack) {
           log.severe('Error logging in with OAuth: $error', stack);
