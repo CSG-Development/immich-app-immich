@@ -292,13 +292,18 @@ class MultiselectGrid extends HookConsumerWidget {
     }
 
     void onCopyToClipboard() async {
-      await ClipboardService.copyToClipboard(
-        context,
-        ref,
-        selection.value,
-      );
-      // Update selection state after copy operation completes
-      selectionEnabledHook.value = false;
+      processing.value = true;
+      try {
+        await ClipboardService.copyToClipboard(
+          context,
+          ref,
+          selection.value,
+        );
+        // Update selection state after copy operation completes
+        selectionEnabledHook.value = false;
+      } finally {
+        processing.value = false;
+      }
     }
 
     void onDuplicate() async {
