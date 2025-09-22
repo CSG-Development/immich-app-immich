@@ -31,6 +31,7 @@ import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/services/album_refresh.service.dart';
 
 final manualUploadProvider = StateNotifierProvider<ManualUploadNotifier, ManualUploadState>((ref) {
   return ManualUploadNotifier(
@@ -76,7 +77,9 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
           currentAssetIndex: 0,
           showDetailedNotification: false,
         ),
-      );
+      ) {
+        _albumRefresh = AlbumRefreshBatcher(ref, batchSize: 5);
+      }
 
   String _lastPrintedDetailContent = '';
   String? _lastPrintedDetailTitle;
@@ -87,6 +90,8 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
     _updateDetailProgress,
     notifyInterval,
   );
+
+  late final AlbumRefreshBatcher _albumRefresh;
 
   void _updateProgress(String? title, int progress, int total) {
     // Guard against throttling calling this method after the upload is done
@@ -125,6 +130,8 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
   void _onAssetUploaded(SuccessUploadAsset result) async {
     await ref.read(backupServiceProvider).handlePostUploadAssetUpdate(result, ref);
     
+    await _albumRefresh.onUploadSuccess(result);
+
     state = state.copyWith(successfulUploads: state.successfulUploads + 1);
     _backupProvider.updateDiskInfo();
   }
@@ -251,7 +258,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
             ref.read(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.backgroundBackupSingleProgress) ||
             state.totalAssetsToUpload == 1;
         state = state.copyWith(showDetailedNotification: showDetailedNotification);
-        final pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
+        final PMProgressHandler? pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
 
         final bool ok = await ref
             .read(backupServiceProvider)
@@ -294,6 +301,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
             "backup_manual_success".tr(),
             presentBanner: true,
           );
+          _albumRefresh.flush();
         }
       } else {
         openAppSettings();
@@ -303,6 +311,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
       dPrint(() => "ERROR _startUpload: ${e.toString()}");
       hasErrors = true;
     } finally {
+      _albumRefresh.flush();
       _backupProvider.updateBackupProgress(BackUpProgressEnum.idle);
       _handleAppInActivity();
       await _localNotificationService.closeNotification(LocalNotificationService.manualUploadDetailedNotificationID);
@@ -325,6 +334,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         _backupProvider.backupProgress != BackUpProgressEnum.manualInProgress) {
       _backupProvider.notifyBackgroundServiceCanRun();
     }
+    _albumRefresh.flush();
     state.cancelToken.cancel();
     if (_backupProvider.backupProgress != BackUpProgressEnum.manualInProgress) {
       _backupProvider.updateBackupProgress(BackUpProgressEnum.idle);
