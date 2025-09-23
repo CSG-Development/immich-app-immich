@@ -10,6 +10,7 @@ import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/album/album_title.provider.dart';
 import 'package:immich_mobile/providers/album/album_viewer.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/widgets/album/album_action_filled_button.dart';
 import 'package:immich_mobile/widgets/album/album_title_text_field.dart';
 import 'package:immich_mobile/widgets/album/album_viewer_editable_description.dart';
@@ -30,6 +31,7 @@ class CreateAlbumPage extends HookConsumerWidget {
     final isAlbumTitleTextFieldFocus = useState(false);
     final isAlbumTitleEmpty = useState(true);
     final selectedAssets = useState<Set<Asset>>(assets != null ? Set.from(assets!) : const {});
+    final processingOverlay = useProcessingOverlay();
 
     void onBackgroundTapped() {
       albumTitleTextFieldFocusNode.unfocus();
@@ -164,17 +166,25 @@ class CreateAlbumPage extends HookConsumerWidget {
     }
 
     Future<void> createAlbum() async {
+      if (processingOverlay.value) return;
+      processingOverlay.value = true;
       onBackgroundTapped();
-      var newAlbum = await ref
-          .watch(albumProvider.notifier)
-          .createAlbum(ref.read(albumTitleProvider), selectedAssets.value);
+      try {
+        var newAlbum = await ref
+            .watch(albumProvider.notifier)
+            .createAlbum(ref.read(albumTitleProvider), selectedAssets.value);
 
-      if (newAlbum != null) {
-        ref.read(albumProvider.notifier).refreshRemoteAlbums();
-        selectedAssets.value = {};
-        ref.read(albumTitleProvider.notifier).clearAlbumTitle();
-        ref.read(albumViewerProvider.notifier).disableEditAlbum();
-        context.replaceRoute(AlbumViewerRoute(albumId: newAlbum.id));
+        if (newAlbum != null) {
+          ref.read(albumProvider.notifier).refreshRemoteAlbums();
+          selectedAssets.value = {};
+          ref.read(albumTitleProvider.notifier).clearAlbumTitle();
+          ref.read(albumViewerProvider.notifier).disableEditAlbum();
+          context.replaceRoute(AlbumViewerRoute(albumId: newAlbum.id));
+        }
+      } finally {
+        // Let overlay show briefly if operation was very fast
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (context.mounted) processingOverlay.value = false;
       }
     }
 
@@ -193,7 +203,7 @@ class CreateAlbumPage extends HookConsumerWidget {
         title: const Text('create_album').tr(),
         actions: [
           TextButton(
-            onPressed: albumTitleController.text.isNotEmpty ? createAlbum : null,
+            onPressed: albumTitleController.text.isNotEmpty && !processingOverlay.value ? createAlbum : null,
             child: Text(
               'create'.tr(),
               style: TextStyle(
