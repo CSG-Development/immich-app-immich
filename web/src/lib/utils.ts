@@ -2,9 +2,12 @@ import { resolve } from '$app/paths';
 import { NotificationType, notificationController } from '$lib/components/shared-components/notification/notification';
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
+import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { lang } from '$lib/stores/preferences.store';
 import { serverConfig } from '$lib/stores/server-config.store';
+import { SlideshowNavigation } from '$lib/stores/slideshow.store';
 import { handleError } from '$lib/utils/handle-error';
+import type { TimelineDateTime } from '$lib/utils/timeline-util';
 import {
   AssetJobName,
   AssetMediaSize,
@@ -395,3 +398,14 @@ export function createDateFormatter(localeCode: string | undefined): DateFormatt
     },
   };
 }
+
+export const toDate = (date: TimelineDateTime): Date => {
+  return new Date(date.year, date.month - 1, date.day, date.hour, date.minute, date.second, date.millisecond);
+};
+
+export const getFirstSlideshowAsset = (sortedSelectedAssets: TimelineAsset[], nav: SlideshowNavigation) =>
+  nav === SlideshowNavigation.Shuffle
+    ? sortedSelectedAssets[Math.floor(Math.random() * sortedSelectedAssets.length)]
+    : nav === SlideshowNavigation.AscendingOrder
+      ? sortedSelectedAssets.at(-1)
+      : sortedSelectedAssets[0];

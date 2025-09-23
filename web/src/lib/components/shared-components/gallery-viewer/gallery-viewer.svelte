@@ -12,6 +12,7 @@
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { showDeleteModal } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
+  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { handlePromiseError } from '$lib/utils';
   import { deleteAssets } from '$lib/utils/actions';
   import { archiveAssets, cancelMultiselect } from '$lib/utils/asset-utils';
@@ -325,6 +326,8 @@
     })(),
   );
 
+  let { slideshowNavigation, slideshowState } = slideshowStore;
+
   const handleNext = async (): Promise<boolean> => {
     try {
       let asset: { id: string } | undefined;
@@ -336,10 +339,29 @@
         }
 
         currentIndex = currentIndex + 1;
-        asset = currentIndex < assets.length ? assets[currentIndex] : undefined;
+
+        if (
+          $slideshowState === SlideshowState.PlaySlideshow &&
+          $slideshowNavigation === SlideshowNavigation.AscendingOrder
+        ) {
+          asset =
+            currentIndex < assets.length
+              ? [...assetInteraction.selectedAssets].reverse().length > 0
+                ? [...assetInteraction.selectedAssets].reverse()[currentIndex]
+                : [...assets].reverse()[currentIndex]
+              : undefined;
+        } else {
+          asset =
+            currentIndex < assets.length
+              ? assetInteraction.selectedAssets.length > 0
+                ? assetInteraction.selectedAssets[currentIndex]
+                : assets[currentIndex]
+              : undefined;
+        }
       }
 
       if (!asset) {
+        currentIndex = 0;
         return false;
       }
 
@@ -357,13 +379,17 @@
       if (onRandom) {
         asset = await onRandom();
       } else {
-        if (assets.length > 0) {
+        if (assetInteraction.selectedAssets.length > 0) {
+          const randomIndex = Math.floor(Math.random() * assetInteraction.selectedAssets.length);
+          asset = assetInteraction.selectedAssets[randomIndex];
+        } else if (assets.length > 0) {
           const randomIndex = Math.floor(Math.random() * assets.length);
           asset = assets[randomIndex];
         }
       }
 
       if (!asset) {
+        currentIndex = 0;
         return;
       }
 
@@ -386,10 +412,29 @@
         }
 
         currentIndex = currentIndex - 1;
-        asset = currentIndex >= 0 ? assets[currentIndex] : undefined;
+
+        if (
+          $slideshowState === SlideshowState.PlaySlideshow &&
+          $slideshowNavigation === SlideshowNavigation.AscendingOrder
+        ) {
+          asset =
+            currentIndex >= 0
+              ? [...assetInteraction.selectedAssets].reverse().length > 0
+                ? [...assetInteraction.selectedAssets].reverse()[currentIndex]
+                : [...assets].reverse()[currentIndex]
+              : undefined;
+        } else {
+          asset =
+            currentIndex >= 0
+              ? assetInteraction.selectedAssets.length > 0
+                ? assetInteraction.selectedAssets[currentIndex]
+                : assets[currentIndex]
+              : undefined;
+        }
       }
 
       if (!asset) {
+        currentIndex = 0;
         return false;
       }
 
@@ -531,6 +576,7 @@
         assetViewingStore.showAssetViewer(false);
         handlePromiseError(navigate({ targetRoute: 'current', assetId: null }));
       }}
+      {assetInteraction}
     />
   </Portal>
 {/if}

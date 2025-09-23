@@ -36,9 +36,14 @@
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
   import { AssetVisibility } from '@immich/sdk';
 
-  import { mdiDotsVertical, mdiPlus } from '@mdi/js';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { mdiDotsVertical, mdiPlus, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -47,7 +52,7 @@
 
   let { data }: Props = $props();
 
-  let { isViewing: showAssetViewer } = assetViewingStore;
+  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
   const timelineManager = new TimelineManager();
   void timelineManager.updateOptions({ visibility: AssetVisibility.Timeline, withStacked: true, withPartners: true });
   onDestroy(() => timelineManager.destroy());
@@ -90,6 +95,21 @@
     assetInteraction.clearMultiselect();
   };
 
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let sortedSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    sortedSelectedAssets = assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(sortedSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
+
   beforeNavigate(() => {
     isFaceEditMode.value = false;
   });
@@ -109,6 +129,7 @@
     removeAction={AssetAction.ARCHIVE}
     onEscape={handleEscape}
     withStacked
+    selectedAssets={sortedSelectedAssets}
   >
     {#if $preferences.memories.enabled}
       <MemoryLane />
@@ -140,6 +161,9 @@
         })}
     ></FavoriteAction>
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+      {#if assetInteraction.selectedAssets.length > 1}
+        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+      {/if}
       <DownloadAction menuItem />
       {#if assetInteraction.selectedAssets.length > 1 || isAssetStackSelected}
         <StackAction

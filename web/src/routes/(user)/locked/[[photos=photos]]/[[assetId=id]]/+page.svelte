@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
   import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
@@ -10,15 +11,21 @@
   import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
   import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import { AppRoute, AssetAction } from '$lib/constants';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
+  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
   import { AssetVisibility, lockAuthSession } from '@immich/sdk';
   import { Button } from '@immich/ui';
-  import { mdiDotsVertical, mdiLockOutline } from '@mdi/js';
+  import { mdiDotsVertical, mdiLockOutline, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -47,7 +54,23 @@
 
   const handleLock = async () => {
     await lockAuthSession();
-    await goto(AppRoute.PHOTOS);
+    await goto(resolve(AppRoute.PHOTOS));
+  };
+
+  let { setAssetId } = assetViewingStore;
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let sortedSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    sortedSelectedAssets = assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(sortedSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
   };
 </script>
 
@@ -69,6 +92,7 @@
     {assetInteraction}
     onEscape={handleEscape}
     removeAction={AssetAction.SET_VISIBILITY_TIMELINE}
+    selectedAssets={sortedSelectedAssets}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_locked_photos_message')} title={$t('nothing_here_yet')} />
@@ -85,6 +109,9 @@
     <SelectAllAssets withText {timelineManager} {assetInteraction} />
     <SetVisibilityAction unlock onVisibilitySet={handleMoveOffLockedFolder} />
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+      {#if assetInteraction.selectedAssets.length > 1}
+        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+      {/if}
       <DownloadAction menuItem />
       <ChangeDate menuItem />
       <ChangeLocation menuItem />
