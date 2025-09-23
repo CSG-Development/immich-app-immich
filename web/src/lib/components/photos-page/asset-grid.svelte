@@ -27,6 +27,7 @@
   import { showDeleteModal } from '$lib/stores/preferences.store';
   import { searchStore } from '$lib/stores/search.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
+  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { handlePromiseError } from '$lib/utils';
   import { deleteAssets, updateStackedAssetInTimeline, updateUnstackedAssetInTimeline } from '$lib/utils/actions';
   import { archiveAssets, cancelMultiselect, selectAllAssets, stackAssets } from '$lib/utils/asset-utils';
@@ -39,7 +40,6 @@
   import Portal from '../shared-components/portal/portal.svelte';
   import AssetDateGroup from './asset-date-group.svelte';
   import DeleteAssetDialog from './delete-asset-dialog.svelte';
-
   interface Props {
     isSelectionMode?: boolean;
     singleSelect?: boolean;
@@ -66,6 +66,7 @@
     onEscape?: () => void;
     children?: Snippet;
     empty?: Snippet;
+    selectedAssets?: TimelineAsset[];
   }
 
   let {
@@ -85,6 +86,7 @@
     onEscape = () => {},
     children,
     empty,
+    selectedAssets = [],
   }: Props = $props();
 
   let { isViewing: showAssetViewer, asset: viewingAsset, preloadAssets, gridScrollTarget, mutex } = assetViewingStore;
@@ -448,43 +450,109 @@
     }
   };
 
-  const handlePrevious = async () => {
-    const release = await mutex.acquire();
-    const laterAsset = await timelineManager.getLaterAsset($viewingAsset);
+  let { slideshowNavigation, slideshowState } = slideshowStore;
 
-    if (laterAsset) {
-      const preloadAsset = await timelineManager.getLaterAsset(laterAsset);
-      const asset = await getAssetInfo({ ...authManager.params, id: laterAsset.id });
-      assetViewingStore.setAsset(asset, preloadAsset ? [preloadAsset] : []);
-      await navigate({ targetRoute: 'current', assetId: laterAsset.id });
+  const viewAssetWithPreload = async ({
+    asset,
+    preload,
+    returnFullAsset,
+  }: {
+    asset: TimelineAsset;
+    preload?: TimelineAsset;
+    returnFullAsset?: boolean;
+  }) => {
+    const fullAsset = await getAssetInfo({ ...authManager.params, id: asset.id });
+    assetViewingStore.setAsset(fullAsset, preload ? [preload] : []);
+    await navigate({ targetRoute: 'current', assetId: asset.id });
+    if (returnFullAsset) {
+      return fullAsset;
+    }
+  };
+
+  const handlePreviousFromSelectedAssets = async () => {
+    const index = selectedAssets.findIndex((el) => el.id === $viewingAsset.id);
+    const previous = selectedAssets[index - 1];
+    if (!previous) {
+      return false;
     }
 
-    release();
-    return !!laterAsset;
+    const preload = selectedAssets[index - 2];
+    await viewAssetWithPreload({ asset: previous, preload });
+    return true;
+  };
+
+  const handlePreviousFromTimeline = async () => {
+    const previous = await timelineManager.getLaterAsset($viewingAsset);
+    if (!previous) {
+      return false;
+    }
+
+    const preload = await timelineManager.getEarlierAsset(previous);
+    await viewAssetWithPreload({ asset: previous, preload });
+    return true;
+  };
+
+  const handlePrevious = async () => {
+    const release = await mutex.acquire();
+    try {
+      if (
+        $slideshowState === SlideshowState.PlaySlideshow &&
+        $slideshowNavigation === SlideshowNavigation.AscendingOrder
+      ) {
+        return selectedAssets.length > 1 ? await handleNextFromSelectedAssets() : await handleNextFromTimeline();
+      }
+      return selectedAssets.length > 1 ? await handlePreviousFromSelectedAssets() : await handlePreviousFromTimeline();
+    } finally {
+      release();
+    }
+  };
+
+  const handleNextFromSelectedAssets = async () => {
+    const index = selectedAssets.findIndex((el) => el.id === $viewingAsset.id);
+    const next = selectedAssets[index + 1];
+    if (!next) {
+      return false;
+    }
+
+    const preload = selectedAssets[index + 2];
+    await viewAssetWithPreload({ asset: next, preload });
+    return true;
+  };
+
+  const handleNextFromTimeline = async () => {
+    const next = await timelineManager.getEarlierAsset($viewingAsset);
+    if (!next) {
+      return false;
+    }
+
+    const preload = await timelineManager.getEarlierAsset(next);
+    await viewAssetWithPreload({ asset: next, preload });
+    return true;
   };
 
   const handleNext = async () => {
     const release = await mutex.acquire();
-    const earlierAsset = await timelineManager.getEarlierAsset($viewingAsset);
-
-    if (earlierAsset) {
-      const preloadAsset = await timelineManager.getEarlierAsset(earlierAsset);
-      const asset = await getAssetInfo({ ...authManager.params, id: earlierAsset.id });
-      assetViewingStore.setAsset(asset, preloadAsset ? [preloadAsset] : []);
-      await navigate({ targetRoute: 'current', assetId: earlierAsset.id });
+    try {
+      if (
+        $slideshowState === SlideshowState.PlaySlideshow &&
+        $slideshowNavigation === SlideshowNavigation.AscendingOrder
+      ) {
+        return selectedAssets.length > 1
+          ? await handlePreviousFromSelectedAssets()
+          : await handlePreviousFromTimeline();
+      }
+      return selectedAssets.length > 1 ? await handleNextFromSelectedAssets() : await handleNextFromTimeline();
+    } finally {
+      release();
     }
-
-    release();
-    return !!earlierAsset;
   };
 
   const handleRandom = async () => {
-    const randomAsset = await timelineManager.getRandomAsset();
+    const random = Math.floor(Math.random() * selectedAssets.length);
+    const randomAsset = selectedAssets.length > 0 ? selectedAssets[random] : await timelineManager.getRandomAsset();
 
     if (randomAsset) {
-      const asset = await getAssetInfo({ ...authManager.params, id: randomAsset.id });
-      assetViewingStore.setAsset(asset);
-      await navigate({ targetRoute: 'current', assetId: randomAsset.id });
+      const asset = await viewAssetWithPreload({ asset: randomAsset, returnFullAsset: true });
       return asset;
     }
   };
@@ -954,6 +1022,7 @@
         onNext={handleNext}
         onRandom={handleRandom}
         onClose={handleClose}
+        {assetInteraction}
       />
     {/await}
   {/if}

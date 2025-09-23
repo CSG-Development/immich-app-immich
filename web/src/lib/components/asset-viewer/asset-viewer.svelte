@@ -10,6 +10,7 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { closeEditorCofirm } from '$lib/stores/asset-editor.store';
+  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { isShowDetail } from '$lib/stores/preferences.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -62,6 +63,7 @@
     onNext: () => Promise<HasAsset>;
     onPrevious: () => Promise<HasAsset>;
     onRandom: () => Promise<{ id: string } | undefined>;
+    assetInteraction?: AssetInteraction;
     copyImage?: () => Promise<void>;
   }
 
@@ -80,6 +82,7 @@
     onNext,
     onPrevious,
     onRandom,
+    assetInteraction = undefined,
     copyImage = $bindable(),
   }: Props = $props();
 
@@ -313,6 +316,9 @@
     } finally {
       $stopSlideshowProgress = true;
       $slideshowState = SlideshowState.None;
+      if (assetInteraction?.selectedAssets.length) {
+        closeViewer();
+      }
     }
   };
 
@@ -416,7 +422,12 @@
         onSetToFullScreen={() => assetViewerHtmlElement?.requestFullscreen?.()}
         onPrevious={() => navigateAsset('previous')}
         onNext={() => navigateAsset('next')}
-        onClose={() => ($slideshowState = SlideshowState.StopSlideshow)}
+        onClose={() => {
+          $slideshowState = SlideshowState.StopSlideshow;
+          if (assetInteraction && assetInteraction.selectedAssets.length > 0) {
+            closeViewer();
+          }
+        }}
       />
     </div>
   {/if}
