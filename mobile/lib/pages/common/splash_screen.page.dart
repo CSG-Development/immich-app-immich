@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
@@ -99,6 +100,11 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     // clean install - change the default of the flag
     // current install not using beta timeline
     if (mounted && context.router.current.name == SplashScreenRoute.name) {
+      final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
+      if (viewedCount >= kCuratorOnboardingSlidesData.length) {
+        await Store.put(StoreKey.onboardingWasShown, true);
+        await Store.delete(StoreKey.onboardingViewedCount);
+      }
       final needBetaMigration = Store.get(StoreKey.needBetaMigration, false);
       if (needBetaMigration) {
         await Store.put(StoreKey.needBetaMigration, false);
