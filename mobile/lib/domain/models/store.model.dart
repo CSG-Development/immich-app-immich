@@ -83,7 +83,8 @@ enum StoreKey<T> {
 
   // Curator
   enableBiometric<bool>._(2000),
-  onboardingWasShown<bool>._(2001);
+  onboardingWasShown<bool>._(2001),
+  onboardingViewedCount<int>._(2002);
 
   const StoreKey._(this.id);
   final int id;
