@@ -3,7 +3,7 @@ import UIKit
 import MobileCoreServices
 import UniformTypeIdentifiers
 
-class ClipboardMessagesImpl: NSObject, NativeClipboardApi {
+class ClipboardApiImpl: NSObject, NativeClipboardApi {
     
     override init() {
         super.init()

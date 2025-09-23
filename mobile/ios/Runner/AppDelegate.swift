@@ -84,6 +84,7 @@ import AVFoundation
     NativeSyncApiSetup.setUp(binaryMessenger: binaryMessenger, api: NativeSyncApiImpl())
     ThumbnailApiSetup.setUp(binaryMessenger: binaryMessenger, api: ThumbnailApiImpl())
     BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: BackgroundWorkerApiImpl())
+    NativeClipboardApiSetup.setUp(binaryMessenger: binaryMessenger, api: ClipboardApiImpl())
   }
 }
 
