@@ -21,12 +21,12 @@
 		B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */; };
 		B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */; };
 		B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */; };
+		CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */; };
+		CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */; };
 		CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */; };
 		CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CE408BDF2E44C83700B1E17A /* AirPlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */; };
 		CE8353CC2DEEE8B800C413E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */; };
-		CE83EA602E603F5E00CEDFEF /* ClipboardMessages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */; };
-		CE83EA612E603F5E00CEDFEF /* ClipboardMessagesImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */; };
 		CEFC4ED82E0DA30600C94B12 /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CEFC4ED92E0DA30600C94B12 /* telemetry.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D218389C4A4C4693F141F7D1 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */; };
@@ -122,11 +122,11 @@
 		B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.g.swift; sourceTree = "<group>"; };
 		C4DBC5BB9D911AC10AC6063E /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		CDE1EAD0A3CF9D6EFE285FFF /* Pods-Runner.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"; sourceTree = "<group>"; };
+		CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.g.swift; sourceTree = "<group>"; };
+		CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImpl.swift; sourceTree = "<group>"; };
 		CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryWrapperPlugin.swift; sourceTree = "<group>"; };
 		CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayManager.swift; sourceTree = "<group>"; };
 		CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMessages.g.swift; sourceTree = "<group>"; };
-		CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMessagesImpl.swift; sourceTree = "<group>"; };
 		CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = telemetry.xcframework; sourceTree = "<group>"; };
 		E0E99CDC17B3EB7FA8BA2332 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		F0B57D382DF764BD00DC5BCC /* WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -332,8 +332,8 @@
 		CE83EA5F2E603F5E00CEDFEF /* Clipboard */ = {
 			isa = PBXGroup;
 			children = (
-				CE83EA5D2E603F5E00CEDFEF /* ClipboardMessages.g.swift */,
-				CE83EA5E2E603F5E00CEDFEF /* ClipboardMessagesImpl.swift */,
+				CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */,
+				CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */,
 			);
 			path = Clipboard;
 			sourceTree = "<group>";
@@ -624,8 +624,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				65F32F31299BD2F800CE9261 /* BackgroundServicePlugin.swift in Sources */,
-				CE83EA602E603F5E00CEDFEF /* ClipboardMessages.g.swift in Sources */,
-				CE83EA612E603F5E00CEDFEF /* ClipboardMessagesImpl.swift in Sources */,
+				CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */,
+				CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B21E34AC2E5B09190031FDB9 /* BackgroundWorker.swift in Sources */,
 				B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */,
