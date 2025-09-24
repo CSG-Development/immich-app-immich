@@ -5,6 +5,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
@@ -67,7 +68,7 @@ class DriftEditImagePage extends ConsumerWidget {
 
       ref.read(backgroundSyncProvider).syncLocal(full: true);
       context.navigator.popUntil((route) => route.isFirst);
-      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!');
+      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
 
       if (localAsset == null) {
         return;
@@ -79,6 +80,7 @@ class DriftEditImagePage extends ConsumerWidget {
         durationInSecond: 6,
         context: context,
         msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
+        gravity: ToastGravity.BOTTOM,
       );
     }
   }
