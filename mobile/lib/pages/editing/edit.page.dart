@@ -56,13 +56,13 @@ class EditImagePage extends ConsumerWidget {
           .saveImage(imageData, title: "${p.withoutExtension(asset.fileName)}_edited.jpg");
       await ref.read(albumProvider.notifier).refreshDeviceAlbums();
       context.navigator.popUntil((route) => route.isFirst);
-      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.CENTER);
+      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,
         context: context,
         msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
-        gravity: ToastGravity.CENTER,
+        gravity: ToastGravity.BOTTOM,
       );
     }
   }
