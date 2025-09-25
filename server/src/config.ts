@@ -236,8 +236,8 @@ export const defaults = Object.freeze<SystemConfig>({
   },
   map: {
     enabled: true,
-    lightStyle: 'https://tiles.immich.cloud/v1/style/light.json',
-    darkStyle: 'https://tiles.immich.cloud/v1/style/dark.json',
+    lightStyle: `${process.env.MAP_TILES_URL}/styles/light-style/style.json`,
+    darkStyle: `${process.env.MAP_TILES_URL}/styles/dark-style/style.json`,
   },
   reverseGeocoding: {
     enabled: true,
