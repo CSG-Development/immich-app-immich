@@ -48,7 +48,7 @@
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences, user } from '$lib/stores/user.store';
-  import { handlePromiseError, makeSharedLinkUrl } from '$lib/utils';
+  import { getFirstSlideshowAsset, handlePromiseError, makeSharedLinkUrl, toDate } from '$lib/utils';
   import { confirmAlbumDelete } from '$lib/utils/album-utils';
   import { cancelMultiselect, downloadAlbum } from '$lib/utils/asset-utils';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
@@ -87,6 +87,7 @@
   } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import { fly } from 'svelte/transition';
   import type { PageData } from './$types';
 
@@ -141,16 +142,6 @@
 
   const handleOpenAndCloseActivityTab = () => {
     isShowActivity = !isShowActivity;
-  };
-
-  const handleStartSlideshow = async () => {
-    const asset =
-      $slideshowNavigation === SlideshowNavigation.Shuffle
-        ? await timelineManager.getRandomAsset()
-        : timelineManager.months[0]?.dayGroups[0]?.viewerAssets[0]?.asset;
-    if (asset) {
-      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
-    }
   };
 
   const handleEscape = async () => {
@@ -441,6 +432,28 @@
       }
     }
   };
+
+  let sortedSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = async () => {
+    sortedSelectedAssets = assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    const nav = get(slideshowNavigation);
+    const firstAsset =
+      nav === SlideshowNavigation.Shuffle
+        ? await timelineManager.getRandomAsset()
+        : nav === SlideshowNavigation.AscendingOrder
+          ? timelineManager.months.at(-1)?.dayGroups.at(-1)?.viewerAssets.at(-1)?.asset
+          : timelineManager.months[0]?.dayGroups[0]?.viewerAssets[0]?.asset;
+    const firstSelectedAsset = getFirstSlideshowAsset(sortedSelectedAssets, nav);
+
+    const asset = sortedSelectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
+
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
 </script>
 
 <div class="flex overflow-hidden" use:scrollMemoryClearer={{ routeStartsWith: AppRoute.ALBUMS }}>
@@ -457,6 +470,7 @@
         {showArchiveIcon}
         {onSelect}
         onEscape={handleEscape}
+        selectedAssets={sortedSelectedAssets}
       >
         {#if viewMode !== AlbumPageViewMode.SELECT_ASSETS}
           {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
@@ -585,6 +599,9 @@
           ></FavoriteAction>
         {/if}
         <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')} offset={{ x: 175, y: 25 }}>
+          {#if assetInteraction.selectedAssets.length > 1}
+            <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+          {/if}
           <DownloadAction menuItem filename="{album.albumName}.zip" />
           {#if assetInteraction.isAllUserOwned}
             <ChangeDate menuItem />

@@ -403,9 +403,14 @@ export const toDate = (date: TimelineDateTime): Date => {
   return new Date(date.year, date.month - 1, date.day, date.hour, date.minute, date.second, date.millisecond);
 };
 
-export const getFirstSlideshowAsset = (sortedSelectedAssets: TimelineAsset[], nav: SlideshowNavigation) =>
-  nav === SlideshowNavigation.Shuffle
-    ? sortedSelectedAssets[Math.floor(Math.random() * sortedSelectedAssets.length)]
+export const getFirstSlideshowAsset = (
+  assets: TimelineAsset[],
+  shuffledAssets: TimelineAsset[],
+  nav: SlideshowNavigation,
+) => {
+  return nav === SlideshowNavigation.Shuffle
+    ? shuffledAssets[0]
     : nav === SlideshowNavigation.AscendingOrder
-      ? sortedSelectedAssets.at(-1)
-      : sortedSelectedAssets[0];
+      ? assets.at(-1)
+      : assets[0];
+};

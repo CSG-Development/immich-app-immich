@@ -4,7 +4,7 @@
   import { ProgressBarStatus } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
-  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
   import { IconButton } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
@@ -92,18 +92,11 @@
 
   const handleDone = async () => {
     await progressBar?.resetProgress();
-
-    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
-      onPrevious();
-      return;
-    }
     onNext();
   };
 
   const onShowSettings = async () => {
-    // eslint-disable-next-line tscompat/tscompat
     if (document.fullscreenElement) {
-      // eslint-disable-next-line tscompat/tscompat
       await document.exitFullscreen();
     }
     await modalManager.show(SlideshowSettingsModal);
@@ -115,11 +108,7 @@
         webkitIsFullScreen?: boolean;
       };
 
-      if (
-        // eslint-disable-next-line tscompat/tscompat
-        !document.fullscreenElement &&
-        !doc.webkitIsFullScreen
-      ) {
+      if (!document.fullscreenElement && !doc.webkitIsFullScreen) {
         onClose();
       }
     }
@@ -131,6 +120,12 @@
       document.removeEventListener('fullscreenchange', exitFullscreenHandler);
       document.removeEventListener('webkitfullscreenchange', exitFullscreenHandler);
     };
+  });
+
+  let videoEl: HTMLVideoElement | null = null;
+
+  onMount(() => {
+    videoEl = document.querySelector('video');
   });
 </script>
 
@@ -178,7 +173,14 @@
       shape="round"
       color="secondary"
       icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
-      onclick={() => (progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause())}
+      onclick={async () => {
+        if (videoEl && progressBarStatus === ProgressBarStatus.Paused) {
+          await videoEl?.play();
+        } else {
+          videoEl?.pause();
+        }
+        return progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause();
+      }}
       aria-label={progressBarStatus === ProgressBarStatus.Paused ? $t('play') : $t('pause')}
     />
     <IconButton
