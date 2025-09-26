@@ -65,6 +65,7 @@
     onRandom: () => Promise<{ id: string } | undefined>;
     assetInteraction?: AssetInteraction;
     copyImage?: () => Promise<void>;
+    onPlaySlideshow?: () => void;
   }
 
   let {
@@ -84,6 +85,7 @@
     onRandom,
     assetInteraction = undefined,
     copyImage = $bindable(),
+    onPlaySlideshow = () => {},
   }: Props = $props();
 
   const { setAssetId } = assetViewingStore;
@@ -242,7 +244,7 @@
 
     if ($slideshowState === SlideshowState.PlaySlideshow && $slideshowNavigation === SlideshowNavigation.Shuffle) {
       hasNext = order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next();
-      if (!hasNext) {
+      if (!hasNext && order === 'next') {
         const asset = await onRandom();
         if (asset) {
           slideshowHistory.queue(asset);
@@ -305,10 +307,9 @@
 
   const handleStopSlideshow = async () => {
     try {
-      // eslint-disable-next-line tscompat/tscompat
       if (document.fullscreenElement) {
         document.body.style.cursor = '';
-        // eslint-disable-next-line tscompat/tscompat
+
         await document.exitFullscreen();
       }
     } catch (error) {
@@ -401,7 +402,7 @@
         preAction={handlePreAction}
         onAction={handleAction}
         onRunJob={handleRunJob}
-        onPlaySlideshow={() => ($slideshowState = SlideshowState.PlaySlideshow)}
+        {onPlaySlideshow}
         onShowDetail={toggleDetailPanel}
         onClose={closeViewer}
       >

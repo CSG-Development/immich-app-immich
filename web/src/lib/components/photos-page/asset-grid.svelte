@@ -67,6 +67,7 @@
     children?: Snippet;
     empty?: Snippet;
     selectedAssets?: TimelineAsset[];
+    shuffledSelectedAssets?: TimelineAsset[];
   }
 
   let {
@@ -87,6 +88,7 @@
     children,
     empty,
     selectedAssets = [],
+    shuffledSelectedAssets = [],
   }: Props = $props();
 
   let { isViewing: showAssetViewer, asset: viewingAsset, preloadAssets, gridScrollTarget, mutex } = assetViewingStore;
@@ -160,6 +162,8 @@
     const { clientHeight, scrollTop } = element;
     return assetTop >= scrollTop && assetTop < scrollTop + clientHeight;
   };
+
+  let shuffledTimelineAssets: TimelineAsset[] = $state([]);
 
   const scrollToAssetId = async (assetId: string) => {
     const monthGroup = await timelineManager.findMonthGroupForAsset(assetId);
@@ -487,7 +491,7 @@
       return false;
     }
 
-    const preload = await timelineManager.getEarlierAsset(previous);
+    const preload = await timelineManager.getLaterAsset(previous);
     await viewAssetWithPreload({ asset: previous, preload });
     return true;
   };
@@ -548,13 +552,37 @@
   };
 
   const handleRandom = async () => {
-    const random = Math.floor(Math.random() * selectedAssets.length);
-    const randomAsset = selectedAssets.length > 0 ? selectedAssets[random] : await timelineManager.getRandomAsset();
+    const index =
+      selectedAssets.length > 0
+        ? shuffledSelectedAssets.findIndex((el) => el.id === $viewingAsset.id)
+        : shuffledTimelineAssets.findIndex((el) => el.id === $viewingAsset.id);
 
-    if (randomAsset) {
-      const asset = await viewAssetWithPreload({ asset: randomAsset, returnFullAsset: true });
+    const next = selectedAssets.length > 0 ? shuffledSelectedAssets[index + 1] : shuffledTimelineAssets[index + 1];
+    if (!next) {
+      return undefined;
+    }
+
+    if (next) {
+      const asset = await viewAssetWithPreload({ asset: next, returnFullAsset: true });
       return asset;
     }
+  };
+
+  const handlePlaySlideshow = async () => {
+    const assets = await timelineManager.getAssets();
+
+    const first = assets.find((a) => a.id === $viewingAsset.id);
+    if (!first) {
+      return;
+    }
+
+    const rest = assets.filter((a) => a.id !== $viewingAsset.id);
+
+    const shuffledRest = rest.sort(() => Math.random() - 0.5);
+
+    shuffledTimelineAssets = [first, ...shuffledRest];
+
+    return ($slideshowState = SlideshowState.PlaySlideshow);
   };
 
   const handleClose = async (asset: { id: string }) => {
@@ -1023,6 +1051,7 @@
         onRandom={handleRandom}
         onClose={handleClose}
         {assetInteraction}
+        onPlaySlideshow={handlePlaySlideshow}
       />
     {/await}
   {/if}
