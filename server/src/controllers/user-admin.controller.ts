@@ -38,15 +38,15 @@ export class UserAdminController {
   //   return this.service.get(auth, id);
   // }
   //
-  // @Put(':id')
-  // @Authenticated({ permission: Permission.ADMIN_USER_UPDATE, admin: true })
-  // updateUserAdmin(
-  //   @Auth() auth: AuthDto,
-  //   @Param() { id }: UUIDParamDto,
-  //   @Body() dto: UserAdminUpdateDto,
-  // ): Promise<UserAdminResponseDto> {
-  //   return this.service.update(auth, id, dto);
-  // }
+  @Put(':id')
+  @Authenticated({ permission: Permission.ADMIN_USER_UPDATE, admin: true })
+  updateUserAdmin(
+    @Auth() auth: AuthDto,
+    @Param() { id }: UUIDParamDto,
+    @Body() dto: UserAdminUpdateDto,
+  ): Promise<UserAdminResponseDto> {
+    return this.service.update(auth, id, dto);
+  }
 
   @Delete(':id')
   @Authenticated({ permission: Permission.ADMIN_USER_DELETE, admin: true })
