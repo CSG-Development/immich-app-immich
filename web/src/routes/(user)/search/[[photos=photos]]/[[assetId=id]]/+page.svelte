@@ -270,12 +270,22 @@
   }
 
   let { slideshowState, slideshowNavigation } = slideshowStore;
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+  let currentIndex = $state(0);
+  const findIndex = (asset: TimelineAsset) => searchResultAssets.findIndex((el) => el.id === asset.id);
 
   const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort((a, b) => findIndex(a) - findIndex(b));
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, nav);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
     if (asset) {
-      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+      handlePromiseError(
+        setAssetId(asset.id).then(() => {
+          currentIndex = assetInteraction.selectedAssets.findIndex((el) => el.id === asset.id);
+          return ($slideshowState = SlideshowState.PlaySlideshow);
+        }),
+      );
     }
   };
 </script>
@@ -409,6 +419,8 @@
         {viewport}
         onReload={onSearchQueryUpdate}
         slidingWindowOffset={searchResultsElement.offsetTop}
+        {currentIndex}
+        {shuffledSelectedAssets}
       />
     {:else if !isLoading}
       <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">

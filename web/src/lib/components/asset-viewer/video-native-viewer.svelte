@@ -7,6 +7,7 @@
   import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
   import { loopVideo as loopVideoPreference, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { videoStore } from '$lib/stores/video.store';
   import { getAssetPlaybackUrl, getAssetThumbnailUrl } from '$lib/utils';
   import { AssetMediaSize } from '@immich/sdk';
   import { onDestroy, onMount } from 'svelte';
@@ -106,6 +107,10 @@
     if (isFaceEditMode.value) {
       videoPlayer?.pause();
     }
+  });
+
+  $effect(() => {
+    videoStore.set(videoPlayer);
   });
 </script>
 
