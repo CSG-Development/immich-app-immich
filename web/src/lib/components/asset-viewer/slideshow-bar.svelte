@@ -5,6 +5,7 @@
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
   import { slideshowStore } from '$lib/stores/slideshow.store';
+  import { videoStore } from '$lib/stores/video.store';
   import { IconButton } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
@@ -28,8 +29,7 @@
     onSetToFullScreen = () => {},
   }: Props = $props();
 
-  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowNavigation, slideshowAutoplay } =
-    slideshowStore;
+  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowAutoplay } = slideshowStore;
 
   let progressBarStatus: ProgressBarStatus | undefined = $state();
   let progressBar = $state<ReturnType<typeof ProgressBar>>();
@@ -122,10 +122,12 @@
     };
   });
 
-  let videoEl: HTMLVideoElement | null = null;
-
-  onMount(() => {
-    videoEl = document.querySelector('video');
+  $effect(() => {
+    if ($videoStore && progressBarStatus === ProgressBarStatus.Paused) {
+      $videoStore?.pause();
+    } else {
+      $videoStore?.play().catch((error) => console.error(error));
+    }
   });
 </script>
 
@@ -174,10 +176,10 @@
       color="secondary"
       icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
       onclick={async () => {
-        if (videoEl && progressBarStatus === ProgressBarStatus.Paused) {
-          await videoEl?.play();
+        if ($videoStore && progressBarStatus === ProgressBarStatus.Paused) {
+          await $videoStore?.play();
         } else {
-          videoEl?.pause();
+          $videoStore?.pause();
         }
         return progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause();
       }}

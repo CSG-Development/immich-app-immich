@@ -54,14 +54,15 @@
   let { setAssetId } = assetViewingStore;
   let { slideshowState, slideshowNavigation } = slideshowStore;
 
-  let sortedSelectedAssets: TimelineAsset[] = $derived([]);
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = () => {
-    sortedSelectedAssets = assetInteraction.selectedAssets.sort(
+    assetInteraction.selectedAssets.sort(
       (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
     );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(sortedSelectedAssets, nav);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
     if (asset) {
       handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
     }
@@ -80,7 +81,8 @@
     {assetInteraction}
     removeAction={AssetAction.UNARCHIVE}
     onEscape={handleEscape}
-    selectedAssets={sortedSelectedAssets}
+    selectedAssets={assetInteraction.selectedAssets}
+    {shuffledSelectedAssets}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_archived_assets_message')} />

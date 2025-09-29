@@ -433,20 +433,22 @@
     }
   };
 
-  let sortedSelectedAssets: TimelineAsset[] = $derived([]);
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = async () => {
-    sortedSelectedAssets = assetInteraction.selectedAssets.sort(
+    assetInteraction.selectedAssets.sort(
       (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
     );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
+
     const firstAsset =
       nav === SlideshowNavigation.Shuffle
         ? await timelineManager.getRandomAsset()
         : nav === SlideshowNavigation.AscendingOrder
           ? timelineManager.months.at(-1)?.dayGroups.at(-1)?.viewerAssets.at(-1)?.asset
           : timelineManager.months[0]?.dayGroups[0]?.viewerAssets[0]?.asset;
-    const firstSelectedAsset = getFirstSlideshowAsset(sortedSelectedAssets, nav);
+    const firstSelectedAsset = getFirstSlideshowAsset(sortedSelectedAssets, shuffledSelectedAssets, nav);
 
     const asset = sortedSelectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
 
@@ -470,7 +472,8 @@
         {showArchiveIcon}
         {onSelect}
         onEscape={handleEscape}
-        selectedAssets={sortedSelectedAssets}
+        selectedAssets={assetInteraction.selectedAssets}
+        {shuffledSelectedAssets}
       >
         {#if viewMode !== AlbumPageViewMode.SELECT_ASSETS}
           {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}

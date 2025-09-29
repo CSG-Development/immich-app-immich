@@ -40,9 +40,10 @@
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { locale } from '$lib/stores/preferences.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
   import { websocketEvents } from '$lib/stores/websocket';
-  import { getPeopleThumbnailUrl, handlePromiseError } from '$lib/utils';
+  import { getFirstSlideshowAsset, getPeopleThumbnailUrl, handlePromiseError, toDate } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { isExternalUrl } from '$lib/utils/navigation';
   import {
@@ -63,10 +64,12 @@
     mdiHeartMinusOutline,
     mdiHeartOutline,
     mdiPlus,
+    mdiPresentationPlay,
   } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { onDestroy, onMount } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -76,7 +79,7 @@
   let { data }: Props = $props();
 
   let numberOfAssets = $state(data.statistics.assets);
-  let { isViewing: showAssetViewer } = assetViewingStore;
+  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
 
   const timelineManager = new TimelineManager();
   $effect(() => void timelineManager.updateOptions({ visibility: AssetVisibility.Timeline, personId: data.person.id }));
@@ -375,6 +378,22 @@
     timelineManager.removeAssets(assetIds);
     assetInteraction.clearMultiselect();
   };
+
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
 </script>
 
 <main
@@ -524,6 +543,9 @@
           })}
       />
       <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+        {#if assetInteraction.selectedAssets.length > 1}
+          <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+        {/if}
         <DownloadAction menuItem filename="{person.name || 'immich'}.zip" />
         <MenuOption
           icon={mdiAccountMultipleCheckOutline}

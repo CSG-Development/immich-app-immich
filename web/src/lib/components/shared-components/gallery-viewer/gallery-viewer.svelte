@@ -44,6 +44,8 @@
     onReload?: (() => void) | undefined;
     pageHeaderOffset?: number;
     slidingWindowOffset?: number;
+    currentIndex?: number;
+    shuffledSelectedAssets?: TimelineAsset[];
   }
 
   let {
@@ -62,6 +64,8 @@
     onReload = undefined,
     slidingWindowOffset = 0,
     pageHeaderOffset = 0,
+    currentIndex = 0,
+    shuffledSelectedAssets = [],
   }: Props = $props();
 
   let { isViewing: isViewerOpen, asset: viewingAsset, setAssetId } = assetViewingStore;
@@ -121,7 +125,6 @@
     };
   });
 
-  let currentIndex = 0;
   if (initialAssetId && assets.length > 0) {
     const index = assets.findIndex(({ id }) => id === initialAssetId);
     if (index !== -1) {
@@ -340,24 +343,12 @@
 
         currentIndex = currentIndex + 1;
 
-        if (
-          $slideshowState === SlideshowState.PlaySlideshow &&
-          $slideshowNavigation === SlideshowNavigation.AscendingOrder
-        ) {
-          asset =
-            currentIndex < assets.length
-              ? [...assetInteraction.selectedAssets].reverse().length > 0
-                ? [...assetInteraction.selectedAssets].reverse()[currentIndex]
-                : [...assets].reverse()[currentIndex]
-              : undefined;
-        } else {
-          asset =
-            currentIndex < assets.length
-              ? assetInteraction.selectedAssets.length > 0
-                ? assetInteraction.selectedAssets[currentIndex]
-                : assets[currentIndex]
-              : undefined;
-        }
+        asset =
+          currentIndex < assets.length
+            ? assetInteraction.selectedAssets.length > 0
+              ? assetInteraction.selectedAssets[currentIndex]
+              : assets[currentIndex]
+            : undefined;
       }
 
       if (!asset) {
@@ -379,13 +370,17 @@
       if (onRandom) {
         asset = await onRandom();
       } else {
-        if (assetInteraction.selectedAssets.length > 0) {
-          const randomIndex = Math.floor(Math.random() * assetInteraction.selectedAssets.length);
-          asset = assetInteraction.selectedAssets[randomIndex];
-        } else if (assets.length > 0) {
-          const randomIndex = Math.floor(Math.random() * assets.length);
-          asset = assets[randomIndex];
-        }
+        const index =
+          assetInteraction.selectedAssets.length > 0
+            ? shuffledSelectedAssets.findIndex((el) => el.id === $viewingAsset.id)
+            : shuffledTimelineAssets.findIndex((el) => el.id === $viewingAsset.id);
+
+        asset =
+          assetInteraction.selectedAssets.length > 0
+            ? shuffledSelectedAssets[index + 1]
+            : shuffledTimelineAssets[index + 1];
+
+        currentIndex = assets.findIndex((el) => el.id === asset?.id);
       }
 
       if (!asset) {
@@ -413,24 +408,12 @@
 
         currentIndex = currentIndex - 1;
 
-        if (
-          $slideshowState === SlideshowState.PlaySlideshow &&
-          $slideshowNavigation === SlideshowNavigation.AscendingOrder
-        ) {
-          asset =
-            currentIndex >= 0
-              ? [...assetInteraction.selectedAssets].reverse().length > 0
-                ? [...assetInteraction.selectedAssets].reverse()[currentIndex]
-                : [...assets].reverse()[currentIndex]
-              : undefined;
-        } else {
-          asset =
-            currentIndex >= 0
-              ? assetInteraction.selectedAssets.length > 0
-                ? assetInteraction.selectedAssets[currentIndex]
-                : assets[currentIndex]
-              : undefined;
-        }
+        asset =
+          currentIndex >= 0
+            ? assetInteraction.selectedAssets.length > 0
+              ? assetInteraction.selectedAssets[currentIndex]
+              : assets[currentIndex]
+            : undefined;
       }
 
       if (!asset) {
@@ -444,6 +427,23 @@
       handleError(error, $t('errors.cannot_navigate_previous_asset'));
       return false;
     }
+  };
+
+  let shuffledTimelineAssets: TimelineAsset[] = $state([]);
+
+  const handlePlaySlideshow = () => {
+    const first = assets.find((a) => a.id === $viewingAsset.id);
+    if (!first) {
+      return;
+    }
+
+    const rest = assets.filter((a) => a.id !== $viewingAsset.id);
+
+    const shuffledRest = rest.sort(() => Math.random() - 0.5);
+
+    shuffledTimelineAssets = [first, ...shuffledRest] as TimelineAsset[];
+
+    return ($slideshowState = SlideshowState.PlaySlideshow);
   };
 
   const navigateToAsset = async (asset?: { id: string }) => {
@@ -569,14 +569,16 @@
     <AssetViewer
       asset={$viewingAsset}
       onAction={handleAction}
-      onPrevious={handlePrevious}
-      onNext={handleNext}
+      onPrevious={$slideshowNavigation === SlideshowNavigation.AscendingOrder ? handleNext : handlePrevious}
+      onNext={$slideshowNavigation === SlideshowNavigation.AscendingOrder ? handlePrevious : handleNext}
       onRandom={handleRandom}
       onClose={() => {
+        currentIndex = 0;
         assetViewingStore.showAssetViewer(false);
         handlePromiseError(navigate({ targetRoute: 'current', assetId: null }));
       }}
       {assetInteraction}
+      onPlaySlideshow={handlePlaySlideshow}
     />
   </Portal>
 {/if}

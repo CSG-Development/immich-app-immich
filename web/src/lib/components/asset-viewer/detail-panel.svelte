@@ -528,7 +528,7 @@
             <a
               href="https://www.openstreetmap.org/?mlat={lat}&mlon={lon}&zoom=13#map=15/{lat}/{lon}"
               target="_blank"
-              class="font-medium text-immich-primary"
+              class="font-medium text-primary underline focus:outline-none"
             >
               {$t('open_in_openstreetmap')}
             </a>
@@ -600,3 +600,14 @@
     onRefresh={handleRefreshPeople}
   />
 {/if}
+
+<style>
+  :global(.maplibregl-popup-content) {
+    background-color: rgb(var(--immich-ui-gray)) !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  :global(.maplibregl-popup-tip) {
+    border-top-color: rgb(var(--immich-ui-gray)) !important;
+  }
+</style>
