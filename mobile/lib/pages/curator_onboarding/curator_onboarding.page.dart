@@ -34,6 +34,12 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
     final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
     final startIndex = viewedCount.clamp(0, _onboardingSteps.length - 1);
+
+    final ensuredViewedCount = startIndex + 1;
+    if (viewedCount < ensuredViewedCount) {
+      Store.put(StoreKey.onboardingViewedCount, ensuredViewedCount);
+    }
+
     if (startIndex > 0) {
       _currentPage = startIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) {
