@@ -124,7 +124,7 @@ android {
         }
     }
 
-    flavorDimensions "environment"
+    flavorDimensions "environment", "distribution"
     productFlavors {
         dev {
             dimension "environment"
@@ -136,6 +136,15 @@ android {
             dimension "environment"
             resValue "string", "app_name", "Curator Photos"
             signingConfig signingConfigs.release_prod
+        }
+        // Distribution dimension flavors - keep existing values unchanged
+        store {
+            dimension "distribution"
+        }
+        sideload {
+            dimension "distribution"
+            // No applicationIdSuffix to keep appId identical unless explicitly needed
+            // Overlay resources/manifests under src/sideload will enable sideload update flow
         }
     }
   externalNativeBuild {
