@@ -448,9 +448,9 @@
         : nav === SlideshowNavigation.AscendingOrder
           ? timelineManager.months.at(-1)?.dayGroups.at(-1)?.viewerAssets.at(-1)?.asset
           : timelineManager.months[0]?.dayGroups[0]?.viewerAssets[0]?.asset;
-    const firstSelectedAsset = getFirstSlideshowAsset(sortedSelectedAssets, shuffledSelectedAssets, nav);
+    const firstSelectedAsset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
 
-    const asset = sortedSelectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
+    const asset = assetInteraction.selectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
 
     if (asset) {
       handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
