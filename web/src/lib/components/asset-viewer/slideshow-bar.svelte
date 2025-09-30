@@ -123,10 +123,12 @@
   });
 
   $effect(() => {
-    if ($videoStore && progressBarStatus === ProgressBarStatus.Paused) {
-      $videoStore?.pause();
-    } else {
-      $videoStore?.play().catch((error) => console.error(error));
+    if ($videoStore) {
+      if (progressBarStatus === ProgressBarStatus.Paused) {
+        $videoStore?.pause();
+      } else {
+        $videoStore?.play().catch((error) => console.error(error));
+      }
     }
   });
 </script>
@@ -176,11 +178,14 @@
       color="secondary"
       icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
       onclick={async () => {
-        if ($videoStore && progressBarStatus === ProgressBarStatus.Paused) {
-          await $videoStore?.play();
-        } else {
-          $videoStore?.pause();
+        if ($videoStore) {
+          if (progressBarStatus === ProgressBarStatus.Paused) {
+            await $videoStore?.play();
+          } else {
+            $videoStore?.pause();
+          }
         }
+
         return progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause();
       }}
       aria-label={progressBarStatus === ProgressBarStatus.Paused ? $t('play') : $t('pause')}
