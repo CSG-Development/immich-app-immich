@@ -1,13 +1,16 @@
-import { CallHandler, Provider, ValidationPipe } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Provider, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { transformException } from '@nestjs/platform-express/multer/multer/multer.utils';
 import { Test } from '@nestjs/testing';
 import { ClassConstructor } from 'class-transformer';
+import { NextFunction } from 'express';
 import { Kysely } from 'kysely';
+import multer from 'multer';
 import { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { Writable } from 'node:stream';
+import { Readable, Writable } from 'node:stream';
 import { PNG } from 'pngjs';
 import postgres from 'postgres';
-import { DB } from 'src/db';
+import { UploadFieldName } from 'src/dtos/asset-media.dto';
 import { AssetUploadInterceptor } from 'src/middleware/asset-upload.interceptor';
 import { AuthGuard } from 'src/middleware/auth.guard';
 import { FileUploadInterceptor } from 'src/middleware/file-upload.interceptor';
@@ -47,6 +50,7 @@ import { SessionRepository } from 'src/repositories/session.repository';
 import { SharedLinkRepository } from 'src/repositories/shared-link.repository';
 import { StackRepository } from 'src/repositories/stack.repository';
 import { StorageRepository } from 'src/repositories/storage.repository';
+import { SyncCheckpointRepository } from 'src/repositories/sync-checkpoint.repository';
 import { SyncRepository } from 'src/repositories/sync.repository';
 import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
 import { TagRepository } from 'src/repositories/tag.repository';
@@ -55,6 +59,7 @@ import { TrashRepository } from 'src/repositories/trash.repository';
 import { UserRepository } from 'src/repositories/user.repository';
 import { VersionHistoryRepository } from 'src/repositories/version-history.repository';
 import { ViewRepository } from 'src/repositories/view-repository';
+import { DB } from 'src/schema';
 import { AuthService } from 'src/services/auth.service';
 import { BaseService } from 'src/services/base.service';
 import { RepositoryInterface } from 'src/types';
@@ -67,11 +72,9 @@ import { newDatabaseRepositoryMock } from 'test/repositories/database.repository
 import { newJobRepositoryMock } from 'test/repositories/job.repository.mock';
 import { newMediaRepositoryMock } from 'test/repositories/media.repository.mock';
 import { newMetadataRepositoryMock } from 'test/repositories/metadata.repository.mock';
-import { newPersonRepositoryMock } from 'test/repositories/person.repository.mock';
 import { newStorageRepositoryMock } from 'test/repositories/storage.repository.mock';
 import { newSystemMetadataRepositoryMock } from 'test/repositories/system-metadata.repository.mock';
 import { ITelemetryRepositoryMock, newTelemetryRepositoryMock } from 'test/repositories/telemetry.repository.mock';
-import { Readable } from 'typeorm/platform/PlatformTools';
 import { assert, Mock, Mocked, vitest } from 'vitest';
 
 export type ControllerContext = {
@@ -83,6 +86,24 @@ export type ControllerContext = {
 
 export const controllerSetup = async (controller: ClassConstructor<unknown>, providers: Provider[]) => {
   const noopInterceptor = { intercept: (ctx: never, next: CallHandler<unknown>) => next.handle() };
+  const upload = multer({ storage: multer.memoryStorage() });
+  const memoryFileInterceptor = {
+    intercept: async (ctx: ExecutionContext, next: CallHandler<unknown>) => {
+      const context = ctx.switchToHttp();
+      const handler = upload.fields([
+        { name: UploadFieldName.ASSET_DATA, maxCount: 1 },
+        { name: UploadFieldName.SIDECAR_DATA, maxCount: 1 },
+      ]);
+
+      await new Promise<void>((resolve, reject) => {
+        const next: NextFunction = (error) => (error ? reject(transformException(error)) : resolve());
+        const maybePromise = handler(context.getRequest(), context.getResponse(), next);
+        Promise.resolve(maybePromise).catch((error) => reject(error));
+      });
+
+      return next.handle();
+    },
+  };
   const moduleRef = await Test.createTestingModule({
     controllers: [controller],
     providers: [
@@ -94,7 +115,7 @@ export const controllerSetup = async (controller: ClassConstructor<unknown>, pro
     ],
   })
     .overrideInterceptor(FileUploadInterceptor)
-    .useValue(noopInterceptor)
+    .useValue(memoryFileInterceptor)
     .overrideInterceptor(AssetUploadInterceptor)
     .useValue(noopInterceptor)
     .compile();
@@ -218,6 +239,7 @@ export type ServiceOverrides = {
   stack: StackRepository;
   storage: StorageRepository;
   sync: SyncRepository;
+  syncCheckpoint: SyncCheckpointRepository;
   systemMetadata: SystemMetadataRepository;
   tag: TagRepository;
   telemetry: TelemetryRepository;
@@ -278,7 +300,7 @@ export const newTestService = <T extends BaseService>(
     notification: automock(NotificationRepository),
     oauth: automock(OAuthRepository, { args: [loggerMock] }),
     partner: automock(PartnerRepository, { strict: false }),
-    person: newPersonRepositoryMock(),
+    person: automock(PersonRepository, { strict: false }),
     process: automock(ProcessRepository),
     search: automock(SearchRepository, { strict: false }),
     // eslint-disable-next-line no-sparse-arrays
@@ -288,6 +310,7 @@ export const newTestService = <T extends BaseService>(
     stack: automock(StackRepository),
     storage: newStorageRepositoryMock(),
     sync: automock(SyncRepository),
+    syncCheckpoint: automock(SyncCheckpointRepository),
     systemMetadata: newSystemMetadataRepositoryMock(),
     // systemMetadata: automock(SystemMetadataRepository, { strict: false }),
     // eslint-disable-next-line no-sparse-arrays
@@ -337,6 +360,7 @@ export const newTestService = <T extends BaseService>(
     overrides.stack || (mocks.stack as As<StackRepository>),
     overrides.storage || (mocks.storage as As<StorageRepository>),
     overrides.sync || (mocks.sync as As<SyncRepository>),
+    overrides.syncCheckpoint || (mocks.syncCheckpoint as As<SyncCheckpointRepository>),
     overrides.systemMetadata || (mocks.systemMetadata as As<SystemMetadataRepository>),
     overrides.tag || (mocks.tag as As<TagRepository>),
     overrides.telemetry || (mocks.telemetry as unknown as TelemetryRepository),
@@ -444,6 +468,16 @@ export async function* makeStream<T>(items: T[] = []): AsyncIterableIterator<T> 
   }
 }
 
-export const wait = (ms: number) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export const wait = (ms: number): Promise<void> => {
+  return new Promise((resolve) => {
+    const target = performance.now() + ms;
+    const checkDone = () => {
+      if (performance.now() >= target) {
+        resolve();
+      } else {
+        setTimeout(checkDone, 1); // Check again after 1ms
+      }
+    };
+    setTimeout(checkDone, ms);
+  });
 };
