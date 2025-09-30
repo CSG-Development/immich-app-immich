@@ -25,7 +25,7 @@
   onclick={onClick}
   class="{width} h-85 m-auto mt-10 flex flex-col place-content-center place-items-center gap-8 rounded-3xl bg-gray-50 p-5 dark:bg-immich-dark-gray-card {hoverClasses}"
 >
-  <img {src} alt="" height="200" draggable="false" />
+  <img class="h-[200px]" {src} alt="" draggable="false" />
 
   {#if title}
     <h2 class="text-xl font-medium my-4">{title}</h2>

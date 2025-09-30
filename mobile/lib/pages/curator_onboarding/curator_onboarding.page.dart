@@ -2,44 +2,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
 
-class OnboardingStep {
-  final String image;
-  final String title;
-  final String description;
-
-  OnboardingStep({
-    required this.image,
-    required this.title,
-    required this.description,
-  });
-}
-
-final _onboardingSteps = [
-  OnboardingStep(
-    image: 'assets/onboarding-1.png',
-    title: 'Manage your photo library',
-    description: 'You can copy, move, delete',
-  ),
-  OnboardingStep(
-    image: 'assets/onboarding-1.png',
-    title: 'Share moments securely',
-    description: 'You can share privately or publicly',
-  ),
-  OnboardingStep(
-    image: 'assets/onboarding-1.png',
-    title: 'Keep your media in sync',
-    description:
-        'Upload from your phone, access from your desktop. Curator Photos keeps everything connected.',
-  ),
-  OnboardingStep(
-    image: 'assets/onboarding-1.png',
-    title: 'Relive the highlights',
-    description: 'Let Curator Photos bring your memories back to life',
-  ),
-];
+final _onboardingSteps = kCuratorOnboardingSlidesData;
 
 @RoutePage()
 class CuratorOnboardingPage extends StatefulWidget {
@@ -64,6 +31,23 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
         (index) => ScrollController(),
       ),
     );
+
+    final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
+    final startIndex = viewedCount.clamp(0, _onboardingSteps.length - 1);
+
+    final ensuredViewedCount = startIndex + 1;
+    if (viewedCount < ensuredViewedCount) {
+      Store.put(StoreKey.onboardingViewedCount, ensuredViewedCount);
+    }
+
+    if (startIndex > 0) {
+      _currentPage = startIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _pageController.jumpToPage(startIndex);
+        }
+      });
+    }
   }
 
   @override
@@ -90,10 +74,16 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
   void _finishOnboarding() async {
     await Store.put(StoreKey.onboardingWasShown, true);
-    context.replaceRoute(const TabControllerRoute());
+    await Store.delete(StoreKey.onboardingViewedCount);
+    final isBeta = Store.isBetaTimelineEnabled;
+    if (isBeta) {
+      context.replaceRoute(const TabShellRoute());
+    } else {
+      context.replaceRoute(const TabControllerRoute());
+    }
   }
 
-  Widget _buildFixedStep(OnboardingStep step, bool isTablet) {
+  Widget _buildFixedStep(OnboardingSlide step, bool isTablet) {
     final imageHeight = isTablet ? 312.0 : 250.0;
 
     Widget content = Column(
@@ -135,7 +125,7 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
     );
   }
 
-  Widget _buildScrollableStep(OnboardingStep step, bool isTablet, int index) {
+  Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, int index) {
     final imageHeight = isTablet ? 312.0 : 120.0;
     final scrollController = _scrollControllers[index];
 
@@ -217,6 +207,11 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
                     itemCount: _onboardingSteps.length,
                     onPageChanged: (index) {
                       setState(() => _currentPage = index);
+                      final prev = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
+                      final next = index + 1;
+                      if (next > prev) {
+                        Store.put(StoreKey.onboardingViewedCount, next);
+                      }
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (isLandscape &&
                             !isTablet &&

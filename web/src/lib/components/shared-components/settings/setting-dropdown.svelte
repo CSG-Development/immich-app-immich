@@ -1,9 +1,9 @@
 <script lang="ts">
+  import Dropdown, { type RenderedOption } from '$lib/components/elements/dropdown.svelte';
+  import type { Snippet } from 'svelte';
+  import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
-  import Dropdown, { type RenderedOption } from '$lib/components/elements/dropdown.svelte';
-  import { t } from 'svelte-i18n';
-  import type { Snippet } from 'svelte';
 
   interface Props {
     title: string;
@@ -13,6 +13,8 @@
     isEdited?: boolean;
     onToggle: (option: RenderedOption) => void;
     children?: Snippet;
+    position?: 'bottom-left' | 'bottom-right';
+    class?: string;
   }
 
   let {
@@ -23,6 +25,8 @@
     isEdited = false,
     onToggle,
     children,
+    position,
+    class: className,
   }: Props = $props();
 </script>
 
@@ -57,6 +61,8 @@
         };
       }}
       onSelect={onToggle}
+      {position}
+      class={className}
     />
   </div>
 </div>

@@ -519,6 +519,14 @@ export class TimelineManager {
     return await getAssetWithOffset(this, assetDescriptor, interval, 'earlier');
   }
 
+  async getAssets() {
+    const assets = [];
+    for await (const asset of this.assetsIterator()) {
+      assets.push(asset);
+    }
+    return assets;
+  }
+
   async getClosestAssetToDate(dateTime: TimelineDateTime) {
     const monthGroup = findMonthGroupForDate(this, dateTime);
     if (!monthGroup) {

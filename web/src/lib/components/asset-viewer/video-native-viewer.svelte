@@ -6,6 +6,8 @@
   import { castManager } from '$lib/managers/cast-manager.svelte';
   import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
   import { loopVideo as loopVideoPreference, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { videoStore } from '$lib/stores/video.store';
   import { getAssetPlaybackUrl, getAssetThumbnailUrl } from '$lib/utils';
   import { AssetMediaSize } from '@immich/sdk';
   import { onDestroy, onMount } from 'svelte';
@@ -99,10 +101,16 @@
   let containerWidth = $state(0);
   let containerHeight = $state(0);
 
+  const { slideshowState } = slideshowStore;
+
   $effect(() => {
     if (isFaceEditMode.value) {
       videoPlayer?.pause();
     }
+  });
+
+  $effect(() => {
+    videoStore.set(videoPlayer);
   });
 </script>
 
@@ -128,7 +136,7 @@
         loop={$loopVideoPreference && loopVideo}
         autoplay
         playsinline
-        controls
+        controls={$slideshowState === SlideshowState.None}
         class="h-full object-contain"
         use:swipe={() => ({})}
         onswipe={onSwipe}

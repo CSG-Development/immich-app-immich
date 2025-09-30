@@ -125,7 +125,7 @@
 
       <input
         bind:this={input}
-        class="immich-form-input w-full pb-2"
+        class="immich-form-input w-full mb-2"
         class:color-picker={inputType === SettingInputFieldType.COLOR}
         aria-describedby={description ? `${label}-desc` : undefined}
         aria-labelledby="{label}-label"

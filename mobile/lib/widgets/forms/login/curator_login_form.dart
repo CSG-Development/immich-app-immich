@@ -399,7 +399,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             displayStringForOption: (value) => value,
             onSelected: (value) {
               serverEndpointController.text = value;
-              passwordFocusNode.requestFocus();
+              emailFocusNode.requestFocus();
             },
             fieldViewBuilder:
                 (context, controller, focusNode, onFieldSubmitted) {
@@ -409,7 +409,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                   return ServerEndpointInput(
                     controller: serverEndpointController,
                     focusNode: serverEndpointFocusNode,
-                    onSubmit: passwordFocusNode.requestFocus,
+                    onSubmit: emailFocusNode.requestFocus,
                     hasExternalError: serverError,
                   );
                 },
@@ -458,19 +458,19 @@ class CuratorLoginForm extends HookConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              buildServerEndpointAutocomplete(),
+              const SizedBox(height: 32.0),
               ValueListenableBuilder<bool>(
                 valueListenable: hasEmailError,
                 builder: (_, emailError, __) {
                   return EmailInput(
                     controller: emailController,
                     focusNode: emailFocusNode,
-                    onSubmit: serverEndpointFocusNode.requestFocus,
+                    onSubmit: passwordFocusNode.requestFocus,
                     hasExternalError: emailError,
                   );
                 },
               ),
-              const SizedBox(height: 32.0),
-              buildServerEndpointAutocomplete(),
               const SizedBox(height: 32.0),
               ValueListenableBuilder<bool>(
                 valueListenable: hasPasswordError,

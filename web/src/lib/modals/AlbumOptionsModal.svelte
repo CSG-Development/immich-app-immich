@@ -116,7 +116,7 @@
   };
 </script>
 
-<Modal title={$t('options')} onClose={() => onClose({ action: 'refreshAlbum' })} size="small">
+<Modal title={$t('options')} onClose={() => onClose({ action: 'refreshAlbum' })} size="small" class="overflow-visible">
   <ModalBody>
     <div class="items-center justify-center">
       <div class="py-2">
@@ -128,6 +128,8 @@
               options={Object.values(options)}
               selectedOption={options[order]}
               onToggle={handleToggleOrder}
+              position="bottom-right"
+              class="!min-w-[180px]"
             />
           {/if}
           <SettingSwitch

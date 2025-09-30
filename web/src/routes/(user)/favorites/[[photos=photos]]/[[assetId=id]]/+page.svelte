@@ -15,14 +15,20 @@
   import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
   import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import { AssetAction } from '$lib/constants';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
+  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
-  import { mdiDotsVertical, mdiPlus } from '@mdi/js';
+  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { mdiDotsVertical, mdiPlus, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -48,6 +54,23 @@
     timelineManager.removeAssets(assetIds);
     assetInteraction.clearMultiselect();
   };
+
+  let { setAssetId } = assetViewingStore;
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
 </script>
 
 <UserPageLayout
@@ -63,6 +86,8 @@
     {assetInteraction}
     removeAction={AssetAction.UNFAVORITE}
     onEscape={handleEscape}
+    selectedAssets={assetInteraction.selectedAssets}
+    {shuffledSelectedAssets}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_favorites_message')} />
@@ -84,6 +109,9 @@
       <AddToAlbum shared />
     </ButtonContextMenu>
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+      {#if assetInteraction.selectedAssets.length > 1}
+        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+      {/if}
       <DownloadAction menuItem />
       <ChangeDate menuItem />
       <ChangeDescription menuItem />

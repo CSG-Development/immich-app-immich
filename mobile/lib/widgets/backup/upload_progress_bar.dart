@@ -11,28 +11,16 @@ class BackupUploadProgressBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isManualUpload = ref.watch(
-      backupProvider.select(
-        (value) => value.backupProgress == BackUpProgressEnum.manualInProgress,
-      ),
+      backupProvider.select((value) => value.backupProgress == BackUpProgressEnum.manualInProgress),
     );
 
     final isIcloudAsset = isManualUpload
-        ? ref.watch(
-            manualUploadProvider
-                .select((value) => value.currentUploadAsset.isIcloudAsset),
-          )
-        : ref.watch(
-            backupProvider
-                .select((value) => value.currentUploadAsset.isIcloudAsset),
-          );
+        ? ref.watch(manualUploadProvider.select((value) => value.currentUploadAsset.isIcloudAsset))
+        : ref.watch(backupProvider.select((value) => value.currentUploadAsset.isIcloudAsset));
 
     final uploadProgress = isManualUpload
-        ? ref.watch(
-            manualUploadProvider.select((value) => value.progressInPercentage),
-          )
-        : ref.watch(
-            backupProvider.select((value) => value.progressInPercentage),
-          );
+        ? ref.watch(manualUploadProvider.select((value) => value.progressInPercentage))
+        : ref.watch(backupProvider.select((value) => value.progressInPercentage));
 
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),

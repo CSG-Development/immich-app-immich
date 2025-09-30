@@ -19,6 +19,7 @@
   import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
   import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
@@ -30,8 +31,9 @@
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
-  import { handlePromiseError } from '$lib/utils';
+  import { getFirstSlideshowAsset, handlePromiseError } from '$lib/utils';
   import { cancelMultiselect } from '$lib/utils/asset-utils';
   import { parseUtcDate } from '$lib/utils/date-time';
   import { handleError } from '$lib/utils/handle-error';
@@ -47,11 +49,19 @@
     type SmartSearchDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiArrowLeft, mdiDotsVertical, mdiImageOffOutline, mdiPlus, mdiSelectAll } from '@mdi/js';
+  import {
+    mdiArrowLeft,
+    mdiDotsVertical,
+    mdiImageOffOutline,
+    mdiPlus,
+    mdiPresentationPlay,
+    mdiSelectAll,
+  } from '@mdi/js';
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
 
-  let { isViewing: showAssetViewer } = assetViewingStore;
+  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
   const viewport: Viewport = $state({ width: 0, height: 0 });
   let searchResultsElement: HTMLElement | undefined = $state();
 
@@ -258,6 +268,26 @@
   function getObjectKeys<T extends object>(obj: T): (keyof T)[] {
     return Object.keys(obj) as (keyof T)[];
   }
+
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+  let currentIndex = $state(0);
+  const findIndex = (asset: TimelineAsset) => searchResultAssets.findIndex((el) => el.id === asset.id);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort((a, b) => findIndex(a) - findIndex(b));
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(
+        setAssetId(asset.id).then(() => {
+          currentIndex = assetInteraction.selectedAssets.findIndex((el) => el.id === asset.id);
+          return ($slideshowState = SlideshowState.PlaySlideshow);
+        }),
+      );
+    }
+  };
 </script>
 
 <svelte:window bind:scrollY />
@@ -296,6 +326,9 @@
         />
 
         <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+          {#if assetInteraction.selectedAssets.length > 1}
+            <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+          {/if}
           <DownloadAction menuItem />
           <ChangeDate menuItem />
           <ChangeLocation menuItem />
@@ -386,6 +419,8 @@
         {viewport}
         onReload={onSearchQueryUpdate}
         slidingWindowOffset={searchResultsElement.offsetTop}
+        {currentIndex}
+        {shuffledSelectedAssets}
       />
     {:else if !isLoading}
       <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
@@ -437,6 +472,9 @@
           />
 
           <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+            {#if assetInteraction.selectedAssets.length > 1}
+              <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+            {/if}
             <DownloadAction menuItem />
             <ChangeDate menuItem />
             <ChangeDescription menuItem />

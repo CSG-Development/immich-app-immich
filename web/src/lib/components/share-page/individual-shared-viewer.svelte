@@ -155,6 +155,7 @@
         onNext={() => Promise.resolve(false)}
         onRandom={() => Promise.resolve(undefined)}
         onClose={() => {}}
+        {assetInteraction}
       />
     {/await}
   {/if}
