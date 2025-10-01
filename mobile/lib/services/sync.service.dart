@@ -565,6 +565,14 @@ class SyncService {
     if (dbAlbum.thumbnail.value != null && toDelete.contains(dbAlbum.thumbnail.value)) {
       dbAlbum.thumbnail.value = null;
     }
+    // If album had no thumbnail and we are adding assets,
+    // set a thumbnail from the newly added assets.
+    if (dbAlbum.thumbnail.value == null) {
+      final thumb = existingInDb.firstOrNull ?? updated.firstOrNull;
+      if (thumb != null) {
+        dbAlbum.thumbnail.value = thumb;
+      }
+    }
     try {
       await _assetRepository.transaction(() async {
         await _assetRepository.updateAll(updated + toUpdate);
@@ -611,6 +619,13 @@ class SyncService {
     _removeDuplicates(newAssets);
     final (existingInDb, updated) = await _linkWithExistingFromDb(newAssets);
     try {
+      // If the album had no thumbnail (previously empty), choose one from the new assets
+      if (dbAlbum.thumbnail.value == null) {
+        final thumb = existingInDb.firstOrNull ?? updated.firstOrNull;
+        if (thumb != null) {
+          dbAlbum.thumbnail.value = thumb;
+        }
+      }
       await _assetRepository.transaction(() async {
         await _assetRepository.updateAll(updated);
         await _albumRepository.addAssets(dbAlbum, existingInDb + updated);
