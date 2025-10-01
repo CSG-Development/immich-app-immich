@@ -399,6 +399,47 @@ class AssetService {
       }).toList();
 
       await _assetRepository.updateAll(updatedAssets);
+
+      await _updateAlbumThumbnails(assets);
+    }
+  }
+
+  /// Update thumbnails for albums affected by asset deletion
+  Future<void> _updateAlbumThumbnails(Iterable<Asset> deletedAssets) async {
+    try {
+      final localAlbums = await _albumService.getAllLocalAlbums();
+      
+      for (final album in localAlbums) {
+        bool needsUpdate = false;
+        
+        // Check if album thumbnail is one of the deleted assets
+        if (album.thumbnail.value == null) {
+          // Thumbnail asset was deleted, need to select a new one
+          final remainingAssets = await _assetRepository.getByAlbum(album, state: AssetState.local);
+          if (remainingAssets.isEmpty) {
+            // Album is empty, clear thumbnail
+            album.thumbnail.value = null;
+          } else {
+            // Album has other assets, select new thumbnail
+            final newThumb = remainingAssets.firstOrNull;
+            album.thumbnail.value = newThumb;
+          }
+          needsUpdate = true;
+        }
+        
+        // Check if album becomes empty after deletion
+        final remainingAssets = await _assetRepository.getByAlbum(album, state: AssetState.local);
+        if (remainingAssets.isEmpty && album.thumbnail.value != null) {
+          album.thumbnail.value = null;
+          needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+          await _albumService.updateAlbum(album);
+        }
+      }
+    } catch (e) {
+      log.warning("Failed to update album thumbnails after asset deletion", e);
     }
   }
 
@@ -445,6 +486,8 @@ class AssetService {
             .toList();
         await _assetRepository.deleteByIds(remoteAssetIds);
       }
+      
+      await _updateAlbumThumbnails(assets);
     });
   }
 

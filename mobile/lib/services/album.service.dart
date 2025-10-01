@@ -442,4 +442,8 @@ class AlbumService {
   Future<void> clearTable() async {
     await _albumRepository.clearTable();
   }
+
+  Future<Album> updateAlbum(Album album) async {
+    return await _albumRepository.update(album);
+  }
 }
