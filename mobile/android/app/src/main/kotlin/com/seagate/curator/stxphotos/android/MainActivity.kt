@@ -4,8 +4,10 @@ import android.content.Context
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.NonNull
+import com.seagate.curator.stxphotos.android.background.BackgroundEngineLock
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerApiImpl
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostApi
+import com.seagate.curator.stxphotos.android.background.BackgroundWorkerLockApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApiImpl
 import com.seagate.curator.stxphotos.android.images.ThumbnailApi
@@ -29,11 +31,11 @@ class MainActivity : FlutterFragmentActivity() {
 
   companion object {
     fun registerPlugins(ctx: Context, flutterEngine: FlutterEngine) {
-      flutterEngine.plugins.add(BackgroundServicePlugin())
-      flutterEngine.plugins.add(HttpSSLOptionsPlugin())
       flutterEngine.plugins.add(TelemetryWrapperPlugin())
 
       val messenger = flutterEngine.dartExecutor.binaryMessenger
+      val backgroundEngineLockImpl = BackgroundEngineLock(ctx)
+      BackgroundWorkerLockApi.setUp(messenger, backgroundEngineLockImpl)
       val nativeSyncApiImpl =
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R) < 1) {
           NativeSyncApiImpl26(ctx)
@@ -46,6 +48,10 @@ class MainActivity : FlutterFragmentActivity() {
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
       NativeClipboardApi.setUp(flutterEngine.dartExecutor.binaryMessenger, ClipboardMessagesImpl(ctx))
       UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
+
+      flutterEngine.plugins.add(BackgroundServicePlugin())
+      flutterEngine.plugins.add(HttpSSLOptionsPlugin())
+      flutterEngine.plugins.add(backgroundEngineLockImpl)
     }
   }
 }
