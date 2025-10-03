@@ -7,7 +7,8 @@ import 'package:immich_mobile/presentation/widgets/album/album_selector.widget.d
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/current_album.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/widgets/common/immich_sliver_app_bar.dart';
+import 'package:immich_mobile/widgets/common/curator_sliver_app_bar.dart';
+import 'package:immich_mobile/presentation/utils/scroll_notifier_utils.dart';
 
 @RoutePage()
 class DriftAlbumsPage extends ConsumerStatefulWidget {
@@ -18,8 +19,24 @@ class DriftAlbumsPage extends ConsumerStatefulWidget {
 }
 
 class _DriftAlbumsPageState extends ConsumerState<DriftAlbumsPage> {
+  final ScrollController _scrollController = ScrollController();
+  RemoveScrollListener? _detachScrollListener;
+
   Future<void> onRefresh() async {
     await ref.read(remoteAlbumProvider.notifier).refresh();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _detachScrollListener = attachScrollNotifierToController(controller: _scrollController, ref: ref);
+  }
+
+  @override
+  void dispose() {
+    _detachScrollListener?.call();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -28,8 +45,9 @@ class _DriftAlbumsPageState extends ConsumerState<DriftAlbumsPage> {
       onRefresh: onRefresh,
       edgeOffset: 100,
       child: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          ImmichSliverAppBar(
+          CuratorSliverAppBar(
             snap: false,
             floating: false,
             pinned: true,
