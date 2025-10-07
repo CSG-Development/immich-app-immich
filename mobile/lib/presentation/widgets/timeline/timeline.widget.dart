@@ -29,6 +29,7 @@ import 'package:immich_mobile/widgets/common/curator_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/mesmerizing_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/selection_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
+import 'package:immich_mobile/presentation/widgets/timeline/asset_count_sliver.widget.dart';
 
 class Timeline extends StatelessWidget {
   const Timeline({
@@ -332,6 +333,7 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
             slivers: [
               if (isSelectionMode) const SelectionSliverAppBar() else if (widget.appBar != null) widget.appBar!,
               if (widget.topSliverWidget != null) widget.topSliverWidget!,
+              const AssetCountSliver(),
               _SliverSegmentedList(
                 segments: segments,
                 delegate: SliverChildBuilderDelegate(
@@ -667,6 +669,7 @@ class _MultiSelectStatusButton extends ConsumerWidget {
     );
   }
 }
+
 
 /// accepts a gesture even though it should reject it (because child won)
 class CustomScaleGestureRecognizer extends ScaleGestureRecognizer {
