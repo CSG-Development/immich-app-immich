@@ -15,6 +15,8 @@ import 'package:immich_mobile/presentation/widgets/action_buttons/download_actio
 import 'package:immich_mobile/presentation/widgets/action_buttons/edit_date_time_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/edit_location_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/favorite_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/copy_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/duplicate_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/move_to_lock_folder_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/share_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/share_link_action_button.widget.dart';
@@ -106,6 +108,9 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           const AdvancedInfoActionButton(source: ActionSource.timeline),
         ],
         const ShareActionButton(source: ActionSource.timeline),
+        // Copy/Duplicate (legacy feature)
+        const CopyActionButton(source: ActionSource.timeline),
+        const DuplicateActionButton(source: ActionSource.timeline),
         if (multiselect.hasRemote) ...[
           const ShareLinkActionButton(source: ActionSource.timeline),
           const DownloadActionButton(source: ActionSource.timeline),

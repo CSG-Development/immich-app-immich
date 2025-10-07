@@ -28,6 +28,7 @@ import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/common/curator_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/mesmerizing_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/selection_sliver_app_bar.dart';
+import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
 
 class Timeline extends StatelessWidget {
   const Timeline({
@@ -57,7 +58,10 @@ class Timeline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      floatingActionButton: const DownloadStatusFloatingButton(),
+      floatingActionButton: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [DownloadStatusFloatingButton(), SizedBox(height: 12), ClipboardPasteButton()],
+      ),
       body: LayoutBuilder(
         builder: (_, constraints) => ProviderScope(
           overrides: [
