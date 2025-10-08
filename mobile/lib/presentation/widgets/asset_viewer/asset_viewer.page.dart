@@ -20,6 +20,8 @@ import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_bar.widge
 import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/top_app_bar.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/video_viewer.widget.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
@@ -173,6 +175,20 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   void _precacheAssets(int index) {
     final timelineService = ref.read(timelineServiceProvider);
     unawaited(timelineService.preCacheAssets(index));
+    // Also pre-process adjacent assets for AirPlay when active
+    final isAirPlayConnected = ref.read(airplayProvider);
+    if (isAirPlayConnected) {
+      () async {
+        final (prevAsset, nextAsset) = await (
+          timelineService.getAssetAsync(index - 1),
+          timelineService.getAssetAsync(index + 1),
+        ).wait;
+        final neighbors = [prevAsset, nextAsset].whereType<BaseAsset>().toList();
+        if (neighbors.isNotEmpty) {
+          await AirplayService.preProcessTimelineAssetsForAirPlay(neighbors, ref);
+        }
+      }();
+    }
     _cancelTimers();
     // This will trigger the pre-caching of adjacent assets ensuring
     // that they are ready when the user navigates to them.
@@ -542,6 +558,12 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
     final isPlayingMotionVideo = ref.read(isPlayingMotionVideoProvider);
     if (displayAsset.isImage && !isPlayingMotionVideo) {
+      final isAirPlayConnected = ref.watch(airplayProvider);
+      if (isAirPlayConnected) {
+        // Pre-convert timeline photo to video for AirPlay in background
+        AirplayService.preConvertTimelinePhotoForAirPlay(displayAsset, ref);
+        return _videoBuilder(ctx, displayAsset);
+      }
       return _imageBuilder(ctx, displayAsset);
     }
 
