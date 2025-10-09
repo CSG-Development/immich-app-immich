@@ -7,10 +7,9 @@
   /* import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte'; */
   import UserUsageStatistic from '$lib/components/user-settings-page/user-usage-statistic.svelte';
   import { /* OpenSettingQueryParameterValue, */ QueryParameter } from '$lib/constants';
-  /* import { featureFlags } from '$lib/stores/server-config.store'; */
   import { user } from '$lib/stores/user.store';
   /* import { oauth } from '$lib/utils'; */
-  import { type ApiKeyResponseDto, type SessionResponseDto } from '@immich/sdk';
+  import { type ApiKeyResponseDto, type SessionResponseDto, type SystemConfigDto } from '@immich/sdk';
   import {
     mdiAccountGroupOutline,
     /* mdiAccountOutline, */
@@ -20,6 +19,7 @@
     mdiDevices,
     /* mdiDownload, */
     mdiFeatureSearchOutline,
+    mdiFileDocumentOutline,
     /* mdiKeyOutline, */
     mdiLockSmart,
     /* mdiOnepassword, */
@@ -32,16 +32,21 @@
   /* import ChangePasswordSettings from './change-password-settings.svelte'; */
   import DeviceList from './device-list.svelte';
   /* import OAuthSettings from './oauth-settings.svelte'; */
+  import AdminSettings from '$lib/components/admin-page/settings/admin-settings.svelte';
+  import LoggingSettings from '$lib/components/admin-page/settings/logging-settings/logging-settings.svelte';
   import PartnerSettings from './partner-settings.svelte';
   /* import UserAPIKeyList from './user-api-key-list.svelte'; */
   /* import UserProfileSettings from './user-profile-settings.svelte'; */
+  import { featureFlags } from '$lib/stores/server-config.store';
 
   interface Props {
+    config: SystemConfigDto;
     keys?: ApiKeyResponseDto[];
     sessions?: SessionResponseDto[];
   }
 
-  let { keys = $bindable([]), sessions = $bindable([]) }: Props = $props();
+  let { keys = $bindable([]), sessions = $bindable([]), config = $bindable() }: Props = $props();
+  let adminSettingElement = $state<ReturnType<typeof AdminSettings>>();
 
   /* let oauthOpen =
     oauth.isCallback(globalThis.location) ||
@@ -145,6 +150,26 @@
   >
     <ChangePinCodeSettings />
   </SettingAccordion>
+
+  <AdminSettings bind:config bind:this={adminSettingElement}>
+    {#snippet children({ savedConfig, defaultConfig })}
+      <SettingAccordion
+        icon={mdiFileDocumentOutline}
+        key="user-logging-settings"
+        title={$t('admin.logging_settings')}
+        subtitle={$t('admin.manage_log_settings')}
+      >
+        <LoggingSettings
+          onSave={(config) => adminSettingElement?.handleSave(config)}
+          onReset={(options) => adminSettingElement?.handleReset(options)}
+          disabled={$featureFlags.configFile}
+          bind:config
+          {defaultConfig}
+          {savedConfig}
+        />
+      </SettingAccordion>
+    {/snippet}
+  </AdminSettings>
 
   <!--  <SettingAccordion-->
   <!--    icon={mdiKeyOutline}-->
