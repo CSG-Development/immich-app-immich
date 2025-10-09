@@ -27,6 +27,6 @@
     />
   {/snippet}
   <Container size="medium" center>
-    <UserSettingsList keys={data.keys} sessions={data.sessions} />
+    <UserSettingsList config={data.config} keys={data.keys} sessions={data.sessions} />
   </Container>
 </UserPageLayout>
