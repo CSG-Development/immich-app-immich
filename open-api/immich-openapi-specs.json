@@ -1982,6 +1982,38 @@
         ]
       }
     },
+    "/auth/biometric-register-options": {
+      "get": {
+        "operationId": "getBiometricRegisterOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "login",

@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put, Req, Res } from '@nestjs/common';
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Req, Res} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/server';
 import {
   AuthDto,
   AuthStatusResponseDto,
@@ -20,6 +21,8 @@ import { AuthType, ImmichCookie } from 'src/enum';
 import { Auth, Authenticated, GetLoginDetails } from 'src/middleware/auth.guard';
 import { AuthService, LoginDetails } from 'src/services/auth.service';
 import { respondWithCookie, respondWithoutCookie } from 'src/utils/response';
+import {RegistrationResponseJSON} from "@simplewebauthn/server/esm";
+import {UUIDParamDto} from "../validation";
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -41,6 +44,28 @@ export class AuthController {
         { key: ImmichCookie.IS_AUTHENTICATED, value: 'true' },
       ],
     });
+  }
+
+  @Get('biometric-register-options')
+  @Authenticated()
+  getBiometricRegisterOptions(@Auth() auth: AuthDto): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    return this.service.generateBiometricRegisterOptions(auth.user.id);
+  }
+
+  @Post('biometric-register-verify')
+  @Authenticated()
+  verifyBiometricRegister(@Auth() auth: AuthDto, @Body() dto: RegistrationResponseJSON): Promise<{verified: boolean}> {
+    return this.service.verifyRegistrationCredential(auth.user.id, dto);
+  }
+
+  @Get('biometric-auth-options/:id')
+  getBiometricAuthenticationOptions(@Param() { id }: UUIDParamDto): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    return this.service.generateBiometricAuthenticationOptions(id);
+  }
+
+  @Post('biometric-auth-options/:id')
+  verifyBiometricAuthentication(@Param() { id }: UUIDParamDto, @Body() dto: RegistrationResponseJSON): Promise<{verified: boolean}> {
+    return this.service.verifyAuthenticationResponse(id, dto);
   }
 
   @Post('admin-sign-up')

@@ -50,6 +50,7 @@
     "@opentelemetry/exporter-prometheus": "^0.201.0",
     "@opentelemetry/sdk-node": "^0.201.0",
     "@react-email/components": "^0.0.41",
+    "@simplewebauthn/server": "^13.2.1",
     "@socket.io/redis-adapter": "^8.3.0",
     "archiver": "^7.0.0",
     "async-lock": "^1.4.0",

@@ -2,6 +2,19 @@ import { BadRequestException, ForbiddenException, Injectable, UnauthorizedExcept
 import { isString } from 'class-validator';
 import { parse } from 'cookie';
 import { DateTime } from 'luxon';
+import {
+  PublicKeyCredentialCreationOptionsJSON,
+  generateRegistrationOptions,
+  GenerateRegistrationOptionsOpts,
+  verifyRegistrationResponse,
+  VerifiedRegistrationResponse,
+  RegistrationResponseJSON,
+  generateAuthenticationOptions,
+  GenerateAuthenticationOptionsOpts,
+  AuthenticatorTransportFuture,
+  verifyAuthenticationResponse,
+  VerifyAuthenticationResponseOpts
+} from '@simplewebauthn/server';
 import { IncomingHttpHeaders } from 'node:http';
 import { join } from 'node:path';
 import { LOGIN_URL, MOBILE_REDIRECT, SALT_ROUNDS } from 'src/constants';
@@ -29,6 +42,8 @@ import { BaseService } from 'src/services/base.service';
 import { isGranted } from 'src/utils/access';
 import { HumanReadableSize } from 'src/utils/bytes';
 import { mimeTypes } from 'src/utils/mime-types';
+import {toBase64URL} from "../utils/base64url";
+
 export interface LoginDetails {
   isSecure: boolean;
   clientIp: string;
@@ -53,8 +68,34 @@ export type ValidateRequest = {
   };
 };
 
+type StoredAuthenticator = {
+  credentialID: string;
+  credentialPublicKey: Uint8Array;
+  counter: number;
+  credentialDeviceType: 'singleDevice' | 'multiDevice';
+  credentialBackedUp: boolean;
+  transports?: string[];
+};
+
 @Injectable()
 export class AuthService extends BaseService {
+  private readonly rpName = 'Immich Test Server';
+  private readonly rpID = 'localhost'; // or your domain
+  private readonly origin = `http://${this.rpID}:3000`;
+  // In-memory storage (replace with DB later)
+  private users = new Map<
+    string,
+    { id: string; credentials: StoredAuthenticator[]; currentChallenge?: string }
+  >();
+  private readonly challenges = new Map<string, string>();
+
+  // Called earlier during registration setup
+  setUserChallenge(userId: string, challenge: string) {
+    const user = this.users.get(userId) ?? { id: userId, credentials: [] };
+    user.currentChallenge = challenge;
+    this.users.set(userId, user);
+  }
+
   async login(dto: LoginCredentialDto, details: LoginDetails) {
     const config = await this.getConfig({ withCache: false });
     if (!config.passwordLogin.enabled) {
@@ -157,6 +198,148 @@ export class AuthService extends BaseService {
     } else {
       throw new BadRequestException('Either password or pinCode is required');
     }
+  }
+
+  async generateBiometricRegisterOptions(userId: string): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    const options: GenerateRegistrationOptionsOpts = {
+      rpName: this.rpName,
+      rpID: this.rpID,
+      userID: Buffer.from(userId, 'utf-8'),
+      userName: `user-${userId}`,
+      timeout: 60_000,
+      attestationType: 'none',
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'preferred',
+      },
+    };
+    const response = await generateRegistrationOptions(options);
+    this.setUserChallenge(userId, response.challenge);
+    return response;
+  }
+
+  async verifyRegistrationCredential(userId: string, response: RegistrationResponseJSON) {
+    const user = this.users.get(userId);
+    if (!user?.currentChallenge) {
+      throw new BadRequestException('Missing challenge or user');
+    }
+
+    let verification: VerifiedRegistrationResponse;
+
+    try {
+      verification = await verifyRegistrationResponse({
+        response,
+        expectedChallenge: user.currentChallenge,
+        expectedOrigin: this.origin,
+        expectedRPID: this.rpID,
+      });
+    } catch (error) {
+      console.error('Registration verification failed', error);
+      throw new BadRequestException('Registration verification failed');
+    }
+
+    const { verified, registrationInfo } = verification;
+
+    if (verified && registrationInfo) {
+      const {
+        credential: { id: credentialID, publicKey: credentialPublicKey, counter },
+        credentialDeviceType,
+        credentialBackedUp,
+      } = registrationInfo;
+
+      const newDevice: StoredAuthenticator = {
+        credentialID,
+        credentialPublicKey,
+        counter,
+        credentialDeviceType,
+        credentialBackedUp,
+        transports: (response?.response?.transports ?? [])
+      };
+
+      user.credentials.push(newDevice);
+      user.currentChallenge = undefined;
+
+      console.log(`Registered credential for user ${userId}`);
+    }
+
+    return { verified };
+  }
+
+  async generateBiometricAuthenticationOptions(userId: string) {
+    const user = this.users.get(userId);
+    if (!user || user.credentials.length === 0) {
+      throw new Error('No registered credentials found for this user');
+    }
+
+    const validTransports: AuthenticatorTransportFuture[] = ['usb', 'nfc', 'ble', 'internal', 'hybrid', 'cable'];
+
+    const allowCredentials = user.credentials.map((cred) => ({
+      id: cred.credentialID,
+      type: 'public-key' as const,
+      transports: (cred.transports ?? []).filter((t) =>
+        validTransports.includes(t as AuthenticatorTransportFuture)
+      ) as AuthenticatorTransportFuture[],
+    }))
+
+    const opts: GenerateAuthenticationOptionsOpts = {
+      timeout: 60_000,
+      rpID: this.rpID,
+      allowCredentials,
+      userVerification: 'preferred',
+    };
+
+    const options = await generateAuthenticationOptions(opts);
+
+    // Store challenge for later verification
+    this.setUserChallenge(userId, options.challenge as string);
+
+    return options;
+  }
+
+  async verifyAuthenticationResponse(userId: string, response: any) {
+    // 1️⃣ Fetch user and stored credentials
+    const user = this.users.get(userId);
+    if (!user || user.credentials.length === 0) {
+      throw new Error('No registered credentials found for user');
+    }
+
+    // 2️⃣ Locate the credential used in this attempt
+    const dbAuthenticator = user.credentials.find(
+      (cred) => cred.credentialID === response.id,
+    );
+    if (!dbAuthenticator) {
+      throw new Error(`Authenticator ${response.id} not registered`);
+    }
+
+    if (!user.currentChallenge) {
+      throw new Error('No expected challenge found');
+    }
+
+    // 4️⃣ Verify the authentication response
+    const verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin: this.origin,
+      expectedRPID: this.rpID,
+      credential: {
+        id: toBase64URL(dbAuthenticator.credentialID),
+        publicKey: dbAuthenticator.credentialPublicKey,
+        counter: dbAuthenticator.counter,
+        transports: dbAuthenticator.transports as AuthenticatorTransport[],
+      },
+      requireUserVerification: true,
+    } satisfies VerifyAuthenticationResponseOpts);
+
+    // 5️⃣ Check verification result
+    const { verified, authenticationInfo } = verification;
+    if (verified && authenticationInfo) {
+      dbAuthenticator.counter = authenticationInfo.newCounter;
+    }
+
+    // 6️⃣ Clean up
+    user.currentChallenge = undefined;
+
+    return { verified };
   }
 
   async adminSignUp(dto: SignUpDto): Promise<UserAdminResponseDto> {
