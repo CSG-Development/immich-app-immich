@@ -29,6 +29,12 @@ const guides: CommunityGuidesProps[] = [
     url: 'https://github.com/immich-app/immich/discussions/3382',
   },
   {
+    title: 'Immich Podman Quadlets Handbook',
+    description:
+      'A rewrite of the original Immich Docker Compose file using Podman Quadlets, with a set of extra guides in the repository’s wiki.',
+    url: 'https://github.com/linux-universe/immich-podman-quadlets/blob/main/README.md',
+  },
+  {
     title: 'Podman/Quadlets Install',
     description: 'Documentation for simple podman setup using quadlets.',
     url: 'https://github.com/tbelway/immich-podman-quadlets/blob/main/docs/install/podman-quadlet.md',
@@ -57,6 +63,12 @@ const guides: CommunityGuidesProps[] = [
     title: 'Immich remote access with NordVPN Meshnet',
     description: 'Access Immich with an end-to-end encrypted connection.',
     url: 'https://meshnet.nordvpn.com/how-to/remote-files-media-access/immich-remote-access',
+  },
+  {
+    title: 'Trust Self Signed Certificates with Immich - OAuth Setup',
+    description:
+      'Set up Certificate Authority trust with Immich, and your private OAuth2/OpenID service, while using a private CA for HTTPS commication.',
+    url: 'https://github.com/immich-app/immich/discussions/18614',
   },
 ];
 
