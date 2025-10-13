@@ -182,6 +182,7 @@ export interface SystemConfig {
 }
 
 export type MachineLearningConfig = SystemConfig['machineLearning'];
+const tilesUrl = process.env.MAP_TILES_URL ?? 'https://homecloud-map.noveogroup.com';
 
 export const defaults = Object.freeze<SystemConfig>({
   backup: {
@@ -257,8 +258,8 @@ export const defaults = Object.freeze<SystemConfig>({
   },
   map: {
     enabled: true,
-    lightStyle: `${process.env.MAP_TILES_URL}/styles/light-style/style.json`,
-    darkStyle: `${process.env.MAP_TILES_URL}/styles/dark-style/style.json`,
+    lightStyle: `${tilesUrl}/styles/light-style/style.json`,
+    darkStyle: `${tilesUrl}/styles/dark-style/style.json`,
   },
   reverseGeocoding: {
     enabled: true,
