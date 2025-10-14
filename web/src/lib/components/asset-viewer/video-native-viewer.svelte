@@ -55,6 +55,7 @@
   onDestroy(() => {
     if (videoPlayer) {
       videoPlayer.src = '';
+      videoStore.set(undefined);
     }
   });
 

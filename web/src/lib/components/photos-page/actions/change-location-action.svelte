@@ -45,5 +45,5 @@
   />
 {/if}
 {#if isShowChangeLocation}
-  <ChangeLocation onConfirm={handleConfirm} />
+  <ChangeLocation onClose={handleConfirm} />
 {/if}
