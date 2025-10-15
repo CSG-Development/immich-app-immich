@@ -1,0 +1,342 @@
+#   Do NOT modify or remove this copyright and confidentiality notice
+#
+#   Copyright (c) 2025 Seagate Technology LLC or one of its affiliates.
+#
+#   This code is classified as SEAGATE CONFIDENTIAL
+#   and may be covered under one or more Non-Disclosure Agreements.
+#   Any use, modification, duplication, derivation, distribution or disclosure
+#   of this code, for any reason, not expressly authorized is prohibited.
+#   All other rights are expressly reserved by Seagate Technology LLC.
+#
+
+openapi: 3.0.3
+info:
+  contact:
+    email: softnas@seagate.com
+  description: Device Resolver API definitions
+  title: Device Resolver API
+  version: 0.0.1
+servers:
+  - url: /api
+security:
+  - BearerAuth: []
+tags:
+  - name: Client
+  - name: Not implemented
+  - name: Device
+paths:
+  /client/v1/auth/initiate:
+    post:
+      description: |
+        This request allows a client application to start authenticating with the
+        service.
+        1. The client application must first ask the user for their email address.
+        2. The client application sends the user email address and some
+           details about the client application to the service with this request.
+        3. The service replies with an opaque reference to the request.
+        4. The service sends an email to the user that contains a short-lived code.
+        5. The client application asks the user for the code they received.
+        6. The client application sends the reference and user code to the `token`
+           API.
+      parameters:
+        - description: Type of user identifier. Only email for now.
+          in: query
+          name: type
+          required: true
+          schema:
+            enum:
+              - email
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Code'
+      responses:
+        '200':
+          $ref: '#/components/responses/InitiateResponse'
+        '400':
+          description: Bad request parameters
+        '500':
+          $ref: '#/components/responses/Error'
+      security: []
+      summary: Initiate client authentication
+      tags:
+        - Client
+  /client/v1/auth/refresh:
+    get:
+      description: |
+        This request allows a client application to renew a JWT access
+        token if it has expired (after 10 minutes).
+
+        The client application must send the refresh token it received
+        in the `token` response.
+      parameters:
+        - description: Refresh token
+          in: query
+          name: refresh_token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+          description: OK
+        '400':
+          description: invalid request parameters
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+          description: not allow to perform this action
+        '500':
+          $ref: '#/components/responses/Error'
+      security: []
+      summary: Renew a JWT access token using a refresh token
+      tags:
+        - Client
+  /client/v1/auth/token:
+    post:
+      description: |
+        This request allows a client application to obtain a JWT access
+        token to query authenticated APIs.
+
+        The client application must send the opaque reference from the
+        `initiate` response and the user code received by email.
+      parameters:
+        - description: Type of user identifier. Only email for now.
+          in: query
+          name: type
+          required: true
+          schema:
+            enum:
+              - email
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Validate'
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+          description: OK
+        '400':
+          description: bad request parameters
+        '500':
+          $ref: '#/components/responses/Error'
+      security: []
+      summary: Obtain a JWT access token
+      tags:
+        - Client
+  /client/v1/devices:
+    get:
+      description: |
+        This request allows a client application to obtain the list of
+        devices a user has access to.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Device'
+          description: Return the list of devices for the authenticated user
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/Error'
+      summary: Retrieve the list of devices a user has access to
+      tags:
+        - Client
+  /client/v1/devices/{deviceID}:
+    get:
+      description: |
+        This request allows an authenticated client application to get
+        information about a device.
+      parameters:
+        - description: Device identifier
+          in: path
+          name: deviceID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevicePaths'
+          description: The response with the device UUID and its paths.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: device not found
+        '500':
+          $ref: '#/components/responses/Error'
+      summary: Get information about a device
+      tags:
+        - Client
+components:
+  schemas:
+    Device:
+      properties:
+        certificateCommonName:
+          type: string
+        friendlyName:
+          type: string
+        hostname:
+          type: string
+        seagateDeviceID:
+          type: string
+      required:
+        - seagateDeviceID
+        - friendlyName
+        - hostname
+        - certificateCommonName
+      type: object
+    DevicePaths:
+      properties:
+        paths:
+          description: The array of paths to connect to the device.
+          items:
+            $ref: '#/components/schemas/DevicePath'
+          type: array
+        seagateDeviceID:
+          description: The UUID of the device.
+          type: string
+      required:
+        - seagateDeviceID
+        - paths
+      type: object
+    Error:
+      type: object
+      required:
+        - name
+        - stacktrace
+      properties:
+        name:
+          type: string
+          description: The error name
+        stacktrace:
+          type: string
+          description: The stacktrace
+        reason:
+          type: string
+          description: the error name can be raised for multiple reasons
+    DevicePath:
+      properties:
+        address:
+          description: The IP address or hostname of the device.
+          type: string
+        port:
+          description: The HTTP(S) port to connect to the device.
+          type: integer
+        type:
+          description: The type of path.
+          enum:
+            - local
+            - public
+            - remote
+          type: string
+      required:
+        - type
+        - address
+      type: object
+  parameters: {}
+  responses:
+    DeviceIDResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DevicePaths'
+      description: The response with the device UUID and its paths.
+    Error:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: The request failed and returned an error
+    ForbiddenError:
+      description: Invalid authentication
+    InitiateResponse:
+      content:
+        application/json:
+          schema:
+            properties:
+              reference:
+                description: reference will need to be provided when calling the `/token` API
+                type: string
+            required:
+              - reference
+            type: object
+      description: Success. A reference is returned and the user will receive a code to continue authenticating.
+    TokenResponse:
+      content:
+        application/json:
+          schema:
+            properties:
+              accessToken:
+                description: JWT access token.
+                type: string
+              expiresIn:
+                description: Number of seconds the access token is valid for.
+                type: integer
+              refreshToken:
+                description: JWT refresh token.
+                type: string
+              tokenType:
+                description: Token type. For now only `Bearer` is available.
+                type: string
+            required:
+              - accessToken
+              - refreshToken
+              - tokenType
+              - expiresIn
+            type: object
+      description: Success. JWT access and refresh tokens are returned.
+    UnauthorizedError:
+      description: Valid token but not allowed to perform this action
+  requestBodies:
+    AuthenticationCode:
+      $ref: '#/components/requestBodies/Code'
+    Code:
+      content:
+        application/json:
+          schema:
+            properties:
+              clientFriendlyName:
+                description: short description of the client environment (phone model, OS version)
+                type: string
+              clientId:
+                description: unique identifier of the client application installation
+                type: string
+              email:
+                description: email of the user
+                format: email
+                type: string
+            required:
+              - email
+              - clientId
+              - clientFriendlyName
+            type: object
+    Validate:
+      content:
+        application/json:
+          schema:
+            properties:
+              code:
+                description: validation code
+                type: string
+              reference:
+                description: opaque reference to the user
+                type: string
+            required:
+              - reference
+              - code
+            type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+  headers: {}
+  examples: {}
+  links: {}
+  callbacks: {}

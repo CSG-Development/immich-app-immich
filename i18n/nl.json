@@ -34,8 +34,8 @@
   "added_to_favorites_count": "{count, number} toegevoegd aan favorieten",
   "admin": {
     "add_exclusion_pattern_description": "Uitsluitingspatronen toevoegen. Globbing met *, ** en ? wordt ondersteund. Om alle bestanden in een map met de naam \"Raw\" te negeren, gebruik \"**/Raw/**\". Om alle bestanden die eindigen op \".tif\" te negeren, gebruik \"**/*.tif\". Om een absoluut pad te negeren, gebruik \"/path/to/ignore/**\".",
-    "asset_offline_description": "Deze asset uit een externe bibliotheek is niet meer beschikbaar op de schijf en is naar de prullenbak verplaatst. Als het bestand binnen de bibliotheek is verplaatst, controleer dan je tijdlijn voor de nieuwe bijbehorende asset. Om dit bestand te herstellen, zorg ervoor dat het onderstaande bestandspad toegankelijk is voor Curator Photos en scan de bibliotheek opnieuw.",
     "admin_user": "Beheerder gebruiker",
+    "asset_offline_description": "Deze asset uit een externe bibliotheek is niet meer beschikbaar op de schijf en is naar de prullenbak verplaatst. Als het bestand binnen de bibliotheek is verplaatst, controleer dan je tijdlijn voor de nieuwe bijbehorende asset. Om dit bestand te herstellen, zorg ervoor dat het onderstaande bestandspad toegankelijk is voor Curator Photos en scan de bibliotheek opnieuw.",
     "authentication_settings": "Authenticatie-instellingen",
     "authentication_settings_description": "Wachtwoord, OAuth, en andere authenticatie-instellingen beheren",
     "authentication_settings_disable_all": "Weet je zeker dat je alle inlogmethoden wilt uitschakelen? Inloggen zal volledig worden uitgeschakeld.",

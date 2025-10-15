@@ -34,8 +34,8 @@
   "added_to_favorites_count": "Přidáno {count, number} do oblíbených",
   "admin": {
     "add_exclusion_pattern_description": "Přidání vzorů vyloučení. Podporováno je globování pomocí *, ** a ?. Chcete-li ignorovat všechny soubory v jakémkoli adresáři s názvem \"Raw\", použijte \"**/Raw/**\". Chcete-li ignorovat všechny soubory končící na \".tif\", použijte \"**/*.tif\". Chcete-li ignorovat absolutní cestu, použijte příkaz \"/path/to/ignore/**\".",
-    "asset_offline_description": "Tato položka externí knihovny se již na disku nenachází a byla přesunuta do koše. Pokud byl soubor přesunut v rámci knihovny, zkontrolujte časovou osu a vyhledejte nové odpovídající položku. Chcete-li tuto položku obnovit, ujistěte se, že je cesta k níže uvedenému souboru přístupná pomocí aplikace Curator Photos a prohledejte knihovnu.",
     "admin_user": "Administrátor",
+    "asset_offline_description": "Tato položka externí knihovny se již na disku nenachází a byla přesunuta do koše. Pokud byl soubor přesunut v rámci knihovny, zkontrolujte časovou osu a vyhledejte nové odpovídající položku. Chcete-li tuto položku obnovit, ujistěte se, že je cesta k níže uvedenému souboru přístupná pomocí aplikace Curator Photos a prohledejte knihovnu.",
     "authentication_settings": "Přihlašování",
     "authentication_settings_description": "Správa hesel, OAuth a dalších nastavení ověření",
     "authentication_settings_disable_all": "Opravdu chcete zakázat všechny metody přihlášení? Přihlašování bude úplně zakázáno.",

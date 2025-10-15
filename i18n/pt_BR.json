@@ -34,8 +34,8 @@
   "added_to_favorites_count": "{count, plural, one {{count, number} adicionado aos favoritos} other {{count, number} adicionados aos favoritos}}",
   "admin": {
     "add_exclusion_pattern_description": "Adicione padrões de exclusão. Utilizar *, ** ou ? são suportados. Para ignorar todos os arquivos em qualquer diretório chamado \"Raw\", use \"**/Raw/**'. Para ignorar todos os arquivos que terminam em \".tif\", use \"**/*.tif\". Para ignorar um caminho absoluto, use \"/caminho/para/ignorar/**\".",
-    "asset_offline_description": "Este arquivo não foi encontrado na biblioteca externa, então foi enviado para a lixeira. Se o arquivo foi movido para outra pasta dentro da biblioteca, verifique sua linha do tempo para encontrar o arquivo novamente. Para restaurar este arquivo, certifique-se de que o caminho descrito abaixo pode ser acessado pelo Curator Photos e então escaneie a biblioteca.",
     "admin_user": "Usuário Administrador",
+    "asset_offline_description": "Este arquivo não foi encontrado na biblioteca externa, então foi enviado para a lixeira. Se o arquivo foi movido para outra pasta dentro da biblioteca, verifique sua linha do tempo para encontrar o arquivo novamente. Para restaurar este arquivo, certifique-se de que o caminho descrito abaixo pode ser acessado pelo Curator Photos e então escaneie a biblioteca.",
     "authentication_settings": "Configurações de Autenticação",
     "authentication_settings_description": "Gerenciar senhas, OAuth, e outras configurações de autenticação",
     "authentication_settings_disable_all": "Tem certeza de que deseja desativar todos os métodos de login? O login será completamente desativado.",
