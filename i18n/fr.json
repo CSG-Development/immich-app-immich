@@ -34,8 +34,8 @@
   "added_to_favorites_count": "{count, number} ajouté(s) aux favoris",
   "admin": {
     "add_exclusion_pattern_description": "Ajouter des schémas d'exclusion. Les caractères génériques *, ** et ? sont pris en charge. Pour ignorer tous les fichiers dans un répertoire nommé « Raw », utilisez « **/Raw/** ». Pour ignorer tous les fichiers se terminant par « .tif », utilisez « **/*.tif ». Pour ignorer un chemin absolu, utilisez « /chemin/à/ignorer/** ».",
-    "asset_offline_description": "Ce média de la bibliothèque externe n'est plus présent sur le disque et a été déplacé vers la corbeille. Si le fichier a été déplacé dans la bibliothèque, vérifiez votre chronologie pour le nouveau média correspondant. Pour restaurer ce média, veuillez vous assurer que le chemin du fichier ci-dessous peut être accédé par Curator Photos et lancez l'analyse de la bibliothèque.",
     "admin_user": "Administrateur",
+    "asset_offline_description": "Ce média de la bibliothèque externe n'est plus présent sur le disque et a été déplacé vers la corbeille. Si le fichier a été déplacé dans la bibliothèque, vérifiez votre chronologie pour le nouveau média correspondant. Pour restaurer ce média, veuillez vous assurer que le chemin du fichier ci-dessous peut être accédé par Curator Photos et lancez l'analyse de la bibliothèque.",
     "authentication_settings": "Paramètres d'authentification",
     "authentication_settings_description": "Gérer le mot de passe, l'authentification OAuth et d'autres paramètres d'authentification",
     "authentication_settings_disable_all": "Êtes-vous sûr de vouloir désactiver toutes les méthodes de connexion ? La connexion sera complètement désactivée.",

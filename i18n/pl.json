@@ -34,8 +34,8 @@
   "added_to_favorites_count": "Dodano {count, number} do ulubionych",
   "admin": {
     "add_exclusion_pattern_description": "Dodaj wzorce wykluczające. Wspierane są specjalne sekwencje (glob) *, ** oraz ?. Aby ignorować całą zawartość wszystkich folderów nazwanych \"Raw\", użyj \"**/Raw/**\". Aby ignorować wszystkie pliki kończące się na \".tif\", użyj \"**/*.tif\". Aby ignorować ścieżkę absolutną, użyj \"/ścieżka/do/ignorowania/**\".",
-    "asset_offline_description": "Ten zewnętrzny zasób biblioteki nie jest już dostępny na dysku i został przeniesiony do kosza. Jeśli plik został przeniesiony w obrębie biblioteki, sprawdź swoją oś czasu pod kątem nowego odpowiadającego zasobu. Aby przywrócić ten zasób, upewnij się, że ścieżka pliku poniżej jest dostępna dla Curator Photos i przeskanuj bibliotekę.",
     "admin_user": "Administrator",
+    "asset_offline_description": "Ten zewnętrzny zasób biblioteki nie jest już dostępny na dysku i został przeniesiony do kosza. Jeśli plik został przeniesiony w obrębie biblioteki, sprawdź swoją oś czasu pod kątem nowego odpowiadającego zasobu. Aby przywrócić ten zasób, upewnij się, że ścieżka pliku poniżej jest dostępna dla Curator Photos i przeskanuj bibliotekę.",
     "authentication_settings": "Ustawienia Uwierzytelnienia",
     "authentication_settings_description": "Zarządzaj hasłem, OAuth i innymi ustawienia uwierzytelnienia",
     "authentication_settings_disable_all": "Czy jesteś pewny, że chcesz wyłączyć wszystkie metody logowania? Logowanie będzie całkowicie wyłączone.",

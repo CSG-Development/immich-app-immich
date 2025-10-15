@@ -34,8 +34,8 @@
   "added_to_favorites_count": "{count, number} dodanih med priljubljene",
   "admin": {
     "add_exclusion_pattern_description": "Dodajte vzorec izključitev. Globiranje z uporabo *, ** in ? je podprto. Če želite prezreti vse datoteke v katerem koli imeniku z imenom \"Raw\", uporabite \"**/Raw/**\". Če želite prezreti vse datoteke, ki se končajo na \".tif\", uporabite \"**/*.tif\". Če želite prezreti absolutno pot, uporabite \"/pot/za/ignoriranje/**\".",
-    "asset_offline_description": "Sredstva zunanje knjižnice ni več mogoče najti na disku in je bilo premaknjeno v koš. Če je bila datoteka premaknjena znotraj knjižnice, preverite svojo časovnico za novo ustrezno sredstvo. Če želite obnoviti to sredstvo, zagotovite, da ima Curator Photos dostop do spodnje poti datoteke, in skenirajte knjižnico.",
     "admin_user": "Skrbniški uporabnik",
+    "asset_offline_description": "Sredstva zunanje knjižnice ni več mogoče najti na disku in je bilo premaknjeno v koš. Če je bila datoteka premaknjena znotraj knjižnice, preverite svojo časovnico za novo ustrezno sredstvo. Če želite obnoviti to sredstvo, zagotovite, da ima Curator Photos dostop do spodnje poti datoteke, in skenirajte knjižnico.",
     "authentication_settings": "Nastavitve preverjanja pristnosti",
     "authentication_settings_description": "Upravljanje gesel, OAuth in drugih nastavitev preverjanja pristnosti",
     "authentication_settings_disable_all": "Ali zares želite onemogočiti vse prijavne metode? Prijava bo popolnoma onemogočena.",

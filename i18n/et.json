@@ -34,8 +34,8 @@
   "added_to_favorites_count": "{count, number} pilti lisatud lemmikutesse",
   "admin": {
     "add_exclusion_pattern_description": "Lisa välistamismustreid. Toetatud on metamärgid *, ** ja ?. Kõikide kataloogis nimega \"Raw\" olevate failide ignoreerimiseks kasuta \"**/Raw/**\". Kõikide .tif failide ignoreerimiseks kasuta \"**/*.tif\". Absouutse tee ignoreerimiseks kasuta \"/path/to/ignore/**\".",
-    "asset_offline_description": "Seda välise kogu üksust ei leitud kettalt ning see liigutati prügikasti. Kui faili asukoht kogu siseselt muutus, leiad vastava uue üksuse oma ajajoonelt. Üksuse taastamiseks veendu, et allpool toodud failitee on Curator Photos'ile kättesaadav ning skaneeri kogu uuesti.",
     "admin_user": "Administraator",
+    "asset_offline_description": "Seda välise kogu üksust ei leitud kettalt ning see liigutati prügikasti. Kui faili asukoht kogu siseselt muutus, leiad vastava uue üksuse oma ajajoonelt. Üksuse taastamiseks veendu, et allpool toodud failitee on Curator Photos'ile kättesaadav ning skaneeri kogu uuesti.",
     "authentication_settings": "Autentimise seaded",
     "authentication_settings_description": "Halda parooli, OAuth ja muid autentimise seadeid",
     "authentication_settings_disable_all": "Kas oled kindel, et soovid kõik sisselogimismeetodid välja lülitada? Sisselogimine lülitatakse täielikult välja.",

@@ -108,7 +108,10 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorScheme.primary)),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colorScheme.primary),
+          borderRadius: const BorderRadius.all(Radius.circular(15)),
+        ),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: colorScheme.outlineVariant),
           borderRadius: const BorderRadius.all(Radius.circular(15)),
