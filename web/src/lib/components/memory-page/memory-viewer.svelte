@@ -7,17 +7,6 @@
   import { shortcuts } from '$lib/actions/shortcut';
   import MemoryPhotoViewer from '$lib/components/memory-page/memory-photo-viewer.svelte';
   import MemoryVideoViewer from '$lib/components/memory-page/memory-video-viewer.svelte';
-  import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
-  import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
-  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
@@ -116,6 +105,7 @@
   const handleEscape = async () => goto(resolve(AppRoute.PHOTOS));
   const handleSelectAll = () =>
     assetInteraction.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
+
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
     // leaving these log statements here as comments. Very useful to figure out what's going on during dev!
     // console.log(`handleAction[${callingContext}] called with: ${action}`);
@@ -247,13 +237,22 @@
     playerInitialized = false;
   };
 
+  const resetAndPlay = () => {
+    handlePromiseError(handleAction('resetAndPlay', 'reset'));
+    handlePromiseError(handleAction('resetAndPlay', 'play'));
+  };
+
   const initPlayer = () => {
-    const isVideoAssetButPlayerHasNotLoadedYet = current && current.asset.isVideo && !videoPlayer;
+    const isVideo = current && current.asset.isVideo;
+    const isVideoAssetButPlayerHasNotLoadedYet = isVideo && !videoPlayer;
     if (playerInitialized || isVideoAssetButPlayerHasNotLoadedYet) {
       return;
     }
     if ($isViewing) {
       handlePromiseError(handleAction('initPlayer[AssetViewOpen]', 'pause'));
+    } else if (isVideo) {
+      // Image assets will start playing when the image is loaded. Only autostart video assets.
+      resetAndPlay();
     } else {
       handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'reset'));
       handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'play'));

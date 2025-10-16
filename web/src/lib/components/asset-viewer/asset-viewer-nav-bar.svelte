@@ -42,6 +42,7 @@
   import {
     mdiAlertOutline,
     mdiCogRefreshOutline,
+    mdiCompare,
     mdiContentCopy,
     mdiDatabaseRefreshOutline,
     mdiDotsVertical,
@@ -100,6 +101,7 @@
   let isOwner = $derived($user && asset.ownerId === $user?.id);
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
+  let smartSearchEnabled = $derived($featureFlags.loaded && $featureFlags.smartSearch);
 
   const navigateToEditor = async () => await goto(resolve(AppRoute.EDITOR) + `?assetId=${asset.id}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

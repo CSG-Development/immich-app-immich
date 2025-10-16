@@ -4,6 +4,7 @@ import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { UploadState } from '$lib/models/upload-asset';
 import { uploadAssetsStore } from '$lib/stores/upload';
+import { user } from '$lib/stores/user.store';
 import { uploadRequest } from '$lib/utils';
 import { addAssetsToAlbum, isWebSupportedAssetMimeType } from '$lib/utils/asset-utils';
 import { ExecutorQueue } from '$lib/utils/executor-queue';
@@ -257,6 +258,9 @@ async function fileUploader({
 
     return responseData.id;
   } catch (error) {
+    if (!get(user)) {
+      return;
+    }
     if (!signal || !signal.aborted) {
       if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
         const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {

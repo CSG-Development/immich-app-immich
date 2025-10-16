@@ -123,7 +123,7 @@
   showUploadButton
   scrollbar={false}
 >
-  <AssetGrid
+  <Timeline
     enableRouting={true}
     {timelineManager}
     {assetInteraction}

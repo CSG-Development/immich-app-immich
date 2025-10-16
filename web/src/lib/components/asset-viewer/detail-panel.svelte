@@ -17,21 +17,14 @@
   import { locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { preferences, user } from '$lib/stores/user.store';
-  import { getAssetThumbnailUrl, getPeopleThumbnailUrl, handlePromiseError } from '$lib/utils';
-  import { delay, isFlipped } from '$lib/utils/asset-utils';
+  import { getAssetThumbnailUrl, getPeopleThumbnailUrl } from '$lib/utils';
+  import { delay, getDimensions } from '$lib/utils/asset-utils';
   import { getByteUnitString } from '$lib/utils/byte-units';
   import { handleError } from '$lib/utils/handle-error';
   import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
   import { fromISODateTime, fromISODateTimeUTC } from '$lib/utils/timeline-util';
   import { getParentPath } from '$lib/utils/tree-utils';
-  import {
-    AssetMediaSize,
-    getAssetInfo,
-    updateAsset,
-    type AlbumResponseDto,
-    type AssetResponseDto,
-    type ExifResponseDto,
-  } from '@immich/sdk';
+  import { AssetMediaSize, getAssetInfo, updateAsset, type AlbumResponseDto, type AssetResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
   import {
     mdiCalendar,
@@ -62,43 +55,19 @@
 
   let { asset, albums = [], currentAlbum = null, onClose }: Props = $props();
 
-  const getDimensions = (exifInfo: ExifResponseDto) => {
-    const { exifImageWidth: width, exifImageHeight: height } = exifInfo;
-    if (isFlipped(exifInfo.orientation)) {
-      return { width: height, height: width };
-    }
-
-    return { width, height };
-  };
-
   let showAssetPath = $state(false);
   let showEditFaces = $state(false);
-  let previousId: string | undefined = $state();
-
-  $effect(() => {
-    if (!previousId) {
-      previousId = asset.id;
-    }
-    if (asset.id !== previousId) {
-      showEditFaces = false;
-      previousId = asset.id;
-    }
-  });
 
   let isOwner = $derived($user?.id === asset.ownerId);
-
-  const handleNewAsset = async (newAsset: AssetResponseDto) => {
-    // TODO: check if reloading asset data is necessary
-    if (newAsset.id && !authManager.isSharedLink) {
-      const data = await getAssetInfo({ id: asset.id });
-      people = data?.people || [];
-      unassignedFaces = data?.unassignedFaces || [];
-    }
-  };
-
-  $effect(() => {
-    handlePromiseError(handleNewAsset(asset));
-  });
+  let people = $derived(asset.people || []);
+  let unassignedFaces = $derived(asset.unassignedFaces || []);
+  let showingHiddenPeople = $state(false);
+  let timeZone = $derived(asset.exifInfo?.timeZone);
+  let dateTime = $derived(
+    timeZone && asset.exifInfo?.dateTimeOriginal
+      ? fromISODateTime(asset.exifInfo.dateTimeOriginal, timeZone)
+      : fromISODateTimeUTC(asset.localDateTime),
+  );
 
   let latlng = $derived(
     (() => {
@@ -111,15 +80,17 @@
     })(),
   );
 
-  let people = $state(asset.people || []);
-  let unassignedFaces = $state(asset.unassignedFaces || []);
-  let showingHiddenPeople = $state(false);
-  let timeZone = $derived(asset.exifInfo?.timeZone);
-  let dateTime = $derived(
-    timeZone && asset.exifInfo?.dateTimeOriginal
-      ? fromISODateTime(asset.exifInfo.dateTimeOriginal, timeZone)
-      : fromISODateTimeUTC(asset.localDateTime),
-  );
+  let previousId: string | undefined = $state();
+
+  $effect(() => {
+    if (!previousId) {
+      previousId = asset.id;
+    }
+    if (asset.id !== previousId) {
+      showEditFaces = false;
+      previousId = asset.id;
+    }
+  });
 
   const getMegapixel = (width: number, height: number): number | undefined => {
     const megapixel = Math.round((height * width) / 1_000_000);
@@ -132,10 +103,7 @@
   };
 
   const handleRefreshPeople = async () => {
-    await getAssetInfo({ id: asset.id }).then((data) => {
-      people = data?.people || [];
-      unassignedFaces = data?.unassignedFaces || [];
-    });
+    asset = await getAssetInfo({ id: asset.id });
     showEditFaces = false;
   };
 
@@ -317,8 +285,7 @@
         class="flex w-full text-start justify-between place-items-start gap-4 py-4"
         onclick={() => (isOwner ? (isShowChangeDate = true) : null)}
         title={isOwner ? $t('edit_date') : ''}
-        class:hover:dark:text-immich-dark-primary={isOwner}
-        class:hover:text-immich-primary={isOwner}
+        class:hover:text-primary={isOwner}
       >
         <div class="flex gap-4">
           <div>
@@ -436,12 +403,14 @@
           {#if asset.exifInfo?.make || asset.exifInfo?.model}
             <p>
               <a
-                href="{resolve(AppRoute.SEARCH)}?{getMetadataSearchQuery({
-                  ...(asset.exifInfo?.make ? { make: asset.exifInfo.make } : {}),
-                  ...(asset.exifInfo?.model ? { model: asset.exifInfo.model } : {}),
-                })}"
+                href={resolve(
+                  `${AppRoute.SEARCH}?${getMetadataSearchQuery({
+                    ...(asset.exifInfo?.make ? { make: asset.exifInfo.make } : {}),
+                    ...(asset.exifInfo?.model ? { model: asset.exifInfo.model } : {}),
+                  })}`,
+                )}
                 title="{$t('search_for')} {asset.exifInfo.make || ''} {asset.exifInfo.model || ''}"
-                class="hover:dark:text-immich-dark-primary hover:text-immich-primary"
+                class="hover:text-primary"
               >
                 {asset.exifInfo.make || ''}
                 {asset.exifInfo.model || ''}

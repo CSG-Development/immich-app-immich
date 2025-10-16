@@ -42,32 +42,32 @@
     assetViewingStore.showAssetViewer(false);
   });
 
-  const onNext = () => {
+  const onNext = async () => {
     const index = getAssetIndex($viewingAsset.id) + 1;
     if (index >= assets.length) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onPrevious = () => {
+  const onPrevious = async () => {
     const index = getAssetIndex($viewingAsset.id) - 1;
     if (index < 0) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onRandom = () => {
+  const onRandom = async () => {
     if (assets.length <= 0) {
-      return Promise.resolve(undefined);
+      return undefined;
     }
     const index = Math.floor(Math.random() * assets.length);
     const asset = assets[index];
-    setAsset(asset);
-    return Promise.resolve(asset);
+    await onViewAsset(asset);
+    return { id: asset.id };
   };
 
   const onSelectAsset = (asset: AssetResponseDto) => {

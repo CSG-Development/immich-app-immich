@@ -1,7 +1,5 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import FormatBoldMessage from '$lib/components/i18n/format-bold-message.svelte';
-import type { InterpolationValues } from '$lib/components/i18n/format-message';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
 import { AppRoute } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -75,6 +73,52 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
         },
       },
     });
+  }
+};
+
+export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], showNotification = true) => {
+  const result = await addToAlbums({
+    ...authManager.params,
+    albumsAddAssetsDto: {
+      albumIds,
+      assetIds,
+    },
+  });
+
+  if (!showNotification) {
+    return result;
+  }
+
+  if (showNotification) {
+    const $t = get(t);
+
+    if (result.error === BulkIdErrorReason.Duplicate) {
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message: $t('assets_were_part_of_albums_count', { values: { count: assetIds.length } }),
+      });
+      return result;
+    }
+    if (result.error) {
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message: $t('assets_cannot_be_added_to_albums', { values: { count: assetIds.length } }),
+      });
+      return result;
+    }
+    notificationController.show({
+      type: NotificationType.Info,
+      timeout: 5000,
+      message: $t('assets_added_to_albums_count', {
+        values: {
+          albumTotal: albumIds.length,
+          assetTotal: assetIds.length,
+        },
+      }),
+    });
+    return result;
   }
 };
 

@@ -54,7 +54,7 @@
 <form autocomplete="off" onsubmit={handleSubmit}>
   <div class="flex flex-col gap-6 place-items-center place-content-center">
     {#if showLabel}
-      <p class="text-dark">{$t('setup_pin_code')}</p>
+      <Heading>{$t('setup_pin_code')}</Heading>
     {/if}
     <PinCodeInput label={$t('new_pin_code')} bind:value={newPinCode} tabindexStart={1} pinLength={6} />
 

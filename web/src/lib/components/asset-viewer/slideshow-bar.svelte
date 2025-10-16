@@ -4,12 +4,12 @@
   import { ProgressBarStatus } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
-  import { slideshowStore } from '$lib/stores/slideshow.store';
+  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
   import { videoStore } from '$lib/stores/video.store';
   import { IconButton } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
-  import { swipe } from 'svelte-gestures';
+  import { useSwipe } from 'svelte-gestures';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';
 
@@ -92,6 +92,11 @@
 
   const handleDone = async () => {
     await progressBar?.resetProgress();
+
+    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
+      onPrevious();
+      return;
+    }
     onNext();
   };
 
@@ -121,6 +126,13 @@
       document.removeEventListener('webkitfullscreenchange', exitFullscreenHandler);
     };
   });
+
+  const { swipe, onswipe, onswipedown } = useSwipe(
+    () => {},
+    () => ({ touchAction: 'pan-x' }),
+    { onswipedown: showControlBar },
+    true,
+  );
 
   $effect(() => {
     if ($videoStore) {
