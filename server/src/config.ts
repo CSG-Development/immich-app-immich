@@ -231,13 +231,13 @@ export const defaults = Object.freeze<SystemConfig>({
       modelName: 'buffalo_l',
       minScore: 0.7,
       maxDistance: 0.5,
-      minFaces: 3,
+      minFaces: 2,
     },
   },
   map: {
     enabled: true,
-    lightStyle: `${process.env.MAP_TILES_URL}/styles/light-style/style.json`,
-    darkStyle: `${process.env.MAP_TILES_URL}/styles/dark-style/style.json`,
+    lightStyle: `${process.env.MAP_TILES_URL || 'https://homecloud-map.noveogroup.com'}/styles/light-style/style.json`,
+    darkStyle: `${process.env.MAP_TILES_URL || 'https://homecloud-map.noveogroup.com'}/styles/dark-style/style.json`,
   },
   reverseGeocoding: {
     enabled: true,
