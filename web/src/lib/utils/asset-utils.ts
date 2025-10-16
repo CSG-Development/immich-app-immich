@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
-import { AppRoute } from '$lib/constants';
+import { AppRoute, OS } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { downloadManager } from '$lib/managers/download-manager.svelte';
 import type { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
@@ -416,8 +416,20 @@ const supportedAssetMimeTypes = new Set([
   'video/x-ms-asf',
 ]);
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); // https://stackoverflow.com/a/23522755
-if (isSafari) {
+/* const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); */ // https://stackoverflow.com/a/23522755
+export const getOS = () => {
+  const userAgent = navigator.userAgent;
+
+  if (/Windows NT/i.test(userAgent)) return OS.WINDOWS;
+  if (/Mac/i.test(userAgent)) return OS.MACOS;
+  if (/Linux/i.test(userAgent)) return OS.LINUX;
+  if (/Android/i.test(userAgent)) return OS.ANDROID;
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return OS.IOS;
+
+  return 'Unknown';
+};
+
+if (getOS() === OS.IOS || getOS() === OS.MACOS) {
   supportedAssetMimeTypes.add('image/heic').add('image/heif');
 }
 

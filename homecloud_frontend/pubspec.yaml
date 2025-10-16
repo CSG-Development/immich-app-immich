@@ -1,0 +1,53 @@
+#   Do NOT modify or remove this copyright and confidentiality notice
+#
+#   Copyright (c) 2025 Seagate Technology LLC or one of its affiliates.
+#
+#   This code is classified as SEAGATE CONFIDENTIAL
+#   and may be covered under one or more Non-Disclosure Agreements.
+#   Any use, modification, duplication, derivation, distribution or disclosure
+#   of this code, for any reason, not expressly authorized is prohibited.
+#   All other rights are expressly reserved by Seagate Technology LLC.
+#
+
+name: homecloud_frontend
+description: "Home Cloud device access"
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  basic_utils: ^5.8.2
+  # Network detection
+  nsd: ^4.0.3
+  # API generation https://pub.dev/packages/swagger_dart_code_generator
+  chopper: ^8.4.0
+  json_annotation: ^4.9.0
+  # State management
+  provider: ^6.1.5
+  # Routing
+  # go_router: ^16.0.0
+  # Save and retrieve data
+  shared_preferences: ^2.5.3
+  # Manage svg assets
+  # flutter_svg: ^2.2.0
+  flutter_secure_storage: ^9.2.4
+  device_info_plus: ^12.1.0
+  hooks_riverpod: ^2.6.1
+
+dev_dependencies:
+  swagger_dart_code_generator: ^4.0.2
+  # dependencies for code generation https://pub.dev/packages/swagger_dart_code_generator
+  build_runner: ^2.4.9
+  chopper_generator: ^8.4.0
+  json_serializable: ^6.11.1
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
