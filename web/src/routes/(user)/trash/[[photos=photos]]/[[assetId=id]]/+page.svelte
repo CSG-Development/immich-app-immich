@@ -124,14 +124,14 @@
       </HStack>
     {/snippet}
 
-    <AssetGrid enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape}>
+    <Timeline enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape}>
       <p class="font-medium text-gray-500/60 dark:text-gray-300/60 p-4">
         {$t('trashed_items_will_be_permanently_deleted_after', { values: { days: $serverConfig.trashDays } })}
       </p>
       {#snippet empty()}
         <EmptyPlaceholder text={$t('trash_no_results_message')} src={empty3Url} />
       {/snippet}
-    </AssetGrid>
+    </Timeline>
   </UserPageLayout>
 {/if}
 

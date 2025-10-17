@@ -120,11 +120,11 @@
 
   <section class="mt-2 h-[calc(100%-(--spacing(20)))] overflow-auto immich-scrollbar">
     {#if tag.hasAssets}
-      <AssetGrid enableRouting={true} {timelineManager} {assetInteraction} removeAction={AssetAction.UNARCHIVE}>
+      <Timeline enableRouting={true} {timelineManager} {assetInteraction} removeAction={AssetAction.UNARCHIVE}>
         {#snippet empty()}
           <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
         {/snippet}
-      </AssetGrid>
+      </Timeline>
     {:else}
       <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
     {/if}

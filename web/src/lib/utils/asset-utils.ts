@@ -1,5 +1,4 @@
 import { goto } from '$app/navigation';
-import { resolve } from '$app/paths';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
 import { AppRoute, OS } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -11,14 +10,15 @@ import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
 import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
 import { preferences } from '$lib/stores/user.store';
 import { downloadRequest, sleep, withError } from '$lib/utils';
-import { createAlbum } from '$lib/utils/album-utils';
 import { getByteUnitString } from '$lib/utils/byte-units';
 import { getFormatter } from '$lib/utils/i18n';
 import { navigate } from '$lib/utils/navigation';
 import { asQueryString } from '$lib/utils/shared-links';
 import {
   addAssetsToAlbum as addAssets,
+  /* addAssetsToAlbums as addToAlbums, */
   AssetVisibility,
+  /* BulkIdErrorReason, */
   bulkTagAssets,
   createStack,
   deleteAssets,
@@ -34,12 +34,13 @@ import {
   type AssetResponseDto,
   type AssetTypeEnum,
   type DownloadInfoDto,
+  type ExifResponseDto,
   type StackResponseDto,
   type UserPreferencesResponseDto,
   type UserResponseDto,
 } from '@immich/sdk';
 import { DateTime } from 'luxon';
-import { t, type Translations } from 'svelte-i18n';
+import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
 
@@ -69,7 +70,7 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolve(`${AppRoute.ALBUMS}/${albumId}`));
+          return goto(`${AppRoute.ALBUMS}/${albumId}`);
         },
       },
     });
@@ -77,7 +78,7 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
 };
 
 export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], showNotification = true) => {
-  const result = await addToAlbums({
+  /* const result = await addToAlbums({
     ...authManager.params,
     albumsAddAssetsDto: {
       albumIds,
@@ -119,7 +120,7 @@ export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], 
       }),
     });
     return result;
-  }
+  } */
 };
 
 export const tagAssets = async ({
@@ -166,47 +167,6 @@ export const removeTag = async ({
   }
 
   return assetIds;
-};
-
-export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[]) => {
-  const album = await createAlbum(albumName, assetIds);
-  if (!album) {
-    return;
-  }
-  const $t = get(t);
-  // for reasons beyond me <ComponentProps<typeof FormatBoldMessage>> doesn't work, even though it's (afaik) exactly this object
-  if (album.assets.length === 0) {
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message: $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } }),
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolve(`${AppRoute.ALBUMS}/${album.id}`));
-        },
-      },
-    });
-  } else {
-    notificationController.show<{ key: Translations; values: InterpolationValues }>({
-      type: NotificationType.Info,
-      timeout: 5000,
-      component: {
-        type: FormatBoldMessage,
-        props: {
-          key: 'assets_added_to_name_count',
-          values: { count: album.assets.length, name: albumName, hasName: !!albumName },
-        },
-      },
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolve(`${AppRoute.ALBUMS}/${album.id}`));
-        },
-      },
-    });
-  }
-  return album;
 };
 
 export const downloadAlbum = async (album: AlbumResponseDto) => {
@@ -324,6 +284,7 @@ export const downloadFile = async (asset: AssetResponseDto) => {
       // play nice with Safari
       await sleep(500);
     }
+
     try {
       notificationController.show({
         type: NotificationType.Info,
@@ -367,6 +328,15 @@ export function isFlipped(orientation?: string | null) {
   const value = Number(orientation);
   return value && (isRotated270CW(value) || isRotated90CW(value));
 }
+
+export const getDimensions = (exifInfo: ExifResponseDto) => {
+  const { exifImageWidth: width, exifImageHeight: height } = exifInfo;
+  if (isFlipped(exifInfo.orientation)) {
+    return { width: height, height: width };
+  }
+
+  return { width, height };
+};
 
 export function getFileSize(asset: AssetResponseDto, maxPrecision = 4): string {
   const size = asset.exifInfo?.fileSizeInByte || 0;
@@ -682,17 +652,12 @@ const imgToBlob = async (imageElement: HTMLImageElement) => {
   throw new Error('Canvas context is null');
 };
 
-const urlToBlob = async (imageSource: string) => {
-  const response = await fetch(imageSource);
-  return await response.blob();
-};
-
 export const urlToArrayBuffer = async (imageSource: string) => {
   const response = await fetch(imageSource);
   return await response.arrayBuffer();
 };
 
-export const copyImageToClipboard = async (source: HTMLImageElement | string) => {
-  const blob = source instanceof HTMLImageElement ? await imgToBlob(source) : await urlToBlob(source);
-  await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+export const copyImageToClipboard = async (source: HTMLImageElement) => {
+  // do not await, so the Safari clipboard write happens in the context of the user gesture
+  await navigator.clipboard.write([new ClipboardItem({ ['image/png']: imgToBlob(source) })]);
 };

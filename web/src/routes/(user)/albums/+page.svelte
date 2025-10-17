@@ -2,11 +2,11 @@
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import AlbumsControls from '$lib/components/album-page/albums-controls.svelte';
   import Albums from '$lib/components/album-page/albums-list.svelte';
-  import GroupTab from '$lib/components/elements/group-tab.svelte';
-  import SearchBar from '$lib/components/elements/search-bar.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import { AppRoute } from '$lib/constants';
+  import GroupTab from '$lib/elements/GroupTab.svelte';
+  import SearchBar from '$lib/elements/SearchBar.svelte';
   import { AlbumFilter, albumViewSettings } from '$lib/stores/preferences.store';
   import { createAlbumAndRedirect } from '$lib/utils/album-utils';
   import { t } from 'svelte-i18n';

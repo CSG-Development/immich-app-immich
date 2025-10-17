@@ -5,16 +5,19 @@
   import { resizeObserver, type OnResizeCallback } from '$lib/actions/resize-observer';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
+  import type { AbsoluteResult, RelativeResult } from '$lib/components/shared-components/change-date.svelte';
+  import ChangeDate from '$lib/components/shared-components/change-date.svelte';
+  import Scrubber from '$lib/components/timeline/Scrubber.svelte';
   import {
     setFocusToAsset as setFocusAssetInit,
     setFocusTo as setFocusToInit,
-  } from '$lib/components/photos-page/actions/focus-actions';
-  import Skeleton from '$lib/components/photos-page/skeleton.svelte';
-  import ChangeDate from '$lib/components/shared-components/change-date.svelte';
-  import Scrubber from '$lib/components/shared-components/scrubber/scrubber.svelte';
+  } from '$lib/components/timeline/actions/focus-actions';
   import { AppRoute, AssetAction } from '$lib/constants';
+  import HotModuleReload from '$lib/elements/HotModuleReload.svelte';
+  import Portal from '$lib/elements/Portal.svelte';
+  import Skeleton from '$lib/elements/Skeleton.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import type { DayGroup } from '$lib/managers/timeline-manager/day-group.svelte';
   import type { MonthGroup } from '$lib/managers/timeline-manager/month-group.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
@@ -34,18 +37,19 @@
   import { navigate } from '$lib/utils/navigation';
   import { getTimes, toTimelineAsset, type ScrubberListener, type TimelineYearMonth } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, type AlbumResponseDto, type PersonResponseDto } from '@immich/sdk';
+  import { modalManager } from '@immich/ui';
   import { DateTime } from 'luxon';
   import { onMount, type Snippet } from 'svelte';
   import type { UpdatePayload } from 'vite';
-  import Portal from '../shared-components/portal/portal.svelte';
-  import AssetDateGroup from './asset-date-group.svelte';
-  import DeleteAssetDialog from './delete-asset-dialog.svelte';
+  import DeleteAssetDialog from '../photos-page/delete-asset-dialog.svelte';
+  import TimelineDateGroup from './TimelineDateGroup.svelte';
+
   interface Props {
     isSelectionMode?: boolean;
     singleSelect?: boolean;
     /** `true` if this asset grid is responds to navigation events; if `true`, then look at the
      `AssetViewingStore.gridScrollTarget` and load and scroll to the asset specified, and
-     additionally, update the page location/url with the asset as the asset-grid is scrolled */
+     additionally, update the page location/url with the asset as the timeline is scrolled */
     enableRouting: boolean;
     timelineManager: TimelineManager;
     assetInteraction: AssetInteraction;
@@ -66,6 +70,18 @@
     onEscape?: () => void;
     children?: Snippet;
     empty?: Snippet;
+    customLayout?: Snippet<[TimelineAsset]>;
+    onThumbnailClick?: (
+      asset: TimelineAsset,
+      timelineManager: TimelineManager,
+      dayGroup: DayGroup,
+      onClick: (
+        timelineManager: TimelineManager,
+        assets: TimelineAsset[],
+        groupTitle: string,
+        asset: TimelineAsset,
+      ) => void,
+    ) => void;
     selectedAssets?: TimelineAsset[];
     shuffledSelectedAssets?: TimelineAsset[];
   }
@@ -87,6 +103,8 @@
     onEscape = () => {},
     children,
     empty,
+    customLayout,
+    onThumbnailClick,
     selectedAssets = [],
     shuffledSelectedAssets = [],
   }: Props = $props();
@@ -142,6 +160,8 @@
     scrollTo(0);
   };
 
+  let shuffledTimelineAssets: TimelineAsset[] = $state([]);
+
   const getAssetHeight = (assetId: string, monthGroup: MonthGroup) => {
     // the following method may trigger any layouts, so need to
     // handle any scroll compensation that may have been set
@@ -163,13 +183,12 @@
     return assetTop >= scrollTop && assetTop < scrollTop + clientHeight;
   };
 
-  let shuffledTimelineAssets: TimelineAsset[] = $state([]);
-
   const scrollToAssetId = async (assetId: string) => {
     const monthGroup = await timelineManager.findMonthGroupForAsset(assetId);
     if (!monthGroup) {
       return false;
     }
+
     const height = getAssetHeight(assetId, monthGroup);
 
     // If the asset is already visible, then don't scroll.
@@ -213,45 +232,33 @@
     complete.then(completeNav, completeNav);
   });
 
-  const hmrSupport = () => {
-    // when hmr happens, skeleton is initialized to true by default
-    // normally, loading asset-grid is part of a navigation event, and the completion of
-    // that event triggers a scroll-to-asset, if necessary, when then clears the skeleton.
-    // this handler will run the navigation/scroll-to-asset handler when hmr is performed,
-    // preventing skeleton from showing after hmr
-    if (import.meta && import.meta.hot) {
-      const afterApdate = (payload: UpdatePayload) => {
-        const assetGridUpdate = payload.updates.some(
-          (update) => update.path.endsWith('asset-grid.svelte') || update.path.endsWith('assets-store.ts'),
-        );
+  const handleAfterUpdate = (payload: UpdatePayload) => {
+    const timelineUpdate = payload.updates.some(
+      (update) => update.path.endsWith('Timeline.svelte') || update.path.endsWith('assets-store.ts'),
+    );
 
-        if (assetGridUpdate) {
-          setTimeout(() => {
-            const asset = $page.url.searchParams.get('at');
-            if (asset) {
-              $gridScrollTarget = { at: asset };
-              void navigate(
-                { targetRoute: 'current', assetId: null, assetGridRouteSearchParams: $gridScrollTarget },
-                { replaceState: true, forceNavigate: true },
-              );
-            } else {
-              scrollToTop();
-            }
-            showSkeleton = false;
-          }, 500);
+    if (timelineUpdate) {
+      setTimeout(() => {
+        const asset = $page.url.searchParams.get('at');
+        if (asset) {
+          $gridScrollTarget = { at: asset };
+          void navigate(
+            { targetRoute: 'current', assetId: null, assetGridRouteSearchParams: $gridScrollTarget },
+            { replaceState: true, forceNavigate: true },
+          );
+        } else {
+          scrollToTop();
         }
-      };
-      import.meta.hot?.on('vite:afterUpdate', afterApdate);
-      import.meta.hot?.on('vite:beforeUpdate', (payload) => {
-        const assetGridUpdate = payload.updates.some((update) => update.path.endsWith('asset-grid.svelte'));
-        if (assetGridUpdate) {
-          timelineManager.destroy();
-        }
-      });
-
-      return () => import.meta.hot?.off('vite:afterUpdate', afterApdate);
+        showSkeleton = false;
+      }, 500);
     }
-    return () => void 0;
+  };
+
+  const handleBeforeUpdate = (payload: UpdatePayload) => {
+    const timelineUpdate = payload.updates.some((update) => update.path.endsWith('Timeline.svelte'));
+    if (timelineUpdate) {
+      timelineManager.destroy();
+    }
   };
 
   const updateIsScrolling = () => (timelineManager.scrolling = true);
@@ -277,10 +284,6 @@
     if (!enableRouting) {
       showSkeleton = false;
     }
-    const disposeHmr = hmrSupport();
-    return () => {
-      disposeHmr();
-    };
   });
 
   const getMaxScrollPercent = () => {
@@ -630,6 +633,23 @@
         updateUnstackedAssetInTimeline(timelineManager, action.assets);
         break;
       }
+      case AssetAction.REMOVE_ASSET_FROM_STACK: {
+        timelineManager.addAssets([toTimelineAsset(action.asset)]);
+        if (action.stack) {
+          //Have to unstack then restack assets in timeline in order to update the stack count in the timeline.
+          updateUnstackedAssetInTimeline(
+            timelineManager,
+            action.stack.assets.map((asset) => toTimelineAsset(asset)),
+          );
+          updateStackedAssetInTimeline(timelineManager, {
+            stack: action.stack,
+            toDeleteIds: action.stack.assets
+              .filter((asset) => asset.id !== action.stack?.primaryAssetId)
+              .map((asset) => asset.id),
+          });
+        }
+        break;
+      }
       case AssetAction.SET_STACK_PRIMARY_ASSET: {
         //Have to unstack then restack assets in timeline in order for the currently removed new primary asset to be made visible.
         updateUnstackedAssetInTimeline(
@@ -896,6 +916,8 @@
 
 <svelte:document onkeydown={onKeyDown} onkeyup={onKeyUp} onselectstart={onSelectStart} use:shortcuts={shortcutList} />
 
+<HotModuleReload onAfterUpdate={handleAfterUpdate} onBeforeUpdate={handleBeforeUpdate} />
+
 {#if isShowDeleteConfirmation}
   <DeleteAssetDialog
     size={idsSelectedAssets.length}
@@ -909,13 +931,15 @@
     title="Navigate to Time"
     initialDate={DateTime.now()}
     timezoneInput={false}
-    onConfirm={async (dateString: string) => {
+    onConfirm={async (dateString: AbsoluteResult | RelativeResult) => {
       isShowSelectDate = false;
-      const asset = await timelineManager.getClosestAssetToDate(
-        (DateTime.fromISO(dateString) as DateTime<true>).toObject(),
-      );
-      if (asset) {
-        setFocusAsset(asset);
+      if (dateString.mode == 'absolute') {
+        const asset = await timelineManager.getClosestAssetToDate(
+          (DateTime.fromISO(dateString.date) as DateTime<true>).toObject(),
+        );
+        if (asset) {
+          setFocusAsset(asset);
+        }
       }
     }}
     onCancel={() => (isShowSelectDate = false)}
@@ -1007,7 +1031,7 @@
           style:transform={`translate3d(0,${absoluteHeight}px,0)`}
           style:width="100%"
         >
-          <AssetDateGroup
+          <TimelineDateGroup
             {withStacked}
             {showArchiveIcon}
             {assetInteraction}
@@ -1019,6 +1043,8 @@
             onSelectAssetCandidates={handleSelectAssetCandidates}
             onSelectAssets={handleSelectAssets}
             onScrollCompensation={handleScrollCompensation}
+            {customLayout}
+            {onThumbnailClick}
           />
         </div>
       {/if}

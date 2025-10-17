@@ -29,7 +29,8 @@
     onSetToFullScreen = () => {},
   }: Props = $props();
 
-  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowAutoplay } = slideshowStore;
+  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowAutoplay, slideshowNavigation } =
+    slideshowStore;
 
   let progressBarStatus: ProgressBarStatus | undefined = $state();
   let progressBar = $state<ReturnType<typeof ProgressBar>>();
@@ -165,7 +166,8 @@
   ]}
 />
 
-<svelte:body use:swipe={() => ({ touchAction: 'pan-x' })} onswipedown={showControlBar} />
+{/* @ts-expect-error https://github.com/Rezi/svelte-gestures/issues/38#issuecomment-3315953573 */ null}
+<svelte:body {@attach swipe} {onswipe} {onswipedown} />
 
 {#if showControls}
   <div

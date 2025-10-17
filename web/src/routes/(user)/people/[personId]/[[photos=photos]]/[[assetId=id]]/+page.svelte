@@ -406,7 +406,7 @@
   }}
 >
   {#key person.id}
-    <AssetGrid
+    <Timeline
       enableRouting={true}
       {person}
       {timelineManager}
@@ -518,7 +518,7 @@
           {/if}
         </div>
       {/if}
-    </AssetGrid>
+    </Timeline>
   {/key}
 </main>
 

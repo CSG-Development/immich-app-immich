@@ -214,9 +214,9 @@
           {#if showingHiddenPeople || !person.isHidden}
             <a
               class="w-[90px]"
-              href="${resolve(AppRoute.PEOPLE)}/${person.id}?${QueryParameter.PREVIOUS_ROUTE}=${currentAlbum?.id
-                ? `${resolve(AppRoute.ALBUMS)}/${currentAlbum?.id}`
-                : resolve(AppRoute.PHOTOS)}"
+              href={`${resolve(AppRoute.PEOPLE)}/${person.id}?${QueryParameter.PREVIOUS_ROUTE}=${
+                currentAlbum?.id ? `${resolve(AppRoute.ALBUMS)}/${currentAlbum?.id}` : resolve(AppRoute.PHOTOS)
+              }`}
               onfocus={() => ($boundingBoxesArray = people[index].faces)}
               onblur={() => ($boundingBoxesArray = [])}
               onmouseover={() => ($boundingBoxesArray = people[index].faces)}
