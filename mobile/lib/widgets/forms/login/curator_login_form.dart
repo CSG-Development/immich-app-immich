@@ -42,8 +42,8 @@ class CuratorLoginForm extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final emailController = useTextEditingController.fromValue(TextEditingValue.empty);
     final passwordController = useTextEditingController.fromValue(TextEditingValue.empty);
-
     final remoteCodeController = useTextEditingController.fromValue(TextEditingValue.empty);
+    final deviceController = useTextEditingController.fromValue(TextEditingValue.empty);
 
     final emailFocusNode = useFocusNode();
     final passwordFocusNode = useFocusNode();
@@ -890,6 +890,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           return DeviceSelector(
+            controller: deviceController,
             devices: devices.value.entries.map((entry) => entry.value).toList(),
             maxWidth: constraints.maxWidth,
             selectedDevice: selectedDevice.value,

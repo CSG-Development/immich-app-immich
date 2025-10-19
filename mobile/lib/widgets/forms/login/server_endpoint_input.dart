@@ -8,6 +8,8 @@ class ServerEndpointInput extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback? onSubmit;
   final bool hasExternalError;
+  final Widget? leadingIcon;
+  final String? label;
 
   const ServerEndpointInput({
     super.key,
@@ -15,6 +17,8 @@ class ServerEndpointInput extends StatelessWidget {
     required this.focusNode,
     this.onSubmit,
     this.hasExternalError = false,
+    this.leadingIcon,
+    this.label
   });
 
   @override
@@ -29,7 +33,7 @@ class ServerEndpointInput extends StatelessWidget {
           inputFormatters: const [TrimFormatter()],
           decoration: LoginInputDecorations.baseDecoration(
             context: context,
-            labelText: 'curator.login_form_endpoint_url'.tr(),
+            labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
             hintText: 'curator.login_form_endpoint_hint'.tr(),
             isError: hasExternalError,
             suffixIcon: shouldShowClearButton
@@ -38,6 +42,7 @@ class ServerEndpointInput extends StatelessWidget {
                     icon: const Icon(Icons.highlight_off),
                   )
                 : null,
+            prefixIcon: leadingIcon,
           ),
           autovalidateMode: AutovalidateMode.always,
           focusNode: focusNode,
