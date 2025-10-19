@@ -17,4 +17,9 @@
       <certificates src="user" />
     </trust-anchors>
   </debug-overrides>
+
+  <!-- Allow cleartext to emulator host -->
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="false">10.0.2.2</domain>
+  </domain-config>
 </network-security-config>
