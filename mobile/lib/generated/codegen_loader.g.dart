@@ -32240,6 +32240,12 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_field_remote_code_error_invalid": "Invalid code. Please check the code and try again.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
       "sign_in_screen_field_remote_code_label": "Confirmation Code",
+      "sign_in_screen_remote_code_cancel": "Cancel",
+      "sign_in_screen_remote_code_description":
+          "Curator Cloud is currently limited to your local network. Enter the remote access code received by email to enable remote access. This is required only once per device",
+      "sign_in_screen_remote_code_skip": "Skip",
+      "sign_in_screen_remote_code_title": "Allow remote access",
+      "sign_in_screen_remote_code_verify": "Verify",
     },
     "current_device": "Current device",
     "current_pin_code": "Current PIN code",

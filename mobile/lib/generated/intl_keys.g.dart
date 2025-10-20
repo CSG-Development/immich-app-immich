@@ -817,6 +817,11 @@ abstract class IntlKeys {
       'curator.sign.in.screen.field.remote.code.error.invalid';
   static const curator_sign_in_screen_field_remote_code_hint = 'curator.sign.in.screen.field.remote.code.hint';
   static const curator_sign_in_screen_field_remote_code_label = 'curator.sign.in.screen.field.remote.code.label';
+  static const curator_sign_in_screen_remote_code_cancel = 'curator.sign.in.screen.remote.code.cancel';
+  static const curator_sign_in_screen_remote_code_description = 'curator.sign.in.screen.remote.code.description';
+  static const curator_sign_in_screen_remote_code_skip = 'curator.sign.in.screen.remote.code.skip';
+  static const curator_sign_in_screen_remote_code_title = 'curator.sign.in.screen.remote.code.title';
+  static const curator_sign_in_screen_remote_code_verify = 'curator.sign.in.screen.remote.code.verify';
   static const current_device = 'current_device';
   static const current_pin_code = 'current_pin_code';
   static const current_server_address = 'current_server_address';
