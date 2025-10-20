@@ -23,6 +23,7 @@ import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
+import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -42,14 +43,13 @@ class CuratorLoginForm extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final emailController = useTextEditingController.fromValue(TextEditingValue.empty);
     final passwordController = useTextEditingController.fromValue(TextEditingValue.empty);
-    final remoteCodeController = useTextEditingController.fromValue(TextEditingValue.empty);
     final deviceController = useTextEditingController.fromValue(TextEditingValue.empty);
 
     final emailFocusNode = useFocusNode();
     final passwordFocusNode = useFocusNode();
     final serverEndpointFocusNode = useFocusNode();
     final deviceFocusNode = useFocusNode();
-    final remoteCodeFocusNode = useFocusNode();
+
 
     final isLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
@@ -68,11 +68,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     final favoriteLoggingIn = useState<bool>(false);
     final loggingIn = useState<bool>(false);
     String favoriteDevice = '';
-    final remoteCodeVisible = useState<bool>(false);
-    final remoteCodeLoading = useState<bool>(false);
-    final remoteCodeExpired = useState<bool>(false);
 
-    String lastCodeChecked = '';
     String lastRemoteEmail = '';
     String clientFriendlyName = '';
 
@@ -140,14 +136,6 @@ class CuratorLoginForm extends HookConsumerWidget {
             }
           }
         }
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (context.mounted) {
-            // TODO: !
-            // setState(() {
-            //   // Update any relevant state variables here
-            // });
-          }
-        });
       }
     }
 
@@ -195,10 +183,6 @@ class CuratorLoginForm extends HookConsumerWidget {
             }
 
             devices.value = {...devices.value, device.about!.certificateCommonName: device};
-          }
-          if (context.mounted) {
-            // TODO: !
-            // setState(() {});
           }
           // Device added
           return true;
@@ -266,8 +250,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         return clientFriendlyName;
       }
       final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      // TODO Replace with actual app name
-      String name = "Curator Manager";
+      String name = "Curator Photos";
       Map<String, dynamic>? data;
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -303,64 +286,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       return name;
     }
 
-    /// Initiate remote access authentication by sending a code to the given email
-    Future<void> initiateRemoteAccess() async {
-      final email = emailController.text;
-      if (EmailUtils.isEmail(email) && email != lastRemoteEmail && context.mounted && !loggingIn.value) {
-        lastRemoteEmail = email;
-        // TODO: !
-        // setState(() {
-        //   // Useful when changing email and requesting a new code
-        //   remoteCodeController.clear();
-        //   remoteCodeErrorText = null;
-        //   remoteCodeExpired = false;
-        //   remoteCodeLoading = true;
-        // });
-        remoteCodeController.clear();
-        remoteCodeErrorText.value = null;
-        remoteCodeExpired.value = false;
-        remoteCodeLoading.value = true;
-        try {
-          clientFriendlyName = await getClientFriendlyName();
-          final response = await ref
-              .read(remoteProvider)
-              .api
-              .clientV1AuthInitiatePost(
-                type: ClientV1AuthInitiatePostType.email,
-                body: Code$RequestBody(
-                  email: email,
-                  clientId: ref.read(remoteProvider).clientId,
-                  clientFriendlyName: clientFriendlyName,
-                ),
-              );
-          // 	Success: A reference is returned and the user will receive a code to continue authenticating.
-          if (response.isSuccessful && context.mounted) {
-            // Save email in device provider to pre-fill next time
-            ref.read(deviceProvider.notifier).setHost(login: email);
-            // Clear any previous authentication of remote access server
-            ref.read(remoteProvider.notifier).logout();
-            if (kDebugMode) {
-              debugPrint("[SignInScreen] Remote access initiated for email: $email, response: ${response.body}");
-            }
-            ref.read(remoteProvider.notifier).reference = response.body?.reference;
-            // Show input for remote access code
-            remoteCodeVisible.value = true;
-            remoteCodeLoading.value = false;
-          } else {
-            handleError(ApiErrorMessage.remoteApi, response);
-          }
-        } catch (error) {
-          handleError(ApiErrorMessage.remoteApi, error);
-        }
-        if (context.mounted) {
-          // TODO: !
-          // setState(() {});
-        }
-      }
-    }
 
     /// Get remote devices from the remote refresh token
-    Future<void> getRemoteDevices() async {
+    Future<void> getRemoteDevices(Future<void> Function() initiateRemoteAccess) async {
       try {
         updateDetectionCounter(1);
         final remoteApi = ref.read(remoteProvider).api;
@@ -426,6 +354,46 @@ class CuratorLoginForm extends HookConsumerWidget {
       updateDetectionCounter(-1);
     }
 
+    /// Initiate remote access authentication by sending a code to the given email
+    Future<void> initiateRemoteAccess() async {
+      final email = emailController.text;
+      if (EmailUtils.isEmail(email) && email != lastRemoteEmail && context.mounted && !loggingIn.value) {
+        lastRemoteEmail = email;
+        remoteCodeErrorText.value = null;
+        try {
+          clientFriendlyName = await getClientFriendlyName();
+          final response = await ref
+              .read(remoteProvider)
+              .api
+              .clientV1AuthInitiatePost(
+                type: ClientV1AuthInitiatePostType.email,
+                body: Code$RequestBody(
+                  email: email,
+                  clientId: ref.read(remoteProvider).clientId,
+                  clientFriendlyName: clientFriendlyName,
+                ),
+              );
+          // 	Success: A reference is returned and the user will receive a code to continue authenticating.
+          if (response.isSuccessful && context.mounted) {
+            // Save email in device provider to pre-fill next time
+            ref.read(deviceProvider.notifier).setHost(login: email);
+            // Clear any previous authentication of remote access server
+            ref.read(remoteProvider.notifier).logout();
+            if (kDebugMode) {
+              debugPrint("[SignInScreen] Remote access initiated for email: $email, response: ${response.body}");
+            }
+            ref.read(remoteProvider.notifier).reference = response.body?.reference;
+            // Show modal for remote access code
+            showRemoteCodeModal(context, () => getRemoteDevices(initiateRemoteAccess), handleError, initiateRemoteAccess);
+          } else {
+            handleError(ApiErrorMessage.remoteApi, response);
+          }
+        } catch (error) {
+          handleError(ApiErrorMessage.remoteApi, error);
+        }
+      }
+    }
+
     /// Start mDNS detection of local devices
     Future<void> startNsdDetection() async {
       if (discovery != null) {
@@ -459,98 +427,12 @@ class CuratorLoginForm extends HookConsumerWidget {
       // If authenticated for remote access, get remote devices
       if (ref.read(remoteProvider).isAuthenticated) {
         lastRemoteEmail = emailController.text;
-        getRemoteDevices();
+        getRemoteDevices(initiateRemoteAccess);
       }
       // Else wait for email to initiate remote access
       else {
         initiateRemoteAccess();
       }
-    }
-
-    /// Validate the remote access code and get access and refresh tokens
-    ///
-    /// Then get the remote devices
-    Future<void> checkRemoteAccessCode() async {
-      // final tr = AppLocalizations.of(context)!;
-      final code = remoteCodeController.text;
-      if (code.isNotEmpty && code != lastCodeChecked) {
-        lastCodeChecked = code;
-        remoteCodeLoading.value = true;
-        remoteCodeErrorText.value = null;
-        if (context.mounted) {
-          // TODO: !
-          // setState(() {});
-        }
-        ;
-
-        try {
-          final response = await ref
-              .read(remoteProvider)
-              .api
-              .clientV1AuthTokenPost(
-                type: ClientV1AuthTokenPostType.email,
-                body: Validate$RequestBody(code: code, reference: ref.read(remoteProvider).reference!),
-              );
-          if (kDebugMode) {
-            debugPrint(
-              "[SignInScreen] Remote code validation response: ${response.isSuccessful}, body: ${response.body}",
-            );
-          }
-          // 	Success: JWT access and refresh tokens are returned.
-          if (response.isSuccessful) {
-            ref.read(remoteProvider.notifier).setAuthToken(auth: response.body!);
-            if (kDebugMode) {
-              debugPrint("[SignInScreen] Remote access authenticated, fetching remote devices...");
-            }
-            // Authenticated with the Remote Access server, we can now get remote devices
-            getRemoteDevices();
-            remoteCodeVisible.value = false;
-          } else {
-            // Generic error message
-            remoteCodeErrorText.value = extractErrorMessage(response);
-            // Invalid code
-            if (remoteCodeErrorText.value!.contains('invalid')) {
-              remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
-            }
-            // Expired code
-            else if (remoteCodeErrorText.value!.contains('expired')) {
-              remoteCodeExpired.value = true;
-              remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_expired'.tr();
-            }
-          }
-        }
-        // Network error => Remote Access server unreachable?
-        catch (error) {
-          remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
-          handleError(ApiErrorMessage.remoteApi, error);
-        }
-      }
-      remoteCodeLoading.value = false;
-      if (context.mounted) {
-        // TODO: !
-        // setState(() {})
-      }
-      ;
-    }
-
-    /// Sign in with the selected device, email and password
-    Future _signIn() async {
-      // if (_formKey.currentState!.validate() && selectedDevice != null) {
-      //   // TODO Implement password login
-      //   showDialog(
-      //     context: context,
-      //     builder: (context) => AlertDialog(
-      //       title: const Text('Not implemented'),
-      //       content: const Text('You need to implement this feature.'),
-      //       actions: [
-      //         TextButton(
-      //           onPressed: () => Navigator.of(context).pop(),
-      //           child: const Text('OK'),
-      //         ),
-      //       ],
-      //     ),
-      //   );
-      // }
     }
 
     /// Change focus from one field to another
@@ -567,12 +449,6 @@ class CuratorLoginForm extends HookConsumerWidget {
           initiateRemoteAccess();
         }
       });
-      remoteCodeFocusNode.addListener(() {
-        if (!remoteCodeFocusNode.hasFocus) {
-          // Validate the code when focus is lost
-          checkRemoteAccessCode();
-        }
-      });
       // Authenticated but need to find the device
       favoriteDevice = ref.read(deviceProvider).deviceID ?? '';
       favoriteLoggingIn.value = favoriteDevice.isNotEmpty && ref.read(deviceProvider).isAuthenticated;
@@ -582,8 +458,6 @@ class CuratorLoginForm extends HookConsumerWidget {
         try {
           emailController.dispose();
           passwordController.dispose();
-          remoteCodeController.dispose();
-          remoteCodeFocusNode.dispose();
           emailFocusNode.dispose();
           passwordFocusNode.dispose();
           deviceFocusNode.dispose();
@@ -682,8 +556,6 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     Future<bool> fetchServerAuthSettings() async {
       clearAllErrors();
-
-      //TODO: !
       final sanitizedServerUrl = sanitizeUrl(selectedDevice.value!.baseUrl.toString());
       final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
 
@@ -899,7 +771,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             enabled: !loggingIn.value,
             onDeviceSelected: (device) {
               selectedDevice.value = device;
-              fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
+              fieldFocusChange(context, deviceFocusNode, emailFocusNode);
             },
             onRefresh: startLocalAndRemoteDetection,
           );
@@ -926,53 +798,6 @@ class CuratorLoginForm extends HookConsumerWidget {
                     hasExternalError: emailError,
                   );
                 },
-              ),
-              if (remoteCodeVisible.value) const SizedBox(height: 32.0),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                alignment: Alignment.topCenter,
-                child: remoteCodeVisible.value
-                    ? Column(
-                        children: [
-                          TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'curator.sign_in_screen_field_remote_code_label'.tr(),
-                              helperText: 'curator.sign_in_screen_field_remote_code_hint'.tr(),
-                              helperMaxLines: 2,
-                              errorText: remoteCodeErrorText.value,
-                              errorMaxLines: 2,
-                              // Show refresh button if code expired
-                              suffixIcon: remoteCodeExpired.value && !remoteCodeLoading.value
-                                  ? IconButton(
-                                      icon: const Icon(Icons.refresh),
-                                      color: Theme.of(context).colorScheme.primary,
-                                      tooltip: 'curator.sign_in_screen_button_request_new_code'.tr(),
-                                      onPressed: () {
-                                        initiateRemoteAccess();
-                                      },
-                                    )
-                                  : null,
-                              // Show loading indicator while requesting/validating code
-                              suffix: remoteCodeLoading.value
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : null,
-                            ),
-                            autofillHints: [AutofillHints.oneTimeCode],
-                            controller: remoteCodeController,
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.done,
-                            focusNode: remoteCodeFocusNode,
-                            enabled: !remoteCodeLoading.value && !loggingIn.value,
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                          ),
-                        ],
-                      )
-                    : const SizedBox.shrink(),
               ),
               const SizedBox(height: 32.0),
               ValueListenableBuilder<bool>(

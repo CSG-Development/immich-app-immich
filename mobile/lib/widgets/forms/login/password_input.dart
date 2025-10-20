@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/widgets/forms/login/input_decorations.dart';
-import 'package:immich_mobile/widgets/forms/login/trim_formatter.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
+import 'package:immich_mobile/utils/trim_formatter.dart';
 
 class PasswordInput extends HookConsumerWidget {
   final TextEditingController controller;
