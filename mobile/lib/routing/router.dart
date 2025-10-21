@@ -64,6 +64,7 @@ import 'package:immich_mobile/pages/library/shared_link/shared_link_edit.page.da
 import 'package:immich_mobile/pages/library/trash.page.dart';
 import 'package:immich_mobile/pages/login/change_password.page.dart';
 import 'package:immich_mobile/pages/login/login.page.dart';
+import 'package:immich_mobile/pages/login/unable_to_connect_screen.dart';
 import 'package:immich_mobile/pages/curator_onboarding/curator_onboarding.page.dart';
 import 'package:immich_mobile/pages/onboarding/permission_onboarding.page.dart';
 import 'package:immich_mobile/pages/photos/memory.page.dart';
@@ -165,6 +166,11 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: SplashScreenRoute.page, initial: true),
     AutoRoute(page: PermissionOnboardingRoute.page, guards: [_authGuard, _duplicateGuard]),
     AutoRoute(page: LoginRoute.page, guards: [_duplicateGuard]),
+    CustomRoute(
+      page: UnableToConnectRoute.page,
+      fullscreenDialog: true,
+      transitionsBuilder: TransitionsBuilders.slideBottom,
+    ),
     AutoRoute(page: CuratorOnboardingRoute.page, guards: [_duplicateGuard]),
     AutoRoute(page: ChangePasswordRoute.page),
     AutoRoute(page: SearchRoute.page, guards: [_authGuard, _duplicateGuard], maintainState: false),

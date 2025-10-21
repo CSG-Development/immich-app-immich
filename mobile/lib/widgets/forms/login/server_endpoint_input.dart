@@ -9,6 +9,7 @@ class ServerEndpointInput extends StatelessWidget {
   final VoidCallback? onSubmit;
   final bool hasExternalError;
   final Widget? leadingIcon;
+  final Widget? suffixIcon;
   final String? label;
 
   const ServerEndpointInput({
@@ -18,6 +19,7 @@ class ServerEndpointInput extends StatelessWidget {
     this.onSubmit,
     this.hasExternalError = false,
     this.leadingIcon,
+    this.suffixIcon,
     this.label
   });
 
@@ -41,7 +43,7 @@ class ServerEndpointInput extends StatelessWidget {
                     onPressed: controller.clear,
                     icon: const Icon(Icons.highlight_off),
                   )
-                : null,
+                : suffixIcon,
             prefixIcon: leadingIcon,
           ),
           autovalidateMode: AutovalidateMode.always,

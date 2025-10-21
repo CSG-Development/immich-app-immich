@@ -50,14 +50,14 @@ class CuratorLoginForm extends HookConsumerWidget {
     final serverEndpointFocusNode = useFocusNode();
     final deviceFocusNode = useFocusNode();
 
-
     final isLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
 
-    final warningMessage = useMemoized(() => ValueNotifier<String?>(null));
-    final hasEmailError = useMemoized(() => ValueNotifier<bool>(false));
-    final hasPasswordError = useMemoized(() => ValueNotifier<bool>(false));
-    final hasServerEndpointError = useMemoized(() => ValueNotifier<bool>(false));
+    final warningMessage = useState<String?>(null);
+    final hasEmailError = useState<bool>(false);
+    final hasPasswordError = useState<bool>(false);
+    final hasServerEndpointError = useState<bool>(false);
+
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
     final serverEndpoint = useState<String?>(null);
@@ -73,13 +73,20 @@ class CuratorLoginForm extends HookConsumerWidget {
     String clientFriendlyName = '';
 
     int remoteInitiateAttempts = 0;
-    final remoteCodeErrorText = useState<String?>(null);
     final selectedDevice = useState<DeviceItem?>(null);
     nsd.Discovery? discovery;
     final devices = useState<Map<String, DeviceItem>>({});
     final counterDetection = useState<int>(0);
 
     bool isDetecting = counterDetection.value > 0;
+
+    String? validateEmail(String email) {
+      final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+      if (!simpleEmailPattern.hasMatch(email)) {
+        return 'login_form_err_invalid_email'.tr();
+      }
+      return null;
+    }
 
     /// Handle API errors by printing them in debug mode
     void handleError(ApiErrorMessage message, dynamic error) {
@@ -92,25 +99,18 @@ class CuratorLoginForm extends HookConsumerWidget {
       if (kDebugMode) {
         debugPrint("[SignInScreen] No device found.");
       }
+
       // Show the Unable To Connect screen in fullscreen dialog
-      // late BuildContext dialogContext;
-      // Navigator.of(context).push(
-      //   MaterialPageRoute<void>(
-      //     fullscreenDialog: true,
-      //     builder: (BuildContext context) {
-      //       dialogContext = context;
-      //       return UnableToConnectScreen(
-      //         onRetry: () => {
-      //           Navigator.of(dialogContext).pop(),
-      //           Future.delayed(
-      //             const Duration(milliseconds: 300),
-      //             () => startLocalAndRemoteDetection(),
-      //           ),
-      //         },
-      //       );
-      //     },
-      //   ),
-      // );
+      context.pushRoute(
+        UnableToConnectRoute(
+          // onRetry: () {
+          //   context.pop();
+          //   Future.delayed(const Duration(milliseconds: 300), () {
+          //     //  startLocalAndRemoteDetection()
+          //   });
+          // },
+        ),
+      );
     }
 
     void updateDetectionCounter(int delta) {
@@ -238,7 +238,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
         deviceAdded = await checkDeviceStatus(
           baseUrl: baseUrl,
-          timeoutDelay: path.type == DevicePathType.local ? 1000 : 3000,
+          timeoutDelay: path.type == DevicePathType.local ? 60 * 1000 : 20 * 3000,
         );
         i++;
       }
@@ -285,7 +285,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
       return name;
     }
-
 
     /// Get remote devices from the remote refresh token
     Future<void> getRemoteDevices(Future<void> Function() initiateRemoteAccess) async {
@@ -359,7 +358,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       final email = emailController.text;
       if (EmailUtils.isEmail(email) && email != lastRemoteEmail && context.mounted && !loggingIn.value) {
         lastRemoteEmail = email;
-        remoteCodeErrorText.value = null;
         try {
           clientFriendlyName = await getClientFriendlyName();
           final response = await ref
@@ -384,12 +382,23 @@ class CuratorLoginForm extends HookConsumerWidget {
             }
             ref.read(remoteProvider.notifier).reference = response.body?.reference;
             // Show modal for remote access code
-            showRemoteCodeModal(context, () => getRemoteDevices(initiateRemoteAccess), handleError, initiateRemoteAccess);
+            showRemoteCodeModal(
+              context,
+              () => getRemoteDevices(initiateRemoteAccess),
+              handleError,
+              initiateRemoteAccess,
+            );
           } else {
             handleError(ApiErrorMessage.remoteApi, response);
           }
         } catch (error) {
           handleError(ApiErrorMessage.remoteApi, error);
+        }
+      } else if (email.isNotEmpty) {
+        final emailValidationError = validateEmail(email);
+        if (emailValidationError != null) {
+          hasEmailError.value = true;
+          warningMessage.value = emailValidationError;
         }
       }
     }
@@ -408,7 +417,10 @@ class CuratorLoginForm extends HookConsumerWidget {
             if (kDebugMode) {
               debugPrint("[SignInScreen] mDNS Device Found: ${service.toString()}");
             }
-            checkDeviceStatus(baseUrl: DeviceProvider.createBaseUrl(service.host!, service.port), timeoutDelay: 5000);
+            checkDeviceStatus(
+              baseUrl: DeviceProvider.createBaseUrl(service.host!, service.port),
+              timeoutDelay: 12 * 5000,
+            );
           }
         });
         // Stop discovery after x seconds if no device found
@@ -498,8 +510,20 @@ class CuratorLoginForm extends HookConsumerWidget {
             hasServerEndpointError.value ||
             hasPreviousLoginFailed.value;
         if (!shouldClear) return;
-        if (emailFocusNode.hasFocus || passwordFocusNode.hasFocus || serverEndpointFocusNode.hasFocus) {
-          clearAllErrors();
+        if (emailFocusNode.hasFocus && hasEmailError.value) {
+          hasEmailError.value = false;
+        }
+        if (passwordFocusNode.hasFocus && hasPasswordError.value) {
+          hasPasswordError.value = false;
+        }
+        if (serverEndpointFocusNode.hasFocus && hasServerEndpointError.value) {
+          hasServerEndpointError.value = false;
+        }
+        if (warningMessage.value != null) {
+          warningMessage.value = null;
+        }
+        if (hasPreviousLoginFailed.value) {
+          hasPreviousLoginFailed.value = false;
         }
       }
 
@@ -584,14 +608,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    // useEffect(() {
-    //   final serverUrl = getServerUrl();
-    //   if (serverUrl != null) {
-    //     serverEndpointController.text = serverUrl;
-    //   }
-    //   return null;
-    // }, []);
-
     void populateDevCredentials() async {
       const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
       await dotenv.load(fileName: '.env.$env');
@@ -605,14 +621,6 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       devices.value = {...devices.value, 'noveo device': DeviceItem(baseUrl: Uri.parse(serverUrl ?? ''))};
       selectedDevice.value = devices.value.entries.firstWhere((item) => item.key == 'noveo device').value;
-    }
-
-    String? validateEmail(String email) {
-      final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-      if (!simpleEmailPattern.hasMatch(email)) {
-        return 'login_form_err_invalid_email'.tr();
-      }
-      return null;
     }
 
     String? validateServerEndpoint(DeviceItem device) {
@@ -731,30 +739,25 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Widget buildWarningBanner() {
-      return ValueListenableBuilder<String?>(
-        valueListenable: warningMessage,
-        builder: (_, message, __) {
-          if (message == null) {
-            return const SizedBox.shrink();
-          }
-          return Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0x1FF44336), borderRadius: BorderRadius.circular(12)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.error, color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
-                    const SizedBox(width: 16.0),
-                    Expanded(child: Text(message)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24.0),
-            ],
-          );
-        },
+      if (warningMessage.value == null) {
+        return const SizedBox.shrink();
+      }
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0x1FF44336), borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.error, color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
+                const SizedBox(width: 16.0),
+                Expanded(child: Text(warningMessage.value!)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24.0),
+        ],
       );
     }
 
@@ -788,28 +791,18 @@ class CuratorLoginForm extends HookConsumerWidget {
             children: [
               buildServerEndpointAutocomplete(),
               const SizedBox(height: 32.0),
-              ValueListenableBuilder<bool>(
-                valueListenable: hasEmailError,
-                builder: (_, emailError, __) {
-                  return EmailInput(
-                    controller: emailController,
-                    focusNode: emailFocusNode,
-                    onSubmit: passwordFocusNode.requestFocus,
-                    hasExternalError: emailError,
-                  );
-                },
+              EmailInput(
+                controller: emailController,
+                focusNode: emailFocusNode,
+                onSubmit: passwordFocusNode.requestFocus,
+                hasExternalError: hasEmailError.value,
               ),
               const SizedBox(height: 32.0),
-              ValueListenableBuilder<bool>(
-                valueListenable: hasPasswordError,
-                builder: (_, passwordError, __) {
-                  return PasswordInput(
-                    controller: passwordController,
-                    focusNode: passwordFocusNode,
-                    onSubmit: login,
-                    hasExternalError: passwordError,
-                  );
-                },
+              PasswordInput(
+                controller: passwordController,
+                focusNode: passwordFocusNode,
+                onSubmit: login,
+                hasExternalError: hasPasswordError.value,
               ),
               const SizedBox(height: 24.0),
               GestureDetector(
