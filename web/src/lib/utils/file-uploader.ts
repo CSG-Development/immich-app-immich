@@ -5,7 +5,7 @@ import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { UploadState } from '$lib/models/upload-asset';
 import { uploadAssetsStore } from '$lib/stores/upload';
 import { uploadRequest } from '$lib/utils';
-import { addAssetsToAlbum, isWebSupportedAssetMimeType } from '$lib/utils/asset-utils';
+import { addAssetsToAlbum, isHEIC, isWebSupportedAssetMimeType } from '$lib/utils/asset-utils';
 import { ExecutorQueue } from '$lib/utils/executor-queue';
 import { asQueryString } from '$lib/utils/shared-links';
 import {
@@ -211,7 +211,7 @@ async function fileUploader({
         });
         responseData = response.data;
       } else {
-        if (isWebSupportedAssetMimeType(assetFile.type)) {
+        if (isWebSupportedAssetMimeType(assetFile.type) || isHEIC(assetFile)) {
           const response = await uploadRequest<AssetMediaResponseDto>({
             url: getBaseUrl() + '/assets' + (queryParams ? `?${queryParams}` : ''),
             data: formData,
