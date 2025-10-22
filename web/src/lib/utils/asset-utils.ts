@@ -385,13 +385,13 @@ export const getOS = () => {
   return 'Unknown';
 };
 
-if (getOS() === OS.IOS || getOS() === OS.MACOS) {
-  supportedAssetMimeTypes.add('image/heic').add('image/heif');
-}
-
 /**
  * Returns true if the asset is an image supported by web browsers, false otherwise
  */
+
+export const isHEIC = (file: File): boolean => {
+  return file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+};
 
 export function isWebSupportedAssetMimeType(type: string): boolean {
   if (!type) {
