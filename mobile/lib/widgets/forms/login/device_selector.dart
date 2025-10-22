@@ -12,7 +12,11 @@ class DeviceItem {
 
   DeviceItem({this.baseUrl, this.about, this.status, this.isTemporary = false});
 
-  String get name => about?.hostname.isNotEmpty == true ? about!.hostname : baseUrl?.host ?? 'Unknown Device';
+  String get name => isTemporary
+      ? baseUrl.toString()
+      : about?.hostname.isNotEmpty == true
+      ? about!.hostname
+      : baseUrl?.host ?? 'Unknown Device';
 
   bool get isReady => status == null || status!.state == StatusState.ready;
 
@@ -49,6 +53,7 @@ class DeviceSelector extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final manualInputDevice = useState<DeviceItem?>(null);
+    final isDropdownOpen = useState<bool>(false);
 
     // Use useEffect to handle controller text updates
     useEffect(() {
@@ -67,7 +72,21 @@ class DeviceSelector extends HookWidget {
       return null;
     }, [selectedDevice]);
 
-    Widget _buildIconDevice(DeviceItem? device) {
+    // Track focus changes to update dropdown state
+    useEffect(() {
+      if (focusNode == null) return null;
+      
+      void onFocusChange() {
+        if (!focusNode!.hasFocus) {
+          isDropdownOpen.value = false;
+        }
+      }
+      
+      focusNode!.addListener(onFocusChange);
+      return () => focusNode!.removeListener(onFocusChange);
+    }, [focusNode]);
+
+    Widget buildIconDevice(DeviceItem? device) {
       late Widget icon;
       if (device == null) {
         if (isDetecting) {
@@ -81,10 +100,10 @@ class DeviceSelector extends HookWidget {
       return SizedBox(height: 40.0, width: 50.0, child: icon);
     }
 
-    List<DeviceItem> _getFilteredOptions(String input) {
+    List<DeviceItem> getFilteredOptions(String input) {
       final List<DeviceItem> items = devices.cast<DeviceItem>();
-      final filteredItems = input.isEmpty 
-          ? items 
+      final filteredItems = input.isEmpty
+          ? items
           : items.where((device) => device.name.toLowerCase().contains(input.toLowerCase())).toList();
 
       // Check if manual input should be added
@@ -92,10 +111,7 @@ class DeviceSelector extends HookWidget {
         final exists = items.any((device) => device.name.toLowerCase() == input.toLowerCase());
         if (!exists) {
           // Create temporary device for manual input
-          final manualDevice = DeviceItem(
-            baseUrl: Uri.tryParse(input),
-            isTemporary: true,
-          );
+          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input), isTemporary: true);
           manualInputDevice.value = manualDevice;
           return [...filteredItems, manualDevice];
         } else {
@@ -108,7 +124,7 @@ class DeviceSelector extends HookWidget {
       return filteredItems;
     }
 
-    void _onOptionSelected(DeviceItem value) {
+    void onOptionSelected(DeviceItem value) {
       controller.text = value.name;
       onDeviceSelected(value);
       // Clear temporary device after selection
@@ -131,10 +147,18 @@ class DeviceSelector extends HookWidget {
                 focusNode: focusNode,
                 optionsBuilder: (value) {
                   final input = value.text.trim();
-                  return _getFilteredOptions(input);
+                  final options = getFilteredOptions(input);
+                  // Update dropdown state based on whether options are available and field has focus
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
+                  });
+                  return options;
                 },
                 displayStringForOption: (value) => value.name,
-                onSelected: _onOptionSelected,
+                onSelected: (option) {
+                  isDropdownOpen.value = false;
+                  onOptionSelected(option);
+                },
                 fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                   return ServerEndpointInput(
                     label: isDetecting
@@ -144,8 +168,37 @@ class DeviceSelector extends HookWidget {
                     focusNode: focusNode,
                     leadingIcon: Padding(
                       padding: const EdgeInsets.only(left: 8.0),
-                      child: _buildIconDevice(selectedDevice),
+                      child: buildIconDevice(selectedDevice),
                     ),
+                    suffixIcon: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                      icon: Icon(
+                        isDropdownOpen.value ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        if (focusNode.hasFocus && isDropdownOpen.value) {
+                          focusNode.unfocus();
+                          isDropdownOpen.value = false;
+                        } else {
+                          focusNode.requestFocus();
+                          // Trigger optionsBuilder by notifying listeners
+                          controller.value = controller.value.copyWith(
+                            text: controller.text,
+                            selection: TextSelection.collapsed(offset: controller.text.length),
+                            composing: TextRange.empty,
+                          );
+                        }
+                      },
+                    ),
+                    onSubmit: () {
+                      if (controller.text.isEmpty) {
+                        onDeviceSelected(null);
+                      } else {
+                        onFieldSubmitted();
+                      }
+                    },
                   );
                 },
                 optionsViewBuilder: (context, onSelected, options) {
@@ -164,14 +217,8 @@ class DeviceSelector extends HookWidget {
                           itemBuilder: (_, index) {
                             final option = options.elementAt(index);
                             return ListTile(
-                              leading: option.isTemporary 
-                                  ? const Icon(Icons.add)
-                                  : _buildIconDevice(option),
-                              title: Text(
-                                option.isTemporary 
-                                  ? option.name
-                                  : option.name + option.warnStatus(context),
-                              ),
+                              leading: option.isTemporary ? const Icon(Icons.add) : buildIconDevice(option),
+                              title: Text(option.isTemporary ? option.name : option.name + option.warnStatus(context)),
                               onTap: () {
                                 onSelected(option);
                               },

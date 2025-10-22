@@ -2729,3 +2729,42 @@ class TrashRoute extends PageRouteInfo<void> {
     },
   );
 }
+
+/// generated route for
+/// [UnableToConnectPage]
+class UnableToConnectRoute extends PageRouteInfo<UnableToConnectRouteArgs> {
+  UnableToConnectRoute({
+    Key? key,
+    VoidCallback? onRetry,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UnableToConnectRoute.name,
+         args: UnableToConnectRouteArgs(key: key, onRetry: onRetry),
+         initialChildren: children,
+       );
+
+  static const String name = 'UnableToConnectRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<UnableToConnectRouteArgs>(
+        orElse: () => const UnableToConnectRouteArgs(),
+      );
+      return UnableToConnectPage(key: args.key, onRetry: args.onRetry);
+    },
+  );
+}
+
+class UnableToConnectRouteArgs {
+  const UnableToConnectRouteArgs({this.key, this.onRetry});
+
+  final Key? key;
+
+  final VoidCallback? onRetry;
+
+  @override
+  String toString() {
+    return 'UnableToConnectRouteArgs{key: $key, onRetry: $onRetry}';
+  }
+}
