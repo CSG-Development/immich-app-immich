@@ -1,10 +1,9 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { page } from '$app/stores';
+import { page } from '$app/state';
 import { AppRoute } from '$lib/constants';
 import { getAssetInfo } from '@immich/sdk';
 import type { NavigationTarget } from '@sveltejs/kit';
-import { get } from 'svelte/store';
 
 export type AssetGridRouteSearchParams = {
   at: string | null | undefined;
@@ -29,31 +28,28 @@ export function getAssetInfoFromParam({ assetId, slug, key }: { assetId?: string
 }
 
 function currentUrlWithoutAsset() {
-  const $page = get(page);
   // This contains special casing for the /photos/:assetId route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
-  return isPhotosRoute($page.route.id)
-    ? resolve(AppRoute.PHOTOS) + $page.url.search
-    : $page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + $page.url.search;
+  return isPhotosRoute(page.route.id)
+    ? resolve(AppRoute.PHOTOS) + page.url.search
+    : page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + page.url.search;
 }
 
 export function currentUrlReplaceAssetId(assetId: string) {
-  const $page = get(page);
-  const params = new URLSearchParams($page.url.search);
+  const params = new URLSearchParams(page.url.search);
   // always remove the assetGridScrollTargetParams
   params.delete('at');
   const paramsString = params.toString();
   const searchparams = paramsString == '' ? '' : '?' + params.toString();
   // this contains special casing for the /photos/:assetId photos route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
-  return isPhotosRoute($page.route.id)
+  return isPhotosRoute(page.route.id)
     ? resolve(`${AppRoute.PHOTOS}/${assetId}${searchparams}`)
-    : `${$page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
+    : `${page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
 }
 
 function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchParams | null) {
-  const $page = get(page);
-  const parsed = new URL(url, $page.url);
+  const parsed = new URL(url, page.url);
 
   const { at: assetId } = searchParams || { at: null };
 
@@ -61,7 +57,7 @@ function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchPar
     return parsed.pathname;
   }
 
-  const params = new URLSearchParams($page.url.search);
+  const params = new URLSearchParams(page.url.search);
   if (assetId) {
     params.set('at', assetId);
   }
@@ -69,8 +65,7 @@ function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchPar
 }
 
 function currentUrl() {
-  const $page = get(page);
-  const current = $page.url;
+  const current = page.url;
   return current.pathname + current.search + current.hash;
 }
 
