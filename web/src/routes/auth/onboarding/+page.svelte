@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import OnboardingBackup from '$lib/components/onboarding-page/onboarding-backup.svelte';
   import OnboardingCard from '$lib/components/onboarding-page/onboarding-card.svelte';
   import OnboardingHello from '$lib/components/onboarding-page/onboarding-hello.svelte';
@@ -95,7 +95,7 @@
   };
 
   $effect(() => {
-    const stepState = $page.url.searchParams.get('step');
+    const stepState = page.url.searchParams.get('step');
     const temporaryIndex = onboardingSteps.findIndex((step) => step.name === stepState);
     index = temporaryIndex === -1 ? 0 : temporaryIndex;
   });

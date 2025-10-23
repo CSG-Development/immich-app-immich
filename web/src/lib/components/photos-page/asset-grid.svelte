@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { resizeObserver, type OnResizeCallback } from '$lib/actions/resize-observer';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
@@ -227,7 +227,7 @@
 
         if (assetGridUpdate) {
           setTimeout(() => {
-            const asset = $page.url.searchParams.get('at');
+            const asset = page.url.searchParams.get('at');
             if (asset) {
               $gridScrollTarget = { at: asset };
               void navigate(
@@ -454,7 +454,7 @@
     }
   };
 
-  let { slideshowNavigation, slideshowState } = slideshowStore;
+  let { slideshowNavigation, slideshowState, isShuffled } = slideshowStore;
 
   const viewAssetWithPreload = async ({
     asset,
@@ -472,6 +472,37 @@
       return fullAsset;
     }
   };
+
+  const shuffleTimelineAssets = async () => {
+    const assets = await timelineManager.getAssets();
+
+    const firstAsset = assets.find((asset) => asset.id === $viewingAsset.id);
+    if (!firstAsset) {
+      return;
+    }
+
+    const rest = assets.filter((asset) => asset.id !== $viewingAsset.id);
+    const shuffledRest = rest.sort(() => Math.random() - 0.5);
+
+    shuffledTimelineAssets = [firstAsset, ...shuffledRest];
+  };
+
+  $effect(() => {
+    if (
+      $viewingAsset &&
+      $slideshowState === SlideshowState.PlaySlideshow &&
+      page.url.pathname.includes(AppRoute.ALBUMS) &&
+      !$isShuffled
+    ) {
+      shuffleTimelineAssets()
+        .then(() => {
+          $isShuffled = true;
+        })
+        .catch((error) => {
+          console.warn(error);
+        });
+    }
+  });
 
   const handlePreviousFromSelectedAssets = async () => {
     const index = selectedAssets.findIndex((el) => el.id === $viewingAsset.id);
@@ -569,19 +600,9 @@
   };
 
   const handlePlaySlideshow = async () => {
-    const assets = await timelineManager.getAssets();
-
-    const first = assets.find((a) => a.id === $viewingAsset.id);
-    if (!first) {
-      return;
+    if ($slideshowNavigation === SlideshowNavigation.Shuffle) {
+      await shuffleTimelineAssets();
     }
-
-    const rest = assets.filter((a) => a.id !== $viewingAsset.id);
-
-    const shuffledRest = rest.sort(() => Math.random() - 0.5);
-
-    shuffledTimelineAssets = [first, ...shuffledRest];
-
     return ($slideshowState = SlideshowState.PlaySlideshow);
   };
 
