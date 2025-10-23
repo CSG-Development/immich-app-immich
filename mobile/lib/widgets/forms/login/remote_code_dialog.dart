@@ -7,14 +7,31 @@ import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
 import 'package:homecloud_frontend/utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+class ActionItem {
+  final String label;
+  final VoidCallback onPressed;
+  final bool isEnabled;
+  final bool isLoading;
+  final bool isDisabled;
+  final bool isVisible;
+  ActionItem({
+    required this.label,
+    required this.onPressed,
+    this.isEnabled = true,
+    this.isLoading = false,
+    this.isDisabled = false,
+    this.isVisible = true,
+  });
+}
+
 class RemoteCodeModal extends HookConsumerWidget {
-  final Future<void> Function() getRemoteDevices;
+  final Future<void> Function() onSuccess;
   final void Function(ApiErrorMessage, Object) handleError;
   final Future<void> Function() initiateRemoteAccess;
 
   const RemoteCodeModal({
     super.key,
-    required this.getRemoteDevices,
+    required this.onSuccess,
     required this.handleError,
     required this.initiateRemoteAccess,
   });
@@ -63,7 +80,7 @@ class RemoteCodeModal extends HookConsumerWidget {
               debugPrint("[SignInScreen] Remote access authenticated, fetching remote devices...");
             }
             // Authenticated with the Remote Access server, we can now get remote devices
-            getRemoteDevices();
+            onSuccess();
             if (context.mounted) {
               Navigator.of(context).pop(); // Close the modal
             }
@@ -90,6 +107,28 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeLoading.value = false;
     }
 
+    List<ActionItem> actions = [
+      ActionItem(
+        label: 'curator.sign_in_screen_remote_code_skip'.tr(),
+        onPressed: () {
+          Navigator.of(context).pop();
+          onSuccess();
+        },
+        isEnabled: true,
+        isLoading: false,
+        isDisabled: false,
+        isVisible: true,
+      ),
+      ActionItem(
+        label: 'curator.sign_in_screen_remote_code_verify'.tr(),
+        onPressed: checkRemoteAccessCode,
+        isEnabled: true,
+        isLoading: remoteCodeLoading.value,
+        isDisabled: false,
+        isVisible: true,
+      ),
+    ];
+
     return AlertDialog(
       title: Text('curator.sign_in_screen_remote_code_title'.tr()),
       content: Column(
@@ -100,7 +139,7 @@ class RemoteCodeModal extends HookConsumerWidget {
           TextFormField(
             decoration: InputDecoration(
               labelText: 'curator.sign_in_screen_field_remote_code_label'.tr(),
-              helperText: 'curator.sign_in_screen_field_remote_code_hint'.tr(),
+              // helperText: 'curator.sign_in_screen_field_remote_code_hint'.tr(),
               helperMaxLines: 2,
               errorText: remoteCodeErrorText.value,
               errorMaxLines: 2,
@@ -121,6 +160,7 @@ class RemoteCodeModal extends HookConsumerWidget {
                   : null,
             ),
             autofillHints: [AutofillHints.oneTimeCode],
+            autofocus: true,
             controller: remoteCodeController,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
@@ -135,27 +175,18 @@ class RemoteCodeModal extends HookConsumerWidget {
           ),
         ],
       ),
-      actions: [
-        if (remoteCodeExpired.value)
-          TextButton(
-            onPressed: () {
-              if (context.mounted) Navigator.of(context).pop();
-            },
-            child: Text('curator.sign_in_screen_remote_code_cancel'.tr()),
-          ),
-        ElevatedButton(
-          onPressed: () {
-            if (context.mounted) Navigator.of(context).pop();
-          },
-          child: Text('curator.sign_in_screen_remote_code_skip'.tr()),
-        ),
-        ElevatedButton(
-          onPressed: remoteCodeLoading.value ? null : checkRemoteAccessCode,
-          child: remoteCodeLoading.value
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text('curator.sign_in_screen_remote_code_verify'.tr()),
-        ),
-      ],
+      actions: actions
+          .where((action) => action.isVisible)
+          .map((action) => TextButton(
+                onPressed: action.onPressed,
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.all(12.0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(action.label),
+              ))
+          .toList(),
     );
   }
 }
@@ -163,17 +194,14 @@ class RemoteCodeModal extends HookConsumerWidget {
 /// Show modal dialog for remote code input
 Future<void> showRemoteCodeModal(
   BuildContext context,
-  Future<void> Function() getRemoteDevices,
+  Future<void> Function() onSuccess,
   void Function(ApiErrorMessage, Object) handleError,
   Future<void> Function() initiateRemoteAccess,
 ) {
   return showDialog(
     context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) => RemoteCodeModal(
-      getRemoteDevices: getRemoteDevices,
-      handleError: handleError,
-      initiateRemoteAccess: initiateRemoteAccess,
-    ),
+    barrierDismissible: true,
+    builder: (BuildContext context) =>
+        RemoteCodeModal(onSuccess: onSuccess, handleError: handleError, initiateRemoteAccess: initiateRemoteAccess),
   );
 }

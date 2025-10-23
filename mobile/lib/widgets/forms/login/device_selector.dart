@@ -75,13 +75,13 @@ class DeviceSelector extends HookWidget {
     // Track focus changes to update dropdown state
     useEffect(() {
       if (focusNode == null) return null;
-      
+
       void onFocusChange() {
         if (!focusNode!.hasFocus) {
           isDropdownOpen.value = false;
         }
       }
-      
+
       focusNode!.addListener(onFocusChange);
       return () => focusNode!.removeListener(onFocusChange);
     }, [focusNode]);
@@ -240,7 +240,14 @@ class DeviceSelector extends HookWidget {
             width: 24.0,
             child: isDetecting
                 ? const CircularProgressIndicator.adaptive()
-                : IconButton(icon: const Icon(Icons.refresh), padding: EdgeInsets.zero, onPressed: onRefresh),
+                : IconButton(
+                    icon: Icon(
+                      Icons.refresh,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: onRefresh,
+                  ),
           ),
         ),
       ],
