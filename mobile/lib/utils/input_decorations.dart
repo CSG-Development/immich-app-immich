@@ -7,6 +7,7 @@ class LoginInputDecorations {
     required String labelText,
     required String hintText,
     Widget? suffixIcon,
+    Widget? prefixIcon,
     int errorMaxLines = 1,
     bool isError = false,
   }) {
@@ -39,6 +40,7 @@ class LoginInputDecorations {
       hintText: hintText,
       errorMaxLines: errorMaxLines,
       suffixIcon: suffixIcon,
+      prefixIcon: prefixIcon,
       hintStyle: TextStyle(
         fontWeight: FontWeight.normal,
         fontSize: 14,

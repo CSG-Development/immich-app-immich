@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_editor/image_editor.dart';
@@ -69,33 +70,29 @@ class EditImagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return FutureBuilder<Uint8List>(
-          future: _imageToUint8List(image),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return ImageEditor(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: FutureBuilder<Uint8List>(
+        future: _imageToUint8List(image),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ImageEditor(
+              config: ImageEditorConfig(
                 imageBytes: snapshot.data!,
                 onImageEditingComplete: (bytes) {
                   _saveEditedImage(context, asset, Image.memory(bytes), ref);
                 },
                 onCloseEditor: () {},
-              );
-            }
-
-            if (snapshot.hasError) {
-              return Center(
-                child: Text('Error: ${snapshot.error}'),
-              );
-            }
-
-            return const Center(
-              child: CircularProgressIndicator(),
+              ),
             );
-          },
-        );
-      },
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          return const Center(child: CircularProgressIndicator());
+        },
+      ),
     );
   }
 }

@@ -18,6 +18,8 @@ import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
 import com.seagate.curator.stxphotos.android.TelemetryWrapperPlugin
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import com.seagate.curator.stxphotos.android.update.UpdateApi
+import com.seagate.curator.stxphotos.android.update.UpdateApiImpl
 
 class MainActivity : FlutterFragmentActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -43,6 +45,7 @@ class MainActivity : FlutterFragmentActivity() {
       BackgroundWorkerFgHostApi.setUp(messenger, BackgroundWorkerApiImpl(ctx))
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
       NativeClipboardApi.setUp(flutterEngine.dartExecutor.binaryMessenger, ClipboardMessagesImpl(ctx))
+      UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
     }
   }
 }

@@ -11,11 +11,13 @@ pigeon:
 	dart run pigeon --input pigeon/background_worker_api.dart
 	dart run pigeon --input pigeon/connectivity_api.dart
 	dart run pigeon --input pigeon/native_clipboard_api.dart
+	dart run pigeon --input pigeon/update_api.dart
 	dart format lib/platform/native_sync_api.g.dart
 	dart format lib/platform/thumbnail_api.g.dart
 	dart format lib/platform/background_worker_api.g.dart
 	dart format lib/platform/connectivity_api.g.dart
 	dart format lib/platform/native_clipboard_api.g.dart
+	dart format lib/platform/update_api.g.dart
 
 watch:
 	dart run build_runner watch --delete-conflicting-outputs

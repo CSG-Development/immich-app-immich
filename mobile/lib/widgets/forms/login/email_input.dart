@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:immich_mobile/widgets/forms/login/input_decorations.dart';
-import 'package:immich_mobile/widgets/forms/login/trim_formatter.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
+import 'package:immich_mobile/utils/trim_formatter.dart';
 
 class EmailInput extends StatelessWidget {
   final TextEditingController controller;
