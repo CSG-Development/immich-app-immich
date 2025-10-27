@@ -6,23 +6,8 @@ import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
 import 'package:homecloud_frontend/utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-class ActionItem {
-  final String label;
-  final VoidCallback onPressed;
-  final bool isEnabled;
-  final bool isLoading;
-  final bool isDisabled;
-  final bool isVisible;
-  ActionItem({
-    required this.label,
-    required this.onPressed,
-    this.isEnabled = true,
-    this.isLoading = false,
-    this.isDisabled = false,
-    this.isVisible = true,
-  });
-}
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/widgets/forms/pin_input.dart';
 
 class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function() onSuccess;
@@ -39,94 +24,179 @@ class RemoteCodeModal extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final remoteCodeController = useTextEditingController.fromValue(TextEditingValue.empty);
-    final remoteCodeFocusNode = useFocusNode();
-    final loggingIn = useState<bool>(false);
-
     final remoteCodeLoading = useState<bool>(false);
     final remoteCodeExpired = useState<bool>(false);
-
-    String lastCodeChecked = '';
-
     final remoteCodeErrorText = useState<String?>(null);
+    final isValidating = useState<bool>(false);
+    final codeLength = useState<int>(0);
+
+    useEffect(() {
+      void listener() {
+        codeLength.value = remoteCodeController.text.length;
+      }
+
+      remoteCodeController.addListener(listener);
+      return () => remoteCodeController.removeListener(listener);
+    }, [remoteCodeController]);
 
     /// Validate the remote access code and get access and refresh tokens
     ///
     /// Then get the remote devices
     Future<void> checkRemoteAccessCode() async {
-      // final tr = AppLocalizations.of(context)!;
-      final code = remoteCodeController.text;
-      if (code.isNotEmpty && code != lastCodeChecked) {
-        lastCodeChecked = code;
-        remoteCodeLoading.value = true;
-        remoteCodeErrorText.value = null;
+      // Prevent duplicate validation calls
+      if (isValidating.value || remoteCodeLoading.value) {
+        return;
+      }
 
-        try {
-          final response = await ref
-              .read(remoteProvider)
-              .api
-              .clientV1AuthTokenPost(
-                type: ClientV1AuthTokenPostType.email,
-                body: Validate$RequestBody(code: code, reference: ref.read(remoteProvider).reference!),
-              );
-          if (kDebugMode) {
-            debugPrint(
-              "[SignInScreen] Remote code validation response: ${response.isSuccessful}, body: ${response.body}",
+      final code = remoteCodeController.text;
+      if (codeLength.value != 6) {
+        return;
+      }
+
+      isValidating.value = true;
+      remoteCodeLoading.value = true;
+      remoteCodeErrorText.value = null;
+
+      try {
+        final response = await ref
+            .read(remoteProvider)
+            .api
+            .clientV1AuthTokenPost(
+              type: ClientV1AuthTokenPostType.email,
+              body: Validate$RequestBody(code: code, reference: ref.read(remoteProvider).reference!),
             );
-          }
-          // 	Success: JWT access and refresh tokens are returned.
-          if (response.isSuccessful) {
-            ref.read(remoteProvider.notifier).setAuthToken(auth: response.body!);
-            if (kDebugMode) {
-              debugPrint("[SignInScreen] Remote access authenticated, fetching remote devices...");
-            }
-            // Authenticated with the Remote Access server, we can now get remote devices
-            onSuccess();
-            if (context.mounted) {
-              Navigator.of(context).pop(); // Close the modal
-            }
-          } else {
-            // Generic error message
-            remoteCodeErrorText.value = extractErrorMessage(response);
-            // Invalid code
-            if (remoteCodeErrorText.value!.contains('invalid')) {
-              remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
-            }
-            // Expired code
-            else if (remoteCodeErrorText.value!.contains('expired')) {
-              remoteCodeExpired.value = true;
-              remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_expired'.tr();
-            }
-          }
+        if (kDebugMode) {
+          debugPrint(
+            "[SignInScreen] Remote code validation response: ${response.isSuccessful}, body: ${response.body}",
+          );
         }
-        // Network error => Remote Access server unreachable?
-        catch (error) {
-          remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
-          handleError(ApiErrorMessage.remoteApi, error);
+        // 	Success: JWT access and refresh tokens are returned.
+        if (response.isSuccessful) {
+          ref.read(remoteProvider.notifier).setAuthToken(auth: response.body!);
+          if (kDebugMode) {
+            debugPrint("[SignInScreen] Remote access authenticated, fetching remote devices...");
+          }
+          // Authenticated with the Remote Access server, we can now get remote devices
+          onSuccess();
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Close the modal
+          }
+        } else {
+          // Generic error message
+          remoteCodeErrorText.value = extractErrorMessage(response);
+          // Invalid code
+          if (remoteCodeErrorText.value!.contains('invalid')) {
+            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
+          }
+          // Expired code
+          else if (remoteCodeErrorText.value!.contains('expired')) {
+            remoteCodeExpired.value = true;
+            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_expired'.tr();
+          }
         }
       }
-      remoteCodeLoading.value = false;
+      // Network error => Remote Access server unreachable?
+      catch (error) {
+        remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
+        handleError(ApiErrorMessage.remoteApi, error);
+      } finally {
+        remoteCodeLoading.value = false;
+        isValidating.value = false;
+      }
     }
 
-    List<ActionItem> actions = [
-      ActionItem(
-        label: 'curator.sign_in_screen_remote_code_skip'.tr(),
-        onPressed: () {
-          Navigator.of(context).pop();
-          onSuccess();
+    final actions = [
+      () {
+        final isLoading = remoteCodeLoading.value;
+        return TextButton(
+          onPressed: isLoading ? null : () {
+            Navigator.of(context).pop();
+            onSuccess();
+          },
+          style: TextButton.styleFrom(
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.all(12.0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'curator.sign_in_screen_remote_code_skip'.tr(),
+              ),
+            ],
+          ),
+        );
+      },
+      // Allow access button - visible when expired
+      if (remoteCodeExpired.value)
+        () {
+          final isLoading = remoteCodeLoading.value;
+          return TextButton(
+            onPressed: isLoading ? null : () {
+              // Clear error state and code input when resending
+              remoteCodeErrorText.value = null;
+              remoteCodeController.clear();
+              remoteCodeExpired.value = false;
+              initiateRemoteAccess();
+            },
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.all(12.0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: isLoading
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        context.colorScheme.primary,
+                      ),
+                    ),
+                  )
+                : Text(
+                    'curator.sign_in_screen_remote_code_resend'.tr(),
+                    style: TextStyle(
+                      color: context.colorScheme.primary,
+                    ),
+                  ),
+          );
         },
-        isEnabled: true,
-        isLoading: false,
-        isDisabled: false,
-        isVisible: true,
-      ),
-      ActionItem(
-        label: 'curator.sign_in_screen_remote_code_verify'.tr(),
-        onPressed: checkRemoteAccessCode,
-        isEnabled: true,
-        isLoading: remoteCodeLoading.value,
-        isDisabled: false,
-        isVisible: true,
-      ),
+      // Submit code button - visible when not expired
+      if (!remoteCodeExpired.value)
+        () {
+          final isLoading = remoteCodeLoading.value;
+          final isDisabled = codeLength.value != 6 || isValidating.value;
+          return TextButton(
+            onPressed: (isLoading || isDisabled) ? null : checkRemoteAccessCode,
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.all(12.0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: isLoading
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        context.colorScheme.primary,
+                      ),
+                    ),
+                  )
+                : Text(
+                    'curator.sign_in_screen_remote_code_allow_access'.tr(),
+                    style: TextStyle(
+                      color: isDisabled
+                          ? context.colorScheme.secondary
+                          : context.colorScheme.primary,
+                    ),
+                  ),
+          );
+        },
     ];
 
     return AlertDialog(
@@ -135,58 +205,38 @@ class RemoteCodeModal extends HookConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('curator.sign_in_screen_remote_code_description'.tr(), style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 16),
-          TextFormField(
-            decoration: InputDecoration(
-              labelText: 'curator.sign_in_screen_field_remote_code_label'.tr(),
-              // helperText: 'curator.sign_in_screen_field_remote_code_hint'.tr(),
-              helperMaxLines: 2,
-              errorText: remoteCodeErrorText.value,
-              errorMaxLines: 2,
-              // Show refresh button if code expired
-              suffixIcon: remoteCodeExpired.value && !remoteCodeLoading.value
-                  ? IconButton(
-                      icon: const Icon(Icons.refresh),
-                      color: Theme.of(context).colorScheme.primary,
-                      tooltip: 'curator.sign_in_screen_button_request_new_code'.tr(),
-                      onPressed: () {
-                        initiateRemoteAccess();
-                      },
-                    )
-                  : null,
-              // Show loading indicator while requesting/validating code
-              suffix: remoteCodeLoading.value
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : null,
+          const SizedBox(height: 24),
+          Opacity(
+            opacity: (remoteCodeLoading.value || isValidating.value) ? 0.5 : 1.0,
+            child: AbsorbPointer(
+              absorbing: remoteCodeLoading.value || isValidating.value,
+              child: PinInput(
+                controller: remoteCodeController,
+                onChanged: (value) {
+                  if (remoteCodeErrorText.value != null) {
+                    remoteCodeErrorText.value = null;
+                  }
+                },
+                length: 6,
+                autoFocus: true,
+                hasError: remoteCodeErrorText.value != null,
+              ),
             ),
-            autofillHints: [AutofillHints.oneTimeCode],
-            autofocus: true,
-            controller: remoteCodeController,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            focusNode: remoteCodeFocusNode,
-            enabled: !remoteCodeLoading.value && !loggingIn.value,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            onChanged: (value) {
-              if (remoteCodeErrorText.value != null) {
-                remoteCodeErrorText.value = null;
-              }
-            },
           ),
+          // Error message display
+          if (remoteCodeErrorText.value != null)
+            ...[
+              const SizedBox(height: 8),
+              Text(
+                remoteCodeErrorText.value!,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colorScheme.error,
+                ),
+                maxLines: 2,
+              ),]
         ],
       ),
-      actions: actions
-          .where((action) => action.isVisible)
-          .map((action) => TextButton(
-                onPressed: action.onPressed,
-                style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.all(12.0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(action.label),
-              ))
-          .toList(),
+      actions: actions.map((actionBuilder) => actionBuilder()).toList(),
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
-import 'package:immich_mobile/widgets/forms/login/login_button.dart';
+import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
@@ -28,6 +28,8 @@ class RemoteAccessForm extends HookConsumerWidget {
     final warningMessage = useState<String?>(null);
     final hasEmailError = useState<bool>(false);
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
+
+    bool canSubmit = !hasEmailError.value && emailController.text.isNotEmpty;
 
     String clientFriendlyName = '';
 
@@ -86,20 +88,7 @@ class RemoteAccessForm extends HookConsumerWidget {
     }
 
     /// Initiate remote access authentication by sending a code to the given email
-    Future<void> initiateRemoteAccess() async {
-      final email = emailController.text;
-
-      emailFocusNode.unfocus();
-
-      if (email.isEmpty) return;
-
-      final emailError = validateEmail(email);
-      if (emailError != null) {
-        hasEmailError.value = true;
-        warningMessage.value = emailError;
-        return;
-      }
-
+    Future<void> initiateRemoteAccess(String email) async {
       try {
         clientFriendlyName = await getClientFriendlyName();
         final response = await ref
@@ -136,14 +125,27 @@ class RemoteAccessForm extends HookConsumerWidget {
     }
 
     Future<void> handleNextPress() async {
-      initiateRemoteAccess();
+      final email = emailController.text;
+
+      emailFocusNode.unfocus();
+
+      if (email.isEmpty) return;
+
+      final emailError = validateEmail(email);
+      if (emailError != null) {
+        hasEmailError.value = true;
+        warningMessage.value = emailError;
+        return;
+      }
+
+      initiateRemoteAccess(email);
       showRemoteCodeModal(
         context,
         () async {
           switchToCuratorLogin();
         },
         handleError,
-        initiateRemoteAccess,
+        () => initiateRemoteAccess(email),
       );
     }
 
@@ -171,6 +173,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         }
       };
     }, []);
+
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +203,17 @@ class RemoteAccessForm extends HookConsumerWidget {
           ),
         ),
         const SizedBox(height: 24.0),
-        LoginButton(onPressed: handleNextPress, withIcon: false, isDisabled: hasEmailError.value),
+        ValueListenableBuilder(
+          valueListenable: emailController,
+          builder: (_, value, _) {
+            return LoginSubmitButton(
+              onPressed: handleNextPress,
+              withIcon: false,
+              isDisabled: value.text.isEmpty,
+              label: 'next'.tr(),
+            );
+          },
+        ),
       ],
     );
   }

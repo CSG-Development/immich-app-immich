@@ -263,7 +263,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         await dotenv.load(fileName: '.env.$env');
         final serverUrl = dotenv.env['DEV_SERVER_URL'];
         final useMock =
-            isDevEnvironment &&
+            // isDevEnvironment &&
             Uri.parse(serverUrl ?? '').host == baseUrl.host &&
             path.type == DevicePathType.public;
 
