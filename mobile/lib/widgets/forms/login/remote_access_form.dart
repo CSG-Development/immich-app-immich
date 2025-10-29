@@ -29,8 +29,6 @@ class RemoteAccessForm extends HookConsumerWidget {
     final hasEmailError = useState<bool>(false);
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
-    bool canSubmit = !hasEmailError.value && emailController.text.isNotEmpty;
-
     String clientFriendlyName = '';
 
     String? validateEmail(String email) {
@@ -126,17 +124,9 @@ class RemoteAccessForm extends HookConsumerWidget {
 
     Future<void> handleNextPress() async {
       final email = emailController.text;
-
+      final isDisabled = email.isEmpty || validateEmail(email) != null;
+      if (isDisabled) return;
       emailFocusNode.unfocus();
-
-      if (email.isEmpty) return;
-
-      final emailError = validateEmail(email);
-      if (emailError != null) {
-        hasEmailError.value = true;
-        warningMessage.value = emailError;
-        return;
-      }
 
       initiateRemoteAccess(email);
       showRemoteCodeModal(
@@ -153,9 +143,18 @@ class RemoteAccessForm extends HookConsumerWidget {
       emailController.text = ref.read(deviceProvider).login;
 
       void onFocusChange() {
+        debugPrint("emailError: $emailController.text");
         if (emailFocusNode.hasFocus) {
           hasEmailError.value = false;
           warningMessage.value = null;
+        } else {
+          if (emailController.text.isEmpty) return;
+          final emailError = validateEmail(emailController.text);
+          if (emailError != null) {
+            hasEmailError.value = true;
+            warningMessage.value = emailError;
+            return;
+          }
         }
       }
 
@@ -173,7 +172,6 @@ class RemoteAccessForm extends HookConsumerWidget {
         }
       };
     }, []);
-
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -209,7 +207,7 @@ class RemoteAccessForm extends HookConsumerWidget {
             return LoginSubmitButton(
               onPressed: handleNextPress,
               withIcon: false,
-              isDisabled: value.text.isEmpty,
+              isDisabled: value.text.isEmpty || validateEmail(value.text) != null,
               label: 'next'.tr(),
             );
           },

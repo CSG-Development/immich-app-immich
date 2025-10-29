@@ -86,18 +86,24 @@ class DeviceSelector extends HookWidget {
       return () => focusNode!.removeListener(onFocusChange);
     }, [focusNode]);
 
-    Widget buildIconDevice(DeviceItem? device) {
-      late Widget icon;
+    Widget? buildIconDevice(DeviceItem? device) {
+      late Widget? icon;
       if (device == null) {
         if (isDetecting) {
           icon = const Icon(Icons.search, size: 32);
         } else {
-          icon = const Icon(Icons.cloud_off, size: 32, color: Colors.red);
+          // icon = const Icon(Icons.cloud_off, size: 32, color: Colors.red);
+          icon = null;
         }
       } else {
         icon = Image.asset("assets/device.webp", width: 50, height: 40);
       }
-      return SizedBox(height: 40.0, width: 50.0, child: icon);
+      return icon != null
+          ? Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: SizedBox(height: 40.0, width: 50.0, child: icon),
+            )
+          : null;
     }
 
     List<DeviceItem> getFilteredOptions(String input) {
@@ -112,13 +118,20 @@ class DeviceSelector extends HookWidget {
         if (!exists) {
           // Create temporary device for manual input
           final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input), isTemporary: true);
-          manualInputDevice.value = manualDevice;
+          // Defer state update to avoid setState during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            manualInputDevice.value = manualDevice;
+          });
           return [...filteredItems, manualDevice];
         } else {
-          manualInputDevice.value = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            manualInputDevice.value = null;
+          });
         }
       } else {
-        manualInputDevice.value = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          manualInputDevice.value = null;
+        });
       }
 
       return filteredItems;
@@ -152,7 +165,7 @@ class DeviceSelector extends HookWidget {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
                   });
-                  return options;
+                  return [...options, DeviceItem()];
                 },
                 displayStringForOption: (value) => value.name,
                 onSelected: (option) {
@@ -161,15 +174,12 @@ class DeviceSelector extends HookWidget {
                 },
                 fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                   return ServerEndpointInput(
-                    label: isDetecting
-                        ? 'curator.oobe_welcome_dropdown_detecting'.tr()
-                        : 'curator.sign_in_screen_dropdown_device_label'.tr(),
+                    label: 'curator.sign_in_screen_dropdown_device_label'.tr(),
                     controller: controller,
                     focusNode: focusNode,
-                    leadingIcon: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: buildIconDevice(selectedDevice),
-                    ),
+                    leadingIcon: buildIconDevice(selectedDevice),
+                    isDetecting: isDetecting,
+                    isEmpty: getFilteredOptions(controller.text).isEmpty,
                     suffixIcon: IconButton(
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -216,13 +226,22 @@ class DeviceSelector extends HookWidget {
                           itemCount: options.length,
                           itemBuilder: (_, index) {
                             final option = options.elementAt(index);
-                            return ListTile(
-                              leading: option.isTemporary ? const Icon(Icons.add) : buildIconDevice(option),
-                              title: Text(option.isTemporary ? option.name : option.name + option.warnStatus(context)),
-                              onTap: () {
-                                onSelected(option);
-                              },
-                            );
+                            return option.baseUrl != null
+                                ? ListTile(
+                                    title: Text(
+                                      option.isTemporary ? option.name : option.name + option.warnStatus(context),
+                                    ),
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                  )
+                                : Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      index > 0 ? const Divider(height: 1) : const SizedBox.shrink(),
+                                      const ListTile(title: Text('I don’t see my Curator')),
+                                    ],
+                                  );
                           },
                         ),
                       ),
@@ -241,10 +260,7 @@ class DeviceSelector extends HookWidget {
             child: isDetecting
                 ? const CircularProgressIndicator.adaptive()
                 : IconButton(
-                    icon: Icon(
-                      Icons.refresh,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                    icon: Icon(Icons.refresh, color: Theme.of(context).primaryColor),
                     padding: EdgeInsets.zero,
                     onPressed: onRefresh,
                   ),
