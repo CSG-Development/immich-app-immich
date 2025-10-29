@@ -41,15 +41,13 @@ class CuratorLoginForm extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bool isDevEnvironment = const String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod') == 'dev';
-
-    final emailController = useTextEditingController.fromValue(TextEditingValue.empty);
     final passwordController = useTextEditingController.fromValue(TextEditingValue.empty);
     final deviceController = useTextEditingController.fromValue(TextEditingValue.empty);
 
-    final emailFocusNode = useFocusNode();
     final passwordFocusNode = useFocusNode();
     final deviceFocusNode = useFocusNode();
+
+    final email = useState<String>('');
 
     final isLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
@@ -399,10 +397,10 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     bool areRequiredFieldsFilled() =>
-        emailController.text.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value != null;
+        email.value.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value != null;
 
     useEffect(() {
-      emailController.text = ref.read(deviceProvider).login;
+      email.value = ref.read(deviceProvider).login;
       // Authenticated but need to find the device
       favoriteDevice = ref.read(deviceProvider).deviceID ?? '';
       favoriteLoggingIn.value = favoriteDevice.isNotEmpty && ref.read(deviceProvider).isAuthenticated;
@@ -410,7 +408,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       startLocalAndRemoteDetection();
       return () {
         try {
-          emailController.dispose();
           passwordController.dispose();
           passwordFocusNode.dispose();
           deviceFocusNode.dispose();
@@ -459,11 +456,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
       await dotenv.load(fileName: '.env.$env');
       final serverUrl = dotenv.env['DEV_SERVER_URL'];
-      final email = dotenv.env['DEV_EMAIL'];
+      final emailValue = dotenv.env['DEV_EMAIL'];
       final password = dotenv.env['DEV_PASSWORD'];
 
       clearAllErrors();
-      emailController.text = email ?? '';
+      email.value = emailValue ?? '';
       passwordController.text = password ?? '';
 
       devices.value = {...devices.value, 'noveo device': DeviceItem(baseUrl: Uri.parse(serverUrl ?? ''))};
@@ -559,7 +556,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         invalidateAllApiRepositoryProviders(ref);
 
-        final result = await ref.read(authProvider.notifier).login(emailController.text, passwordController.text);
+        final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
@@ -637,6 +634,15 @@ class CuratorLoginForm extends HookConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          Text(
+                            email.value,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 24.0),
                           LayoutBuilder(
                             builder: (context, constraints) {
                               return DeviceSelector(
@@ -655,15 +661,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                               );
                             },
                           ),
-                          const SizedBox(height: 32.0),
-                          EmailInput(
-                            controller: emailController,
-                            focusNode: emailFocusNode,
-                            onSubmit: passwordFocusNode.requestFocus,
-                            hasExternalError: hasEmailError.value,
-                            canRequestFocus: false,
-                          ),
-                          const SizedBox(height: 32.0),
+                          const SizedBox(height: 24.0),
                           PasswordInput(
                             controller: passwordController,
                             focusNode: passwordFocusNode,
@@ -714,9 +712,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                                 ),
                           AnimatedBuilder(
                             animation: Listenable.merge([
-                              emailController,
                               passwordController,
-                              // serverEndpointController,
                               hasPreviousLoginFailed,
                             ]),
                             builder: (_, __) {

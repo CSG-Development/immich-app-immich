@@ -16,7 +16,6 @@ class LoginPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final isAuthenticated = ref.watch(remoteProvider).isAuthenticated;
 
     final appVersion = useState('0.0.0');
@@ -47,22 +46,26 @@ class LoginPage extends HookConsumerWidget {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
-                  child: isRemoteAccessForm.value
-                      ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
-                      : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
+                    child: isRemoteAccessForm.value
+                        ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
+                        : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

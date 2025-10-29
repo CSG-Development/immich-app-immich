@@ -10,11 +10,10 @@ class LoginInputDecorations {
     Widget? prefixIcon,
     int errorMaxLines = 1,
     bool isError = false,
+    FloatingLabelBehavior floatingLabelBehavior = FloatingLabelBehavior.auto
   }) {
     final bool isDarkTheme = context.isDarkTheme;
     final Color resolvedErrorColor = isDarkTheme ? const Color(0xFFF28F8C): const Color(0xFFF44336);
-    final Color resolvedLabelColor =
-        isDarkTheme ? const Color(0xDEFFFFFF) : const Color(0xDE000000);
     final Color resolvedHintColor =
         isDarkTheme ? const Color(0xFF858585) : const Color(0xFF7A7A7A);
 
@@ -47,13 +46,13 @@ class LoginInputDecorations {
         color: isError ? resolvedErrorColor : resolvedHintColor,
       ),
       labelStyle: WidgetStateTextStyle.resolveWith((states) {
-        if (isError) {
+        if (isError || states.contains(WidgetState.error)) {
           return TextStyle(color: resolvedErrorColor);
         }
         if (states.contains(WidgetState.focused)) {
           return TextStyle(color: Theme.of(context).colorScheme.primary);
         }
-        return TextStyle(color: resolvedLabelColor);
+        return TextStyle(color: resolvedHintColor);
       }),
       floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
         if (isError || states.contains(WidgetState.error)) {
@@ -62,9 +61,9 @@ class LoginInputDecorations {
         if (states.contains(WidgetState.focused)) {
           return TextStyle(color: Theme.of(context).colorScheme.primary);
         }
-        return TextStyle(color: resolvedLabelColor);
+        return TextStyle(color: resolvedHintColor);
       }),
-      floatingLabelBehavior: FloatingLabelBehavior.always,
+      floatingLabelBehavior: floatingLabelBehavior,
     );
   }
 }

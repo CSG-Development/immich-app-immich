@@ -8,6 +8,7 @@ import 'package:homecloud_frontend/utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/pin_input.dart';
+import 'package:pinput/pinput.dart';
 
 class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function() onSuccess;
@@ -109,23 +110,18 @@ class RemoteCodeModal extends HookConsumerWidget {
       () {
         final isLoading = remoteCodeLoading.value;
         return TextButton(
-          onPressed: isLoading ? null : () {
-            Navigator.of(context).pop();
-            onSuccess();
-          },
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.of(context).pop();
+                  onSuccess();
+                },
           style: TextButton.styleFrom(
             minimumSize: Size.zero,
             padding: const EdgeInsets.all(12.0),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'curator.sign_in_screen_remote_code_skip'.tr(),
-              ),
-            ],
-          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [Text('curator.sign_in_screen_remote_code_skip'.tr())]),
         );
       },
       // Allow access button - visible when expired
@@ -133,13 +129,15 @@ class RemoteCodeModal extends HookConsumerWidget {
         () {
           final isLoading = remoteCodeLoading.value;
           return TextButton(
-            onPressed: isLoading ? null : () {
-              // Clear error state and code input when resending
-              remoteCodeErrorText.value = null;
-              remoteCodeController.clear();
-              remoteCodeExpired.value = false;
-              initiateRemoteAccess();
-            },
+            onPressed: isLoading
+                ? null
+                : () {
+                    // Clear error state and code input when resending
+                    remoteCodeErrorText.value = null;
+                    remoteCodeController.clear();
+                    remoteCodeExpired.value = false;
+                    initiateRemoteAccess();
+                  },
             style: TextButton.styleFrom(
               minimumSize: Size.zero,
               padding: const EdgeInsets.all(12.0),
@@ -151,16 +149,12 @@ class RemoteCodeModal extends HookConsumerWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        context.colorScheme.primary,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(context.colorScheme.primary),
                     ),
                   )
                 : Text(
                     'curator.sign_in_screen_remote_code_resend'.tr(),
-                    style: TextStyle(
-                      color: context.colorScheme.primary,
-                    ),
+                    style: TextStyle(color: context.colorScheme.primary),
                   ),
           );
         },
@@ -182,18 +176,12 @@ class RemoteCodeModal extends HookConsumerWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        context.colorScheme.primary,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(context.colorScheme.primary),
                     ),
                   )
                 : Text(
                     'curator.sign_in_screen_remote_code_allow_access'.tr(),
-                    style: TextStyle(
-                      color: isDisabled
-                          ? context.colorScheme.secondary
-                          : context.colorScheme.primary,
-                    ),
+                    style: TextStyle(color: isDisabled ? context.colorScheme.secondary : context.colorScheme.primary),
                   ),
           );
         },
@@ -203,6 +191,7 @@ class RemoteCodeModal extends HookConsumerWidget {
       title: Text('curator.sign_in_screen_remote_code_title'.tr()),
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('curator.sign_in_screen_remote_code_description'.tr(), style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 24),
@@ -210,30 +199,82 @@ class RemoteCodeModal extends HookConsumerWidget {
             opacity: (remoteCodeLoading.value || isValidating.value) ? 0.5 : 1.0,
             child: AbsorbPointer(
               absorbing: remoteCodeLoading.value || isValidating.value,
-              child: PinInput(
-                controller: remoteCodeController,
-                onChanged: (value) {
-                  if (remoteCodeErrorText.value != null) {
-                    remoteCodeErrorText.value = null;
-                  }
+              child: Builder(
+                builder: (context) {
+                  // Compute pin size for custom themes
+                  const minimumPadding = 18.0;
+                  const gapWidth = 3.0;
+                  final screenWidth = MediaQuery.sizeOf(context).width;
+                  double pinWidth = (screenWidth - (minimumPadding * 2) - (gapWidth * 5)) / 6;
+                  if (pinWidth > 60) pinWidth = 60;
+                  final pinHeight = pinWidth / (60 / 64);
+
+                  // Custom default theme: grey border, no background
+                  final customDefaultPinTheme = PinTheme(
+                    width: pinWidth,
+                    height: pinHeight,
+                    textStyle: TextStyle(fontSize: 24, color: context.colorScheme.onSurface),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(19)),
+                      border: Border.all(color: context.colorScheme.outline),
+                      color: Colors.transparent,
+                    ),
+                  );
+
+                  // Custom focused theme: primary border, no background
+                  final customFocusedPinTheme = customDefaultPinTheme.copyWith(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(19)),
+                      border: Border.all(color: context.primaryColor.withValues(alpha: 0.5), width: 2),
+                      color: Colors.transparent,
+                    ),
+                  );
+
+                  // Custom error theme: specific error colors, no background
+                  final customErrorPinTheme = customDefaultPinTheme.copyWith(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(19)),
+                      border: Border.all(
+                        color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
+                        width: 2,
+                      ),
+                      color: Colors.transparent,
+                    ),
+                  );
+
+                  return PinInput(
+                    controller: remoteCodeController,
+                    onChanged: (value) {
+                      if (remoteCodeErrorText.value != null) {
+                        remoteCodeErrorText.value = null;
+                      }
+                    },
+                    length: 6,
+                    autoFocus: true,
+                    hasError: remoteCodeErrorText.value != null,
+                    defaultPinTheme: customDefaultPinTheme,
+                    focusedPinTheme: customFocusedPinTheme,
+                    errorPinTheme: customErrorPinTheme,
+                  );
                 },
-                length: 6,
-                autoFocus: true,
-                hasError: remoteCodeErrorText.value != null,
               ),
             ),
           ),
           // Error message display
-          if (remoteCodeErrorText.value != null)
-            ...[
-              const SizedBox(height: 8),
-              Text(
+          if (remoteCodeErrorText.value != null) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Text(
                 remoteCodeErrorText.value!,
+                textAlign: TextAlign.left,
                 style: context.textTheme.bodySmall?.copyWith(
-                  color: context.colorScheme.error,
+                  color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
                 ),
                 maxLines: 2,
-              ),]
+              ),
+            ),
+          ],
         ],
       ),
       actions: actions.map((actionBuilder) => actionBuilder()).toList(),

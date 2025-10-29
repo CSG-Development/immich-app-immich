@@ -11,6 +11,9 @@ class PinInput extends StatelessWidget {
   final bool? hasError;
   final String? label;
   final TextEditingController? controller;
+  final PinTheme? defaultPinTheme;
+  final PinTheme? focusedPinTheme;
+  final PinTheme? errorPinTheme;
 
   const PinInput({
     super.key,
@@ -22,6 +25,9 @@ class PinInput extends StatelessWidget {
     this.hasError,
     this.label,
     this.controller,
+    this.defaultPinTheme,
+    this.focusedPinTheme,
+    this.errorPinTheme,
   });
 
   @override
@@ -40,19 +46,38 @@ class PinInput extends StatelessWidget {
       return Size(pinWidth, pinHeight);
     }
 
-    final defaultPinTheme = PinTheme(
-      width: getPinSize().width,
-      height: getPinSize().height,
-      textStyle: TextStyle(
-        fontSize: 24,
-        color: context.colorScheme.onSurface,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(19)),
-        border: Border.all(color: context.colorScheme.surfaceBright),
-        color: context.colorScheme.surfaceContainerHigh,
-      ),
-    );
+    final baseDefaultPinTheme = defaultPinTheme ??
+        PinTheme(
+          width: getPinSize().width,
+          height: getPinSize().height,
+          textStyle: TextStyle(
+            fontSize: 24,
+            color: context.colorScheme.onSurface,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(19)),
+            border: Border.all(color: context.colorScheme.surfaceBright),
+            color: context.colorScheme.surfaceContainerHigh,
+          ),
+        );
+
+    final baseFocusedPinTheme = focusedPinTheme ??
+        baseDefaultPinTheme.copyWith(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(19)),
+            border: Border.all(color: context.primaryColor.withValues(alpha: 0.5), width: 2),
+            color: context.colorScheme.surfaceContainerHigh,
+          ),
+        );
+
+    final baseErrorPinTheme = errorPinTheme ??
+        baseDefaultPinTheme.copyWith(
+          decoration: BoxDecoration(
+            color: context.colorScheme.error.withAlpha(15),
+            borderRadius: const BorderRadius.all(Radius.circular(19)),
+            border: Border.all(color: context.colorScheme.error.withAlpha(100), width: 2),
+          ),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,21 +102,9 @@ class PinInput extends StatelessWidget {
               Container(margin: const EdgeInsets.only(bottom: 9), width: 18, height: 2, color: context.primaryColor),
             ],
           ),
-          defaultPinTheme: defaultPinTheme,
-          focusedPinTheme: defaultPinTheme.copyWith(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(19)),
-              border: Border.all(color: context.primaryColor.withValues(alpha: 0.5), width: 2),
-              color: context.colorScheme.surfaceContainerHigh,
-            ),
-          ),
-          errorPinTheme: defaultPinTheme.copyWith(
-            decoration: BoxDecoration(
-              color: context.colorScheme.error.withAlpha(15),
-              borderRadius: const BorderRadius.all(Radius.circular(19)),
-              border: Border.all(color: context.colorScheme.error.withAlpha(100), width: 2),
-            ),
-          ),
+          defaultPinTheme: baseDefaultPinTheme,
+          focusedPinTheme: baseFocusedPinTheme,
+          errorPinTheme: baseErrorPinTheme,
           pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
           length: length ?? 6,
           onChanged: onChanged,
