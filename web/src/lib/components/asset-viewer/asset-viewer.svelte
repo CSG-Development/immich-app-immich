@@ -96,6 +96,7 @@
     slideshowNavigation,
     slideshowState,
     slideshowTransition,
+    isShuffled,
   } = slideshowStore;
   const stackThumbnailSize = 60;
   const stackSelectedThumbnailSize = 65;
@@ -318,6 +319,7 @@
     } finally {
       $stopSlideshowProgress = true;
       $slideshowState = SlideshowState.None;
+      $isShuffled = false;
       if (assetInteraction?.selectedAssets.length) {
         closeViewer();
       }

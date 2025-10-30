@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
   import { listNavigation } from '$lib/actions/list-navigation';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
@@ -110,8 +110,8 @@
   let suggestionContainer: HTMLElement | undefined = $state();
 
   onMount(() => {
-    const action = $page.url.searchParams.get(QueryParameter.ACTION);
-    const getPreviousRoute = $page.url.searchParams.get(QueryParameter.PREVIOUS_ROUTE);
+    const action = page.url.searchParams.get(QueryParameter.ACTION);
+    const getPreviousRoute = page.url.searchParams.get(QueryParameter.PREVIOUS_ROUTE);
     if (getPreviousRoute && !isExternalUrl(getPreviousRoute)) {
       previousRoute = getPreviousRoute;
     }
@@ -150,7 +150,7 @@
 
   afterNavigate(({ from }) => {
     // Prevent setting previousRoute to the current page.
-    if (from?.url && from.route.id !== $page.route.id) {
+    if (from?.url && from.route.id !== page.route.id) {
       previousRoute = from.url.href;
     }
   });
@@ -348,9 +348,9 @@
 
   const handleGoBack = async () => {
     viewMode = PersonPageViewMode.VIEW_ASSETS;
-    if ($page.url.searchParams.has(QueryParameter.ACTION)) {
-      $page.url.searchParams.delete(QueryParameter.ACTION);
-      await goto($page.url);
+    if (page.url.searchParams.has(QueryParameter.ACTION)) {
+      page.url.searchParams.delete(QueryParameter.ACTION);
+      await goto(page.url);
     }
   };
 

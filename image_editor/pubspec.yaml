@@ -1,18 +1,15 @@
 name: image_editor
 description: "Image editor"
 version: 0.0.1
-homepage:
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  pro_image_editor: ^9.13.0
+  pro_image_editor: ^11.10.1
   image: ^4.5.4
-  path_provider: ^2.1.5
-  path_provider_foundation: ^2.4.1
 
 dev_dependencies:
   flutter_test:

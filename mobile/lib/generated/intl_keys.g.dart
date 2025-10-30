@@ -798,6 +798,7 @@ abstract class IntlKeys {
   static const created_at = 'created_at';
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
+  static const curator_button_action_retry = 'curator.button.action.retry';
   static const curator_login_form_email_hint = 'curator.login.form.email.hint';
   static const curator_login_form_endpoint_hint = 'curator.login.form.endpoint.hint';
   static const curator_login_form_endpoint_url = 'curator.login.form.endpoint.url';
@@ -817,6 +818,23 @@ abstract class IntlKeys {
       'curator.sign.in.screen.field.remote.code.error.invalid';
   static const curator_sign_in_screen_field_remote_code_hint = 'curator.sign.in.screen.field.remote.code.hint';
   static const curator_sign_in_screen_field_remote_code_label = 'curator.sign.in.screen.field.remote.code.label';
+  static const curator_sign_in_screen_remote_code_allow_access = 'curator.sign.in.screen.remote.code.allow.access';
+  static const curator_sign_in_screen_remote_code_cancel = 'curator.sign.in.screen.remote.code.cancel';
+  static const curator_sign_in_screen_remote_code_description = 'curator.sign.in.screen.remote.code.description';
+  static const curator_sign_in_screen_remote_code_resend = 'curator.sign.in.screen.remote.code.resend';
+  static const curator_sign_in_screen_remote_code_skip = 'curator.sign.in.screen.remote.code.skip';
+  static const curator_sign_in_screen_remote_code_title = 'curator.sign.in.screen.remote.code.title';
+  static const curator_sign_in_screen_remote_code_verify = 'curator.sign.in.screen.remote.code.verify';
+  static const curator_unable_to_connect_screen_message_list_1 = 'curator.unable.to.connect.screen.message.list.1';
+  static const curator_unable_to_connect_screen_message_list_2 = 'curator.unable.to.connect.screen.message.list.2';
+  static const curator_unable_to_connect_screen_message_list_3 = 'curator.unable.to.connect.screen.message.list.3';
+  static const curator_unable_to_connect_screen_message_list_4 = 'curator.unable.to.connect.screen.message.list.4';
+  static const curator_unable_to_connect_screen_message_list_5 = 'curator.unable.to.connect.screen.message.list.5';
+  static const curator_unable_to_connect_screen_message_list_footer =
+      'curator.unable.to.connect.screen.message.list.footer';
+  static const curator_unable_to_connect_screen_message_list_title =
+      'curator.unable.to.connect.screen.message.list.title';
+  static const curator_unable_to_connect_screen_title = 'curator.unable.to.connect.screen.title';
   static const current_device = 'current_device';
   static const current_pin_code = 'current_pin_code';
   static const current_server_address = 'current_server_address';

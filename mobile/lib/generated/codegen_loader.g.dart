@@ -32224,6 +32224,7 @@ class CodegenLoader extends AssetLoader {
     "crop": "Crop",
     "curated_object_page_title": "Things",
     "curator": {
+      "button_action_retry": "Retry",
       "login_form_email_hint": "Enter email address",
       "login_form_endpoint_hint": "No device detected",
       "login_form_endpoint_url": "Connecting to",
@@ -32236,10 +32237,32 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_button_request_new_code": "Request new code",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
-      "sign_in_screen_field_remote_code_error_expired": "The code has expired. Please request a new code.",
-      "sign_in_screen_field_remote_code_error_invalid": "Invalid code. Please check the code and try again.",
+      "sign_in_screen_field_remote_code_error_expired": "Your code has expired",
+      "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
       "sign_in_screen_field_remote_code_label": "Confirmation Code",
+      "sign_in_screen_remote_code_allow_access": "Allow access",
+      "sign_in_screen_remote_code_cancel": "Cancel",
+      "sign_in_screen_remote_code_description":
+          "We have sent a one-time code to authorize this device to access your Curator. Check your email for the code and enter it here. If you do not see it in your inbox, please check your spam folder.",
+      "sign_in_screen_remote_code_resend": "Resend code",
+      "sign_in_screen_remote_code_skip": "Skip",
+      "sign_in_screen_remote_code_title": "Allow remote access",
+      "sign_in_screen_remote_code_verify": "Verify",
+      "unable_to_connect_screen_message_list_1":
+          "Verify that the device is properly connected to the network and that the internet connection is stable",
+      "unable_to_connect_screen_message_list_2": "Make sure the device is powered on and functioning correctly",
+      "unable_to_connect_screen_message_list_3":
+          "Check firewall settings to confirm they are not blocking the connection",
+      "unable_to_connect_screen_message_list_4":
+          "If using a wireless connection, confirm the device is within range of the router",
+      "unable_to_connect_screen_message_list_5":
+          "Your device and mobile phone must be on the same network for initial setup",
+      "unable_to_connect_screen_message_list_footer":
+          "If you continue to experience issues, please contact our <link>Support team</link> for further assistance.",
+      "unable_to_connect_screen_message_list_title":
+          "We are unable to detect the Home Cloud device. Please ensure the following:",
+      "unable_to_connect_screen_title": "Unable to connect",
     },
     "current_device": "Current device",
     "current_pin_code": "Current PIN code",
