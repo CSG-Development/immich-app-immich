@@ -32,8 +32,8 @@
   /* import ChangePasswordSettings from './change-password-settings.svelte'; */
   import DeviceList from './device-list.svelte';
   /* import OAuthSettings from './oauth-settings.svelte'; */
-  import AdminSettings from '$lib/components/admin-page/settings/admin-settings.svelte';
-  import LoggingSettings from '$lib/components/admin-page/settings/logging-settings/logging-settings.svelte';
+  import AdminSettings from '$lib/components/admin-settings/AdminSettings.svelte';
+  import LoggingSettings from '$lib/components/admin-settings/LoggingSettings.svelte';
   import PartnerSettings from './partner-settings.svelte';
   /* import UserAPIKeyList from './user-api-key-list.svelte'; */
   /* import UserProfileSettings from './user-profile-settings.svelte'; */

@@ -11,8 +11,7 @@
   import { getAssetPlaybackUrl, getAssetThumbnailUrl } from '$lib/utils';
   import { AssetMediaSize } from '@immich/sdk';
   import { onDestroy, onMount } from 'svelte';
-  import type { SwipeCustomEvent } from 'svelte-gestures';
-  import { swipe } from 'svelte-gestures';
+  import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
   import { fade } from 'svelte/transition';
 
   interface Props {
@@ -139,8 +138,7 @@
         playsinline
         controls={$slideshowState === SlideshowState.None}
         class="h-full object-contain"
-        use:swipe={() => ({})}
-        onswipe={onSwipe}
+        {...useSwipe(onSwipe)}
         oncanplay={(e) => handleCanPlay(e.currentTarget)}
         onended={onVideoEnded}
         onvolumechange={(e) => ($videoViewerMuted = e.currentTarget.muted)}

@@ -2,7 +2,6 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
-  import GroupTab from '$lib/components/elements/group-tab.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import {
     notificationController,
@@ -10,6 +9,7 @@
   } from '$lib/components/shared-components/notification/notification';
   import SharedLinkCard from '$lib/components/sharedlinks-page/shared-link-card.svelte';
   import { AppRoute } from '$lib/constants';
+  import GroupTab from '$lib/elements/GroupTab.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
   import { handleError } from '$lib/utils/handle-error';

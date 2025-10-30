@@ -14,6 +14,7 @@ export async function loadFromTimeBuckets(
   signal: AbortSignal,
 ): Promise<void> {
   if (monthGroup.getFirstAsset()) {
+    const timeBucket = toISOYearMonthUTC(monthGroup.yearMonth);
     return;
   }
 

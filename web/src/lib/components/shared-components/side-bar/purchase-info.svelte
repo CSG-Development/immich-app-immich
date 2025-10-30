@@ -2,9 +2,9 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import Icon from '$lib/components/elements/icon.svelte';
-  import Portal from '$lib/components/shared-components/portal/portal.svelte';
   import SupporterBadge from '$lib/components/shared-components/side-bar/supporter-badge.svelte';
   import { AppRoute } from '$lib/constants';
+  import Portal from '$lib/elements/Portal.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import PurchaseModal from '$lib/modals/PurchaseModal.svelte';
   import { purchaseStore } from '$lib/stores/purchase.store';
