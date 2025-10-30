@@ -8,6 +8,8 @@ class EmailInput extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback? onSubmit;
   final bool hasExternalError;
+  final String? Function(String?)? validator;
+  final bool canRequestFocus;
 
   const EmailInput({
     super.key,
@@ -15,6 +17,8 @@ class EmailInput extends StatelessWidget {
     required this.focusNode,
     this.onSubmit,
     this.hasExternalError = false,
+    this.validator,
+    this.canRequestFocus = true,
   });
 
   @override
@@ -27,6 +31,7 @@ class EmailInput extends StatelessWidget {
 
         return TextFormField(
           controller: controller,
+          validator: validator,
           inputFormatters: const [TrimFormatter()],
           decoration: LoginInputDecorations.baseDecoration(
             context: context,
@@ -46,6 +51,7 @@ class EmailInput extends StatelessWidget {
           onFieldSubmitted: (_) => onSubmit?.call(),
           focusNode: focusNode,
           textInputAction: TextInputAction.next,
+          canRequestFocus: canRequestFocus,
         );
       },
     );

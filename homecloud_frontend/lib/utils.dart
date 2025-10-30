@@ -11,7 +11,8 @@ import 'package:homecloud_frontend/api/remote_access.swagger.dart' as api show E
 import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
 
 import 'package:nsd/nsd.dart' as nsd;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart'
+    show SharedPreferencesAsync;
 
 enum ApiErrorMessage { aboutGet, statusGet, remoteApi }
 
@@ -122,18 +123,31 @@ Future<RemoteAccessDependencies> initHCDevice() async {
   // Initialize Homecloud certificate for TLS validation
   final homecloudCert = await initializeHomecloudCertificate();
 
-  final Map<String, dynamic> storageData = await SharedPreferencesAsync().getAll();
+  final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
+  final Map<String, dynamic> storageData = await asyncPrefs.getAll();
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   late Map<String, String> secureData;
+
+  // Check if this is the first launch (after reinstall)
+  const String hasLaunchedBeforeKey = 'homecloud_has_launched_before';
+  final bool hasLaunchedBefore = storageData.containsKey(hasLaunchedBeforeKey);
+
+  if (!hasLaunchedBefore) {
+    // This is a fresh install or reinstall - clear secure storage
+    try {
+      await secureStorage.deleteAll();
+    } catch (e) {
+      // If clearing secure storage fails, continue with existing data
+    }
+    // Mark that the app has been launched
+    await asyncPrefs.setBool(hasLaunchedBeforeKey, true);
+  }
 
   try {
     secureData = await secureStorage.readAll();
   } catch (e) {
     // If reading secure storage fails, initialize with an empty map
     secureData = {};
-    if (kDebugMode) {
-      print("Error reading secure storage: $e");
-    }
   }
 
   return RemoteAccessDependencies(

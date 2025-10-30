@@ -11,6 +11,8 @@ class ServerEndpointInput extends StatelessWidget {
   final Widget? leadingIcon;
   final Widget? suffixIcon;
   final String? label;
+  final bool isDetecting;
+  final bool isEmpty;
 
   const ServerEndpointInput({
     super.key,
@@ -20,7 +22,9 @@ class ServerEndpointInput extends StatelessWidget {
     this.hasExternalError = false,
     this.leadingIcon,
     this.suffixIcon,
-    this.label
+    this.label,
+    this.isDetecting = false,
+    this.isEmpty = true,
   });
 
   @override
@@ -28,23 +32,24 @@ class ServerEndpointInput extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([controller, focusNode]),
       builder: (context, _) {
-        final bool shouldShowClearButton =
-            controller.text.isNotEmpty && focusNode.hasFocus;
+        final bool shouldShowClearButton = controller.text.isNotEmpty && focusNode.hasFocus;
         return TextFormField(
           controller: controller,
           inputFormatters: const [TrimFormatter()],
           decoration: LoginInputDecorations.baseDecoration(
             context: context,
             labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
-            hintText: 'curator.login_form_endpoint_hint'.tr(),
+            hintText: isDetecting
+                ? 'curator.oobe_welcome_dropdown_detecting'.tr()
+                : isEmpty
+                ? 'curator.login_form_endpoint_hint'.tr()
+                : '',
             isError: hasExternalError,
             suffixIcon: shouldShowClearButton
-                ? IconButton(
-                    onPressed: controller.clear,
-                    icon: const Icon(Icons.highlight_off),
-                  )
+                ? IconButton(onPressed: controller.clear, icon: const Icon(Icons.highlight_off))
                 : suffixIcon,
             prefixIcon: leadingIcon,
+            floatingLabelBehavior: isDetecting ? FloatingLabelBehavior.always : FloatingLabelBehavior.auto,
           ),
           autovalidateMode: AutovalidateMode.always,
           focusNode: focusNode,
