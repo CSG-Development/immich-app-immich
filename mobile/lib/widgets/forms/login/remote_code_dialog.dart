@@ -181,7 +181,11 @@ class RemoteCodeModal extends HookConsumerWidget {
                   )
                 : Text(
                     'curator.sign_in_screen_remote_code_allow_access'.tr(),
-                    style: TextStyle(color: isDisabled ? context.colorScheme.secondary : context.colorScheme.primary),
+                    style: TextStyle(
+                      color: isDisabled
+                          ? const Color(0xFF9E9E9E)
+                          : context.colorScheme.primary,
+                    ),
                   ),
           );
         },
@@ -216,7 +220,11 @@ class RemoteCodeModal extends HookConsumerWidget {
                     textStyle: TextStyle(fontSize: 24, color: context.colorScheme.onSurface),
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.all(Radius.circular(19)),
-                      border: Border.all(color: context.colorScheme.outline),
+                      border: Border.all(
+                        color: context.isDarkTheme
+                            ? const Color(0xFF616161)
+                            : const Color(0xFFCBCDD3),
+                      ),
                       color: Colors.transparent,
                     ),
                   );
@@ -225,7 +233,12 @@ class RemoteCodeModal extends HookConsumerWidget {
                   final customFocusedPinTheme = customDefaultPinTheme.copyWith(
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.all(Radius.circular(19)),
-                      border: Border.all(color: context.primaryColor.withValues(alpha: 0.5), width: 2),
+                      border: Border.all(
+                        color: context.isDarkTheme
+                            ? const Color(0xFF64B5F6)
+                            : const Color(0xFF1976D2),
+                        width: 2,
+                      ),
                       color: Colors.transparent,
                     ),
                   );
@@ -255,6 +268,10 @@ class RemoteCodeModal extends HookConsumerWidget {
                     defaultPinTheme: customDefaultPinTheme,
                     focusedPinTheme: customFocusedPinTheme,
                     errorPinTheme: customErrorPinTheme,
+                    cursor: Align(
+                      alignment: Alignment.center,
+                      child: Container(width: 2, height: 22, color: context.primaryColor),
+                    ),
                   );
                 },
               ),

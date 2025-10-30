@@ -18,7 +18,6 @@ import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
 import 'package:immich_mobile/widgets/forms/login/device_selector.dart';
-import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
@@ -119,9 +118,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     /// Stop mDNS detection
-    Future<void> _stopDiscovery(nsd.Discovery? discovery) async {
+    Future<void> _stopDiscovery() async {
       if (discovery != null) {
-        stopDiscovery(discovery);
+        stopDiscovery(discovery!);
         discovery = null;
         updateDetectionCounter(-1);
       }
@@ -170,7 +169,7 @@ class CuratorLoginForm extends HookConsumerWidget {
               ref.read(deviceProvider).isAuthenticated) {
             // Set device then go to dashboard
             ref.read(deviceProvider.notifier).setHost(baseUrl: device.baseUrl, status: device.status, save: false);
-            _stopDiscovery(discovery);
+            _stopDiscovery();
             // TODO Implement passwordless login
             showDialog(
               context: context,
@@ -361,7 +360,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         });
         // Stop discovery after x seconds if no device found
         Future.delayed(durationDetection, () {
-          _stopDiscovery(discovery);
+          _stopDiscovery();
         });
       } else {
         updateDetectionCounter(-1);
@@ -414,7 +413,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         } catch (e) {
           // Ignore
         }
-        _stopDiscovery(discovery);
+        _stopDiscovery();
       };
     }, []);
 

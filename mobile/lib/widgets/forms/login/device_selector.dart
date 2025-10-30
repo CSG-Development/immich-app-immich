@@ -258,7 +258,7 @@ class DeviceSelector extends HookWidget {
             height: 24.0,
             width: 24.0,
             child: isDetecting
-                ? const CircularProgressIndicator.adaptive()
+                ? const CircularProgressIndicator()
                 : IconButton(
                     icon: Icon(Icons.refresh, color: Theme.of(context).primaryColor),
                     padding: EdgeInsets.zero,
