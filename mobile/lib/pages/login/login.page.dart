@@ -33,9 +33,17 @@ class LoginPage extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: isRemoteAccessForm.value || isAuthenticated
+        leading: isRemoteAccessForm.value
             ? null
-            : IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => isRemoteAccessForm.value = true),
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (isAuthenticated) {
+                    ref.read(remoteProvider.notifier).logout();
+                  }
+                  isRemoteAccessForm.value = true;
+                },
+              ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         systemOverlayStyle: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,

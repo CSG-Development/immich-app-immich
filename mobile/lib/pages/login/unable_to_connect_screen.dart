@@ -51,7 +51,9 @@ class UnableToConnectPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: context.colorScheme.surface,
         title: Text('curator.unable_to_connect_screen_title'.tr()),
         titleTextStyle: context.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
@@ -98,6 +100,7 @@ class UnableToConnectPage extends StatelessWidget {
       ),
       bottomNavigationBar: onRetry != null
           ? BottomAppBar(
+              color: context.colorScheme.surface,
               padding: const EdgeInsetsDirectional.symmetric(horizontal: 24, vertical: 12),
               child: FilledButton.icon(onPressed: onRetry, icon: null, label: Text('curator.button_action_retry'.tr())),
             )
