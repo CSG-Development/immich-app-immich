@@ -4,7 +4,7 @@
   import { ProgressBarStatus } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
-  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
   import { videoStore } from '$lib/stores/video.store';
   import { IconButton } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
@@ -93,11 +93,6 @@
 
   const handleDone = async () => {
     await progressBar?.resetProgress();
-
-    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
-      onPrevious();
-      return;
-    }
     onNext();
   };
 

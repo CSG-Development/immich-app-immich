@@ -24,7 +24,6 @@
     AssetJobName,
     AssetTypeEnum,
     getAllAlbums,
-    getAssetInfo,
     getStack,
     runAssetJobs,
     type AlbumResponseDto,
