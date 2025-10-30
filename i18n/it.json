@@ -34,8 +34,8 @@
   "added_to_favorites_count": "Aggiunto {count, number} ai preferiti",
   "admin": {
     "add_exclusion_pattern_description": "Aggiungi modelli di esclusione. È supportato il globbing utilizzando *, ** e ?. Per ignorare tutti i file in qualsiasi directory denominata \"Raw\", usa \"**/Raw/**\". Per ignorare tutti i file con estensione \".tif\", usa \"**/*.tif\". Per ignorare un percorso assoluto, usa \"/percorso/da/ignorare/**\".",
-    "asset_offline_description": "Questa risorsa della libreria esterna non si trova più sul disco ed è stata spostata nel cestino. Se il file è stato spostato all'interno della libreria, controlla la timeline per la nuova risorsa corrispondente. Per ripristinare questa risorsa, assicurati che Curator Photos possa accedere al percorso del file ed esegui la scansione della libreria.",
     "admin_user": "Utente amministratore",
+    "asset_offline_description": "Questa risorsa della libreria esterna non si trova più sul disco ed è stata spostata nel cestino. Se il file è stato spostato all'interno della libreria, controlla la timeline per la nuova risorsa corrispondente. Per ripristinare questa risorsa, assicurati che Curator Photos possa accedere al percorso del file ed esegui la scansione della libreria.",
     "authentication_settings": "Impostazioni di Autenticazione",
     "authentication_settings_description": "Gestisci password, OAuth e altre impostazioni di autenticazione",
     "authentication_settings_disable_all": "Sei sicuro di voler disabilitare tutte le modalità di accesso? Il login verrà disabilitato completamente.",

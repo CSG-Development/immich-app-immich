@@ -45,6 +45,8 @@ import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
+import 'package:homecloud_frontend/homecloud_frontend.dart';
+
 void main() async {
   ImmichWidgetsBinding();
 
@@ -62,12 +64,15 @@ void main() async {
   // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
   // await telemetryChannel.invokeMethod('init', ['test']);
 
+  final remoteAccessDependencies = await initHCDevice();
+
   runApp(
     ProviderScope(
       overrides: [
         dbProvider.overrideWithValue(isar),
         isarProvider.overrideWithValue(isar),
         driftProvider.overrideWith(driftOverride(drift)),
+        remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
       ],
       child: const MainWidget(),
     ),

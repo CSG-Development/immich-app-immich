@@ -33,8 +33,8 @@
   "added_to_favorites_count": "{count, number} pievienoti izlasei",
   "admin": {
     "add_exclusion_pattern_description": "Pievienojiet izlaišanas shēmas. Aizstājējzīmju izmantoša *, **, un ? tiek atbalstīta. Lai ignorētu visus failus jebkurā direktorijā ar nosaukumu “RAW”, izmantojiet “**/RAW/**”. Lai ignorētu visus failus, kas beidzas ar “. tif”, izmantojiet “**/*. tif”. Lai ignorētu absolūto ceļu, izmantojiet “/path/to/ignore/**”.",
-    "asset_offline_description": "Šis ārējās bibliotēkas resurss vairs nav atrodams diskā un ir pārvietots uz atkritumu grozu. Ja fails tika pārvietots bibliotēkas ietvaros, pārbaudiet, vai jūsu hronoloģijā ir jauns atbilstošais resurss. Lai atjaunotu šo resursu, pārliecinieties, vai Curator Photos var piekļūt tālāk norādītajam faila ceļam un skenēt bibliotēku.",
     "admin_user": "Administrators",
+    "asset_offline_description": "Šis ārējās bibliotēkas resurss vairs nav atrodams diskā un ir pārvietots uz atkritumu grozu. Ja fails tika pārvietots bibliotēkas ietvaros, pārbaudiet, vai jūsu hronoloģijā ir jauns atbilstošais resurss. Lai atjaunotu šo resursu, pārliecinieties, vai Curator Photos var piekļūt tālāk norādītajam faila ceļam un skenēt bibliotēku.",
     "authentication_settings": "Autentifikācijas iestatījumi",
     "authentication_settings_description": "Paroļu, OAuth un citu autentifikācijas iestatījumu pārvaldība",
     "authentication_settings_disable_all": "Vai tiešām vēlaties atspējot visas pieteikšanās metodes? Pieteikšanās tiks pilnībā atspējota.",

@@ -34,8 +34,8 @@
   "added_to_favorites_count": "Agregado {count, number} a favoritos",
   "admin": {
     "add_exclusion_pattern_description": "Agrega patrones de exclusión. Puedes utilizar los caracteres *, ** y ? (globbing). Ejemplos: para ignorar todos los archivos en cualquier directorio llamado \"Raw\", utiliza \"**/Raw/**\". Para ignorar todos los archivos que terminan en \".tif\", utiliza \"**/*.tif\". Para ignorar una ruta absoluta, utiliza \"/carpeta/a/ignorar/**\".",
-    "asset_offline_description": "Este recurso externo de la biblioteca ya no se encuentra en el disco y se ha movido a la papelera. Si el archivo se movió dentro de la biblioteca, comprueba la línea temporal para el nuevo recurso correspondiente. Para restaurar este recurso, asegúrate de que Curator Photos puede acceder a la siguiente ruta de archivo y escanear la biblioteca.",
     "admin_user": "Usuario admin",
+    "asset_offline_description": "Este recurso externo de la biblioteca ya no se encuentra en el disco y se ha movido a la papelera. Si el archivo se movió dentro de la biblioteca, comprueba la línea temporal para el nuevo recurso correspondiente. Para restaurar este recurso, asegúrate de que Curator Photos puede acceder a la siguiente ruta de archivo y escanear la biblioteca.",
     "authentication_settings": "Parámetros de autenticación",
     "authentication_settings_description": "Gestionar contraseñas, OAuth y otros parámetros de autenticación",
     "authentication_settings_disable_all": "¿Estás seguro de que deseas desactivar todos los métodos de inicio de sesión? Esto desactivará por completo el inicio de sesión.",

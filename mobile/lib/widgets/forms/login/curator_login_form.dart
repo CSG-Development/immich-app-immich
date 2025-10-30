@@ -13,52 +13,372 @@ import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
-import 'package:immich_mobile/widgets/forms/login/email_input.dart';
+import 'package:immich_mobile/widgets/forms/login/device_selector.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
-import 'package:immich_mobile/widgets/forms/login/server_endpoint_input.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 
-class CuratorLoginForm extends HookConsumerWidget {
-  CuratorLoginForm({super.key});
+import 'package:homecloud_frontend/homecloud_frontend.dart';
+import 'package:homecloud_frontend/api/api.swagger.dart';
+import 'package:homecloud_frontend/api/remote_access.swagger.dart';
+import 'package:homecloud_frontend/nsd_wrapper.dart' as nsd;
 
+class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');
+  final VoidCallback switchToRemoteAccessForm;
+
+  CuratorLoginForm({super.key, required this.switchToRemoteAccessForm});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final emailController =
-        useTextEditingController.fromValue(TextEditingValue.empty);
-    final passwordController =
-        useTextEditingController.fromValue(TextEditingValue.empty);
-    final serverEndpointController =
-        useTextEditingController.fromValue(TextEditingValue.empty);
+    final passwordController = useTextEditingController.fromValue(TextEditingValue.empty);
+    final deviceController = useTextEditingController.fromValue(TextEditingValue.empty);
 
-    final emailFocusNode = useFocusNode();
     final passwordFocusNode = useFocusNode();
-    final serverEndpointFocusNode = useFocusNode();
+    final deviceFocusNode = useFocusNode();
+
+    final email = useState<String>('');
 
     final isLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
-    final warningMessage = useMemoized(() => ValueNotifier<String?>(null));
-    final hasEmailError = useMemoized(() => ValueNotifier<bool>(false));
-    final hasPasswordError = useMemoized(() => ValueNotifier<bool>(false));
-    final hasServerEndpointError =
-        useMemoized(() => ValueNotifier<bool>(false));
 
-    final formKey =
-        useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
+    final warningMessage = useState<String?>(null);
+    final hasEmailError = useState<bool>(false);
+    final hasPasswordError = useState<bool>(false);
 
-    final serverEndpoint = useState<String?>(null);
+    final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
+
     final serverInfo = ref.watch(serverInfoProvider);
     final localAuthState = ref.watch(localAuthProvider);
+
+    final favoriteLoggingIn = useState<bool>(false);
+    final loggingIn = useState<bool>(false);
+    String favoriteDevice = '';
+
+    int remoteInitiateAttempts = 0;
+    final selectedDevice = useState<DeviceItem?>(null);
+    nsd.Discovery? discovery;
+    final devices = useState<Map<String, DeviceItem>>({});
+    final counterDetection = useState<int>(0);
+
+    bool isDetecting = counterDetection.value > 0;
+
+    /// Handle API errors by printing them in debug mode
+    void handleError(ApiErrorMessage message, dynamic error) {
+      dPrint(() => "[SignInScreen] $message: ${extractErrorMessage(error)}");
+      log.severe(extractErrorMessage(error));
+    }
+    late final VoidCallback startLocalAndRemoteDetection;
+
+    void noDeviceFound() {
+      dPrint(() => "[SignInScreen] No device found.");
+
+      // Show the Unable To Connect screen in fullscreen dialog
+      context.pushRoute(
+        UnableToConnectRoute(
+          onRetry: () {
+            context.pop();
+            Future.delayed(const Duration(milliseconds: 300), () {
+               startLocalAndRemoteDetection();
+            });
+          },
+        ),
+      );
+    }
+
+    void updateDetectionCounter(int delta) {
+      if (context.mounted) {
+        counterDetection.value += delta;
+        if (counterDetection.value == 0 && !ref.read(deviceProvider).deviceFound) {
+          favoriteLoggingIn.value = false;
+          dPrint(() => "[SignInScreen] Detection finished, found devices: ${devices.value.length}");
+          // No device found after detection
+          if (devices.value.isEmpty) {
+            noDeviceFound();
+          }
+          // Auto-select favorite device if found
+          else if (selectedDevice.value == null) {
+            selectedDevice.value = devices.value.values.firstWhere(
+              (device) => device.about?.certificateCommonName == favoriteDevice,
+              orElse: () => devices.value.values.first,
+            );
+            dPrint(() => "[SignInScreen] Auto-selecting device: ${selectedDevice.value!.about?.certificateCommonName}");
+          }
+        }
+      }
+    }
+
+    /// Stop mDNS detection
+    Future<void> _stopDiscovery() async {
+      if (discovery != null) {
+        stopDiscovery(discovery!);
+        discovery = null;
+        updateDetectionCounter(-1);
+      }
+    }
+
+    /// Get the about information of the device and add it to the list of devices.
+    ///
+    /// If the device is the favorite device and already authenticated, set it in the provider and go to dashboard
+    Future<bool> getDeviceAbout(Api api, Uri baseUrl, Status status, bool useMock) async {
+      try {
+        if (useMock) {
+          final about = About(
+            certificateCommonName: 'HC Test Client Noveo',
+            date: DateTime.now(),
+            defaultMacAddr: 'test',
+            hardwareInfo: const AboutHardware(memory: 0, processorCount: 0, processorType: ''),
+            hostname: 'HomeCloud Noveo',
+            installId: 'test',
+            modelName: 'test',
+            modelNumber: 'test',
+            networkInterfaces: [],
+            osState: AboutOsState.normal,
+            productId: 'test',
+            serialNumber: 'test',
+            version: 'test',
+          );
+
+          final device = DeviceItem(baseUrl: baseUrl, about: about, status: status);
+          // Avoid duplicates between mDNS and remote detection
+          // Don't worry about overwriting, the remote device contains also the local paths ;)
+          if (context.mounted) {
+            dPrint(() => "[SignInScreen] Adding device: ${device.name} at ${device.baseUrl}");
+          }
+
+          devices.value = {...devices.value, device.about!.certificateCommonName: device};
+
+          return true;
+        }
+
+        final response = await api.aboutGet();
+        if (response.isSuccessful) {
+          final device = DeviceItem(baseUrl: baseUrl, about: response.body!, status: status);
+          // Auto-login if is the favorite device and already authenticated
+          if (device.about?.certificateCommonName == favoriteDevice &&
+              context.mounted &&
+              ref.read(deviceProvider).isAuthenticated) {
+            // Set device then go to dashboard
+            ref.read(deviceProvider.notifier).setHost(baseUrl: device.baseUrl, status: device.status, save: false);
+            _stopDiscovery();
+            // TODO Implement passwordless login
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Not implemented'),
+                content: const Text('Device found, but the authentication flow is not implemented.'),
+                actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+              ),
+            );
+          }
+          // Else add to the list of devices
+          else {
+            // Avoid duplicates between mDNS and remote detection
+            // Don't worry about overwriting, the remote device contains also the local paths ;)
+            if (context.mounted) {
+              dPrint(() => "[SignInScreen] Adding device: ${device.name} at ${device.baseUrl}");
+            }
+
+            devices.value = {...devices.value, device.about!.certificateCommonName: device};
+          }
+          // Device added
+          return true;
+        } else {
+          handleError(ApiErrorMessage.aboutGet, response);
+        }
+      } catch (error) {
+        handleError(ApiErrorMessage.aboutGet, error);
+      }
+      // Device not added
+      return false;
+    }
+
+    /// Check the status of a device at the given baseUrl.
+    ///
+    /// Then if the device is set up, get its about information.
+    ///
+    /// If everything is ok, add the device to the list of devices.
+    Future<bool> checkDeviceStatus({required Uri baseUrl, int timeoutDelay = 1000, bool useMock = false}) async {
+      dPrint(() => "[SignInScreen] checkDeviceStatus: $baseUrl, useMock: $useMock");
+      try {
+        if (useMock) {
+          final api = DeviceProvider.createApi(baseUrl: baseUrl);
+          final status = const Status(
+            oobe: Oobe(done: true),
+            apps: AppStatus(files: '0', photos: '0'),
+            state: StatusState.ready,
+          );
+
+          dPrint(() => "[SignInScreen] Device status response for ${baseUrl.host}: ${status.toString()}");
+          // Add only if the device is set up
+          if (status.oobe.done) {
+            return getDeviceAbout(api, baseUrl, status, true);
+          }
+        }
+
+        final api = DeviceProvider.createApi(baseUrl: baseUrl);
+        final response = await api.statusGet().timeout(Duration(milliseconds: timeoutDelay));
+
+        if (response.isSuccessful) {
+          final status = response.body!;
+          dPrint(() => "[SignInScreen] Device status response for ${baseUrl.host}: ${status.toString()}");
+          // Add only if the device is set up
+          if (status.oobe.done) {
+            return getDeviceAbout(api, baseUrl, status, false);
+          }
+        } else {
+          handleError(ApiErrorMessage.statusGet, response);
+        }
+      } catch (error) {
+        handleError(ApiErrorMessage.statusGet, error);
+      }
+      // Device not added
+      return false;
+    }
+
+    /// Try to add a remote device using its paths
+    /// Paths are ordered by priority (local first, Public then relay) by the server
+    Future<void> addRemoteDevice(Device device, DevicePaths devicePaths) async {
+      updateDetectionCounter(1);
+      int i = 0;
+      bool deviceAdded = false;
+      while (i < devicePaths.paths.length && !deviceAdded) {
+        var path = devicePaths.paths[i];
+        final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
+        dPrint(() => "[SignInScreen] Checking remote device with ${path.type.value} path: $baseUrl");
+
+        const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
+        await dotenv.load(fileName: '.env.$env');
+        final serverUrl = dotenv.env['DEV_SERVER_URL'];
+        final useMock =
+            // isDevEnvironment &&
+            Uri.parse(serverUrl ?? '').host == baseUrl.host &&
+            path.type == DevicePathType.public;
+
+        deviceAdded = await checkDeviceStatus(
+          baseUrl: baseUrl,
+          timeoutDelay: path.type == DevicePathType.local ? 60 * 1000 : 20 * 3000,
+          useMock: useMock,
+        );
+        i++;
+      }
+      updateDetectionCounter(-1);
+    }
+
+    /// Get remote devices from the remote refresh token
+    Future<void> getRemoteDevices() async {
+      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+      if (!isAuthenticated) {
+        return;
+      }
+      try {
+        updateDetectionCounter(1);
+        final remoteApi = ref.read(remoteProvider).api;
+        final responseList = await remoteApi.clientV1DevicesGet();
+        dPrint(
+          () => "[SignInScreen] Remote devices GET response: ${responseList.isSuccessful}, body: ${responseList.body}",
+        );
+        if (responseList.isSuccessful) {
+          final List<Device>? remoteDevices = responseList.body;
+          if (remoteDevices != null && remoteDevices.isNotEmpty) {
+            dPrint(() => "[SignInScreen] Found ${remoteDevices.length} remote devices.");
+            // Get paths of each remote device
+            for (Device remoteDevice in remoteDevices) {
+              dPrint(() => "[SignInScreen] Processing remote device: ${remoteDevice.friendlyName}");
+              // Already added from mDNS detection
+              // if (devices.value.containsKey(remoteDevice.certificateCommonName)) {
+              //   dPrint(() => "[SignInScreen] Remote device already added: ${remoteDevice.friendlyName}");
+              //   if (isDevEnvironment) {
+              //     dPrint(() => "[SignInScreen] Skip for dev environment");
+              //   } else {
+              //     continue;
+              //   }
+              // }
+              dPrint(() => "[SignInScreen] ${remoteDevice.seagateDeviceID}");
+              // Get paths of the remote device
+              final responseInfo = await remoteApi.clientV1DevicesDeviceIDGet(deviceID: remoteDevice.seagateDeviceID);
+              dPrint(
+                () =>
+                    "[SignInScreen] Device paths GET for ${remoteDevice.friendlyName}: ${responseInfo.isSuccessful}, body: ${responseInfo.body}",
+              );
+              // Try to add device using the priority list
+              if (responseInfo.isSuccessful) {
+                addRemoteDevice(remoteDevice, responseInfo.body!);
+              } else {
+                handleError(ApiErrorMessage.remoteApi, responseInfo);
+              }
+            }
+          }
+        } else {
+          // If unauthorized or forbidden, try to re-initiate the authentication
+          if (responseList.statusCode == 401 || responseList.statusCode == 403) {
+            if (remoteInitiateAttempts < 2) {
+              remoteInitiateAttempts++;
+              dPrint(
+                () =>
+                    "[SignInScreen] Unauthorized or forbidden when fetching remote devices. Attempt: $remoteInitiateAttempts",
+              );
+              Future.delayed(const Duration(seconds: 1), () {
+                switchToRemoteAccessForm();
+              });
+            }
+          }
+          handleError(ApiErrorMessage.remoteApi, responseList);
+        }
+      } catch (error) {
+        handleError(ApiErrorMessage.remoteApi, error);
+      }
+      updateDetectionCounter(-1);
+    }
+
+    /// Start mDNS detection of local devices
+    Future<void> startNsdDetection() async {
+      if (discovery != null) {
+        return; // Already detecting, avoid duplicate calls
+      }
+      updateDetectionCounter(1);
+      discovery = await startDiscovery();
+      if (discovery != null && context.mounted) {
+        // Add a listener to find device
+        discovery?.addServiceListener((service, status) {
+          if (status == nsd.ServiceStatus.found && service.name!.contains(serviceNameDiscover) && context.mounted) {
+            dPrint(() => "[SignInScreen] mDNS Device Found: ${service.toString()}");
+            checkDeviceStatus(
+              baseUrl: DeviceProvider.createBaseUrl(service.host!, service.port),
+              timeoutDelay: 12 * 5000,
+            );
+          }
+        });
+        // Stop discovery after x seconds if no device found
+        Future.delayed(durationDetection, () {
+          _stopDiscovery();
+        });
+      } else {
+        updateDetectionCounter(-1);
+      }
+    }
+
+    startLocalAndRemoteDetection = () {
+      devices.value = {};
+      selectedDevice.value = null;
+      startNsdDetection();
+      getRemoteDevices();
+    };
+
+    /// Change focus from one field to another
+    void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
+      currentFocus.unfocus();
+      FocusScope.of(context).requestFocus(nextFocus);
+    }
 
     void clearAllErrors() {
       if (warningMessage.value != null) {
@@ -70,59 +390,81 @@ class CuratorLoginForm extends HookConsumerWidget {
       if (hasPasswordError.value) {
         hasPasswordError.value = false;
       }
-      if (hasServerEndpointError.value) {
-        hasServerEndpointError.value = false;
-      }
       if (hasPreviousLoginFailed.value) {
         hasPreviousLoginFailed.value = false;
       }
     }
 
     bool areRequiredFieldsFilled() =>
-        emailController.text.isNotEmpty &&
-        passwordController.text.isNotEmpty &&
-        serverEndpointController.text.isNotEmpty;
+        email.value.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value != null;
 
-    useEffect(
-      () {
-        void onFocusChange() {
-          final shouldClear = warningMessage.value != null ||
-              hasEmailError.value ||
-              hasPasswordError.value ||
-              hasServerEndpointError.value ||
-              hasPreviousLoginFailed.value;
-          if (!shouldClear) return;
-          if (emailFocusNode.hasFocus ||
-              passwordFocusNode.hasFocus ||
-              serverEndpointFocusNode.hasFocus) {
-            clearAllErrors();
-          }
+    useEffect(() {
+      email.value = ref.read(deviceProvider).login;
+      // Authenticated but need to find the device
+      favoriteDevice = ref.read(deviceProvider).deviceID ?? '';
+      favoriteLoggingIn.value = favoriteDevice.isNotEmpty && ref.read(deviceProvider).isAuthenticated;
+      // Start detection of local and remote devices
+      startLocalAndRemoteDetection();
+      return () {
+        try {
+          passwordController.dispose();
+          passwordFocusNode.dispose();
+          deviceFocusNode.dispose();
+        } catch (e) {
+          // Ignore
         }
+        _stopDiscovery();
+      };
+    }, []);
 
-        emailFocusNode.addListener(onFocusChange);
-        passwordFocusNode.addListener(onFocusChange);
-        serverEndpointFocusNode.addListener(onFocusChange);
+    useEffect(() {
+      void onFocusChange() {
+        final shouldClear =
+            warningMessage.value != null ||
+            hasEmailError.value ||
+            hasPasswordError.value ||
+            hasPreviousLoginFailed.value;
+        if (!shouldClear) return;
+        if (passwordFocusNode.hasFocus && hasPasswordError.value) {
+          hasPasswordError.value = false;
+        }
+        if (warningMessage.value != null) {
+          warningMessage.value = null;
+        }
+        if (hasPreviousLoginFailed.value) {
+          hasPreviousLoginFailed.value = false;
+        }
+      }
 
-        return () {
-          emailFocusNode.removeListener(onFocusChange);
-          passwordFocusNode.removeListener(onFocusChange);
-          serverEndpointFocusNode.removeListener(onFocusChange);
-        };
-      },
-      [],
-    );
+      passwordFocusNode.addListener(onFocusChange);
 
-    useEffect(
-      () {
-        return () {
-          warningMessage.dispose();
-          hasEmailError.dispose();
-          hasPasswordError.dispose();
-          hasServerEndpointError.dispose();
-        };
-      },
-      [],
-    );
+      return () {
+        passwordFocusNode.removeListener(onFocusChange);
+      };
+    }, []);
+
+    useEffect(() {
+      return () {
+        warningMessage.dispose();
+        hasEmailError.dispose();
+        hasPasswordError.dispose();
+      };
+    }, []);
+
+    void populateDevCredentials() async {
+      const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
+      await dotenv.load(fileName: '.env.$env');
+      final serverUrl = dotenv.env['DEV_SERVER_URL'];
+      final emailValue = dotenv.env['DEV_EMAIL'];
+      final password = dotenv.env['DEV_PASSWORD'];
+
+      clearAllErrors();
+      email.value = emailValue ?? '';
+      passwordController.text = password ?? '';
+
+      devices.value = {...devices.value, 'noveo device': DeviceItem(baseUrl: Uri.parse(serverUrl ?? ''))};
+      selectedDevice.value = devices.value.entries.firstWhere((item) => item.key == 'noveo device').value;
+    }
 
     Future<void> updateVersionCompatibilityWarning() async {
       try {
@@ -156,9 +498,12 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Future<bool> fetchServerAuthSettings() async {
-      clearAllErrors();
+      final device = selectedDevice.value!;
+      final baseUrl =
+          '${device.baseUrl!.scheme}://${device.baseUrl!.host}${device.baseUrl!.port != 80 && device.baseUrl!.port != 443 ? ':${device.baseUrl!.port}' : ''}/photos';
 
-      final sanitizedServerUrl = sanitizeUrl(serverEndpointController.text);
+      clearAllErrors();
+      final sanitizedServerUrl = sanitizeUrl(baseUrl.toString());
       final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
 
       if (normalizedServerUrl.isEmpty) {
@@ -167,14 +512,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       try {
-        final endpoint = await ref
-            .read(authProvider.notifier)
-            .validateServerUrl(normalizedServerUrl);
+        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
 
         await ref.read(serverInfoProvider.notifier).getServerInfo();
         await updateVersionCompatibilityWarning();
 
-        serverEndpoint.value = endpoint;
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
@@ -188,84 +530,13 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    useEffect(
-      () {
-        final serverUrl = getServerUrl();
-        if (serverUrl != null) {
-          serverEndpointController.text = serverUrl;
-        }
-        return null;
-      },
-      [],
-    );
-
-    void populateDevCredentials() async {
-      const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-      await dotenv.load(fileName: '.env.$env');
-      final serverUrl = dotenv.env['DEV_SERVER_URL'];
-      final email = dotenv.env['DEV_EMAIL'];
-      final password = dotenv.env['DEV_PASSWORD'];
-
-      clearAllErrors();
-      emailController.text = email ?? '';
-      passwordController.text = password ?? '';
-      serverEndpointController.text = serverUrl ?? '';
-    }
-
-    String? validateEmail(String email) {
-      final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-      if (!simpleEmailPattern.hasMatch(email)) {
-        return 'login_form_err_invalid_email'.tr();
-      }
-      return null;
-    }
-
-    String? validateServerEndpoint(String url) {
-      final parsedUrl = Uri.tryParse(sanitizeUrl(url));
-      if (parsedUrl == null ||
-          !parsedUrl.isAbsolute ||
-          !parsedUrl.scheme.startsWith("http") ||
-          parsedUrl.host.isEmpty) {
-        return 'login_form_err_invalid_url'.tr();
-      }
-
-      return null;
-    }
-
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
-        return;
-      }
-      if (!areRequiredFieldsFilled()) {
         return;
       }
 
       TextInput.finishAutofillContext();
       FocusScope.of(context).unfocus();
-
-      final serverEndpointValidationError =
-          validateServerEndpoint(serverEndpointController.text);
-
-      if (serverEndpointValidationError != null) {
-        hasServerEndpointError.value = true;
-        warningMessage.value = serverEndpointValidationError;
-        hasPreviousLoginFailed.value = true;
-        return;
-      }
-
-      final emailValidationError = validateEmail(emailController.text);
-
-      if (emailValidationError != null) {
-        hasEmailError.value = true;
-        warningMessage.value = emailValidationError;
-        hasPreviousLoginFailed.value = true;
-        return;
-      }
-
-      if (!areRequiredFieldsFilled()) {
-        hasPreviousLoginFailed.value = true;
-        return;
-      }
 
       clearAllErrors();
 
@@ -284,10 +555,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         invalidateAllApiRepositoryProviders(ref);
 
-        final result = await ref.read(authProvider.notifier).login(
-              emailController.text,
-              passwordController.text,
-            );
+        final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
@@ -304,10 +572,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                       child: const Text('login_form_not_now').tr(),
                       onPressed: () => Navigator.of(context).pop(false),
                     ),
-                    TextButton(
-                      child: const Text('common_yes').tr(),
-                      onPressed: () => Navigator.of(context).pop(true),
-                    ),
+                    TextButton(child: const Text('common_yes').tr(), onPressed: () => Navigator.of(context).pop(true)),
                   ],
                 );
               },
@@ -318,8 +583,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             }
           }
 
-          final onboardingWasShown =
-              Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+          final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
             context.replaceRoute(const TabControllerRoute());
           } else {
@@ -343,232 +607,125 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    Widget buildWarningBanner() {
-      return ValueListenableBuilder<String?>(
-        valueListenable: warningMessage,
-        builder: (_, message, __) {
-          if (message == null) {
-            return const SizedBox.shrink();
-          }
-          return Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0x1FF44336),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.error,
-                      color: context.isDarkTheme
-                          ? const Color(0xFFF28F8C)
-                          : const Color(0xFFF44336),
-                    ),
-                    const SizedBox(width: 16.0),
-                    Expanded(
-                      child: Text(message),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24.0),
-            ],
-          );
-        },
-      );
-    }
-
-    Widget buildServerEndpointAutocomplete() {
-      return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final double maxWidth = constraints.maxWidth;
-          return RawAutocomplete<String>(
-            textEditingController: serverEndpointController,
-            focusNode: serverEndpointFocusNode,
-            optionsBuilder: (value) {
-              const allOptions = ['1', '2', '3'];
-              final input = value.text.trim();
-              if (input.isEmpty) return allOptions;
-              return allOptions.where(
-                (option) => option.toLowerCase().contains(input.toLowerCase()),
-              );
-            },
-            displayStringForOption: (value) => value,
-            onSelected: (value) {
-              serverEndpointController.text = value;
-              emailFocusNode.requestFocus();
-            },
-            fieldViewBuilder:
-                (context, controller, focusNode, onFieldSubmitted) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: hasServerEndpointError,
-                builder: (_, serverError, __) {
-                  return ServerEndpointInput(
-                    controller: serverEndpointController,
-                    focusNode: serverEndpointFocusNode,
-                    onSubmit: emailFocusNode.requestFocus,
-                    hasExternalError: serverError,
-                  );
-                },
-              );
-            },
-            optionsViewBuilder: (context, onSelected, options) {
-              return Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 4,
-                  borderRadius: BorderRadius.circular(12),
-                  clipBehavior: Clip.antiAlias,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: 300,
-                      minWidth: maxWidth,
-                      maxWidth: maxWidth,
-                    ),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      itemCount: options.length,
-                      itemBuilder: (_, index) {
-                        final option = options.elementAt(index);
-                        return ListTile(
-                          title: Text(option),
-                          onTap: () {
-                            onSelected(option);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      );
-    }
-
-    Widget buildLoginForm() {
-      return Form(
-        key: formKey,
-        child: AutofillGroup(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        GestureDetector(
+          onDoubleTap: () => populateDevCredentials(),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              buildServerEndpointAutocomplete(),
-              const SizedBox(height: 32.0),
-              ValueListenableBuilder<bool>(
-                valueListenable: hasEmailError,
-                builder: (_, emailError, __) {
-                  return EmailInput(
-                    controller: emailController,
-                    focusNode: emailFocusNode,
-                    onSubmit: passwordFocusNode.requestFocus,
-                    hasExternalError: emailError,
-                  );
-                },
+              const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
+              SvgPicture.asset(
+                context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
+                height: 40,
               ),
-              const SizedBox(height: 32.0),
-              ValueListenableBuilder<bool>(
-                valueListenable: hasPasswordError,
-                builder: (_, passwordError, __) {
-                  return PasswordInput(
-                    controller: passwordController,
-                    focusNode: passwordFocusNode,
-                    onSubmit: login,
-                    hasExternalError: passwordError,
-                  );
-                },
-              ),
-              const SizedBox(height: 24.0),
-              GestureDetector(
-                // onTap: () => context.pushRoute(const CuratorOnboardingRoute()),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(
-                    'reset_password'.tr(),
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24.0),
-              buildWarningBanner(),
-              SizedBox(
-                height: 100.0,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    isLoading.value
-                        ? LoadingIcon(
-                            key: const ValueKey("loading"),
-                            text: 'curator.login_form_loading_text'.tr(),
-                          )
-                        : AnimatedBuilder(
-                            animation: Listenable.merge([
-                              emailController,
-                              passwordController,
-                              serverEndpointController,
-                              hasPreviousLoginFailed,
-                            ]),
-                            builder: (_, __) {
-                              final canSubmit = areRequiredFieldsFilled() &&
-                                  !hasPreviousLoginFailed.value;
-                              return LoginButton(
-                                onPressed: canSubmit ? login : () {},
-                                withIcon: false,
-                                isDisabled: !canSubmit,
+            ],
+          ),
+        ),
+        const SizedBox(height: 24.0),
+        isLoading.value
+            ? LoadingIcon(key: const ValueKey("loading"), text: 'curator.login_form_loading_text'.tr())
+            : Column(
+                children: [
+                  Form(
+                    key: formKey,
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            email.value,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 24.0),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DeviceSelector(
+                                controller: deviceController,
+                                devices: devices.value.entries.map((entry) => entry.value).toList(),
+                                maxWidth: constraints.maxWidth,
+                                selectedDevice: selectedDevice.value,
+                                isDetecting: isDetecting,
+                                focusNode: deviceFocusNode,
+                                enabled: !loggingIn.value,
+                                onDeviceSelected: (device) {
+                                  selectedDevice.value = device;
+                                  fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
+                                },
+                                onRefresh: startLocalAndRemoteDetection,
                               );
                             },
                           ),
-                  ],
-                ),
+                          const SizedBox(height: 24.0),
+                          PasswordInput(
+                            controller: passwordController,
+                            focusNode: passwordFocusNode,
+                            onSubmit: login,
+                            hasExternalError: hasPasswordError.value,
+                          ),
+                          const SizedBox(height: 24.0),
+                          GestureDetector(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                'reset_password'.tr(),
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24.0),
+                          warningMessage.value == null
+                              ? const SizedBox.shrink()
+                              : Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x1FF44336),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.error,
+                                            color: context.isDarkTheme
+                                                ? const Color(0xFFF28F8C)
+                                                : const Color(0xFFF44336),
+                                          ),
+                                          const SizedBox(width: 16.0),
+                                          Expanded(child: Text(warningMessage.value!)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24.0),
+                                  ],
+                                ),
+                          AnimatedBuilder(
+                            animation: Listenable.merge([
+                              passwordController,
+                              hasPreviousLoginFailed,
+                            ]),
+                            builder: (_, __) {
+                              final canSubmit = areRequiredFieldsFilled() && !hasPreviousLoginFailed.value;
+                              return LoginButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    Widget buildLogo(BuildContext context) {
-      return GestureDetector(
-        onDoubleTap: () => populateDevCredentials(),
-        child: SvgPicture.asset(
-          context.isDarkTheme
-              ? 'assets/curator-photos-logo-dark.svg'
-              : 'assets/curator-photos-logo-light.svg',
-          height: 52,
-        ),
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: SizedBox(
-                width: 312,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    buildLogo(context),
-                    const SizedBox(height: 24.0),
-                    buildLoginForm(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+      ],
     );
   }
 }

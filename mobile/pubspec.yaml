@@ -2,7 +2,7 @@ name: immich_mobile
 description: Immich - selfhosted backup media file on mobile phone
 
 publish_to: 'none'
-version: 1.0.10+1
+version: 1.0.11+1
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -82,6 +82,9 @@ dependencies:
   image_editor:
     path: ../image_editor
 
+  homecloud_frontend:
+    path: ../homecloud_frontend
+
   native_video_player:
     git:
       url: https://github.com/immich-app/native_video_player
@@ -100,6 +103,7 @@ dependencies:
 
 dependency_overrides:
   intl: ^0.20.2
+  device_info_plus: ^11.3.3
 
 dev_dependencies:
   flutter_test:

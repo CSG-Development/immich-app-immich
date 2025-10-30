@@ -236,8 +236,8 @@ export const defaults = Object.freeze<SystemConfig>({
   },
   map: {
     enabled: true,
-    lightStyle: `${process.env.MAP_TILES_URL}/styles/light-style/style.json`,
-    darkStyle: `${process.env.MAP_TILES_URL}/styles/dark-style/style.json`,
+    lightStyle: `${process.env.MAP_TILES_URL || 'https://homecloud-map.noveogroup.com'}/styles/light-style/style.json`,
+    darkStyle: `${process.env.MAP_TILES_URL || 'https://homecloud-map.noveogroup.com'}/styles/dark-style/style.json`,
   },
   reverseGeocoding: {
     enabled: true,

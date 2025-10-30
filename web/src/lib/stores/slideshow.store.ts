@@ -35,6 +35,7 @@ function createSlideshowStore() {
   );
   const slideshowLook = persisted<SlideshowLook>('slideshow-look', SlideshowLook.Contain);
   const slideshowState = writable<SlideshowState>(SlideshowState.None);
+  const isShuffled = writable<boolean>(false);
 
   const showProgressBar = persisted<boolean>('slideshow-show-progressbar', true);
   const slideshowDelay = persisted<number>('slideshow-delay', 5, {});
@@ -71,6 +72,7 @@ function createSlideshowStore() {
     showProgressBar,
     slideshowTransition,
     slideshowAutoplay,
+    isShuffled,
   };
 }
 
