@@ -10,8 +10,11 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
@@ -477,6 +480,18 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+    Future<void> handleSyncFlow() async {
+      final backgroundManager = ref.read(backgroundSyncProvider);
+
+      await backgroundManager.syncLocal(full: true);
+      await backgroundManager.syncRemote();
+      await backgroundManager.hashAssets();
+
+      if (Store.get(StoreKey.syncAlbums, false)) {
+        await backgroundManager.syncLinkedAlbum();
+      }
+    }
+
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -532,7 +547,22 @@ class CuratorLoginForm extends HookConsumerWidget {
 
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
+            // context.replaceRoute(const TabControllerRoute());
+
+          if (onboardingWasShown) {
+            final isBeta = Store.isBetaTimelineEnabled;
+            if (isBeta) {
+              await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+              handleSyncFlow();
+              ref.read(websocketProvider.notifier).connect();
+              context.replaceRoute(const TabShellRoute());
+              return;
+            }
             context.replaceRoute(const TabControllerRoute());
+          } else {
+            context.replaceRoute(const CuratorOnboardingRoute());
+          }
+
           } else {
             context.replaceRoute(const CuratorOnboardingRoute());
           }

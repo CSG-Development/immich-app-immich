@@ -5,6 +5,7 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/setting.model.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/advanced_info_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/archive_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_action_button.widget.dart';
@@ -14,11 +15,14 @@ import 'package:immich_mobile/presentation/widgets/action_buttons/download_actio
 import 'package:immich_mobile/presentation/widgets/action_buttons/edit_date_time_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/edit_location_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/favorite_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/copy_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/duplicate_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/move_to_lock_folder_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/share_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/share_link_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/stack_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/trash_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/unstack_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/upload_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/album/album_selector.widget.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_sheet.widget.dart';
@@ -62,11 +66,19 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
         return;
       }
 
+      final remoteAssets = selectedAssets.whereType<RemoteAsset>();
       final addedCount = await ref
           .read(remoteAlbumProvider.notifier)
-          .addAssets(album.id, selectedAssets.map((e) => (e as RemoteAsset).id).toList());
+          .addAssets(album.id, remoteAssets.map((e) => e.id).toList());
 
-      if (addedCount != selectedAssets.length) {
+      if (selectedAssets.length != remoteAssets.length) {
+        ImmichToast.show(
+          context: context,
+          msg: 'add_to_album_bottom_sheet_some_local_assets'.t(context: context),
+        );
+      }
+
+      if (addedCount != remoteAssets.length) {
         ImmichToast.show(
           context: context,
           msg: 'add_to_album_bottom_sheet_already_exists'.tr(namedArgs: {"album": album.name}),
@@ -87,7 +99,7 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
 
     return BaseBottomSheet(
       controller: sheetController,
-      initialChildSize: 0.45,
+      initialChildSize: widget.minChildSize ?? 0.15,
       minChildSize: widget.minChildSize,
       maxChildSize: 0.85,
       shouldCloseOnMinExtent: false,
@@ -96,6 +108,9 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           const AdvancedInfoActionButton(source: ActionSource.timeline),
         ],
         const ShareActionButton(source: ActionSource.timeline),
+        // Copy/Duplicate (legacy feature)
+        const CopyActionButton(source: ActionSource.timeline),
+        const DuplicateActionButton(source: ActionSource.timeline),
         if (multiselect.hasRemote) ...[
           const ShareLinkActionButton(source: ActionSource.timeline),
           const DownloadActionButton(source: ActionSource.timeline),
@@ -108,15 +123,18 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           const EditLocationActionButton(source: ActionSource.timeline),
           const MoveToLockFolderActionButton(source: ActionSource.timeline),
           if (multiselect.selectedAssets.length > 1) const StackActionButton(source: ActionSource.timeline),
+          if (multiselect.hasStacked) const UnStackActionButton(source: ActionSource.timeline),
           const DeleteActionButton(source: ActionSource.timeline),
         ],
         if (multiselect.hasLocal || multiselect.hasMerged) const DeleteLocalActionButton(source: ActionSource.timeline),
         if (multiselect.hasLocal) const UploadActionButton(source: ActionSource.timeline),
       ],
-      slivers: [
-        const AddToAlbumHeader(),
-        AlbumSelector(onAlbumSelected: addAssetsToAlbum, onKeyboardExpanded: onKeyboardExpand),
-      ],
+      slivers: multiselect.hasRemote
+          ? [
+              const AddToAlbumHeader(),
+              AlbumSelector(onAlbumSelected: addAssetsToAlbum, onKeyboardExpanded: onKeyboardExpand),
+            ]
+          : [],
     );
   }
 }

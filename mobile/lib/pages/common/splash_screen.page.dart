@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
@@ -68,13 +69,23 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
             infoProvider.getServerInfo();
 
             if (Store.isBetaTimelineEnabled) {
-              await Future.wait([backgroundManager.syncLocal(), backgroundManager.syncRemote()]);
+              bool syncSuccess = false;
               await Future.wait([
-                backgroundManager.hashAssets().then((_) {
-                  _resumeBackup(backupProvider);
-                }),
-                _resumeBackup(backupProvider),
+                backgroundManager.syncLocal(full: true),
+                backgroundManager.syncRemote().then((success) => syncSuccess = success),
               ]);
+
+              if (syncSuccess) {
+                await Future.wait([
+                  backgroundManager.hashAssets().then((_) {
+                    _resumeBackup(backupProvider);
+                  }),
+                  _resumeBackup(backupProvider),
+                ]);
+              } else {
+                backupProvider.updateError(BackupError.syncFailed);
+                await backgroundManager.hashAssets();
+              }
 
               if (Store.get(StoreKey.syncAlbums, false)) {
                 await backgroundManager.syncLinkedAlbum();

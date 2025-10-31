@@ -5,18 +5,22 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/websocket.provider.dart';
 
 final _onboardingSteps = kCuratorOnboardingSlidesData;
 
 @RoutePage()
-class CuratorOnboardingPage extends StatefulWidget {
+class CuratorOnboardingPage extends ConsumerStatefulWidget {
   const CuratorOnboardingPage({super.key});
 
   @override
-  State<CuratorOnboardingPage> createState() => _CuratorOnboardingPageState();
+  ConsumerState<CuratorOnboardingPage> createState() => _CuratorOnboardingPageState();
 }
 
-class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
+class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
   final PageController _pageController = PageController();
   final List<ScrollController> _scrollControllers = [];
   int _currentPage = 0;
@@ -72,15 +76,30 @@ class _CuratorOnboardingPageState extends State<CuratorOnboardingPage> {
 
   void _skip() => _finishOnboarding();
 
+  Future<void> _handleSyncFlow() async {
+    final backgroundManager = ref.read(backgroundSyncProvider);
+
+    await backgroundManager.syncLocal(full: true);
+    await backgroundManager.syncRemote();
+    await backgroundManager.hashAssets();
+
+    if (Store.get(StoreKey.syncAlbums, false)) {
+      await backgroundManager.syncLinkedAlbum();
+    }
+  }
+
   void _finishOnboarding() async {
     await Store.put(StoreKey.onboardingWasShown, true);
     await Store.delete(StoreKey.onboardingViewedCount);
     final isBeta = Store.isBetaTimelineEnabled;
     if (isBeta) {
+      await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+      await _handleSyncFlow();
+      ref.read(websocketProvider.notifier).connect();
       context.replaceRoute(const TabShellRoute());
-    } else {
-      context.replaceRoute(const TabControllerRoute());
+      return;
     }
+    context.replaceRoute(const TabControllerRoute());
   }
 
   Widget _buildFixedStep(OnboardingSlide step, bool isTablet) {

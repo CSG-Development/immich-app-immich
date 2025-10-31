@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,11 +9,13 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/cast_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/download_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/favorite_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/motion_photo_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/unfavorite_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_viewer.state.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/current_album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
@@ -20,6 +23,7 @@ import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 
 class ViewerTopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ViewerTopAppBar({super.key});
@@ -54,9 +58,22 @@ class ViewerTopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     }
 
     final isCasting = ref.watch(castProvider.select((c) => c.isCasting));
+    final isAirPlayConnected = ref.watch(airplayProvider);
 
     final actions = <Widget>[
+      if (asset.isRemoteOnly) const DownloadActionButton(source: ActionSource.viewer, menuItem: true),
       if (isCasting || (asset.hasRemote)) const CastActionButton(menuItem: true),
+      if (Platform.isIOS)
+        IconButton(
+          onPressed: () async {
+            await AirplayService.showAirPlayMenu();
+          },
+          icon: Icon(
+            Icons.airplay,
+            size: 20.0,
+            color: isAirPlayConnected ? context.primaryColor : Colors.grey[200],
+          ),
+        ),
       if (album != null && album.isActivityEnabled && album.isShared)
         IconButton(
           icon: const Icon(Icons.chat_outlined),
@@ -84,6 +101,17 @@ class ViewerTopAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     final lockedViewActions = <Widget>[
       if (isCasting || (asset.hasRemote)) const CastActionButton(menuItem: true),
+      if (Platform.isIOS)
+        IconButton(
+          onPressed: () async {
+            await AirplayService.showAirPlayMenu();
+          },
+          icon: Icon(
+            Icons.airplay,
+            size: 20.0,
+            color: isAirPlayConnected ? context.primaryColor : Colors.grey[200],
+          ),
+        ),
       const _KebabMenu(),
     ];
 

@@ -9,6 +9,7 @@ import 'package:immich_mobile/domain/models/setting.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_sheet/sheet_location_details.widget.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_sheet/sheet_tags_details.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/bottom_sheet/sheet_people_details.widget.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_sheet.widget.dart';
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
@@ -51,6 +52,7 @@ class AssetDetailBottomSheet extends ConsumerWidget {
       isArchived: isArchived,
       isTrashEnabled: isTrashEnable,
       isInLockedView: isInLockedView,
+      isStacked: asset.hasRemote && (asset as RemoteAsset).stackId != null,
       currentAlbum: currentAlbum,
       advancedTroubleshooting: advancedTroubleshooting,
       source: ActionSource.viewer,
@@ -152,6 +154,8 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
         if (exifInfo != null) _SheetAssetDescription(exif: exifInfo),
         const SheetPeopleDetails(),
         const SheetLocationDetails(),
+        // Tags section mirrored to sheet style
+        const SheetTagsDetails(),
         // Details header
         _SheetTile(
           title: 'exif_bottom_sheet_details'.t(context: context),

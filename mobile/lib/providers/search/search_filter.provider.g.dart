@@ -207,7 +207,8 @@ mixin GetSearchSuggestionsRef on FutureProviderRef<List<String>> {
 }
 
 class _GetSearchSuggestionsProviderElement
-    extends FutureProviderElement<List<String>> with GetSearchSuggestionsRef {
+    extends FutureProviderElement<List<String>>
+    with GetSearchSuggestionsRef {
   _GetSearchSuggestionsProviderElement(super.provider);
 
   @override

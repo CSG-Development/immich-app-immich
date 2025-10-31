@@ -24,8 +24,6 @@ import 'package:immich_mobile/infrastructure/repositories/logger_db.repository.d
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:immich_mobile/domain/services/secure_store.service.dart';
-import 'package:immich_mobile/infrastructure/repositories/secure_store.repository.dart';
 
 void configureFileDownloaderNotifications() {
   FileDownloader().configureNotificationForGroup(
@@ -98,12 +96,11 @@ abstract final class Bootstrap {
     bool listenStoreUpdates = true,
     bool shouldBufferLogs = true,
   }) async {
-    final isBeta = await IsarStoreRepository(db).tryGet(StoreKey.betaTimeline) ?? false;
+    final isBeta = await IsarStoreRepository(db).tryGet(StoreKey.betaTimeline) ?? true;
     final IStoreRepository storeRepo = isBeta ? DriftStoreRepository(drift) : IsarStoreRepository(db);
 
     await StoreService.init(storeRepository: storeRepo, listenUpdates: listenStoreUpdates);
 
-    await SecureStoreService.init(storeRepository: SecureStoreRepository());
     await LogService.init(
       logRepository: LogRepository(logDb),
       storeRepository: storeRepo,

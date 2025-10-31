@@ -120,18 +120,6 @@ class TabControllerPage extends HookConsumerWidget {
       );
     }
 
-    Widget navigationRail(TabsRouter tabsRouter) {
-      return NavigationRail(
-        destinations: navigationDestinations
-            .map((e) => NavigationRailDestination(icon: e.icon, label: Text(e.label), selectedIcon: e.selectedIcon))
-            .toList(),
-        onDestinationSelected: (index) => onNavigationSelected(tabsRouter, index),
-        selectedIndex: tabsRouter.activeIndex,
-        labelType: NavigationRailLabelType.all,
-        groupAlignment: 0.0,
-      );
-    }
-
     final isVisible = ref.watch(scrollNotifierProvider).isVisible;
     final multiselectEnabled = ref.watch(multiselectProvider);
     return AutoTabsRouter(

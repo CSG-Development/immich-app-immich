@@ -1,6 +1,3 @@
-import 'package:flutter/foundation.dart';
-import 'package:immich_mobile/domain/models/tag.model.dart';
-// part 'asset.model.dart';
 part 'local_asset.model.dart';
 part 'remote_asset.model.dart';
 
