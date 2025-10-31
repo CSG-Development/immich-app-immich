@@ -45,6 +45,7 @@
   import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { albumPreviousRoute } from '$lib/stores/navigation.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences, user } from '$lib/stores/user.store';
@@ -407,7 +408,14 @@
     const changed = await modalManager.show(AlbumUsersModal, { album });
 
     if (changed) {
-      await refreshAlbum();
+      await refreshAlbum().catch(async () => {
+        const prev = get(albumPreviousRoute);
+        await (prev
+          ? goto(prev).then(() => {
+              albumPreviousRoute.set(null);
+            })
+          : goto(resolve(AppRoute.PHOTOS)));
+      });
     }
   };
 
