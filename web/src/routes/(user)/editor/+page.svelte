@@ -45,7 +45,7 @@
     const uint8Array = flutterState.getImage();
 
     const asset = await getAssetInfo({ id: assetId, key: authManager.key });
-    const resultFile = new File([uint8Array], asset.originalFileName);
+    const resultFile = new File([uint8Array], asset.originalFileName, { type: 'image/jpeg' });
     await fileUploadHandler({ files: [resultFile] }).then(async () => {
       await goto(resolve(AppRoute.PHOTOS), { replaceState: true });
     });
