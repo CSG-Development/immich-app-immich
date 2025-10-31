@@ -56,3 +56,4 @@ preferWorkspacePackages: true
 injectWorkspacePackages: true
 shamefullyHoist: false
 verifyDepsBeforeRun: install
+forceLegacyDeploy: true
