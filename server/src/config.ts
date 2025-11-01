@@ -230,7 +230,7 @@ export const defaults = Object.freeze<SystemConfig>({
       enabled: true,
       modelName: 'facenet-pytorch',
       minScore: 0.7,
-      maxDistance: 0.5,
+      maxDistance: 0.75,
       minFaces: 3,
     },
   },
