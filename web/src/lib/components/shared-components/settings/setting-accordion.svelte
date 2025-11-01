@@ -80,7 +80,7 @@
         {#if icon}
           <Icon path={icon} class="text-immich-primary dark:text-immich-dark-primary" size="24" ariaHidden />
         {/if}
-        <h2 class="font-medium text-immich-primary dark:text-immich-dark-primary">
+        <h2 class="font-medium text-primary">
           {title}
         </h2>
       </div>

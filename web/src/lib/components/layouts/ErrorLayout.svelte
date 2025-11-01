@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { copyToClipboard } from '$lib/utils';
   import { IconButton, Logo } from '@immich/ui';
   import { mdiCodeTags, mdiContentCopy, mdiMessage, mdiPartyPopper } from '@mdi/js';
@@ -25,7 +24,7 @@
   <section>
     <div class="flex place-items-center border-b px-6 py-4 dark:border-b-immich-dark-gray">
       <a class="flex place-items-center gap-2 hover:cursor-pointer" href="/photos">
-        <Logo class="h-[50px]" variant="inline" appTheme={themeManager.value} />
+        <Logo class="h-[50px]" variant="inline" />
       </a>
     </div>
   </section>

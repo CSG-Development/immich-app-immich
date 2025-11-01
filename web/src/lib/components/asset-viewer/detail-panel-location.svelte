@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
   import ChangeLocation from '$lib/components/shared-components/change-location.svelte';
-  import Portal from '$lib/components/shared-components/portal/portal.svelte';
+  import Portal from '$lib/elements/Portal.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
   import { mdiMapMarkerOutline, mdiPencil } from '@mdi/js';
@@ -16,18 +16,22 @@
 
   let isShowChangeLocation = $state(false);
 
-  async function handleConfirmChangeLocation(gps: { lng: number; lat: number }) {
+  const onClose = async (point?: { lng: number; lat: number }) => {
     isShowChangeLocation = false;
+
+    if (!point) {
+      return;
+    }
 
     try {
       asset = await updateAsset({
         id: asset.id,
-        updateAssetDto: { latitude: gps.lat, longitude: gps.lng },
+        updateAssetDto: { latitude: point.lat, longitude: point.lng },
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_location'));
     }
-  }
+  };
 </script>
 
 {#if asset.exifInfo?.country}
@@ -36,8 +40,7 @@
     class="flex w-full text-start justify-between place-items-start gap-4 py-4"
     onclick={() => (isOwner ? (isShowChangeLocation = true) : null)}
     title={isOwner ? $t('edit_location') : ''}
-    class:hover:dark:text-immich-dark-primary={isOwner}
-    class:hover:text-immich-primary={isOwner}
+    class:hover:text-primary={isOwner}
   >
     <div class="flex gap-4">
       <div><Icon path={mdiMapMarkerOutline} size="24" /></div>
@@ -85,6 +88,6 @@
 
 {#if isShowChangeLocation}
   <Portal>
-    <ChangeLocation {asset} onConfirm={handleConfirmChangeLocation} onCancel={() => (isShowChangeLocation = false)} />
+    <ChangeLocation {asset} {onClose} />
   </Portal>
 {/if}

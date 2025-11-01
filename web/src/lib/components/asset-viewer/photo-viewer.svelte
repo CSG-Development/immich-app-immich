@@ -13,7 +13,7 @@
   import { SlideshowLook, SlideshowState, slideshowLookCssMapping, slideshowStore } from '$lib/stores/slideshow.store';
   import { photoZoomState } from '$lib/stores/zoom-image.store';
   import { getAssetOriginalUrl, getAssetThumbnailUrl, handlePromiseError } from '$lib/utils';
-  import { canCopyImageToClipboard, copyImageToClipboard, isWebCompatibleImage } from '$lib/utils/asset-utils';
+  import { canCopyImageToClipboard, copyImageToClipboard, isWebCompatibleAsset } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { getBoundingBox } from '$lib/utils/people-utils';
   import { cancelImageUrl } from '$lib/utils/sw-messaging';
@@ -21,7 +21,7 @@
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetMediaSize, type AssetResponseDto, type SharedLinkResponseDto } from '@immich/sdk';
   import { onDestroy, onMount } from 'svelte';
-  import { swipe, type SwipeCustomEvent } from 'svelte-gestures';
+  import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
   import LoadingSpinner from '../shared-components/loading-spinner.svelte';
@@ -148,7 +148,7 @@
 
   const targetImageSize = $derived.by(() => {
     if ($alwaysLoadOriginalFile || forceUseOriginal || originalImageLoaded) {
-      return isWebCompatibleImage(asset) ? 'original' : AssetMediaSize.Fullsize;
+      return isWebCompatibleAsset(asset) ? 'original' : AssetMediaSize.Fullsize;
     }
 
     return AssetMediaSize.Preview;

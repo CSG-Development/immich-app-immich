@@ -1,4 +1,5 @@
 import { isHttpError } from '@immich/sdk';
+import type { Component } from 'svelte';
 import { notificationController, NotificationType } from '../components/shared-components/notification/notification';
 
 export function getServerErrorMessage(error: unknown) {
@@ -19,22 +20,30 @@ export function getServerErrorMessage(error: unknown) {
   return data?.message || error.message;
 }
 
-export function handleError(error: unknown, message: string) {
-  if ((error as Error)?.name === 'AbortError') {
+interface ApiError extends Error {
+  status: number;
+}
+
+export function handleError(error: unknown, message: string, component?: Component) {
+  if ((error as ApiError)?.name === 'AbortError') {
     return;
   }
 
-  console.error(`[handleError]: ${message}`, error, (error as Error)?.stack);
+  console.error(`[handleError]: ${message}`, error, (error as ApiError)?.stack);
 
   try {
     let serverMessage = getServerErrorMessage(error);
     if (serverMessage) {
-      serverMessage = `${String(serverMessage).slice(0, 75)}\n(Curator Photos Server Error)`;
+      serverMessage = `${String(serverMessage).slice(0, 75)}\n${(error as ApiError)?.status >= 500 ? '(Curator Photos Server Error)' : ''}`;
     }
 
     const errorMessage = serverMessage || message;
 
-    notificationController.show({ message: errorMessage, type: NotificationType.Error });
+    notificationController.show({
+      message: errorMessage,
+      type: NotificationType.Error,
+      ...(!!component ? { component } : {}),
+    });
 
     return errorMessage;
   } catch (error) {

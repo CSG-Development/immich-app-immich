@@ -14,7 +14,7 @@
       size="medium"
       color="secondary"
       {translations}
-      onChange={(theme) => themeManager.setTheme(theme == 'dark' ? Theme.DARK : Theme.LIGHT)}
+      onChange={(theme) => themeManager.setTheme(theme === 'dark' ? Theme.DARK : Theme.LIGHT)}
     />
   {/await}
 {/if}

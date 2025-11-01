@@ -1,24 +1,31 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import SelectAllAssets from '$lib/components/photos-page/actions/select-all-assets.svelte';
-  import SetVisibilityAction from '$lib/components/photos-page/actions/set-visibility-action.svelte';
-  import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
+  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
+  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
+  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
+  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
+  import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
+  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
+  import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AppRoute, AssetAction } from '$lib/constants';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
+  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
   import { AssetVisibility, lockAuthSession } from '@immich/sdk';
   import { Button } from '@immich/ui';
-  import { mdiDotsVertical, mdiLockOutline } from '@mdi/js';
+  import { mdiDotsVertical, mdiLockOutline, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -47,7 +54,24 @@
 
   const handleLock = async () => {
     await lockAuthSession();
-    await goto(AppRoute.PHOTOS);
+    await goto(resolve(AppRoute.PHOTOS));
+  };
+
+  let { setAssetId } = assetViewingStore;
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
   };
 </script>
 
@@ -63,17 +87,19 @@
     </Button>
   {/snippet}
 
-  <AssetGrid
+  <Timeline
     enableRouting={true}
     {timelineManager}
     {assetInteraction}
     onEscape={handleEscape}
     removeAction={AssetAction.SET_VISIBILITY_TIMELINE}
+    selectedAssets={assetInteraction.selectedAssets}
+    {shuffledSelectedAssets}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_locked_photos_message')} title={$t('nothing_here_yet')} />
     {/snippet}
-  </AssetGrid>
+  </Timeline>
 </UserPageLayout>
 
 <!-- Multi-selection mode app bar -->
@@ -85,6 +111,9 @@
     <SelectAllAssets withText {timelineManager} {assetInteraction} />
     <SetVisibilityAction unlock onVisibilitySet={handleMoveOffLockedFolder} />
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+      {#if assetInteraction.selectedAssets.length > 1}
+        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+      {/if}
       <DownloadAction menuItem />
       <ChangeDate menuItem />
       <ChangeLocation menuItem />

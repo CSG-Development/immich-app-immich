@@ -1,49 +1,59 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
+import 'package:immich_mobile/utils/trim_formatter.dart';
 
 class EmailInput extends StatelessWidget {
   final TextEditingController controller;
-  final FocusNode? focusNode;
-  final Function()? onSubmit;
+  final FocusNode focusNode;
+  final VoidCallback? onSubmit;
+  final bool hasExternalError;
+  final String? Function(String?)? validator;
+  final bool canRequestFocus;
 
   const EmailInput({
     super.key,
     required this.controller,
-    this.focusNode,
+    required this.focusNode,
     this.onSubmit,
+    this.hasExternalError = false,
+    this.validator,
+    this.canRequestFocus = true,
   });
-
-  String? _validateInput(String? email) {
-    if (email == null || email == '') return null;
-    if (email.endsWith(' ')) return 'login_form_err_trailing_whitespace'.tr();
-    if (email.startsWith(' ')) return 'login_form_err_leading_whitespace'.tr();
-    if (email.contains(' ') || !email.contains('@')) {
-      return 'login_form_err_invalid_email'.tr();
-    }
-    return null;
-  }
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      autofocus: true,
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: 'email'.tr(),
-        border: const OutlineInputBorder(),
-        hintText: 'login_form_email_hint'.tr(),
-        hintStyle: const TextStyle(
-          fontWeight: FontWeight.normal,
-          fontSize: 14,
-        ),
-      ),
-      validator: _validateInput,
-      autovalidateMode: AutovalidateMode.always,
-      autofillHints: const [AutofillHints.email],
-      keyboardType: TextInputType.emailAddress,
-      onFieldSubmitted: (_) => onSubmit?.call(),
-      focusNode: focusNode,
-      textInputAction: TextInputAction.next,
+    return ListenableBuilder(
+      listenable: Listenable.merge([controller, focusNode]),
+      builder: (context, _) {
+        final bool shouldShowClearButton =
+            controller.text.isNotEmpty && focusNode.hasFocus;
+
+        return TextFormField(
+          controller: controller,
+          validator: validator,
+          inputFormatters: const [TrimFormatter()],
+          decoration: LoginInputDecorations.baseDecoration(
+            context: context,
+            labelText: 'email'.tr(),
+            hintText: 'curator.login_form_email_hint'.tr(),
+            suffixIcon: shouldShowClearButton
+                ? IconButton(
+                    onPressed: controller.clear,
+                    icon: const Icon(Icons.highlight_off),
+                  )
+                : null,
+            isError: hasExternalError,
+          ),
+          autovalidateMode: AutovalidateMode.always,
+          autofillHints: const [AutofillHints.email],
+          keyboardType: TextInputType.emailAddress,
+          onFieldSubmitted: (_) => onSubmit?.call(),
+          focusNode: focusNode,
+          textInputAction: TextInputAction.next,
+          canRequestFocus: canRequestFocus,
+        );
+      },
     );
   }
 }

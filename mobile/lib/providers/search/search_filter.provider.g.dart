@@ -7,7 +7,7 @@ part of 'search_filter.provider.dart';
 // **************************************************************************
 
 String _$getSearchSuggestionsHash() =>
-    r'bc30a65e8fcb273cbd07bab876baf67bcc794737';
+    r'a1a971072002dbfe3cfa3cd05c688b8a355234a8';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -85,8 +85,7 @@ class GetSearchSuggestionsFamily extends Family<AsyncValue<List<String>>> {
 }
 
 /// See also [getSearchSuggestions].
-class GetSearchSuggestionsProvider
-    extends AutoDisposeFutureProvider<List<String>> {
+class GetSearchSuggestionsProvider extends FutureProvider<List<String>> {
   /// See also [getSearchSuggestions].
   GetSearchSuggestionsProvider(
     SearchSuggestionType type, {
@@ -95,29 +94,28 @@ class GetSearchSuggestionsProvider
     String? make,
     String? model,
   }) : this._internal(
-          (ref) => getSearchSuggestions(
-            ref as GetSearchSuggestionsRef,
-            type,
-            locationCountry: locationCountry,
-            locationState: locationState,
-            make: make,
-            model: model,
-          ),
-          from: getSearchSuggestionsProvider,
-          name: r'getSearchSuggestionsProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$getSearchSuggestionsHash,
-          dependencies: GetSearchSuggestionsFamily._dependencies,
-          allTransitiveDependencies:
-              GetSearchSuggestionsFamily._allTransitiveDependencies,
-          type: type,
-          locationCountry: locationCountry,
-          locationState: locationState,
-          make: make,
-          model: model,
-        );
+         (ref) => getSearchSuggestions(
+           ref as GetSearchSuggestionsRef,
+           type,
+           locationCountry: locationCountry,
+           locationState: locationState,
+           make: make,
+           model: model,
+         ),
+         from: getSearchSuggestionsProvider,
+         name: r'getSearchSuggestionsProvider',
+         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+             ? null
+             : _$getSearchSuggestionsHash,
+         dependencies: GetSearchSuggestionsFamily._dependencies,
+         allTransitiveDependencies:
+             GetSearchSuggestionsFamily._allTransitiveDependencies,
+         type: type,
+         locationCountry: locationCountry,
+         locationState: locationState,
+         make: make,
+         model: model,
+       );
 
   GetSearchSuggestionsProvider._internal(
     super._createNotifier, {
@@ -162,7 +160,7 @@ class GetSearchSuggestionsProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<String>> createElement() {
+  FutureProviderElement<List<String>> createElement() {
     return _GetSearchSuggestionsProviderElement(this);
   }
 
@@ -191,7 +189,7 @@ class GetSearchSuggestionsProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin GetSearchSuggestionsRef on AutoDisposeFutureProviderRef<List<String>> {
+mixin GetSearchSuggestionsRef on FutureProviderRef<List<String>> {
   /// The parameter `type` of this provider.
   SearchSuggestionType get type;
 
@@ -209,7 +207,7 @@ mixin GetSearchSuggestionsRef on AutoDisposeFutureProviderRef<List<String>> {
 }
 
 class _GetSearchSuggestionsProviderElement
-    extends AutoDisposeFutureProviderElement<List<String>>
+    extends FutureProviderElement<List<String>>
     with GetSearchSuggestionsRef {
   _GetSearchSuggestionsProviderElement(super.provider);
 
@@ -227,5 +225,6 @@ class _GetSearchSuggestionsProviderElement
   @override
   String? get model => (origin as GetSearchSuggestionsProvider).model;
 }
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

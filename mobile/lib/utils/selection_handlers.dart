@@ -14,32 +14,24 @@ import 'package:immich_mobile/widgets/common/date_time_picker.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/location_picker.dart';
 import 'package:immich_mobile/widgets/common/share_dialog.dart';
+import 'package:immich_mobile/widgets/common/tags_picker.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
-void handleShareAssets(
-  WidgetRef ref,
-  BuildContext context,
-  Iterable<Asset> selection,
-) {
+void handleShareAssets(WidgetRef ref, BuildContext context, Iterable<Asset> selection) {
   showDialog(
     context: context,
     builder: (BuildContext buildContext) {
-      ref
-          .watch(shareServiceProvider)
-          .shareAssets(selection.toList(), context)
-          .then(
-        (bool status) {
-          if (!status) {
-            ImmichToast.show(
-              context: context,
-              msg: 'image_viewer_page_state_provider_share_error'.tr(),
-              toastType: ToastType.error,
-              gravity: ToastGravity.BOTTOM,
-            );
-          }
-          buildContext.pop();
-        },
-      );
+      ref.watch(shareServiceProvider).shareAssets(selection.toList(), context).then((bool status) {
+        if (!status) {
+          ImmichToast.show(
+            context: context,
+            msg: 'image_viewer_page_state_provider_share_error'.tr(),
+            toastType: ToastType.error,
+            gravity: ToastGravity.BOTTOM,
+          );
+        }
+        buildContext.pop();
+      });
       return const ShareDialog();
     },
     barrierDismissible: false,
@@ -56,20 +48,12 @@ Future<void> handleArchiveAssets(
 }) async {
   if (selection.isNotEmpty) {
     shouldArchive ??= !selection.every((a) => a.isArchived);
-    await ref
-        .read(assetProvider.notifier)
-        .toggleArchive(selection, shouldArchive);
+    await ref.read(assetProvider.notifier).toggleArchive(selection, shouldArchive);
     final message = shouldArchive
-        ? 'moved_to_archive'
-            .t(context: context, args: {'count': selection.length})
-        : 'moved_to_library'
-            .t(context: context, args: {'count': selection.length});
+        ? 'moved_to_archive'.t(context: context, args: {'count': selection.length})
+        : 'moved_to_library'.t(context: context, args: {'count': selection.length});
     if (context.mounted) {
-      ImmichToast.show(
-        context: context,
-        msg: message,
-        gravity: toastGravity,
-      );
+      ImmichToast.show(context: context, msg: message, gravity: toastGravity);
     }
   }
 }
@@ -83,29 +67,30 @@ Future<void> handleFavoriteAssets(
 }) async {
   if (selection.isNotEmpty) {
     shouldFavorite ??= !selection.every((a) => a.isFavorite);
-    await ref
-        .watch(assetProvider.notifier)
-        .toggleFavorite(selection, shouldFavorite);
 
-    final assetOrAssets = selection.length > 1 ? 'assets' : 'asset';
+    // Only operate on assets that actually need a change
+    final List<Asset> targets = shouldFavorite
+        ? selection.where((a) => !a.isFavorite).toList()
+        : selection.where((a) => a.isFavorite).toList();
+
+    if (targets.isEmpty) {
+      return;
+    }
+
+    await ref.watch(assetProvider.notifier).toggleFavorite(targets, shouldFavorite);
+
+    final int affectedCount = targets.length;
+    final assetOrAssets = affectedCount > 1 ? 'assets' : 'asset';
     final toastMessage = shouldFavorite
-        ? 'Added ${selection.length} $assetOrAssets to favorites'
-        : 'Removed ${selection.length} $assetOrAssets from favorites';
+        ? 'Added $affectedCount $assetOrAssets to favorites'
+        : 'Removed $affectedCount $assetOrAssets from favorites';
     if (context.mounted) {
-      ImmichToast.show(
-        context: context,
-        msg: toastMessage,
-        gravity: toastGravity,
-      );
+      ImmichToast.show(context: context, msg: toastMessage, gravity: toastGravity);
     }
   }
 }
 
-Future<void> handleEditDateTime(
-  WidgetRef ref,
-  BuildContext context,
-  List<Asset> selection,
-) async {
+Future<void> handleEditDateTime(WidgetRef ref, BuildContext context, List<Asset> selection) async {
   DateTime? initialDate;
   String? timeZone;
   Duration? offset;
@@ -131,28 +116,17 @@ Future<void> handleEditDateTime(
   ref.read(assetServiceProvider).changeDateTime(selection.toList(), dateTime);
 }
 
-Future<void> handleEditLocation(
-  WidgetRef ref,
-  BuildContext context,
-  List<Asset> selection,
-) async {
+Future<void> handleEditLocation(WidgetRef ref, BuildContext context, List<Asset> selection) async {
   LatLng? initialLatLng;
   if (selection.length == 1) {
     final asset = selection.first;
     final assetWithExif = await ref.watch(assetServiceProvider).loadExif(asset);
-    if (assetWithExif.exifInfo?.latitude != null &&
-        assetWithExif.exifInfo?.longitude != null) {
-      initialLatLng = LatLng(
-        assetWithExif.exifInfo!.latitude!,
-        assetWithExif.exifInfo!.longitude!,
-      );
+    if (assetWithExif.exifInfo?.latitude != null && assetWithExif.exifInfo?.longitude != null) {
+      initialLatLng = LatLng(assetWithExif.exifInfo!.latitude!, assetWithExif.exifInfo!.longitude!);
     }
   }
 
-  final location = await showLocationPicker(
-    context: context,
-    initialLatLng: initialLatLng,
-  );
+  final location = await showLocationPicker(context: context, initialLatLng: initialLatLng);
 
   if (location == null) {
     return;
@@ -168,20 +142,30 @@ Future<void> handleSetAssetsVisibility(
   List<Asset> selection,
 ) async {
   if (selection.isNotEmpty) {
-    await ref
-        .watch(assetProvider.notifier)
-        .setLockedView(selection, visibility);
+    await ref.watch(assetProvider.notifier).setLockedView(selection, visibility);
 
     final assetOrAssets = selection.length > 1 ? 'assets' : 'asset';
     final toastMessage = visibility == AssetVisibilityEnum.locked
         ? 'Added ${selection.length} $assetOrAssets to locked folder'
         : 'Removed ${selection.length} $assetOrAssets from locked folder';
     if (context.mounted) {
-      ImmichToast.show(
-        context: context,
-        msg: toastMessage,
-        gravity: ToastGravity.BOTTOM,
-      );
+      ImmichToast.show(context: context, msg: toastMessage, gravity: ToastGravity.BOTTOM);
+    }
+  }
+}
+
+Future<void> handleAddTags(
+  WidgetRef ref,
+  BuildContext context,
+  List<Asset> selection,
+) async {
+  if (selection.length == 1) {
+    final tags = await showTagsPicker(context: context, ref: ref);
+    if (tags == null || tags.isEmpty) {
+      return;
+    }
+    for (final tag in tags) {
+      await ref.read(assetServiceProvider).addTagsToAssets([selection.first], [tag]);
     }
   }
 }

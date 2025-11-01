@@ -49,54 +49,56 @@ class PlacesCollectionPage extends HookConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        shrinkWrap: true,
-        children: [
-          if (search.value == null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                height: 200,
-                width: context.width,
-                child: MapThumbnail(
-                  onTap: (_, __) => context
-                      .pushRoute(MapRoute(initialLocation: currentLocation)),
-                  zoom: 8,
-                  centre: currentLocation ??
-                      const LatLng(
-                        21.44950,
-                        -157.91959,
-                      ),
-                  showAttribution: false,
-                  themeMode:
-                      context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+      body: SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            if (search.value == null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SizedBox(
+                  height: 200,
+                  width: context.width,
+                  child: MapThumbnail(
+                    onTap: (_, __) => context
+                        .pushRoute(MapRoute(initialLocation: currentLocation)),
+                    zoom: 8,
+                    centre: currentLocation ??
+                        const LatLng(
+                          21.44950,
+                          -157.91959,
+                        ),
+                    showAttribution: false,
+                    themeMode:
+                        context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+                  ),
                 ),
               ),
+            places.when(
+              data: (places) {
+                if (search.value != null) {
+                  places = places.where((place) {
+                    return place.label
+                        .toLowerCase()
+                        .contains(search.value!.toLowerCase());
+                  }).toList();
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: places.length,
+                  itemBuilder: (context, index) {
+                    final place = places[index];
+        
+                    return PlaceTile(id: place.id, name: place.label);
+                  },
+                );
+              },
+              error: (error, stask) => const Text('Error getting places'),
+              loading: () => const Center(child: CircularProgressIndicator()),
             ),
-          places.when(
-            data: (places) {
-              if (search.value != null) {
-                places = places.where((place) {
-                  return place.label
-                      .toLowerCase()
-                      .contains(search.value!.toLowerCase());
-                }).toList();
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: places.length,
-                itemBuilder: (context, index) {
-                  final place = places[index];
-
-                  return PlaceTile(id: place.id, name: place.label);
-                },
-              );
-            },
-            error: (error, stask) => const Text('Error getting places'),
-            loading: () => const Center(child: CircularProgressIndicator()),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -110,24 +112,17 @@ class PlaceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thumbnailUrl =
-        '${Store.get(StoreKey.serverEndpoint)}/assets/$id/thumbnail';
+    final thumbnailUrl = '${Store.get(StoreKey.serverEndpoint)}/assets/$id/thumbnail';
 
     void navigateToPlace() {
       context.pushRoute(
         SearchRoute(
           prefilter: SearchFilter(
             people: {},
-            location: SearchLocationFilter(
-              city: name,
-            ),
+            location: SearchLocationFilter(city: name),
             camera: SearchCameraFilter(),
             date: SearchDateFilter(),
-            display: SearchDisplayFilters(
-              isNotInAlbum: false,
-              isArchive: false,
-              isFavorite: false,
-            ),
+            display: SearchDisplayFilters(isNotInAlbum: false, isArchive: false, isFavorite: false),
             mediaType: AssetType.other,
           ),
         ),
@@ -136,22 +131,16 @@ class PlaceTile extends StatelessWidget {
 
     return LargeLeadingTile(
       onTap: () => navigateToPlace(),
-      title: Text(
-        name,
-        style: context.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      title: Text(name, style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
       leading: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
         child: CachedNetworkImage(
           width: 80,
           height: 80,
           fit: BoxFit.cover,
           imageUrl: thumbnailUrl,
           httpHeaders: ApiService.getRequestHeaders(),
-          errorWidget: (context, url, error) =>
-              const Icon(Icons.image_not_supported_outlined),
+          errorWidget: (context, url, error) => const Icon(Icons.image_not_supported_outlined),
         ),
       ),
     );

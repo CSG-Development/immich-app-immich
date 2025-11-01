@@ -1,7 +1,7 @@
 <script lang="ts">
   import { shortcuts } from '$lib/actions/shortcut';
-  import Portal from '$lib/components/shared-components/portal/portal.svelte';
   import DuplicateAsset from '$lib/components/utilities-page/duplicates/duplicate-asset.svelte';
+  import Portal from '$lib/elements/Portal.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { handlePromiseError } from '$lib/utils';
   import { suggestDuplicate } from '$lib/utils/duplicate-utils';
@@ -42,32 +42,32 @@
     assetViewingStore.showAssetViewer(false);
   });
 
-  const onNext = () => {
+  const onNext = async () => {
     const index = getAssetIndex($viewingAsset.id) + 1;
     if (index >= assets.length) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onPrevious = () => {
+  const onPrevious = async () => {
     const index = getAssetIndex($viewingAsset.id) - 1;
     if (index < 0) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onRandom = () => {
+  const onRandom = async () => {
     if (assets.length <= 0) {
-      return Promise.resolve(undefined);
+      return undefined;
     }
     const index = Math.floor(Math.random() * assets.length);
     const asset = assets[index];
-    setAsset(asset);
-    return Promise.resolve(asset);
+    await onViewAsset(asset);
+    return { id: asset.id };
   };
 
   const onSelectAsset = (asset: AssetResponseDto) => {
@@ -112,7 +112,7 @@
   ]}
 />
 
-<div class="pt-4 rounded-3xl border dark:border-2 border-gray-300 dark:border-gray-700 max-w-216 mx-auto mb-16">
+<div class="pt-4 rounded-3xl border dark:border-2 border-gray-300 dark:border-gray-700 max-w-216 mx-auto mb-4">
   <div class="flex flex-wrap gap-y-6 mb-4 px-6 w-full place-content-end justify-between">
     <!-- MARK ALL BUTTONS -->
     <div class="flex text-xs text-black">

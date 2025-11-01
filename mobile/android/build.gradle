@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '2.0.20'
+    ext.kotlin_version = '2.1.0'
     ext.roomVersion = '1.1.1-rc1'
     repositories {
         google()
@@ -13,6 +13,8 @@ buildscript {
 }
 
 allprojects {
+    ext.kotlin_version = '2.2.20'
+
     repositories {
         google()
         mavenCentral()
@@ -28,8 +30,8 @@ subprojects {
         if (project.plugins.hasPlugin("com.android.application") ||
                 project.plugins.hasPlugin("com.android.library")) {
             project.android {
-                compileSdkVersion 35
-                buildToolsVersion "35.0.0"
+                compileSdkVersion 36
+                buildToolsVersion "36.0.0"
             }
         }
     }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, beforeNavigate } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { shortcut } from '$lib/actions/shortcut';
   import DownloadPanel from '$lib/components/asset-viewer/download-panel.svelte';
@@ -8,8 +9,9 @@
   import NavigationLoadingBar from '$lib/components/shared-components/navigation-loading-bar.svelte';
   import NotificationList from '$lib/components/shared-components/notification/notification-list.svelte';
   import UploadPanel from '$lib/components/shared-components/upload-panel.svelte';
-  import VersionAnnouncementBox from '$lib/components/shared-components/version-announcement-box.svelte';
+  import { AppRoute } from '$lib/constants';
   import { eventManager } from '$lib/managers/event-manager.svelte';
+  import { albumPreviousRoute } from '$lib/stores/navigation.store';
   import { serverConfig } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { closeWebsocketConnection, openWebsocketConnection } from '$lib/stores/websocket';
@@ -58,8 +60,18 @@
     showNavigationLoadingBar = true;
   });
 
-  afterNavigate(() => {
+  let current: string | null = $state(null);
+  let hasNavigated = $state(false);
+
+  afterNavigate((nav) => {
     showNavigationLoadingBar = false;
+
+    if (hasNavigated && page.url.pathname.includes(`${resolve(AppRoute.ALBUMS)}/`)) {
+      albumPreviousRoute.set(current);
+    }
+
+    hasNavigated = true;
+    current = nav.to?.url?.pathname ?? null;
   });
   run(() => {
     if ($user) {
@@ -72,7 +84,7 @@
 
 <svelte:head>
   <title>{page.data.meta?.title || 'Web'} - Curator Photos</title>
-  <link rel="manifest" href="/photos/manifest.json" crossorigin="use-credentials" />
+  <link rel="manifest" href="/photos/static/manifest.json" crossorigin="use-credentials" />
   <meta name="theme-color" content="currentColor" />
   <AppleHeader />
 
@@ -123,7 +135,3 @@
 <DownloadPanel />
 <UploadPanel />
 <NotificationList />
-
-{#if $user?.isAdmin}
-  <VersionAnnouncementBox />
-{/if}

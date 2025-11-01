@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
-  import { page } from '$app/stores';
+  import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
   import { listNavigation } from '$lib/actions/list-navigation';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
@@ -9,20 +9,6 @@
   import EditNameInput from '$lib/components/faces-page/edit-name-input.svelte';
   import MergeFaceSelector from '$lib/components/faces-page/merge-face-selector.svelte';
   import UnMergeFaceSelector from '$lib/components/faces-page/unmerge-face-selector.svelte';
-  import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
-  import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
-  import SelectAllAssets from '$lib/components/photos-page/actions/select-all-assets.svelte';
-  import SetVisibilityAction from '$lib/components/photos-page/actions/set-visibility-action.svelte';
-  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
-  import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
@@ -31,6 +17,20 @@
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
+  import AddToAlbum from '$lib/components/timeline/actions/AddToAlbumAction.svelte';
+  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
+  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
+  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
+  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
+  import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
+  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
+  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
+  import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
+  import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
+  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
+  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
+  import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AppRoute, PersonPageViewMode, QueryParameter, SessionStorageKey } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
@@ -40,9 +40,10 @@
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { locale } from '$lib/stores/preferences.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
   import { websocketEvents } from '$lib/stores/websocket';
-  import { getPeopleThumbnailUrl, handlePromiseError } from '$lib/utils';
+  import { getFirstSlideshowAsset, getPeopleThumbnailUrl, handlePromiseError, toDate } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { isExternalUrl } from '$lib/utils/navigation';
   import {
@@ -63,10 +64,12 @@
     mdiHeartMinusOutline,
     mdiHeartOutline,
     mdiPlus,
+    mdiPresentationPlay,
   } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { onDestroy, onMount } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -76,7 +79,7 @@
   let { data }: Props = $props();
 
   let numberOfAssets = $state(data.statistics.assets);
-  let { isViewing: showAssetViewer } = assetViewingStore;
+  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
 
   const timelineManager = new TimelineManager();
   $effect(() => void timelineManager.updateOptions({ visibility: AssetVisibility.Timeline, personId: data.person.id }));
@@ -86,7 +89,7 @@
 
   let viewMode: PersonPageViewMode = $state(PersonPageViewMode.VIEW_ASSETS);
   let isEditingName = $state(false);
-  let previousRoute: string = $state(resolveRoute(AppRoute.EXPLORE, {}));
+  let previousRoute: string = $state(resolve(AppRoute.EXPLORE));
   let people: PersonResponseDto[] = [];
   let personMerge1: PersonResponseDto | undefined = $state();
   let personMerge2: PersonResponseDto | undefined = $state();
@@ -107,8 +110,8 @@
   let suggestionContainer: HTMLElement | undefined = $state();
 
   onMount(() => {
-    const action = $page.url.searchParams.get(QueryParameter.ACTION);
-    const getPreviousRoute = $page.url.searchParams.get(QueryParameter.PREVIOUS_ROUTE);
+    const action = page.url.searchParams.get(QueryParameter.ACTION);
+    const getPreviousRoute = page.url.searchParams.get(QueryParameter.PREVIOUS_ROUTE);
     if (getPreviousRoute && !isExternalUrl(getPreviousRoute)) {
       previousRoute = getPreviousRoute;
     }
@@ -147,7 +150,7 @@
 
   afterNavigate(({ from }) => {
     // Prevent setting previousRoute to the current page.
-    if (from?.url && from.route.id !== $page.route.id) {
+    if (from?.url && from.route.id !== page.route.id) {
       previousRoute = from.url.href;
     }
   });
@@ -222,9 +225,9 @@
     viewMode = PersonPageViewMode.VIEW_ASSETS;
   };
 
-  const handleMergeSuggestion = async () => {
+  const handleMergeSuggestion = async (): Promise<{ merged: boolean }> => {
     if (!personMerge1 || !personMerge2) {
-      return;
+      return { merged: false };
     }
 
     const result = await modalManager.show(PersonMergeSuggestionModal, {
@@ -234,7 +237,7 @@
     });
 
     if (!result) {
-      return;
+      return { merged: false };
     }
 
     const [personToMerge, personToBeMergedInto] = result;
@@ -242,9 +245,10 @@
     people = people.filter((person: PersonResponseDto) => person.id !== personToMerge.id);
     if (personToBeMergedInto.name != personName && person.id === personToBeMergedInto.id) {
       await updateAssetCount();
-      return;
+      return { merged: true };
     }
-    await goto(resolveRoute(`${AppRoute.PEOPLE}/${personToBeMergedInto.id}`, {}), { replaceState: true });
+    await goto(resolve(`${AppRoute.PEOPLE}/${personToBeMergedInto.id}`), { replaceState: true });
+    return { merged: true };
   };
 
   const handleSuggestPeople = async (person2: PersonResponseDto) => {
@@ -318,8 +322,10 @@
             !person.isHidden,
         )
         .slice(0, 3);
-      await handleMergeSuggestion();
-      return;
+      const { merged } = await handleMergeSuggestion();
+      if (merged) {
+        return;
+      }
     }
     await changeName();
   };
@@ -342,9 +348,9 @@
 
   const handleGoBack = async () => {
     viewMode = PersonPageViewMode.VIEW_ASSETS;
-    if ($page.url.searchParams.has(QueryParameter.ACTION)) {
-      $page.url.searchParams.delete(QueryParameter.ACTION);
-      await goto($page.url);
+    if (page.url.searchParams.has(QueryParameter.ACTION)) {
+      page.url.searchParams.delete(QueryParameter.ACTION);
+      await goto(page.url);
     }
   };
 
@@ -372,6 +378,22 @@
     timelineManager.removeAssets(assetIds);
     assetInteraction.clearMultiselect();
   };
+
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
 </script>
 
 <main
@@ -384,7 +406,7 @@
   }}
 >
   {#key person.id}
-    <AssetGrid
+    <Timeline
       enableRouting={true}
       {person}
       {timelineManager}
@@ -496,7 +518,7 @@
           {/if}
         </div>
       {/if}
-    </AssetGrid>
+    </Timeline>
   {/key}
 </main>
 
@@ -521,6 +543,9 @@
           })}
       />
       <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+        {#if assetInteraction.selectedAssets.length > 1}
+          <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+        {/if}
         <DownloadAction menuItem filename="{person.name || 'immich'}.zip" />
         <MenuOption
           icon={mdiAccountMultipleCheckOutline}

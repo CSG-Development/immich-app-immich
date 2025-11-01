@@ -1,9 +1,11 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
+  import { ErrorTexts } from '$lib/constants';
+  import { UploadState } from '$lib/models/upload-asset';
   import { locale } from '$lib/stores/preferences.store';
   import { uploadAssetsStore } from '$lib/stores/upload';
   import { uploadExecutionQueue } from '$lib/utils/file-uploader';
-  import { IconButton } from '@immich/ui';
+  import { Button, IconButton } from '@immich/ui';
   import { mdiCancel, mdiCloudUploadOutline, mdiCog, mdiWindowMinimize } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { quartInOut } from 'svelte/easing';
@@ -15,12 +17,29 @@
   let showOptions = $state(false);
   let concurrency = $state(uploadExecutionQueue.concurrency);
 
-  let { stats, isDismissible, isUploading, remainingUploads } = uploadAssetsStore;
+  let { stats, isDismissible, isUploading, remainingUploads, removeItem, subscribe } = uploadAssetsStore;
+
+  const handleCancelAll = () => {
+    for (const asset of $uploadAssetsStore) {
+      asset.controller?.abort(ErrorTexts.CANCEL_ALL);
+      removeItem(asset.id);
+    }
+  };
+
+  let isDisabled = $derived(false);
+
+  const isLoading =
+    $isUploading &&
+    $uploadAssetsStore.some((asset) => asset.state === UploadState.PENDING || asset.state === UploadState.STARTED);
 
   $effect(() => {
     if ($isUploading) {
       showDetail = true;
     }
+  });
+
+  subscribe((assets) => {
+    isDisabled = assets.some((asset) => asset.message === $t('asset_hashing'));
   });
 </script>
 
@@ -66,7 +85,7 @@
                 },
               })}
             </p>
-            <p class="immich-form-label text-xs">
+            <p class="immich-form-label text-xs w-[190px]">
               {$t('upload_status_uploaded')}
               <span class="text-success">{$stats.success.toLocaleString($locale)}</span>
               -
@@ -134,6 +153,24 @@
           {#each $uploadAssetsStore as uploadAsset (uploadAsset.id)}
             <UploadAssetPreview {uploadAsset} />
           {/each}
+        </div>
+        <div class="flex items-baseline">
+          {#if isLoading}
+            <span {...$uploadAssetsStore.length === 1 && { class: 'ml-auto mr-auto' }}>{$t('asset_uploading')}</span>
+          {/if}
+          {#if isLoading && $uploadAssetsStore.length > 1}
+            <Button
+              type="button"
+              size="small"
+              variant="ghost"
+              title={$t('cancel_all')}
+              class="ml-auto"
+              disabled={isDisabled}
+              onclick={handleCancelAll}
+            >
+              {$t('cancel_all')}
+            </Button>
+          {/if}
         </div>
       </div>
     {:else}

@@ -1,10 +1,13 @@
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { NotificationType, notificationController } from '$lib/components/shared-components/notification/notification';
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
+import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { lang } from '$lib/stores/preferences.store';
 import { serverConfig } from '$lib/stores/server-config.store';
+import { SlideshowNavigation } from '$lib/stores/slideshow.store';
 import { handleError } from '$lib/utils/handle-error';
+import type { TimelineDateTime } from '$lib/utils/timeline-util';
 import {
   AssetJobName,
   AssetMediaSize,
@@ -37,6 +40,12 @@ interface DownloadRequestOptions<T = unknown> {
   onDownloadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
 }
 
+interface DateFormatter {
+  formatDate: (date: Date) => string;
+  formatTime: (date: Date) => string;
+  formatDateTime: (date: Date) => string;
+}
+
 export const initLanguage = async () => {
   const preferenceLang = get(lang);
   for (const { code, loader } of langs) {
@@ -51,6 +60,8 @@ interface UploadRequestOptions {
   method?: 'POST' | 'PUT';
   data: FormData;
   onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
+  signal?: AbortSignal;
+  onAbort?: (reason?: string) => void;
 }
 
 export class AbortError extends Error {
@@ -69,8 +80,12 @@ class ApiError extends Error {
   }
 }
 
+export const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{ data: T; status: number }> => {
-  const { onUploadProgress: onProgress, data, url } = options;
+  const { onUploadProgress: onProgress, data, url, signal, onAbort } = options;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -86,6 +101,13 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
 
     if (onProgress) {
       xhr.upload.addEventListener('progress', (event) => onProgress(event));
+    }
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        onAbort?.(signal.reason);
+      });
     }
 
     xhr.open(options.method || 'POST', url);
@@ -185,7 +207,7 @@ export const getAssetOriginalUrl = (options: string | AssetUrlOptions) => {
     options = { id: options };
   }
   const { id, cacheKey } = options;
-  return createUrl(getAssetOriginalPath(id), { key: authManager.key, c: cacheKey });
+  return createUrl(getAssetOriginalPath(id), { ...authManager.params, c: cacheKey });
 };
 
 export const getAssetThumbnailUrl = (options: string | (AssetUrlOptions & { size?: AssetMediaSize })) => {
@@ -193,7 +215,7 @@ export const getAssetThumbnailUrl = (options: string | (AssetUrlOptions & { size
     options = { id: options };
   }
   const { id, size, cacheKey } = options;
-  return createUrl(getAssetThumbnailPath(id), { size, key: authManager.key, c: cacheKey });
+  return createUrl(getAssetThumbnailPath(id), { ...authManager.params, size, c: cacheKey });
 };
 
 export const getAssetPlaybackUrl = (options: string | AssetUrlOptions) => {
@@ -201,7 +223,7 @@ export const getAssetPlaybackUrl = (options: string | AssetUrlOptions) => {
     options = { id: options };
   }
   const { id, cacheKey } = options;
-  return createUrl(getAssetPlaybackPath(id), { key: authManager.key, c: cacheKey });
+  return createUrl(getAssetPlaybackPath(id), { ...authManager.params, c: cacheKey });
 };
 
 export const getProfileImageUrl = (user: UserResponseDto) =>
@@ -258,9 +280,9 @@ export const copyToClipboard = async (secret: string) => {
   }
 };
 
-export const makeSharedLinkUrl = (key: string) => {
-  return new URL(resolveRoute(`/share/${key}`, {}), get(serverConfig).externalDomain || globalThis.location.origin)
-    .href;
+export const makeSharedLinkUrl = (sharedLink: SharedLinkResponseDto) => {
+  const path = sharedLink.slug ? resolve(`/s/${sharedLink.slug}` as any) : resolve(`/share/${sharedLink.key}`);
+  return new URL(path, get(serverConfig).externalDomain || globalThis.location.origin).href;
 };
 
 export const oauth = {
@@ -344,3 +366,51 @@ export const withError = async <T>(fn: () => Promise<T>): Promise<[undefined, T]
 
 // eslint-disable-next-line unicorn/prefer-code-point
 export const decodeBase64 = (data: string) => Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+
+export function createDateFormatter(localeCode: string | undefined): DateFormatter {
+  return {
+    formatDate: (date: Date): string =>
+      date.toLocaleString(localeCode, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+
+    formatTime: (date: Date): string =>
+      date.toLocaleString(localeCode, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }),
+
+    formatDateTime: (date: Date): string => {
+      const formattedDate = date.toLocaleString(localeCode, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const formattedTime = date.toLocaleString(localeCode, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      return `${formattedDate} ${formattedTime}`;
+    },
+  };
+}
+
+export const toDate = (date: TimelineDateTime): Date => {
+  return new Date(date.year, date.month - 1, date.day, date.hour, date.minute, date.second, date.millisecond);
+};
+
+export const getFirstSlideshowAsset = (
+  assets: TimelineAsset[],
+  shuffledAssets: TimelineAsset[],
+  nav: SlideshowNavigation,
+) => {
+  return nav === SlideshowNavigation.Shuffle
+    ? shuffledAssets[0]
+    : nav === SlideshowNavigation.AscendingOrder
+      ? assets.at(-1)
+      : assets[0];
+};

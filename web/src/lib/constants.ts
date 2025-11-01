@@ -8,9 +8,11 @@ export enum AssetAction {
   RESTORE = 'restore',
   ADD = 'add',
   ADD_TO_ALBUM = 'add-to-album',
+  STACK = 'stack',
   UNSTACK = 'unstack',
   KEEP_THIS_DELETE_OTHERS = 'keep-this-delete-others',
   SET_STACK_PRIMARY_ASSET = 'set-stack-primary-asset',
+  REMOVE_ASSET_FROM_STACK = 'remove-asset-from-stack',
   SET_VISIBILITY_LOCKED = 'set-visibility-locked',
   SET_VISIBILITY_TIMELINE = 'set-visibility-timeline',
 }
@@ -21,6 +23,7 @@ export enum AppRoute {
   ADMIN_SETTINGS = '/admin/system-settings',
   ADMIN_STATS = '/admin/server-status',
   ADMIN_JOBS = '/admin/jobs-status',
+  ADMIN_REPAIR = '/admin/repair',
 
   ALBUMS = '/albums',
   LIBRARIES = '/libraries',
@@ -49,10 +52,14 @@ export enum AppRoute {
 
   UTILITIES = '/utilities',
   DUPLICATES = '/utilities/duplicates',
+  LARGE_FILES = '/utilities/large-files',
+  GEOLOCATION = '/utilities/geolocation',
 
   FOLDERS = '/folders',
   TAGS = '/tags',
   LOCKED = '/locked',
+
+  EDITOR = '/editor',
 }
 
 export enum ProjectionType {
@@ -420,4 +427,16 @@ export enum ToggleVisibility {
   SHOW_ALL = 'show-all',
 }
 
-export const assetViewerFadeDuration: number = 150;
+export const assetViewerFadeDuration: number = 500;
+
+export const ErrorTexts = {
+  CANCEL_ALL: 'Cancel all',
+};
+
+export enum OS {
+  WINDOWS = 'Windows',
+  MACOS = 'macOS',
+  LINUX = 'Linux',
+  ANDROID = 'Android',
+  IOS = 'iOS',
+}

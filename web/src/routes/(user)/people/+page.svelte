@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
-  import { page } from '$app/stores';
+  import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { focusTrap } from '$lib/actions/focus-trap';
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import { shortcut } from '$lib/actions/shortcut';
@@ -53,7 +53,7 @@
   let searchPeopleElement = $state<ReturnType<typeof SearchPeople>>();
 
   onMount(() => {
-    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
+    const getSearchedPeople = page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
     if (getSearchedPeople) {
       searchName = getSearchedPeople;
       if (searchPeopleElement) {
@@ -118,10 +118,10 @@
   };
 
   const handleSearch = async () => {
-    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
+    const getSearchedPeople = page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
     if (getSearchedPeople !== searchName) {
-      $page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchName);
-      await goto($page.url, { keepFocus: true });
+      page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchName);
+      await goto(page.url, { keepFocus: true });
     }
   };
 
@@ -204,8 +204,12 @@
         personUpdateDto: { isFavorite: !detail.isFavorite },
       });
 
-      const index = people.findIndex((person) => person.id === detail.id);
-      people[index] = updatedPerson;
+      people = people.map((person: PersonResponseDto) => {
+        if (person.id === updatedPerson.id) {
+          return updatedPerson;
+        }
+        return person;
+      });
 
       notificationController.show({
         message: updatedPerson.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'),
@@ -218,7 +222,7 @@
 
   const handleMergePeople = async (detail: PersonResponseDto) => {
     await goto(
-      `${resolveRoute(AppRoute.PEOPLE, {})}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolveRoute(AppRoute.PEOPLE, {})}`,
+      `${resolve(AppRoute.PEOPLE)}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolve(AppRoute.PEOPLE)}`,
     );
   };
 
@@ -238,7 +242,7 @@
   };
 
   const onResetSearchBar = async () => {
-    await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, $page.url);
+    await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, page.url);
   };
 
   let people = $derived(data.people.people);

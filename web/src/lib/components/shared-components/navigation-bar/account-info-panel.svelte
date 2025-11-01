@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { focusTrap } from '$lib/actions/focus-trap';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
@@ -57,7 +57,7 @@
       </div>
     </div>
     <div>
-      <p class="text-center text-lg font-medium text-immich-primary dark:text-immich-dark-primary">
+      <p class="text-center text-lg font-medium text-primary">
         {$user.name}
       </p>
       <p class="text-sm text-gray-500 dark:text-immich-dark-fg">{$user.email}</p>
@@ -65,7 +65,7 @@
 
     <div class="flex flex-col gap-1">
       <Button
-        href={resolveRoute(AppRoute.USER_SETTINGS, {})}
+        href={resolve(AppRoute.USER_SETTINGS)}
         onclick={onClose}
         size="small"
         color="secondary"
@@ -92,7 +92,7 @@
 
     <button
       type="button"
-      class="text-center mt-4 underline text-xs text-immich-primary dark:text-immich-dark-primary"
+      class="text-center mt-4 underline text-xs text-primary"
       onclick={async () => {
         onClose();
         if (info) {

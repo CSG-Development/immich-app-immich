@@ -17,11 +17,13 @@ import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/download.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
+import 'package:immich_mobile/providers/trash.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/album.service.dart';
+import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/services/stack.service.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
@@ -29,6 +31,7 @@ import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart'
 import 'package:immich_mobile/widgets/asset_grid/control_bottom_app_bar.dart';
 import 'package:immich_mobile/widgets/asset_grid/immich_asset_grid.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class MultiselectGrid extends HookConsumerWidget {
   const MultiselectGrid({
@@ -37,7 +40,9 @@ class MultiselectGrid extends HookConsumerWidget {
     this.onRefresh,
     this.buildLoadingIndicator,
     this.onRemoveFromAlbum,
+    this.updateAfterDeletedRemote,
     this.topWidget,
+    this.onAfterDuplicate,
     this.stackEnabled = false,
     this.dragScrollLabelEnabled = true,
     this.archiveEnabled = false,
@@ -48,13 +53,16 @@ class MultiselectGrid extends HookConsumerWidget {
     this.unfavorite = false,
     this.downloadEnabled = true,
     this.emptyIndicator,
+    this.visibleItemsListener,
   });
 
   final ProviderListenable<AsyncValue<RenderList>> renderListProvider;
   final Future<void> Function()? onRefresh;
   final Widget Function()? buildLoadingIndicator;
   final Future<bool> Function(Iterable<Asset>)? onRemoveFromAlbum;
+  final Future<bool> Function(Iterable<Asset>)? updateAfterDeletedRemote;
   final Widget? topWidget;
+  final Future<void> Function(List<Asset> newAssets)? onAfterDuplicate;
   final bool stackEnabled;
   final bool dragScrollLabelEnabled;
   final bool archiveEnabled;
@@ -65,11 +73,10 @@ class MultiselectGrid extends HookConsumerWidget {
   final bool unfavorite;
   final bool editEnabled;
   final Widget? emptyIndicator;
-  Widget buildDefaultLoadingIndicator() =>
-      const Center(child: CircularProgressIndicator());
+  Widget buildDefaultLoadingIndicator() => const Center(child: CircularProgressIndicator());
+  final Function(Iterable<ItemPosition>)? visibleItemsListener;
 
-  Widget buildEmptyIndicator() =>
-      emptyIndicator ?? Center(child: const Text("no_assets_to_show").tr());
+  Widget buildEmptyIndicator() => emptyIndicator ?? Center(child: const Text("no_assets_to_show").tr());
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -81,57 +88,38 @@ class MultiselectGrid extends HookConsumerWidget {
     final currentUser = ref.watch(currentUserProvider);
     final processing = useProcessingOverlay();
 
-    useEffect(
-      () {
-        selectionEnabledHook.addListener(() {
-          multiselectEnabled.state = selectionEnabledHook.value;
-        });
+    useEffect(() {
+      selectionEnabledHook.addListener(() {
+        multiselectEnabled.state = selectionEnabledHook.value;
+      });
 
-        return () {
-          // This does not work in tests
-          if (kReleaseMode) {
-            selectionEnabledHook.dispose();
-          }
-        };
-      },
-      [],
-    );
+      return () {
+        // This does not work in tests
+        if (kReleaseMode) {
+          selectionEnabledHook.dispose();
+        }
+      };
+    }, []);
 
-    void selectionListener(
-      bool multiselect,
-      Set<Asset> selectedAssets,
-    ) {
+    void selectionListener(bool multiselect, Set<Asset> selectedAssets) {
       selectionEnabledHook.value = multiselect;
       selection.value = selectedAssets;
-      selectionAssetState.value =
-          AssetSelectionState.fromSelection(selectedAssets);
+      selectionAssetState.value = AssetSelectionState.fromSelection(selectedAssets);
     }
 
     errorBuilder(String? msg) => msg != null && msg.isNotEmpty
-        ? () => ImmichToast.show(
-              context: context,
-              msg: msg,
-              gravity: ToastGravity.BOTTOM,
-            )
+        ? () => ImmichToast.show(context: context, msg: msg, gravity: ToastGravity.BOTTOM)
         : null;
 
-    Iterable<Asset> ownedRemoteSelection({
-      String? localErrorMessage,
-      String? ownerErrorMessage,
-    }) {
+    Iterable<Asset> ownedRemoteSelection({String? localErrorMessage, String? ownerErrorMessage}) {
       final assets = selection.value;
       return assets
           .remoteOnly(errorCallback: errorBuilder(localErrorMessage))
-          .ownedOnly(
-            currentUser,
-            errorCallback: errorBuilder(ownerErrorMessage),
-          );
+          .ownedOnly(currentUser, errorCallback: errorBuilder(ownerErrorMessage));
     }
 
     Iterable<Asset> remoteSelection({String? errorMessage}) =>
-        selection.value.remoteOnly(
-          errorCallback: errorBuilder(errorMessage),
-        );
+        selection.value.remoteOnly(errorCallback: errorBuilder(errorMessage));
 
     void onShareAssets(bool shareLocal) {
       processing.value = true;
@@ -139,9 +127,7 @@ class MultiselectGrid extends HookConsumerWidget {
         // Share = Download + Send to OS specific share sheet
         handleShareAssets(ref, context, selection.value);
       } else {
-        final ids =
-            remoteSelection(errorMessage: "home_page_share_err_local".tr())
-                .map((e) => e.remoteId!);
+        final ids = remoteSelection(errorMessage: "home_page_share_err_local".tr()).map((e) => e.remoteId!);
         context.pushRoute(SharedLinkEditRoute(assetsList: ids.toList()));
       }
       processing.value = false;
@@ -178,29 +164,28 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    void onDelete([bool force = false]) async {
+    Future<void> performDeleteLocal(bool isMergedAsset) async {
       processing.value = true;
       try {
-        final toDelete = selection.value
-            .ownedOnly(
-              currentUser,
-              errorCallback: errorBuilder('home_page_delete_err_partner'.tr()),
-            )
-            .toList();
-        final isDeleted = await ref
-            .read(assetProvider.notifier)
-            .deleteAssets(toDelete, force: force);
+        final localAssets = selection.value.where((a) => a.isLocal).toList();
+
+        final toDelete = isMergedAsset ? localAssets.where((e) => e.storage == AssetState.merged) : localAssets;
+
+        if (toDelete.isEmpty) {
+          return;
+        }
+
+        final isDeleted = await ref.read(assetProvider.notifier).deleteLocalAssets(toDelete.toList());
 
         if (isDeleted) {
+          final deletedCount = localAssets.where((e) => !isMergedAsset || e.isRemote).length;
+
           ImmichToast.show(
             context: context,
-            msg: force
-                ? 'assets_deleted_permanently'
-                    .tr(namedArgs: {'count': "${selection.value.length}"})
-                : 'assets_trashed'
-                    .tr(namedArgs: {'count': "${selection.value.length}"}),
+            msg: 'assets_removed_permanently_from_device'.tr(namedArgs: {'count': "$deletedCount"}),
             gravity: ToastGravity.BOTTOM,
           );
+
           selectionEnabledHook.value = false;
         }
       } finally {
@@ -208,39 +193,80 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    void onDeleteLocal(bool isMergedAsset) async {
-      processing.value = true;
-      try {
-        final localAssets = selection.value.where((a) => a.isLocal).toList();
+    void onDelete([bool force = false]) async {
+      final toDelete = selection.value
+          .ownedOnly(
+            currentUser,
+            errorCallback: errorBuilder('home_page_delete_err_partner'.tr()),
+          )
+          .toList();
 
-        final toDelete = isMergedAsset
-            ? localAssets.where((e) => e.storage == AssetState.merged)
-            : localAssets;
+      final hasMerged = toDelete.any((a) => a.storage == AssetState.merged);
 
-        if (toDelete.isEmpty) {
-          return;
+      bool isDeleted = false;
+      if (force) {
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteAssets(toDelete, force: true);
+        } finally {
+          processing.value = false;
         }
-
-        final isDeleted = await ref
-            .read(assetProvider.notifier)
-            .deleteLocalAssets(toDelete.toList());
-
+      } else if (hasMerged) {
+        // Move to trash on server, then trigger system/local delete prompt
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteRemoteAssets(toDelete);
+        } finally {
+          processing.value = false;
+        }
         if (isDeleted) {
-          final deletedCount =
-              localAssets.where((e) => !isMergedAsset || e.isRemote).length;
+          await performDeleteLocal(true);
+        }
+      } else {
+        // Default: trash remote only
+        processing.value = true;
+        try {
+          isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteRemoteAssets(toDelete);
+        } finally {
+          processing.value = false;
+        }
+      }
 
+      if (isDeleted) {
+        if (updateAfterDeletedRemote != null) {
+          final deletedRemote = toDelete.where((a) => a.isRemote).toList();
+          if (deletedRemote.isNotEmpty) {
+            await updateAfterDeletedRemote!(deletedRemote);
+          }
+        }
+        if (force) {
           ImmichToast.show(
             context: context,
-            msg: 'assets_removed_permanently_from_device'
-                .tr(namedArgs: {'count': "$deletedCount"}),
+            msg: 'assets_deleted_permanently'
+                .tr(namedArgs: {'count': "${selection.value.length}"}),
             gravity: ToastGravity.BOTTOM,
           );
-
-          selectionEnabledHook.value = false;
+        } else {
+          ImmichToast.show(
+            context: context,
+            msg: 'assets_trashed'
+                .tr(namedArgs: {'count': "${selection.value.length}"}),
+            gravity: ToastGravity.BOTTOM,
+          );
         }
-      } finally {
-        processing.value = false;
+        selectionEnabledHook.value = false;
       }
+    }
+
+    void onDeleteLocal(bool isMergedAsset) {
+      // Fire and forget for UI callback compatibility
+      unawaited(performDeleteLocal(isMergedAsset));
     }
 
     void onDownload() async {
@@ -248,34 +274,64 @@ class MultiselectGrid extends HookConsumerWidget {
       try {
         final toDownload = selection.value.toList();
 
-        final results = await ref
-            .read(downloadStateProvider.notifier)
-            .downloadAllAsset(toDownload);
+        final results = await ref.read(downloadStateProvider.notifier).downloadAllAsset(toDownload);
 
         final totalCount = toDownload.length;
         final successCount = results.where((e) => e).length;
         final failedCount = totalCount - successCount;
 
         final msg = failedCount > 0
-            ? 'assets_downloaded_failed'.t(
-                context: context,
-                args: {
-                  'count': successCount,
-                  'error': failedCount,
-                },
-              )
-            : 'assets_downloaded_successfully'.t(
-                context: context,
-                args: {
-                  'count': successCount,
-                },
-              );
+            ? 'assets_downloaded_failed'.t(context: context, args: {'count': successCount, 'error': failedCount})
+            : 'assets_downloaded_successfully'.t(context: context, args: {'count': successCount});
 
-        ImmichToast.show(
-          context: context,
-          msg: msg,
-          gravity: ToastGravity.BOTTOM,
+        ImmichToast.show(context: context, msg: msg, gravity: ToastGravity.BOTTOM);
+      } finally {
+        processing.value = false;
+        selectionEnabledHook.value = false;
+      }
+    }
+
+    void onCopyToClipboard() async {
+      processing.value = true;
+      try {
+        await ClipboardService.copyToClipboard(
+          context,
+          ref,
+          selection.value,
         );
+        // Update selection state after copy operation completes
+        selectionEnabledHook.value = false;
+      } finally {
+        processing.value = false;
+      }
+    }
+
+    void onDuplicate() async {
+      processing.value = true;
+      try {
+        // Use the new direct duplication method
+        final result = await ClipboardService.duplicateAssets(
+          context,
+          ref,
+          selection.value,
+        );
+        
+        if (result.success) {
+          if (onAfterDuplicate != null && result.newAssets.isNotEmpty) {
+            await onAfterDuplicate!(result.newAssets);
+          }
+          if (result.hasErrors) {
+            // Partial success with errors
+            // Silent error handling
+          } else {
+            // Complete success
+          }
+        } else {
+          // Complete failure
+          // Silent error handling
+        }
+      } catch (e) {
+        // Silent error handling
       } finally {
         processing.value = false;
         selectionEnabledHook.value = false;
@@ -290,19 +346,18 @@ class MultiselectGrid extends HookConsumerWidget {
           ownerErrorMessage: 'home_page_delete_err_partner'.tr(),
         ).toList();
 
-        final isDeleted =
-            await ref.read(assetProvider.notifier).deleteRemoteAssets(
-                  toDelete,
-                  shouldDeletePermanently: shouldDeletePermanently,
-                );
+        final isDeleted = await ref
+            .read(assetProvider.notifier)
+            .deleteRemoteAssets(toDelete, shouldDeletePermanently: shouldDeletePermanently);
         if (isDeleted) {
+          if (updateAfterDeletedRemote != null) {
+            await updateAfterDeletedRemote!(toDelete);
+          }
           ImmichToast.show(
             context: context,
             msg: shouldDeletePermanently
-                ? 'assets_deleted_permanently_from_server'
-                    .tr(namedArgs: {'count': "${toDelete.length}"})
-                : 'assets_trashed_from_server'
-                    .tr(namedArgs: {'count': "${toDelete.length}"}),
+                ? 'assets_deleted_permanently_from_server'.tr(namedArgs: {'count': "${toDelete.length}"})
+                : 'assets_trashed_from_server'.tr(namedArgs: {'count': "${toDelete.length}"}),
             gravity: ToastGravity.BOTTOM,
           );
         }
@@ -312,14 +367,40 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    void onUpload() {
+    void onUpload() async {
       processing.value = true;
       selectionEnabledHook.value = false;
       try {
-        ref.read(manualUploadProvider.notifier).uploadAssets(
-              context,
-              selection.value.where((a) => a.storage == AssetState.local),
-            );
+        // First, restore any selected assets that are trashed on the server
+        final trashedRemoteAssets = selection.value.where(
+          (a) => a.isTrashed && a.isRemote,
+        );
+        if (trashedRemoteAssets.isNotEmpty) {
+          final restored = await ref.read(trashProvider.notifier).restoreAssets(
+                trashedRemoteAssets,
+              );
+          if (restored) {
+            // As we don't have direct mapping here, try a lighter refresh by touching the current album if any
+            // Otherwise, perform full refresh as a fallback
+            try {
+              // No direct album linkage in selection context; fallback
+              await ref.read(albumProvider.notifier).refreshRemoteAlbums();
+            } catch (_) {
+              // ignore
+            }
+          }
+        }
+
+        // Then, upload local-only assets
+        final localOnly = selection.value.where(
+          (a) => a.storage == AssetState.local,
+        );
+        if (localOnly.isNotEmpty) {
+          await ref.read(manualUploadProvider.notifier).uploadAssets(
+                context,
+                localOnly,
+              );
+        }
       } finally {
         processing.value = false;
       }
@@ -328,16 +409,11 @@ class MultiselectGrid extends HookConsumerWidget {
     void onAddToAlbum(Album album) async {
       processing.value = true;
       try {
-        final Iterable<Asset> assets = remoteSelection(
-          errorMessage: "home_page_add_to_album_err_local".tr(),
-        );
+        final Iterable<Asset> assets = remoteSelection(errorMessage: "home_page_add_to_album_err_local".tr());
         if (assets.isEmpty) {
           return;
         }
-        final result = await ref.read(albumServiceProvider).addAssets(
-              album,
-              assets,
-            );
+        final result = await ref.read(albumServiceProvider).addAssets(album, assets);
 
         if (result != null) {
           if (result.alreadyInAlbum.isNotEmpty) {
@@ -355,10 +431,7 @@ class MultiselectGrid extends HookConsumerWidget {
             ImmichToast.show(
               context: context,
               msg: "home_page_add_to_album_success".tr(
-                namedArgs: {
-                  "album": album.name,
-                  "added": result.successfullyAdded.toString(),
-                },
+                namedArgs: {"album": album.name, "added": result.successfullyAdded.toString()},
               ),
               toastType: ToastType.success,
             );
@@ -373,15 +446,11 @@ class MultiselectGrid extends HookConsumerWidget {
     void onCreateNewAlbum() async {
       processing.value = true;
       try {
-        final Iterable<Asset> assets = remoteSelection(
-          errorMessage: "home_page_add_to_album_err_local".tr(),
-        );
+        final Iterable<Asset> assets = remoteSelection(errorMessage: "home_page_add_to_album_err_local".tr());
         if (assets.isEmpty) {
           return;
         }
-        final result = await ref
-            .read(albumServiceProvider)
-            .createAlbumWithGeneratedName(assets);
+        final result = await ref.read(albumServiceProvider).createAlbumWithGeneratedName(assets);
 
         if (result != null) {
           ref.watch(albumProvider.notifier).refreshRemoteAlbums();
@@ -401,9 +470,7 @@ class MultiselectGrid extends HookConsumerWidget {
           return;
         }
 
-        await ref.read(stackServiceProvider).createStack(
-              selection.value.map((e) => e.remoteId!).toList(),
-            );
+        await ref.read(stackServiceProvider).createStack(selection.value.map((e) => e.remoteId!).toList());
       } finally {
         processing.value = false;
         selectionEnabledHook.value = false;
@@ -449,16 +516,9 @@ class MultiselectGrid extends HookConsumerWidget {
         );
         if (remoteAssets.isNotEmpty) {
           final isInLockedView = ref.read(inLockedViewProvider);
-          final visibility = isInLockedView
-              ? AssetVisibilityEnum.timeline
-              : AssetVisibilityEnum.locked;
+          final visibility = isInLockedView ? AssetVisibilityEnum.timeline : AssetVisibilityEnum.locked;
 
-          await handleSetAssetsVisibility(
-            ref,
-            context,
-            visibility,
-            remoteAssets.toList(),
-          );
+          await handleSetAssetsVisibility(ref, context, visibility, remoteAssets.toList());
         }
       } finally {
         processing.value = false;
@@ -466,45 +526,38 @@ class MultiselectGrid extends HookConsumerWidget {
       }
     }
 
-    Future<T> Function() wrapLongRunningFun<T>(
-      Future<T> Function() fun, {
-      bool showOverlay = true,
-    }) =>
-        () async {
-          if (showOverlay) processing.value = true;
-          try {
-            final result = await fun();
-            if (result.runtimeType != bool || result == true) {
-              selectionEnabledHook.value = false;
-            }
-            return result;
-          } finally {
-            if (showOverlay) processing.value = false;
-          }
-        };
+    Future<T> Function() wrapLongRunningFun<T>(Future<T> Function() fun, {bool showOverlay = true}) => () async {
+      if (showOverlay) processing.value = true;
+      try {
+        final result = await fun();
+        if (result.runtimeType != bool || result == true) {
+          selectionEnabledHook.value = false;
+        }
+        return result;
+      } finally {
+        if (showOverlay) processing.value = false;
+      }
+    };
 
     return SafeArea(
       top: true,
       bottom: false,
       child: Stack(
         children: [
-          ref.watch(renderListProvider).when(
-                data: (data) => data.isEmpty &&
-                        (buildLoadingIndicator != null || topWidget == null)
+          ref
+              .watch(renderListProvider)
+              .when(
+                data: (data) => data.isEmpty && (buildLoadingIndicator != null || topWidget == null)
                     ? (buildLoadingIndicator ?? buildEmptyIndicator)()
                     : ImmichAssetGrid(
                         renderList: data,
                         listener: selectionListener,
                         selectionActive: selectionEnabledHook.value,
-                        onRefresh: onRefresh == null
-                            ? null
-                            : wrapLongRunningFun(
-                                onRefresh!,
-                                showOverlay: false,
-                              ),
+                        onRefresh: onRefresh == null ? null : wrapLongRunningFun(onRefresh!, showOverlay: false),
                         topWidget: topWidget,
                         showStack: stackEnabled,
                         showDragScrollLabel: dragScrollLabelEnabled,
+                        visibleItemsListener: visibleItemsListener,
                       ),
                 error: (error, _) => Center(child: Text(error.toString())),
                 loading: buildLoadingIndicator ?? buildDefaultLoadingIndicator,
@@ -527,16 +580,22 @@ class MultiselectGrid extends HookConsumerWidget {
               onUpload: onUpload,
               enabled: !processing.value,
               selectionAssetState: selectionAssetState.value,
+              selectedAssets: selection.value.toList(),
+              // Unfilled heart only when all selected are favorites; otherwise filled
+              unfavorite: selection.value.isNotEmpty && selection.value.every((a) => a.isFavorite),
               onStack: stackEnabled ? onStack : null,
               onEditTime: editEnabled ? onEditTime : null,
               onEditLocation: editEnabled ? onEditLocation : null,
-              unfavorite: unfavorite,
               unarchive: unarchive,
               onToggleLocked: onToggleLockedVisibility,
               onRemoveFromAlbum: onRemoveFromAlbum != null
-                  ? wrapLongRunningFun(
-                      () => onRemoveFromAlbum!(selection.value),
-                    )
+                  ? wrapLongRunningFun(() => onRemoveFromAlbum!(selection.value))
+                  : null,
+              onCopyToClipboard: ClipboardService.isCopySupportedForSelection(selection.value)
+                  ? () async => onCopyToClipboard()
+                  : null,
+              onDuplicate: ClipboardService.isDuplicateSupportedForSelection(selection.value)
+                  ? () async => onDuplicate()
                   : null,
             ),
         ],

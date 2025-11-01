@@ -8,12 +8,14 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/widgets/album/add_to_album_sliverlist.dart';
+import 'package:immich_mobile/widgets/album/add_to_album_bottom_sheet.dart';
 import 'package:immich_mobile/models/asset_selection_state.dart';
 import 'package:immich_mobile/widgets/asset_grid/delete_dialog.dart';
 import 'package:immich_mobile/widgets/asset_grid/upload_dialog.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/widgets/common/drag_sheet.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
+import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/utils/draggable_scroll_controller.dart';
 
 final controlBottomAppBarNotifier = ControlBottomAppBarNotifier();
@@ -40,11 +42,14 @@ class ControlBottomAppBar extends HookConsumerWidget {
   final void Function()? onRemoveFromAlbum;
   final void Function()? onToggleLocked;
   final void Function()? onDownload;
+  final Future<void> Function()? onCopyToClipboard;
+  final void Function()? onDuplicate;
 
   final bool enabled;
   final bool unfavorite;
   final bool unarchive;
   final AssetSelectionState selectionAssetState;
+  final List<Asset> selectedAssets;
 
   const ControlBottomAppBar({
     super.key,
@@ -63,7 +68,10 @@ class ControlBottomAppBar extends HookConsumerWidget {
     this.onEditLocation,
     this.onRemoveFromAlbum,
     this.onToggleLocked,
+    this.onCopyToClipboard,
+    this.onDuplicate,
     this.selectionAssetState = const AssetSelectionState(),
+    this.selectedAssets = const [],
     this.enabled = true,
     this.unarchive = false,
     this.unfavorite = false,
@@ -71,57 +79,60 @@ class ControlBottomAppBar extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasRemote =
-        selectionAssetState.hasRemote || selectionAssetState.hasMerged;
-    final hasLocal =
-        selectionAssetState.hasLocal || selectionAssetState.hasMerged;
-    final trashEnabled =
-        ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
+    final hasRemote = selectionAssetState.hasRemote || selectionAssetState.hasMerged;
+    final hasLocal = selectionAssetState.hasLocal || selectionAssetState.hasMerged;
+    final trashEnabled = ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
     final albums = ref.watch(albumProvider).where((a) => a.isRemote).toList();
-    final sharedAlbums =
-        ref.watch(albumProvider).where((a) => a.shared).toList();
+    final sharedAlbums = ref.watch(albumProvider).where((a) => a.shared).toList();
     const bottomPadding = 0.24;
     final scrollController = useDraggableScrollController();
     final isInLockedView = ref.watch(inLockedViewProvider);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Increase the minimum size in landscape for local-only selections so the action
+    // row is fully visible without a tiny scroll.
+    final double minSize =
+        (selectionAssetState.hasLocalOnly && isLandscape) ? 0.34 : bottomPadding;
 
     void minimize() {
+      // TODO: merge conflict
+      // scrollController.animateTo(bottomPadding, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       scrollController.animateTo(
-        bottomPadding,
+        minSize,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
 
-    useEffect(
-      () {
-        controlBottomAppBarNotifier.addListener(minimize);
-        return () {
-          controlBottomAppBarNotifier.removeListener(minimize);
-        };
-      },
-      [],
-    );
+    useEffect(() {
+      controlBottomAppBarNotifier.addListener(minimize);
+      return () {
+        controlBottomAppBarNotifier.removeListener(minimize);
+      };
+    }, []);
 
-    void showForceDeleteDialog(
-      Function(bool) deleteCb, {
-      String? alertMsg,
-    }) {
+    void showForceDeleteDialog(Function(bool) deleteCb, {String? alertMsg}) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
-          return DeleteDialog(
-            alert: alertMsg,
-            onDelete: () => deleteCb(true),
-          );
+          return DeleteDialog(alert: alertMsg, onDelete: () => deleteCb(true));
         },
       );
     }
 
-    void handleRemoteDelete(
-      bool force,
-      Function(bool) deleteCb, {
-      String? alertMsg,
-    }) {
+    /// Show existing AddToAlbumBottomSheet
+    void showAddToAlbumBottomSheet() {
+      showModalBottomSheet(
+        elevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15.0))),
+        context: context,
+        builder: (BuildContext _) {
+          return AddToAlbumBottomSheet(assets: selectedAssets);
+        },
+      );
+    }
+
+    void handleRemoteDelete(bool force, Function(bool) deleteCb, {String? alertMsg}) {
       if (!force) {
         deleteCb(force);
         return;
@@ -132,9 +143,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
     List<Widget> renderActionButtons() {
       return [
         ControlBoxButton(
-          iconData: Platform.isAndroid
-              ? Icons.share_rounded
-              : Icons.ios_share_rounded,
+          iconData: Platform.isAndroid ? Icons.share_rounded : Icons.ios_share_rounded,
           label: "share".tr(),
           onPressed: enabled ? () => onShare(true) : null,
         ),
@@ -144,28 +153,49 @@ class ControlBottomAppBar extends HookConsumerWidget {
             label: "share_link".tr(),
             onPressed: enabled ? () => onShare(false) : null,
           ),
+        if (!isInLockedView && hasRemote && albums.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 100),
+            child: ControlBoxButton(
+              iconData: Icons.photo_album,
+              label: "add_to_album".tr(),
+              onPressed: enabled ? showAddToAlbumBottomSheet : null,
+            ),
+          ),
         if (hasRemote && onArchive != null)
           ControlBoxButton(
-            iconData:
-                unarchive ? Icons.unarchive_outlined : Icons.archive_outlined,
+            iconData: unarchive ? Icons.unarchive_outlined : Icons.archive_outlined,
             label: (unarchive ? "unarchive" : "archive").tr(),
             onPressed: enabled ? onArchive : null,
           ),
         if (hasRemote && onFavorite != null)
           ControlBoxButton(
-            iconData: unfavorite
-                ? Icons.favorite_border_rounded
-                : Icons.favorite_rounded,
+            iconData:
+                unfavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
             label: (unfavorite ? "unfavorite" : "favorite").tr(),
             onPressed: enabled ? onFavorite : null,
           ),
         if (hasRemote && onDownload != null)
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 90),
+            child: ControlBoxButton(iconData: Icons.download, label: "download".tr(), onPressed: onDownload),
+          ),
+        if (onCopyToClipboard != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 90),
             child: ControlBoxButton(
-              iconData: Icons.download,
-              label: "download".tr(),
-              onPressed: onDownload,
+              iconData: Icons.copy_outlined,
+              label: "copy_to_clipboard".tr(),
+              onPressed: onCopyToClipboard,
+            ),
+          ),
+        if (onDuplicate != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 90),
+            child: ControlBoxButton(
+              iconData: Icons.content_copy,
+              label: "duplicate".tr(),
+              onPressed: onDuplicate,
             ),
           ),
         if (hasLocal && hasRemote && onDelete != null && !isInLockedView)
@@ -174,11 +204,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
             child: ControlBoxButton(
               iconData: Icons.delete_sweep_outlined,
               label: "delete".tr(),
-              onPressed: enabled
-                  ? () => handleRemoteDelete(!trashEnabled, onDelete!)
-                  : null,
-              onLongPressed:
-                  enabled ? () => showForceDeleteDialog(onDelete!) : null,
+              onPressed: enabled ? () => handleRemoteDelete(!trashEnabled, onDelete!) : null,
+              onLongPressed: enabled ? () => showForceDeleteDialog(onDelete!) : null,
             ),
           ),
         if (hasRemote && onDeleteServer != null && !isInLockedView)
@@ -190,17 +217,10 @@ class ControlBottomAppBar extends HookConsumerWidget {
                   ? "control_bottom_app_bar_trash_from_immich".tr()
                   : "control_bottom_app_bar_delete_from_immich".tr(),
               onPressed: enabled
-                  ? () => handleRemoteDelete(
-                        !trashEnabled,
-                        onDeleteServer!,
-                        alertMsg: "delete_dialog_alert_remote",
-                      )
+                  ? () => handleRemoteDelete(!trashEnabled, onDeleteServer!, alertMsg: "delete_dialog_alert_remote")
                   : null,
               onLongPressed: enabled
-                  ? () => showForceDeleteDialog(
-                        onDeleteServer!,
-                        alertMsg: "delete_dialog_alert_remote",
-                      )
+                  ? () => showForceDeleteDialog(onDeleteServer!, alertMsg: "delete_dialog_alert_remote")
                   : null,
             ),
           ),
@@ -211,10 +231,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
               iconData: Icons.delete_forever,
               label: "delete_dialog_title".tr(),
               onPressed: enabled
-                  ? () => showForceDeleteDialog(
-                        onDeleteServer!,
-                        alertMsg: "delete_dialog_alert_remote",
-                      )
+                  ? () => showForceDeleteDialog(onDeleteServer!, alertMsg: "delete_dialog_alert_remote")
                   : null,
             ),
           ),
@@ -233,9 +250,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return DeleteLocalOnlyDialog(
-                            onDeleteLocal: onDeleteLocal!,
-                          );
+                          return DeleteLocalOnlyDialog(onDeleteLocal: onDeleteLocal!);
                         },
                       );
                     }
@@ -264,18 +279,12 @@ class ControlBottomAppBar extends HookConsumerWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 100),
             child: ControlBoxButton(
-              iconData: isInLockedView
-                  ? Icons.lock_open_rounded
-                  : Icons.lock_outline_rounded,
-              label: isInLockedView
-                  ? "remove_from_locked_folder".tr()
-                  : "move_to_locked_folder".tr(),
+              iconData: isInLockedView ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+              label: isInLockedView ? "remove_from_locked_folder".tr() : "move_to_locked_folder".tr(),
               onPressed: enabled ? onToggleLocked : null,
             ),
           ),
-        if (!selectionAssetState.hasLocal &&
-            selectionAssetState.selectedCount > 1 &&
-            onStack != null)
+        if (!selectionAssetState.hasLocal && selectionAssetState.selectedCount > 1 && onStack != null)
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 90),
             child: ControlBoxButton(
@@ -293,19 +302,22 @@ class ControlBottomAppBar extends HookConsumerWidget {
               onPressed: enabled ? onRemoveFromAlbum : null,
             ),
           ),
-        if (selectionAssetState.hasLocal)
+        // Upload button rules:
+        // - show for local-only
+        // - show for merged but trashed (to restore)
+        // - hide for merged (not trashed)
+        if ((selectionAssetState.hasLocalOnly ||
+                selectionAssetState.hasMergedTrashed))
           ControlBoxButton(
             iconData: Icons.backup_outlined,
             label: "upload".tr(),
             onPressed: enabled
                 ? () => showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return UploadDialog(
-                          onUpload: onUpload,
-                        );
-                      },
-                    )
+                    context: context,
+                    builder: (BuildContext context) {
+                      return UploadDialog(onUpload: onUpload);
+                    },
+                  )
                 : null,
           ),
       ];
@@ -313,27 +325,27 @@ class ControlBottomAppBar extends HookConsumerWidget {
 
     getInitialSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.35;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     getMaxChildSize() {
       if (isInLockedView) {
-        return bottomPadding;
+        return minSize;
       }
       if (hasRemote) {
         return 0.65;
       }
-      return bottomPadding;
+      return minSize;
     }
 
     return DraggableScrollableSheet(
       initialChildSize: getInitialSize(),
-      minChildSize: bottomPadding,
+      minChildSize: minSize,
       maxChildSize: getMaxChildSize(),
       snap: true,
       controller: scrollController,
@@ -343,10 +355,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
           surfaceTintColor: context.colorScheme.surfaceContainerHigh,
           elevation: 6.0,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
           ),
           margin: const EdgeInsets.all(0),
           child: CustomScrollView(
@@ -367,14 +376,8 @@ class ControlBottomAppBar extends HookConsumerWidget {
                       ),
                     ),
                     if (hasRemote && !isInLockedView) ...[
-                      const Divider(
-                        indent: 16,
-                        endIndent: 16,
-                        thickness: 1,
-                      ),
-                      _AddToAlbumTitleRow(
-                        onCreateNewAlbum: enabled ? onCreateNewAlbum : null,
-                      ),
+                      const Divider(indent: 16, endIndent: 16, thickness: 1),
+                      _AddToAlbumTitleRow(onCreateNewAlbum: enabled ? onCreateNewAlbum : null),
                     ],
                   ],
                 ),
@@ -398,9 +401,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
 }
 
 class _AddToAlbumTitleRow extends StatelessWidget {
-  const _AddToAlbumTitleRow({
-    required this.onCreateNewAlbum,
-  });
+  const _AddToAlbumTitleRow({required this.onCreateNewAlbum});
 
   final VoidCallback? onCreateNewAlbum;
 
@@ -411,23 +412,13 @@ class _AddToAlbumTitleRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            "add_to_album",
-            style: context.textTheme.titleSmall,
-          ).tr(),
+          Text("add_to_album", style: context.textTheme.titleSmall).tr(),
           TextButton.icon(
             onPressed: onCreateNewAlbum,
-            icon: Icon(
-              Icons.add,
-              color: context.primaryColor,
-            ),
+            icon: Icon(Icons.add, color: context.primaryColor),
             label: Text(
               "common_create_new_album",
-              style: TextStyle(
-                color: context.primaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
             ).tr(),
           ),
         ],

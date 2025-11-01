@@ -1,9 +1,6 @@
 import { goto } from '$app/navigation';
-import { resolveRoute } from '$app/paths';
-import FormatBoldMessage from '$lib/components/i18n/format-bold-message.svelte';
-import type { InterpolationValues } from '$lib/components/i18n/format-message';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
-import { AppRoute } from '$lib/constants';
+import { AppRoute, OS } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { downloadManager } from '$lib/managers/download-manager.svelte';
 import type { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
@@ -12,14 +9,16 @@ import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
 import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
 import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
 import { preferences } from '$lib/stores/user.store';
-import { downloadRequest, withError } from '$lib/utils';
-import { createAlbum } from '$lib/utils/album-utils';
+import { downloadRequest, sleep, withError } from '$lib/utils';
 import { getByteUnitString } from '$lib/utils/byte-units';
 import { getFormatter } from '$lib/utils/i18n';
 import { navigate } from '$lib/utils/navigation';
+import { asQueryString } from '$lib/utils/shared-links';
 import {
   addAssetsToAlbum as addAssets,
+  /* addAssetsToAlbums as addToAlbums, */
   AssetVisibility,
+  /* BulkIdErrorReason, */
   bulkTagAssets,
   createStack,
   deleteAssets,
@@ -35,22 +34,23 @@ import {
   type AssetResponseDto,
   type AssetTypeEnum,
   type DownloadInfoDto,
+  type ExifResponseDto,
   type StackResponseDto,
   type UserPreferencesResponseDto,
   type UserResponseDto,
 } from '@immich/sdk';
 import { DateTime } from 'luxon';
-import { t, type Translations } from 'svelte-i18n';
+import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
 
 export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
   const result = await addAssets({
+    ...authManager.params,
     id: albumId,
     bulkIdsDto: {
       ids: assetIds,
     },
-    key: authManager.key,
   });
   const count = result.filter(({ success }) => success).length;
   const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
@@ -70,11 +70,57 @@ export const addAssetsToAlbum = async (albumId: string, assetIds: string[], show
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${albumId}`, {}));
+          return goto(`${AppRoute.ALBUMS}/${albumId}`);
         },
       },
     });
   }
+};
+
+export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], showNotification = true) => {
+  /* const result = await addToAlbums({
+    ...authManager.params,
+    albumsAddAssetsDto: {
+      albumIds,
+      assetIds,
+    },
+  });
+
+  if (!showNotification) {
+    return result;
+  }
+
+  if (showNotification) {
+    const $t = get(t);
+
+    if (result.error === BulkIdErrorReason.Duplicate) {
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message: $t('assets_were_part_of_albums_count', { values: { count: assetIds.length } }),
+      });
+      return result;
+    }
+    if (result.error) {
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message: $t('assets_cannot_be_added_to_albums', { values: { count: assetIds.length } }),
+      });
+      return result;
+    }
+    notificationController.show({
+      type: NotificationType.Info,
+      timeout: 5000,
+      message: $t('assets_added_to_albums_count', {
+        values: {
+          albumTotal: albumIds.length,
+          assetTotal: assetIds.length,
+        },
+      }),
+    });
+    return result;
+  } */
 };
 
 export const tagAssets = async ({
@@ -123,47 +169,6 @@ export const removeTag = async ({
   return assetIds;
 };
 
-export const addAssetsToNewAlbum = async (albumName: string, assetIds: string[]) => {
-  const album = await createAlbum(albumName, assetIds);
-  if (!album) {
-    return;
-  }
-  const $t = get(t);
-  // for reasons beyond me <ComponentProps<typeof FormatBoldMessage>> doesn't work, even though it's (afaik) exactly this object
-  if (album.assets.length === 0) {
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message: $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } }),
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
-        },
-      },
-    });
-  } else {
-    notificationController.show<{ key: Translations; values: InterpolationValues }>({
-      type: NotificationType.Info,
-      timeout: 5000,
-      component: {
-        type: FormatBoldMessage,
-        props: {
-          key: 'assets_added_to_name_count',
-          values: { count: album.assets.length, name: albumName, hasName: !!albumName },
-        },
-      },
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
-        },
-      },
-    });
-  }
-  return album;
-};
-
 export const downloadAlbum = async (album: AlbumResponseDto) => {
   await downloadArchive(`${album.albumName}.zip`, {
     albumId: album.id,
@@ -200,7 +205,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
   const $preferences = get<UserPreferencesResponseDto | undefined>(preferences);
   const dto = { ...options, archiveSize: $preferences?.download.archiveSize };
 
-  const [error, downloadInfo] = await withError(() => getDownloadInfo({ downloadInfoDto: dto, key: authManager.key }));
+  const [error, downloadInfo] = await withError(() => getDownloadInfo({ ...authManager.params, downloadInfoDto: dto }));
   if (error) {
     const $t = get(t);
     handleError(error, $t('errors.unable_to_download_files'));
@@ -215,7 +220,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
     const archive = downloadInfo.archives[index];
     const suffix = downloadInfo.archives.length > 1 ? `+${index + 1}` : '';
     const archiveName = fileName.replace('.zip', `${suffix}-${DateTime.now().toFormat('yyyyLLdd_HHmmss')}.zip`);
-    const key = authManager.key;
+    const queryParams = asQueryString(authManager.params);
 
     let downloadKey = `${archiveName} `;
     if (downloadInfo.archives.length > 1) {
@@ -229,7 +234,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
       // TODO use sdk once it supports progress events
       const { data } = await downloadRequest({
         method: 'POST',
-        url: getBaseUrl() + '/download/archive' + (key ? `?key=${key}` : ''),
+        url: getBaseUrl() + '/download/archive' + (queryParams ? `?${queryParams}` : ''),
         data: { assetIds: archive.assetIds },
         signal: abort.signal,
         onDownloadProgress: (event) => downloadManager.update(downloadKey, event.loaded),
@@ -262,7 +267,7 @@ export const downloadFile = async (asset: AssetResponseDto) => {
   };
 
   if (asset.livePhotoVideoId) {
-    const motionAsset = await getAssetInfo({ id: asset.livePhotoVideoId, key: authManager.key });
+    const motionAsset = await getAssetInfo({ ...authManager.params, id: asset.livePhotoVideoId });
     if (!isAndroidMotionVideo(motionAsset) || get(preferences)?.download.includeEmbeddedVideos) {
       assets.push({
         filename: motionAsset.originalFileName,
@@ -272,16 +277,21 @@ export const downloadFile = async (asset: AssetResponseDto) => {
     }
   }
 
-  for (const { filename, id } of assets) {
-    try {
-      const key = authManager.key;
+  const queryParams = asQueryString(authManager.params);
 
+  for (const [i, { filename, id }] of assets.entries()) {
+    if (i !== 0) {
+      // play nice with Safari
+      await sleep(500);
+    }
+
+    try {
       notificationController.show({
         type: NotificationType.Info,
         message: $t('downloading_asset_filename', { values: { filename: asset.originalFileName } }),
       });
 
-      downloadUrl(getBaseUrl() + `/assets/${id}/original` + (key ? `?key=${key}` : ''), filename);
+      downloadUrl(getBaseUrl() + `/assets/${id}/original` + (queryParams ? `?${queryParams}` : ''), filename);
     } catch (error) {
       handleError(error, $t('errors.error_downloading', { values: { filename } }));
     }
@@ -319,9 +329,18 @@ export function isFlipped(orientation?: string | null) {
   return value && (isRotated270CW(value) || isRotated90CW(value));
 }
 
-export function getFileSize(asset: AssetResponseDto): string {
+export const getDimensions = (exifInfo: ExifResponseDto) => {
+  const { exifImageWidth: width, exifImageHeight: height } = exifInfo;
+  if (isFlipped(exifInfo.orientation)) {
+    return { width: height, height: width };
+  }
+
+  return { width, height };
+};
+
+export function getFileSize(asset: AssetResponseDto, maxPrecision = 4): string {
   const size = asset.exifInfo?.fileSizeInByte || 0;
-  return size > 0 ? getByteUnitString(size, undefined, 4) : 'Invalid Data';
+  return size > 0 ? getByteUnitString(size, undefined, maxPrecision) : 'Invalid Data';
 }
 
 export function getAssetResolution(asset: AssetResponseDto): string {
@@ -347,29 +366,61 @@ export function getAssetRatio(asset: AssetResponseDto) {
 }
 
 // list of supported image extensions from https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types excluding svg
-const supportedImageMimeTypes = new Set([
+const supportedAssetMimeTypes = new Set([
   'image/apng',
   'image/avif',
   'image/gif',
   'image/jpeg',
   'image/png',
   'image/webp',
+  'video/3gpp',
+  'video/x-msvideo',
+  'video/x-flv',
+  'video/x-m4v',
+  'video/x-matroska',
+  'video/mp2t',
+  'video/mp4',
+  'video/mpeg',
+  'video/quicktime',
+  'video/webm',
+  'video/x-ms-asf',
 ]);
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); // https://stackoverflow.com/a/23522755
-if (isSafari) {
-  supportedImageMimeTypes.add('image/heic').add('image/heif');
-}
+/* const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); */ // https://stackoverflow.com/a/23522755
+export const getOS = () => {
+  const userAgent = navigator.userAgent;
+
+  if (/Windows NT/i.test(userAgent)) return OS.WINDOWS;
+  if (/Mac/i.test(userAgent)) return OS.MACOS;
+  if (/Linux/i.test(userAgent)) return OS.LINUX;
+  if (/Android/i.test(userAgent)) return OS.ANDROID;
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return OS.IOS;
+
+  return 'Unknown';
+};
 
 /**
  * Returns true if the asset is an image supported by web browsers, false otherwise
  */
-export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
+
+export const isHEIC = (file: File): boolean => {
+  return file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+};
+
+export function isWebSupportedAssetMimeType(type: string): boolean {
+  if (!type) {
+    return false;
+  }
+
+  return supportedAssetMimeTypes.has(type);
+}
+
+export function isWebCompatibleAsset(asset: AssetResponseDto): boolean {
   if (!asset.originalMimeType) {
     return false;
   }
 
-  return supportedImageMimeTypes.has(asset.originalMimeType);
+  return supportedAssetMimeTypes.has(asset.originalMimeType);
 }
 
 export const getAssetType = (type: AssetTypeEnum) => {
@@ -601,12 +652,12 @@ const imgToBlob = async (imageElement: HTMLImageElement) => {
   throw new Error('Canvas context is null');
 };
 
-const urlToBlob = async (imageSource: string) => {
+export const urlToArrayBuffer = async (imageSource: string) => {
   const response = await fetch(imageSource);
-  return await response.blob();
+  return await response.arrayBuffer();
 };
 
-export const copyImageToClipboard = async (source: HTMLImageElement | string) => {
-  const blob = source instanceof HTMLImageElement ? await imgToBlob(source) : await urlToBlob(source);
-  await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+export const copyImageToClipboard = async (source: HTMLImageElement) => {
+  // do not await, so the Safari clipboard write happens in the context of the user gesture
+  await navigator.clipboard.write([new ClipboardItem({ ['image/png']: imgToBlob(source) })]);
 };

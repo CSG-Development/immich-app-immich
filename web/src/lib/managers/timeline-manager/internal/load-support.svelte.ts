@@ -14,16 +14,17 @@ export async function loadFromTimeBuckets(
   signal: AbortSignal,
 ): Promise<void> {
   if (monthGroup.getFirstAsset()) {
+    const timeBucket = toISOYearMonthUTC(monthGroup.yearMonth);
     return;
   }
 
   const timeBucket = toISOYearMonthUTC(monthGroup.yearMonth);
-  const key = authManager.key;
+
   const bucketResponse = await getTimeBucket(
     {
+      ...authManager.params,
       ...options,
       timeBucket,
-      key,
     },
     { signal },
   );
@@ -35,9 +36,9 @@ export async function loadFromTimeBuckets(
   if (options.timelineAlbumId) {
     const albumAssets = await getTimeBucket(
       {
+        ...authManager.params,
         albumId: options.timelineAlbumId,
         timeBucket,
-        key,
       },
       { signal },
     );

@@ -70,11 +70,7 @@
   let colorClass = $derived(colorClasses[user.avatarColor]);
   let sizeClass = $derived(sizeClasses[size]);
   let title = $derived(label ?? `${user.name} (${user.email})`);
-  let interactiveClass = $derived(
-    interactive
-      ? 'border-2 border-immich-primary hover:border-immich-dark-primary dark:hover:border-immich-primary dark:border-immich-dark-primary transition-colors'
-      : '',
-  );
+  let interactiveClass = $derived(interactive ? 'transition-colors' : '');
 </script>
 
 <figure
@@ -93,14 +89,14 @@
   {/if}
   {#if showFallback}
     <span
-      class="flex h-full w-full select-none items-center justify-center font-medium"
+      class="uppercase flex h-full w-full select-none items-center justify-center font-medium"
       class:text-xs={size === 'sm'}
       class:text-lg={size === 'lg'}
       class:text-xl={size === 'xl'}
       class:text-2xl={size === 'xxl'}
       class:text-3xl={size === 'xxxl'}
     >
-      {(user.name[0] || '').toUpperCase()}
+      {user.name[0] || ''}
     </span>
   {/if}
 </figure>

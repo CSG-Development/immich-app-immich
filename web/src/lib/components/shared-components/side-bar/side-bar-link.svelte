@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
   import { page } from '$app/state';
   import Icon from '$lib/components/elements/icon.svelte';
   import { mdiChevronDown, mdiChevronLeft } from '@mdi/js';
@@ -8,7 +7,7 @@
 
   interface Props {
     title: string;
-    routeId: string;
+    href: string;
     icon: string;
     flippedLogo?: boolean;
     isSelected?: boolean;
@@ -19,7 +18,7 @@
 
   let {
     title,
-    routeId,
+    href,
     icon,
     flippedLogo = false,
     isSelected = $bindable(false),
@@ -28,10 +27,8 @@
     dropdownOpen = $bindable(false),
   }: Props = $props();
 
-  let routePath = $derived(resolveRoute(routeId, {}));
-
   $effect(() => {
-    isSelected = (page.route.id?.match(/^\/(admin|\(user\))\/[^/]*/) || [])[0] === routeId;
+    isSelected = page.url.pathname === href;
   });
 </script>
 
@@ -55,13 +52,13 @@
     </span>
   {/if}
   <a
-    href={routePath}
+    {href}
     data-sveltekit-preload-data={preloadData ? 'hover' : 'off'}
     draggable="false"
     aria-current={isSelected ? 'page' : undefined}
     class="flex w-full place-items-center gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary
     {isSelected
-      ? 'bg-immich-primary/10 text-immich-primary hover:bg-immich-primary/10 dark:bg-immich-dark-primary/10 dark:text-immich-dark-primary'
+      ? 'bg-immich-primary/10 text-immich-primary hover:bg-immich-primary/10 dark:bg-immich-dark-primary/24 dark:text-immich-dark-primary'
       : ''}"
   >
     <div class="flex w-full place-items-center gap-4 ps-5 overflow-hidden truncate">

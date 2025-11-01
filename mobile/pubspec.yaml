@@ -2,11 +2,11 @@ name: immich_mobile
 description: Immich - selfhosted backup media file on mobile phone
 
 publish_to: 'none'
-version: 1.0.4+1
+version: 1.0.12+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
-  flutter: 3.29.3
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: 3.35.4
 
 isar_version: &isar_version 3.1.8
 
@@ -16,7 +16,7 @@ dependencies:
 
   async: ^2.11.0
   auto_route: ^9.2.0
-  background_downloader: ^9.2.0
+  background_downloader: ^9.2.5
   cached_network_image: ^3.4.1
   cancellation_token_http: ^2.1.0
   cast: ^2.1.0
@@ -43,7 +43,7 @@ dependencies:
   home_widget: ^0.8.0
   http: ^1.3.0
   image_picker: ^1.1.2
-  intl: ^0.19.0
+  intl: ^0.20.0
   local_auth: ^2.3.0
   logging: ^1.3.0
   maplibre_gl: ^0.22.0
@@ -57,12 +57,12 @@ dependencies:
   photo_manager: ^3.6.4
   photo_manager_image_provider: ^2.2.0
   pinput: ^5.0.1
-  platform: ^3.1.6
   punycode: ^1.0.0
   riverpod_annotation: ^2.6.1
   scrollable_positioned_list: ^0.3.8
   share_handler: ^0.0.22
   share_plus: ^10.1.4
+  sliver_tools: ^0.2.12
   socket_io_client: ^2.0.3+1
   stream_transform: ^2.1.1
   thumbhash: 0.1.0+1
@@ -71,15 +71,24 @@ dependencies:
   uuid: ^4.5.1
   wakelock_plus: ^1.2.10
   worker_manager: ^7.2.3
+  scroll_date_picker: ^3.8.0
+  ffi: ^2.1.4
   flutter_dotenv: ^5.2.1
   firebase_core: ^3.13.1
   firebase_crashlytics: ^4.3.6
   firebase_performance: ^0.10.1+6
+  ffmpeg_kit_flutter_new: ^3.2.0
+
+  image_editor:
+    path: ../image_editor
+
+  homecloud_frontend:
+    path: ../homecloud_frontend
 
   native_video_player:
     git:
       url: https://github.com/immich-app/native_video_player
-      ref: '5459d54'
+      ref: '893894b'
   openapi:
     path: openapi
   isar:
@@ -94,6 +103,7 @@ dependencies:
 
 dependency_overrides:
   intl: ^0.20.2
+  device_info_plus: ^11.3.3
 
 dev_dependencies:
   flutter_test:
@@ -121,7 +131,7 @@ dev_dependencies:
   # Drift generator
   drift_dev: ^2.23.1
   # Type safe platform code
-  pigeon: ^25.3.1
+  pigeon: ^26.0.0
 
 flutter:
   uses-material-design: true
@@ -129,25 +139,6 @@ flutter:
     - assets/
     - .env.dev
     - .env.prod
-  fonts:
-    - family: Inconsolata
-      fonts:
-        - asset: fonts/Inconsolata-Regular.ttf
-    - family: Overpass
-      fonts:
-        - asset: fonts/overpass/Overpass-Regular.ttf
-          weight: 400
-        - asset: fonts/overpass/Overpass-Italic.ttf
-          style: italic
-        - asset: fonts/overpass/Overpass-Medium.ttf
-          weight: 500
-        - asset: fonts/overpass/Overpass-SemiBold.ttf
-          weight: 600
-        - asset: fonts/overpass/Overpass-Bold.ttf
-          weight: 700
-    - family: OverpassMono
-      fonts:
-        - asset: fonts/overpass/OverpassMono.ttf
   default-flavor: prod
 
 flutter_launcher_icons:

@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { purchaseStore } from '$lib/stores/purchase.store';
 import { preferences as preferences$, user as user$ } from '$lib/stores/user.store';
 import { userInteraction } from '$lib/stores/user.svelte';
@@ -60,11 +60,11 @@ export const authenticate = async (url: URL, options?: AuthOptions) => {
   }
 
   if (!user) {
-    redirect(302, resolveRoute(`${AppRoute.AUTH_LOGIN}?continue=${encodeURIComponent(url.pathname + url.search)}`, {}));
+    redirect(302, resolve(AppRoute.AUTH_LOGIN) + `?continue=${encodeURIComponent(url.pathname + url.search)}`);
   }
 
   if (adminRoute && !user.isAdmin) {
-    redirect(302, resolveRoute(AppRoute.PHOTOS, {}));
+    redirect(302, resolve(AppRoute.PHOTOS));
   }
 };
 

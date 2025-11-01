@@ -4,10 +4,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginButton extends ConsumerWidget {
   final Function() onPressed;
+  final bool withIcon;
+  final bool isDisabled;
 
   const LoginButton({
     super.key,
     required this.onPressed,
+    this.withIcon = true,
+    this.isDisabled = false,
   });
 
   @override
@@ -15,12 +19,18 @@ class LoginButton extends ConsumerWidget {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
+        backgroundColor: isDisabled ? Colors.grey[300] : null,
+        foregroundColor: isDisabled ? Colors.grey[600] : null,
       ),
-      onPressed: onPressed,
-      icon: const Icon(Icons.login_rounded),
-      label: const Text(
+      onPressed: isDisabled ? null : onPressed,
+      icon: withIcon ? const Icon(Icons.login_rounded) : null,
+      label: Text(
         "login",
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: isDisabled ? Colors.grey[600] : null,
+        ),
       ).tr(),
     );
   }

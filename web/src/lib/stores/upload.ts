@@ -14,7 +14,12 @@ function createUploadStore() {
 
   const isUploading = derived(uploadAssets, (items) => items.length > 0);
   const isDismissible = derived(uploadAssets, (items) =>
-    items.some((item) => item.state === UploadState.ERROR || item.state === UploadState.DUPLICATED),
+    items.some(
+      (item) =>
+        item.state === UploadState.ERROR ||
+        item.state === UploadState.DUPLICATED ||
+        item.state === UploadState.UNSUPPORTED_TYPE,
+    ),
   );
   const remainingUploads = derived(
     uploadAssets,
@@ -85,7 +90,12 @@ function createUploadStore() {
 
   const dismissErrors = () =>
     uploadAssets.update((value) =>
-      value.filter((e) => e.state !== UploadState.ERROR && e.state !== UploadState.DUPLICATED),
+      value.filter(
+        (e) =>
+          e.state !== UploadState.ERROR &&
+          e.state !== UploadState.DUPLICATED &&
+          e.state !== UploadState.UNSUPPORTED_TYPE,
+      ),
     );
 
   const reset = () => {

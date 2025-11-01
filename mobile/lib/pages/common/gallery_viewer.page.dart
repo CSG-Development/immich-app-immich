@@ -16,13 +16,15 @@ import 'package:immich_mobile/pages/common/download_panel.dart';
 import 'package:immich_mobile/pages/common/gallery_stacked_children.dart';
 import 'package:immich_mobile/pages/common/native_video_viewer.page.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
+import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_stack.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
-import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
 import 'package:immich_mobile/widgets/asset_viewer/advanced_bottom_sheet.dart';
@@ -87,11 +89,7 @@ class GalleryViewerPage extends HookConsumerWidget {
         if (index < totalAssets.value && index >= 0) {
           final asset = loadAsset(index);
           await precacheImage(
-            ImmichImage.imageProvider(
-              asset: asset,
-              width: context.width,
-              height: context.height,
-            ),
+            ImmichImage.imageProvider(asset: asset, width: context.width, height: context.height),
             context,
             onError: onError,
           );
@@ -103,6 +101,12 @@ class GalleryViewerPage extends HookConsumerWidget {
       }
     }
 
+    useEffect(() {
+      if (ref.read(showControlsProvider)) {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      } else {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+      }
     useEffect(
       () {
         if (ref.read(showControlsProvider)) {
@@ -111,11 +115,13 @@ class GalleryViewerPage extends HookConsumerWidget {
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
         }
 
-        // Delay this a bit so we can finish loading the page
-        Timer(const Duration(milliseconds: 400), () {
-          precacheNextImage(currentIndex.value + 1);
-        });
+      // Delay this a bit so we can finish loading the page
+      Timer(const Duration(milliseconds: 400), () {
+        precacheNextImage(currentIndex.value + 1);
+      });
 
+      return null;
+    }, const []);
         return null;
       },
       const [],
@@ -125,7 +131,7 @@ class GalleryViewerPage extends HookConsumerWidget {
       final asset = loadAsset(currentIndex.value);
 
       if (asset.isRemote) {
-        ref.read(castProvider.notifier).loadMedia(asset, false);
+        ref.read(castProvider.notifier).loadMediaOld(asset, false);
       } else {
         if (isCasting) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -136,9 +142,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                   duration: const Duration(seconds: 1),
                   content: Text(
                     "local_asset_cast_failed".tr(),
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      color: context.primaryColor,
-                    ),
+                    style: context.textTheme.bodyLarge?.copyWith(color: context.primaryColor),
                   ),
                 ),
               );
@@ -147,9 +151,7 @@ class GalleryViewerPage extends HookConsumerWidget {
         }
       }
       return null;
-    }, [
-      ref.watch(castProvider).isCasting,
-    ]);
+    }, [ref.watch(castProvider).isCasting]);
 
     void showInfo() {
       final asset = ref.read(currentAssetProvider);
@@ -157,9 +159,7 @@ class GalleryViewerPage extends HookConsumerWidget {
         return;
       }
       showModalBottomSheet(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(15.0)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15.0))),
         barrierColor: Colors.transparent,
         isScrollControlled: true,
         showDragHandle: true,
@@ -174,20 +174,10 @@ class GalleryViewerPage extends HookConsumerWidget {
             expand: false,
             builder: (context, scrollController) {
               return Padding(
-                padding: EdgeInsets.only(
-                  bottom: context.viewInsets.bottom,
-                ),
-                child: ref.watch(appSettingsServiceProvider).getSetting<bool>(
-                          AppSettingsEnum.advancedTroubleshooting,
-                        )
-                    ? AdvancedBottomSheet(
-                        assetDetail: asset,
-                        scrollController: scrollController,
-                      )
-                    : DetailPanel(
-                        asset: asset,
-                        scrollController: scrollController,
-                      ),
+                padding: EdgeInsets.only(bottom: context.viewInsets.bottom),
+                child: ref.watch(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.advancedTroubleshooting)
+                    ? AdvancedBottomSheet(assetDetail: asset, scrollController: scrollController)
+                    : DetailPanel(asset: asset, scrollController: scrollController),
               );
             },
           );
@@ -238,7 +228,7 @@ class GalleryViewerPage extends HookConsumerWidget {
 
     PhotoViewGalleryPageOptions buildImage(Asset asset) {
       return PhotoViewGalleryPageOptions(
-        onDragStart: (_, details, __) {
+        onDragStart: (_, details, __, ___) {
           localPosition.value = details.localPosition;
         },
         onDragUpdate: (_, details, __) {
@@ -258,18 +248,92 @@ class GalleryViewerPage extends HookConsumerWidget {
         tightMode: true,
         initialScale: PhotoViewComputedScale.contained * 0.99,
         minScale: PhotoViewComputedScale.contained * 0.99,
-        errorBuilder: (context, error, stackTrace) => ImmichImage(
-          asset,
-          fit: BoxFit.contain,
-        ),
+        errorBuilder: (context, error, stackTrace) => ImmichImage(asset, fit: BoxFit.contain),
       );
+    }
+
+    Widget buildLoadingThumbnail(Asset asset) {
+      if (asset.isLocal && asset.local != null) {
+        // For local photos, use FutureBuilder to handle async file loading
+        return FutureBuilder<File?>(
+          future: asset.local!.file,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return Image(
+                key: ValueKey(asset),
+                image: FileImage(snapshot.data!),
+                fit: BoxFit.contain,
+                height: 250, // Use fixed size for loading thumbnail
+                width: 250,
+                alignment: Alignment.center,
+              );
+            } else {
+              // Show loading or fallback
+              return Container(
+                height: 250,
+                width: 250,
+                color: Colors.black,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
+        );
+      } else {
+        // For remote photos, use ImmichThumbnail
+        return ImmichThumbnail(key: ValueKey(asset), asset: asset, fit: BoxFit.contain);
+      }
+    }
+
+    Widget buildVideoImage(BuildContext context, Asset asset) {
+      if (asset.isLocal && asset.local != null) {
+        // For local photos, use FutureBuilder to handle async file loading
+        return FutureBuilder<File?>(
+          future: asset.local!.file,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return Image(
+                key: ValueKey(asset),
+                image: FileImage(snapshot.data!),
+                fit: BoxFit.contain,
+                height: context.height,
+                width: context.width,
+                alignment: Alignment.center,
+              );
+            } else {
+              // Show loading or fallback
+              return Container(
+                height: context.height,
+                width: context.width,
+                color: Colors.black,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+          },
+        );
+      } else {
+        // For remote photos, use ImmichImage.imageProvider
+        return Image(
+          key: ValueKey(asset),
+          image: ImmichImage.imageProvider(asset: asset, width: context.width, height: context.height),
+          fit: BoxFit.contain,
+          height: context.height,
+          width: context.width,
+          alignment: Alignment.center,
+        );
+      }
     }
 
     PhotoViewGalleryPageOptions buildVideo(BuildContext context, Asset asset) {
       return PhotoViewGalleryPageOptions.customChild(
-        onDragStart: (_, details, __) =>
-            localPosition.value = details.localPosition,
+        onDragStart: (_, details, __, ___) => localPosition.value = details.localPosition,
         onDragUpdate: (_, details, __) => handleSwipeUpDown(details),
+        onTapDown: (_, __, ___) {
+          ref.read(showControlsProvider.notifier).toggle();
+        },
         heroAttributes: _getHeroAttributes(asset),
         filterQuality: FilterQuality.high,
         initialScale: PhotoViewComputedScale.contained * 0.99,
@@ -282,18 +346,8 @@ class GalleryViewerPage extends HookConsumerWidget {
           child: NativeVideoViewerPage(
             key: getVideoPlayerKey(asset.id),
             asset: asset,
-            image: Image(
-              key: ValueKey(asset),
-              image: ImmichImage.imageProvider(
-                asset: asset,
-                width: context.width,
-                height: context.height,
-              ),
-              fit: BoxFit.contain,
-              height: context.height,
-              width: context.width,
-              alignment: Alignment.center,
-            ),
+            image: buildVideoImage(context, asset),
+            showControls: true,
           ),
         ),
       );
@@ -304,14 +358,23 @@ class GalleryViewerPage extends HookConsumerWidget {
 
       final stackId = newAsset.stackId;
       if (stackId != null && currentIndex.value == index) {
-        final stackElements =
-            ref.read(assetStackStateProvider(newAsset.stackId!));
+        final stackElements = ref.read(assetStackStateProvider(newAsset.stackId!));
         if (stackIndex.value < stackElements.length) {
           newAsset = stackElements.elementAt(stackIndex.value);
         }
       }
 
+      // Check if AirPlay is connected and this is an image
+      final isAirPlayConnected = ref.watch(airplayProvider);
       if (newAsset.isImage && !isPlayingMotionVideo) {
+        // If AirPlay is connected, use video player for any image (local or remote)
+        if (isAirPlayConnected) {
+          // Pre-convert photo in background for seamless experience
+          AirplayService.preConvertPhotoForAirPlay(newAsset, ref);
+          
+          return buildVideo(context, newAsset);
+        }
+        // Otherwise, use regular photo view
         return buildImage(newAsset);
       }
       return buildVideo(context, newAsset);
@@ -319,8 +382,7 @@ class GalleryViewerPage extends HookConsumerWidget {
 
     return PopScope(
       // Change immersive mode back to normal "edgeToEdge" mode
-      onPopInvokedWithResult: (didPop, _) =>
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+      onPopInvokedWithResult: (didPop, _) => SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
@@ -335,27 +397,28 @@ class GalleryViewerPage extends HookConsumerWidget {
 
                 if (asset.isImage && !ref.read(isPlayingMotionVideoProvider)) {
                   isZoomed.value = state != PhotoViewScaleState.initial;
-                  ref.read(showControlsProvider.notifier).show =
-                      !isZoomed.value;
+                  ref.read(showControlsProvider.notifier).show = !isZoomed.value;
+                }
+                
+                // Force show controls when AirPlay is active
+                final isAirPlayConnected = ref.read(airplayProvider);
+                if (isAirPlayConnected) {
+                  ref.read(showControlsProvider.notifier).show = true;
                 }
               },
               gaplessPlayback: true,
               loadingBuilder: (context, event, index) {
                 final asset = loadAsset(index);
-                return ClipRect(
+                return SizedBox(
+                  width: context.width,
+                  height: context.height,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
+                      SizedBox.expand(child: buildLoadingThumbnail(asset)),
                       BackdropFilter(
-                        filter: ui.ImageFilter.blur(
-                          sigmaX: 10,
-                          sigmaY: 10,
-                        ),
-                      ),
-                      ImmichThumbnail(
-                        key: ValueKey(asset),
-                        asset: asset,
-                        fit: BoxFit.contain,
+                        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: const SizedBox.expand(),
                       ),
                     ],
                   ),
@@ -365,12 +428,12 @@ class GalleryViewerPage extends HookConsumerWidget {
               scrollPhysics: isZoomed.value
                   ? const NeverScrollableScrollPhysics() // Don't allow paging while scrolled in
                   : (Platform.isIOS
-                      ? const FastScrollPhysics() // Use bouncing physics for iOS
-                      : const FastClampingScrollPhysics() // Use heavy physics for Android
-                  ),
+                        ? const FastScrollPhysics() // Use bouncing physics for iOS
+                        : const FastClampingScrollPhysics() // Use heavy physics for Android
+                          ),
               itemCount: totalAssets.value,
               scrollDirection: Axis.horizontal,
-              onPageChanged: (value) {
+              onPageChanged: (value, _) {
                 final next = currentIndex.value < value ? value + 1 : value - 1;
 
                 ref.read(hapticFeedbackProvider.notifier).selectionClick();
@@ -394,7 +457,7 @@ class GalleryViewerPage extends HookConsumerWidget {
 
                 // send image to casting if the server has it
                 if (newAsset.isRemote) {
-                  ref.read(castProvider.notifier).loadMedia(newAsset, false);
+                  ref.read(castProvider.notifier).loadMediaOld(newAsset, false);
                 } else {
                   context.scaffoldMessenger.clearSnackBars();
 
@@ -405,9 +468,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                         duration: const Duration(seconds: 2),
                         content: Text(
                           "local_asset_cast_failed".tr(),
-                          style: context.textTheme.bodyLarge?.copyWith(
-                            color: context.primaryColor,
-                          ),
+                          style: context.textTheme.bodyLarge?.copyWith(color: context.primaryColor),
                         ),
                       ),
                     );
@@ -420,10 +481,7 @@ class GalleryViewerPage extends HookConsumerWidget {
               top: 0,
               left: 0,
               right: 0,
-              child: GalleryAppBar(
-                key: const ValueKey('app-bar'),
-                showInfo: showInfo,
-              ),
+              child: GalleryAppBar(key: const ValueKey('app-bar'), showInfo: showInfo),
             ),
             Positioned(
               bottom: 0,
@@ -454,9 +512,7 @@ class GalleryViewerPage extends HookConsumerWidget {
   @pragma('vm:prefer-inline')
   PhotoViewHeroAttributes _getHeroAttributes(Asset asset) {
     return PhotoViewHeroAttributes(
-      tag: asset.isInDb
-          ? asset.id + heroOffset
-          : '${asset.remoteId}-$heroOffset',
+      tag: asset.isInDb ? asset.id + heroOffset : '${asset.remoteId}-$heroOffset',
       transitionOnUserGestures: true,
     );
   }

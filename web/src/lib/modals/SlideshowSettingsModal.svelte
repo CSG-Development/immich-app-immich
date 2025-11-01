@@ -73,7 +73,7 @@
   };
 </script>
 
-<Modal size="small" title={$t('slideshow_settings')} onClose={() => onClose()}>
+<Modal size="small" title={$t('slideshow_settings')} onClose={() => onClose()} class="overflow-visible">
   <ModalBody>
     <div class="flex flex-col gap-4 text-immich-primary dark:text-immich-dark-primary">
       <SettingDropdown
@@ -83,6 +83,8 @@
         onToggle={(option) => {
           tempSlideshowNavigation = handleToggle(option, navigationOptions) || tempSlideshowNavigation;
         }}
+        position="bottom-right"
+        class="!min-w-[180px]"
       />
       <SettingDropdown
         title={$t('look')}
@@ -91,6 +93,8 @@
         onToggle={(option) => {
           tempSlideshowLook = handleToggle(option, lookOptions) || tempSlideshowLook;
         }}
+        position="bottom-right"
+        class="!min-w-[220px]"
       />
       <SettingSwitch title={$t('autoplay_slideshow')} bind:checked={tempSlideshowAutoplay} />
       <SettingSwitch title={$t('show_progress_bar')} bind:checked={tempShowProgressBar} />

@@ -1,5 +1,6 @@
 <script lang="ts">
   import empty1Url from '$lib/assets/empty-1.svg';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
 
   interface Props {
     onClick?: undefined | (() => unknown);
@@ -11,7 +12,7 @@
 
   let { onClick = undefined, text, fullWidth = false, src = empty1Url, title }: Props = $props();
 
-  let width = $derived(fullWidth ? 'w-full' : 'w-1/2');
+  let width = $derived(fullWidth || mobileDevice.maxMd ? 'w-full' : 'w-130');
 
   const hoverClasses = onClick
     ? `border dark:border-immich-dark-gray hover:bg-immich-primary/5 dark:hover:bg-immich-dark-primary/25`
@@ -22,12 +23,12 @@
 <svelte:element
   this={onClick ? 'button' : 'div'}
   onclick={onClick}
-  class="{width} m-auto mt-10 flex flex-col place-content-center place-items-center rounded-3xl bg-gray-50 p-5 dark:bg-immich-dark-gray {hoverClasses}"
+  class="{width} h-85 m-auto mt-10 flex flex-col place-content-center place-items-center gap-8 rounded-3xl bg-gray-50 p-5 dark:bg-immich-dark-gray-card {hoverClasses}"
 >
-  <img {src} alt="" width="500" draggable="false" />
+  <img class="h-[200px]" {src} alt="" draggable="false" />
 
   {#if title}
     <h2 class="text-xl font-medium my-4">{title}</h2>
   {/if}
-  <p class="text-immich-text-gray-500 dark:text-immich-dark-fg font-light text-center">{text}</p>
+  <p class="text-immich-gray-text dark:text-immich-dark-gray-text font-medium text-center">{text.toUpperCase()}</p>
 </svelte:element>

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
-  import Badge from '$lib/components/elements/badge.svelte';
+  import { resolve } from '$app/paths';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import SharedLinkCopy from '$lib/components/sharedlinks-page/actions/shared-link-copy.svelte';
   import SharedLinkDelete from '$lib/components/sharedlinks-page/actions/shared-link-delete.svelte';
   import SharedLinkEdit from '$lib/components/sharedlinks-page/actions/shared-link-edit.svelte';
   import ShareCover from '$lib/components/sharedlinks-page/covers/share-cover.svelte';
   import { AppRoute } from '$lib/constants';
+  import Badge from '$lib/elements/Badge.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { SharedLinkType, type SharedLinkResponseDto } from '@immich/sdk';
   import { mdiDotsVertical } from '@mdi/js';
@@ -42,7 +42,7 @@
 >
   <svelte:element
     this={isExpired ? 'div' : 'a'}
-    href={isExpired ? undefined : resolveRoute(`${AppRoute.SHARE}/${link.key}`, {})}
+    href={isExpired ? undefined : resolve(`${AppRoute.SHARE}/${link.key}`)}
     class="flex gap-4 w-full py-4"
   >
     <ShareCover class="transition-all duration-300 hover:shadow-lg" {link} />
@@ -93,6 +93,9 @@
           <Badge rounded="full"><span class="text-xs px-1">{$t('password')}</span></Badge>
         {/if}
       </div>
+      {#if link.slug}
+        <Badge rounded="full"><span class="text-xs px-1">{$t('custom_url')}</span></Badge>
+      {/if}
     </div>
   </svelte:element>
   <div class="flex flex-auto flex-col place-content-center place-items-end text-end ms-4">

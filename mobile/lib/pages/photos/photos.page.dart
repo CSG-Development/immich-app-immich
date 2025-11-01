@@ -9,15 +9,17 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
-import 'package:immich_mobile/widgets/common/immich_app_bar.dart';
+import 'package:immich_mobile/widgets/common/curator_app_bar.dart';
 import 'package:immich_mobile/widgets/common/immich_loading_indicator.dart';
 import 'package:immich_mobile/widgets/memories/memory_lane.dart';
+import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
 
 @RoutePage()
 class PhotosPage extends HookConsumerWidget {
@@ -30,17 +32,14 @@ class PhotosPage extends HookConsumerWidget {
     final tipOneOpacity = useState(0.0);
     final refreshCount = useState(0);
 
-    useEffect(
-      () {
-        ref.read(websocketProvider.notifier).connect();
-        Future(() => ref.read(assetProvider.notifier).getAllAsset());
-        Future(() => ref.read(albumProvider.notifier).refreshRemoteAlbums());
-        ref.read(serverInfoProvider.notifier).getServerInfo();
+    useEffect(() {
+      ref.read(websocketProvider.notifier).connect();
+      Future(() => ref.read(assetProvider.notifier).getAllAsset());
+      Future(() => ref.read(albumProvider.notifier).refreshRemoteAlbums());
+      ref.read(serverInfoProvider.notifier).getServerInfo();
 
-        return;
-      },
-      [],
-    );
+      return;
+    }, []);
 
     Widget buildLoadingIndicator() {
       Timer(const Duration(seconds: 2), () => tipOneOpacity.value = 1);
@@ -54,9 +53,7 @@ class PhotosPage extends HookConsumerWidget {
               padding: const EdgeInsets.only(top: 16.0),
               child: Text(
                 'home_page_building_timeline',
-                style: context.textTheme.titleMedium?.copyWith(
-                  color: context.primaryColor,
-                ),
+                style: context.textTheme.titleMedium?.copyWith(color: context.primaryColor),
               ).tr(),
             ),
             const SizedBox(height: 8),
@@ -138,44 +135,49 @@ class PhotosPage extends HookConsumerWidget {
       );
     }
 
-    final showMemories = currentUser != null && currentUser.memoryEnabled;
-    final Widget topWidget = showMemories
-        ? Column(
+    final Widget topWidget = (currentUser != null && currentUser.memoryEnabled) ? Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const MemoryLane(),
               buildAssetCountWidget(),
             ],
-          )
-        : buildAssetCountWidget();
+          ) : buildAssetCountWidget();
 
-    return Stack(
-      children: [
-        MultiselectGrid(
-          topWidget: topWidget,
-          renderListProvider: timelineUsers.length > 1
-              ? multiUsersTimelineProvider(timelineUsers)
-              : singleUserTimelineProvider(currentUser?.id),
-          buildLoadingIndicator: buildLoadingIndicator,
-          onRefresh: refreshAssets,
-          stackEnabled: true,
-          archiveEnabled: true,
-          editEnabled: true,
-        ),
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
-          top: ref.watch(multiselectProvider)
-              ? -(kToolbarHeight + context.padding.top)
-              : 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: kToolbarHeight + context.padding.top,
-            color: context.themeData.appBarTheme.backgroundColor,
-            child: const ImmichAppBar(),
+    return Scaffold(
+      floatingActionButton: const ClipboardPasteButton(),
+      body: Stack(
+        children: [
+          MultiselectGrid(
+            topWidget: topWidget,
+            renderListProvider: timelineUsers.length > 1
+                ? multiUsersTimelineProvider(timelineUsers)
+                : singleUserTimelineProvider(currentUser?.id),
+            buildLoadingIndicator: buildLoadingIndicator,
+            onRefresh: refreshAssets,
+            stackEnabled: true,
+            archiveEnabled: true,
+            editEnabled: true,
+            visibleItemsListener: (position) {
+              ref
+                  .read(scrollNotifierProvider)
+                  .handleItemPositionsChange(position);
+            },
           ),
-        ),
-      ],
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            top: ref.watch(multiselectProvider)
+                ? -(64.0 + context.padding.top)
+                : 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 64.0 + context.padding.top,
+              color: context.themeData.appBarTheme.backgroundColor,
+              child: const CuratorAppBar(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

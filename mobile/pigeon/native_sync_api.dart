@@ -23,6 +23,8 @@ class PlatformAsset {
   final int? width;
   final int? height;
   final int durationInSeconds;
+  final int orientation;
+  final bool isFavorite;
 
   const PlatformAsset({
     required this.id,
@@ -33,6 +35,8 @@ class PlatformAsset {
     this.width,
     this.height,
     this.durationInSeconds = 0,
+    this.orientation = 0,
+    this.isFavorite = false,
   });
 }
 
@@ -68,6 +72,14 @@ class SyncDelta {
   });
 }
 
+class HashResult {
+  final String assetId;
+  final String? error;
+  final String? hash;
+
+  const HashResult({required this.assetId, this.error, this.hash});
+}
+
 @HostApi()
 abstract class NativeSyncApi {
   bool shouldFullSync();
@@ -91,6 +103,9 @@ abstract class NativeSyncApi {
   @TaskQueue(type: TaskQueueType.serialBackgroundThread)
   List<PlatformAsset> getAssetsForAlbum(String albumId, {int? updatedTimeCond});
 
+  @async
   @TaskQueue(type: TaskQueueType.serialBackgroundThread)
-  List<Uint8List?> hashPaths(List<String> paths);
+  List<HashResult> hashAssets(List<String> assetIds, {bool allowNetworkAccess = false});
+
+  void cancelHashing();
 }

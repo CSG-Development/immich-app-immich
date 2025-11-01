@@ -1,23 +1,12 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { intersectionObserver } from '$lib/actions/intersection-observer';
   import { resizeObserver } from '$lib/actions/resize-observer';
   import { shortcuts } from '$lib/actions/shortcut';
   import MemoryPhotoViewer from '$lib/components/memory-page/memory-photo-viewer.svelte';
   import MemoryVideoViewer from '$lib/components/memory-page/memory-video-viewer.svelte';
-  import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
-  import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
-  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
@@ -70,7 +59,7 @@
   let paused = $state(false);
   let current = $state<MemoryAsset | undefined>(undefined);
   let currentMemoryAssetFull = $derived.by(async () =>
-    current?.asset ? await getAssetInfo({ id: current.asset.id, key: authManager.key }) : undefined,
+    current?.asset ? await getAssetInfo({ ...authManager.params, id: current.asset.id }) : undefined,
   );
   let currentTimelineAssets = $derived(current?.memory.assets.map((asset) => toTimelineAsset(asset)) || []);
 
@@ -113,9 +102,10 @@
   const handlePreviousAsset = () => handleNavigate(current?.previous?.asset);
   const handleNextMemory = () => handleNavigate(current?.nextMemory?.assets[0]);
   const handlePreviousMemory = () => handleNavigate(current?.previousMemory?.assets[0]);
-  const handleEscape = async () => goto(resolveRoute(AppRoute.PHOTOS, {}));
+  const handleEscape = async () => goto(resolve(AppRoute.PHOTOS));
   const handleSelectAll = () =>
     assetInteraction.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
+
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
     // leaving these log statements here as comments. Very useful to figure out what's going on during dev!
     // console.log(`handleAction[${callingContext}] called with: ${action}`);
@@ -236,7 +226,7 @@
 
   const init = (target: Page | NavigationTarget | null) => {
     if (memoryStore.memories.length === 0) {
-      return handlePromiseError(goto(resolveRoute(AppRoute.PHOTOS, {})));
+      return handlePromiseError(goto(resolve(AppRoute.PHOTOS)));
     }
 
     current = loadFromParams(target);
@@ -247,13 +237,22 @@
     playerInitialized = false;
   };
 
+  const resetAndPlay = () => {
+    handlePromiseError(handleAction('resetAndPlay', 'reset'));
+    handlePromiseError(handleAction('resetAndPlay', 'play'));
+  };
+
   const initPlayer = () => {
-    const isVideoAssetButPlayerHasNotLoadedYet = current && current.asset.isVideo && !videoPlayer;
+    const isVideo = current && current.asset.isVideo;
+    const isVideoAssetButPlayerHasNotLoadedYet = isVideo && !videoPlayer;
     if (playerInitialized || isVideoAssetButPlayerHasNotLoadedYet) {
       return;
     }
     if ($isViewing) {
       handlePromiseError(handleAction('initPlayer[AssetViewOpen]', 'pause'));
+    } else if (isVideo) {
+      // Image assets will start playing when the image is loaded. Only autostart video assets.
+      resetAndPlay();
     } else {
       handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'reset'));
       handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'play'));
@@ -354,7 +353,7 @@
   use:resizeObserver={({ height, width }) => ((viewport.height = height), (viewport.width = width))}
 >
   {#if current}
-    <ControlAppBar onClose={() => goto(resolveRoute(AppRoute.PHOTOS, {}))} forceDark multiRow>
+    <ControlAppBar onClose={() => goto(resolve(AppRoute.PHOTOS))} forceDark multiRow>
       {#snippet leading()}
         {#if current}
           <p class="text-lg">
@@ -522,7 +521,7 @@
 
               <div>
                 <IconButton
-                  href={resolveRoute(`${AppRoute.PHOTOS}?at=${current.asset.id}`, {})}
+                  href={resolve(`${AppRoute.PHOTOS}?at=${current.asset.id}`)}
                   icon={mdiImageSearch}
                   aria-label={$t('view_in_timeline')}
                   color="secondary"

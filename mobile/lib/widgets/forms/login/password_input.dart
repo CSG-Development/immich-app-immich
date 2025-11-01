@@ -2,17 +2,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
+import 'package:immich_mobile/utils/trim_formatter.dart';
 
 class PasswordInput extends HookConsumerWidget {
   final TextEditingController controller;
-  final FocusNode? focusNode;
-  final Function()? onSubmit;
+  final FocusNode focusNode;
+  final VoidCallback? onSubmit;
+  final bool hasExternalError;
 
   const PasswordInput({
     super.key,
     required this.controller,
-    this.focusNode,
+    required this.focusNode,
     this.onSubmit,
+    this.hasExternalError = false,
   });
 
   @override
@@ -22,23 +26,21 @@ class PasswordInput extends HookConsumerWidget {
     return TextFormField(
       obscureText: !isPasswordVisible.value,
       controller: controller,
-      decoration: InputDecoration(
+      inputFormatters: const [TrimFormatter()],
+      decoration: LoginInputDecorations.baseDecoration(
+        context: context,
         labelText: 'password'.tr(),
-        border: const OutlineInputBorder(),
-        hintText: 'login_form_password_hint'.tr(),
-        hintStyle: const TextStyle(
-          fontWeight: FontWeight.normal,
-          fontSize: 14,
-        ),
+        hintText: 'curator.login_form_password_hint'.tr(),
         suffixIcon: IconButton(
-          onPressed: () => isPasswordVisible.value = !isPasswordVisible.value,
-          icon: Icon(
-            isPasswordVisible.value
-                ? Icons.visibility_off_sharp
-                : Icons.visibility_sharp,
+          style: IconButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+          onPressed: () => isPasswordVisible.value = !isPasswordVisible.value,
+          icon: Icon(isPasswordVisible.value ? Icons.visibility_off_sharp : Icons.visibility_sharp),
         ),
+        isError: hasExternalError,
       ),
+      autovalidateMode: AutovalidateMode.always,
       autofillHints: const [AutofillHints.password],
       keyboardType: TextInputType.text,
       onFieldSubmitted: (_) => onSubmit?.call(),

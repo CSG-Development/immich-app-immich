@@ -2,12 +2,38 @@ import Foundation
 import SwiftUI
 import WidgetKit
 
-enum WidgetError: Error {
+let IMMICH_SHARE_GROUP = "group.com.seagate.curator.stxphotos.ios.share"
+
+enum WidgetError: Error, Codable {
   case noLogin
   case fetchFailed
-  case unknown
   case albumNotFound
+  case noAssetsAvailable
+}
+
+enum FetchError: Error {
   case unableToResize
+  case invalidImage
+  case invalidURL
+  case fetchFailed
+}
+
+extension WidgetError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .noLogin:
+      return "Login to Immich"
+
+    case .fetchFailed:
+      return "Unable to connect to your Immich instance"
+
+    case .albumNotFound:
+      return "Album not found"
+
+    case .noAssetsAvailable:
+      return "No assets available"
+    }
+  }
 }
 
 enum AssetType: String, Codable {
@@ -17,20 +43,25 @@ enum AssetType: String, Codable {
   case other = "OTHER"
 }
 
-struct SearchResult: Codable {
+struct Asset: Codable {
   let id: String
   let type: AssetType
+
+  var deepLink: URL? {
+    return URL(string: "immich://asset?id=\(id)")
+  }
 }
 
-struct SearchFilters: Codable {
-  var type: AssetType = .image
-  let size: Int
+struct SearchFilter: Codable {
+  var type = AssetType.image
+  var size = 1
   var albumIds: [String] = []
+  var isFavorite: Bool? = nil
 }
 
 struct MemoryResult: Codable {
   let id: String
-  var assets: [SearchResult]
+  var assets: [Asset]
   let type: String
 
   struct MemoryData: Codable {
@@ -40,23 +71,51 @@ struct MemoryResult: Codable {
   let data: MemoryData
 }
 
-struct Album: Codable {
+struct Album: Codable, Equatable {
   let id: String
   let albumName: String
+
+  static let NONE = Album(id: "NONE", albumName: "None")
+  static let FAVORITES = Album(id: "FAVORITES", albumName: "Favorites")
+
+  var filter: SearchFilter {
+    switch self {
+    case Album.NONE:
+      return SearchFilter()
+    case Album.FAVORITES:
+      return SearchFilter(isFavorite: true)
+
+    // regular album
+    default:
+      return SearchFilter(albumIds: [id])
+    }
+  }
+
+  var isVirtual: Bool {
+    switch self {
+    case Album.NONE, Album.FAVORITES:
+      return true
+    default:
+      return false
+    }
+  }
 }
 
 // MARK: API
 
 class ImmichAPI {
+  typealias CustomHeaders = [String:String]
   struct ServerConfig {
     let serverEndpoint: String
     let sessionKey: String
+    let customHeaders: CustomHeaders
   }
+  
   let serverConfig: ServerConfig
 
   init() async throws {
     // fetch the credentials from the UserDefaults store that dart placed here
-    guard let defaults = UserDefaults(suiteName: "group.com.seagate.curator.stxphotos.ios.share"),
+    guard let defaults = UserDefaults(suiteName: IMMICH_SHARE_GROUP),
       let serverURL = defaults.string(forKey: "widget_server_url"),
       let sessionKey = defaults.string(forKey: "widget_auth_token")
     else {
@@ -66,10 +125,20 @@ class ImmichAPI {
     if serverURL == "" || sessionKey == "" {
       throw WidgetError.noLogin
     }
+    
+    // custom headers come in the form of KV pairs in JSON
+    var customHeadersJSON = (defaults.string(forKey: "widget_custom_headers") ?? "")
+    var customHeaders: CustomHeaders = [:]
+    
+    if customHeadersJSON != "",
+       let parsedHeaders = try? JSONDecoder().decode(CustomHeaders.self, from: customHeadersJSON.data(using: .utf8)!) {
+      customHeaders = parsedHeaders
+    }
 
     serverConfig = ServerConfig(
       serverEndpoint: serverURL,
-      sessionKey: sessionKey
+      sessionKey: sessionKey,
+      customHeaders: customHeaders
     )
   }
 
@@ -99,9 +168,16 @@ class ImmichAPI {
 
     return components?.url
   }
+  
+  func applyCustomHeaders(for request: inout URLRequest) {
+    for (header, value) in serverConfig.customHeaders {
+      request.addValue(value, forHTTPHeaderField: header)
+    }
+  }
 
-  func fetchSearchResults(with filters: SearchFilters) async throws
-    -> [SearchResult]
+  func fetchSearchResults(with filters: SearchFilter = Album.NONE.filter)
+    async throws
+    -> [Asset]
   {
     // get URL
     guard
@@ -117,11 +193,12 @@ class ImmichAPI {
     request.httpMethod = "POST"
     request.httpBody = try JSONEncoder().encode(filters)
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
+    applyCustomHeaders(for: &request)
+    
     let (data, _) = try await URLSession.shared.data(for: request)
 
     // decode data
-    return try JSONDecoder().decode([SearchResult].self, from: data)
+    return try JSONDecoder().decode([Asset].self, from: data)
   }
 
   func fetchMemory(for date: Date) async throws -> [MemoryResult] {
@@ -139,6 +216,7 @@ class ImmichAPI {
 
     var request = URLRequest(url: searchURL)
     request.httpMethod = "GET"
+    applyCustomHeaders(for: &request)
 
     let (data, _) = try await URLSession.shared.data(for: request)
 
@@ -146,7 +224,7 @@ class ImmichAPI {
     return try JSONDecoder().decode([MemoryResult].self, from: data)
   }
 
-  func fetchImage(asset: SearchResult) async throws -> UIImage {
+  func fetchImage(asset: Asset) async throws(FetchError) -> UIImage {
     let thumbnailParams = [URLQueryItem(name: "size", value: "preview")]
     let assetEndpoint = "/assets/" + asset.id + "/thumbnail"
 
@@ -157,16 +235,31 @@ class ImmichAPI {
         params: thumbnailParams
       )
     else {
-      throw URLError(.badURL)
+      throw .invalidURL
     }
 
-    let (data, _) = try await URLSession.shared.data(from: fetchURL)
-
-    guard let img = UIImage(data: data) else {
-      throw URLError(.badServerResponse)
+    guard let imageSource = CGImageSourceCreateWithURL(fetchURL as CFURL, nil)
+    else {
+      throw .invalidURL
     }
 
-    return img
+    let decodeOptions: [NSString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceThumbnailMaxPixelSize: 512,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+    ]
+
+    guard
+      let thumbnail = CGImageSourceCreateThumbnailAtIndex(
+        imageSource,
+        0,
+        decodeOptions as CFDictionary
+      )
+    else {
+      throw .fetchFailed
+    }
+
+    return UIImage(cgImage: thumbnail)
   }
 
   func fetchAlbums() async throws -> [Album] {
@@ -182,7 +275,8 @@ class ImmichAPI {
 
     var request = URLRequest(url: searchURL)
     request.httpMethod = "GET"
-
+    applyCustomHeaders(for: &request)
+    
     let (data, _) = try await URLSession.shared.data(for: request)
 
     // decode data

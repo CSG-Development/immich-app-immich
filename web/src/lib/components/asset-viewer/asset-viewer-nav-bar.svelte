@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import CastButton from '$lib/cast/cast-button.svelte';
   import type { OnAction, PreAction } from '$lib/components/asset-viewer/actions/action';
   import AddToAlbumAction from '$lib/components/asset-viewer/actions/add-to-album-action.svelte';
@@ -22,6 +23,8 @@
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { AppRoute } from '$lib/constants';
+  import { photoViewerImgElement } from '$lib/stores/assets-store.svelte';
+  import { featureFlags } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { photoZoomState } from '$lib/stores/zoom-image.store';
   import { getAssetJobName, getSharedLink } from '$lib/utils';
@@ -41,9 +44,11 @@
   import {
     mdiAlertOutline,
     mdiCogRefreshOutline,
+    mdiCompare,
     mdiContentCopy,
     mdiDatabaseRefreshOutline,
     mdiDotsVertical,
+    mdiFileEditOutline,
     mdiHeadSyncOutline,
     mdiImageRefreshOutline,
     mdiImageSearch,
@@ -98,6 +103,11 @@
   let isOwner = $derived($user && asset.ownerId === $user?.id);
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
+  let smartSearchEnabled = $derived($featureFlags.loaded && $featureFlags.smartSearch);
+
+  const navigateToEditor = async () => await goto(resolve(AppRoute.EDITOR) + `?assetId=${asset.id}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isGalleryUrl = (path: string) => page.url.pathname.includes(resolve(path as any));
 
   // $: showEditorButton =
   //   isOwner &&
@@ -124,6 +134,17 @@
     {#if !asset.isTrashed && $user && !isLocked}
       <ShareAction {asset} />
     {/if}
+    {#if asset.type === AssetTypeEnum.Image && (isGalleryUrl(AppRoute.PHOTOS) || isGalleryUrl(AppRoute.ALBUMS))}
+      <IconButton
+        class="hidden sm:flex"
+        color="secondary"
+        variant="ghost"
+        shape="round"
+        icon={mdiFileEditOutline}
+        aria-label={$t('edit')}
+        onclick={navigateToEditor}
+      />
+    {/if}
     {#if asset.isOffline}
       <IconButton
         shape="round"
@@ -147,7 +168,7 @@
         onclick={onZoomImage}
       />
     {/if}
-    {#if canCopyImageToClipboard() && asset.type === AssetTypeEnum.Image}
+    {#if canCopyImageToClipboard() && asset.type === AssetTypeEnum.Image && $photoViewerImgElement}
       <IconButton
         color="secondary"
         variant="ghost"
@@ -174,7 +195,7 @@
       <DeleteAction {asset} {onAction} {preAction} />
 
       <ButtonContextMenu direction="left" align="top-right" color="secondary" title={$t('more')} icon={mdiDotsVertical}>
-        {#if showSlideshow && !isLocked}
+        {#if showSlideshow}
           <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={onPlaySlideshow} />
         {/if}
         {#if showDownloadButton}
@@ -218,8 +239,16 @@
             {#if !asset.isArchived && !asset.isTrashed}
               <MenuOption
                 icon={mdiImageSearch}
-                onClick={() => goto(resolveRoute(`${AppRoute.PHOTOS}?at=${stack?.primaryAssetId ?? asset.id}`, {}))}
+                onClick={() => goto(resolve(`${AppRoute.PHOTOS}?at=${stack?.primaryAssetId ?? asset.id}`))}
                 text={$t('view_in_timeline')}
+              />
+            {/if}
+            {#if !asset.isArchived && !asset.isTrashed && smartSearchEnabled}
+              <MenuOption
+                icon={mdiCompare}
+                onClick={() =>
+                  goto(resolve(`${AppRoute.SEARCH}?query={"queryAssetId":"${stack?.primaryAssetId ?? asset.id}"}`))}
+                text={$t('view_similar_photos')}
               />
             {/if}
           {/if}

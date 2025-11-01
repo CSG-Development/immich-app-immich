@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { shortcut } from '$lib/actions/shortcut';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
@@ -38,17 +38,17 @@
 
 <svelte:document use:shortcut={{ shortcut: { key: 't' }, onShortcut: handleAddTag }} />
 
-{#if isOwner && !authManager.key}
+{#if isOwner && !authManager.isSharedLink}
   <section class="px-4 mt-4">
     <div class="flex h-10 w-full items-center justify-between text-sm">
-      <h2>{$t('tags').toUpperCase()}</h2>
+      <h2 class="uppercase">{$t('tags')}</h2>
     </div>
     <section class="flex flex-wrap pt-2 gap-1" data-testid="detail-panel-tags">
       {#each tags as tag (tag.id)}
         <div class="flex group transition-all">
           <a
             class="inline-block h-min whitespace-nowrap ps-3 pe-1 group-hover:ps-3 py-1 text-center align-baseline leading-none text-gray-100 dark:text-immich-dark-gray bg-primary rounded-s-full hover:bg-immich-primary/80 dark:hover:bg-immich-dark-primary/80 transition-all"
-            href={encodeURI(resolveRoute(`${AppRoute.TAGS}/?path=${tag.value}`, {}))}
+            href={encodeURI(resolve(`${AppRoute.TAGS}/?path=${tag.value}`))}
           >
             <p class="text-sm">
               {tag.value}

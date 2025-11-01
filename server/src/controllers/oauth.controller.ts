@@ -19,69 +19,70 @@ import { respondWithCookie } from 'src/utils/response';
 export class OAuthController {
   constructor(private service: AuthService) {}
 
-  // @Get('mobile-redirect')
-  // @Redirect()
-  // redirectOAuthToMobile(@Req() request: Request) {
-  //   return {
-  //     url: this.service.getMobileRedirect(request.url),
-  //     statusCode: HttpStatus.TEMPORARY_REDIRECT,
-  //   };
-  // }
-  //
-  // @Post('authorize')
-  // async startOAuth(
-  //   @Body() dto: OAuthConfigDto,
-  //   @Res({ passthrough: true }) res: Response,
-  //   @GetLoginDetails() loginDetails: LoginDetails,
-  // ): Promise<OAuthAuthorizeResponseDto> {
-  //   const { url, state, codeVerifier } = await this.service.authorize(dto);
-  //   return respondWithCookie(
-  //     res,
-  //     { url },
-  //     {
-  //       isSecure: loginDetails.isSecure,
-  //       values: [
-  //         { key: ImmichCookie.OAUTH_STATE, value: state },
-  //         { key: ImmichCookie.OAUTH_CODE_VERIFIER, value: codeVerifier },
-  //       ],
-  //     },
-  //   );
-  // }
-  //
-  // @Post('callback')
-  // async finishOAuth(
-  //   @Req() request: Request,
-  //   @Res({ passthrough: true }) res: Response,
-  //   @Body() dto: OAuthCallbackDto,
-  //   @GetLoginDetails() loginDetails: LoginDetails,
-  // ): Promise<LoginResponseDto> {
-  //   const body = await this.service.callback(dto, request.headers, loginDetails);
-  //   res.clearCookie(ImmichCookie.OAUTH_STATE);
-  //   res.clearCookie(ImmichCookie.OAUTH_CODE_VERIFIER);
-  //   return respondWithCookie(res, body, {
-  //     isSecure: loginDetails.isSecure,
-  //     values: [
-  //       { key: ImmichCookie.ACCESS_TOKEN, value: body.accessToken },
-  //       { key: ImmichCookie.AUTH_TYPE, value: AuthType.OAUTH },
-  //       { key: ImmichCookie.IS_AUTHENTICATED, value: 'true' },
-  //     ],
-  //   });
-  // }
-  //
-  // @Post('link')
-  // @Authenticated()
-  // linkOAuthAccount(
-  //   @Req() request: Request,
-  //   @Auth() auth: AuthDto,
-  //   @Body() dto: OAuthCallbackDto,
-  // ): Promise<UserAdminResponseDto> {
-  //   return this.service.link(auth, dto, request.headers);
-  // }
-  //
-  // @Post('unlink')
-  // @HttpCode(HttpStatus.OK)
-  // @Authenticated()
-  // unlinkOAuthAccount(@Auth() auth: AuthDto): Promise<UserAdminResponseDto> {
-  //   return this.service.unlink(auth);
-  // }
+  @Get('mobile-redirect')
+  @Redirect()
+  redirectOAuthToMobile(@Req() request: Request) {
+    return {
+      url: this.service.getMobileRedirect(request.url),
+      statusCode: HttpStatus.TEMPORARY_REDIRECT,
+    };
+  }
+
+  @Post('authorize')
+  async startOAuth(
+    @Body() dto: OAuthConfigDto,
+    @Res({ passthrough: true }) res: Response,
+    @GetLoginDetails() loginDetails: LoginDetails,
+  ): Promise<OAuthAuthorizeResponseDto> {
+    const { url, state, codeVerifier } = await this.service.authorize(dto);
+    return respondWithCookie(
+      res,
+      { url },
+      {
+        isSecure: loginDetails.isSecure,
+        values: [
+          { key: ImmichCookie.OAuthState, value: state },
+          { key: ImmichCookie.OAuthCodeVerifier, value: codeVerifier },
+        ],
+      },
+    );
+  }
+
+  @Post('callback')
+  async finishOAuth(
+    @Req() request: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() dto: OAuthCallbackDto,
+    @GetLoginDetails() loginDetails: LoginDetails,
+  ): Promise<LoginResponseDto> {
+    const body = await this.service.callback(dto, request.headers, loginDetails);
+    res.clearCookie(ImmichCookie.OAuthState);
+    res.clearCookie(ImmichCookie.OAuthCodeVerifier);
+    return respondWithCookie(res, body, {
+      isSecure: loginDetails.isSecure,
+      values: [
+        { key: ImmichCookie.AccessToken, value: body.accessToken },
+        { key: ImmichCookie.AuthType, value: AuthType.OAuth },
+        { key: ImmichCookie.IsAuthenticated, value: 'true' },
+      ],
+    });
+  }
+
+  @Post('link')
+  @Authenticated()
+  @HttpCode(HttpStatus.OK)
+  linkOAuthAccount(
+    @Req() request: Request,
+    @Auth() auth: AuthDto,
+    @Body() dto: OAuthCallbackDto,
+  ): Promise<UserAdminResponseDto> {
+    return this.service.link(auth, dto, request.headers);
+  }
+
+  @Post('unlink')
+  @Authenticated()
+  @HttpCode(HttpStatus.OK)
+  unlinkOAuthAccount(@Auth() auth: AuthDto): Promise<UserAdminResponseDto> {
+    return this.service.unlink(auth);
+  }
 }

@@ -36,6 +36,15 @@ export default defineConfig({
     allowedHosts: true,
   },
   plugins: [
+    /* viteStaticCopy({
+      targets: [
+        { src: 'flutter_app/build/web/**', dest: 'flutter' },
+        {
+          src: 'flutter_app/build/web/assets/**',
+          dest: 'assets',
+        },
+      ],
+    }), */
     enhancedImages(),
     tailwindcss(),
     sveltekit(),
@@ -53,7 +62,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}'],
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: ['./src/test-data/setup.ts'],
     sequence: {
       hooks: 'list',

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -16,8 +16,16 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		B21E34AA2E5AFD2B0031FDB9 /* BackgroundWorkerApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21E34A92E5AFD210031FDB9 /* BackgroundWorkerApiImpl.swift */; };
+		B21E34AC2E5B09190031FDB9 /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21E34AB2E5B09100031FDB9 /* BackgroundWorker.swift */; };
+		B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */; };
+		B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */; };
+		B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */; };
+		CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */; };
+		CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */; };
 		CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */; };
 		CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
+		CE408BDF2E44C83700B1E17A /* AirPlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */; };
 		CE8353CC2DEEE8B800C413E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */; };
 		CEFC4ED82E0DA30600C94B12 /* telemetry.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; };
 		CEFC4ED92E0DA30600C94B12 /* telemetry.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -29,6 +37,9 @@
 		FAC6F89B2D287C890078CB2F /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FAC6F8902D287C890078CB2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FAC6F8B72D287F120078CB2F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC6F8B52D287F120078CB2F /* ShareViewController.swift */; };
 		FAC6F8B92D287F120078CB2F /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FAC6F8B32D287F120078CB2F /* MainInterface.storyboard */; };
+		FEAFA8732E4D42F4001E47FE /* Thumbhash.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAFA8722E4D42F4001E47FE /* Thumbhash.swift */; };
+		FED3B1962E253E9B0030FD97 /* ThumbnailsImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = FED3B1942E253E9B0030FD97 /* ThumbnailsImpl.swift */; };
+		FED3B1972E253E9B0030FD97 /* Thumbnails.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = FED3B1932E253E9B0030FD97 /* Thumbnails.g.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,9 +115,17 @@
 		9E64F3FFFCF0A1B8E5847993 /* Pods-Runner.release-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-prod.xcconfig"; sourceTree = "<group>"; };
 		9FE3B0F58E3FF94FB2A746B7 /* Pods-ShareExtension.release-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.release-dev.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.release-dev.xcconfig"; sourceTree = "<group>"; };
 		B1FBA9EE014DE20271B0FE77 /* Pods-ShareExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.profile.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.profile.xcconfig"; sourceTree = "<group>"; };
+		B21E34A92E5AFD210031FDB9 /* BackgroundWorkerApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorkerApiImpl.swift; sourceTree = "<group>"; };
+		B21E34AB2E5B09100031FDB9 /* BackgroundWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.swift; sourceTree = "<group>"; };
+		B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connectivity.g.swift; sourceTree = "<group>"; };
+		B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityApiImpl.swift; sourceTree = "<group>"; };
+		B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.g.swift; sourceTree = "<group>"; };
 		C4DBC5BB9D911AC10AC6063E /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		CDE1EAD0A3CF9D6EFE285FFF /* Pods-Runner.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"; sourceTree = "<group>"; };
+		CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.g.swift; sourceTree = "<group>"; };
+		CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImpl.swift; sourceTree = "<group>"; };
 		CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryWrapperPlugin.swift; sourceTree = "<group>"; };
+		CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayManager.swift; sourceTree = "<group>"; };
 		CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CEFC4ED72E0DA30600C94B12 /* telemetry.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = telemetry.xcframework; sourceTree = "<group>"; };
 		E0E99CDC17B3EB7FA8BA2332 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -123,6 +142,9 @@
 		FAC6F8B42D287F120078CB2F /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		FAC6F8B52D287F120078CB2F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		FAC7416727DB9F5500C668D8 /* RunnerProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RunnerProfile.entitlements; sourceTree = "<group>"; };
+		FEAFA8722E4D42F4001E47FE /* Thumbhash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbhash.swift; sourceTree = "<group>"; };
+		FED3B1932E253E9B0030FD97 /* Thumbnails.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnails.g.swift; sourceTree = "<group>"; };
+		FED3B1942E253E9B0030FD97 /* ThumbnailsImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailsImpl.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -138,6 +160,8 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B2CF7F8C2DDE4EBB00744BF6 /* Sync */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = Sync;
 			sourceTree = "<group>";
 		};
@@ -266,11 +290,15 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B25D37792E72CA15008B6CA7 /* Connectivity */,
+				B21E34A62E5AF9760031FDB9 /* Background */,
+				CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */,
 				CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */,
 				B2CF7F8C2DDE4EBB00744BF6 /* Sync */,
 				FA9973382CF6DF4B000EF859 /* Runner.entitlements */,
 				65DD438629917FAD0047FFA8 /* BackgroundSync */,
 				FAC7416727DB9F5500C668D8 /* RunnerProfile.entitlements */,
+				CE83EA5F2E603F5E00CEDFEF /* Clipboard */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -279,8 +307,37 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				FED3B1952E253E9B0030FD97 /* Images */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		B21E34A62E5AF9760031FDB9 /* Background */ = {
+			isa = PBXGroup;
+			children = (
+				B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */,
+				B21E34AB2E5B09100031FDB9 /* BackgroundWorker.swift */,
+				B21E34A92E5AFD210031FDB9 /* BackgroundWorkerApiImpl.swift */,
+			);
+			path = Background;
+			sourceTree = "<group>";
+		};
+		B25D37792E72CA15008B6CA7 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */,
+				B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		CE83EA5F2E603F5E00CEDFEF /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */,
+				CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */,
+			);
+			path = Clipboard;
 			sourceTree = "<group>";
 		};
 		FAC6F8B62D287F120078CB2F /* ShareExtension */ = {
@@ -292,6 +349,16 @@
 				FAC6F8B52D287F120078CB2F /* ShareViewController.swift */,
 			);
 			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		FED3B1952E253E9B0030FD97 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				FEAFA8722E4D42F4001E47FE /* Thumbhash.swift */,
+				FED3B1932E253E9B0030FD97 /* Thumbnails.g.swift */,
+				FED3B1942E253E9B0030FD97 /* ThumbnailsImpl.swift */,
+			);
+			path = Images;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -559,8 +626,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				65F32F31299BD2F800CE9261 /* BackgroundServicePlugin.swift in Sources */,
+				CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */,
+				CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				B21E34AC2E5B09190031FDB9 /* BackgroundWorker.swift in Sources */,
+				B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */,
+				FEAFA8732E4D42F4001E47FE /* Thumbhash.swift in Sources */,
+				B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */,
+				FED3B1962E253E9B0030FD97 /* ThumbnailsImpl.swift in Sources */,
+				B21E34AA2E5AFD2B0031FDB9 /* BackgroundWorkerApiImpl.swift in Sources */,
+				FED3B1972E253E9B0030FD97 /* Thumbnails.g.swift in Sources */,
+				CE408BDF2E44C83700B1E17A /* AirPlayManager.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */,
 				65F32F33299D349D00CE9261 /* BackgroundSyncWorker.swift in Sources */,
 				CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */,
 			);
@@ -690,6 +768,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -835,6 +914,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -866,6 +946,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -955,6 +1036,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1086,6 +1168,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1211,6 +1294,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
+				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;

@@ -1,54 +1,65 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:immich_mobile/utils/url_helper.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
+import 'package:immich_mobile/utils/trim_formatter.dart';
 
 class ServerEndpointInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  final Function()? onSubmit;
+  final VoidCallback? onSubmit;
+  final bool hasExternalError;
+  final Widget? leadingIcon;
+  final Widget? suffixIcon;
+  final String? label;
+  final bool isDetecting;
+  final bool isEmpty;
 
   const ServerEndpointInput({
     super.key,
     required this.controller,
     required this.focusNode,
     this.onSubmit,
+    this.hasExternalError = false,
+    this.leadingIcon,
+    this.suffixIcon,
+    this.label,
+    this.isDetecting = false,
+    this.isEmpty = true,
   });
-
-  String? _validateInput(String? url) {
-    if (url == null || url.isEmpty) return null;
-
-    final parsedUrl = Uri.tryParse(sanitizeUrl(url));
-    if (parsedUrl == null ||
-        !parsedUrl.isAbsolute ||
-        !parsedUrl.scheme.startsWith("http") ||
-        parsedUrl.host.isEmpty) {
-      return 'login_form_err_invalid_url'.tr();
-    }
-
-    return null;
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: 'login_form_endpoint_url'.tr(),
-          border: const OutlineInputBorder(),
-          hintText: 'login_form_endpoint_hint'.tr(),
-          errorMaxLines: 4,
-        ),
-        validator: _validateInput,
-        autovalidateMode: AutovalidateMode.always,
-        focusNode: focusNode,
-        autofillHints: const [AutofillHints.url],
-        keyboardType: TextInputType.url,
-        autocorrect: false,
-        onFieldSubmitted: (_) => onSubmit?.call(),
-        textInputAction: TextInputAction.go,
-      ),
+    return ListenableBuilder(
+      listenable: Listenable.merge([controller, focusNode]),
+      builder: (context, _) {
+        final bool shouldShowClearButton = controller.text.isNotEmpty && focusNode.hasFocus;
+        return TextFormField(
+          controller: controller,
+          inputFormatters: const [TrimFormatter()],
+          decoration: LoginInputDecorations.baseDecoration(
+            context: context,
+            labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
+            hintText: isDetecting
+                ? 'curator.oobe_welcome_dropdown_detecting'.tr()
+                : isEmpty
+                ? 'curator.login_form_endpoint_hint'.tr()
+                : '',
+            isError: hasExternalError,
+            suffixIcon: shouldShowClearButton
+                ? IconButton(onPressed: controller.clear, icon: const Icon(Icons.highlight_off))
+                : suffixIcon,
+            prefixIcon: leadingIcon,
+            floatingLabelBehavior: isDetecting ? FloatingLabelBehavior.always : FloatingLabelBehavior.auto,
+          ),
+          autovalidateMode: AutovalidateMode.always,
+          focusNode: focusNode,
+          autofillHints: const [AutofillHints.url],
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          onFieldSubmitted: (_) => onSubmit?.call(),
+          textInputAction: TextInputAction.go,
+        );
+      },
     );
   }
 }

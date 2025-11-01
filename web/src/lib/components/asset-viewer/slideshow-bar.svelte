@@ -4,11 +4,12 @@
   import { ProgressBarStatus } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
-  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
+  import { videoStore } from '$lib/stores/video.store';
   import { IconButton } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
-  import { swipe } from 'svelte-gestures';
+  import { useSwipe } from 'svelte-gestures';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';
 
@@ -28,7 +29,7 @@
     onSetToFullScreen = () => {},
   }: Props = $props();
 
-  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowNavigation, slideshowAutoplay } =
+  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowAutoplay, slideshowNavigation } =
     slideshowStore;
 
   let progressBarStatus: ProgressBarStatus | undefined = $state();
@@ -92,18 +93,11 @@
 
   const handleDone = async () => {
     await progressBar?.resetProgress();
-
-    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
-      onPrevious();
-      return;
-    }
     onNext();
   };
 
   const onShowSettings = async () => {
-    // eslint-disable-next-line tscompat/tscompat
     if (document.fullscreenElement) {
-      // eslint-disable-next-line tscompat/tscompat
       await document.exitFullscreen();
     }
     await modalManager.show(SlideshowSettingsModal);
@@ -115,11 +109,7 @@
         webkitIsFullScreen?: boolean;
       };
 
-      if (
-        // eslint-disable-next-line tscompat/tscompat
-        !document.fullscreenElement &&
-        !doc.webkitIsFullScreen
-      ) {
+      if (!document.fullscreenElement && !doc.webkitIsFullScreen) {
         onClose();
       }
     }
@@ -131,6 +121,23 @@
       document.removeEventListener('fullscreenchange', exitFullscreenHandler);
       document.removeEventListener('webkitfullscreenchange', exitFullscreenHandler);
     };
+  });
+
+  const { swipe, onswipe, onswipedown } = useSwipe(
+    () => {},
+    () => ({ touchAction: 'pan-x' }),
+    { onswipedown: showControlBar },
+    true,
+  );
+
+  $effect(() => {
+    if ($videoStore) {
+      if (progressBarStatus === ProgressBarStatus.Paused) {
+        $videoStore?.pause();
+      } else {
+        $videoStore?.play().catch((error) => console.error(error));
+      }
+    }
   });
 </script>
 
@@ -154,7 +161,8 @@
   ]}
 />
 
-<svelte:body use:swipe={() => ({ touchAction: 'pan-x' })} onswipedown={showControlBar} />
+{/* @ts-expect-error https://github.com/Rezi/svelte-gestures/issues/38#issuecomment-3315953573 */ null}
+<svelte:body {@attach swipe} {onswipe} {onswipedown} />
 
 {#if showControls}
   <div
@@ -178,7 +186,17 @@
       shape="round"
       color="secondary"
       icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
-      onclick={() => (progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause())}
+      onclick={async () => {
+        if ($videoStore) {
+          if (progressBarStatus === ProgressBarStatus.Paused) {
+            await $videoStore?.play();
+          } else {
+            $videoStore?.pause();
+          }
+        }
+
+        return progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause();
+      }}
       aria-label={progressBarStatus === ProgressBarStatus.Paused ? $t('play') : $t('pause')}
     />
     <IconButton

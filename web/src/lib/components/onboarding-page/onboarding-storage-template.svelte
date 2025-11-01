@@ -1,11 +1,11 @@
 <script lang="ts">
-  import AdminSettings from '$lib/components/admin-page/settings/admin-settings.svelte';
-  import StorageTemplateSettings from '$lib/components/admin-page/settings/storage-template/storage-template-settings.svelte';
-  import FormatMessage from '$lib/components/i18n/format-message.svelte';
+  import AdminSettings from '$lib/components/admin-settings/AdminSettings.svelte';
+  import StorageTemplateSettings from '$lib/components/admin-settings/StorageTemplateSettings.svelte';
+  import FormatMessage from '$lib/elements/FormatMessage.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { getConfig, type SystemConfigDto } from '@immich/sdk';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
 
   let config: SystemConfigDto | undefined = $state();
   let adminSettingsComponent = $state<ReturnType<typeof AdminSettings>>();
@@ -14,9 +14,7 @@
     config = await getConfig();
   });
 
-  export const save = async () => {
-    await adminSettingsComponent?.handleSave({ storageTemplate: config?.storageTemplate });
-  };
+  onDestroy(() => adminSettingsComponent?.handleSave({ storageTemplate: config?.storageTemplate }));
 </script>
 
 <div class="flex flex-col">

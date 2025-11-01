@@ -1,6 +1,6 @@
 [project]
 name = "immich-ml"
-version = "1.129.0"
+version = "2.0.0"
 description = ""
 authors = [{ name = "Hau Tran", email = "alex.tran1502@gmail.com" }]
 requires-python = ">=3.10,<4.0"
@@ -15,6 +15,7 @@ dependencies = [
     "facenet-pytorch>=2.5.2",
     "torch>=1.12.0",
     "torchvision>=0.13.0",
+    "numpy<2",
     "opencv-python-headless>=4.7.0.72,<5.0",
     "orjson>=3.9.5",
     "pillow>=9.5.0,<11.0",

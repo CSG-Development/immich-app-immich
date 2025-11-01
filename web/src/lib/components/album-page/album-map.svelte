@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { authManager } from '$lib/managers/auth-manager.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import MapModal from '$lib/modals/MapModal.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';

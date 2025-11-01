@@ -1,28 +1,29 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { shortcut } from '$lib/actions/shortcut';
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
-  import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
-  import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
-  import AssetJobActions from '$lib/components/photos-page/actions/asset-job-actions.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
-  import SetVisibilityAction from '$lib/components/photos-page/actions/set-visibility-action.svelte';
-  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
+  import AddToAlbum from '$lib/components/timeline/actions/AddToAlbumAction.svelte';
+  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
+  import AssetJobActions from '$lib/components/timeline/actions/AssetJobActions.svelte';
+  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
+  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
+  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
+  import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
+  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
+  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
+  import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
+  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
+  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
+  import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import { AppRoute, QueryParameter } from '$lib/constants';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
@@ -30,8 +31,9 @@
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
-  import { handlePromiseError } from '$lib/utils';
+  import { getFirstSlideshowAsset, handlePromiseError } from '$lib/utils';
   import { cancelMultiselect } from '$lib/utils/asset-utils';
   import { parseUtcDate } from '$lib/utils/date-time';
   import { handleError } from '$lib/utils/handle-error';
@@ -47,18 +49,26 @@
     type SmartSearchDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiArrowLeft, mdiDotsVertical, mdiImageOffOutline, mdiPlus, mdiSelectAll } from '@mdi/js';
+  import {
+    mdiArrowLeft,
+    mdiDotsVertical,
+    mdiImageOffOutline,
+    mdiPlus,
+    mdiPresentationPlay,
+    mdiSelectAll,
+  } from '@mdi/js';
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
 
-  const MAX_ASSET_COUNT = 5000;
-  let { isViewing: showAssetViewer } = assetViewingStore;
+  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
   const viewport: Viewport = $state({ width: 0, height: 0 });
+  let searchResultsElement: HTMLElement | undefined = $state();
 
   // The GalleryViewer pushes it's own history state, which causes weird
   // behavior for history.back(). To prevent that we store the previous page
   // manually and navigate back to that.
-  let previousRoute = $state(resolveRoute(AppRoute.EXPLORE, {}) as string);
+  let previousRoute = $state(resolve(AppRoute.EXPLORE) as string);
 
   let nextPage = $state(1);
   let searchResultAlbums: AlbumResponseDto[] = $state([]);
@@ -110,11 +120,11 @@
     const route = from?.route?.id;
 
     if (isPeopleRoute(route)) {
-      previousRoute = resolveRoute(AppRoute.PHOTOS, {});
+      previousRoute = resolve(AppRoute.PHOTOS);
     }
 
     if (isAlbumsRoute(route)) {
-      previousRoute = resolveRoute(AppRoute.EXPLORE, {});
+      previousRoute = resolve(AppRoute.EXPLORE);
     }
 
     tick()
@@ -150,10 +160,7 @@
 
   // eslint-disable-next-line svelte/valid-prop-names-in-kit-pages
   export const loadNextPage = async (force?: boolean) => {
-    if (!nextPage || searchResultAssets.length >= MAX_ASSET_COUNT) {
-      return;
-    }
-    if (isLoading && !force) {
+    if (!nextPage || (isLoading && !force)) {
       return;
     }
     isLoading = true;
@@ -234,7 +241,10 @@
     return personNames.join(', ');
   }
 
-  async function getTagNames(tagIds: string[]) {
+  async function getTagNames(tagIds: string[] | null) {
+    if (tagIds === null) {
+      return $t('untagged');
+    }
     const tagNames = await Promise.all(
       tagIds.map(async (tagId) => {
         const tag = await getTagById({ id: tagId });
@@ -258,6 +268,26 @@
   function getObjectKeys<T extends object>(obj: T): (keyof T)[] {
     return Object.keys(obj) as (keyof T)[];
   }
+
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+  let currentIndex = $state(0);
+  const findIndex = (asset: TimelineAsset) => searchResultAssets.findIndex((el) => el.id === asset.id);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort((a, b) => findIndex(a) - findIndex(b));
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(
+        setAssetId(asset.id).then(() => {
+          currentIndex = assetInteraction.selectedAssets.findIndex((el) => el.id === asset.id);
+          return ($slideshowState = SlideshowState.PlaySlideshow);
+        }),
+      );
+    }
+  };
 </script>
 
 <svelte:window bind:scrollY />
@@ -296,6 +326,9 @@
         />
 
         <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+          {#if assetInteraction.selectedAssets.length > 1}
+            <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+          {/if}
           <DownloadAction menuItem />
           <ChangeDate menuItem />
           <ChangeLocation menuItem />
@@ -328,9 +361,9 @@
   >
     {#each getObjectKeys(terms) as searchKey (searchKey)}
       {@const value = terms[searchKey]}
-      <div class="flex place-content-center place-items-center text-xs">
+      <div class="flex place-content-center place-items-center items-stretch text-xs">
         <div
-          class="bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
+          class="flex items-center justify-center bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
           {value === true ? 'rounded-full' : 'rounded-s-full'}"
         >
           {getHumanReadableSearchKey(searchKey as keyof SearchTerms)}
@@ -344,7 +377,7 @@
               {#await getPersonName(value) then personName}
                 {personName}
               {/await}
-            {:else if searchKey === 'tagIds' && Array.isArray(value)}
+            {:else if searchKey === 'tagIds' && (Array.isArray(value) || value === null)}
               {#await getTagNames(value) then tagNames}
                 {tagNames}
               {/await}
@@ -361,9 +394,10 @@
 {/if}
 
 <section
-  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4"
+  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4 max-h-screen"
   bind:clientHeight={viewport.height}
   bind:clientWidth={viewport.width}
+  bind:this={searchResultsElement}
 >
   {#if searchResultAlbums.length > 0}
     <section>
@@ -383,8 +417,10 @@
         onIntersected={loadNextPage}
         showArchiveIcon={true}
         {viewport}
-        pageHeaderOffset={54}
         onReload={onSearchQueryUpdate}
+        slidingWindowOffset={searchResultsElement.offsetTop}
+        {currentIndex}
+        {shuffledSelectedAssets}
       />
     {:else if !isLoading}
       <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
@@ -436,6 +472,9 @@
           />
 
           <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+            {#if assetInteraction.selectedAssets.length > 1}
+              <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+            {/if}
             <DownloadAction menuItem />
             <ChangeDate menuItem />
             <ChangeDescription menuItem />

@@ -1,4 +1,4 @@
-import { resolveRoute } from '$app/paths';
+import { resolve } from '$app/paths';
 import { AppRoute } from '$lib/constants';
 import { serverConfig } from '$lib/stores/server-config.store';
 import { getFormatter } from '$lib/utils/i18n';
@@ -11,7 +11,7 @@ export const load = (async ({ parent }) => {
   const { isInitialized } = get(serverConfig);
   if (isInitialized) {
     // Admin has been registered, redirect to login
-    redirect(302, resolveRoute(AppRoute.AUTH_LOGIN, {}));
+    redirect(302, resolve(AppRoute.AUTH_LOGIN));
   }
 
   const $t = await getFormatter();

@@ -124,7 +124,7 @@
         <div
           class="bg-gray-50 border border-immich-dark-primary/20 dark:bg-immich-dark-primary/15 p-6 pe-12 rounded-xl flex place-content-center gap-4"
         >
-          <Icon path={mdiKey} size="56" class="text-immich-primary dark:text-immich-dark-primary" />
+          <Icon path={mdiKey} size="56" class="text-primary" />
 
           <div>
             <p class="text-immich-primary dark:text-immich-dark-primary font-semibold text-lg">
@@ -156,10 +156,10 @@
         <div
           class="bg-gray-50 border border-immich-dark-primary/20 dark:bg-immich-dark-primary/15 p-6 pe-12 rounded-xl flex place-content-center gap-4"
         >
-          <Icon path={mdiKey} size="56" class="text-immich-primary dark:text-immich-dark-primary" />
+          <Icon path={mdiKey} size="56" class="text-primary" />
 
           <div>
-            <p class="text-immich-primary dark:text-immich-dark-primary font-semibold text-lg">
+            <p class="text-primary font-semibold text-lg">
               {$t('purchase_individual_title')}
             </p>
             {#if $user.license?.activatedAt}

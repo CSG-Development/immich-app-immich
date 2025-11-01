@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolveRoute } from '$app/paths';
+  import { resolve } from '$app/paths';
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
   import AlbumsTable from '$lib/components/album-page/albums-table.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
@@ -39,7 +39,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { normalizeSearchString } from '$lib/utils/string-utils';
   import { addUsersToAlbum, deleteAlbum, isHttpError, type AlbumResponseDto, type AlbumUserAddDto } from '@immich/sdk';
-  import { mdiDeleteOutline, mdiFolderDownloadOutline, mdiRenameOutline, mdiShareVariantOutline } from '@mdi/js';
+  import { mdiDeleteOutline, mdiDownload, mdiRenameOutline, mdiShareVariantOutline } from '@mdi/js';
   import { groupBy } from 'lodash-es';
   import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -316,7 +316,7 @@
       button: {
         text: $t('view_album'),
         onClick() {
-          return goto(resolveRoute(`${AppRoute.ALBUMS}/${album.id}`, {}));
+          return goto(resolve(`${AppRoute.ALBUMS}/${album.id}`));
         },
       },
     });
@@ -370,7 +370,7 @@
 
         if (sharedLink) {
           handleSharedLinkCreated(albumToShare);
-          await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink.key) });
+          await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink) });
         }
         return;
       }
@@ -420,7 +420,7 @@
     />
     <MenuOption icon={mdiShareVariantOutline} text={$t('share')} onClick={() => openShareModal()} />
   {/if}
-  <MenuOption icon={mdiFolderDownloadOutline} text={$t('download')} onClick={() => handleDownloadAlbum()} />
+  <MenuOption icon={mdiDownload} text={$t('download')} onClick={() => handleDownloadAlbum()} />
   {#if showFullContextMenu}
     <MenuOption icon={mdiDeleteOutline} text={$t('delete')} onClick={() => setAlbumToDelete()} />
   {/if}

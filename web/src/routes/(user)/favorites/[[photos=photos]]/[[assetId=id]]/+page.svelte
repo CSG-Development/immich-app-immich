@@ -1,28 +1,34 @@
 <script lang="ts">
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
-  import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
-  import ChangeDate from '$lib/components/photos-page/actions/change-date-action.svelte';
-  import ChangeDescription from '$lib/components/photos-page/actions/change-description-action.svelte';
-  import ChangeLocation from '$lib/components/photos-page/actions/change-location-action.svelte';
-  import CreateSharedLink from '$lib/components/photos-page/actions/create-shared-link.svelte';
-  import DeleteAssets from '$lib/components/photos-page/actions/delete-assets.svelte';
-  import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
-  import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
-  import SelectAllAssets from '$lib/components/photos-page/actions/select-all-assets.svelte';
-  import SetVisibilityAction from '$lib/components/photos-page/actions/set-visibility-action.svelte';
-  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
-  import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
-  import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
+  import AddToAlbum from '$lib/components/timeline/actions/AddToAlbumAction.svelte';
+  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
+  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
+  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
+  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
+  import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
+  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
+  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
+  import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
+  import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
+  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
+  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
+  import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AssetAction } from '$lib/constants';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
+  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
-  import { mdiDotsVertical, mdiPlus } from '@mdi/js';
+  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { mdiDotsVertical, mdiPlus, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
+  import { get } from 'svelte/store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -48,6 +54,23 @@
     timelineManager.removeAssets(assetIds);
     assetInteraction.clearMultiselect();
   };
+
+  let { setAssetId } = assetViewingStore;
+  let { slideshowState, slideshowNavigation } = slideshowStore;
+
+  let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
+
+  const handleStartSlideshow = () => {
+    assetInteraction.selectedAssets.sort(
+      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
+    );
+    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    const nav = get(slideshowNavigation);
+    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    if (asset) {
+      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+    }
+  };
 </script>
 
 <UserPageLayout
@@ -56,18 +79,20 @@
   description={$t('items_count', { values: { count: timelineManager.assetCount } })}
   scrollbar={false}
 >
-  <AssetGrid
+  <Timeline
     enableRouting={true}
     withStacked={true}
     {timelineManager}
     {assetInteraction}
     removeAction={AssetAction.UNFAVORITE}
     onEscape={handleEscape}
+    selectedAssets={assetInteraction.selectedAssets}
+    {shuffledSelectedAssets}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_favorites_message')} />
     {/snippet}
-  </AssetGrid>
+  </Timeline>
 </UserPageLayout>
 
 <!-- Multiselection mode app bar -->
@@ -84,6 +109,9 @@
       <AddToAlbum shared />
     </ButtonContextMenu>
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
+      {#if assetInteraction.selectedAssets.length > 1}
+        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+      {/if}
       <DownloadAction menuItem />
       <ChangeDate menuItem />
       <ChangeDescription menuItem />

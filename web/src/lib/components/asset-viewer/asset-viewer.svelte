@@ -10,6 +10,7 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { closeEditorCofirm } from '$lib/stores/asset-editor.store';
+  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { isShowDetail } from '$lib/stores/preferences.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -62,7 +63,9 @@
     onNext: () => Promise<HasAsset>;
     onPrevious: () => Promise<HasAsset>;
     onRandom: () => Promise<{ id: string } | undefined>;
+    assetInteraction?: AssetInteraction;
     copyImage?: () => Promise<void>;
+    onPlaySlideshow?: () => void;
   }
 
   let {
@@ -80,7 +83,9 @@
     onNext,
     onPrevious,
     onRandom,
+    assetInteraction = undefined,
     copyImage = $bindable(),
+    onPlaySlideshow = () => {},
   }: Props = $props();
 
   const { setAssetId } = assetViewingStore;
@@ -90,6 +95,7 @@
     slideshowNavigation,
     slideshowState,
     slideshowTransition,
+    isShuffled,
   } = slideshowStore;
   const stackThumbnailSize = 60;
   const stackSelectedThumbnailSize = 65;
@@ -111,7 +117,7 @@
   let zoomToggle = $state(() => void 0);
 
   const refreshStack = async () => {
-    if (authManager.key) {
+    if (authManager.isSharedLink) {
       return;
     }
 
@@ -191,7 +197,7 @@
   });
 
   const handleGetAllAlbums = async () => {
-    if (authManager.key) {
+    if (authManager.isSharedLink) {
       return;
     }
 
@@ -239,7 +245,7 @@
 
     if ($slideshowState === SlideshowState.PlaySlideshow && $slideshowNavigation === SlideshowNavigation.Shuffle) {
       hasNext = order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next();
-      if (!hasNext) {
+      if (!hasNext && order === 'next') {
         const asset = await onRandom();
         if (asset) {
           slideshowHistory.queue(asset);
@@ -302,10 +308,9 @@
 
   const handleStopSlideshow = async () => {
     try {
-      // eslint-disable-next-line tscompat/tscompat
       if (document.fullscreenElement) {
         document.body.style.cursor = '';
-        // eslint-disable-next-line tscompat/tscompat
+
         await document.exitFullscreen();
       }
     } catch (error) {
@@ -313,6 +318,10 @@
     } finally {
       $stopSlideshowProgress = true;
       $slideshowState = SlideshowState.None;
+      $isShuffled = false;
+      if (assetInteraction?.selectedAssets.length) {
+        closeViewer();
+      }
     }
   };
 
@@ -395,7 +404,7 @@
         preAction={handlePreAction}
         onAction={handleAction}
         onRunJob={handleRunJob}
-        onPlaySlideshow={() => ($slideshowState = SlideshowState.PlaySlideshow)}
+        {onPlaySlideshow}
         onShowDetail={toggleDetailPanel}
         onClose={closeViewer}
       >
@@ -416,7 +425,12 @@
         onSetToFullScreen={() => assetViewerHtmlElement?.requestFullscreen?.()}
         onPrevious={() => navigateAsset('previous')}
         onNext={() => navigateAsset('next')}
-        onClose={() => ($slideshowState = SlideshowState.StopSlideshow)}
+        onClose={() => {
+          $slideshowState = SlideshowState.StopSlideshow;
+          if (assetInteraction && assetInteraction.selectedAssets.length > 0) {
+            closeViewer();
+          }
+        }}
       />
     </div>
   {/if}
@@ -484,7 +498,7 @@
               onPreviousAsset={() => navigateAsset('previous')}
               onNextAsset={() => navigateAsset('next')}
               {sharedLink}
-              haveFadeTransition={$slideshowState === SlideshowState.None || $slideshowTransition}
+              haveFadeTransition={$slideshowState !== SlideshowState.None && $slideshowTransition}
             />
           {/if}
         {:else}

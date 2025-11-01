@@ -9,7 +9,7 @@ import {
 } from '@immich/sdk';
 import { createUserDto, uuidDto } from 'src/fixtures';
 import { errorDto } from 'src/responses';
-import { app, asBearerAuth, shareUrl, utils } from 'src/utils';
+import { app, asBearerAuth, baseUrl, shareUrl, utils } from 'src/utils';
 import request from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -78,6 +78,7 @@ describe('/shared-links', () => {
           type: SharedLinkType.Album,
           albumId: metadataAlbum.id,
           showMetadata: true,
+          slug: 'metadata-album',
         }),
         utils.createSharedLink(user1.accessToken, {
           type: SharedLinkType.Album,
@@ -117,7 +118,35 @@ describe('/shared-links', () => {
       const resp = await request(shareUrl).get(`/${linkWithAssets.key}`);
       expect(resp.status).toBe(200);
       expect(resp.header['content-type']).toContain('text/html');
+      expect(resp.text).toContain(`<meta property="og:image" content="http://127.0.0.1:2285`);
+    });
+
+    it('should fall back to my.immich.app og:image meta tag for shared asset if Host header is not present', async () => {
+      const resp = await request(shareUrl).get(`/${linkWithAssets.key}`).set('Host', '');
+      expect(resp.status).toBe(200);
+      expect(resp.header['content-type']).toContain('text/html');
       expect(resp.text).toContain(`<meta property="og:image" content="https://my.immich.app`);
+    });
+
+    it('should return 404 for an invalid shared link', async () => {
+      const resp = await request(shareUrl).get(`/invalid-key`);
+      expect(resp.status).toBe(404);
+      expect(resp.header['content-type']).toContain('text/html');
+      expect(resp.text).not.toContain(`og:type`);
+      expect(resp.text).not.toContain(`og:title`);
+      expect(resp.text).not.toContain(`og:description`);
+      expect(resp.text).not.toContain(`og:image`);
+    });
+  });
+
+  describe('GET /s/:slug', () => {
+    it('should work for slug auth', async () => {
+      const resp = await request(baseUrl).get(`/s/${linkWithMetadata.slug}`);
+      expect(resp.status).toBe(200);
+      expect(resp.header['content-type']).toContain('text/html');
+      expect(resp.text).toContain(
+        `<meta name="description" content="${metadataAlbum.assets.length} shared photos &amp; videos" />`,
+      );
     });
   });
 
@@ -456,7 +485,7 @@ describe('/shared-links', () => {
         .delete(`/shared-links/${linkWithAlbum.id}`)
         .set('Authorization', `Bearer ${user1.accessToken}`);
 
-      expect(status).toBe(200);
+      expect(status).toBe(204);
     });
   });
 });
