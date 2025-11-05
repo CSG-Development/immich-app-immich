@@ -14,7 +14,7 @@
   import { setQueryValue } from '$lib/utils/navigation';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, updateAssets } from '@immich/sdk';
-  import { Button, LoadingSpinner, modalManager, Text } from '@immich/ui';
+  import { Button, LoadingSpinner, modalManager, Text, Tooltip } from '@immich/ui';
   import { mdiMapMarkerMultipleOutline, mdiPencilOutline, mdiSelectRemove } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -144,12 +144,13 @@
         <Text class="hidden md:inline-block text-xs text-gray-500 font-mono mr-5 ml-2 uppercase">
           {$t('selected_gps_coordinates')}
         </Text>
-        <Text
-          title="latitude, longitude"
-          class="rounded-3xl font-mono text-sm text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
-            ? 'bg-primary/90 text-light font-semibold scale-105'
-            : ''}">{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}</Text
-        >
+        <Tooltip text="latitude, longitude">
+          <Text
+            class="rounded-3xl font-mono text-sm text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
+              ? 'bg-primary/90 text-light font-semibold scale-105'
+              : ''}">{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}</Text
+          >
+        </Tooltip>
       </div>
 
       <Button size="small" color="secondary" variant="ghost" leadingIcon={mdiPencilOutline} onclick={handlePickOnMap}>

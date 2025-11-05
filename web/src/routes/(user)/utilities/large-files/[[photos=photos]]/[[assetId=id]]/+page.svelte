@@ -56,17 +56,17 @@
 </script>
 
 <UserPageLayout title={data.meta.title} scrollbar={true}>
-  <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-    {#if assets && data.assets.length > 0}
-      {#each assets as asset (asset.id)}
+  {#if assets && data.assets.length > 0}
+    {#each assets as asset (asset.id)}
+      <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         <LargeAssetData {asset} onViewAsset={(asset) => setAsset(asset)} />
-      {/each}
-    {:else}
-      <p class="text-center text-lg dark:text-white flex place-items-center place-content-center">
-        {$t('no_assets_to_show')}
-      </p>
-    {/if}
-  </div>
+      </div>
+    {/each}
+  {:else}
+    <p class="text-center text-lg dark:text-white flex place-items-center place-content-center pt-12">
+      {$t('no_duplicates_found')}
+    </p>
+  {/if}
 </UserPageLayout>
 
 {#if $showAssetViewer}
