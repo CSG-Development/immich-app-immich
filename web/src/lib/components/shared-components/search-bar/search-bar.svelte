@@ -228,7 +228,7 @@
   >
     <div use:focusOutside={{ onFocusOut: closeDropdown }} tabindex="-1">
       <label for="main-search-bar" class="sr-only">{$t('search_your_photos')}</label>
-      <Tooltip>
+      <Tooltip text={value ? '' : 'Please fill out this field.'}>
         <input
           title=""
           type="text"
