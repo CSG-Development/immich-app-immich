@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 from functools import partial
 from typing import Any, AsyncGenerator, Callable, Iterator
 from zipfile import BadZipFile
-from facenet_pytorch import InceptionResnetV1
 
 import orjson
 from fastapi import Depends, FastAPI, File, Form, HTTPException

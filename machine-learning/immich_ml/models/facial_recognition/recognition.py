@@ -20,9 +20,6 @@ from immich_ml.schemas import (
     ModelType,
 )
 
-from facenet_pytorch import InceptionResnetV1
-
-
 class FaceRecognizer(InferenceModel):
     depends = [(ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)]
     identity = (ModelType.RECOGNITION, ModelTask.FACIAL_RECOGNITION)
@@ -34,17 +31,25 @@ class FaceRecognizer(InferenceModel):
 
     def _load(self) -> ModelSession:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
-        return None
-#         session = self._make_session(self.model_path)
-#         if (not self.batch_size or self.batch_size > 1) and str(session.get_inputs()[0].shape[0]) != "batch":
-#             self._add_batch_axis(self.model_path)
-#             session = self._make_session(self.model_path)
-#         self.model = ArcFaceONNX(
-#             self.model_path_for_format(ModelFormat.ONNX).as_posix(),
-#             session=session,
-#         )
-#         return session
+        # Path to ONNX model file
+        model_path = self.model_path_for_format(ModelFormat.ONNX).as_posix()
+
+        # Create ONNXRuntime session
+        session = self._make_session(model_path)
+
+        # If your session input has static batch dim and you need dynamic batching
+        if (not self.batch_size or self.batch_size > 1) and str(session.get_inputs()[0].shape[0]) != "batch":
+            self._add_batch_axis(self.model_path)
+            session = self._make_session(model_path)
+
+        # Initialize ArcFaceONNX wrapper
+        self.model = ArcFaceONNX(
+            model_path,
+            session=session,
+        )
+
+        return session
+
     def download(self) -> None:
         # Override base download method to do nothing
         log.info(f"Skipping download for FaceRecognizer ({self.model_name})")

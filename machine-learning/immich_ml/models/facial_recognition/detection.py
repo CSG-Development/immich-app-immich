@@ -2,8 +2,7 @@ from typing import Any
 
 import torch
 import numpy as np
-# from insightface.model_zoo import RetinaFace
-from facenet_pytorch import MTCNN
+from insightface.model_zoo import RetinaFace
 from numpy.typing import NDArray
 
 from immich_ml.models.base import InferenceModel
@@ -21,13 +20,21 @@ class FaceDetector(InferenceModel):
 
     def _load(self) -> ModelSession:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.model = MTCNN(keep_all=True, thresholds=[self.min_score]*3, post_process=False, device=device)
-        return None
-#         session = self._make_session(self.model_path)
-#         self.model = RetinaFace(session=session)
-#         self.model.prepare(ctx_id=0, det_thresh=self.min_score, input_size=(640, 640))
-#
-#         return session
+
+        # Path to ONNX model file
+        model_path = self.model_path_for_format(ModelFormat.ONNX).as_posix()
+
+        # Create ONNXRuntime session
+        session = self._make_session(model_path)
+
+        self.model = RetinaFace(session=session)
+        self.model.prepare(
+          ctx_id=0 if "cuda" in device else -1,
+          det_thresh=self.min_score,
+          input_size=(640, 640)
+        )
+
+        return session
 
     def download(self) -> None:
         # Override base download method to do nothing
