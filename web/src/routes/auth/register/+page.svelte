@@ -56,19 +56,19 @@
     </Alert>
 
     <Field label={$t('admin_email')} required>
-      <Input bind:value={email} type="email" autocomplete="email" />
+      <Input bind:value={email} type="email" required autocomplete="email" />
     </Field>
 
     <Field label={$t('admin_password')} required>
-      <PasswordInput bind:value={password} autocomplete="new-password" />
+      <PasswordInput bind:value={password} required autocomplete="new-password" />
     </Field>
 
     <Field label={$t('confirm_admin_password')} required>
-      <PasswordInput bind:value={confirmPassword} autocomplete="new-password" />
+      <PasswordInput bind:value={confirmPassword} required autocomplete="new-password" />
     </Field>
 
     <Field label={$t('name')} required>
-      <Input bind:value={name} type="text" autocomplete="name" />
+      <Input bind:value={name} type="text" required autocomplete="name" />
     </Field>
 
     {#if errorMessage}

@@ -13,7 +13,7 @@
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js';
 
   import { fromTimelinePlainDate, getDateLocaleString } from '$lib/utils/timeline-util';
-  import { Icon } from '@immich/ui';
+  import { Icon, Tooltip } from '@immich/ui';
   import type { Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
@@ -141,6 +141,9 @@
       timelineManager.clearScrollCompensation();
     }
   });
+
+  let tooltipX = $state(0);
+  let tooltipY = $state(0);
 </script>
 
 {#each filterIntersecting(monthGroup.dayGroups) as dayGroup, groupIndex (dayGroup.day)}
@@ -166,8 +169,14 @@
   >
     <!-- Date group title -->
     <div
-      class="flex pt-7 pb-5 max-md:pt-5 max-md:pb-3 h-6 place-items-center text-xs font-medium text-immich-fg dark:text-immich-dark-fg md:text-sm"
+      class="relative flex pt-7 pb-5 max-md:pt-5 max-md:pb-3 h-6 place-items-center text-xs font-medium text-immich-fg dark:text-immich-dark-fg md:text-sm"
       style:width={dayGroup.width + 'px'}
+      style={`--tooltip-x:${tooltipX}px; --tooltip-y:${tooltipY}px`}
+      onmousemove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        tooltipX = e.clientX - rect.left + 12;
+        tooltipY = e.clientY - rect.top + 12;
+      }}
     >
       {#if !singleSelect}
         <div
@@ -185,12 +194,11 @@
         </div>
       {/if}
 
-      <span
-        class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]"
-        title={getDayGroupFullDate(dayGroup)}
-      >
-        {dayGroup.groupTitle}
-      </span>
+      <Tooltip text={getDayGroupFullDate(dayGroup)} class="!absolute !translate-x-0 !translate-y-0 tooltip">
+        <span class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]">
+          {dayGroup.groupTitle}
+        </span>
+      </Tooltip>
     </div>
 
     <!-- Image grid -->
@@ -253,5 +261,10 @@
   }
   [data-image-grid] {
     user-select: none;
+  }
+
+  :global(.tooltip) {
+    top: var(--tooltip-y) !important;
+    left: var(--tooltip-x) !important;
   }
 </style>

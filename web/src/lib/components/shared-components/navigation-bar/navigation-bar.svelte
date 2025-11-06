@@ -17,7 +17,7 @@
   import { featureFlags } from '$lib/stores/server-config.store';
   import { sidebarStore } from '$lib/stores/sidebar.svelte';
   import { user } from '$lib/stores/user.store';
-  import { Button, IconButton, Logo } from '@immich/ui';
+  import { Button, IconButton, Logo, Tooltip } from '@immich/ui';
   import { mdiBellBadge, mdiBellOutline, mdiMagnify, mdiMenu, mdiTrayArrowUp } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import ThemeButton from '../theme-button.svelte';
@@ -151,16 +151,17 @@
             onEscape: () => (shouldShowAccountInfoPanel = false),
           }}
         >
-          <button
-            type="button"
-            class="flex ps-2"
-            onclick={() => (shouldShowAccountInfoPanel = !shouldShowAccountInfoPanel)}
-            title={`${$user.name} (${$user.email})`}
-          >
-            {#key $user}
-              <UserAvatar user={$user} size="md" noTitle interactive />
-            {/key}
-          </button>
+          <Tooltip text={`${$user.name} (${$user.email})`}>
+            <button
+              type="button"
+              class="flex ps-2"
+              onclick={() => (shouldShowAccountInfoPanel = !shouldShowAccountInfoPanel)}
+            >
+              {#key $user}
+                <UserAvatar user={$user} size="md" noTitle interactive />
+              {/key}
+            </button>
+          </Tooltip>
 
           {#if shouldShowAccountInfoPanel}
             <AccountInfoPanel

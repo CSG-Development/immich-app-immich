@@ -682,7 +682,7 @@ importers:
         version: link:../open-api/typescript-sdk
       '@immich/ui':
         specifier: github:CSG-Development/immich-app-ui#chore/merge-upstream
-        version: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/1ebe14fa592ad9d64b8dcfcf413369c303a36150(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)
+        version: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/4a2b8f3e7c61234a4d91e52c62895cd7b3fc55f2(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)
       '@mapbox/mapbox-gl-rtl-text':
         specifier: 0.2.3
         version: 0.2.3(mapbox-gl@1.13.3)
@@ -2774,8 +2774,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@immich/ui@https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/1ebe14fa592ad9d64b8dcfcf413369c303a36150':
-    resolution: {tarball: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/1ebe14fa592ad9d64b8dcfcf413369c303a36150}
+  '@immich/ui@https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/4a2b8f3e7c61234a4d91e52c62895cd7b3fc55f2':
+    resolution: {tarball: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/4a2b8f3e7c61234a4d91e52c62895cd7b3fc55f2}
     version: 0.36.0
     peerDependencies:
       svelte: ^5.0.0
@@ -14146,7 +14146,7 @@ snapshots:
   '@img/sharp-win32-x64@0.34.4':
     optional: true
 
-  '@immich/ui@https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/1ebe14fa592ad9d64b8dcfcf413369c303a36150(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)':
+  '@immich/ui@https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/4a2b8f3e7c61234a4d91e52c62895cd7b3fc55f2(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)':
     dependencies:
       '@mdi/js': 7.4.47
       bits-ui: 2.11.8(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@22.18.11)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)))(svelte@5.35.5)

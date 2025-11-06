@@ -97,7 +97,7 @@
     {shuffledSelectedAssets}
   >
     {#snippet empty()}
-      <EmptyPlaceholder text={$t('no_locked_photos_message')} title={$t('nothing_here_yet')} />
+      <EmptyPlaceholder text={$t('no_locked_photos_message')} />
     {/snippet}
   </Timeline>
 </UserPageLayout>

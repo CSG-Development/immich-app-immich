@@ -334,7 +334,7 @@
         </div>
       {/key}
     {:else}
-      <p class="text-center text-lg dark:text-white flex place-items-center place-content-center">
+      <p class="text-center text-lg dark:text-white flex place-items-center place-content-center pt-12">
         {$t('no_duplicates_found')}
       </p>
     {/if}
