@@ -13,7 +13,7 @@
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js';
 
   import { fromTimelinePlainDate, getDateLocaleString } from '$lib/utils/timeline-util';
-  import { Icon, Tooltip } from '@immich/ui';
+  import { Icon } from '@immich/ui';
   import type { Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
@@ -194,11 +194,12 @@
         </div>
       {/if}
 
-      <Tooltip text={getDayGroupFullDate(dayGroup)} class="!absolute !translate-x-0 !translate-y-0 tooltip">
-        <span class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]">
-          {dayGroup.groupTitle}
-        </span>
-      </Tooltip>
+      <span
+        class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]"
+        title={getDayGroupFullDate(dayGroup)}
+      >
+        {dayGroup.groupTitle}
+      </span>
     </div>
 
     <!-- Image grid -->

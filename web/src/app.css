@@ -45,6 +45,8 @@
   --color-immich-gray-dark: rgb(var(--immich-gray-dark));
   --color-immich-gray-border: rgb(var(--immich-gray-border));
   --color-immich-gray-text: rgb(var(--immich-gray-text));
+  --color-immich-danger: rgb(var(--immich-danger));
+  --color-immich-bg-gray: rgb(66, 66, 66, 0.12);
 
   --color-immich-dark-primary: rgb(var(--immich-dark-primary));
   --color-immich-dark-bg: rgb(var(--immich-dark-bg));
@@ -56,6 +58,9 @@
   --color-immich-dark-gray-light: rgb(var(--immich-dark-gray-light));
   --color-immich-dark-gray-border: rgb(var(--immich-dark-gray-border));
   --color-immich-dark-gray-text: rgb(var(--immich-dark-gray-text));
+  --color-immich-dark-danger: rgb(var(--immich-dark-danger));
+  --color-immich-dark-success: rgb(var(--immich-dark-success));
+  --color-immich-dark-bg-gray: rgba(238, 238, 238, 0.12);
 }
 
 @theme {
@@ -82,6 +87,7 @@
     --immich-gray-dark: 78 78 78;
     --immich-gray-border: 224 224 224;
     --immich-gray-text: 122 122 122;
+    --immich-danger: 160, 42, 33;
 
     /* dark */
     --immich-dark-primary: 100 181 246;
@@ -94,6 +100,8 @@
     --immich-dark-gray-light: 184 184 184;
     --immich-dark-gray-border: 97 97 97;
     --immich-dark-gray-text: 178 178 178;
+    --immich-dark-danger: 242, 145, 138;
+    --immich-dark-success: 110, 189, 73;
   }
 
   *,
