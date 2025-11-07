@@ -6,6 +6,7 @@
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { handlePromiseError } from '$lib/utils';
   import { navigate } from '$lib/utils/navigation';
+  import type { AssetResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -16,35 +17,42 @@
   let { data }: Props = $props();
 
   let assets = $derived(data.assets);
+  let asset = $derived(data.asset);
   const { isViewing: showAssetViewer, asset: viewingAsset, setAsset } = assetViewingStore;
   const getAssetIndex = (id: string) => assets.findIndex((asset) => asset.id === id);
 
-  const onNext = () => {
+  $effect(() => {
+    if (asset) {
+      setAsset(asset);
+    }
+  });
+
+  const onNext = async () => {
     const index = getAssetIndex($viewingAsset.id) + 1;
     if (index >= assets.length) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onPrevious = () => {
+  const onPrevious = async () => {
     const index = getAssetIndex($viewingAsset.id) - 1;
     if (index < 0) {
-      return Promise.resolve(false);
+      return false;
     }
-    setAsset(assets[index]);
-    return Promise.resolve(true);
+    await onViewAsset(assets[index]);
+    return true;
   };
 
-  const onRandom = () => {
+  const onRandom = async () => {
     if (assets.length <= 0) {
-      return Promise.resolve(undefined);
+      return undefined;
     }
     const index = Math.floor(Math.random() * assets.length);
     const asset = assets[index];
-    setAsset(asset);
-    return Promise.resolve(asset);
+    await onViewAsset(asset);
+    return asset;
   };
 
   const onAction = (payload: Action) => {
@@ -53,20 +61,24 @@
       $showAssetViewer = false;
     }
   };
+
+  const onViewAsset = async (asset: AssetResponseDto) => {
+    await navigate({ targetRoute: 'current', assetId: asset.id });
+  };
 </script>
 
 <UserPageLayout title={data.meta.title} scrollbar={true}>
-  {#if assets && data.assets.length > 0}
-    {#each assets as asset (asset.id)}
-      <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        <LargeAssetData {asset} onViewAsset={(asset) => setAsset(asset)} />
-      </div>
-    {/each}
-  {:else}
-    <p class="text-center text-lg dark:text-white flex place-items-center place-content-center pt-12">
-      {$t('no_duplicates_found')}
-    </p>
-  {/if}
+  <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+    {#if assets && data.assets.length > 0}
+      {#each assets as asset (asset.id)}
+        <LargeAssetData {asset} {onViewAsset} />
+      {/each}
+    {:else}
+      <p class="text-center text-lg dark:text-white flex place-items-center place-content-center">
+        {$t('no_assets_to_show')}
+      </p>
+    {/if}
+  </div>
 </UserPageLayout>
 
 {#if $showAssetViewer}
