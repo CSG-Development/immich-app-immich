@@ -40,7 +40,7 @@
   import { featureFlags } from '$lib/stores/server-config.store';
 
   interface Props {
-    config: SystemConfigDto;
+    config?: SystemConfigDto;
     keys?: ApiKeyResponseDto[];
     sessions?: SessionResponseDto[];
   }
@@ -151,25 +151,29 @@
     <ChangePinCodeSettings />
   </SettingAccordion>
 
-  <AdminSettings bind:config bind:this={adminSettingElement}>
-    {#snippet children({ savedConfig, defaultConfig })}
-      <SettingAccordion
-        icon={mdiFileDocumentOutline}
-        key="user-logging-settings"
-        title={$t('admin.logging_settings')}
-        subtitle={$t('admin.manage_log_settings')}
-      >
-        <LoggingSettings
-          onSave={(config) => adminSettingElement?.handleSave(config)}
-          onReset={(options) => adminSettingElement?.handleReset(options)}
-          disabled={$featureFlags.configFile}
-          bind:config
-          {defaultConfig}
-          {savedConfig}
-        />
-      </SettingAccordion>
-    {/snippet}
-  </AdminSettings>
+  {#if config}
+    <AdminSettings {config} bind:this={adminSettingElement}>
+      {#snippet children({ savedConfig, defaultConfig })}
+        <SettingAccordion
+          icon={mdiFileDocumentOutline}
+          key="user-logging-settings"
+          title={$t('admin.logging_settings')}
+          subtitle={$t('admin.manage_log_settings')}
+        >
+          {#if config}
+            <LoggingSettings
+              onSave={(config) => adminSettingElement?.handleSave(config)}
+              onReset={(options) => adminSettingElement?.handleReset(options)}
+              disabled={$featureFlags.configFile}
+              {config}
+              {defaultConfig}
+              {savedConfig}
+            />
+          {/if}
+        </SettingAccordion>
+      {/snippet}
+    </AdminSettings>
+  {/if}
 
   <!--  <SettingAccordion-->
   <!--    icon={mdiKeyOutline}-->

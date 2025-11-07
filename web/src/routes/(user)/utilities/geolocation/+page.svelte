@@ -1,4 +1,5 @@
 <script lang="ts">
+  import empty5Url from '$lib/assets/empty-5.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import ChangeLocation from '$lib/components/shared-components/change-location.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
@@ -132,6 +133,8 @@
       onClick(timelineManager, dayGroup.getAssets(), dayGroup.groupTitle, asset);
     }
   };
+
+  let isEmpty = $derived(timelineManager.isInitialized && timelineManager.months.length === 0);
 </script>
 
 <svelte:document onkeydown={onKeyDown} onkeyup={onKeyUp} />
@@ -139,14 +142,16 @@
 <UserPageLayout title={data.meta.title} scrollbar={true}>
   {#snippet buttons()}
     <div class="flex gap-2 justify-end place-items-center">
-      <Text class="hidden md:block text-xs mr-4 text-dark/50">{$t('geolocation_instruction_location')}</Text>
-      <div class="border flex place-items-center place-content-center px-2 py-1 bg-primary/10 rounded-2xl">
-        <Text class="hidden md:inline-block text-xs text-gray-500 font-mono mr-5 ml-2 uppercase">
+      {#if !isEmpty}
+        <Text class="hidden md:block text-xs mr-4 text-dark/50">{$t('geolocation_instruction_location')}</Text>
+      {/if}
+      <div class="flex place-items-center place-content-center px-2 py-1 bg-primary/10 rounded-2xl">
+        <Text class="hidden md:inline-block text-xs text-immich-dark-gray-text mr-5 ml-2 uppercase">
           {$t('selected_gps_coordinates')}
         </Text>
         <Tooltip text="latitude, longitude">
           <Text
-            class="rounded-3xl font-mono text-sm text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
+            class="rounded-3xl text-xs text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
               ? 'bg-primary/90 text-light font-semibold scale-105'
               : ''}">{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}</Text
           >
@@ -156,20 +161,23 @@
       <Button size="small" color="secondary" variant="ghost" leadingIcon={mdiPencilOutline} onclick={handlePickOnMap}>
         <Text class="hidden sm:inline-block">{$t('location_picker_choose_on_map')}</Text>
       </Button>
-      <Button
-        leadingIcon={mdiSelectRemove}
-        size="small"
-        color="secondary"
-        variant="ghost"
-        disabled={!assetInteraction.selectionActive}
-        onclick={handleDeselectAll}
-      >
-        {$t('unselect_all')}
-      </Button>
+      {#if !isEmpty}
+        <Button
+          leadingIcon={mdiSelectRemove}
+          size="small"
+          color="secondary"
+          variant="ghost"
+          disabled={!assetInteraction.selectionActive}
+          onclick={handleDeselectAll}
+        >
+          {$t('unselect_all')}
+        </Button>
+      {/if}
       <Button
         leadingIcon={mdiMapMarkerMultipleOutline}
         size="small"
         color="primary"
+        shape="round"
         disabled={assetInteraction.selectedAssets.length === 0}
         onclick={() => handleUpdate()}
       >
@@ -198,17 +206,21 @@
   >
     {#snippet customLayout(asset: TimelineAsset)}
       {#if hasGps(asset)}
-        <div class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-success text-black">
+        <div
+          class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-immich-dark-success text-black"
+        >
           {asset.city || $t('gps')}
         </div>
       {:else}
-        <div class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-danger text-light">
+        <div
+          class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-immich-dark-danger text-light"
+        >
           {$t('gps_missing')}
         </div>
       {/if}
     {/snippet}
     {#snippet empty()}
-      <EmptyPlaceholder text={$t('no_assets_message')} onClick={() => {}} />
+      <EmptyPlaceholder text={$t('no_location_assets')} src={empty5Url} />
     {/snippet}
   </Timeline>
 </UserPageLayout>
