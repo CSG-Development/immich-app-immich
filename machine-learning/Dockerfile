@@ -162,6 +162,13 @@ COPY --from=builder /opt/venv /opt/venv
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
 
+# --- Ensure preloaded model cache persists across runtime ---
+# Store a safe copy of preloaded model files
+COPY cache/ /preload-cache
+
+COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
+RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
+
 ARG BUILD_ID
 ARG BUILD_IMAGE
 ARG BUILD_SOURCE_REF
@@ -178,6 +185,6 @@ ENV IMMICH_SOURCE_COMMIT=${BUILD_SOURCE_COMMIT}
 ENV IMMICH_SOURCE_URL=https://github.com/immich-app/immich/commit/${BUILD_SOURCE_COMMIT}
 
 ENTRYPOINT ["tini", "--"]
-CMD ["python", "-m", "immich_ml"]
+CMD ["/usr/local/bin/entrypoint-wrapper.sh", "python", "-m", "immich_ml"]
 
 HEALTHCHECK CMD python3 healthcheck.py

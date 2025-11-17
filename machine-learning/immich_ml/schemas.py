@@ -40,7 +40,7 @@ class ModelFormat(StrEnum):
 
 class ModelSource(StrEnum):
     INSIGHTFACE = "insightface"
-    FACENET = "facenet-pytorch"
+    ARCFACE = "arcfaceresnet8-100"
     MCLIP = "mclip"
     OPENCLIP = "openclip"
 

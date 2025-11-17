@@ -194,9 +194,10 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
             except KeyError:
                 message = f"Task {entry['task']} of type {entry['type']} depends on output of {dep}"
                 raise HTTPException(400, message)
-        if model.model_name == "facenet-pytorch" and entry["type"] == ModelType.DETECTION:
-            model = FaceDetector(model_name=model.model_name)
-        elif model.model_name == "facenet-pytorch" and entry["type"] == ModelType.RECOGNITION:
+        # TODO change placeholder below when detection model is replaced too
+        if model.model_name == "scrfd_10g_gnkps" and entry["type"] == ModelType.DETECTION:
+            model = FaceDetector(model_name="scrfd_10g_gnkps")
+        elif model.model_name == "arcfaceresnet8-100" and entry["type"] == ModelType.RECOGNITION:
             model = FaceRecognizer(model_name=model.model_name)
         else:
             model = await load(model)
@@ -231,7 +232,7 @@ async def load(model: InferenceModel) -> InferenceModel:
         with lock:
             try:
                 # Only download if needed
-                if model.model_name not in ["facenet-pytorch"]:
+                if model.model_name not in ["arcfaceresnet8-100", "scrfd_10g_gnkps"]:
                     model.load()
                 else:
                     log.info(f"Skipping download for internal model: '{model.model_name}'")

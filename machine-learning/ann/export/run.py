@@ -54,7 +54,7 @@ class ArcFace(ExportBase):
         return torch.rand(self.input_shape, device=self.device)
 
 
-class RetinaFace(ExportBase):
+class SCRFD(ExportBase):
     input_shape = (1, 3, 640, 640)
 
     def __init__(self, onnx_model_path: str, device: torch.device):
@@ -145,8 +145,8 @@ def main() -> None:
         )
     models = [
         ClipVision("ViT-B-32", "openai", device),
-        ArcFace("buffalo_l_rec.onnx", device),
-        RetinaFace("buffalo_l_det.onnx", device),
+        ArcFace("arcfaceresnet8-100_rec.onnx", device),
+        SCRFD("scrfd_10g_gnkps.onnx.onnx", device),
     ]
     for model in models:
         export(model)
