@@ -31,8 +31,8 @@
     eventManager.emit('auth.login', user);
   };
 
-  const onFirstLogin = async () => await goto(resolve(AppRoute.AUTH_CHANGE_PASSWORD));
-  const onOnboarding = async () => await goto(resolve(AppRoute.AUTH_ONBOARDING));
+  const onFirstLogin = () => goto(resolve(AppRoute.AUTH_CHANGE_PASSWORD));
+  const onOnboarding = () => goto(resolve(AppRoute.AUTH_ONBOARDING));
 
   onMount(async () => {
     if (!$featureFlags.oauth) {

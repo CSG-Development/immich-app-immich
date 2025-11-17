@@ -3,10 +3,12 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { shortcuts } from '$lib/actions/shortcut';
+  import duplicatesUrl from '$lib/assets/duplicates.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import {
-    NotificationType,
     notificationController,
+    NotificationType,
   } from '$lib/components/shared-components/notification/notification';
   import DuplicatesCompareControl from '$lib/components/utilities-page/duplicates/duplicates-compare-control.svelte';
   import { AppRoute } from '$lib/constants';
@@ -334,9 +336,7 @@
         </div>
       {/key}
     {:else}
-      <p class="text-center text-lg dark:text-white flex place-items-center place-content-center">
-        {$t('no_duplicates_found')}
-      </p>
+      <EmptyPlaceholder text={$t('no_duplicates_found')} src={duplicatesUrl} />
     {/if}
   </div>
 </UserPageLayout>

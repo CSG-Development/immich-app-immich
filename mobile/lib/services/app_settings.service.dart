@@ -50,9 +50,10 @@ enum AppSettingsEnum<T> {
   enableBackup<bool>(StoreKey.enableBackup, null, false),
   useCellularForUploadVideos<bool>(StoreKey.useWifiForUploadVideos, null, false),
   useCellularForUploadPhotos<bool>(StoreKey.useWifiForUploadPhotos, null, false),
+  backupRequireCharging<bool>(StoreKey.backupRequireCharging, null, false),
+  backupTriggerDelay<int>(StoreKey.backupTriggerDelay, null, 30),
   readonlyModeEnabled<bool>(StoreKey.readonlyModeEnabled, "readonlyModeEnabled", false),
-  enableBiometric<bool>(StoreKey.enableBiometric, null, false),
-  ;
+  enableBiometric<bool>(StoreKey.enableBiometric, null, false);
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);
 

@@ -37,11 +37,11 @@
   {#if title || icon}
     <div class="flex gap-2 items-center justify-center w-fit">
       {#if icon}
-        <Icon path={icon} size="30" class="text-immich-primary dark:text-immich-dark-primary" />
+        <Icon path={icon} size="30" class="text-primary" />
       {/if}
       {#if title}
-        <p class="text-xl text-immich-primary dark:text-immich-dark-primary">
-          {title.toUpperCase()}
+        <p class="uppercase text-xl text-primary">
+          {title}
         </p>
       {/if}
     </div>

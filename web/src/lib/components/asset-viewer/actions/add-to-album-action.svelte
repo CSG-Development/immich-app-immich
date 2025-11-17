@@ -5,7 +5,7 @@
   import { AssetAction } from '$lib/constants';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import AlbumPickerModal from '$lib/modals/AlbumPickerModal.svelte';
-  import { addAssetsToAlbum /* addAssetsToAlbums */ } from '$lib/utils/asset-utils';
+  import { addAssetsToAlbum, addAssetsToAlbums } from '$lib/utils/asset-utils';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import type { AssetResponseDto } from '@immich/sdk';
   import { mdiImageAlbum, mdiShareVariantOutline } from '@mdi/js';

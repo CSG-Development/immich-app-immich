@@ -23,6 +23,8 @@
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { AppRoute } from '$lib/constants';
+  import { photoViewerImgElement } from '$lib/stores/assets-store.svelte';
+  import { featureFlags } from '$lib/stores/server-config.store';
   import { user } from '$lib/stores/user.store';
   import { photoZoomState } from '$lib/stores/zoom-image.store';
   import { getAssetJobName, getSharedLink } from '$lib/utils';
@@ -42,6 +44,7 @@
   import {
     mdiAlertOutline,
     mdiCogRefreshOutline,
+    mdiCompare,
     mdiContentCopy,
     mdiDatabaseRefreshOutline,
     mdiDotsVertical,
@@ -100,6 +103,7 @@
   let isOwner = $derived($user && asset.ownerId === $user?.id);
   let showDownloadButton = $derived(sharedLink ? sharedLink.allowDownload : !asset.isOffline);
   let isLocked = $derived(asset.visibility === AssetVisibility.Locked);
+  let smartSearchEnabled = $derived($featureFlags.loaded && $featureFlags.smartSearch);
 
   const navigateToEditor = async () => await goto(resolve(AppRoute.EDITOR) + `?assetId=${asset.id}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,7 +168,7 @@
         onclick={onZoomImage}
       />
     {/if}
-    {#if canCopyImageToClipboard() && asset.type === AssetTypeEnum.Image}
+    {#if canCopyImageToClipboard() && asset.type === AssetTypeEnum.Image && $photoViewerImgElement}
       <IconButton
         color="secondary"
         variant="ghost"
@@ -237,6 +241,14 @@
                 icon={mdiImageSearch}
                 onClick={() => goto(resolve(`${AppRoute.PHOTOS}?at=${stack?.primaryAssetId ?? asset.id}`))}
                 text={$t('view_in_timeline')}
+              />
+            {/if}
+            {#if !asset.isArchived && !asset.isTrashed && smartSearchEnabled}
+              <MenuOption
+                icon={mdiCompare}
+                onClick={() =>
+                  goto(resolve(`${AppRoute.SEARCH}?query={"queryAssetId":"${stack?.primaryAssetId ?? asset.id}"}`))}
+                text={$t('view_similar_photos')}
               />
             {/if}
           {/if}

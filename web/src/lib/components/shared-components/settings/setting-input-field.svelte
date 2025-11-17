@@ -1,13 +1,13 @@
 <script lang="ts">
   import { SettingInputFieldType } from '$lib/constants';
+  import { PasswordInput, Tooltip } from '@immich/ui';
   import { onMount, tick, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
   import type { FormEventHandler } from 'svelte/elements';
   import { fly } from 'svelte/transition';
-  import PasswordField from '../password-field.svelte';
 
-  interface Props {
+  type Props = {
     inputType: SettingInputFieldType;
     value: string | number | undefined | null;
     min?: number;
@@ -23,7 +23,14 @@
     passwordAutocomplete?: AutoFill;
     descriptionSnippet?: Snippet;
     trailingSnippet?: Snippet;
-  }
+  } & (
+    | { inputType: SettingInputFieldType.PASSWORD; value: string }
+    | { inputType: SettingInputFieldType.NUMBER; value: number | null | undefined }
+    | {
+        inputType: SettingInputFieldType.TEXT | SettingInputFieldType.COLOR | SettingInputFieldType.EMAIL;
+        value: string | null | undefined;
+      }
+  );
 
   let {
     inputType,
@@ -76,9 +83,7 @@
 
 <div class="mb-4 w-full">
   <div class="flex place-items-center gap-1">
-    <label class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm min-h-6" for={label}
-      >{label}</label
-    >
+    <label class="font-medium text-primary text-sm min-h-6 uppercase" for={label}>{label}</label>
     {#if required}
       <div class="text-red-400">*</div>
     {/if}
@@ -102,16 +107,39 @@
   {/if}
 
   {#if inputType !== SettingInputFieldType.PASSWORD}
-    <div class="flex place-items-center place-content-center">
+    <div class="flex place-items-center place-content-center gap-2">
       {#if inputType === SettingInputFieldType.COLOR}
+        <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
+          <input
+            bind:this={input}
+            class="immich-form-input w-full pb-2 rounded-none me-1"
+            aria-describedby={description ? `${label}-desc` : undefined}
+            aria-labelledby="{label}-label"
+            id={label}
+            name={label}
+            type="text"
+            min={min.toString()}
+            max={max.toString()}
+            {step}
+            {required}
+            bind:value
+            onchange={handleChange}
+            {disabled}
+            title=""
+          />
+        </Tooltip>
+      {/if}
+
+      <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
         <input
           bind:this={input}
-          class="immich-form-input w-full pb-2 rounded-none me-1"
+          class="immich-form-input w-full mb-2"
+          class:color-picker={inputType === SettingInputFieldType.COLOR}
           aria-describedby={description ? `${label}-desc` : undefined}
           aria-labelledby="{label}-label"
           id={label}
           name={label}
-          type="text"
+          type={inputType}
           min={min.toString()}
           max={max.toString()}
           {step}
@@ -119,44 +147,27 @@
           bind:value
           onchange={handleChange}
           {disabled}
-          {title}
+          title=""
         />
-      {/if}
-
-      <input
-        bind:this={input}
-        class="immich-form-input w-full mb-2"
-        class:color-picker={inputType === SettingInputFieldType.COLOR}
-        aria-describedby={description ? `${label}-desc` : undefined}
-        aria-labelledby="{label}-label"
-        id={label}
-        name={label}
-        type={inputType}
-        min={min.toString()}
-        max={max.toString()}
-        {step}
-        {required}
-        bind:value
-        onchange={handleChange}
-        {disabled}
-        {title}
-      />
+      </Tooltip>
 
       {@render trailingSnippet?.()}
     </div>
   {:else}
-    <PasswordField
-      aria-describedby={description ? `${label}-desc` : undefined}
-      aria-labelledby="{label}-label"
-      id={label}
-      name={label}
-      autocomplete={passwordAutocomplete}
-      {required}
-      password={(value || '').toString()}
-      onInput={(passwordValue) => (value = passwordValue)}
-      {disabled}
-      {title}
-    />
+    <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
+      <PasswordInput
+        aria-describedby={description ? `${label}-desc` : undefined}
+        aria-labelledby="{label}-label"
+        size="small"
+        id={label}
+        name={label}
+        autocomplete={passwordAutocomplete}
+        {required}
+        bind:value={value as string}
+        {disabled}
+        title=""
+      />
+    </Tooltip>
   {/if}
 </div>
 

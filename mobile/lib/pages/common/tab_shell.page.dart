@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/timeline.model.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/memory.provider.dart';
@@ -16,6 +17,7 @@ import 'package:immich_mobile/providers/search/search_input_focus.provider.dart'
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 
 @RoutePage()
 class TabShellPage extends ConsumerStatefulWidget {
@@ -57,25 +59,6 @@ class _TabShellPageState extends ConsumerState<TabShellPage> {
       ),
     ];
 
-    Widget navigationRail(TabsRouter tabsRouter) {
-      return NavigationRail(
-        destinations: navigationDestinations
-            .map(
-              (e) => NavigationRailDestination(
-                icon: e.icon,
-                label: Text(e.label),
-                selectedIcon: e.selectedIcon,
-                disabled: !e.enabled,
-              ),
-            )
-            .toList(),
-        onDestinationSelected: (index) => _onNavigationSelected(tabsRouter, index, ref),
-        selectedIndex: tabsRouter.activeIndex,
-        labelType: NavigationRailLabelType.all,
-        groupAlignment: 0.0,
-      );
-    }
-
     return AutoTabsRouter(
       routes: [const MainTimelineRoute(), DriftSearchRoute(), const DriftAlbumsRoute(), const DriftLibraryRoute()],
       duration: const Duration(milliseconds: 600),
@@ -85,21 +68,47 @@ class _TabShellPageState extends ConsumerState<TabShellPage> {
         return PopScope(
           canPop: tabsRouter.activeIndex == 0,
           onPopInvokedWithResult: (didPop, _) => !didPop ? tabsRouter.setActiveIndex(0) : null,
-          child: Scaffold(
-            resizeToAvoidBottomInset: false,
-            body: isScreenLandscape
-                ? Row(
+          child: isScreenLandscape
+              ? CuratorShell(
+                  body: Stack(
                     children: [
-                      navigationRail(tabsRouter),
-                      const VerticalDivider(),
-                      Expanded(child: child),
+                      Positioned.fill(child: child),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _BottomNavigationBar(tabsRouter: tabsRouter, destinations: navigationDestinations),
+                      ),
                     ],
-                  )
-                : child,
-            bottomNavigationBar: _BottomNavigationBar(tabsRouter: tabsRouter, destinations: navigationDestinations),
-          ),
+                  ),
+                  bottomNavigationBar: null,
+                )
+              : CuratorShell(
+                  body: child,
+                  bottomNavigationBar: _BottomNavigationBar(
+                    tabsRouter: tabsRouter,
+                    destinations: navigationDestinations,
+                  ),
+                ),
         );
       },
+    );
+  }
+}
+
+class CuratorShell extends StatelessWidget {
+  const CuratorShell({super.key, required this.body, this.bottomNavigationBar});
+
+  final Widget body;
+  final Widget? bottomNavigationBar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      drawer: const CuratorAppBarDrawer(),
+      body: body,
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }
@@ -171,8 +180,27 @@ class _BottomNavigationBarState extends ConsumerState<_BottomNavigationBar> {
   Widget build(BuildContext context) {
     final isScreenLandscape = context.orientation == Orientation.landscape;
 
-    if (isScreenLandscape || hideNavigationBar) {
+    final isVisible = ref.watch(scrollNotifierProvider).isVisible;
+
+    if (hideNavigationBar) {
       return const SizedBox.shrink();
+    }
+
+    if (isScreenLandscape) {
+      return AnimatedSlide(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        offset: isVisible ? Offset.zero : const Offset(0, 1),
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: NavigationBar(
+            selectedIndex: widget.tabsRouter.activeIndex,
+            onDestinationSelected: (index) => _onNavigationSelected(widget.tabsRouter, index, ref),
+            destinations: widget.destinations,
+          ),
+        ),
+      );
     }
 
     return NavigationBar(

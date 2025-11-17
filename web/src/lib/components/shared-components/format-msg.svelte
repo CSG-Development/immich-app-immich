@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FormatMessage from '$lib/components/i18n/format-message.svelte';
+  import FormatMessage from '$lib/elements/FormatMessage.svelte';
 
   let { key, values } = $props<{
     key: string;

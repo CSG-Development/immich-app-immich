@@ -16,7 +16,7 @@
     type AlbumResponseDto,
     type UserResponseDto,
   } from '@immich/sdk';
-  import { Modal, ModalBody } from '@immich/ui';
+  import { Button, Modal, ModalBody, Text } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -138,12 +138,9 @@
                 <MenuOption onClick={() => handleRemoveUser(user)} text={$t('remove')} />
               </ButtonContextMenu>
             {:else if user.id == currentUser?.id}
-              <button
-                type="button"
-                onclick={() => handleRemoveUser(user)}
-                class="text-sm font-medium text-immich-primary transition-colors hover:text-immich-primary/75 dark:text-immich-dark-primary"
-                >{$t('leave')}</button
-              >
+              <Button shape="round" variant="ghost" leadingIcon={undefined} onclick={() => handleRemoveUser(user)}>
+                {$t('leave')}
+              </Button>
             {/if}
           </div>
         </div>

@@ -7,17 +7,17 @@
   import { page } from '$app/state';
   import { clickOutside } from '$lib/actions/click-outside';
   import CastButton from '$lib/cast/cast-button.svelte';
-  import SkipLink from '$lib/components/elements/buttons/skip-link.svelte';
   import NotificationPanel from '$lib/components/shared-components/navigation-bar/notification-panel.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
   import { AppRoute } from '$lib/constants';
+  import SkipLink from '$lib/elements/SkipLink.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { notificationManager } from '$lib/stores/notification-manager.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { sidebarStore } from '$lib/stores/sidebar.svelte';
   import { user } from '$lib/stores/user.store';
-  import { Button, IconButton, Logo } from '@immich/ui';
+  import { Button, IconButton, Logo, Tooltip } from '@immich/ui';
   import { mdiBellBadge, mdiBellOutline, mdiMagnify, mdiMenu, mdiTrayArrowUp } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import ThemeButton from '../theme-button.svelte';
@@ -151,16 +151,17 @@
             onEscape: () => (shouldShowAccountInfoPanel = false),
           }}
         >
-          <button
-            type="button"
-            class="flex ps-2"
-            onclick={() => (shouldShowAccountInfoPanel = !shouldShowAccountInfoPanel)}
-            title={`${$user.name} (${$user.email})`}
-          >
-            {#key $user}
-              <UserAvatar user={$user} size="md" noTitle interactive />
-            {/key}
-          </button>
+          <Tooltip text={`${$user.name} (${$user.email})`}>
+            <button
+              type="button"
+              class="flex ps-2"
+              onclick={() => (shouldShowAccountInfoPanel = !shouldShowAccountInfoPanel)}
+            >
+              {#key $user}
+                <UserAvatar user={$user} size="md" noTitle interactive />
+              {/key}
+            </button>
+          </Tooltip>
 
           {#if shouldShowAccountInfoPanel}
             <AccountInfoPanel

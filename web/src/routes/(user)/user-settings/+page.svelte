@@ -3,6 +3,8 @@
   import UserSettingsList from '$lib/components/user-settings-page/user-settings-list.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';
+  import { user } from '$lib/stores/user.store';
+  import { getConfig, type SystemConfigDto } from '@immich/sdk';
   import { Container, IconButton } from '@immich/ui';
   import { mdiKeyboard } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -13,6 +15,20 @@
   }
 
   let { data }: Props = $props();
+
+  let config: SystemConfigDto | undefined = $state(undefined);
+
+  $effect(() => {
+    if ($user.isAdmin) {
+      getConfig()
+        .then((res) => {
+          config = res;
+        })
+        .catch((error) => console.warn(error));
+    } else {
+      config = undefined;
+    }
+  });
 </script>
 
 <UserPageLayout title={data.meta.title}>
@@ -27,6 +43,6 @@
     />
   {/snippet}
   <Container size="medium" center>
-    <UserSettingsList config={data.config} keys={data.keys} sessions={data.sessions} />
+    <UserSettingsList {config} keys={data.keys} sessions={data.sessions} />
   </Container>
 </UserPageLayout>

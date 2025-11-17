@@ -18,13 +18,12 @@
   let { asset, isSelected, onSelectAsset, onViewAsset }: Props = $props();
 
   let isFromExternalLibrary = $derived(!!asset.libraryId);
-  let assetData = $derived(JSON.stringify(asset, null, 2));
 </script>
 
 <div
-  class="max-w-60 rounded-xl border-4 transition-colors font-semibold text-xs {isSelected
-    ? 'bg-primary border-primary'
-    : 'bg-subtle border-subtle'}"
+  class="max-w-60 rounded-xl transition-colors font-semibold text-xs p-1 {isSelected
+    ? 'bg-primary'
+    : 'bg-immich-bg-gray dark:bg-immich-dark-bg-gray'}"
 >
   <div class="relative w-full">
     <button
@@ -38,7 +37,6 @@
       <img
         src={getAssetThumbnailUrl(asset.id)}
         alt={$getAltText(toTimelineAsset(asset))}
-        title={assetData}
         class="h-60 object-cover rounded-t-xl w-full"
         draggable="false"
       />
@@ -53,8 +51,8 @@
       <!-- OVERLAY CHIP -->
       <div
         class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors {isSelected
-          ? 'bg-green-400/90'
-          : 'bg-red-300/90'} text-black"
+          ? 'bg-immich-dark-success'
+          : 'bg-immich-dark-danger'} text-black"
       >
         {isSelected ? $t('keep') : $t('to_trash')}
       </div>

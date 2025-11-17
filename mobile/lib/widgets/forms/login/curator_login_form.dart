@@ -10,8 +10,11 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
@@ -129,37 +132,8 @@ class CuratorLoginForm extends HookConsumerWidget {
     /// Get the about information of the device and add it to the list of devices.
     ///
     /// If the device is the favorite device and already authenticated, set it in the provider and go to dashboard
-    Future<bool> getDeviceAbout(Api api, Uri baseUrl, Status status, bool useMock) async {
+    Future<bool> getDeviceAbout(Api api, Uri baseUrl, Status status) async {
       try {
-        if (useMock) {
-          final about = About(
-            certificateCommonName: 'HC Test Client Noveo',
-            date: DateTime.now(),
-            defaultMacAddr: 'test',
-            hardwareInfo: const AboutHardware(memory: 0, processorCount: 0, processorType: ''),
-            hostname: 'HomeCloud Noveo',
-            installId: 'test',
-            modelName: 'test',
-            modelNumber: 'test',
-            networkInterfaces: [],
-            osState: AboutOsState.normal,
-            productId: 'test',
-            serialNumber: 'test',
-            version: 'test',
-          );
-
-          final device = DeviceItem(baseUrl: baseUrl, about: about, status: status);
-          // Avoid duplicates between mDNS and remote detection
-          // Don't worry about overwriting, the remote device contains also the local paths ;)
-          if (context.mounted) {
-            dPrint(() => "[SignInScreen] Adding device: ${device.name} at ${device.baseUrl}");
-          }
-
-          devices.value = {...devices.value, device.about!.certificateCommonName: device};
-
-          return true;
-        }
-
         final response = await api.aboutGet();
         if (response.isSuccessful) {
           final device = DeviceItem(baseUrl: baseUrl, about: response.body!, status: status);
@@ -207,24 +181,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     /// Then if the device is set up, get its about information.
     ///
     /// If everything is ok, add the device to the list of devices.
-    Future<bool> checkDeviceStatus({required Uri baseUrl, int timeoutDelay = 1000, bool useMock = false}) async {
-      dPrint(() => "[SignInScreen] checkDeviceStatus: $baseUrl, useMock: $useMock");
+    Future<bool> checkDeviceStatus({required Uri baseUrl, int timeoutDelay = 1000}) async {
+      dPrint(() => "[SignInScreen] checkDeviceStatus: $baseUrl");
       try {
-        if (useMock) {
-          final api = DeviceProvider.createApi(baseUrl: baseUrl);
-          final status = const Status(
-            oobe: Oobe(done: true),
-            apps: AppStatus(files: '0', photos: '0'),
-            state: StatusState.ready,
-          );
-
-          dPrint(() => "[SignInScreen] Device status response for ${baseUrl.host}: ${status.toString()}");
-          // Add only if the device is set up
-          if (status.oobe.done) {
-            return getDeviceAbout(api, baseUrl, status, true);
-          }
-        }
-
         final api = DeviceProvider.createApi(baseUrl: baseUrl);
         final response = await api.statusGet().timeout(Duration(milliseconds: timeoutDelay));
 
@@ -233,7 +192,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           dPrint(() => "[SignInScreen] Device status response for ${baseUrl.host}: ${status.toString()}");
           // Add only if the device is set up
           if (status.oobe.done) {
-            return getDeviceAbout(api, baseUrl, status, false);
+            return getDeviceAbout(api, baseUrl, status);
           }
         } else {
           handleError(ApiErrorMessage.statusGet, response);
@@ -256,18 +215,9 @@ class CuratorLoginForm extends HookConsumerWidget {
         final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
         dPrint(() => "[SignInScreen] Checking remote device with ${path.type.value} path: $baseUrl");
 
-        const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-        await dotenv.load(fileName: '.env.$env');
-        final serverUrl = dotenv.env['DEV_SERVER_URL'];
-        final useMock =
-            // isDevEnvironment &&
-            Uri.parse(serverUrl ?? '').host == baseUrl.host &&
-            path.type == DevicePathType.public;
-
         deviceAdded = await checkDeviceStatus(
           baseUrl: baseUrl,
           timeoutDelay: path.type == DevicePathType.local ? 60 * 1000 : 20 * 3000,
-          useMock: useMock,
         );
         i++;
       }
@@ -530,6 +480,18 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+    Future<void> handleSyncFlow() async {
+      final backgroundManager = ref.read(backgroundSyncProvider);
+
+      await backgroundManager.syncLocal(full: true);
+      await backgroundManager.syncRemote();
+      await backgroundManager.hashAssets();
+
+      if (Store.get(StoreKey.syncAlbums, false)) {
+        await backgroundManager.syncLinkedAlbum();
+      }
+    }
+
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -585,7 +547,22 @@ class CuratorLoginForm extends HookConsumerWidget {
 
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
+            // context.replaceRoute(const TabControllerRoute());
+
+          if (onboardingWasShown) {
+            final isBeta = Store.isBetaTimelineEnabled;
+            if (isBeta) {
+              await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+              handleSyncFlow();
+              ref.read(websocketProvider.notifier).connect();
+              context.replaceRoute(const TabShellRoute());
+              return;
+            }
             context.replaceRoute(const TabControllerRoute());
+          } else {
+            context.replaceRoute(const CuratorOnboardingRoute());
+          }
+
           } else {
             context.replaceRoute(const CuratorOnboardingRoute());
           }

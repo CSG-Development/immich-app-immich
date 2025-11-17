@@ -10,7 +10,7 @@
 
 <div class="gap-4 flex flex-col">
   <Logo class="h-[100px] mb-2" variant="icon" />
-  <p class="font-medium mb-6 text-6xl text-immich-primary dark:text-immich-dark-primary">
+  <p class="font-medium mb-6 text-6xl text-primary">
     {$t('onboarding_welcome_user', { values: { user: $user.name } })}
   </p>
   <p class="text-3xl pb-6 font-light">

@@ -13,8 +13,10 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
+import 'package:immich_mobile/presentation/utils/use_scroll_notifier.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/general_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -36,6 +38,7 @@ class DriftSearchPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scrollController = useScrollNotifier(ref);
     final textSearchType = useState<TextSearchType>(TextSearchType.context);
     final searchHintText = useState<String>('sunrise_on_the_beach'.t(context: context));
     final textSearchController = useTextEditingController();
@@ -418,7 +421,13 @@ class DriftSearchPage extends HookConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -440,7 +449,7 @@ class DriftSearchPage extends HookConsumerWidget {
                     }
                   },
                   icon: const Icon(Icons.more_vert_rounded),
-                  tooltip: 'Show text search menu',
+                  tooltip: 'show_text_search_menu'.tr(),
                 );
               },
               menuChildren: [
@@ -528,6 +537,7 @@ class DriftSearchPage extends HookConsumerWidget {
         ),
       ),
       body: CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
@@ -633,6 +643,7 @@ class _SearchResultGrid extends ConsumerWidget {
             groupBy: GroupAssetsBy.none,
             appBar: null,
             bottomSheet: const GeneralBottomSheet(minChildSize: 0.20),
+            snapToMonth: false,
           ),
         ),
       ),

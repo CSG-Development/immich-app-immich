@@ -46,6 +46,22 @@ class ScrollNotifier with ChangeNotifier {
     }
   }
 
+  // Controller-based update entry point
+  void handleOffset({
+    required double offset,
+    required double minScrollExtent,
+    required double maxScrollExtent,
+  }) {
+    // Detect overscroll (e.g., iOS bounce)
+    if (offset < minScrollExtent || offset > maxScrollExtent) {
+      _isOverscrolling = true;
+      return;
+    }
+
+    _isOverscrolling = false;
+    _updateVisibility(offset);
+  }
+
   void handleItemPositionsChange(Iterable<ItemPosition> positions) {
     if (positions.isEmpty) return;
     
