@@ -158,7 +158,7 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
-  - isar_flutter_libs (1.0.0):
+  - isar_community_flutter_libs (1.0.0):
     - Flutter
   - local_auth_darwin (0.0.1):
     - Flutter
@@ -257,7 +257,7 @@ DEPENDENCIES:
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
-  - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
+  - isar_community_flutter_libs (from `.symlinks/plugins/isar_community_flutter_libs/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
   - maplibre_gl (from `.symlinks/plugins/maplibre_gl/ios`)
   - native_video_player (from `.symlinks/plugins/native_video_player/ios`)
@@ -344,8 +344,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
-  isar_flutter_libs:
-    :path: ".symlinks/plugins/isar_flutter_libs/ios"
+  isar_community_flutter_libs:
+    :path: ".symlinks/plugins/isar_community_flutter_libs/ios"
   local_auth_darwin:
     :path: ".symlinks/plugins/local_auth_darwin/darwin"
   maplibre_gl:
@@ -418,7 +418,7 @@ SPEC CHECKSUMS:
   home_widget: 0434835a4c9a75704264feff6be17ea40e0f0d57
   image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
-  isar_flutter_libs: fdf730ca925d05687f36d7f1d355e482529ed097
+  isar_community_flutter_libs: cf478bdca01f7fb2bde0320930a785456748f1ad
   local_auth_darwin: 66e40372f1c29f383a314c738c7446e2f7fdadc3
   MapLibre: 69e572367f4ef6287e18246cfafc39c80cdcabcd
   maplibre_gl: 753f55d763a81cbdba087d02af02d12206e6f94e
@@ -445,6 +445,6 @@ SPEC CHECKSUMS:
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
   wakelock_plus: 373cfe59b235a6dd5837d0fb88791d2f13a90d56
 
-PODFILE CHECKSUM: 0e9e827bd2d1a0c9f5a2cdad0b0537615e655fbf
+PODFILE CHECKSUM: 7b6cd01e14c5632e6651ad3a11b8fd66502b690f
 
 COCOAPODS: 1.16.2
