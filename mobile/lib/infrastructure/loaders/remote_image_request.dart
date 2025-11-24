@@ -158,16 +158,16 @@ class RemoteImageRequest extends ImageRequest {
 
   Future<ImageInfo?> _decodeBuffer(ImmutableBuffer buffer, ImageDecoderCallback decode, scale) async {
     if (_isCancelled) {
-      buffer.dispose();
       return null;
     }
     final codec = await decode(buffer);
     if (_isCancelled) {
-      buffer.dispose();
+      // The decoder may take ownership of the buffer; do not dispose it here to avoid double-dispose assertions.
       codec.dispose();
       return null;
     }
     final frame = await codec.getNextFrame();
+    codec.dispose();
     return ImageInfo(image: frame.image, scale: scale);
   }
 
