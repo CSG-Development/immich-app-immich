@@ -93,7 +93,12 @@ class MultiselectGrid extends HookConsumerWidget {
         multiselectEnabled.state = selectionEnabledHook.value;
       });
 
-      return null;
+      return () {
+        // This does not work in tests
+        if (kReleaseMode) {
+          selectionEnabledHook.dispose();
+        }
+      };
     }, []);
 
     void selectionListener(bool multiselect, Set<Asset> selectedAssets) {
