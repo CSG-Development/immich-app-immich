@@ -92,7 +92,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
     // Increase the minimum size in landscape for local-only selections so the action
     // row is fully visible without a tiny scroll.
     final double minSize =
-        (selectionAssetState.hasLocalOnly && isLandscape) ? 0.34 : bottomPadding;
+        (selectionAssetState.hasLocal && !selectionAssetState.hasMerged && isLandscape) ? 0.34 : bottomPadding;
 
     void minimize() {
       // TODO: merge conflict
@@ -306,8 +306,7 @@ class ControlBottomAppBar extends HookConsumerWidget {
         // - show for local-only
         // - show for merged but trashed (to restore)
         // - hide for merged (not trashed)
-        if ((selectionAssetState.hasLocalOnly ||
-                selectionAssetState.hasMergedTrashed))
+        if ((selectionAssetState.hasLocal && !selectionAssetState.hasMerged))
           ControlBoxButton(
             iconData: Icons.backup_outlined,
             label: "upload".tr(),

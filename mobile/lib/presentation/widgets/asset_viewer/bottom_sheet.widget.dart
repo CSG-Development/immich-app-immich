@@ -154,8 +154,7 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
         if (exifInfo != null) _SheetAssetDescription(exif: exifInfo),
         const SheetPeopleDetails(),
         const SheetLocationDetails(),
-        // Tags section mirrored to sheet style
-        const SheetTagsDetails(),
+        const SheetTagsDetailsBeta(),
         // Details header
         _SheetTile(
           title: 'exif_bottom_sheet_details'.t(context: context),

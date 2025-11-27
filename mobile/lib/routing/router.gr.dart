@@ -1554,7 +1554,7 @@ class DriftVideoRoute extends PageRouteInfo<void> {
 class EditImageRoute extends PageRouteInfo<EditImageRouteArgs> {
   EditImageRoute({
     Key? key,
-    required Asset asset,
+    required BaseAsset asset,
     required Image image,
     required bool isEdited,
     List<PageRouteInfo>? children,
@@ -1595,7 +1595,7 @@ class EditImageRouteArgs {
 
   final Key? key;
 
-  final Asset asset;
+  final BaseAsset asset;
 
   final Image image;
 
