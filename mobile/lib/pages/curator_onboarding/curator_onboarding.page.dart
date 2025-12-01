@@ -76,9 +76,8 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
 
   void _skip() => _finishOnboarding();
 
-  Future<void> _handleSyncFlow() async {
+  Future<void> handleSyncFlow() async {
     final backgroundManager = ref.read(backgroundSyncProvider);
-
     await backgroundManager.syncLocal(full: true);
     await backgroundManager.syncRemote();
     await backgroundManager.hashAssets();
@@ -94,7 +93,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
     final isBeta = Store.isBetaTimelineEnabled;
     if (isBeta) {
       await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-      await _handleSyncFlow();
+      handleSyncFlow();
       ref.read(websocketProvider.notifier).connect();
       context.replaceRoute(const TabShellRoute());
       return;

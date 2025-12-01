@@ -161,15 +161,7 @@ class RemoteAccessForm extends HookConsumerWidget {
       emailFocusNode.addListener(onFocusChange);
 
       return () {
-        try {
-          emailFocusNode.removeListener(onFocusChange);
-          emailController.dispose();
-          emailFocusNode.dispose();
-          warningMessage.dispose();
-          hasEmailError.dispose();
-        } catch (e) {
-          // Ignore
-        }
+        emailFocusNode.removeListener(onFocusChange);
       };
     }, []);
 

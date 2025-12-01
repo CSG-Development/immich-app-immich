@@ -32,7 +32,6 @@ import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
 import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:immich_mobile/services/album_refresh.service.dart';
 
 final backupProvider = StateNotifierProvider<BackupNotifier, BackUpState>((ref) {
   return BackupNotifier(
@@ -91,9 +90,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
           ),
           iCloudDownloadProgress: 0.0,
         ),
-      ) {
-        _albumRefresh = AlbumRefreshBatcher(ref, batchSize: 5);
-      }
+      );
 
   final log = Logger('BackupNotifier');
   final BackupService _backupService;
@@ -105,7 +102,6 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   final FileMediaRepository _fileMediaRepository;
   final BackupAlbumService _backupAlbumService;
   final Ref ref;
-  late final AlbumRefreshBatcher _albumRefresh;
 
   ///
   /// UI INTERACTION
@@ -159,14 +155,6 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   void setAutoBackup(bool enabled) {
     Store.put(StoreKey.autoBackup, enabled);
     state = state.copyWith(autoBackup: enabled);
-    // If the user just enabled auto-backup, attempt to start it immediately
-    // respecting the same guards used on app resume.
-    if (enabled) {
-      // Fire and forget; internal guards prevent overlapping runs
-      // and ensure auth/permission checks.
-      // ignore: discarded_futures
-      _resumeBackup();
-    }
   }
 
   void configureBackgroundBackup({
@@ -468,7 +456,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
       // Perform Backup
       state = state.copyWith(cancelToken: CancellationToken());
 
-      final PMProgressHandler? pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
+      final pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
 
       pmProgressHandler?.stream.listen((event) {
         final double progress = event.progress;
@@ -506,7 +494,6 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     if (state.backupProgress != BackUpProgressEnum.inProgress) {
       notifyBackgroundServiceCanRun();
     }
-    _albumRefresh.flush();
     state.cancelToken.cancel();
     state = state.copyWith(
       backupProgress: BackUpProgressEnum.idle,
@@ -526,14 +513,10 @@ class BackupNotifier extends StateNotifier<BackUpState> {
             .toSet(),
       );
     } else {
-      await ref.read(backupServiceProvider).handlePostUploadAssetUpdate(result, ref);
-      
       state = state.copyWith(
         selectedAlbumsBackupAssetsIds: {...state.selectedAlbumsBackupAssetsIds, result.candidate.asset.localId!},
         allAssetsInDatabase: [...state.allAssetsInDatabase, result.candidate.asset.localId!],
       );
-
-      await _albumRefresh.onUploadSuccess(result);
     }
 
     if (state.allUniqueAssets.length - state.selectedAlbumsBackupAssetsIds.length == 0) {
@@ -551,7 +534,6 @@ class BackupNotifier extends StateNotifier<BackUpState> {
         progressInFileSpeedUpdateSentBytes: 0,
       );
       _updatePersistentAlbumsSelection();
-      _albumRefresh.flush();
     }
 
     updateDiskInfo();

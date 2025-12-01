@@ -356,13 +356,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       // Start detection of local and remote devices
       startLocalAndRemoteDetection();
       return () {
-        try {
-          passwordController.dispose();
-          passwordFocusNode.dispose();
-          deviceFocusNode.dispose();
-        } catch (e) {
-          // Ignore
-        }
         _stopDiscovery();
       };
     }, []);
@@ -394,11 +387,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     }, []);
 
     useEffect(() {
-      return () {
-        warningMessage.dispose();
-        hasEmailError.dispose();
-        hasPasswordError.dispose();
-      };
+      return null;
     }, []);
 
     void populateDevCredentials() async {

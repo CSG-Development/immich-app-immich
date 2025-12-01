@@ -9,11 +9,15 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_editor/image_editor.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
+import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 /// A stateless widget that provides functionality for editing an image.
@@ -26,7 +30,7 @@ import 'package:path/path.dart' as p;
 @immutable
 @RoutePage()
 class EditImagePage extends ConsumerWidget {
-  final Asset asset;
+  final BaseAsset asset;
   final Image image;
   final bool isEdited;
 
@@ -49,15 +53,49 @@ class EditImagePage extends ConsumerWidget {
     return completer.future;
   }
 
-  Future<void> _saveEditedImage(BuildContext context, Asset asset, Image image, WidgetRef ref) async {
+  Future<void> _saveEditedImageDeprecated(BuildContext context, BaseAsset asset, Image image, WidgetRef ref) async {
     try {
       final Uint8List imageData = await _imageToUint8List(image);
       await ref
           .read(fileMediaRepositoryProvider)
-          .saveImage(imageData, title: "${p.withoutExtension(asset.fileName)}_edited.jpg");
+          .saveImage(imageData, title: "${p.withoutExtension(asset.name)}_edited.jpg");
       await ref.read(albumProvider.notifier).refreshDeviceAlbums();
       context.navigator.popUntil((route) => route.isFirst);
       ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
+    } catch (e) {
+      ImmichToast.show(
+        durationInSecond: 6,
+        context: context,
+        msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _saveEditedImage(BuildContext context, BaseAsset asset, Image image, WidgetRef ref) async {
+    try {
+      final Uint8List imageData = await _imageToUint8List(image);
+      LocalAsset? localAsset;
+
+      try {
+        localAsset = await ref
+            .read(fileMediaRepositoryProvider)
+            .saveLocalAsset(imageData, title: "${p.withoutExtension(asset.name)}_edited.jpg");
+      } on PlatformException catch (e) {
+        // OS might not return the saved image back, so we handle that gracefully
+        // This can happen if app does not have full library access
+        Logger("SaveEditedImage").warning("Failed to retrieve the saved image back from OS", e);
+      }
+
+      ref.read(backgroundSyncProvider).syncLocal(full: true);
+      context.navigator.popUntil((route) => route.isFirst);
+      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
+
+      if (localAsset == null) {
+        return;
+      }
+
+      await ref.read(uploadServiceProvider).manualBackup([localAsset]);
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,
