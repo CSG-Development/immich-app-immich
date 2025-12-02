@@ -3,7 +3,6 @@
   import { resolve } from '$app/paths';
   import onboarding1DarkUrl from '$lib/assets/onboarding-1-dark.svg';
   import onboarding1Url from '$lib/assets/onboarding-1.svg';
-  import onboarding2Url from '$lib/assets/onboarding-2.svg';
   import onboarding3DarkUrl from '$lib/assets/onboarding-3-dark.svg';
   import onboarding3Url from '$lib/assets/onboarding-3.svg';
   import onboarding4DarkUrl from '$lib/assets/onboarding-4-dark.svg';
@@ -21,14 +20,14 @@
   const slides = $derived([
     {
       src: theme === Theme.Light ? onboarding1Url : onboarding1DarkUrl,
-      title: $t('welcome_to_immich'),
+      title: $t('onboarding_step_1_title'),
       text: $t('onboarding_step_1_text'),
     },
-    {
+    /* {
       src: onboarding2Url,
       title: $t('onboarding_step_2_title'),
       text: $t('onboarding_step_2_text'),
-    },
+    }, */
     {
       src: theme === Theme.Light ? onboarding3Url : onboarding3DarkUrl,
       title: $t('onboarding_step_3_title'),
@@ -38,11 +37,13 @@
       src: theme === Theme.Light ? onboarding4Url : onboarding4DarkUrl,
       title: $t('onboarding_step_4_title'),
       text: $t('onboarding_step_4_text'),
+      textBottom: $t('onboarding_step_4_text_bottom'),
     },
     {
       src: onboarding5Url,
       title: $t('onboarding_step_5_title'),
       text: $t('onboarding_step_5_text'),
+      textBottom: $t('onboarding_step_5_text_bottom'),
     },
   ]);
 
@@ -115,7 +116,7 @@
 >
   <div class="relative flex items-center justify-center w-full h-[283px]">
     <IconButton
-      class="absolute z-50 -left-6 w-10 h-10 text-black/87 dark:text-white/87 bg-transparent border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(66,66,66)]/47"
+      class="absolute z-50 -left-6 w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
       shape="round"
       variant="ghost"
       color="secondary"
@@ -141,7 +142,7 @@
     </div>
 
     <IconButton
-      class="absolute z-50 -right-6 w-10 h-10 text-black/87 dark:text-white/87 bg-transparent border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(66,66,66)]/47"
+      class="absolute z-50 -right-6 w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
       shape="round"
       variant="ghost"
       color="secondary"
@@ -154,29 +155,39 @@
 
   <div class="relative w-full h-full overflow-hidden">
     {#each slides as slide, i (i)}
-      <p
-        bind:this={titleRefs[i]}
-        class="text-left font-bold text-[34px]/10 text-black/87 dark:text-white/87 w-full absolute top-0 left-0 object-contain transition-transform duration-500 ease-in-out opacity-0"
-        class:invisible={i !== currentStep}
-        style="
-        transform: translateX({(i - currentStep) * 100}%);
-        opacity: {i === currentStep ? 1 : 0};
-      "
-      >
-        {slide.title}
-      </p>
-      <p
-        class="text-black/87 dark:text-white/87 w-full absolute object-contain transition-transform duration-500 ease-in-out opacity-0"
-        class:top-26={titleLines[i] === 2}
-        class:top-16={titleLines[i] === 1}
-        class:invisible={i !== currentStep}
-        style="
-        transform: translateX({(i - currentStep) * 100}%);
-        opacity: {i === currentStep ? 1 : 0};
-      "
-      >
-        {slide.text}
-      </p>
+      <div class="w-full absolute flex flex-col gap-4" class:invisible={i !== currentStep}>
+        <p
+          bind:this={titleRefs[i]}
+          class="text-left font-bold text-[34px]/10 text-black/87 dark:text-white/87 w-full object-contain transition-transform duration-500 ease-in-out opacity-0 pb-2"
+          style="
+            transform: translateX({(i - currentStep) * 100}%);
+            opacity: {i === currentStep ? 1 : 0};
+          "
+        >
+          {slide.title}
+        </p>
+
+        <p
+          class="text-black/87 dark:text-white/87 w-full object-contain transition-transform duration-500 ease-in-out opacity-0"
+          style="
+            transform: translateX({(i - currentStep) * 100}%);
+            opacity: {i === currentStep ? 1 : 0};
+          "
+        >
+          {slide.text}
+        </p>
+        {#if slide?.textBottom}
+          <p
+            class="text-black/87 dark:text-white/87 w-full object-contain transition-transform duration-500 ease-in-out opacity-0"
+            style="
+              transform: translateX({(i - currentStep) * 100}%);
+              opacity: {i === currentStep ? 1 : 0};
+            "
+          >
+            {slide.textBottom}
+          </p>
+        {/if}
+      </div>
     {/each}
   </div>
 
