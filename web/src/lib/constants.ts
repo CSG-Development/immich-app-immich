@@ -49,7 +49,6 @@ export enum AppRoute {
   AUTH_CHANGE_PASSWORD = '/auth/change-password',
   AUTH_ONBOARDING = '/auth/onboarding',
   AUTH_PIN_PROMPT = '/auth/pin-prompt',
-  AUTH_TEST = '/auth/test',
 
   UTILITIES = '/utilities',
   DUPLICATES = '/utilities/duplicates',
