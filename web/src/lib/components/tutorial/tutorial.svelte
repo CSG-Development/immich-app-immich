@@ -10,6 +10,8 @@
   import onboarding5Url from '$lib/assets/onboarding-5.svg';
   import { AppRoute } from '$lib/constants';
   import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import { user } from '$lib/stores/user.store';
+  import { setUserOnboarding, updateAdminOnboarding } from '@immich/sdk';
   import { Button, IconButton, Theme } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight } from '@mdi/js';
   import { onMount } from 'svelte';
@@ -75,6 +77,14 @@
   };
 
   const onDone = async () => {
+    if ($user.isAdmin) {
+      await updateAdminOnboarding({ adminOnboardingUpdateDto: { isOnboarded: true } });
+    }
+
+    await setUserOnboarding({
+      onboardingDto: { isOnboarded: true },
+    });
+
     await goto(resolve(AppRoute.PHOTOS));
   };
 
@@ -112,11 +122,11 @@
 
 <div
   id="onboarding-card"
-  class="flex flex-col items-center w-120 h-205.5 max-w-4xl gap-6 rounded-3xl px-10 py-10 bg-gray-50 dark:bg-[rgb(38,39,41)] text-black dark:text-immich-dark-fg overflow-hidden"
+  class="flex flex-col items-center w-120 max-sm:max-w-120 h-205.5 max-sm:h-full max-w-4xl gap-6 rounded-3xl max-sm:rounded-none px-10 max-sm:px-5 py-10 bg-gray-50 dark:bg-[rgb(38,39,41)] text-black dark:text-immich-dark-fg overflow-hidden"
 >
   <div class="relative flex items-center justify-center w-full h-[283px]">
     <IconButton
-      class="absolute z-50 -left-6 w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
+      class="absolute z-50 -left-6 max-sm:left-0 w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
       shape="round"
       variant="ghost"
       color="secondary"
@@ -126,12 +136,12 @@
       onclick={onPrevious}
     ></IconButton>
 
-    <div class="relative w-full h-[283px] overflow-hidden">
+    <div class="relative w-full h-[283px] max-sm:h-full overflow-hidden">
       {#each slides as slide, i (i)}
         <img
           src={slide.src}
           alt={`Onboarding step ${i}`}
-          class="absolute top-0 left-0 w-full object-contain transition-transform duration-500 ease-in-out opacity-0"
+          class="absolute top-0 left-0 w-full object-contain transition-transform duration-500 ease-in-out opacity-0 max-h-[283px] max-sm:h-full"
           class:invisible={i !== currentStep}
           style="
             transform: translateX({(i - currentStep) * 100}%);
@@ -142,7 +152,7 @@
     </div>
 
     <IconButton
-      class="absolute z-50 -right-6 w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
+      class="absolute z-50 -right-6 max-sm:right-0  w-10 h-10 text-black/87 dark:text-white/87 bg-[rgb(66,66,66)]/8 border border-[rgb(224,224,224)] dark:border-[rgb(97,97,97)] dark:bg-[rgb(238,238,238)]/8"
       shape="round"
       variant="ghost"
       color="secondary"
