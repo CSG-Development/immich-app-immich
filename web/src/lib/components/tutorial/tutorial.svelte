@@ -163,7 +163,7 @@
     ></IconButton>
   </div>
 
-  <div class="relative w-full h-full overflow-hidden">
+  <div class="relative w-full h-full overflow-x-hidden overflow-y-auto">
     {#each slides as slide, i (i)}
       <div class="w-full absolute flex flex-col gap-4" class:invisible={i !== currentStep}>
         <p
