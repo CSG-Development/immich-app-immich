@@ -126,7 +126,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Hariç tutma desenleri ekleyin. *, ** ve ? kullanılarak Globbing (temsili yer doldurucu karakter) desteklenir. Farzedelim \"Raw\" adlı bir dizininiz var, içinde ki tüm dosyaları yoksaymak için \"**/Raw/**\" şeklinde yazabilirsiniz. \".tif\" ile biten tüm dosyaları yoksaymak için \"**/*.tif\" yazabilirsiniz. Mutlak yolu yoksaymak için \"/yoksayılacak/olan/yol/**\" şeklinde yazabilirsiniz.",
       "asset_offline_description":
-          "Bu harici kütüphane varlığı artık diskte bulunmuyor ve çöp kutusuna taşındı. Dosya kütüphane içinde taşındıysa, yeni karşılık gelen varlık için zaman çizelgenizi kontrol edin. Bu varlığı geri yüklemek için lütfen aşağıdaki dosya yolunun Curator Photos tarafından erişilebilir olduğundan emin olun ve kütüphaneyi tarayın.",
+          "Bu harici kütüphane varlığı artık diskte bulunmuyor ve çöp kutusuna taşındı. Dosya kütüphane içinde taşındıysa, yeni karşılık gelen varlık için zaman çizelgenizi kontrol edin. Bu varlığı geri yüklemek için lütfen aşağıdaki dosya yolunun Personal Cloud Photos tarafından erişilebilir olduğundan emin olun ve kütüphaneyi tarayın.",
       "authentication_settings": "Yetkilendirme Ayarları",
       "authentication_settings_description": "Şifre, OAuth, ve diğer yetkilendirme ayarlarını yönet",
       "authentication_settings_disable_all":
@@ -142,7 +142,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Ayarlar şuanda config dosyası tarafından ayarlanmıştır",
       "confirm_delete_library": "{library} kütüphanesini silmek istediğinize emin misiniz?",
       "confirm_delete_library_assets":
-          "Bu kütüphaneyi silmek istediğinize emin misiniz? Bu işlem {count, plural, one {# tane varlığı} other {all # tane varlığı}} Curator Photos’tan silecek ve bu işlem geri alınamaz. Silinen dosyalar diskten silinmeyecek.",
+          "Bu kütüphaneyi silmek istediğinize emin misiniz? Bu işlem {count, plural, one {# tane varlığı} other {all # tane varlığı}} Personal Cloud Photos’tan silecek ve bu işlem geri alınamaz. Silinen dosyalar diskten silinmeyecek.",
       "confirm_email_below": "Onaylamak için aşağıya {email} yazın",
       "confirm_reprocess_all_faces":
           "Tüm yüzleri tekrardan işlemek istediğinize emin misiniz? Bu işlem isimlendirilmiş insanları da silecek.",
@@ -266,7 +266,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Harita ayarlarını etkinleştir",
       "map_gps_settings": "Harita & GPS Ayarları",
       "map_gps_settings_description": "Harita Yönetimi & GPS (Ters Jeokodlama) Ayarları",
-      "map_implications": "Harita özelliği, harici bir döşeme hizmetine (tiles.curatorphotos.cloud) bağlıdır",
+      "map_implications": "Harita özelliği, harici bir döşeme hizmetine (tiles.personalcloudphotos.cloud) bağlıdır",
       "map_light_style": "Açık mod",
       "map_manage_reverse_geocoding_settings": "<link>Coğrafi Kodlama</link> ayarlarını yönet",
       "map_reverse_geocoding": "Coğrafi Kodlama",
@@ -293,8 +293,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOT: Bu daha sonra değiştirilemez!",
       "notification_email_from_address": "Şu adresten",
       "notification_email_from_address_description":
-          "Göndericinin email adresi, örnek: \"Curator Photos Fotoğraf Sunucusu <noreply@example.com>\"",
-      "notification_email_host_description": "E-posta sunucusunun ana bilgisayarı (örneğin, smtp.curatorphotos.app)",
+          "Göndericinin email adresi, örnek: \"Personal Cloud Photos Fotoğraf Sunucusu <noreply@example.com>\"",
+      "notification_email_host_description":
+          "E-posta sunucusunun ana bilgisayarı (örneğin, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Sertifika hatalarını görmezden gel",
       "notification_email_ignore_certificate_errors_description":
           "TLS sertifika doğrulama ayarlarını görmezden gel (Önerilmez)",
@@ -396,9 +397,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Bildirim şablonlarını yönet.",
       "theme_custom_css_settings": "Özel CSS",
       "theme_custom_css_settings_description":
-          "CSS (Cascading Style Sheets) kullanılarak Curator Photos’un tasarımı değiştirilebilir.",
+          "CSS (Cascading Style Sheets) kullanılarak Personal Cloud Photos’un tasarımı değiştirilebilir.",
       "theme_settings": "Tema ayarları",
-      "theme_settings_description": "Curator Photos web arayüzünün özelleştirilmesi ayarlarını yönet",
+      "theme_settings_description": "Personal Cloud Photos web arayüzünün özelleştirilmesi ayarlarını yönet",
       "thumbnail_generation_job": "Önizlemeleri oluştur",
       "thumbnail_generation_job_description":
           "Her kişi ve obje için büyük, küçük ve bulanık thumbnail (küçük resim) oluştur",
@@ -529,7 +530,7 @@ class CodegenLoader extends AssetLoader {
         "Bazı cihazlar, cihazdaki öğelerin küçük resimlerini göstermekte çok yavaştır. Bunun yerine sunucudaki küçük resimleri göstermek için bu ayarı etkinleştirin.",
     "advanced_settings_prefer_remote_title": "Uzak görüntüleri tercih et",
     "advanced_settings_proxy_headers_subtitle":
-        "Curator Photos’un her ağ isteğiyle birlikte göndermesi gereken proxy header'ları tanımlayın",
+        "Personal Cloud Photos’un her ağ isteğiyle birlikte göndermesi gereken proxy header'ları tanımlayın",
     "advanced_settings_proxy_headers_title": "Proxy Header'lar",
     "advanced_settings_self_signed_ssl_subtitle":
         "Sunucu uç noktası için SSL sertifika doğrulamasını atlar. Kendinden imzalı sertifikalar için gereklidir.",
@@ -622,7 +623,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotoğraf Izgarası",
     "asset_offline": "Varlık Çevrim Dışı",
     "asset_offline_description":
-        "Bu harici varlık artık diskte bulunmuyor. Yardım için lütfen Curator Photos yöneticinizle iletişime geçin.",
+        "Bu harici varlık artık diskte bulunmuyor. Yardım için lütfen Personal Cloud Photos yöneticinizle iletişime geçin.",
     "asset_restored_successfully": "Öğe başarıyla geri yüklendi",
     "asset_skipped": "Atlandı",
     "asset_skipped_in_trash": "Çöpte",
@@ -637,7 +638,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {# varlık} other {# varlık}} {hasName, select, true {<b>{name}</b>} other {yeni albüm}} içine eklendi",
     "assets_count": "{count, plural, one {# varlık} other {# varlıklar}}",
     "assets_deleted_permanently": "{count} öğe kalıcı olarak silindi",
-    "assets_deleted_permanently_from_server": "{count} öğe kalıcı olarak Curator Photos sunucusundan silindi",
+    "assets_deleted_permanently_from_server": "{count} öğe kalıcı olarak Personal Cloud Photos sunucusundan silindi",
     "assets_moved_to_trash_count": "{count, plural, one {# varlık} other {# varlık}} çöpe taşındı",
     "assets_permanently_deleted_count": "Kalıcı olarak silindi {count, plural, one {# varlık} other {# varlıklar}}",
     "assets_removed_count": "Kaldırıldı {count, plural, one {# varlık} other {# varlıklar}}",
@@ -648,7 +649,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} öğe geri yüklendi",
     "assets_trashed": "{count} öğe çöpe atıldı",
     "assets_trashed_count": "{count, plural, one {# varlık} other {# varlıklar}} çöp kutusuna taşındı",
-    "assets_trashed_from_server": "{count} öğe Curator Photos sunucusunda çöpe atıldı",
+    "assets_trashed_from_server": "{count} öğe Personal Cloud Photos sunucusunda çöpe atıldı",
     "assets_were_part_of_album_count": "{count, plural, one {Varlık zaten} other {Varlıklar zaten}} albümün parçasıydı",
     "authorized_devices": "Yetki Verilmiş Cihazlar",
     "automatic_endpoint_switching_subtitle":
@@ -659,7 +660,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Geri, kapat veya seçimi kaldır",
     "background_location_permission": "Arka plan konum izni",
     "background_location_permission_content":
-        "Arka planda çalışırken ağ değiştirmek için Curator Photos'in *her zaman* tam konum erişimine sahip olması gerekir, böylece uygulama Wi-Fi ağının adını okuyabilir",
+        "Arka planda çalışırken ağ değiştirmek için Personal Cloud Photos'in *her zaman* tam konum erişimine sahip olması gerekir, böylece uygulama Wi-Fi ağının adını okuyabilir",
     "backup_album_selection_page_albums_device": "Cihazdaki albümler ({count})",
     "backup_album_selection_page_albums_tap": "Seçmek için dokunun, hariç tutmak için çift dokunun",
     "backup_album_selection_page_assets_scatter":
@@ -683,7 +684,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ayarlara git",
     "backup_controller_page_background_battery_info_link": "Bana nasıl olduğunu göster",
     "backup_controller_page_background_battery_info_message":
-        "En iyi arka plan yedekleme deneyimi için lütfen Curator Photos’un arka plan etkinliğini kısıtlayabilecek tüm pil optimizasyonlarını devre dışı bırakın.\n\nBu ayarın yeri cihaz modeline göre değişiklik gösterdiğinden cihazınızda nerede olduğunu lütfen araştırın.",
+        "En iyi arka plan yedekleme deneyimi için lütfen Personal Cloud Photos’un arka plan etkinliğini kısıtlayabilecek tüm pil optimizasyonlarını devre dışı bırakın.\n\nBu ayarın yeri cihaz modeline göre değişiklik gösterdiğinden cihazınızda nerede olduğunu lütfen araştırın.",
     "backup_controller_page_background_battery_info_ok": "Tamam",
     "backup_controller_page_background_battery_info_title": "Pil optimizasyonları",
     "backup_controller_page_background_charging": "Sadece şarjda",
@@ -746,7 +747,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {# kopya öğeyi} other {# kopya öğeleri}} tutmak istediğinizden emin misiniz? Bu işlem, hiçbir şeyi silmeden tüm kopya gruplarını çözecektir.",
     "bulk_trash_duplicates_confirmation":
         "{count, plural, one {# kopya öğeyi} other {# kopya öğeleri}} toplu olarak çöp kutusuna taşımak istediğinizden emin misiniz? Bu işlem, her grubun en büyük öğesini tutacak ve diğer tüm kopyaları çöp kutusuna taşıyacaktır.",
-    "buy": "Curator Photos'i Satın Alın",
+    "buy": "Personal Cloud Photos'i Satın Alın",
     "cache_settings_clear_cache_button": "Önbelleği temizle",
     "cache_settings_clear_cache_button_title":
         "Uygulamanın önbelleğini temizleyin. Önbellek yeniden oluşturulana kadar uygulamanın performansını önemli ölçüde etkileyecektir.",
@@ -758,7 +759,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Paylaşılan albüm küçük resimleri",
     "cache_settings_statistics_thumbnail": "Küçük resimler",
     "cache_settings_statistics_title": "Önbellek kullanımı",
-    "cache_settings_subtitle": "Curator Photos mobil uygulamasının önbelleğe alma davranışını kontrol edin",
+    "cache_settings_subtitle": "Personal Cloud Photos mobil uygulamasının önbelleğe alma davranışını kontrol edin",
     "cache_settings_tile_subtitle": "Yerel depolama davranışını kontrol et",
     "cache_settings_tile_title": "Yerel Depolama",
     "cache_settings_title": "Önbellek Ayarları",
@@ -840,7 +841,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Bağlam",
     "continue": "Devam et",
     "control_bottom_app_bar_create_new_album": "Yeni albüm",
-    "control_bottom_app_bar_delete_from_immich": "Curator Photos’tan sil",
+    "control_bottom_app_bar_delete_from_immich": "Personal Cloud Photos’tan sil",
     "control_bottom_app_bar_delete_from_local": "Cihazdan sil",
     "control_bottom_app_bar_edit_location": "Konumu Düzenle",
     "control_bottom_app_bar_edit_time": "Tarih ve Saati Düzenle",
@@ -906,12 +907,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Sil",
     "delete_album": "Albümü sil",
     "delete_api_key_prompt": "Bu API anahtarını silmek istediğinizden emin misiniz?",
-    "delete_dialog_alert": "Bu öğeler cihazınızdan ve Curator Photos’tan kalıcı olarak silinecektir",
+    "delete_dialog_alert": "Bu öğeler cihazınızdan ve Personal Cloud Photos’tan kalıcı olarak silinecektir",
     "delete_dialog_alert_local":
-        "Bu öğeler cihazınızdan kalıcı olarak silinecek ancak Curator Photos sunucusunda mevcut kalacaklardır",
+        "Bu öğeler cihazınızdan kalıcı olarak silinecek ancak Personal Cloud Photos sunucusunda mevcut kalacaklardır",
     "delete_dialog_alert_local_non_backed_up":
-        "Bazı öğeler Curator Photos’a yedeklenmemiş ve cihazınızdan kalıcı olarak silinecek",
-    "delete_dialog_alert_remote": "Bu öğeler Curator Photos sunucusundan kalıcı olarak silinecektir",
+        "Bazı öğeler Personal Cloud Photos’a yedeklenmemiş ve cihazınızdan kalıcı olarak silinecek",
+    "delete_dialog_alert_remote": "Bu öğeler Personal Cloud Photos sunucusundan kalıcı olarak silinecektir",
     "delete_dialog_ok_force": "Yine de Sil",
     "delete_dialog_title": "Kalıcı Olarak Sil",
     "delete_duplicates_confirmation": "Bu kopyaları kalıcı olarak silmek istediğinizden emin misiniz?",
@@ -965,7 +966,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Varlık indirme ile ilgili ayarları yönetin",
     "download_started": "İndirme başladı",
     "download_sucess": "İndirme başarılı",
-    "download_sucess_android": "Medya DCIM/CuratorPhotos klasörüne indirildi",
+    "download_sucess_android": "Medya DCIM/PersonalCloudPhotos klasörüne indirildi",
     "download_waiting_to_retry": "Yeniden denemek için bekleniyor",
     "downloading": "İndiriliyor",
     "downloading_asset_filename": "Varlık indiriliyor {filename}",
@@ -1005,7 +1006,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Bu klasör boş",
     "empty_trash": "Çöpü boşalt",
     "empty_trash_confirmation":
-        "Çöp kutusunu boşaltmak istediğinizden emin misiniz? Bu işlem, Curator Photos’taki çöp kutusundaki tüm varlıkları kalıcı olarak silecektir.\nBu işlemi geri alamazsınız!",
+        "Çöp kutusunu boşaltmak istediğinizden emin misiniz? Bu işlem, Personal Cloud Photos’taki çöp kutusundaki tüm varlıkları kalıcı olarak silecektir.\nBu işlemi geri alamazsınız!",
     "enable": "Etkinleştir",
     "enable_biometric_auth_description": "Biyometrik kimlik doğrulamasını etkinleştirmek için PIN kodu girin",
     "enabled": "Etkinleştirildi",
@@ -1236,7 +1237,7 @@ class CodegenLoader extends AssetLoader {
     "home_page_upload_err_limit": "Aynı anda en fazla 30 öğe yüklenebilir, atlanabilir",
     "hour": "Saat",
     "ignore_icloud_photos": "iCloud Fotoğraflarını Yok Say",
-    "ignore_icloud_photos_description": "iCloud'a yüklenmiş fotoğraflar Curator Photos sunucusuna yüklenmesin",
+    "ignore_icloud_photos_description": "iCloud'a yüklenmiş fotoğraflar Personal Cloud Photos sunucusuna yüklenmesin",
     "image": "Resim",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Fotoğraf}} {date} tarihinde çekildi",
     "image_alt_text_date_1_person":
@@ -1261,8 +1262,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "İndirme Başladı",
     "image_viewer_page_state_provider_download_success": "İndirme Başarılı",
     "image_viewer_page_state_provider_share_error": "Paylaşım Hatası",
-    "immich_logo": "Curator Photos Logosu",
-    "immich_web_interface": "Curator Photos Web Arayüzü",
+    "immich_logo": "Personal Cloud Photos Logosu",
+    "immich_web_interface": "Personal Cloud Photos Web Arayüzü",
     "import_from_json": "JSON'dan İçe Aktar",
     "import_path": "İçe aktarma yolu",
     "in_albums": "{count, plural, one {# Albüm} other {# Albümde}}",
@@ -1320,7 +1321,7 @@ class CodegenLoader extends AssetLoader {
     "local_network_sheet_info": "Uygulama belirlenmiş Wi-Fi ağını kullanırken bu URL üzerinden sunucuya bağlanacaktır",
     "location_permission": "Konum izni",
     "location_permission_content":
-        "Otomatik geçiş özelliğinin çalışabilmesi için Curator Photos’un mevcut Wi-Fi ağının adını bilmesi, bunu sağlamak için de tam konum iznine ihtiyacı vardır.",
+        "Otomatik geçiş özelliğinin çalışabilmesi için Personal Cloud Photos’un mevcut Wi-Fi ağının adını bilmesi, bunu sağlamak için de tam konum iznine ihtiyacı vardır.",
     "location_picker_choose_on_map": "Haritada seç",
     "location_picker_latitude_error": "Geçerli bir enlem yazın",
     "location_picker_latitude_hint": "Buraya enlem yazın",
@@ -1467,7 +1468,7 @@ class CodegenLoader extends AssetLoader {
     "notification_toggle_setting_description": "E-posta bildirimlerine izin ver",
     "notifications": "Bildirimler",
     "notifications_setting_description": "Bildirimleri yönetin",
-    "official_immich_resources": "Resmi Curator Photos Kaynakları",
+    "official_immich_resources": "Resmi Personal Cloud Photos Kaynakları",
     "offline": "Çevrim dışı",
     "ok": "Tamam",
     "oldest_first": "Eski olan önce",
@@ -1538,12 +1539,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Haydi başlayalım",
     "permission_onboarding_go_to_settings": "Ayarlara git",
     "permission_onboarding_permission_denied":
-        "İzin reddedildi. Curator Photos’u kullanmak için Ayarlar'da fotoğraf ve video izinlerini verin.",
+        "İzin reddedildi. Personal Cloud Photos’u kullanmak için Ayarlar'da fotoğraf ve video izinlerini verin.",
     "permission_onboarding_permission_granted": "İzin verildi. Artık hazırsınız!",
     "permission_onboarding_permission_limited":
-        "Sınırlı izin. Curator Photos’un tüm fotoğrav ve videolarınızı yedeklemesine ve yönetmesine izin vermek için Ayarlar'da fotoğraf ve video izinlerini verin.",
+        "Sınırlı izin. Personal Cloud Photos’un tüm fotoğrav ve videolarınızı yedeklemesine ve yönetmesine izin vermek için Ayarlar'da fotoğraf ve video izinlerini verin.",
     "permission_onboarding_request":
-        "Curator Photos’un fotoğraflarınızı ve videolarınızı görüntüleyebilmesi için izne ihtiyacı var.",
+        "Personal Cloud Photos’un fotoğraflarınızı ve videolarınızı görüntüleyebilmesi için izne ihtiyacı var.",
     "person": "Kişi",
     "person_hidden": "{name}{hidden, select, true { (gizli)} other {}}",
     "photo_shared_all_users":
@@ -1583,12 +1584,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Herkese açık albüm",
     "public_share": "Genel paylaşım",
     "purchase_account_info": "Destekçi",
-    "purchase_activated_subtitle": "Curator Photos ve açık kaynak yazılıma destek olduğunuz için teşekkür ederiz",
+    "purchase_activated_subtitle":
+        "Personal Cloud Photos ve açık kaynak yazılıma destek olduğunuz için teşekkür ederiz",
     "purchase_activated_time": "{date} tarihinde etkinleştirildi",
     "purchase_activated_title": "Anahtarınız başarıyla etkinleştirildi",
     "purchase_button_activate": "Aktifleştir",
     "purchase_button_buy": "Satın al",
-    "purchase_button_buy_immich": "Curator Photos satın al",
+    "purchase_button_buy_immich": "Personal Cloud Photos satın al",
     "purchase_button_never_show_again": "Bir daha gösterme",
     "purchase_button_reminder": "30 gün içinde bana hatırlat",
     "purchase_button_remove_key": "Anahtarı kaldır",
@@ -1598,13 +1600,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Destekçi statüsü",
     "purchase_individual_title": "Bireysel",
     "purchase_input_suggestion": "Zaten bir ürün anahtarınız var mı? Lütfen aşağıya girin",
-    "purchase_license_subtitle": "Curator Photos’u satın alarak devam eden gelişimini destekleyin",
+    "purchase_license_subtitle": "Personal Cloud Photos’u satın alarak devam eden gelişimini destekleyin",
     "purchase_lifetime_description": "Ömür boyu geçerli",
     "purchase_option_title": "SATIN ALMA SEÇENEKLERİ",
     "purchase_panel_info_1":
-        "Curator Photos’un gelişimi zaman ve çaba gerektiriyor ve tam zamanlı geliştiricilerimiz var. Amacımız, açık kaynak yazılımı sürdürülebilir bir gelir kaynağı haline getirmek.",
+        "Personal Cloud Photos’un gelişimi zaman ve çaba gerektiriyor ve tam zamanlı geliştiricilerimiz var. Amacımız, açık kaynak yazılımı sürdürülebilir bir gelir kaynağı haline getirmek.",
     "purchase_panel_info_2":
-        "Bu satın alma işlemi Curator Photos’ta ek işlevsellik açmayacak. Curator Photos’un gelişimini desteklemek için size güveniyoruz.",
+        "Bu satın alma işlemi Personal Cloud Photos’ta ek işlevsellik açmayacak. Personal Cloud Photos’un gelişimini desteklemek için size güveniyoruz.",
     "purchase_panel_title": "Projeyi destekleyin",
     "purchase_per_server": "Sunucu başına",
     "purchase_per_user": "Kullanıcı başına",
@@ -1809,7 +1811,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_total_progress_title": "Arkaplan yedeklemesi toplam ilerlemesini göster",
     "setting_video_viewer_looping_title": "Döngü",
     "settings": "Ayarlar",
-    "settings_require_restart": "Bu ayarı uygulamak için lütfen Curator Photos’u yeniden başlatın",
+    "settings_require_restart": "Bu ayarı uygulamak için lütfen Personal Cloud Photos’u yeniden başlatın",
     "settings_saved": "Ayarlar kaydedildi",
     "setup_pin_code": "PIN kodunu ayarlayın",
     "share": "Paylaş",
@@ -1934,13 +1936,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Destek",
     "support_and_feedback": "Destek & Geri Bildirim",
     "support_third_party_description":
-        "Curator Photos kurulumu üçüncü bir tarafça yapıldı. Yaşadığınız sorunlar bu paketle ilgili olabilir. Lütfen öncelikli olarak aşağıdaki bağlantıları kullanarak bu sağlayıcıyla iletişime geçin.",
+        "Personal Cloud Photos kurulumu üçüncü bir tarafça yapıldı. Yaşadığınız sorunlar bu paketle ilgili olabilir. Lütfen öncelikli olarak aşağıdaki bağlantıları kullanarak bu sağlayıcıyla iletişime geçin.",
     "swap_merge_direction": "Birleştirme yönünü değiştir",
     "sync": "Senkronize et",
     "sync_albums": "Albümleri eşzamanla",
     "sync_albums_manual_subtitle": "Yüklenmiş fotoğraf ve videoları yedekleme için seçili albümler ile eşzamanlayın",
     "sync_upload_album_setting_subtitle":
-        "Seçili albümleri Curator Photos’ta oluşturun ve içindekileri Curator Photos’a yükleyin.",
+        "Seçili albümleri Personal Cloud Photos’ta oluşturun ve içindekileri Personal Cloud Photos’a yükleyin.",
     "tag": "Etiket",
     "tag_assets": "Dosyaları etiketle",
     "tag_created": "Etiket oluşturuldu: {tag}",
@@ -1991,7 +1993,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Silinen fotoğraf ve videolar burada listelenecektir.",
     "trash_page_delete_all": "Tümünü Sil",
     "trash_page_empty_trash_dialog_content":
-        "Çöp kutusuna atılmış öğeleri silmek istediğinize emin misiniz? Bu öğeler Curator Photos'ten kalıcı olarak silinecek",
+        "Çöp kutusuna atılmış öğeleri silmek istediğinize emin misiniz? Bu öğeler Personal Cloud Photos'ten kalıcı olarak silinecek",
     "trash_page_info": "Çöp kutusuna atılan öğeler {days} gün sonra kalıcı olarak silinecektir",
     "trash_page_no_assets": "Çöp kutusu boş",
     "trash_page_restore_all": "Tümünü geri yükle",
@@ -2060,7 +2062,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versiyon",
     "version_announcement_closing": "Arkadaşınız, Alex",
     "version_announcement_message":
-        "Merhaba! Curator Photos'in yeni bir sürümü mevcut. Lütfen yapılandırmanızın güncel olduğundan emin olmak için <link>sürüm notlarını</link> okumak için biraz zaman ayırın, özellikle WatchTower veya Immich kurulumunuzu otomatik olarak güncelleyen bir mekanizma kullanıyorsanız yanlış yapılandırmaların önüne geçmek adına bu önemlidir.",
+        "Merhaba! Personal Cloud Photos'in yeni bir sürümü mevcut. Lütfen yapılandırmanızın güncel olduğundan emin olmak için <link>sürüm notlarını</link> okumak için biraz zaman ayırın, özellikle WatchTower veya Immich kurulumunuzu otomatik olarak güncelleyen bir mekanizma kullanıyorsanız yanlış yapılandırmaların önüne geçmek adına bu önemlidir.",
     "version_history": "Versiyon geçmişi",
     "version_history_item": "{version}, {date} tarihinde kuruldu",
     "video_hover_setting": "Üzerinde durulduğunda video önizlemesi oynat",
@@ -2087,7 +2089,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Uyarı",
     "week": "Hafta",
     "welcome": "Hoş geldiniz",
-    "welcome_to_immich": "Curator Photos’a hoş geldiniz",
+    "welcome_to_immich": "Personal Cloud Photos’a hoş geldiniz",
     "wifi_name": "Wi-Fi Adı",
     "year": "Yıl",
     "years_ago": "{years, plural, one {bir yıl} other {# yıl}} önce",
@@ -2097,7 +2099,7 @@ class CodegenLoader extends AssetLoader {
     "zoom_image": "Görüntüyü yakınlaştır",
   };
   static const Map<String, dynamic> _mk = {
-    "about": "За Curator Photos",
+    "about": "За Personal Cloud Photos",
     "account": "Профил",
     "account_settings": "Поставки за профилот",
     "acknowledge": "Прочитано",
@@ -2129,7 +2131,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Додади шаблони за исклучување. Поддржано е користење на glob со *, **, и ?. За да се игнорираат сите датотеки во кој било директориум именуван \"Raw\", користи \"**/Raw/**\". За да се игнорираат сите датотеки што завршуваат со \".tif\", користи \"**/*.tif\". За да се игнорира апсолутна патека, користи \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Ова средство од екстерна библиотека веќе не е пронајдено на дискот и е преместено во ѓубре. Ако датотеката била преместена во рамките на библиотеката, проверете ја вашата временска линија за новото соодветно средство. За да го вратите ова средство, осигурајте се дека долунаведената патека може да биде пристапена од Curator Photos и скенирајте ја библиотеката.",
+          "Ова средство од екстерна библиотека веќе не е пронајдено на дискот и е преместено во ѓубре. Ако датотеката била преместена во рамките на библиотеката, проверете ја вашата временска линија за новото соодветно средство. За да го вратите ова средство, осигурајте се дека долунаведената патека може да биде пристапена од Personal Cloud Photos и скенирајте ја библиотеката.",
       "authentication_settings": "Поставки за автентикација",
       "authentication_settings_description": "Управувај со лозинки, OAuth, и други поставки за автентикација",
       "authentication_settings_disable_all":
@@ -2145,7 +2147,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Конгигурацијата е моментално поставена од конфигурациска датотека",
       "confirm_delete_library": "Дали сте сигурни дека сакате да ја избришете библиотеката {library}?",
       "confirm_delete_library_assets":
-          "Дали сте сигурни дека сакате да ја избришете оваа библиотека? Ова ќе {count, plural, one {избрише # содржано средство} other {ги избрише сите # содржани средства}} од Curator Photos и нема да може да се {count, plural, one {врати} other {вратат}} назад. Датотеките ќе останат на диск.",
+          "Дали сте сигурни дека сакате да ја избришете оваа библиотека? Ова ќе {count, plural, one {избрише # содржано средство} other {ги избрише сите # содржани средства}} од Personal Cloud Photos и нема да може да се {count, plural, one {врати} other {вратат}} назад. Датотеките ќе останат на диск.",
       "confirm_email_below": "За да потврдите, внесете \"{email}\" доле",
       "confirm_reprocess_all_faces":
           "Дали сте сигурни дека сакате да се обработат одново сите лица? Ова ќе ги избрише и сите именувани луѓе.",
@@ -2427,7 +2429,7 @@ class CodegenLoader extends AssetLoader {
           "Dodajte vzorec izključitev. Globiranje z uporabo *, ** in ? je podprto. Če želite prezreti vse datoteke v katerem koli imeniku z imenom \"Raw\", uporabite \"**/Raw/**\". Če želite prezreti vse datoteke, ki se končajo na \".tif\", uporabite \"**/*.tif\". Če želite prezreti absolutno pot, uporabite \"/pot/za/ignoriranje/**\".",
       "admin_user": "Skrbniški uporabnik",
       "asset_offline_description":
-          "Sredstva zunanje knjižnice ni več mogoče najti na disku in je bilo premaknjeno v koš. Če je bila datoteka premaknjena znotraj knjižnice, preverite svojo časovnico za novo ustrezno sredstvo. Če želite obnoviti to sredstvo, zagotovite, da ima Curator Photos dostop do spodnje poti datoteke, in skenirajte knjižnico.",
+          "Sredstva zunanje knjižnice ni več mogoče najti na disku in je bilo premaknjeno v koš. Če je bila datoteka premaknjena znotraj knjižnice, preverite svojo časovnico za novo ustrezno sredstvo. Če želite obnoviti to sredstvo, zagotovite, da ima Personal Cloud Photos dostop do spodnje poti datoteke, in skenirajte knjižnico.",
       "authentication_settings": "Nastavitve preverjanja pristnosti",
       "authentication_settings_description": "Upravljanje gesel, OAuth in drugih nastavitev preverjanja pristnosti",
       "authentication_settings_disable_all":
@@ -2443,7 +2445,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfiguracija je trenutno nastavljena s konfiguracijsko datoteko",
       "confirm_delete_library": "Ali ste prepričani, da želite izbrisati knjižnico {library}?",
       "confirm_delete_library_assets":
-          "Ali ste prepričani, da želite izbrisati to knjižnico? To bo iz Curator Photos izbrisalo {count, plural, one {# vsebovani vir} two {# vsebovana vira} few {# vsebovane vire} other {vseh # vsebovanih virov}} in tega ni možno razveljaviti. Datoteke bodo ostale na disku.",
+          "Ali ste prepričani, da želite izbrisati to knjižnico? To bo iz Personal Cloud Photos izbrisalo {count, plural, one {# vsebovani vir} two {# vsebovana vira} few {# vsebovane vire} other {vseh # vsebovanih virov}} in tega ni možno razveljaviti. Datoteke bodo ostale na disku.",
       "confirm_email_below": "Za potrditev vnesite \"{email}\" spodaj",
       "confirm_reprocess_all_faces":
           "Ali ste prepričani, da želite znova obdelati vse obraze? S tem boste počistili tudi že imenovane osebe.",
@@ -2570,7 +2572,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Omogoči funkcije zemljevida",
       "map_gps_settings": "Nastavitve zemljevida in GPS",
       "map_gps_settings_description": "Upravljajte nastavitve zemljevida in GPS (povratno geokodiranje)",
-      "map_implications": "Funkcija zemljevida se opira na zunanjo storitev ploščic (tiles.curatorphotos.cloud)",
+      "map_implications": "Funkcija zemljevida se opira na zunanjo storitev ploščic (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Svetli način",
       "map_manage_reverse_geocoding_settings": "Upravljanje nastavitev <link>Povratno geokodiranje</link>",
       "map_reverse_geocoding": "Povratno geokodiranje",
@@ -2597,8 +2599,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "OPOMBA: Tega pozneje ni mogoče spremeniti!",
       "notification_email_from_address": "Iz naslova",
       "notification_email_from_address_description":
-          "E-poštni naslov pošiljatelja, na primer: \"Curator Photos Photo Server <noreply@example.com>\". Uporabite naslov, s katerega lahko pošiljate e-pošto.",
-      "notification_email_host_description": "Gostitelj e-poštnega strežnika (npr. smtp.curatorphotos.app)",
+          "E-poštni naslov pošiljatelja, na primer: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Uporabite naslov, s katerega lahko pošiljate e-pošto.",
+      "notification_email_host_description": "Gostitelj e-poštnega strežnika (npr. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Prezri napake potrdil",
       "notification_email_ignore_certificate_errors_description":
           "Prezri napake pri preverjanju potrdila TLS (ni priporočljivo)",
@@ -2703,9 +2705,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Upravljanje predlog po meri za obvestila",
       "theme_custom_css_settings": "CSS po meri",
       "theme_custom_css_settings_description":
-          "Kaskadni slogovni listi (CSS) omogočajo prilagajanje oblikovanja Curator Photos.",
+          "Kaskadni slogovni listi (CSS) omogočajo prilagajanje oblikovanja Personal Cloud Photos.",
       "theme_settings": "Nastavitve teme",
-      "theme_settings_description": "Upravljanje prilagajanja spletnega vmesnika Curator Photos",
+      "theme_settings_description": "Upravljanje prilagajanja spletnega vmesnika Personal Cloud Photos",
       "these_files_matched_by_checksum": "Te datoteke se ujemajo z njihovimi kontrolnimi vsotami",
       "thumbnail_generation_job": "Ustvarite sličice",
       "thumbnail_generation_job_description":
@@ -2842,7 +2844,7 @@ class CodegenLoader extends AssetLoader {
         "Nekatere naprave zelo počasi nalagajo sličice iz sredstev v napravi. Aktivirajte to nastavitev, če želite namesto tega naložiti oddaljene slike.",
     "advanced_settings_prefer_remote_title": "Uporabi raje oddaljene slike",
     "advanced_settings_proxy_headers_subtitle":
-        "Določi proxy glavo, ki jo naj Curator Photos pošlje ob vsaki mrežni zahtevi",
+        "Določi proxy glavo, ki jo naj Personal Cloud Photos pošlje ob vsaki mrežni zahtevi",
     "advanced_settings_proxy_headers_title": "Proxy glave",
     "advanced_settings_self_signed_ssl_subtitle":
         "Preskoči preverjanje potrdila SSL za končno točko strežnika. Zahtevano za samopodpisana potrdila.",
@@ -2940,7 +2942,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Mreža fotografij",
     "asset_offline": "Sredstvo brez povezave",
     "asset_offline_description":
-        "Tega zunanjega sredstva ni več mogoče najti na disku. Za pomoč kontaktirajte Curator Photos skrbnika.",
+        "Tega zunanjega sredstva ni več mogoče najti na disku. Za pomoč kontaktirajte Personal Cloud Photos skrbnika.",
     "asset_restored_successfully": "Sredstvo uspešno obnovljeno",
     "asset_skipped": "Preskočeno",
     "asset_skipped_in_trash": "V smetnjak",
@@ -2959,7 +2961,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Sredstvo} two {Sredstvi} few {Sredstva} other {Sredstev}} ni mogoče dodati v album",
     "assets_count": "{count, plural, one {# sredstvo} two {# sredstvi} few {# sredstva} other {# sredstev}}",
     "assets_deleted_permanently": "trajno izrisana sredstva {count}",
-    "assets_deleted_permanently_from_server": "trajno izbrisana sredstva iz strežnika Curator Photos {count}",
+    "assets_deleted_permanently_from_server": "trajno izbrisana sredstva iz strežnika Personal Cloud Photos {count}",
     "assets_downloaded_failed":
         "{count, plural, one {Prenešena # datoteka - {error} datoteka ni uspela} two {Prenešeni # datoteki - {error} datoteki nista uspeli} few {Prenešene # datoteke - {error} datoteke niso uspele} other {Prenešenih # datotek - {error} datoteke niso uspele}}",
     "assets_downloaded_successfully":
@@ -2979,7 +2981,7 @@ class CodegenLoader extends AssetLoader {
     "assets_trashed": "sredstva v smetnjaku {count}",
     "assets_trashed_count":
         "V smetnjak {count, plural, one {# sredstvo} two {# sredstvi} few {# sredstva} other {# sredstev}}",
-    "assets_trashed_from_server": "sredstva iz strežnika Curator Photos v smetnjaku {count}",
+    "assets_trashed_from_server": "sredstva iz strežnika Personal Cloud Photos v smetnjaku {count}",
     "assets_were_part_of_album_count":
         "{count, plural, one {sredstvo je} two {sredstvi sta} few {sredstva so} other {sredstev je}} že del albuma",
     "authorized_devices": "Pooblaščene naprave",
@@ -2991,7 +2993,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Nazaj, zaprite ali prekličite izbiro",
     "background_location_permission": "Dovoljenje za iskanje lokacije v ozadju",
     "background_location_permission_content":
-        "Ko deluje v ozadju mora imeti Curator Photos za zamenjavo omrežij, *vedno* dostop do natančne lokacije, da lahko aplikacija prebere ime omrežja Wi-Fi",
+        "Ko deluje v ozadju mora imeti Personal Cloud Photos za zamenjavo omrežij, *vedno* dostop do natančne lokacije, da lahko aplikacija prebere ime omrežja Wi-Fi",
     "backup_album_selection_page_albums_device": "Albumi v napravi ({count})",
     "backup_album_selection_page_albums_tap": "Tapnite za vključitev, dvakrat tapnite za izključitev",
     "backup_album_selection_page_assets_scatter":
@@ -3014,7 +3016,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Pojdi na nastavitve",
     "backup_controller_page_background_battery_info_link": "Pokaži mi kako",
     "backup_controller_page_background_battery_info_message":
-        "Za najboljšo izkušnjo varnostnega kopiranja v ozadju onemogočite vse optimizacije baterije, ki omejujejo dejavnost v ozadju za Curator Photos.\n\nKer je to odvisno od naprave, poiščite zahtevane informacije za proizvajalca vaše naprave.",
+        "Za najboljšo izkušnjo varnostnega kopiranja v ozadju onemogočite vse optimizacije baterije, ki omejujejo dejavnost v ozadju za Personal Cloud Photos.\n\nKer je to odvisno od naprave, poiščite zahtevane informacije za proizvajalca vaše naprave.",
     "backup_controller_page_background_battery_info_ok": "V redu",
     "backup_controller_page_background_battery_info_title": "Optimizacije baterije",
     "backup_controller_page_background_charging": "Samo med polnjenjem",
@@ -3077,7 +3079,7 @@ class CodegenLoader extends AssetLoader {
         "Ali ste prepričani, da želite obdržati {count, plural, one {# dvojnik} two {# dvojnika} few {# dvojnike} other {# dvojnikov}}? S tem boste razrešili vse podvojene skupine, ne da bi karkoli izbrisali.",
     "bulk_trash_duplicates_confirmation":
         "Ali ste prepričani, da želite množično vreči v smetnjak {count, plural, one {# dvojnik} two {# dvojnika} few {# dvojnike} other {# dvojnikov}}? S tem boste obdržali največje sredstvo vsake skupine in odstranili vse druge dvojnike.",
-    "buy": "Kupi Curator Photos",
+    "buy": "Kupi Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Sličice strani knjižnice ({} sredstev)",
     "cache_settings_clear_cache_button": "Počisti predpomnilnik",
     "cache_settings_clear_cache_button_title":
@@ -3091,7 +3093,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Sličice albuma v skupni rabi",
     "cache_settings_statistics_thumbnail": "Sličice",
     "cache_settings_statistics_title": "Uporaba predpomnilnika",
-    "cache_settings_subtitle": "Nadzirajte delovanje predpomnjenja mobilne aplikacije Curator Photos",
+    "cache_settings_subtitle": "Nadzirajte delovanje predpomnjenja mobilne aplikacije Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Velikost predpomnilnika sličic ({} sredstev)",
     "cache_settings_tile_subtitle": "Nadzoruj vedenje lokalnega shranjevanja",
     "cache_settings_tile_title": "Lokalna shramba",
@@ -3177,7 +3179,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Nadaljuj",
     "control_bottom_app_bar_create_new_album": "Ustvari nov album",
-    "control_bottom_app_bar_delete_from_immich": "Izbriši iz Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Izbriši iz Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Izbriši iz naprave",
     "control_bottom_app_bar_edit_location": "Uredi lokacijo",
     "control_bottom_app_bar_edit_time": "Uredi datum & uro",
@@ -3244,12 +3246,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Izbriši",
     "delete_album": "Izbriši album",
     "delete_api_key_prompt": "Ali ste prepričani, da želite izbrisati ta API ključ?",
-    "delete_dialog_alert": "Ti elementi bodo trajno izbrisani iz Curator Photos in vaše naprave",
+    "delete_dialog_alert": "Ti elementi bodo trajno izbrisani iz Personal Cloud Photos in vaše naprave",
     "delete_dialog_alert_local":
-        "Ti elementi bodo trajno odstranjeni iz vaše naprave, vendar bodo še vedno na voljo na strežniku Curator Photos",
+        "Ti elementi bodo trajno odstranjeni iz vaše naprave, vendar bodo še vedno na voljo na strežniku Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Nekateri elementi niso varnostno kopirani v Curator Photos in bodo trajno odstranjeni iz vaše naprave",
-    "delete_dialog_alert_remote": "Ti elementi bodo trajno izbrisani iz strežnika Curator Photos",
+        "Nekateri elementi niso varnostno kopirani v Personal Cloud Photos in bodo trajno odstranjeni iz vaše naprave",
+    "delete_dialog_alert_remote": "Ti elementi bodo trajno izbrisani iz strežnika Personal Cloud Photos",
     "delete_dialog_ok_force": "Vseeno izbriši",
     "delete_dialog_title": "Trajno izbriši",
     "delete_duplicates_confirmation": "Ali ste prepričani, da želite trajno izbrisati te dvojnike?",
@@ -3303,7 +3305,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Upravljajte nastavitve, povezane s prenosom sredstev",
     "download_started": "Prenos se je začel",
     "download_sucess": "Prenos uspešen",
-    "download_sucess_android": "Medij je bil prenesen v DCIM/CuratorPhotos",
+    "download_sucess_android": "Medij je bil prenesen v DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Čakam na ponovni poskus",
     "downloading": "Prenašanje",
     "downloading_asset_filename": "Prenašanje sredstva {filename}",
@@ -3343,7 +3345,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ta mapa je prazna",
     "empty_trash": "Izprazni smetnjak",
     "empty_trash_confirmation":
-        "Ste prepričani, da želite izprazniti smetnjak? S tem boste iz Curator Photos trajno odstranili vsa sredstva v smetnjaku.\nTega dejanja ne morete razveljaviti!",
+        "Ste prepričani, da želite izprazniti smetnjak? S tem boste iz Personal Cloud Photos trajno odstranili vsa sredstva v smetnjaku.\nTega dejanja ne morete razveljaviti!",
     "enable": "Omogoči",
     "enable_biometric_auth_description": "Vnesite svojo PIN kodo, da omogočite biometrično preverjanje pristnosti",
     "enabled": "Omogočeno",
@@ -3595,7 +3597,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Ura",
     "id": "ID",
     "ignore_icloud_photos": "Ignoriraj fotografije iCloud",
-    "ignore_icloud_photos_description": "Fotografije, shranjene v iCloud, ne bodo naložene na strežnik Curator Photos",
+    "ignore_icloud_photos_description":
+        "Fotografije, shranjene v iCloud, ne bodo naložene na strežnik Personal Cloud Photos",
     "image": "Slika",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} zajet {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} zajet z osebo {person1} dne {date}",
@@ -3619,8 +3622,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Prenos se je začel",
     "image_viewer_page_state_provider_download_success": "Prenos je uspel",
     "image_viewer_page_state_provider_share_error": "Napaka skupne rabe",
-    "immich_logo": "Curator Photos logo",
-    "immich_web_interface": "Curator Photos spletni vmesnik",
+    "immich_logo": "Personal Cloud Photos logo",
+    "immich_web_interface": "Personal Cloud Photos spletni vmesnik",
     "import_from_json": "Uvoz iz JSON",
     "import_path": "Pot uvoza",
     "in_albums": "V {count, plural, one {# album} two {# albuma} few {# albume} other {# albumov}}",
@@ -3691,7 +3694,7 @@ class CodegenLoader extends AssetLoader {
         "Aplikacija se bo povezala s strežnikom prek tega URL-ja, ko bo uporabljala navedeno omrežje Wi-Fi",
     "location_permission": "Dovoljenje za lokacijo",
     "location_permission_content":
-        "Za uporabo funkcije samodejnega preklapljanja potrebuje Curator Photos dovoljenje za natančno lokacijo, da lahko prebere ime trenutnega omrežja Wi-Fi",
+        "Za uporabo funkcije samodejnega preklapljanja potrebuje Personal Cloud Photos dovoljenje za natančno lokacijo, da lahko prebere ime trenutnega omrežja Wi-Fi",
     "location_picker_choose_on_map": "Izberi na zemljevidu",
     "location_picker_latitude_error": "Vnesi veljavno zemljepisno širino",
     "location_picker_latitude_hint": "Tukaj vnesi svojo zemljepisno širino",
@@ -3865,7 +3868,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Obvestila",
     "notifications_setting_description": "Upravljanje obvestil",
     "oauth": "OAuth",
-    "official_immich_resources": "Curator Photos uradni viri",
+    "official_immich_resources": "Personal Cloud Photos uradni viri",
     "offline": "Brez povezave",
     "ok": "V redu",
     "oldest_first": "Najprej najstarejši",
@@ -3945,11 +3948,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Začnimo",
     "permission_onboarding_go_to_settings": "Pojdite na nastavitve",
     "permission_onboarding_permission_denied":
-        "Dovoljenje zavrnjeno. Če želite uporabljati Curator Photos, v nastavitvah podelite dovoljenja za fotografije in videoposnetke.",
+        "Dovoljenje zavrnjeno. Če želite uporabljati Personal Cloud Photos, v nastavitvah podelite dovoljenja za fotografije in videoposnetke.",
     "permission_onboarding_permission_granted": "Dovoljenje je izdano! Vse je pripravljeno.",
     "permission_onboarding_permission_limited":
-        "Dovoljenje je omejeno. Če želite Curator Photosu dovoliti varnostno kopiranje in upravljanje vaše celotne zbirke galerij, v nastavitvah podelite dovoljenja za fotografije in videoposnetke.",
-    "permission_onboarding_request": "Curator Photos potrebuje dovoljenje za ogled vaših fotografij in videoposnetkov.",
+        "Dovoljenje je omejeno. Če želite Personal Cloud Photosu dovoliti varnostno kopiranje in upravljanje vaše celotne zbirke galerij, v nastavitvah podelite dovoljenja za fotografije in videoposnetke.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos potrebuje dovoljenje za ogled vaših fotografij in videoposnetkov.",
     "person": "Oseba",
     "person_birthdate": "Rojen dne {date}",
     "person_hidden": "{name}{hidden, select, true { (skrita)} other {}}",
@@ -4002,12 +4006,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Javni album",
     "public_share": "Javno deljenje",
     "purchase_account_info": "Podpornik",
-    "purchase_activated_subtitle": "Hvala, ker podpirate Curator Photos in odprtokodno programsko opremo",
+    "purchase_activated_subtitle": "Hvala, ker podpirate Personal Cloud Photos in odprtokodno programsko opremo",
     "purchase_activated_time": "Aktivirano {date}",
     "purchase_activated_title": "Vaš ključ je bil uspešno aktiviran",
     "purchase_button_activate": "Aktiviraj",
     "purchase_button_buy": "Kupi",
-    "purchase_button_buy_immich": "Kupi Curator Photos",
+    "purchase_button_buy_immich": "Kupi Personal Cloud Photos",
     "purchase_button_never_show_again": "Nikoli več ne pokaži",
     "purchase_button_reminder": "Opomni me čez 30 dni",
     "purchase_button_remove_key": "Odstrani ključ",
@@ -4017,13 +4021,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status podpornika",
     "purchase_individual_title": "Posamezno",
     "purchase_input_suggestion": "Ali imate ključ izdelka? Spodaj vnesite ključ",
-    "purchase_license_subtitle": "Kupite Curator Photos, da podprete nadaljnji razvoj storitve",
+    "purchase_license_subtitle": "Kupite Personal Cloud Photos, da podprete nadaljnji razvoj storitve",
     "purchase_lifetime_description": "Doživljenjski nakup",
     "purchase_option_title": "MOŽNOSTI NAKUPA",
     "purchase_panel_info_1":
-        "Gradnja Curator Photos zahteva veliko časa in truda, zato imamo zaposlene inženirje, ki delajo na tem, da bi bil čim boljši. Naše poslanstvo je, da odprtokodna programska oprema in etične poslovne prakse, ki bi postale trajnostni vir dohodka za razvijalce in ustvarjanje ekosistema, ki spoštuje zasebnost z resničnimi alternativami izkoriščevalskim storitvam v oblaku.",
+        "Gradnja Personal Cloud Photos zahteva veliko časa in truda, zato imamo zaposlene inženirje, ki delajo na tem, da bi bil čim boljši. Naše poslanstvo je, da odprtokodna programska oprema in etične poslovne prakse, ki bi postale trajnostni vir dohodka za razvijalce in ustvarjanje ekosistema, ki spoštuje zasebnost z resničnimi alternativami izkoriščevalskim storitvam v oblaku.",
     "purchase_panel_info_2":
-        "Ker se zavezujemo, da ne bomo dodajali plačilnih storitev, vam ta nakup ne bo omogočil nobenih dodatnih funkcij v Curator Photos. Zanašamo se na uporabnike, kot ste vi, ki podpirajo nenehni razvoj Curator Photos.",
+        "Ker se zavezujemo, da ne bomo dodajali plačilnih storitev, vam ta nakup ne bo omogočil nobenih dodatnih funkcij v Personal Cloud Photos. Zanašamo se na uporabnike, kot ste vi, ki podpirajo nenehni razvoj Personal Cloud Photos.",
     "purchase_panel_title": "Podpri projekt",
     "purchase_per_server": "Na strežnik",
     "purchase_per_user": "Na uporabnika",
@@ -4249,7 +4253,7 @@ class CodegenLoader extends AssetLoader {
         "Ko pretakate video iz strežnika, predvajajte izvirnik, tudi če je na voljo prekodiranje. Lahko povzroči medpomnjenje. Videoposnetki, ki so na voljo lokalno, se predvajajo v izvirni kakovosti ne glede na to nastavitev.",
     "setting_video_viewer_original_video_title": "Vsili izvirni video",
     "settings": "Nastavitve",
-    "settings_require_restart": "Znova zaženite Curator Photos, da uporabite to nastavitev",
+    "settings_require_restart": "Znova zaženite Personal Cloud Photos, da uporabite to nastavitev",
     "settings_saved": "Nastavitve shranjene",
     "setup_pin_code": "Nastavi PIN kodo",
     "share": "Deli",
@@ -4380,14 +4384,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Podpora",
     "support_and_feedback": "Podpora in povratne informacije",
     "support_third_party_description":
-        "Vašo namestitev Curator Photos je pakirala tretja oseba. Težave, ki jih imate, lahko povzroči ta paket, zato prosimo, da težave najprej izpostavite njim, tako da uporabite spodnje povezave.",
+        "Vašo namestitev Personal Cloud Photos je pakirala tretja oseba. Težave, ki jih imate, lahko povzroči ta paket, zato prosimo, da težave najprej izpostavite njim, tako da uporabite spodnje povezave.",
     "swap_merge_direction": "Zamenjaj smer združevanja",
     "sync": "Sinhronizacija",
     "sync_albums": "Sinhronizacija albumov",
     "sync_albums_manual_subtitle":
         "Sinhronizirajte vse naložene videoposnetke in fotografije v izbrane varnostne albume",
     "sync_upload_album_setting_subtitle":
-        "Ustvarite in naložite svoje fotografije in videoposnetke v izbrane albume na Curator Photos",
+        "Ustvarite in naložite svoje fotografije in videoposnetke v izbrane albume na Personal Cloud Photos",
     "tag": "Oznaka",
     "tag_assets": "Označi sredstva",
     "tag_created": "Ustvarjena oznaka: {tag}",
@@ -4438,7 +4442,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Fotografije in videoposnetki, ki so v smetnjaku, bodo prikazani tukaj.",
     "trash_page_delete_all": "Izbriši vse",
     "trash_page_empty_trash_dialog_content":
-        "Ali želite izprazniti svoja sredstva v smeti? Ti elementi bodo trajno odstranjeni iz Curator Photos",
+        "Ali želite izprazniti svoja sredstva v smeti? Ti elementi bodo trajno odstranjeni iz Personal Cloud Photos",
     "trash_page_info": "Elementi v smeteh bodo trajno izbrisani po {days} dneh",
     "trash_page_no_assets": "Ni sredstev v smeteh",
     "trash_page_restore_all": "Obnovi vse",
@@ -4488,7 +4492,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Napake",
     "upload_status_uploaded": "Naloženo",
     "upload_success": "Nalaganje je uspelo, osvežite stran, da vidite nova sredstva za nalaganje.",
-    "upload_to_immich": "Naloži v Curator Photos ({count})",
+    "upload_to_immich": "Naloži v Personal Cloud Photos ({count})",
     "uploading": "Nalagam",
     "url": "URL",
     "usage": "Uporaba",
@@ -4518,7 +4522,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Različica",
     "version_announcement_closing": "Tvoj prijatelj, Alex",
     "version_announcement_message":
-        "Pozdravljeni! Na voljo je nova različica Curator Photos. Vzemite si nekaj časa in preberite <link>opombe ob izdaji</link>, da zagotovite, da so vaše nastavitve posodobljene, da preprečite morebitne napačne konfiguracije, zlasti če uporabljate WatchTower ali kateri koli mehanizem, ki samodejno posodablja vaš primerek Curator Photos.",
+        "Pozdravljeni! Na voljo je nova različica Personal Cloud Photos. Vzemite si nekaj časa in preberite <link>opombe ob izdaji</link>, da zagotovite, da so vaše nastavitve posodobljene, da preprečite morebitne napačne konfiguracije, zlasti če uporabljate WatchTower ali kateri koli mehanizem, ki samodejno posodablja vaš primerek Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "opombe ob izdaji",
     "version_announcement_overlay_text_1": "Živjo prijatelj, na voljo je nova izdaja",
     "version_announcement_overlay_text_2": "vzemi si čas in obišči ",
@@ -4555,7 +4559,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Opozorilo",
     "week": "Teden",
     "welcome": "Dobrodošli",
-    "welcome_to_immich": "Dobrodošli v Curator Photos",
+    "welcome_to_immich": "Dobrodošli v Personal Cloud Photos",
     "wifi_name": "WiFi ime",
     "wrong_pin_code": "Napačna PIN koda",
     "year": "Leto",
@@ -4566,7 +4570,7 @@ class CodegenLoader extends AssetLoader {
     "zoom_image": "Povečava slike",
   };
   static const Map<String, dynamic> _hu = {
-    "about": "Az Curator Photos-ről",
+    "about": "Az Personal Cloud Photos-ről",
     "account": "Fiók",
     "account_settings": "Fiók Beállítások",
     "acknowledge": "Megértettem",
@@ -4602,7 +4606,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Kihagyási minták (pattern) megadása. A *, ** és ? helyettesítő karakterek engedélyezettek. Pl. a \"Raw\" könyvtárban tárolt összes fájl kihagyásához használható a \"**/Raw/**\". Minden \".tif\" fájl kihagyása az összes mappában: \"**/*.tif\". Abszolút elérési útvonal kihagyása: \"/kihagyni/kivant/mappa/**\".",
       "asset_offline_description":
-          "Ez a külső képtárban lévő elem már nem található, ezért a lomtárba került. Ha a fájl a képtáron belül lett áthelyezve, akkor ellenőrizd, hogy továbbra is látható az idővonaladon. Az elem visszaállításához győződj meg róla, hogy az alábbi mappa az Curator Photos számára elérhető, majd újra fésüld át a képtárat.",
+          "Ez a külső képtárban lévő elem már nem található, ezért a lomtárba került. Ha a fájl a képtáron belül lett áthelyezve, akkor ellenőrizd, hogy továbbra is látható az idővonaladon. Az elem visszaállításához győződj meg róla, hogy az alábbi mappa az Personal Cloud Photos számára elérhető, majd újra fésüld át a képtárat.",
       "authentication_settings": "Hitelesítési beállítások",
       "authentication_settings_description": "Jelszó, OAuth és egyéb hitelesítési beállítások kezelése",
       "authentication_settings_disable_all":
@@ -4619,7 +4623,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "A konfigurációt jelenleg egy konfigurációs fájl állítja be",
       "confirm_delete_library": "Biztosan ki szeretnéd törölni a {library} képtárat?",
       "confirm_delete_library_assets":
-          "Biztosan kitörlöd ezt a képtárat? Ez kitörli az Curator Photos-ből a benne lévő {count, plural, one {#} other {#}} elemet is, és ez nem visszavonható. A fájlok fizikailag a lemezen maradnak.",
+          "Biztosan kitörlöd ezt a képtárat? Ez kitörli az Personal Cloud Photos-ből a benne lévő {count, plural, one {#} other {#}} elemet is, és ez nem visszavonható. A fájlok fizikailag a lemezen maradnak.",
       "confirm_email_below": "A megerősítéshez írd be, hogy \"{email}\"",
       "confirm_reprocess_all_faces":
           "Biztos vagy benne, hogy újra fel szeretnéd dolgozni az összes arcot? Ez a már elnevezett személyeket is törli.",
@@ -4747,7 +4751,8 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Térkép funkciók engedélyezése",
       "map_gps_settings": "Térkép és GPS Beállítások",
       "map_gps_settings_description": "A Térkép és GPS (Fordított Geokódolás) Beállításainak Kezelése",
-      "map_implications": "A térkép szolgáltatás egy külső csempeszolgáltatót használ (tiles.curatorphotos.cloud)",
+      "map_implications":
+          "A térkép szolgáltatás egy külső csempeszolgáltatót használ (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Világos stílus",
       "map_manage_reverse_geocoding_settings": "A <link>Fordított Geokódolás</link> beállításainak kezelése",
       "map_reverse_geocoding": "Fordított Geokódolás",
@@ -4774,8 +4779,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "FIGYELEM: ezt később nem lehet megváltoztatni!",
       "notification_email_from_address": "Feladó cím",
       "notification_email_from_address_description":
-          "Küldő email címe, például: \"Curator Photos Fotószerver <noreply@example.com>\"",
-      "notification_email_host_description": "Email szerver kiszolgálója (pl. smtp.curatorphotos.app)",
+          "Küldő email címe, például: \"Personal Cloud Photos Fotószerver <noreply@example.com>\"",
+      "notification_email_host_description": "Email szerver kiszolgálója (pl. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Tanúsítvány hibák figyelmen kívül hagyása",
       "notification_email_ignore_certificate_errors_description":
           "TLS tanúsítvány érvényességi hibák figyelmen kívül hagyása (nem ajánlott)",
@@ -4878,9 +4883,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Értesítés sablon",
       "template_settings_description": "Egyéni sablonok kezelése az értesítésekhez.",
       "theme_custom_css_settings": "Egyedi CSS",
-      "theme_custom_css_settings_description": "CSS Stíluslapokkal az Curator Photos stílusa megváltoztatható.",
+      "theme_custom_css_settings_description": "CSS Stíluslapokkal az Personal Cloud Photos stílusa megváltoztatható.",
       "theme_settings": "Téma Beállítások",
-      "theme_settings_description": "Az Curator Photos webes felület testreszabásának kezelése",
+      "theme_settings_description": "Az Personal Cloud Photos webes felület testreszabásának kezelése",
       "these_files_matched_by_checksum": "Ezek a fájlok egyeznek az ellenőrző összegük alapján",
       "thumbnail_generation_job": "Bélyegképek Generálása",
       "thumbnail_generation_job_description":
@@ -5107,7 +5112,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotórács",
     "asset_offline": "Elem Offline",
     "asset_offline_description":
-        "Ez a külső elem már nem elérhető a lemezen. Kérlek, lépj kapcsolatba az Curator Photos adminisztrátorával.",
+        "Ez a külső elem már nem elérhető a lemezen. Kérlek, lépj kapcsolatba az Personal Cloud Photos adminisztrátorával.",
     "asset_restored_successfully": "Elem sikeresen helyreállítva",
     "asset_skipped": "Kihagyva",
     "asset_skipped_in_trash": "Lomtárban",
@@ -5122,7 +5127,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, other {# elem}} hozzáadva {hasName, select, true {a(z) <b>{name}</b>} other {az új}} albumhoz",
     "assets_count": "{count, plural, other {# elem}}",
     "assets_deleted_permanently": "{count} elem véglegesen törölve",
-    "assets_deleted_permanently_from_server": "{count} elem véglegesen törölve az Curator Photos szerverről",
+    "assets_deleted_permanently_from_server": "{count} elem véglegesen törölve az Personal Cloud Photos szerverről",
     "assets_moved_to_trash_count": "{count, plural, other {# elem}} áthelyezve a lomtárba",
     "assets_permanently_deleted_count": "{count, plural, other {# elem}} véglegesen törölve",
     "assets_removed_count": "{count, plural, other {# elem}} eltávolítva",
@@ -5133,7 +5138,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} elem sikeresen helyreállítva",
     "assets_trashed": "{count} elem lomtárba helyezve",
     "assets_trashed_count": "{count, plural, other {# elem}} a lomtárba helyezve",
-    "assets_trashed_from_server": "{count} elem lomtárba helyezve az Curator Photos szerveren",
+    "assets_trashed_from_server": "{count} elem lomtárba helyezve az Personal Cloud Photos szerveren",
     "assets_were_part_of_album_count": "{count, plural, other {# elem}} már eleve szerepelt az albumban",
     "authorized_devices": "Engedélyezett Eszközök",
     "automatic_endpoint_switching_subtitle":
@@ -5143,7 +5148,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Vissza, bezárás, vagy kijelölés törlése",
     "background_location_permission": "Háttérben történő helymeghatározási engedély",
     "background_location_permission_content":
-        "Hálózatok automatikus váltásához az Curator Photos-nek *mindenképpen* hozzá kell férnie a pontos helyzethez, hogy az alkalmazás le tudja kérni a Wi-Fi hálózat nevét",
+        "Hálózatok automatikus váltásához az Personal Cloud Photos-nek *mindenképpen* hozzá kell férnie a pontos helyzethez, hogy az alkalmazás le tudja kérni a Wi-Fi hálózat nevét",
     "backup_album_selection_page_albums_device": "Ezen az eszközön lévő albumok ({count})",
     "backup_album_selection_page_albums_tap": "Koppints a hozzáadáshoz, duplán koppints az eltávolításhoz",
     "backup_album_selection_page_assets_scatter":
@@ -5166,7 +5171,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Beállítások megnyitása",
     "backup_controller_page_background_battery_info_link": "Mutasd meg hogyan",
     "backup_controller_page_background_battery_info_message":
-        "A sikeres háttérben történő mentéshez kérjük, tiltsd le az Curator Photos akkumulátor optimalizálását.\n\nMivel ezt a különféle eszközökön máshogy kell, ezért kérjük, az eszközöd gyártójától tudd meg, hogyan kell.",
+        "A sikeres háttérben történő mentéshez kérjük, tiltsd le az Personal Cloud Photos akkumulátor optimalizálását.\n\nMivel ezt a különféle eszközökön máshogy kell, ezért kérjük, az eszközöd gyártójától tudd meg, hogyan kell.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Akkumulátor optimalizálás",
     "backup_controller_page_background_charging": "Csak töltés közben",
@@ -5224,7 +5229,7 @@ class CodegenLoader extends AssetLoader {
         "Biztosan meg szeretnél tartani {count, plural, other {# egyező elemet}}? Ez a művelet az elemek törlése nélkül megszünteti az összes duplikált csoportosítást.",
     "bulk_trash_duplicates_confirmation":
         "Biztosan kitörölsz {count, plural, one {# duplikált fájlt} other {# duplikált fájlt}}? Ez a művelet megtartja minden csoportból a legnagyobb méretű elemet, és kitöröl minden másik duplikáltat.",
-    "buy": "Curator Photos Megvásárlása",
+    "buy": "Personal Cloud Photos Megvásárlása",
     "cache_settings_album_thumbnails": "Képtár oldalankénti bélyegképei ({} elem)",
     "cache_settings_clear_cache_button": "Gyorsítótár kiürítése",
     "cache_settings_clear_cache_button_title":
@@ -5237,7 +5242,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Megosztott album bélyegképei",
     "cache_settings_statistics_thumbnail": "Bélyegképek",
     "cache_settings_statistics_title": "Gyorsítótár használata",
-    "cache_settings_subtitle": "Az Curator Photos mobilalkalmazás gyorsítótár viselkedésének beállítása",
+    "cache_settings_subtitle": "Az Personal Cloud Photos mobilalkalmazás gyorsítótár viselkedésének beállítása",
     "cache_settings_thumbnail_size": "Bélyegkép gyorsítótár mérete ({} elem)",
     "cache_settings_tile_subtitle": "Helyi tárhely viselkedésének beállítása",
     "cache_settings_tile_title": "Helyi Tárhely",
@@ -5315,7 +5320,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontextus",
     "continue": "Folytatás",
     "control_bottom_app_bar_create_new_album": "Új album létrehozása",
-    "control_bottom_app_bar_delete_from_immich": "Törlés az Curator Photos-ből",
+    "control_bottom_app_bar_delete_from_immich": "Törlés az Personal Cloud Photos-ből",
     "control_bottom_app_bar_delete_from_local": "Törlés az eszközről",
     "control_bottom_app_bar_edit_location": "Hely Módosítása",
     "control_bottom_app_bar_edit_time": "Dátum és Idő Módosítása",
@@ -5379,12 +5384,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Törlés",
     "delete_album": "Album törlése",
     "delete_api_key_prompt": "Biztosan törölni szeretnéd ezt az API kulcsot?",
-    "delete_dialog_alert": "Ezek az elemek véglegesen törölve lesznek Curator Photos-ről és az eszközödről is",
+    "delete_dialog_alert": "Ezek az elemek véglegesen törölve lesznek Personal Cloud Photos-ről és az eszközödről is",
     "delete_dialog_alert_local":
-        "Ezek az elemek véglegesen törölve lesznek az eszközödről, de továbbra is elérhetőek maradnak az Curator Photos szerveren",
+        "Ezek az elemek véglegesen törölve lesznek az eszközödről, de továbbra is elérhetőek maradnak az Personal Cloud Photos szerveren",
     "delete_dialog_alert_local_non_backed_up":
-        "Néhány elem nem lett elmentve az Curator Photos szerverre és most véglegesen törölve lesznek az eszközödről is",
-    "delete_dialog_alert_remote": "Ezek az elemek véglegesen törlésre kerülnek az Curator Photos szerverről",
+        "Néhány elem nem lett elmentve az Personal Cloud Photos szerverre és most véglegesen törölve lesznek az eszközödről is",
+    "delete_dialog_alert_remote": "Ezek az elemek véglegesen törlésre kerülnek az Personal Cloud Photos szerverről",
     "delete_dialog_ok_force": "Törlés Mindenképp",
     "delete_dialog_title": "Végleges Törlés",
     "delete_duplicates_confirmation": "Biztosan véglegesen törölni szeretnéd ezeket a duplikátumokat?",
@@ -5436,7 +5441,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Elemek letöltésével kapcsolatos beállítások kezelése",
     "download_started": "Letöltés megkezdve",
     "download_sucess": "Sikeres letöltés",
-    "download_sucess_android": "Média letöltve a DCIM/CuratorPhotos mappába\n",
+    "download_sucess_android": "Média letöltve a DCIM/PersonalCloudPhotos mappába\n",
     "download_waiting_to_retry": "Várakozás",
     "downloading": "Letöltés",
     "downloading_asset_filename": "{filename} elem letöltése",
@@ -5471,7 +5476,7 @@ class CodegenLoader extends AssetLoader {
     "editor_crop_tool_h2_rotation": "Forgatás",
     "empty_trash": "Lomtár ürítése",
     "empty_trash_confirmation":
-        "Biztosan kiüríted a lomtárat? Ez az Curator Photos lomtárában lévő összes elemet véglegesen törli.\nEz a művelet nem visszavonható!",
+        "Biztosan kiüríted a lomtárat? Ez az Personal Cloud Photos lomtárában lévő összes elemet véglegesen törli.\nEz a művelet nem visszavonható!",
     "enable": "Engedélyezés",
     "enabled": "Engedélyezve",
     "end_date": "Vég dátum",
@@ -5703,7 +5708,8 @@ class CodegenLoader extends AssetLoader {
     "host": "Kiszolgáló",
     "hour": "Óra",
     "ignore_icloud_photos": "iCloud fotók figyelmen kívül hagyása",
-    "ignore_icloud_photos_description": "Az iCloud-ban tárolt fotók nem lesznek feltöltve az Curator Photos szerverre",
+    "ignore_icloud_photos_description":
+        "Az iCloud-ban tárolt fotók nem lesznek feltöltve az Personal Cloud Photos szerverre",
     "image": "Kép",
     "image_alt_text_date": "{isVideo, select, true {Videó} other {Kép}} készítési dátuma: {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Videó} other {Kép}} vele: {person1} (készült {date})",
@@ -5726,8 +5732,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Letöltés Megkezdődött",
     "image_viewer_page_state_provider_download_success": "Letöltés Sikeres",
     "image_viewer_page_state_provider_share_error": "Megosztás Hiba",
-    "immich_logo": "Curator Photos Logó",
-    "immich_web_interface": "Curator Photos Webes Felület",
+    "immich_logo": "Personal Cloud Photos Logó",
+    "immich_web_interface": "Personal Cloud Photos Webes Felület",
     "import_from_json": "Importálás JSON formátumból",
     "import_path": "Importálási útvonal",
     "in_albums": "{count, plural, one {# albumban} other {# albumban}}",
@@ -5787,7 +5793,7 @@ class CodegenLoader extends AssetLoader {
         "Az alkalmazés ezen az URL címen fogja elérni a szervert, ha a megadott WiFi hálózathoz van csatlankozva",
     "location_permission": "Helymeghatározási engedély",
     "location_permission_content":
-        "Hálózatok automatikus váltásához az Curator Photos-nek *mindenképpen* hozzá kell férnie a pontos helyzethez, hogy az alkalmazás le tudja kérni a Wi-Fi hálózat nevét",
+        "Hálózatok automatikus váltásához az Personal Cloud Photos-nek *mindenképpen* hozzá kell férnie a pontos helyzethez, hogy az alkalmazás le tudja kérni a Wi-Fi hálózat nevét",
     "location_picker_choose_on_map": "Válassz a térképen",
     "location_picker_latitude_error": "Érvényes szélességi kört írj be",
     "location_picker_latitude_hint": "Ide írd a szélességi kört",
@@ -5939,7 +5945,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Értesítések",
     "notifications_setting_description": "Értesítések kezelése",
     "oauth": "OAuth",
-    "official_immich_resources": "Hivatalos Curator Photos Források",
+    "official_immich_resources": "Hivatalos Personal Cloud Photos Források",
     "offline": "Offline",
     "offline_paths": "Offline útvonalak",
     "offline_paths_description":
@@ -6010,11 +6016,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Vágjunk bele",
     "permission_onboarding_go_to_settings": "Beállítások megnyitása",
     "permission_onboarding_permission_denied":
-        "Hozzáférés megtagadva. Az Curator Photos használatához engedélyezni kell a fotó és videó hozzáférést a Beállításokban.",
+        "Hozzáférés megtagadva. Az Personal Cloud Photos használatához engedélyezni kell a fotó és videó hozzáférést a Beállításokban.",
     "permission_onboarding_permission_granted": "Hozzáférés engedélyezve! Minden készen áll.",
     "permission_onboarding_permission_limited":
-        "Korlátozott hozzáférés. Ha szeretnéd, hogy az Curator Photos a teljes galéria gyűjteményedet mentse és kezelje, akkor a Beállításokban engedélyezd a fotó és videó jogosultságokat.",
-    "permission_onboarding_request": "Engedélyezni kell, hogy az Curator Photos hozzáférjen a képeidhez és videóidhoz",
+        "Korlátozott hozzáférés. Ha szeretnéd, hogy az Personal Cloud Photos a teljes galéria gyűjteményedet mentse és kezelje, akkor a Beállításokban engedélyezd a fotó és videó jogosultságokat.",
+    "permission_onboarding_request":
+        "Engedélyezni kell, hogy az Personal Cloud Photos hozzáférjen a képeidhez és videóidhoz",
     "person": "Személy",
     "person_birthdate": "Született: {date}",
     "person_hidden": "{name}{hidden, select, true { (rejtett)} other {}}",
@@ -6055,12 +6062,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Nyilvános album",
     "public_share": "Nyilvános Megosztás",
     "purchase_account_info": "Támogató",
-    "purchase_activated_subtitle": "Köszönjük, hogy támogattad az Curator Photos-et és a nyílt forráskódú szoftvereket",
+    "purchase_activated_subtitle":
+        "Köszönjük, hogy támogattad az Personal Cloud Photos-et és a nyílt forráskódú szoftvereket",
     "purchase_activated_time": "Aktiválva ekkor: {date}",
     "purchase_activated_title": "Kulcs sikeresen aktiválva",
     "purchase_button_activate": "Aktiválás",
     "purchase_button_buy": "Vásárlás",
-    "purchase_button_buy_immich": "Vásárold meg az Curator Photos-et",
+    "purchase_button_buy_immich": "Vásárold meg az Personal Cloud Photos-et",
     "purchase_button_never_show_again": "Soha többé ne mutassa",
     "purchase_button_reminder": "Emlékeztessen 30 nap múlva",
     "purchase_button_remove_key": "Kulcs eltávolítása",
@@ -6070,13 +6078,14 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Támogató állapot",
     "purchase_individual_title": "Magánszemély",
     "purchase_input_suggestion": "Van egy termékkulcsod? Add meg a kulcsot alább",
-    "purchase_license_subtitle": "Az Curator Photos megvásárlásával támogasd a szolgáltatás folyamatos fejlesztését",
+    "purchase_license_subtitle":
+        "Az Personal Cloud Photos megvásárlásával támogasd a szolgáltatás folyamatos fejlesztését",
     "purchase_lifetime_description": "Élettartamra szóló vásárlás",
     "purchase_option_title": "VÁSÁRLÁSI LEHETŐSÉGEK",
     "purchase_panel_info_1":
-        "Az Curator Photos készítése sok időt és erőfeszítést igényel, ezért főállásban foglalkoztatunk szoftvermérnököket, hogy annyira jó programmá tegyük, amennyire csak lehet. Küldetésünk, hogy a nyílt forráskódú szoftver és etikus üzleti gyakorlat fenntartható bevételi forrás legyen a fejlesztőknek, és hogy létrehozzunk egy magánszférát tiszteletben tartó ökoszisztémát, ami valódi alternatíváját jelenti a felhasználókat kizsákmányoló felhőalapú szolgáltatásoknak.",
+        "Az Personal Cloud Photos készítése sok időt és erőfeszítést igényel, ezért főállásban foglalkoztatunk szoftvermérnököket, hogy annyira jó programmá tegyük, amennyire csak lehet. Küldetésünk, hogy a nyílt forráskódú szoftver és etikus üzleti gyakorlat fenntartható bevételi forrás legyen a fejlesztőknek, és hogy létrehozzunk egy magánszférát tiszteletben tartó ökoszisztémát, ami valódi alternatíváját jelenti a felhasználókat kizsákmányoló felhőalapú szolgáltatásoknak.",
     "purchase_panel_info_2":
-        "Mivel elkötelezettek vagyunk amellett, hogy ne vezessünk be csak pénzért elérhető extrákat, ezért ez a vásárlás nem biztosít új funkciókat az Curator Photos-ben. Az Curator Photos folyamatos fejlesztését az olyan felhasználók támogatására építjük mint Te.",
+        "Mivel elkötelezettek vagyunk amellett, hogy ne vezessünk be csak pénzért elérhető extrákat, ezért ez a vásárlás nem biztosít új funkciókat az Personal Cloud Photos-ben. Az Personal Cloud Photos folyamatos fejlesztését az olyan felhasználók támogatására építjük mint Te.",
     "purchase_panel_title": "Támogasd a projektet",
     "purchase_per_server": "Szerverenként",
     "purchase_per_user": "Felhasználónként",
@@ -6291,7 +6300,7 @@ class CodegenLoader extends AssetLoader {
         "A szerverről történő videólejátszás során az eredeti videó lejátszása még akkor is, ha van optimalizált, átkódolt verzió. Akadozó lejátszást eredményezhet. A helyi eszközön eleve elérhető videókat mindenképpen eredeti minőségben játszuk le.",
     "setting_video_viewer_original_video_title": "Eredeti videó lejátszása",
     "settings": "Beállítások",
-    "settings_require_restart": "Ennek a beállításnak az érvénybe lépéséhez indítsd újra az Curator Photos-et",
+    "settings_require_restart": "Ennek a beállításnak az érvénybe lépéséhez indítsd újra az Personal Cloud Photos-et",
     "settings_saved": "Beállítások elmentve",
     "setup_pin_code": "PIN kód beállítása",
     "share": "Megosztás",
@@ -6416,14 +6425,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Támogatás",
     "support_and_feedback": "Támogatás és Visszajelzés",
     "support_third_party_description":
-        "Az Curator Photos telepítésedet egy harmadik fél csomagolta. Mivel elképzelhető, hogy az esetlegesen felmerülő problémákat ez a csomag okozza, ezért kérjük, először velük közöld a problémákat az alábbi linkek segítségével.",
+        "Az Personal Cloud Photos telepítésedet egy harmadik fél csomagolta. Mivel elképzelhető, hogy az esetlegesen felmerülő problémákat ez a csomag okozza, ezért kérjük, először velük közöld a problémákat az alábbi linkek segítségével.",
     "swap_merge_direction": "Egyesítés irányának megfordítása",
     "sync": "Szinkronizálás",
     "sync_albums": "Albumok szinkronizálása",
     "sync_albums_manual_subtitle":
-        "Összes fotó és videó létrehozása és szinkronizálása a kiválasztott Curator Photos albumokba",
+        "Összes fotó és videó létrehozása és szinkronizálása a kiválasztott Personal Cloud Photos albumokba",
     "sync_upload_album_setting_subtitle":
-        "Fotók és videók létrehozása és szinkronizálása a kiválasztott Curator Photos albumba",
+        "Fotók és videók létrehozása és szinkronizálása a kiválasztott Personal Cloud Photos albumba",
     "tag": "Címke",
     "tag_assets": "Elemek címkézése",
     "tag_created": "Létrehozott címke: {tag}",
@@ -6474,7 +6483,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Itt lesznek láthatóak a lomtárba tett képek és videók.",
     "trash_page_delete_all": "Mindet Töröl",
     "trash_page_empty_trash_dialog_content":
-        "Ki szeretnéd üríteni a lomtárban lévő elemeket? Ezeket véglegesen eltávolítjuk az Curator Photos-ből",
+        "Ki szeretnéd üríteni a lomtárban lévő elemeket? Ezeket véglegesen eltávolítjuk az Personal Cloud Photos-ből",
     "trash_page_info": "A Lomátrba helyezett elemek {days} nap után véglegesen törlődnek",
     "trash_page_no_assets": "A Lomtár üres",
     "trash_page_restore_all": "Mindet Visszaállít",
@@ -6519,7 +6528,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Hibák",
     "upload_status_uploaded": "Feltöltve",
     "upload_success": "Feltöltés sikeres, frissítsd az oldalt az újonnan feltöltött elemek megtekintéséhez.",
-    "upload_to_immich": "Feltöltés Curator Photos-be ({count})",
+    "upload_to_immich": "Feltöltés Personal Cloud Photos-be ({count})",
     "uploading": "Feltöltés folyamatban",
     "usage": "Használat",
     "use_current_connection": "Jelenlegi kapcsolat használata",
@@ -6545,7 +6554,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Verzió",
     "version_announcement_closing": "Barátsággal, Alex",
     "version_announcement_message":
-        "Szia! Az Curator Photos-nek elérhető egy új verziója. Kérjük, szánj időt a <link>verzióinformáció</link> elolvasására, hogy meggyőződj róla, hogy a beállításaid naprakészek, így elkerülj egy esetleges félrekonfigurálást. Különösen, ha WatchTower-t vagy más automatikus frissítési megoldást használsz.",
+        "Szia! Az Personal Cloud Photos-nek elérhető egy új verziója. Kérjük, szánj időt a <link>verzióinformáció</link> elolvasására, hogy meggyőződj róla, hogy a beállításaid naprakészek, így elkerülj egy esetleges félrekonfigurálást. Különösen, ha WatchTower-t vagy más automatikus frissítési megoldást használsz.",
     "version_announcement_overlay_release_notes": "kiadási megjegyzések áttekintésére",
     "version_announcement_overlay_text_1": "Szia barátom, ennek az alkalmazásnak van egy új verziója: ",
     "version_announcement_overlay_text_2": "Kérjük, szánj időt a",
@@ -6581,7 +6590,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Figyelmeztetés",
     "week": "Hét",
     "welcome": "Üdvözlünk",
-    "welcome_to_immich": "Üdvözlünk az Curator Photos-ben",
+    "welcome_to_immich": "Üdvözlünk az Personal Cloud Photos-ben",
     "wifi_name": "WiFi Neve",
     "wrong_pin_code": "Hibás PIN kód",
     "year": "Év",
@@ -6695,7 +6704,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {# pridėtas} few {# pridėti} other {# pridėta}} prie mėgstamiausių",
     "admin": {
       "asset_offline_description":
-          "Šis išorinės bibliotekos elementas nebepasiekiamas diske ir buvo perkeltas į šiukšliadėžę. Jei failas buvo perkeltas toje pačioje bibliotekoje, laiko skalėje rasite naują atitinkamą elementą. Jei norite šį elementą atkurti, įsitikinkite, kad Curator Photos gali pasiekti failą žemiau nurodytu adresu, ir suvykdykite bibliotekos skanavimą.",
+          "Šis išorinės bibliotekos elementas nebepasiekiamas diske ir buvo perkeltas į šiukšliadėžę. Jei failas buvo perkeltas toje pačioje bibliotekoje, laiko skalėje rasite naują atitinkamą elementą. Jei norite šį elementą atkurti, įsitikinkite, kad Personal Cloud Photos gali pasiekti failą žemiau nurodytu adresu, ir suvykdykite bibliotekos skanavimą.",
       "authentication_settings": "Autentifikavimo nustatymai",
       "authentication_settings_description": "Tvarkyti slaptažodžių, OAuth ir kitus autentifikavimo nustatymus",
       "authentication_settings_disable_all":
@@ -6712,7 +6721,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigūracija nustatyta pagal konfigūracinį failą",
       "confirm_delete_library": "Ar tikrai norite ištrinti {library} biblioteką?",
       "confirm_delete_library_assets":
-          "Ar tikrai norite ištrinti šią biblioteką? Šis veiksmas ištrins {count, plural, one {# contained asset} other {all # contained assets}} iš Curator Photos ir negali būti grąžintas. Failai liks diske.",
+          "Ar tikrai norite ištrinti šią biblioteką? Šis veiksmas ištrins {count, plural, one {# contained asset} other {all # contained assets}} iš Personal Cloud Photos ir negali būti grąžintas. Failai liks diske.",
       "confirm_email_below": "Patvirtinimui įveskite \"{email}\" žemiau",
       "confirm_reprocess_all_faces":
           "Ar tikrai norite iš naujo apdoroti visus veidus? Tai taip pat ištrins įvardytus asmenis.",
@@ -6821,7 +6830,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Įgalinti žemėlapio funkcijas",
       "map_gps_settings": "Žemėlapio ir GPS nustatymai",
       "map_gps_settings_description": "Tvarkyti žemėlapio ir GPS (atvirkštinio geokodavimo) nustatymus",
-      "map_implications": "Žemėlapio funkcija naudojasi išoriniu plytelių servisu (tiles.curatorphotos.cloud)",
+      "map_implications": "Žemėlapio funkcija naudojasi išoriniu plytelių servisu (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Šviesioji tema",
       "map_manage_reverse_geocoding_settings": "Tvarkyti <link>atvirkštinio geokodavimo</link> nustatymus",
       "map_reverse_geocoding": "Atvirkštinis geokodavimas",
@@ -6847,8 +6856,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "PASTABA: Vėliau to pakeisti negalima!",
       "notification_email_from_address": "Iš adreso",
       "notification_email_from_address_description":
-          "Siuntėjo elektroninis adresas, pavyzdžiui: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "Elektroninio pašto serverio savininkas (pvz. smtp.curatorphotos.app)",
+          "Siuntėjo elektroninis adresas, pavyzdžiui: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description":
+          "Elektroninio pašto serverio savininkas (pvz. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Nepaisyti sertifikatų klaidų",
       "notification_email_ignore_certificate_errors_description":
           "Nepaisyti TLS sertifikato patvirtinimo klaidų (nerekomenduojama)",
@@ -7003,7 +7013,7 @@ class CodegenLoader extends AssetLoader {
     "asset_filename_is_offline": "Elementas {filename} nepasiekiamas",
     "asset_offline": "Elementas nepasiekiamas",
     "asset_offline_description":
-        "Šis išorinis elementas neberandamas diske. Dėl pagalbos susisiekite su savo Curator Photos administratoriumi.",
+        "Šis išorinis elementas neberandamas diske. Dėl pagalbos susisiekite su savo Personal Cloud Photos administratoriumi.",
     "asset_restored_successfully": "Asset restored successfully",
     "asset_uploaded": "Įkelta",
     "asset_uploading": "Įkeliama...",
@@ -7040,7 +7050,7 @@ class CodegenLoader extends AssetLoader {
         "Ar tikrai norite palikti visus {count, plural, one {# besidubliuojantį elementą} few {# besidubliuojančius elementus} other {# besidubliuojančių elementų}}? Tokiu būdu nieko netrinant bus sutvarkytos visos dublikatų grupės.",
     "bulk_trash_duplicates_confirmation":
         "Ar tikrai norite perkelti į šiukšliadėžę visus {count, plural, one {# besidubliuojantį elementą} few {# besidubliuojančius elementus} other {# besidubliuojančių elementų}}? Bus paliktas didžiausias kiekvienos grupės elementas ir į šiukšliadėžę perkelti kiti besidubliuojantys elementai.",
-    "buy": "Įsigyti Curator Photos",
+    "buy": "Įsigyti Personal Cloud Photos",
     "camera": "Fotoaparatas",
     "camera_brand": "Fotoaparato prekės ženklas",
     "camera_model": "Fotoaparato modelis",
@@ -7285,7 +7295,7 @@ class CodegenLoader extends AssetLoader {
         "If this is your first time using the app, please make sure to choose a backup album(s) so that the timeline can populate photos and videos in the album(s).",
     "hour": "Valanda",
     "image": "Nuotrauka",
-    "immich_logo": "Curator Photos logotipas",
+    "immich_logo": "Personal Cloud Photos logotipas",
     "import_from_json": "Importuoti iš JSON",
     "import_path": "Importavimo kelias",
     "in_archive": "Archyve",
@@ -7322,7 +7332,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "Kraunama",
     "loading_search_results_failed": "Nepavyko užkrauti paieškos rezultatų",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "log_out": "Atsijungti",
     "log_out_all_devices": "Atsijungti iš visų įrenginių",
     "logged_out_all_devices": "Atsijungta iš visų įrenginių",
@@ -7394,7 +7404,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Pranešimai",
     "notifications_setting_description": "Tvarkyti pranešimus",
     "oauth": "OAuth",
-    "official_immich_resources": "Oficialūs Curator Photos ištekliai",
+    "official_immich_resources": "Oficialūs Personal Cloud Photos ištekliai",
     "offline": "Neprisijungęs",
     "oldest_first": "Seniausias pirmas",
     "onboarding_welcome_user": "Sveiki atvykę, {user}",
@@ -7445,12 +7455,12 @@ class CodegenLoader extends AssetLoader {
     "profile_picture_set": "Profilio nuotrauka nustatyta.",
     "public_album": "Viešas albumas",
     "purchase_account_info": "Rėmėjas",
-    "purchase_activated_subtitle": "Dėkojame, kad remiate Curator Photos ir atviro kodo programinę įrangą",
+    "purchase_activated_subtitle": "Dėkojame, kad remiate Personal Cloud Photos ir atviro kodo programinę įrangą",
     "purchase_activated_time": "Suaktyvinta {date}",
     "purchase_activated_title": "Jūsų raktas sėkmingai aktyvuotas",
     "purchase_button_activate": "Aktyvuoti",
     "purchase_button_buy": "Pirkti",
-    "purchase_button_buy_immich": "Pirkti Curator Photos",
+    "purchase_button_buy_immich": "Pirkti Personal Cloud Photos",
     "purchase_button_never_show_again": "Niekada daugiau nerodyti",
     "purchase_button_reminder": "Priminti man po 30 dienų",
     "purchase_button_remove_key": "Pašalinti produkto rakta",
@@ -7459,13 +7469,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_1": "Asmeniui",
     "purchase_individual_description_2": "Rėmėjo statusas",
     "purchase_input_suggestion": "Turite produkto raktą? Įveskite jį žemiau",
-    "purchase_license_subtitle": "Įsigykite „Curator Photos“, kad palaikytumėte tolesnį paslaugos vystymą",
+    "purchase_license_subtitle": "Įsigykite „Personal Cloud Photos“, kad palaikytumėte tolesnį paslaugos vystymą",
     "purchase_lifetime_description": "Pirkimas visam gyvenimui",
     "purchase_option_title": "PIRKIMO PASIRINKIMAS",
     "purchase_panel_info_1":
-        "„Curator Photos“ kūrimas užima daug laiko ir pastangų, o visą darbo dieną dirba inžinieriai, kad jis būtų kuo geresnis. Mūsų misija yra, kad atvirojo kodo programinė įranga ir etiška verslo praktika taptų tvariu kūrėjų pajamų šaltiniu ir sukurtų privatumą gerbiančią ekosistemą su realiomis alternatyvomis išnaudojamoms debesijos paslaugoms.",
+        "„Personal Cloud Photos“ kūrimas užima daug laiko ir pastangų, o visą darbo dieną dirba inžinieriai, kad jis būtų kuo geresnis. Mūsų misija yra, kad atvirojo kodo programinė įranga ir etiška verslo praktika taptų tvariu kūrėjų pajamų šaltiniu ir sukurtų privatumą gerbiančią ekosistemą su realiomis alternatyvomis išnaudojamoms debesijos paslaugoms.",
     "purchase_panel_info_2":
-        "Kadangi esame įsipareigoję nepridėti mokamų sienų, šis pirkinys nesuteiks jums jokių papildomų „Curator Photos“ funkcijų. Mes tikime, kad tokie naudotojai kaip jūs palaikys nuolatinį „Curator Photos“ vystymąsi.",
+        "Kadangi esame įsipareigoję nepridėti mokamų sienų, šis pirkinys nesuteiks jums jokių papildomų „Personal Cloud Photos“ funkcijų. Mes tikime, kad tokie naudotojai kaip jūs palaikys nuolatinį „Personal Cloud Photos“ vystymąsi.",
     "purchase_panel_title": "Palaikykite projektą",
     "purchase_per_server": "Vienam serveriui",
     "purchase_per_user": "Vienam naudotojui",
@@ -7603,7 +7613,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_notify_never": "niekada",
     "setting_notifications_single_progress_subtitle": "Detali įkėlimo progreso informacija kiekvienam elementui",
     "settings": "Nustatymai",
-    "settings_require_restart": "Prašome perkrauti Curator Photos, siekiant pritaikyti šį nustatymą",
+    "settings_require_restart": "Prašome perkrauti Personal Cloud Photos, siekiant pritaikyti šį nustatymą",
     "settings_saved": "Nustatymai išsaugoti",
     "setup_pin_code": "Nustatyti PIN kodą",
     "share": "Dalintis",
@@ -7685,7 +7695,7 @@ class CodegenLoader extends AssetLoader {
     "sync": "Sinchronizuoti",
     "sync_albums": "Sinchronizuoti albumus",
     "sync_upload_album_setting_subtitle":
-        "Sukurti ir įkelti jūsų nuotraukas ir vaizdo įrašus į pasirinktus Curator Photos albumus",
+        "Sukurti ir įkelti jūsų nuotraukas ir vaizdo įrašus į pasirinktus Personal Cloud Photos albumus",
     "tag": "Žyma",
     "tag_created": "Sukurta žyma: {tag}",
     "tag_feature_description": "Peržiūrėkite nuotraukas ir vaizdo įrašus sugrupuotus pagal sužymėtas temas",
@@ -7714,7 +7724,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Į šiukšliadėžę perkeltos nuotraukos ir vaizdo įrašai bus rodomi čia.",
     "trash_page_delete_all": "Ištrinti Visus",
     "trash_page_empty_trash_dialog_content":
-        "Ar norite ištrinti išmestus elementus? Šie elementai bus visam laikui pašalinti iš Curator Photos",
+        "Ar norite ištrinti išmestus elementus? Šie elementai bus visam laikui pašalinti iš Personal Cloud Photos",
     "trash_page_no_assets": "Nėra išmestų elementų",
     "trash_page_restore_all": "Atkurti Visus",
     "trashed_items_will_be_permanently_deleted_after":
@@ -7752,7 +7762,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Klaidos",
     "upload_status_uploaded": "Įkelta",
     "upload_success": "Įkėlimas pavyko, norėdami pamatyti naujai įkeltus elementus perkraukite puslapį.",
-    "upload_to_immich": "Įkelti į Curator Photos ({count})",
+    "upload_to_immich": "Įkelti į Personal Cloud Photos ({count})",
     "uploading": "Įkeliama",
     "usage": "Naudojymas",
     "use_biometric": "Naudoti biometriją",
@@ -7778,7 +7788,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versija",
     "version_announcement_closing": "Tavo draugas, Alex",
     "version_announcement_message":
-        "Sveiki! Nauja „Curator Photos“ versija yra pasiekiama. Prašome skirti šiek tiek laiko perskaityti <link>leidimo pastabas</link>, kad įsitikintumėte, jog jūsų nustatymai yra atnaujinti. Tai padės išvengti netinkamo sukonfigūravimo, ypač jei naudojate „WatchTower“ ar kitą mechanizmą, kuris automatiškai atnaujina jūsų „Curator Photos“ serverį.",
+        "Sveiki! Nauja „Personal Cloud Photos“ versija yra pasiekiama. Prašome skirti šiek tiek laiko perskaityti <link>leidimo pastabas</link>, kad įsitikintumėte, jog jūsų nustatymai yra atnaujinti. Tai padės išvengti netinkamo sukonfigūravimo, ypač jei naudojate „WatchTower“ ar kitą mechanizmą, kuris automatiškai atnaujina jūsų „Personal Cloud Photos“ serverį.",
     "version_history": "Versijų istorija",
     "version_history_item": "Versija {version} įdiegta {date}",
     "video": "Vaizdo įrašas",
@@ -7799,7 +7809,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Įspėjimas",
     "week": "Savaitė",
     "welcome": "Sveiki atvykę",
-    "welcome_to_immich": "Sveiki atvykę į Curator Photos",
+    "welcome_to_immich": "Sveiki atvykę į Personal Cloud Photos",
     "wifi_name": "Wi-Fi Pavadinimas",
     "wrong_pin_code": "Neteisingas PIN kodas",
     "year": "Metai",
@@ -7882,7 +7892,7 @@ class CodegenLoader extends AssetLoader {
           "Uitsluitingspatronen toevoegen. Globbing met *, ** en ? wordt ondersteund. Om alle bestanden in een map met de naam \"Raw\" te negeren, gebruik \"**/Raw/**\". Om alle bestanden die eindigen op \".tif\" te negeren, gebruik \"**/*.tif\". Om een absoluut pad te negeren, gebruik \"/path/to/ignore/**\".",
       "admin_user": "Beheerder gebruiker",
       "asset_offline_description":
-          "Deze asset uit een externe bibliotheek is niet meer beschikbaar op de schijf en is naar de prullenbak verplaatst. Als het bestand binnen de bibliotheek is verplaatst, controleer dan je tijdlijn voor de nieuwe bijbehorende asset. Om dit bestand te herstellen, zorg ervoor dat het onderstaande bestandspad toegankelijk is voor Curator Photos en scan de bibliotheek opnieuw.",
+          "Deze asset uit een externe bibliotheek is niet meer beschikbaar op de schijf en is naar de prullenbak verplaatst. Als het bestand binnen de bibliotheek is verplaatst, controleer dan je tijdlijn voor de nieuwe bijbehorende asset. Om dit bestand te herstellen, zorg ervoor dat het onderstaande bestandspad toegankelijk is voor Personal Cloud Photos en scan de bibliotheek opnieuw.",
       "authentication_settings": "Authenticatie-instellingen",
       "authentication_settings_description": "Wachtwoord, OAuth, en andere authenticatie-instellingen beheren",
       "authentication_settings_disable_all":
@@ -7898,7 +7908,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Instellingen worden momenteel beheerd door een configuratiebestand",
       "confirm_delete_library": "Weet je zeker dat je de bibliotheek {library} wilt verwijderen?",
       "confirm_delete_library_assets":
-          "Weet je zeker dat je deze bibliotheek wilt verwijderen? Hiermee {count, plural, one {wordt # asset} other {worden alle # assets}} uit Curator Photos verwijderd en dit kan niet ongedaan worden gemaakt. Bestanden blijven op de schijf staan.",
+          "Weet je zeker dat je deze bibliotheek wilt verwijderen? Hiermee {count, plural, one {wordt # asset} other {worden alle # assets}} uit Personal Cloud Photos verwijderd en dit kan niet ongedaan worden gemaakt. Bestanden blijven op de schijf staan.",
       "confirm_email_below": "Typ hieronder \"{email}\" ter bevestiging",
       "confirm_reprocess_all_faces":
           "Weet je zeker dat je alle gezichten opnieuw wilt verwerken? Hiermee worden ook alle mensen gewist.",
@@ -8024,7 +8034,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Kaartfuncties inschakelen",
       "map_gps_settings": "Kaart & GPS Instellingen",
       "map_gps_settings_description": "Beheer kaart & GPS (omgekeerde geocodering) instellingen",
-      "map_implications": "De kaartfunctie is afhankelijk van een externe service (tiles.curatorphotos.cloud)",
+      "map_implications": "De kaartfunctie is afhankelijk van een externe service (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Lichte stijl",
       "map_manage_reverse_geocoding_settings": "Beheer <link>omgekeerde geocodering</link> instellingen",
       "map_reverse_geocoding": "Omgekeerde geocodering",
@@ -8051,8 +8061,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "LET OP: Dit kan later niet meer worden gewijzigd!",
       "notification_email_from_address": "Adres afzender",
       "notification_email_from_address_description":
-          "E-mailadres van de afzender, bijvoorbeeld: \"Curator Photos Foto Server <noreply@example.com>\". Zorg ervoor dat je een adres gebruikt waar je e-mails van mag verzenden.",
-      "notification_email_host_description": "Host van de e-mailserver (bijv. smtp.curatorphotos.app)",
+          "E-mailadres van de afzender, bijvoorbeeld: \"Personal Cloud Photos Foto Server <noreply@example.com>\". Zorg ervoor dat je een adres gebruikt waar je e-mails van mag verzenden.",
+      "notification_email_host_description": "Host van de e-mailserver (bijv. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Negeer certificaatfouten",
       "notification_email_ignore_certificate_errors_description":
           "Negeer validatiefouten van TLS-certificaat (niet aanbevolen)",
@@ -8155,9 +8165,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Beheer aangepast sjablonen voor meldingen",
       "theme_custom_css_settings": "Aangepaste CSS",
       "theme_custom_css_settings_description":
-          "Met Cascading Style Sheets kan het ontwerp van Curator Photos worden aangepast.",
+          "Met Cascading Style Sheets kan het ontwerp van Personal Cloud Photos worden aangepast.",
       "theme_settings": "Thema-instellingen",
-      "theme_settings_description": "Beheer het uiterlijk van de Curator Photos webinterface",
+      "theme_settings_description": "Beheer het uiterlijk van de Personal Cloud Photos webinterface",
       "thumbnail_generation_job": "Thumbnail genereren",
       "thumbnail_generation_job_description":
           "Genereer grote, kleine en vervaagde thumbnails voor iedere asset, en genereer thumbnails voor iedere persoon",
@@ -8293,7 +8303,7 @@ class CodegenLoader extends AssetLoader {
         "Sommige apparaten zijn traag met het laden van afbeeldingen die lokaal zijn opgeslagen op het apparaat. Activeer deze instelling om in plaats daarvan externe afbeeldingen te laden.",
     "advanced_settings_prefer_remote_title": "Externe afbeeldingen laden",
     "advanced_settings_proxy_headers_subtitle":
-        "Definieer proxy headers die Curator Photos bij elk netwerkverzoek moet verzenden",
+        "Definieer proxy headers die Personal Cloud Photos bij elk netwerkverzoek moet verzenden",
     "advanced_settings_proxy_headers_title": "Proxy headers",
     "advanced_settings_self_signed_ssl_subtitle":
         "Slaat SSL-certificaatverificatie voor de connectie met de server over. Deze optie is vereist voor zelfondertekende certificaten.",
@@ -8391,7 +8401,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotoraster",
     "asset_offline": "Asset offline",
     "asset_offline_description":
-        "Deze externe asset is niet meer op de schijf te vinden. Neem contact op met de Curator Photos beheerder voor hulp.",
+        "Deze externe asset is niet meer op de schijf te vinden. Neem contact op met de Personal Cloud Photos beheerder voor hulp.",
     "asset_restored_successfully": "Asset succesvol hersteld",
     "asset_skipped": "Overgeslagen",
     "asset_skipped_in_trash": "In prullenbak",
@@ -8408,7 +8418,8 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {# asset} other {# assets}} konden niet aan album toegevoegd worden",
     "assets_count": "{count, plural, one {# asset} other {# assets}}",
     "assets_deleted_permanently": "{count} asset(s) permanent verwijderd",
-    "assets_deleted_permanently_from_server": "{count} asset(s) permanent verwijderd van de Curator Photos server",
+    "assets_deleted_permanently_from_server":
+        "{count} asset(s) permanent verwijderd van de Personal Cloud Photos server",
     "assets_downloaded_failed":
         "{count, plural, one {# bestand gedownload - {error} bestand mislukt} other {# bestanden gedownload - {error} bestanden mislukt}}",
     "assets_downloaded_successfully":
@@ -8423,7 +8434,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} asset(s) succesvol hersteld",
     "assets_trashed": "{count} asset(s) naar de prullenbak verplaatst",
     "assets_trashed_count": "{count, plural, one {# asset} other {# assets}} naar prullenbak verplaatst",
-    "assets_trashed_from_server": "{count} asset(s) naar de prullenbak verplaatst op de Curator Photos server",
+    "assets_trashed_from_server": "{count} asset(s) naar de prullenbak verplaatst op de Personal Cloud Photos server",
     "assets_were_part_of_album_count":
         "{count, plural, one {Asset was} other {Assets waren}} al onderdeel van het album",
     "authorized_devices": "Geautoriseerde apparaten",
@@ -8435,7 +8446,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Terug, sluiten of deselecteren",
     "background_location_permission": "Achtergrond locatie toestemming",
     "background_location_permission_content":
-        "Om van netwerk te wisselen terwijl de app op de achtergrond draait, heeft Curator Photos *altijd* toegang tot de exacte locatie nodig om de naam van het wifi-netwerk te kunnen lezen",
+        "Om van netwerk te wisselen terwijl de app op de achtergrond draait, heeft Personal Cloud Photos *altijd* toegang tot de exacte locatie nodig om de naam van het wifi-netwerk te kunnen lezen",
     "backup_album_selection_page_albums_device": "Albums op apparaat ({count})",
     "backup_album_selection_page_albums_tap": "Tik om in te voegen, dubbel tik om uit te sluiten",
     "backup_album_selection_page_assets_scatter":
@@ -8458,7 +8469,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ga naar instellingen",
     "backup_controller_page_background_battery_info_link": "Laat zien hoe",
     "backup_controller_page_background_battery_info_message":
-        "Voor de beste back-upervaring, schakel je alle batterijoptimalisaties uit omdat deze op-de-achtergrondactiviteiten van Curator Photos beperken.\n\nAangezien dit apparaatspecifiek is, zoek de vereiste informatie op voor de fabrikant van je apparaat.",
+        "Voor de beste back-upervaring, schakel je alle batterijoptimalisaties uit omdat deze op-de-achtergrondactiviteiten van Personal Cloud Photos beperken.\n\nAangezien dit apparaatspecifiek is, zoek de vereiste informatie op voor de fabrikant van je apparaat.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Batterijoptimalisaties",
     "backup_controller_page_background_charging": "Alleen tijdens opladen",
@@ -8521,7 +8532,7 @@ class CodegenLoader extends AssetLoader {
         "Weet je zeker dat je {count, plural, one {# duplicate asset} other {# duplicate assets}} wilt behouden? Dit zal alle groepen met duplicaten oplossen zonder iets te verwijderen.",
     "bulk_trash_duplicates_confirmation":
         "Weet je zeker dat je {count, plural, one {# duplicate asset} other {# duplicate assets}} in bulk naar de prullenbak wilt verplaatsen? Dit zal de grootste asset van elke groep behouden en alle andere duplicaten naar de prullenbak verplaatsen.",
-    "buy": "Curator Photos kopen",
+    "buy": "Personal Cloud Photos kopen",
     "cache_settings_album_thumbnails": "Thumbnails bibliotheekpagina ({} assets)",
     "cache_settings_clear_cache_button": "Cache wissen",
     "cache_settings_clear_cache_button_title":
@@ -8534,7 +8545,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Gedeeld-albumthumbnails",
     "cache_settings_statistics_thumbnail": "Minaturen",
     "cache_settings_statistics_title": "Cachegebruik",
-    "cache_settings_subtitle": "Beheer het cachegedrag van de Curator Photos app",
+    "cache_settings_subtitle": "Beheer het cachegedrag van de Personal Cloud Photos app",
     "cache_settings_thumbnail_size": "Thumbnail-cachegrootte ({} assets)",
     "cache_settings_tile_subtitle": "Beheer het gedrag van lokale opslag",
     "cache_settings_tile_title": "Lokale opslag",
@@ -8620,7 +8631,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Context",
     "continue": "Doorgaan",
     "control_bottom_app_bar_create_new_album": "Nieuw album maken",
-    "control_bottom_app_bar_delete_from_immich": "Verwijderen van Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Verwijderen van Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Verwijderen van apparaat",
     "control_bottom_app_bar_edit_location": "Locatie bewerken",
     "control_bottom_app_bar_edit_time": "Datum & tijd bewerken",
@@ -8687,12 +8698,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Verwijderen",
     "delete_album": "Album verwijderen",
     "delete_api_key_prompt": "Weet je zeker dat je deze API-sleutel wilt verwijderen?",
-    "delete_dialog_alert": "Deze items zullen permanent verwijderd worden van Curator Photos en je apparaat",
+    "delete_dialog_alert": "Deze items zullen permanent verwijderd worden van Personal Cloud Photos en je apparaat",
     "delete_dialog_alert_local":
-        "Deze items worden permanent verwijderd van je apparaat, maar blijven beschikbaar op de Curator Photos server",
+        "Deze items worden permanent verwijderd van je apparaat, maar blijven beschikbaar op de Personal Cloud Photos server",
     "delete_dialog_alert_local_non_backed_up":
-        "Van sommige items is geen back-up gemaakt in Curator Photos en zullen permanent van je apparaat worden verwijderd",
-    "delete_dialog_alert_remote": "Deze items worden permanent verwijderd van de Curator Photos server",
+        "Van sommige items is geen back-up gemaakt in Personal Cloud Photos en zullen permanent van je apparaat worden verwijderd",
+    "delete_dialog_alert_remote": "Deze items worden permanent verwijderd van de Personal Cloud Photos server",
     "delete_dialog_ok_force": "Toch verwijderen",
     "delete_dialog_title": "Permanent verwijderen",
     "delete_duplicates_confirmation": "Weet je zeker dat je deze duplicaten permanent wilt verwijderen?",
@@ -8746,7 +8757,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Beheer instellingen voor het downloaden van assets",
     "download_started": "Download gestart",
     "download_sucess": "Succesvol gedownload",
-    "download_sucess_android": "Het bestand is gedownload naar DCIM/CuratorPhotos",
+    "download_sucess_android": "Het bestand is gedownload naar DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Wachten om opnieuw te proberen",
     "downloading": "Downloaden",
     "downloading_asset_filename": "Asset {filename} downloaden",
@@ -8786,7 +8797,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Deze map is leeg",
     "empty_trash": "Prullenbak leegmaken",
     "empty_trash_confirmation":
-        "Weet je zeker dat je de prullenbak wilt legen? Hiermee worden alle assets in de prullenbak permanent uit Curator Photos verwijderd.\nJe kunt deze actie niet ongedaan maken!",
+        "Weet je zeker dat je de prullenbak wilt legen? Hiermee worden alle assets in de prullenbak permanent uit Personal Cloud Photos verwijderd.\nJe kunt deze actie niet ongedaan maken!",
     "enable": "Inschakelen",
     "enable_biometric_auth_description": "Voer uw pincode in om biometrische authenticatie in te schakelen",
     "enabled": "Ingeschakeld",
@@ -9041,7 +9052,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Negeer iCloud foto's",
     "ignore_icloud_photos_description":
-        "Foto's die op iCloud zijn opgeslagen, worden niet geüpload naar de Curator Photos server",
+        "Foto's die op iCloud zijn opgeslagen, worden niet geüpload naar de Personal Cloud Photos server",
     "image": "Afbeelding",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Afbeelding}} genomen op {date}",
     "image_alt_text_date_1_person":
@@ -9066,8 +9077,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Download gestart",
     "image_viewer_page_state_provider_download_success": "Download succesvol",
     "image_viewer_page_state_provider_share_error": "Error bij delen",
-    "immich_logo": "Curator Photos logo",
-    "immich_web_interface": "Curator Photos Web Interface",
+    "immich_logo": "Personal Cloud Photos logo",
+    "immich_web_interface": "Personal Cloud Photos Web Interface",
     "import_from_json": "Importeren vanuit JSON",
     "import_path": "Import-pad",
     "in_albums": "In {count, plural, one {# album} other {# albums}}",
@@ -9138,7 +9149,7 @@ class CodegenLoader extends AssetLoader {
         "De app maakt verbinding met de server via deze URL wanneer het opgegeven wifi-netwerk wordt gebruikt",
     "location_permission": "Locatietoestemming",
     "location_permission_content":
-        "Om de functie voor automatische serverwissel te gebruiken, heeft Curator Photos toegang tot de exacte locatie nodig om de naam van het huidige wifi-netwerk te kunnen bepalen.",
+        "Om de functie voor automatische serverwissel te gebruiken, heeft Personal Cloud Photos toegang tot de exacte locatie nodig om de naam van het huidige wifi-netwerk te kunnen bepalen.",
     "location_picker_choose_on_map": "Kies op kaart",
     "location_picker_latitude_error": "Voer een geldige breedtegraad in",
     "location_picker_latitude_hint": "Voer hier je breedtegraad in",
@@ -9312,7 +9323,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Meldingen",
     "notifications_setting_description": "Beheer meldingen",
     "oauth": "OAuth",
-    "official_immich_resources": "Officiële Curator Photos bronnen",
+    "official_immich_resources": "Officiële Personal Cloud Photos bronnen",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Oudste eerst",
@@ -9390,11 +9401,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Aan de slag",
     "permission_onboarding_go_to_settings": "Ga naar instellingen",
     "permission_onboarding_permission_denied":
-        "Toestemming geweigerd. Geef toestemming tot foto's en video's in je Instellingen om Curator Photos te kunnen gebruiken.",
+        "Toestemming geweigerd. Geef toestemming tot foto's en video's in je Instellingen om Personal Cloud Photos te kunnen gebruiken.",
     "permission_onboarding_permission_granted": "Toestemming verleend. Je bent helemaal klaar.",
     "permission_onboarding_permission_limited":
-        "Beperkte toestemming. Geef toestemming tot foto's en video's in Instellingen om Curator Photos een back-up te laten maken van je galerij en deze te beheren.",
-    "permission_onboarding_request": "Curator Photos heeft toestemming nodig om je foto's en video's te bekijken.",
+        "Beperkte toestemming. Geef toestemming tot foto's en video's in Instellingen om Personal Cloud Photos een back-up te laten maken van je galerij en deze te beheren.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos heeft toestemming nodig om je foto's en video's te bekijken.",
     "person": "Persoon",
     "person_birthdate": "Geboren op {date}",
     "person_hidden": "{name}{hidden, select, true { (verborgen)} other {}}",
@@ -9443,12 +9455,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Openbaar album",
     "public_share": "Openbare deellink",
     "purchase_account_info": "Supporter",
-    "purchase_activated_subtitle": "Bedankt voor het ondersteunen van Curator Photos en open-source software",
+    "purchase_activated_subtitle": "Bedankt voor het ondersteunen van Personal Cloud Photos en open-source software",
     "purchase_activated_time": "Geactiveerd op {date}",
     "purchase_activated_title": "Je licentiesleutel is succesvol geactiveerd",
     "purchase_button_activate": "Activeren",
     "purchase_button_buy": "Kopen",
-    "purchase_button_buy_immich": "Koop Curator Photos",
+    "purchase_button_buy_immich": "Koop Personal Cloud Photos",
     "purchase_button_never_show_again": "Nooit meer tonen",
     "purchase_button_reminder": "Herinner mij over 30 dagen",
     "purchase_button_remove_key": "Licentiesleutel verwijderen",
@@ -9458,13 +9470,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Supporterstatus",
     "purchase_individual_title": "Gebruiker",
     "purchase_input_suggestion": "Heb je een licentiesleutel? Voer deze hieronder in",
-    "purchase_license_subtitle": "Koop Curator Photos om de verdere ontwikkeling van de service te ondersteunen",
+    "purchase_license_subtitle": "Koop Personal Cloud Photos om de verdere ontwikkeling van de service te ondersteunen",
     "purchase_lifetime_description": "Levenslange aankoop",
     "purchase_option_title": "AANKOOP MOGELIJKHEDEN",
     "purchase_panel_info_1":
-        "Het bouwen van Curator Photos kost veel tijd en moeite, en we hebben fulltime engineers die eraan werken om het zo goed mogelijk te maken. Onze missie is om open-source software en ethische bedrijfspraktijken een duurzame inkomstenbron te laten worden voor ontwikkelaars en een ecosysteem te creëren dat de privacy respecteert met echte alternatieven voor uitbuitende cloudservices.",
+        "Het bouwen van Personal Cloud Photos kost veel tijd en moeite, en we hebben fulltime engineers die eraan werken om het zo goed mogelijk te maken. Onze missie is om open-source software en ethische bedrijfspraktijken een duurzame inkomstenbron te laten worden voor ontwikkelaars en een ecosysteem te creëren dat de privacy respecteert met echte alternatieven voor uitbuitende cloudservices.",
     "purchase_panel_info_2":
-        "Omdat we ons inzetten om geen paywalls toe te voegen, krijg je met deze aankoop geen extra functies in Curator Photos. We vertrouwen op gebruikers zoals jij om de verdere ontwikkeling van Curator Photos te ondersteunen.",
+        "Omdat we ons inzetten om geen paywalls toe te voegen, krijg je met deze aankoop geen extra functies in Personal Cloud Photos. We vertrouwen op gebruikers zoals jij om de verdere ontwikkeling van Personal Cloud Photos te ondersteunen.",
     "purchase_panel_title": "Steun het project",
     "purchase_per_server": "Per server",
     "purchase_per_user": "Per gebruiker",
@@ -9690,7 +9702,7 @@ class CodegenLoader extends AssetLoader {
         "Speel video's altijd in originele kwaliteit af, zelfs als er een getranscodeerd bestand beschikbaar is op de server. Dit kan leiden tot buffering. Video's die lokaal beschikbaar zijn, worden altijd in originele kwaliteit afgespeeld, ongeacht deze instelling.",
     "setting_video_viewer_original_video_title": "Forceer originele videokwaliteit",
     "settings": "Instellingen",
-    "settings_require_restart": "Start Curator Photos opnieuw op om deze instelling toe te passen",
+    "settings_require_restart": "Start Personal Cloud Photos opnieuw op om deze instelling toe te passen",
     "settings_saved": "Instellingen opgeslagen",
     "setup_pin_code": "Stel een PIN code in",
     "share": "Delen",
@@ -9819,14 +9831,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Ondersteuning",
     "support_and_feedback": "Ondersteuning & feedback",
     "support_third_party_description":
-        "Je Curator Photos installatie is door een derde partij samengesteld. Problemen die je ervaart, kunnen door dat pakket veroorzaakt zijn. Meld problemen in eerste instantie bij hen via de onderstaande links.",
+        "Je Personal Cloud Photos installatie is door een derde partij samengesteld. Problemen die je ervaart, kunnen door dat pakket veroorzaakt zijn. Meld problemen in eerste instantie bij hen via de onderstaande links.",
     "swap_merge_direction": "Wissel richting voor samenvoegen om",
     "sync": "Sync",
     "sync_albums": "Albums synchroniseren",
     "sync_albums_manual_subtitle":
         "Synchroniseer alle geüploade video’s en foto’s naar de geselecteerde back-up albums",
     "sync_upload_album_setting_subtitle":
-        "Maak en upload je foto's en video's naar de geselecteerde albums op Curator Photos",
+        "Maak en upload je foto's en video's naar de geselecteerde albums op Personal Cloud Photos",
     "tag": "Tag",
     "tag_assets": "Assets taggen",
     "tag_created": "Tag aangemaakt: {tag}",
@@ -9877,7 +9889,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Hier verschijnen foto's en video's die in de prullenbak zijn geplaatst.",
     "trash_page_delete_all": "Verwijder alle",
     "trash_page_empty_trash_dialog_content":
-        "Wil je de prullenbak leegmaken? Deze items worden permanent verwijderd van Curator Photos",
+        "Wil je de prullenbak leegmaken? Deze items worden permanent verwijderd van Personal Cloud Photos",
     "trash_page_info": "Verwijderde items worden permanent verwijderd na {days} dagen",
     "trash_page_no_assets": "Geen verwijderde assets",
     "trash_page_restore_all": "Herstel alle",
@@ -9925,7 +9937,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Fouten",
     "upload_status_uploaded": "Geüpload",
     "upload_success": "Uploaden gelukt, vernieuw de pagina om de nieuwe assets te zien.",
-    "upload_to_immich": "Uploaden naar Curator Photos ({count})",
+    "upload_to_immich": "Uploaden naar Personal Cloud Photos ({count})",
     "uploading": "Aan het uploaden",
     "url": "URL",
     "usage": "Gebruik",
@@ -9955,7 +9967,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versie",
     "version_announcement_closing": "Je vriend, Alex",
     "version_announcement_message":
-        "Hallo! Er is een nieuwe versie van Curator Photos beschikbaar. Neem even de tijd om de <link>release notes</link> te lezen en zorg ervoor dat je setup up-to-date is om misconfiguraties te voorkomen, vooral als je WatchTower of een andere update-mechanisme gebruikt.",
+        "Hallo! Er is een nieuwe versie van Personal Cloud Photos beschikbaar. Neem even de tijd om de <link>release notes</link> te lezen en zorg ervoor dat je setup up-to-date is om misconfiguraties te voorkomen, vooral als je WatchTower of een andere update-mechanisme gebruikt.",
     "version_announcement_overlay_release_notes": "releaseopmerkingen",
     "version_announcement_overlay_text_1": "Hoi, er is een nieuwe versie beschikbaar van",
     "version_announcement_overlay_text_2": "neem je tijd en bezoek de ",
@@ -9991,7 +10003,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Waarschuwing",
     "week": "Week",
     "welcome": "Welkom",
-    "welcome_to_immich": "Welkom bij Curator Photos",
+    "welcome_to_immich": "Welkom bij Personal Cloud Photos",
     "wifi_name": "WiFi-naam",
     "wrong_pin_code": "Onjuiste pincode",
     "year": "Jaar",
@@ -10037,7 +10049,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Tambahkan corak pengecualian. Globbing menggunakan *, **, dan ? disokong. Untuk mengabaikan semua fail dalam mana-mana direktori bernama \"Raw\", gunakan \"**/Raw/**\". Untuk mengabaikan semua fail yang berakhir dengan \".tif\", gunakan \"**/*.tif\". Untuk mengabaikan laluan mutlak, gunakan \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Aset pustaka luaran ini tidak lagi ditemui pada cakera dan telah dialihkan ke sampah. Jika fail telah dialihkan dalam pustaka, semak garis masa anda untuk aset baharu yang sepadan. Untuk memulihkan aset ini, sila pastikan bahawa laluan fail di bawah boleh diakses oleh Curator Photos dan mengimbas pustaka.",
+          "Aset pustaka luaran ini tidak lagi ditemui pada cakera dan telah dialihkan ke sampah. Jika fail telah dialihkan dalam pustaka, semak garis masa anda untuk aset baharu yang sepadan. Untuk memulihkan aset ini, sila pastikan bahawa laluan fail di bawah boleh diakses oleh Personal Cloud Photos dan mengimbas pustaka.",
       "authentication_settings": "Tetapan Pengesahan",
       "authentication_settings_description": "Urus kata laluan, OAuth dan tetapan pengesahan lain",
       "authentication_settings_disable_all":
@@ -10053,7 +10065,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurasi kini ditetapkan oleh fail konfigurasi",
       "confirm_delete_library": "Adakah anda pasti mahu memadamkan {library}?",
       "confirm_delete_library_assets":
-          "Adakah anda pasti mahu memadamkan pustaka ini? Ini akan memadam {count, plural, one {# aset yang terkandung} other {semua # aset yang terkandung}} daripada Curator Photos dan tidak boleh dibuat asal. Fail akan kekal pada cakera.",
+          "Adakah anda pasti mahu memadamkan pustaka ini? Ini akan memadam {count, plural, one {# aset yang terkandung} other {semua # aset yang terkandung}} daripada Personal Cloud Photos dan tidak boleh dibuat asal. Fail akan kekal pada cakera.",
       "confirm_email_below": "Untuk mengesahkan, sila taip \"{email}\" dibawah",
       "confirm_reprocess_all_faces":
           "Adakah anda pasti mahu memproses semula semua wajah? Ini juga akan membersihkan orang bernama.",
@@ -10181,7 +10193,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Aktifkan ciri peta",
       "map_gps_settings": "Tetapan Peta & GPS",
       "map_gps_settings_description": "Urus Tetapan Peta & GPS (Geokod Terbalik)",
-      "map_implications": "Ciri peta bergantung pada perkhidmatan jubin luaran (tiles.curatorphotos.cloud)",
+      "map_implications": "Ciri peta bergantung pada perkhidmatan jubin luaran (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Tema terang",
       "map_manage_reverse_geocoding_settings": "Urus tetapan <link>Geocoding Songsang</link>",
       "map_reverse_geocoding": "Geokoding Sonsang",
@@ -10206,8 +10218,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Ini tidak boleh diubah kemudian!",
       "notification_email_from_address": "Dari alamat",
       "notification_email_from_address_description":
-          "Alamat e-mel penghantar, sebagai contoh: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "Hos e-mel pelayan (cth. smtp.curatorphotos.app)",
+          "Alamat e-mel penghantar, sebagai contoh: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description": "Hos e-mel pelayan (cth. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Abaikan ralat-ralat sijil",
       "notification_email_ignore_certificate_errors_description":
           "Abaikan ralat pengesahan sijil TLS (tidak disyorkan)",
@@ -10307,9 +10319,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Templat Pemberitahuan",
       "template_settings_description": "Urus templat tersuai untuk pemberitahuan.",
       "theme_custom_css_settings": "CSS tersuai",
-      "theme_custom_css_settings_description": "Lembaran Gaya Lata membolehkan reka bentuk Curator Photos disuaikan.",
+      "theme_custom_css_settings_description":
+          "Lembaran Gaya Lata membolehkan reka bentuk Personal Cloud Photos disuaikan.",
       "theme_settings": "Tetapan Tema",
-      "theme_settings_description": "Urus penyesuaian antara muka web Curator Photos",
+      "theme_settings_description": "Urus penyesuaian antara muka web Personal Cloud Photos",
       "these_files_matched_by_checksum": "Fail ini dipadankan dengan semakan mereka",
       "thumbnail_generation_job": "Jana Imej Kenit",
       "thumbnail_generation_job_description":
@@ -10485,7 +10498,7 @@ class CodegenLoader extends AssetLoader {
           "添加排除规则。支持使用 *、** 和 ? 通配符。比如要忽略任何名为 “Raw” 的文件夹中的所有文件，请使用 “**/Raw/**”；要忽略所有以 “.tif” 结尾的文件，请使用 “**/*.tif”；要忽略绝对路径，请使用 “/path/to/ignore/**”。",
       "admin_user": "管理员用户",
       "asset_offline_description":
-          "磁盘上已找不到此外部库项目，已将其移至回收站。如果文件已在库中移动，请检查时间线中是否有对应项目。要恢复此项目，请确保 Curator Photos 可以访问以下文件路径并执行“扫描库”任务。",
+          "磁盘上已找不到此外部库项目，已将其移至回收站。如果文件已在库中移动，请检查时间线中是否有对应项目。要恢复此项目，请确保 Personal Cloud Photos 可以访问以下文件路径并执行“扫描库”任务。",
       "authentication_settings": "认证设置",
       "authentication_settings_description": "管理密码、OAuth 和其它认证设置",
       "authentication_settings_disable_all": "确定要禁用所有的登录方式？该操作将完全禁止登录。",
@@ -10500,7 +10513,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "当前配置已通过配置文件设置",
       "confirm_delete_library": "确定要删除图库“{library}”吗？",
       "confirm_delete_library_assets":
-          "确定要删除该图库吗？这将删除所有包含在 Curator Photos 中的{count, plural, one {#个项目} other {#个项目}}，且无法撤销。但文件仍将保留在磁盘中。",
+          "确定要删除该图库吗？这将删除所有包含在 Personal Cloud Photos 中的{count, plural, one {#个项目} other {#个项目}}，且无法撤销。但文件仍将保留在磁盘中。",
       "confirm_email_below": "请输入“{email}”以进行确认",
       "confirm_reprocess_all_faces": "确定要对全部照片重新进行面部识别吗？这将同时清除所有已命名人物。",
       "confirm_user_password_reset": "确定要重置用户“{user}”的密码吗？",
@@ -10604,7 +10617,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "启用地图功能",
       "map_gps_settings": "地图与 GPS 设置",
       "map_gps_settings_description": "管理地图与 GPS（反向地理编码）设置",
-      "map_implications": "地图功能依赖于外部地形贴图服务（tiles.curatorphotos.cloud）",
+      "map_implications": "地图功能依赖于外部地形贴图服务（tiles.personalcloudphotos.cloud）",
       "map_light_style": "浅色模式",
       "map_manage_reverse_geocoding_settings": "管理<link>反向地理编码</link>设置",
       "map_reverse_geocoding": "反向地理编码",
@@ -10719,9 +10732,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "通知模板",
       "template_settings_description": "管理自定义通知模板",
       "theme_custom_css_settings": "自定义 CSS",
-      "theme_custom_css_settings_description": "可以通过 CSS 自定义 Curator Photos 外观。",
+      "theme_custom_css_settings_description": "可以通过 CSS 自定义 Personal Cloud Photos 外观。",
       "theme_settings": "主题设置",
-      "theme_settings_description": "自定义 Curator Photos Web 界面",
+      "theme_settings_description": "自定义 Personal Cloud Photos Web 界面",
       "thumbnail_generation_job": "生成缩略图",
       "thumbnail_generation_job_description": "为每个项目生成不同尺寸的缩略图，并为每个人物生成缩略图",
       "transcoding_acceleration_api": "加速器 API",
@@ -10829,7 +10842,7 @@ class CodegenLoader extends AssetLoader {
     "advanced_settings_log_level_title": "日志等级: {level}",
     "advanced_settings_prefer_remote_subtitle": "在某些设备上，从本地的项目加载缩略图的速度非常慢。启用此选项以加载远程项目。",
     "advanced_settings_prefer_remote_title": "优先远程项目",
-    "advanced_settings_proxy_headers_subtitle": "定义代理标头，应用于 Curator Photos 的每次网络请求",
+    "advanced_settings_proxy_headers_subtitle": "定义代理标头，应用于 Personal Cloud Photos 的每次网络请求",
     "advanced_settings_proxy_headers_title": "代理标头",
     "advanced_settings_self_signed_ssl_subtitle": "跳过对服务器 的 SSL 证书验证（该选项适用于使用自签名证书的服务器）。",
     "advanced_settings_self_signed_ssl_title": "允许自签名 SSL 证书",
@@ -10920,7 +10933,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_subtitle": "照片网格布局设置",
     "asset_list_settings_title": "照片网格",
     "asset_offline": "项目脱机",
-    "asset_offline_description": "磁盘上已找不到该外部项目。请联系您的 Curator Photos 管理员寻求帮助。",
+    "asset_offline_description": "磁盘上已找不到该外部项目。请联系您的 Personal Cloud Photos 管理员寻求帮助。",
     "asset_restored_successfully": "已成功恢复所有项目",
     "asset_skipped": "已跳过",
     "asset_skipped_in_trash": "已回收",
@@ -10957,7 +10970,8 @@ class CodegenLoader extends AssetLoader {
     "back": "返回",
     "back_close_deselect": "返回、关闭或反选",
     "background_location_permission": "后台定位权限",
-    "background_location_permission_content": "为了在后台运行时切换网络，Curator Photos 必须*始终*拥有精确的位置访问权限，这样应用程序才能读取 Wi-Fi 网络的名称",
+    "background_location_permission_content":
+        "为了在后台运行时切换网络，Personal Cloud Photos 必须*始终*拥有精确的位置访问权限，这样应用程序才能读取 Wi-Fi 网络的名称",
     "backup_album_selection_page_albums_device": "设备上的相册（{count}）",
     "backup_album_selection_page_albums_tap": "单击选中，双击取消",
     "backup_album_selection_page_assets_scatter": "项目会分散在多个相册中。因此，可以在备份过程中包含或排除相册。",
@@ -10978,7 +10992,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "前往设置",
     "backup_controller_page_background_battery_info_link": "怎么做",
     "backup_controller_page_background_battery_info_message":
-        "为了获得最佳的后台备份体验，请禁用任何限制 Curator Photos 后台活动的电池优化。\n\n由于这是设备相关的，因此请查找设备制造商提供的信息进行操作。",
+        "为了获得最佳的后台备份体验，请禁用任何限制 Personal Cloud Photos 后台活动的电池优化。\n\n由于这是设备相关的，因此请查找设备制造商提供的信息进行操作。",
     "backup_controller_page_background_battery_info_ok": "我知道了",
     "backup_controller_page_background_battery_info_title": "电池优化",
     "backup_controller_page_background_charging": "仅充电时",
@@ -11037,7 +11051,7 @@ class CodegenLoader extends AssetLoader {
     "bulk_keep_duplicates_confirmation": "您确定要保留{count, plural, one {#个重复项目} other {#个重复项目}}吗？这将清空所有重复记录，但不会删除任何内容。",
     "bulk_trash_duplicates_confirmation":
         "您确定要批量删除{count, plural, one {#个重复项目} other {#个重复项目}}吗？这将保留每组中最大的项目并删除所有其它重复项目。",
-    "buy": "购买 Curator Photos",
+    "buy": "购买 Personal Cloud Photos",
     "cache_settings_clear_cache_button": "清除缓存",
     "cache_settings_clear_cache_button_title": "清除应用缓存。在重新生成缓存之前，将显著影响应用的性能。",
     "cache_settings_duplicated_assets_clear_button": "清除",
@@ -11048,7 +11062,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "共享相册缩略图",
     "cache_settings_statistics_thumbnail": "缩略图",
     "cache_settings_statistics_title": "缓存使用情况",
-    "cache_settings_subtitle": "控制 Curator Photos app 的缓存行为",
+    "cache_settings_subtitle": "控制 Personal Cloud Photos app 的缓存行为",
     "cache_settings_tile_subtitle": "设置本地存储行为",
     "cache_settings_tile_title": "本地存储",
     "cache_settings_title": "缓存设置",
@@ -11127,7 +11141,7 @@ class CodegenLoader extends AssetLoader {
     "context": "以文搜图",
     "continue": "继续",
     "control_bottom_app_bar_create_new_album": "新建相册",
-    "control_bottom_app_bar_delete_from_immich": "从 Curator Photos 服务器中删除",
+    "control_bottom_app_bar_delete_from_immich": "从 Personal Cloud Photos 服务器中删除",
     "control_bottom_app_bar_delete_from_local": "从移动设备中删除",
     "control_bottom_app_bar_edit_location": "编辑位置信息",
     "control_bottom_app_bar_edit_time": "编辑日期和时间",
@@ -11192,10 +11206,10 @@ class CodegenLoader extends AssetLoader {
     "delete": "删除",
     "delete_album": "删除相册",
     "delete_api_key_prompt": "确定删除此 API 密钥吗？",
-    "delete_dialog_alert": "这些项目将从 Curator Photos 和您的设备中永久删除",
-    "delete_dialog_alert_local": "这些项目将从您的移动设备中永久删除，但仍然可以从 Curator Photos 服务器中再次获取",
-    "delete_dialog_alert_local_non_backed_up": "部分项目还未备份至 Curator Photos 服务器，将从您的移动设备中永久删除",
-    "delete_dialog_alert_remote": "这些项目将从 Curator Photos 服务器中永久删除",
+    "delete_dialog_alert": "这些项目将从 Personal Cloud Photos 和您的设备中永久删除",
+    "delete_dialog_alert_local": "这些项目将从您的移动设备中永久删除，但仍然可以从 Personal Cloud Photos 服务器中再次获取",
+    "delete_dialog_alert_local_non_backed_up": "部分项目还未备份至 Personal Cloud Photos 服务器，将从您的移动设备中永久删除",
+    "delete_dialog_alert_remote": "这些项目将从 Personal Cloud Photos 服务器中永久删除",
     "delete_dialog_ok_force": "确认删除",
     "delete_dialog_title": "永久删除",
     "delete_duplicates_confirmation": "确定要永久删除这些重复项吗？",
@@ -11247,7 +11261,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "管理项目下载相关设置",
     "download_started": "开始下载",
     "download_sucess": "下载成功",
-    "download_sucess_android": "媒体已下载至 DCIM/CuratorPhotos",
+    "download_sucess_android": "媒体已下载至 DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "等待重试",
     "downloading": "下载中",
     "downloading_asset_filename": "下载项目“{filename}”",
@@ -11527,7 +11541,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "时",
     "id": "ID",
     "ignore_icloud_photos": "忽略 iCloud 照片",
-    "ignore_icloud_photos_description": "存储在 iCloud 中的照片不会上传至 Curator Photos 服务器",
+    "ignore_icloud_photos_description": "存储在 iCloud 中的照片不会上传至 Personal Cloud Photos 服务器",
     "image": "图片",
     "image_alt_text_date": "在{date}拍摄的{isVideo, select, true {视频} other {照片}}",
     "image_alt_text_date_1_person": "{date}拍摄的包含{person1}的{isVideo, select, true {视频} other {照片}}",
@@ -11549,7 +11563,7 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_success": "下载成功",
     "image_viewer_page_state_provider_share_error": "共享出错",
     "immich_logo": "Immich 标志",
-    "immich_web_interface": "Curator Photos Web 界面",
+    "immich_web_interface": "Personal Cloud Photos Web 界面",
     "import_from_json": "从 JSON 导入",
     "import_path": "导入路径",
     "in_albums": "在{count, plural, one {#个相册} other {#个相册}}中",
@@ -11616,7 +11630,7 @@ class CodegenLoader extends AssetLoader {
     "local_network": "本地网络",
     "local_network_sheet_info": "当使用指定的 Wi-Fi 网络时，应用程序将通过此 URL 访问服务器",
     "location_permission": "定位权限",
-    "location_permission_content": "为使用自动切换功能，Curator Photos 需要精确的定位权限，这样才能读取当前 Wi-Fi 网络的名称",
+    "location_permission_content": "为使用自动切换功能，Personal Cloud Photos 需要精确的定位权限，这样才能读取当前 Wi-Fi 网络的名称",
     "location_picker_choose_on_map": "在地图上选择",
     "location_picker_latitude_error": "输入有效的纬度值",
     "location_picker_latitude_hint": "请在此处输入您的纬度值",
@@ -11781,7 +11795,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "通知",
     "notifications_setting_description": "管理通知",
     "oauth": "OAuth",
-    "official_immich_resources": "Curator Photos 官方资源",
+    "official_immich_resources": "Personal Cloud Photos 官方资源",
     "offline": "离线",
     "ok": "确定",
     "oldest_first": "最旧优先",
@@ -11855,10 +11869,10 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_continue_anyway": "仍然继续",
     "permission_onboarding_get_started": "开始使用",
     "permission_onboarding_go_to_settings": "转到设置",
-    "permission_onboarding_permission_denied": "权限被拒：要使用 Curator Photos，请在“设置”中授予照片和视频权限。",
+    "permission_onboarding_permission_denied": "权限被拒：要使用 Personal Cloud Photos，请在“设置”中授予照片和视频权限。",
     "permission_onboarding_permission_granted": "已授权！一切就绪。",
-    "permission_onboarding_permission_limited": "权限受限：要让 Curator Photos 备份和管理您的整个图库收藏，请在“设置”中授予照片和视频权限。",
-    "permission_onboarding_request": "Curator Photos 需要权限才能查看您的照片和视频。",
+    "permission_onboarding_permission_limited": "权限受限：要让 Personal Cloud Photos 备份和管理您的整个图库收藏，请在“设置”中授予照片和视频权限。",
+    "permission_onboarding_request": "Personal Cloud Photos 需要权限才能查看您的照片和视频。",
     "person": "人物",
     "person_birthdate": "出生于{date}",
     "person_hidden": "{name}{hidden, select, true {（已隐藏）} other {}}",
@@ -11906,12 +11920,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "公开相册",
     "public_share": "公开共享",
     "purchase_account_info": "支持者",
-    "purchase_activated_subtitle": "感谢您对 Curator Photos 和开源软件的支持",
+    "purchase_activated_subtitle": "感谢您对 Personal Cloud Photos 和开源软件的支持",
     "purchase_activated_time": "激活于{date}",
     "purchase_activated_title": "您的密钥已成功激活",
     "purchase_button_activate": "激活",
     "purchase_button_buy": "购买",
-    "purchase_button_buy_immich": "购买 Curator Photos",
+    "purchase_button_buy_immich": "购买 Personal Cloud Photos",
     "purchase_button_never_show_again": "不再显示",
     "purchase_button_reminder": "30 天内不再显示",
     "purchase_button_remove_key": "移除密钥",
@@ -11921,12 +11935,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "支持者状态",
     "purchase_individual_title": "个人",
     "purchase_input_suggestion": "已有一个产品密钥？请在下方输入密钥",
-    "purchase_license_subtitle": "购买 Curator Photos 以支持此服务的持续发展",
+    "purchase_license_subtitle": "购买 Personal Cloud Photos 以支持此服务的持续发展",
     "purchase_lifetime_description": "终身许可",
     "purchase_option_title": "购买选项",
     "purchase_panel_info_1":
-        "开发 Curator Photos 需要大量的时间和精力，我们有全职工程师在努力将其做到最好。我们的使命是通过开源软件和道德商业实践，为开发者提供可持续的收入来源，并创建一个尊重隐私的生态系统，提供一个可以真正替代现有剥削性云服务的选择。",
-    "purchase_panel_info_2": "由于我们承诺不添加付费功能，此次购买不会为您提供 Curator Photos 的任何额外功能。我们依靠像您这样的用户来支持 Curator Photos 的持续开发。",
+        "开发 Personal Cloud Photos 需要大量的时间和精力，我们有全职工程师在努力将其做到最好。我们的使命是通过开源软件和道德商业实践，为开发者提供可持续的收入来源，并创建一个尊重隐私的生态系统，提供一个可以真正替代现有剥削性云服务的选择。",
+    "purchase_panel_info_2":
+        "由于我们承诺不添加付费功能，此次购买不会为您提供 Personal Cloud Photos 的任何额外功能。我们依靠像您这样的用户来支持 Personal Cloud Photos 的持续开发。",
     "purchase_panel_title": "支持这个项目",
     "purchase_per_server": "每台服务器",
     "purchase_per_user": "每位用户",
@@ -12142,7 +12157,7 @@ class CodegenLoader extends AssetLoader {
     "setting_video_viewer_original_video_subtitle": "从服务器流式传输视频时，即使有转码，也播放原始视频。可能会导致缓冲。本地视频则以原始质量播放，与此设置无关。",
     "setting_video_viewer_original_video_title": "强制播放原始视频",
     "settings": "设置",
-    "settings_require_restart": "请重启 Curator Photos 以使设置生效",
+    "settings_require_restart": "请重启 Personal Cloud Photos 以使设置生效",
     "settings_saved": "设置已保存",
     "setup_pin_code": "设置PIN码",
     "share": "共享",
@@ -12270,12 +12285,13 @@ class CodegenLoader extends AssetLoader {
     "sunrise_on_the_beach": "海滩上的日出",
     "support": "支持",
     "support_and_feedback": "支持和反馈",
-    "support_third_party_description": "您的 Curator Photos 安装程序是由第三方打包的。您遇到的问题可能是由软件包引起的，因此请优先使用下面的链接提出 Issue 或 Bug。",
+    "support_third_party_description":
+        "您的 Personal Cloud Photos 安装程序是由第三方打包的。您遇到的问题可能是由软件包引起的，因此请优先使用下面的链接提出 Issue 或 Bug。",
     "swap_merge_direction": "互换合并方向",
     "sync": "同步",
     "sync_albums": "同步相册",
     "sync_albums_manual_subtitle": "将所有上传的视频和照片同步到选定的备份相册",
-    "sync_upload_album_setting_subtitle": "创建照片和视频并上传到 Curator Photos 上的选定相册中",
+    "sync_upload_album_setting_subtitle": "创建照片和视频并上传到 Personal Cloud Photos 上的选定相册中",
     "tag": "标签",
     "tag_assets": "标记项目",
     "tag_created": "已创建标签：{tag}",
@@ -12323,7 +12339,7 @@ class CodegenLoader extends AssetLoader {
     "trash_emptied": "空回收站",
     "trash_no_results_message": "删除的照片和视频将在此处展示。",
     "trash_page_delete_all": "删除全部",
-    "trash_page_empty_trash_dialog_content": "是否清空回收站？这些项目将被从 Curator Photos 中永久删除",
+    "trash_page_empty_trash_dialog_content": "是否清空回收站？这些项目将被从 Personal Cloud Photos 中永久删除",
     "trash_page_info": "回收站中项目将在 {days} 天后永久删除",
     "trash_page_no_assets": "暂无已删除项目",
     "trash_page_restore_all": "恢复全部",
@@ -12369,7 +12385,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "错误",
     "upload_status_uploaded": "已上传",
     "upload_success": "上传成功，刷新页面查看新上传的项目。",
-    "upload_to_immich": "上传至 Curator Photos（{count}）",
+    "upload_to_immich": "上传至 Personal Cloud Photos（{count}）",
     "uploading": "正在上传",
     "url": "URL",
     "usage": "用量",
@@ -12398,7 +12414,7 @@ class CodegenLoader extends AssetLoader {
     "version": "版本",
     "version_announcement_closing": "您的朋友，Alex",
     "version_announcement_message":
-        "您好！已经检测到 Curator Photos 有新版本。请抽空阅读一下<link>发行说明</link>，以确保您的配置文件是最新的，避免存在配置错误，特别是当您是使用 WatchTower 或其它类似的自动升级工具时。",
+        "您好！已经检测到 Personal Cloud Photos 有新版本。请抽空阅读一下<link>发行说明</link>，以确保您的配置文件是最新的，避免存在配置错误，特别是当您是使用 WatchTower 或其它类似的自动升级工具时。",
     "version_history": "版本更新历史记录",
     "version_history_item": "在 {date} 安装 {version} 版本",
     "video": "视频",
@@ -12427,7 +12443,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "警告",
     "week": "周",
     "welcome": "欢迎",
-    "welcome_to_immich": "欢迎使用 Curator Photos",
+    "welcome_to_immich": "欢迎使用 Personal Cloud Photos",
     "wifi_name": "Wi-Fi 名称",
     "wrong_pin_code": "错误的PIN码",
     "year": "年",
@@ -12438,7 +12454,7 @@ class CodegenLoader extends AssetLoader {
     "zoom_image": "缩放图像",
   };
   static const Map<String, dynamic> _ja = {
-    "about": "Curator Photos について",
+    "about": "Personal Cloud Photos について",
     "account": "アカウント",
     "account_settings": "アカウント設定",
     "acknowledge": "了解",
@@ -12476,7 +12492,7 @@ class CodegenLoader extends AssetLoader {
           "除外パターンを追加します。ワイルドカード「*」「**」「?」を使用できます。すべてのディレクトリで「Raw」と名前が付いたファイルを無視するには、「**/Raw/**」を使用します。また、「.tif」で終わるファイルをすべて無視するには、「**/*.tif」を使用します。さらに、絶対パスを無視するには「/path/to/ignore/**」を使用します。",
       "admin_user": "管理ユーザー",
       "asset_offline_description":
-          "この外部ライブラリのアセットはディスク上に見つからなくなってゴミ箱に移動されました。ファイルがライブラリの中で移動された場合はタイムラインで新しい対応するアセットを確認してください。このアセットを復元するには以下のファイルパスがCurator Photosからアクセスできるか確認してライブラリをスキャンしてください。",
+          "この外部ライブラリのアセットはディスク上に見つからなくなってゴミ箱に移動されました。ファイルがライブラリの中で移動された場合はタイムラインで新しい対応するアセットを確認してください。このアセットを復元するには以下のファイルパスがPersonal Cloud Photosからアクセスできるか確認してライブラリをスキャンしてください。",
       "authentication_settings": "認証設定",
       "authentication_settings_description": "認証設定の管理（パスワード、OAuth、その他）",
       "authentication_settings_disable_all": "本当に全てのログイン方法を無効にしますか? ログインは完全に無効になります。",
@@ -12491,7 +12507,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "設定は現在 Config File で設定されている",
       "confirm_delete_library": "本当に {library} を削除しますか？",
       "confirm_delete_library_assets":
-          "本当にこのライブラリを削除しますか？ {count, plural, one {#個のアセット} other {#個のアセット全て}} がCurator Photosから削除され、元に戻すことはできません。ファイルはディスク上に残ります。",
+          "本当にこのライブラリを削除しますか？ {count, plural, one {#個のアセット} other {#個のアセット全て}} がPersonal Cloud Photosから削除され、元に戻すことはできません。ファイルはディスク上に残ります。",
       "confirm_email_below": "確認のため、以下に \"{email}\" と入力してください",
       "confirm_reprocess_all_faces": "本当にすべての顔を再処理しますか? これにより名前が付けられた人物も消去されます。",
       "confirm_user_password_reset": "本当に {user} のパスワードをリセットしますか？",
@@ -12602,7 +12618,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "地図表示機能を有効にします",
       "map_gps_settings": "地図・GPS設定",
       "map_gps_settings_description": "地図とGPS(逆ジオコーディング)の設定を管理します",
-      "map_implications": "地図表示機能は外部のタイルサービス(tiles.curatorphotos.cloud)に依存します",
+      "map_implications": "地図表示機能は外部のタイルサービス(tiles.personalcloudphotos.cloud)に依存します",
       "map_light_style": "ライトモード",
       "map_manage_reverse_geocoding_settings": "<link>逆ジオコーディング</link>の設定を管理します",
       "map_reverse_geocoding": "逆ジオコーディング",
@@ -12627,8 +12643,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "注意: 後から変更できません！",
       "notification_email_from_address": "送信メールアドレス",
       "notification_email_from_address_description":
-          "送信メールアドレスを設定します（例： \"Curator Photos Photo Server <noreply@example.com>\" ）. 必ずメール送信が許可されているアドレスを使用してください.",
-      "notification_email_host_description": "送信メールサーバーを設定します（例：smtp.curatorphotos.app）",
+          "送信メールアドレスを設定します（例： \"Personal Cloud Photos Photo Server <noreply@example.com>\" ）. 必ずメール送信が許可されているアドレスを使用してください.",
+      "notification_email_host_description": "送信メールサーバーを設定します（例：smtp.personalcloudphotos.app）",
       "notification_email_ignore_certificate_errors": "証明書エラーを無視",
       "notification_email_ignore_certificate_errors_description": "TLS証明書の検証エラーを無視します（非推奨）",
       "notification_email_password_description": "メールサーバーでの認証時に使用するパスワードを設定します",
@@ -12721,7 +12737,7 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "通知テンプレート",
       "template_settings_description": "通知のためのカスタムテンプレートを管理します",
       "theme_custom_css_settings": "カスタムCSS",
-      "theme_custom_css_settings_description": "CSS を使って Curator Photos のデザインをカスタマイズできます。",
+      "theme_custom_css_settings_description": "CSS を使って Personal Cloud Photos のデザインをカスタマイズできます。",
       "theme_settings": "テーマ設定",
       "theme_settings_description": "Web インターフェースのカスタマイズを管理します",
       "thumbnail_generation_job": "サムネイル生成",
@@ -12933,7 +12949,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "グリッド",
     "asset_offline": "アセットはオフラインです",
     "asset_offline_description":
-        "このアセットはオフラインです。 Curator Photosはファイルの場所にアクセスできません。 アセットが利用可能であることを確認しライブラリを再スキャンしてください。",
+        "このアセットはオフラインです。 Personal Cloud Photosはファイルの場所にアクセスできません。 アセットが利用可能であることを確認しライブラリを再スキャンしてください。",
     "asset_restored_successfully": "復元できました",
     "asset_skipped": "スキップ済",
     "asset_skipped_in_trash": "ゴミ箱の中",
@@ -12992,7 +13008,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "設定を開く",
     "backup_controller_page_background_battery_info_link": "詳細",
     "backup_controller_page_background_battery_info_message":
-        "バックグラウンド処理を正常に動作させるためには、Curator Photosアプリに適用されているバッテリーの最適化をオフにしてください。\n\nデバイスによって設定方法が異なりますので各々調べてください",
+        "バックグラウンド処理を正常に動作させるためには、Personal Cloud Photosアプリに適用されているバッテリーの最適化をオフにしてください。\n\nデバイスによって設定方法が異なりますので各々調べてください",
     "backup_controller_page_background_battery_info_ok": "了解",
     "backup_controller_page_background_battery_info_title": "バッテリーの最適化",
     "backup_controller_page_background_charging": "充電中のみ",
@@ -13052,7 +13068,7 @@ class CodegenLoader extends AssetLoader {
         "本当に{count, plural, one {#個} other {#個}}の重複アセットを保持しますか?これにより何も削除されずに重複グループが解決されます。",
     "bulk_trash_duplicates_confirmation":
         "本当に{count, plural, one {#個} other {#個}}の重複したアセットを一括でごみ箱に移動しますか?これにより各重複中の最大のアセットが保持され、他の全ての重複はごみ箱に移動されます。",
-    "buy": "Curator Photosを購入",
+    "buy": "Personal Cloud Photosを購入",
     "cache_settings_album_thumbnails": "ライブラリのサムネイル ({}枚)",
     "cache_settings_clear_cache_button": "キャッシュをクリア",
     "cache_settings_clear_cache_button_title": "キャッシュを削除 (キャッシュが再生成されるまで、アプリのパフォーマンスが著しく低下します)",
@@ -13264,7 +13280,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "アセットのダウンロードに関連する設定を管理します",
     "download_started": "ダウンロード開始",
     "download_sucess": "ダウンロード成功",
-    "download_sucess_android": "DCIM/CuratorPhotosに保存されました",
+    "download_sucess_android": "DCIM/PersonalCloudPhotosに保存されました",
     "download_waiting_to_retry": "リトライ中",
     "downloading": "ダウンロード中",
     "downloading_asset_filename": "アセット {filename} をダウンロード中",
@@ -13303,7 +13319,8 @@ class CodegenLoader extends AssetLoader {
     "email_notifications": "Eメール通知",
     "empty_folder": "このフォルダーは空です",
     "empty_trash": "ゴミ箱を空にする",
-    "empty_trash_confirmation": "本当にゴミ箱を空にしますか? これにより、ゴミ箱内のすべてのアセットが Curator Photos から永久に削除されます。\nこの操作を元に戻すことはできません!",
+    "empty_trash_confirmation":
+        "本当にゴミ箱を空にしますか? これにより、ゴミ箱内のすべてのアセットが Personal Cloud Photos から永久に削除されます。\nこの操作を元に戻すことはできません!",
     "enable": "有効化",
     "enable_biometric_auth_description": "生体認証を有効化するために、PINコードを入力してください",
     "enabled": "有効",
@@ -13544,7 +13561,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "時間",
     "id": "ID",
     "ignore_icloud_photos": "iCloud上の写真をスキップ",
-    "ignore_icloud_photos_description": "iCloudに保存済みの項目をCurator Photosサーバー上にアップロードしません",
+    "ignore_icloud_photos_description": "iCloudに保存済みの項目をPersonal Cloud Photosサーバー上にアップロードしません",
     "image": "写真",
     "image_alt_text_date": "{isVideo, select, true {動画} other {写真}}は{date} に撮影",
     "image_alt_text_date_1_person": "{date}の、{person1}との{isVideo, select, true {動画} other {画像}}",
@@ -13564,8 +13581,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "ダウンロードが始まります",
     "image_viewer_page_state_provider_download_success": "ダウンロード成功",
     "image_viewer_page_state_provider_share_error": "共有エラー",
-    "immich_logo": "Curator Photos ロゴ",
-    "immich_web_interface": "Curator Photos Webインターフェース",
+    "immich_logo": "Personal Cloud Photos ロゴ",
+    "immich_web_interface": "Personal Cloud Photos Webインターフェース",
     "import_from_json": "JSONからインポート",
     "import_path": "インポートパス",
     "in_albums": "{count, plural, one {#件のアルバム} other {#件のアルバム}}の中",
@@ -13797,7 +13814,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "通知",
     "notifications_setting_description": "通知を管理します",
     "oauth": "OAuth",
-    "official_immich_resources": "公式Curator Photosリソース",
+    "official_immich_resources": "公式Personal Cloud Photosリソース",
     "offline": "オフライン",
     "ok": "了解",
     "oldest_first": "古い順",
@@ -13874,8 +13891,8 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_permission_denied": "写真へのアクセスが許可されていません。このアプリを使うには設定から写真と動画へのアクセスを許可してください",
     "permission_onboarding_permission_granted": "写真へのアクセスが許可されました",
     "permission_onboarding_permission_limited":
-        "写真へのアクセスが制限されています。Curator Photosが写真のバックアップと管理を行うには、システム設定から写真と動画のアクセス権限を変更してください。",
-    "permission_onboarding_request": "Curator Photosは写真へのアクセス許可が必要です",
+        "写真へのアクセスが制限されています。Personal Cloud Photosが写真のバックアップと管理を行うには、システム設定から写真と動画のアクセス権限を変更してください。",
+    "permission_onboarding_request": "Personal Cloud Photosは写真へのアクセス許可が必要です",
     "person": "人物",
     "person_birthdate": "{date}生まれ",
     "person_hidden": "{name}{hidden, select, true { (非表示)} other {}}",
@@ -13923,12 +13940,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "公開アルバム",
     "public_share": "公開共有",
     "purchase_account_info": "サポーター",
-    "purchase_activated_subtitle": "Curator Photos とオープンソース ソフトウェアを支援していただきありがとうございます",
+    "purchase_activated_subtitle": "Personal Cloud Photos とオープンソース ソフトウェアを支援していただきありがとうございます",
     "purchase_activated_time": "{date}にアクティベート",
     "purchase_activated_title": "キーは正常にアクティベートされました",
     "purchase_button_activate": "アクティベート",
     "purchase_button_buy": "購入",
-    "purchase_button_buy_immich": "Curator Photosを購入",
+    "purchase_button_buy_immich": "Personal Cloud Photosを購入",
     "purchase_button_never_show_again": "二度と表示しない",
     "purchase_button_reminder": "30日後に通知する",
     "purchase_button_remove_key": "キーを削除",
@@ -13938,13 +13955,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "サポーターの状態",
     "purchase_individual_title": "個人",
     "purchase_input_suggestion": "プロダクトキーをお持ちですか? 下に入力してください",
-    "purchase_license_subtitle": "Curator Photos を購入してサービスの継続的な開発を支援してください",
+    "purchase_license_subtitle": "Personal Cloud Photos を購入してサービスの継続的な開発を支援してください",
     "purchase_lifetime_description": "生涯の購入",
     "purchase_option_title": "購入オプション",
     "purchase_panel_info_1":
-        "Curator Photosの製作には多くの時間と労力を要しており、また、可能な限りCurator Photosを良いものにするために取り組んでいる専任の技術者がいます。私たちの使命は、オープンソースソフトウェアであり倫理観に則したビジネスの実践のために、開発者の持続可能な収入源となること、そして搾取的なクラウドサービスの本当の代替サービスで、プライバシーを尊重したエコシステムをつくることです。",
+        "Personal Cloud Photosの製作には多くの時間と労力を要しており、また、可能な限りPersonal Cloud Photosを良いものにするために取り組んでいる専任の技術者がいます。私たちの使命は、オープンソースソフトウェアであり倫理観に則したビジネスの実践のために、開発者の持続可能な収入源となること、そして搾取的なクラウドサービスの本当の代替サービスで、プライバシーを尊重したエコシステムをつくることです。",
     "purchase_panel_info_2":
-        "私たちは有料化しないことを約束していますので、この購入によってCurator Photosに追加の機能が付与されることはありません。私たちは、皆様のようなCurator Photosの継続的な開発を支援するユーザーに支えられています。",
+        "私たちは有料化しないことを約束していますので、この購入によってPersonal Cloud Photosに追加の機能が付与されることはありません。私たちは、皆様のようなPersonal Cloud Photosの継続的な開発を支援するユーザーに支えられています。",
     "purchase_panel_title": "プロジェクトを支援",
     "purchase_per_server": "サーバーごと",
     "purchase_per_user": "ユーザーごと",
@@ -14162,7 +14179,7 @@ class CodegenLoader extends AssetLoader {
         "動画をストリーミングする際に、トランスコードされた動画が存在していても、あえてオリジナル画質の動画を再生します。ストリーミングに待ち時間が生じるかもしれません。なお、デバイス上に保存されている動画はこの設定の有無に関わらず、オリジナル画質の動画を再生します。",
     "setting_video_viewer_original_video_title": "常にオリジナル画質の動画を再生する",
     "settings": "設定",
-    "settings_require_restart": "Curator Photosを再起動して設定を適用してください",
+    "settings_require_restart": "Personal Cloud Photosを再起動して設定を適用してください",
     "settings_saved": "設定が保存されました",
     "setup_pin_code": "PINコードをセットアップ",
     "share": "共有",
@@ -14291,7 +14308,7 @@ class CodegenLoader extends AssetLoader {
     "support": "サポート",
     "support_and_feedback": "サポートとフィードバック",
     "support_third_party_description":
-        "Curator Photosのインストールはサードパーティーによってパッケージ化されています。遭遇した問題はそのパッケージに起因している可能性があるので以下のリンクを使って最初にそのパッケージに問題を提起してください。",
+        "Personal Cloud Photosのインストールはサードパーティーによってパッケージ化されています。遭遇した問題はそのパッケージに起因している可能性があるので以下のリンクを使って最初にそのパッケージに問題を提起してください。",
     "swap_merge_direction": "統合する方向を入れ替え",
     "sync": "同期",
     "sync_albums": "アルバムを同期",
@@ -14391,7 +14408,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "エラー",
     "upload_status_uploaded": "アップロード済",
     "upload_success": "アップロード成功、新しくアップロードされたアセットを見るにはページを更新してください。",
-    "upload_to_immich": "Curator Photosにアップロード ({count})",
+    "upload_to_immich": "Personal Cloud Photosにアップロード ({count})",
     "uploading": "アップロード中",
     "url": "URL",
     "usage": "使用容量",
@@ -14420,7 +14437,7 @@ class CodegenLoader extends AssetLoader {
     "version": "バージョン",
     "version_announcement_closing": "あなたの友人、Alex",
     "version_announcement_message":
-        "こんにちは! 新しいバージョンのCurator Photosがリリースされました。特にWatchTowerやCurator Photosインスタンスを自動的に更新する仕組みを設けている場合は<link>リリースノート</link>をよく読んで設定が最新のものになっているか確認してください。",
+        "こんにちは! 新しいバージョンのPersonal Cloud Photosがリリースされました。特にWatchTowerやPersonal Cloud Photosインスタンスを自動的に更新する仕組みを設けている場合は<link>リリースノート</link>をよく読んで設定が最新のものになっているか確認してください。",
     "version_announcement_overlay_release_notes": "更新情報",
     "version_announcement_overlay_text_1": "新しい",
     "version_announcement_overlay_text_2": "のバージョンが公開中です。",
@@ -14455,7 +14472,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "警告",
     "week": "週",
     "welcome": "ようこそ",
-    "welcome_to_immich": "Curator Photosにようこそ",
+    "welcome_to_immich": "Personal Cloud Photosにようこそ",
     "wifi_name": "Wi-Fiの名前(SSID)",
     "wrong_pin_code": "PINコードが間違っています",
     "year": "年",
@@ -14466,7 +14483,7 @@ class CodegenLoader extends AssetLoader {
     "zoom_image": "画像を拡大",
   };
   static const Map<String, dynamic> _de = {
-    "about": "Über Curator Photos",
+    "about": "Über Personal Cloud Photos",
     "account": "Konto",
     "account_settings": "Kontoeinstellungen",
     "acknowledge": "Bestätigen",
@@ -14504,7 +14521,7 @@ class CodegenLoader extends AssetLoader {
           "Ausschlussmuster hinzufügen. Platzhalter, wie *, **, und ? werden unterstützt. Um alle Dateien in einem Verzeichnis namens „Raw\" zu ignorieren, „**/Raw/**“ verwenden. Um alle Dateien zu ignorieren, die auf „.tif“ enden, „**/*.tif“ verwenden. Um einen absoluten Pfad zu ignorieren, „/pfad/zum/ignorieren/**“ verwenden.",
       "admin_user": "Administrator",
       "asset_offline_description":
-          "Diese Datei einer externen Bibliothek befindet sich nicht mehr auf der Festplatte und wurde in den Papierkorb verschoben. Falls die Datei innerhalb der Bibliothek verschoben wurde, überprüfe deine Zeitleiste auf die neue entsprechende Datei. Um diese Datei wiederherzustellen, stelle bitte sicher, dass Curator Photos auf den unten stehenden Dateipfad zugreifen kann und scanne die Bibliothek.",
+          "Diese Datei einer externen Bibliothek befindet sich nicht mehr auf der Festplatte und wurde in den Papierkorb verschoben. Falls die Datei innerhalb der Bibliothek verschoben wurde, überprüfe deine Zeitleiste auf die neue entsprechende Datei. Um diese Datei wiederherzustellen, stelle bitte sicher, dass Personal Cloud Photos auf den unten stehenden Dateipfad zugreifen kann und scanne die Bibliothek.",
       "authentication_settings": "Authentifizierungseinstellungen",
       "authentication_settings_description": "Passwort-, OAuth- und sonstige Authentifizierungseinstellungen verwalten",
       "authentication_settings_disable_all":
@@ -14521,7 +14538,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Ist derzeit in einer Konfigurationsdatei festgelegt",
       "confirm_delete_library": "Bist du sicher, dass du die Bibliothek {library} löschen willst?",
       "confirm_delete_library_assets":
-          "Bist du sicher, dass du diese Bibliothek löschen willst? Dies löscht {count, plural, one {# enthaltenes Objekt} other {alle # enthaltenen Objekte}} aus Curator Photos und kann nicht rückgängig gemacht werden. Die Dateien bleiben auf der Festplatte erhalten.",
+          "Bist du sicher, dass du diese Bibliothek löschen willst? Dies löscht {count, plural, one {# enthaltenes Objekt} other {alle # enthaltenen Objekte}} aus Personal Cloud Photos und kann nicht rückgängig gemacht werden. Die Dateien bleiben auf der Festplatte erhalten.",
       "confirm_email_below": "Bestätige, indem du unten \"{email}\" eingibst",
       "confirm_reprocess_all_faces":
           "Bist du sicher, dass du alle Gesichter erneut verarbeiten möchtest? Dies löscht auch alle bereits benannten Personen.",
@@ -14648,7 +14665,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Kartenfunktionen aktivieren",
       "map_gps_settings": "Karten- & GPS-Einstellungen",
       "map_gps_settings_description": "Karten- & GPS-Einstellungen verwalten",
-      "map_implications": "Die Kartenfunktion verwendet einen externen Tile-Service (tiles.curatorphotos.cloud)",
+      "map_implications": "Die Kartenfunktion verwendet einen externen Tile-Service (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Heller Stil",
       "map_manage_reverse_geocoding_settings": "Einstellungen für die <link>umgekehrte Geokodierung</link> verwalten",
       "map_reverse_geocoding": "Umgekehrte Geokodierung",
@@ -14677,8 +14694,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "HINWEIS: Dies kann später nicht mehr geändert werden!",
       "notification_email_from_address": "Absenderadresse",
       "notification_email_from_address_description":
-          "E-Mail-Adresse des Senders, zum Beispiel: \"Curator Photos Photo Server <noreply@example.com>\". Stelle sicher, dass du eine Adresse nutzt, die du berechtigt bist zu nutzen.",
-      "notification_email_host_description": "Host des E-Mail-Servers (z.B. smtp.curatorphotos.app)",
+          "E-Mail-Adresse des Senders, zum Beispiel: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Stelle sicher, dass du eine Adresse nutzt, die du berechtigt bist zu nutzen.",
+      "notification_email_host_description": "Host des E-Mail-Servers (z.B. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignoriere Zertifikats-Fehler",
       "notification_email_ignore_certificate_errors_description":
           "TLS-Zertifikatsvalidierungsfehler ignorieren (nicht empfohlen)",
@@ -14787,9 +14804,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Benutzerdefinierte Vorlagen für Benachrichtigungen verwalten",
       "theme_custom_css_settings": "Benutzerdefiniertes CSS",
       "theme_custom_css_settings_description":
-          "Mit Cascading Style Sheets (CSS) kann das Design von Curator Photos angepasst werden.",
+          "Mit Cascading Style Sheets (CSS) kann das Design von Personal Cloud Photos angepasst werden.",
       "theme_settings": "Theme-Einstellungen",
-      "theme_settings_description": "Anpassung der Curator Photos-Web-Oberfläche",
+      "theme_settings_description": "Anpassung der Personal Cloud Photos-Web-Oberfläche",
       "these_files_matched_by_checksum": "Diese Dateien wurden anhand ihrer Prüfsummen abgeglichen",
       "thumbnail_generation_job": "Miniaturansichten generieren",
       "thumbnail_generation_job_description":
@@ -14929,7 +14946,7 @@ class CodegenLoader extends AssetLoader {
         "Einige Geräte sind sehr langsam beim Laden von Miniaturbildern direkt aus dem Gerät. Aktivieren Sie diese Einstellung, um stattdessen die Server-Bilder zu laden.",
     "advanced_settings_prefer_remote_title": "Server-Bilder bevorzugen",
     "advanced_settings_proxy_headers_subtitle":
-        "Definiere einen Proxy-Header, den Curator Photos bei jeder Netzwerkanfrage mitschicken soll",
+        "Definiere einen Proxy-Header, den Personal Cloud Photos bei jeder Netzwerkanfrage mitschicken soll",
     "advanced_settings_proxy_headers_title": "Proxy-Headers",
     "advanced_settings_self_signed_ssl_subtitle":
         "Verifizierung von SSL-Zertifikaten vom Server überspringen. Notwendig bei selbstsignierten Zertifikaten.",
@@ -15027,7 +15044,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotogitter",
     "asset_offline": "Datei offline",
     "asset_offline_description":
-        "Diese externe Datei ist nicht mehr auf dem Datenträger vorhanden. Bitte wende dich an deinen Curator Photos-Administrator, um Hilfe zu erhalten.",
+        "Diese externe Datei ist nicht mehr auf dem Datenträger vorhanden. Bitte wende dich an deinen Personal Cloud Photos-Administrator, um Hilfe zu erhalten.",
     "asset_restored_successfully": "Datei erfolgreich wiederhergestellt",
     "asset_skipped": "Übersprungen",
     "asset_skipped_in_trash": "Im Papierkorb",
@@ -15044,7 +15061,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Datei kann}other {Dateien können}} nicht zum Album hinzugefügt werden",
     "assets_count": "{count, plural, one {# Datei} other {# Dateien}}",
     "assets_deleted_permanently": "{count} Element(e) permanent gelöscht",
-    "assets_deleted_permanently_from_server": "{count} Element(e) permanent vom Curator Photos-Server gelöscht",
+    "assets_deleted_permanently_from_server": "{count} Element(e) permanent vom Personal Cloud Photos-Server gelöscht",
     "assets_downloaded_failed":
         "{count, plural, one {# Datei heruntergeladen - {error} fehlgeschlagen} other {# Dateien heruntergeladen - {error} fehlgeschlagen}}",
     "assets_downloaded_successfully":
@@ -15059,7 +15076,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} Element(e) erfolgreich wiederhergestellt",
     "assets_trashed": "{count} Element(e) gelöscht",
     "assets_trashed_count": "{count, plural, one {# Datei} other {# Dateien}} in den Papierkorb verschoben",
-    "assets_trashed_from_server": "{count} Element(e) vom Curator Photos-Server gelöscht",
+    "assets_trashed_from_server": "{count} Element(e) vom Personal Cloud Photos-Server gelöscht",
     "assets_were_part_of_album_count":
         "{count, plural, one {# Datei ist} other {# Dateien sind}} bereits im Album vorhanden",
     "authorized_devices": "Verwendete Geräte",
@@ -15071,7 +15088,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Zurück, Schließen oder Abwählen",
     "background_location_permission": "Hintergrund Standortfreigabe",
     "background_location_permission_content":
-        "Um im Hintergrund zwischen den Netzwerken wechseln zu können, muss Curator Photos *immer* Zugriff auf den genauen Standort haben, damit die App den Namen des WLAN-Netzwerks ermitteln kann",
+        "Um im Hintergrund zwischen den Netzwerken wechseln zu können, muss Personal Cloud Photos *immer* Zugriff auf den genauen Standort haben, damit die App den Namen des WLAN-Netzwerks ermitteln kann",
     "backup_album_selection_page_albums_device": "Alben auf dem Gerät ({count})",
     "backup_album_selection_page_albums_tap":
         "Einmalig das Album antippen um es zu sichern, doppelt antippen um es nicht mehr zu sichern",
@@ -15096,7 +15113,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Gehe zu Einstellungen",
     "backup_controller_page_background_battery_info_link": "Zeige mir wie",
     "backup_controller_page_background_battery_info_message":
-        "Für die besten Ergebnisse für Sicherungen im Hintergrund, deaktiviere alle Batterieoptimierungen und Einschränkungen für die Hintergrundaktivitäten von Curator Photos.\n\nDa dies gerätespezifisch ist, schlage diese Informationen für deinen Gerätehersteller nach.",
+        "Für die besten Ergebnisse für Sicherungen im Hintergrund, deaktiviere alle Batterieoptimierungen und Einschränkungen für die Hintergrundaktivitäten von Personal Cloud Photos.\n\nDa dies gerätespezifisch ist, schlage diese Informationen für deinen Gerätehersteller nach.",
     "backup_controller_page_background_battery_info_ok": "Ok",
     "backup_controller_page_background_battery_info_title": "Batterieoptimierungen",
     "backup_controller_page_background_charging": "Nur während des Ladens",
@@ -15159,7 +15176,7 @@ class CodegenLoader extends AssetLoader {
         "Bist du sicher, dass du {count, plural, one {# duplizierte Datei} other {# duplizierte Dateien}} behalten möchtest? Dies wird alle Duplikat-Gruppen auflösen ohne etwas zu löschen.",
     "bulk_trash_duplicates_confirmation":
         "Bist du sicher, dass du {count, plural, one {# duplizierte Datei} other {# duplizierte Dateien gemeinsam}} in den Papierkorb verschieben möchtest? Dies wird die größte Datei jeder Gruppe behalten und alle anderen Duplikate in den Papierkorb verschieben.",
-    "buy": "Curator Photos erwerben",
+    "buy": "Personal Cloud Photos erwerben",
     "cache_settings_album_thumbnails": "Vorschaubilder der Bibliothek ({} Elemente)",
     "cache_settings_clear_cache_button": "Zwischenspeicher löschen",
     "cache_settings_clear_cache_button_title":
@@ -15172,7 +15189,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Vorschaubilder geteilter Alben",
     "cache_settings_statistics_thumbnail": "Vorschaubilder",
     "cache_settings_statistics_title": "Zwischenspeicher-Nutzung",
-    "cache_settings_subtitle": "Kontrollieren, wie Curator Photos den Zwischenspeicher nutzt",
+    "cache_settings_subtitle": "Kontrollieren, wie Personal Cloud Photos den Zwischenspeicher nutzt",
     "cache_settings_thumbnail_size": "Vorschaubilder im Zwischenspeicher ({} Bilder)",
     "cache_settings_tile_subtitle": "Lokalen Speicher verwalten",
     "cache_settings_tile_title": "Lokaler Speicher",
@@ -15258,7 +15275,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontext",
     "continue": "Fortsetzen",
     "control_bottom_app_bar_create_new_album": "Neues Album erstellen",
-    "control_bottom_app_bar_delete_from_immich": "Aus Curator Photos löschen",
+    "control_bottom_app_bar_delete_from_immich": "Aus Personal Cloud Photos löschen",
     "control_bottom_app_bar_delete_from_local": "Vom Gerät löschen",
     "control_bottom_app_bar_edit_location": "Ort bearbeiten",
     "control_bottom_app_bar_edit_time": "Datum und Uhrzeit bearbeiten",
@@ -15325,11 +15342,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Löschen",
     "delete_album": "Album löschen",
     "delete_api_key_prompt": "Bist du sicher, dass du diesen API-Schlüssel löschen willst?",
-    "delete_dialog_alert": "Diese Elemente werden unwiderruflich von Curator Photos und dem Gerät entfernt",
-    "delete_dialog_alert_local": "Diese Inhalte werden vom Gerät gelöscht, bleiben aber auf dem Curator Photos-Server",
+    "delete_dialog_alert": "Diese Elemente werden unwiderruflich von Personal Cloud Photos und dem Gerät entfernt",
+    "delete_dialog_alert_local":
+        "Diese Inhalte werden vom Gerät gelöscht, bleiben aber auf dem Personal Cloud Photos-Server",
     "delete_dialog_alert_local_non_backed_up":
-        "Einige Inhalte sind nicht in Curator Photos gesichert und werden dauerhaft vom Gerät gelöscht",
-    "delete_dialog_alert_remote": "Diese Inhalte werden dauerhaft vom Curator Photos-Server gelöscht",
+        "Einige Inhalte sind nicht in Personal Cloud Photos gesichert und werden dauerhaft vom Gerät gelöscht",
+    "delete_dialog_alert_remote": "Diese Inhalte werden dauerhaft vom Personal Cloud Photos-Server gelöscht",
     "delete_dialog_ok_force": "Trotzdem löschen",
     "delete_dialog_title": "Endgültig löschen",
     "delete_duplicates_confirmation": "Bist du sicher, dass du diese Duplikate endgültig löschen willst?",
@@ -15384,7 +15402,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Einstellungen für das Herunterladen von Dateien verwalten",
     "download_started": "Download gestartet",
     "download_sucess": "Download erfolgreich",
-    "download_sucess_android": "Die Datei wurde nach DCIM/CuratorPhotos heruntergeladen",
+    "download_sucess_android": "Die Datei wurde nach DCIM/PersonalCloudPhotos heruntergeladen",
     "download_waiting_to_retry": "Warte auf erneuten Versuch",
     "downloading": "Herunterladen",
     "downloading_asset_filename": "Datei {filename} wird heruntergeladen",
@@ -15424,7 +15442,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Dieser Ordner ist leer",
     "empty_trash": "Papierkorb leeren",
     "empty_trash_confirmation":
-        "Bist du sicher, dass du den Papierkorb leeren willst?\nDies entfernt alle Dateien im Papierkorb endgültig aus Curator Photos und kann nicht rückgängig gemacht werden!",
+        "Bist du sicher, dass du den Papierkorb leeren willst?\nDies entfernt alle Dateien im Papierkorb endgültig aus Personal Cloud Photos und kann nicht rückgängig gemacht werden!",
     "enable": "Aktivieren",
     "enable_biometric_auth_description": "Gib deinen PIN Code ein, um die biometrische Authentifizierung zu aktivieren",
     "enabled": "Aktiviert",
@@ -15670,7 +15688,7 @@ class CodegenLoader extends AssetLoader {
     "home_page_favorite_err_local": "Kann lokale Elemente noch nicht favorisieren, überspringen",
     "home_page_favorite_err_partner": "Inhalte von Partnern können nicht favorisiert werden, überspringe",
     "home_page_first_time_notice":
-        "Wenn dies das erste Mal ist dass Du Curator Photos nutzt, stelle bitte sicher, dass mindestens ein Album zur Sicherung ausgewählt ist, sodass die Zeitachse mit Fotos und Videos gefüllt werden kann",
+        "Wenn dies das erste Mal ist dass Du Personal Cloud Photos nutzt, stelle bitte sicher, dass mindestens ein Album zur Sicherung ausgewählt ist, sodass die Zeitachse mit Fotos und Videos gefüllt werden kann",
     "home_page_locked_error_local":
         "Lokale Dateien können nicht in den gesperrten Ordner verschoben werden, überspringe",
     "home_page_locked_error_partner":
@@ -15682,7 +15700,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "iCloud Fotos ignorieren",
     "ignore_icloud_photos_description":
-        "Fotos, die in der iCloud gespeichert sind, werden nicht auf den Curator Photos Server hochgeladen",
+        "Fotos, die in der iCloud gespeichert sind, werden nicht auf den Personal Cloud Photos Server hochgeladen",
     "image": "Bild",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Bild}} aufgenommen am {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Bild}} aufgenommen mit {person1} am {date}",
@@ -15706,8 +15724,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Download gestartet",
     "image_viewer_page_state_provider_download_success": "Erfolgreich heruntergeladen",
     "image_viewer_page_state_provider_share_error": "Fehler beim Teilen",
-    "immich_logo": "Curator Photos-Logo",
-    "immich_web_interface": "Curator Photos-Web-Oberfläche",
+    "immich_logo": "Personal Cloud Photos-Logo",
+    "immich_web_interface": "Personal Cloud Photos-Web-Oberfläche",
     "import_from_json": "Aus JSON importieren",
     "import_path": "Importpfad",
     "in_albums": "In {count, plural, one {# Album} other {# Alben}}",
@@ -15777,7 +15795,7 @@ class CodegenLoader extends AssetLoader {
         "Die App stellt über diese URL eine Verbindung zum Server her, wenn sie das angegebene WLAN-Netzwerk verwendet",
     "location_permission": "Standort Genehmigung",
     "location_permission_content":
-        "Um die automatische Umschaltfunktion nutzen zu können, benötigt Curator Photos genaue Standortberechtigung, damit es den Namen des aktuellen WLAN-Netzwerks ermitteln kann",
+        "Um die automatische Umschaltfunktion nutzen zu können, benötigt Personal Cloud Photos genaue Standortberechtigung, damit es den Namen des aktuellen WLAN-Netzwerks ermitteln kann",
     "location_picker_choose_on_map": "Auf der Karte auswählen",
     "location_picker_latitude_error": "Gültigen Breitengrad eingeben",
     "location_picker_latitude_hint": "Breitengrad eingeben",
@@ -15955,7 +15973,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Benachrichtigungen",
     "notifications_setting_description": "Benachrichtigungen verwalten",
     "oauth": "OAuth",
-    "official_immich_resources": "Offizielle Curator Photos Quellen",
+    "official_immich_resources": "Offizielle Personal Cloud Photos Quellen",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Älteste zuerst",
@@ -16034,11 +16052,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Jetzt starten",
     "permission_onboarding_go_to_settings": "Gehe zu Einstellungen",
     "permission_onboarding_permission_denied":
-        "Berechtigung verweigert. Um Curator Photos zu benutzen, muss Zugriff auf Fotos und Videos in Einstellungen erlaubt werden.",
+        "Berechtigung verweigert. Um Personal Cloud Photos zu benutzen, muss Zugriff auf Fotos und Videos in Einstellungen erlaubt werden.",
     "permission_onboarding_permission_granted": "Berechtigung erteilt! Du bist startklar.",
     "permission_onboarding_permission_limited":
-        "Berechtigungen unzureichend. Um Curator Photos das Sichern von ganzen Sammlungen zu ermöglichen, muss der Zugriff auf alle Fotos und Videos in den Einstellungen erlaubt werden.",
-    "permission_onboarding_request": "Curator Photos benötigt Berechtigung um auf deine Fotos und Videos zuzugreifen.",
+        "Berechtigungen unzureichend. Um Personal Cloud Photos das Sichern von ganzen Sammlungen zu ermöglichen, muss der Zugriff auf alle Fotos und Videos in den Einstellungen erlaubt werden.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos benötigt Berechtigung um auf deine Fotos und Videos zuzugreifen.",
     "person": "Person",
     "person_birthdate": "Geboren am {date}",
     "person_hidden": "{name}{hidden, select, true { (verborgen)} other {}}",
@@ -16091,12 +16110,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Öffentliches Album",
     "public_share": "Öffentliche Freigabe",
     "purchase_account_info": "Unterstützer",
-    "purchase_activated_subtitle": "Danke für die Unterstützung von Curator Photos und Open-Source Software",
+    "purchase_activated_subtitle": "Danke für die Unterstützung von Personal Cloud Photos und Open-Source Software",
     "purchase_activated_time": "Aktiviert am {date}",
     "purchase_activated_title": "Dein Schlüssel wurde erfolgreich aktiviert",
     "purchase_button_activate": "Aktivieren",
     "purchase_button_buy": "Kaufen",
-    "purchase_button_buy_immich": "Curator Photos kaufen",
+    "purchase_button_buy_immich": "Personal Cloud Photos kaufen",
     "purchase_button_never_show_again": "Nicht nochmal anzeigen",
     "purchase_button_reminder": "Erinnere mich in 30 Tagen",
     "purchase_button_remove_key": "Schlüssel entfernen",
@@ -16106,13 +16125,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Unterstützerstatus",
     "purchase_individual_title": "Einzelperson",
     "purchase_input_suggestion": "Besitzen Sie bereits einen Produktschlüssel? Bitte geben Sie diesen unten ein",
-    "purchase_license_subtitle": "Kaufe Curator Photos, um die fortlaufende Entwicklung zu unterstützen",
+    "purchase_license_subtitle": "Kaufe Personal Cloud Photos, um die fortlaufende Entwicklung zu unterstützen",
     "purchase_lifetime_description": "Lebenslange Gültigkeit",
     "purchase_option_title": "KAUFOPTIONEN",
     "purchase_panel_info_1":
-        "Die Entwicklung von Curator Photos erfordert viel Zeit und Mühe, und wir haben Vollzeit-Entwickler, die daran arbeiten es möglichst perfekt zu machen. Unser Ziel ist es, dass Open-Source-Software und moralische Geschäftsmethoden zu einer nachhaltigen Einkommensquelle für Entwickler werden und ein datenschutzfreundliches Ökosystem mit echten Alternativen zu ausbeuterischen Cloud-Diensten geschaffen wird.",
+        "Die Entwicklung von Personal Cloud Photos erfordert viel Zeit und Mühe, und wir haben Vollzeit-Entwickler, die daran arbeiten es möglichst perfekt zu machen. Unser Ziel ist es, dass Open-Source-Software und moralische Geschäftsmethoden zu einer nachhaltigen Einkommensquelle für Entwickler werden und ein datenschutzfreundliches Ökosystem mit echten Alternativen zu ausbeuterischen Cloud-Diensten geschaffen wird.",
     "purchase_panel_info_2":
-        "Weil wir davon überzeugt sind keine Paywalls zu haben, wird dieser Kauf keine zusätzlichen Funktionen in Curator Photos freischalten. Wir verlassen uns auf Nutzende wie dich, um die Entwicklung von Curator Photos zu unterstützen.",
+        "Weil wir davon überzeugt sind keine Paywalls zu haben, wird dieser Kauf keine zusätzlichen Funktionen in Personal Cloud Photos freischalten. Wir verlassen uns auf Nutzende wie dich, um die Entwicklung von Personal Cloud Photos zu unterstützen.",
     "purchase_panel_title": "Das Projekt unterstützen",
     "purchase_per_server": "Pro Server",
     "purchase_per_user": "Pro Benutzer",
@@ -16338,7 +16357,7 @@ class CodegenLoader extends AssetLoader {
         "Beim Streaming eines Videos vom Server wird das Original abgespielt, auch wenn eine Transkodierung verfügbar ist. Kann zu Pufferung führen. Lokal verfügbare Videos werden unabhängig von dieser Einstellung in Originalqualität wiedergegeben.",
     "setting_video_viewer_original_video_title": "Originalvideo erzwingen",
     "settings": "Einstellungen",
-    "settings_require_restart": "Bitte starte Curator Photos neu, um diese Einstellung anzuwenden",
+    "settings_require_restart": "Bitte starte Personal Cloud Photos neu, um diese Einstellung anzuwenden",
     "settings_saved": "Einstellungen gespeichert",
     "setup_pin_code": "Einen PIN Code festlegen",
     "share": "Teilen",
@@ -16469,14 +16488,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Unterstützung",
     "support_and_feedback": "Unterstützung & Feedback",
     "support_third_party_description":
-        "Deine Curator Photos-Installation wurde von einem Drittanbieter zusammengestellt. Probleme, die bei dir auftreten, können durch dieses Paket verursacht werden. Bitte wende dich daher in erster Linie an diesen Anbieter, indem du die unten stehenden Links verwendest.",
+        "Deine Personal Cloud Photos-Installation wurde von einem Drittanbieter zusammengestellt. Probleme, die bei dir auftreten, können durch dieses Paket verursacht werden. Bitte wende dich daher in erster Linie an diesen Anbieter, indem du die unten stehenden Links verwendest.",
     "swap_merge_direction": "Vertauschen der Zusammenführungsrichtung",
     "sync": "Synchronisieren",
     "sync_albums": "Alben synchronisieren",
     "sync_albums_manual_subtitle":
         "Synchronisiere alle hochgeladenen Videos und Fotos in die ausgewählten Backup-Alben",
     "sync_upload_album_setting_subtitle":
-        "Erstelle deine ausgewählten Alben in Curator Photos und lade die Fotos und Videos dort hoch",
+        "Erstelle deine ausgewählten Alben in Personal Cloud Photos und lade die Fotos und Videos dort hoch",
     "tag": "Tag",
     "tag_assets": "Dateien taggen",
     "tag_created": "Tag erstellt: {tag}",
@@ -16527,7 +16546,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Gelöschte Fotos und Videos werden hier angezeigt.",
     "trash_page_delete_all": "Alle löschen",
     "trash_page_empty_trash_dialog_content":
-        "Elemente im Papierkorb löschen? Diese Elemente werden dauerhaft aus Curator Photos entfernt",
+        "Elemente im Papierkorb löschen? Diese Elemente werden dauerhaft aus Personal Cloud Photos entfernt",
     "trash_page_info": "Elemente im Papierkorb werden nach {days} Tagen endgültig gelöscht",
     "trash_page_no_assets": "Es gibt keine Daten im Papierkorb",
     "trash_page_restore_all": "Alle wiederherstellen",
@@ -16575,7 +16594,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Fehler",
     "upload_status_uploaded": "Hochgeladen",
     "upload_success": "Hochladen erfolgreich. Aktualisiere die Seite, um neue hochgeladene Dateien zu sehen.",
-    "upload_to_immich": "Auf Curator Photos hochladen ({count})",
+    "upload_to_immich": "Auf Personal Cloud Photos hochladen ({count})",
     "uploading": "Wird hochgeladen",
     "url": "URL",
     "usage": "Verwendung",
@@ -16605,7 +16624,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Version",
     "version_announcement_closing": "Dein Freund, Alex",
     "version_announcement_message":
-        "Hi! Es gibt eine neue Version von Curator Photos. Bitte nimm dir Zeit, die <link>Versionshinweise</link> zu lesen, um Fehlkonfigurationen zu vermeiden, insbesondere wenn du WatchTower oder ein anderes Verfahren verwendest, das Curator Photos automatisch aktualisiert.",
+        "Hi! Es gibt eine neue Version von Personal Cloud Photos. Bitte nimm dir Zeit, die <link>Versionshinweise</link> zu lesen, um Fehlkonfigurationen zu vermeiden, insbesondere wenn du WatchTower oder ein anderes Verfahren verwendest, das Personal Cloud Photos automatisch aktualisiert.",
     "version_announcement_overlay_release_notes": "Änderungsprotokoll",
     "version_announcement_overlay_text_1": "Hallo mein Freund! Es gibt eine neue Version von",
     "version_announcement_overlay_text_2": "Bitte nehme dir die Zeit und lies das ",
@@ -16641,7 +16660,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Warnung",
     "week": "Woche",
     "welcome": "Willkommen",
-    "welcome_to_immich": "Willkommen bei Curator Photos",
+    "welcome_to_immich": "Willkommen bei Personal Cloud Photos",
     "wifi_name": "WLAN-Name",
     "wrong_pin_code": "PIN Code falsch",
     "year": "Jahr",
@@ -16690,7 +16709,7 @@ class CodegenLoader extends AssetLoader {
           "Добавьте шаблоны исключений. Поддерживаются символы подстановки *, ** и ?. Чтобы игнорировать все файлы в любом каталоге с именем \"Raw\", укажите \"**/Raw/**\". Чтобы игнорировать все файлы, заканчивающиеся на \".tif\", используйте \"**/*.tif\". Чтобы игнорировать путь целиком, укажите \"/path/to/ignore/**\".",
       "admin_user": "Администратор",
       "asset_offline_description":
-          "Этот файл внешней библиотеки не был найден на диске и был перемещён в корзину. Если файл был перемещён внутри библиотеки, проверьте временную шкалу, чтобы найти новый соответствующий ресурс. Чтобы восстановить файл, убедитесь, что путь ниже доступен для Curator Photos и выполните сканирование библиотеки.",
+          "Этот файл внешней библиотеки не был найден на диске и был перемещён в корзину. Если файл был перемещён внутри библиотеки, проверьте временную шкалу, чтобы найти новый соответствующий ресурс. Чтобы восстановить файл, убедитесь, что путь ниже доступен для Personal Cloud Photos и выполните сканирование библиотеки.",
       "authentication_settings": "Настройки аутентификации",
       "authentication_settings_description": "Управление паролями, OAuth и другими настройками аутентификации",
       "authentication_settings_disable_all":
@@ -16706,7 +16725,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Настроено с помощью файла конфигурации",
       "confirm_delete_library": "Вы действительно хотите удалить библиотеку {library}?",
       "confirm_delete_library_assets":
-          "Вы уверены, что хотите удалить эту библиотеку? Это безвозвратно удалит {count, plural, one {# объект} many {# объектов} other {# объекта}} из Curator Photos. Файлы останутся на диске.",
+          "Вы уверены, что хотите удалить эту библиотеку? Это безвозвратно удалит {count, plural, one {# объект} many {# объектов} other {# объекта}} из Personal Cloud Photos. Файлы останутся на диске.",
       "confirm_email_below": "Введите \"{email}\" для подтверждения",
       "confirm_reprocess_all_faces":
           "Вы уверены, что хотите повторно определить все лица? Будут также удалены имена со всех лиц.",
@@ -16835,7 +16854,7 @@ class CodegenLoader extends AssetLoader {
       "map_gps_settings": "Настройки карты и GPS",
       "map_gps_settings_description": "Управление настройками карты и GPS (обратного геокодирования)",
       "map_implications":
-          "Функция отображения объектов на карте использует внешний сервис плиток (tiles.curatorphotos.cloud)",
+          "Функция отображения объектов на карте использует внешний сервис плиток (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Светлый стиль",
       "map_manage_reverse_geocoding_settings": "Управление настройками <link>обратного геокодирования</link>",
       "map_reverse_geocoding": "Обратное геокодирование",
@@ -16862,8 +16881,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "ПРИМЕЧАНИЕ: Это невозможно изменить позже!",
       "notification_email_from_address": "Адрес отправителя",
       "notification_email_from_address_description":
-          "Адрес электронной почты отправителя, например: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "Доменное имя почтового сервера (например, smtp.curatorphotos.app)",
+          "Адрес электронной почты отправителя, например: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description": "Доменное имя почтового сервера (например, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Игнорировать ошибки сертификата",
       "notification_email_ignore_certificate_errors_description":
           "Игнорировать ошибки проверки сертификата TLS (не рекомендуется)",
@@ -16970,9 +16989,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Шаблоны уведомлений",
       "template_settings_description": "Настройте шаблоны уведомлений",
       "theme_custom_css_settings": "Пользовательские CSS",
-      "theme_custom_css_settings_description": "Каскадные таблицы стилей позволяют настраивать дизайн Curator Photos.",
+      "theme_custom_css_settings_description":
+          "Каскадные таблицы стилей позволяют настраивать дизайн Personal Cloud Photos.",
       "theme_settings": "Настройки темы",
-      "theme_settings_description": "Управление настройкой веб-интерфейса Curator Photos",
+      "theme_settings_description": "Управление настройкой веб-интерфейса Personal Cloud Photos",
       "these_files_matched_by_checksum": "Эти файлы сопоставляются по их контрольным суммам",
       "thumbnail_generation_job": "Создание миниатюр",
       "thumbnail_generation_job_description":
@@ -17110,7 +17130,7 @@ class CodegenLoader extends AssetLoader {
         "Некоторые устройства очень медленно загружают локальные изображения. Активируйте эту настройку, чтобы изображения всегда загружались с сервера.",
     "advanced_settings_prefer_remote_title": "Предпочитать фото на сервере",
     "advanced_settings_proxy_headers_subtitle":
-        "Определите заголовки прокси-сервера, которые Curator Photos должен отправлять с каждым сетевым запросом",
+        "Определите заголовки прокси-сервера, которые Personal Cloud Photos должен отправлять с каждым сетевым запросом",
     "advanced_settings_proxy_headers_title": "Заголовки прокси",
     "advanced_settings_self_signed_ssl_subtitle":
         "Пропускать проверку SSL-сертификата сервера. Требуется для самоподписанных сертификатов.",
@@ -17211,7 +17231,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Сетка фотографий",
     "asset_offline": "Объект отключён",
     "asset_offline_description":
-        "Этот внешний файл не найден на диске. Пожалуйста, свяжитесь с администратором Curator Photos для получения помощи.",
+        "Этот внешний файл не найден на диске. Пожалуйста, свяжитесь с администратором Personal Cloud Photos для получения помощи.",
     "asset_restored_successfully": "Объект успешно восстановлен",
     "asset_skipped": "Пропущено",
     "asset_skipped_in_trash": "В корзине",
@@ -17230,7 +17250,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Объект не может быть добавлен} other {Объекты не могут быть добавлены}} в альбом",
     "assets_count": "{count, plural, one {# объект} many {# объектов} other {# объекта}}",
     "assets_deleted_permanently": "{count} объект(ов) удалено навсегда",
-    "assets_deleted_permanently_from_server": "{count} объект(ов) навсегда удалено с сервера Curator Photos",
+    "assets_deleted_permanently_from_server": "{count} объект(ов) навсегда удалено с сервера Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Скачан # файл} many {Скачано # файлов} other {Скачано # файла}}, {error} - сбой",
     "assets_downloaded_successfully":
@@ -17250,7 +17270,7 @@ class CodegenLoader extends AssetLoader {
     "assets_trashed": "{count} объект(ов) помещено в корзину",
     "assets_trashed_count":
         "{count, plural, one {# объект перемещён} many {# объектов перемещено} other {# объекта перемещено}} в корзину",
-    "assets_trashed_from_server": "{count} объект(ов) помещено в корзину на сервере Curator Photos",
+    "assets_trashed_from_server": "{count} объект(ов) помещено в корзину на сервере Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {# объект} many {# объектов} other {# объекта}} уже в альбоме",
     "authorized_devices": "Авторизованные устройства",
@@ -17347,7 +17367,7 @@ class CodegenLoader extends AssetLoader {
         "Вы уверены, что хотите оставить {count, plural, one {# дублирующийся объект} many {# дублирующихся объектов} other {# дублирующихся объекта}}? Это сохранит все дубликаты.",
     "bulk_trash_duplicates_confirmation":
         "Вы уверены, что хотите переместить в корзину {count, plural, one {# дублирующийся объект} many {# дублирующихся объектов} other {# дублирующихся объекта}}? Будет сохранён самый большой файл в каждой группе, а его дубликаты перемещены в корзину.",
-    "buy": "Приобретение лицензии Curator Photos",
+    "buy": "Приобретение лицензии Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Миниатюры страниц библиотеки ({} объектов)",
     "cache_settings_clear_cache_button": "Очистить кэш",
     "cache_settings_clear_cache_button_title":
@@ -17445,7 +17465,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Контекст",
     "continue": "Продолжить",
     "control_bottom_app_bar_create_new_album": "Создать альбом",
-    "control_bottom_app_bar_delete_from_immich": "Удалить из Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Удалить из Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Удалить с устройства",
     "control_bottom_app_bar_edit_location": "Изменить место",
     "control_bottom_app_bar_edit_time": "Изменить дату",
@@ -17514,10 +17534,10 @@ class CodegenLoader extends AssetLoader {
     "delete_api_key_prompt": "Вы действительно хотите удалить этот API ключ?",
     "delete_dialog_alert": "Эти элементы будут безвозвратно удалены с сервера, а также с вашего устройства",
     "delete_dialog_alert_local":
-        "Эти объекты будут безвозвратно удалены с вашего устройства, но по-прежнему будут доступны на сервере Curator Photos",
+        "Эти объекты будут безвозвратно удалены с вашего устройства, но по-прежнему будут доступны на сервере Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Резервные копии некоторых объектов не были загружены в Curator Photos и будут безвозвратно удалены с вашего устройства",
-    "delete_dialog_alert_remote": "Эти объекты будут безвозвратно удалены с сервера Curator Photos",
+        "Резервные копии некоторых объектов не были загружены в Personal Cloud Photos и будут безвозвратно удалены с вашего устройства",
+    "delete_dialog_alert_remote": "Эти объекты будут безвозвратно удалены с сервера Personal Cloud Photos",
     "delete_dialog_ok_force": "Все равно удалить",
     "delete_dialog_title": "Удалить навсегда",
     "delete_duplicates_confirmation": "Вы уверены, что хотите навсегда удалить эти дубликаты?",
@@ -17571,7 +17591,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Управление настройками скачивания объектов",
     "download_started": "Загрузка началась",
     "download_sucess": "Успешная загрузка",
-    "download_sucess_android": "Медиафайлы загружены в DCIM/CuratorPhotos",
+    "download_sucess_android": "Медиафайлы загружены в DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Ожидание повторной попытки",
     "downloading": "Загрузка",
     "downloading_asset_filename": "Загрузка объекта {filename}",
@@ -17612,7 +17632,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Пустая папка",
     "empty_trash": "Очистить корзину",
     "empty_trash_confirmation":
-        "Вы уверены, что хотите очистить корзину? Все объекты в корзине будут навсегда удалены из Curator Photos.\nВы не сможете отменить это действие!",
+        "Вы уверены, что хотите очистить корзину? Все объекты в корзине будут навсегда удалены из Personal Cloud Photos.\nВы не сможете отменить это действие!",
     "enable": "Включить",
     "enable_biometric_auth_description": "Введите свой PIN-код для включения биометрической аутентификации",
     "enabled": "Включено",
@@ -17866,7 +17886,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "Час",
     "id": "ID",
     "ignore_icloud_photos": "Пропускать файлы из iCloud",
-    "ignore_icloud_photos_description": "Не загружать файлы в Curator Photos, если они хранятся в iCloud",
+    "ignore_icloud_photos_description": "Не загружать файлы в Personal Cloud Photos, если они хранятся в iCloud",
     "image": "Изображения",
     "image_alt_text_date": "Совместное {isVideo, select, true {Video} other {Image}} {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} совместно с {person1} {date}",
@@ -17889,8 +17909,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Загрузка началась",
     "image_viewer_page_state_provider_download_success": "Успешно загружено",
     "image_viewer_page_state_provider_share_error": "Ошибка общего доступа",
-    "immich_logo": "Лого Curator Photos",
-    "immich_web_interface": "Веб интерфейс Curator Photos",
+    "immich_logo": "Лого Personal Cloud Photos",
+    "immich_web_interface": "Веб интерфейс Personal Cloud Photos",
     "import_from_json": "Импорт из JSON",
     "import_path": "Путь импорта",
     "in_albums": "В {count, plural, one {# альбоме} other {# альбомах}}",
@@ -17961,7 +17981,7 @@ class CodegenLoader extends AssetLoader {
         "Приложение будет подключаться к серверу по этому адресу, когда устройство подключено к выбранной Wi-Fi сети",
     "location_permission": "Доступ к местоположению",
     "location_permission_content":
-        "Чтобы использовать функцию автоматического переключения, Curator Photos необходимо разрешение на точное определение местоположения, чтобы оно могло считывать название текущей Wi-Fi сети",
+        "Чтобы использовать функцию автоматического переключения, Personal Cloud Photos необходимо разрешение на точное определение местоположения, чтобы оно могло считывать название текущей Wi-Fi сети",
     "location_picker_choose_on_map": "Выбрать на карте",
     "location_picker_latitude_error": "Укажите правильную широту",
     "location_picker_latitude_hint": "Введите широту",
@@ -18139,7 +18159,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Уведомления",
     "notifications_setting_description": "Управление уведомлениями",
     "oauth": "OAuth",
-    "official_immich_resources": "Официальные ресурсы Curator Photos",
+    "official_immich_resources": "Официальные ресурсы Personal Cloud Photos",
     "offline": "Недоступен",
     "ok": "ОК",
     "oldest_first": "Сначала старые",
@@ -18221,7 +18241,7 @@ class CodegenLoader extends AssetLoader {
         "Не удалось получить доступ. Чтобы использовать приложение, разрешите доступ к \"Фото и видео\" в настройках.",
     "permission_onboarding_permission_granted": "Доступ получен! Всё готово.",
     "permission_onboarding_permission_limited":
-        "Доступ к файлам ограничен. Чтобы Curator Photos мог создавать резервные копии и управлять вашей галереей, пожалуйста, предоставьте приложению разрешение на доступ к \"Фото и видео\" в настройках.",
+        "Доступ к файлам ограничен. Чтобы Personal Cloud Photos мог создавать резервные копии и управлять вашей галереей, пожалуйста, предоставьте приложению разрешение на доступ к \"Фото и видео\" в настройках.",
     "permission_onboarding_request": "Приложению необходимо разрешение на доступ к вашим фото и видео.",
     "person": "Человек",
     "person_birthdate": "Дата рождения: {date}",
@@ -18273,12 +18293,12 @@ class CodegenLoader extends AssetLoader {
     "public_share": "Публичный доступ",
     "purchase_account_info": "Поддержка",
     "purchase_activated_subtitle":
-        "Благодарим вас за поддержку Curator Photos и программного обеспечения с открытым исходным кодом",
+        "Благодарим вас за поддержку Personal Cloud Photos и программного обеспечения с открытым исходным кодом",
     "purchase_activated_time": "Активировано на {date}",
     "purchase_activated_title": "Ваш ключ успешно активирован",
     "purchase_button_activate": "Активировать",
     "purchase_button_buy": "Купить",
-    "purchase_button_buy_immich": "Купить Curator Photos",
+    "purchase_button_buy_immich": "Купить Personal Cloud Photos",
     "purchase_button_never_show_again": "Больше не показывать",
     "purchase_button_reminder": "Напомнить через 30 дней",
     "purchase_button_remove_key": "Удалить ключ",
@@ -18289,13 +18309,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Состояние поддержки",
     "purchase_individual_title": "Индивидуальный",
     "purchase_input_suggestion": "У вас есть ключ продукта? Введите этот ключ ниже",
-    "purchase_license_subtitle": "Приобретите Curator Photos, чтобы поддержать дальнейшее развитие сервиса",
+    "purchase_license_subtitle": "Приобретите Personal Cloud Photos, чтобы поддержать дальнейшее развитие сервиса",
     "purchase_lifetime_description": "Единовременная покупка",
     "purchase_option_title": "Варианты покупки",
     "purchase_panel_info_1":
-        "Создание Curator Photos отнимает много времени и усилий, и у нас есть штатные разработчики, которые работают над тем, чтобы сделать его настолько хорошим, насколько это возможно. Наша миссия заключается в том, чтобы программное обеспечение с открытым исходным кодом и этические методы ведения бизнеса стали устойчивым источником дохода для разработчиков и чтобы создать экосистему, уважающую конфиденциальность, с реальными альтернативами эксплуататорским облачным сервисам.",
+        "Создание Personal Cloud Photos отнимает много времени и усилий, и у нас есть штатные разработчики, которые работают над тем, чтобы сделать его настолько хорошим, насколько это возможно. Наша миссия заключается в том, чтобы программное обеспечение с открытым исходным кодом и этические методы ведения бизнеса стали устойчивым источником дохода для разработчиков и чтобы создать экосистему, уважающую конфиденциальность, с реальными альтернативами эксплуататорским облачным сервисам.",
     "purchase_panel_info_2":
-        "Поскольку мы обязались не добавлять платные функции, эта покупка не добавит дополнительных возможностей в Curator Photos. Мы рассчитываем на таких пользователей как вы, чтобы поддерживать дальнейшую разработку Curator Photos.",
+        "Поскольку мы обязались не добавлять платные функции, эта покупка не добавит дополнительных возможностей в Personal Cloud Photos. Мы рассчитываем на таких пользователей как вы, чтобы поддерживать дальнейшую разработку Personal Cloud Photos.",
     "purchase_panel_title": "Поддержите проект",
     "purchase_per_server": "На сервер",
     "purchase_per_user": "На пользователя",
@@ -18652,14 +18672,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Поддержка",
     "support_and_feedback": "Поддержка и обратная связь",
     "support_third_party_description":
-        "Ваша установка Curator Photos была упакована сторонним разработчиком. Проблемы, с которыми вы столкнулись, могут быть вызваны этим пакетом, поэтому, пожалуйста, в первую очередь обращайтесь к ним, используя ссылки ниже.",
+        "Ваша установка Personal Cloud Photos была упакована сторонним разработчиком. Проблемы, с которыми вы столкнулись, могут быть вызваны этим пакетом, поэтому, пожалуйста, в первую очередь обращайтесь к ним, используя ссылки ниже.",
     "swap_merge_direction": "Изменить направление слияния",
     "sync": "Синхр.",
     "sync_albums": "Синхронизировать альбомы",
     "sync_albums_manual_subtitle":
         "Синхронизировать все загруженные фото и видео в выбранные альбомы для резервного копирования",
     "sync_upload_album_setting_subtitle":
-        "Создавайте и загружайте свои фотографии и видео в выбранные альбомы на сервер Curator Photos",
+        "Создавайте и загружайте свои фотографии и видео в выбранные альбомы на сервер Personal Cloud Photos",
     "tag": "Тег",
     "tag_assets": "Добавить теги",
     "tag_created": "Тег {tag} создан",
@@ -18710,7 +18730,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Здесь будут отображаться удалённые фотографии и видео.",
     "trash_page_delete_all": "Удалить все",
     "trash_page_empty_trash_dialog_content":
-        "Очистить корзину? Объекты в ней будут навсегда удалены из Curator Photos.",
+        "Очистить корзину? Объекты в ней будут навсегда удалены из Personal Cloud Photos.",
     "trash_page_info": "Объекты в корзине будут окончательно удалены через {days} дней",
     "trash_page_no_assets": "Корзина пуста",
     "trash_page_restore_all": "Восстановить все",
@@ -18761,7 +18781,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Ошибки",
     "upload_status_uploaded": "Загружено",
     "upload_success": "Загрузка прошла успешно. Обновите страницу, чтобы увидеть новые объекты.",
-    "upload_to_immich": "Загрузка в Curator Photos ({count})",
+    "upload_to_immich": "Загрузка в Personal Cloud Photos ({count})",
     "uploading": "Загружается",
     "url": "URL",
     "usage": "Использование",
@@ -18821,7 +18841,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Предупреждение",
     "week": "Неделя",
     "welcome": "Добро пожаловать",
-    "welcome_to_immich": "Добро пожаловать в Curator Photos",
+    "welcome_to_immich": "Добро пожаловать в Personal Cloud Photos",
     "wifi_name": "Имя сети",
     "wrong_pin_code": "Неверный PIN-код",
     "year": "Год",
@@ -18870,7 +18890,7 @@ class CodegenLoader extends AssetLoader {
           "Dodaj wzorce wykluczające. Wspierane są specjalne sekwencje (glob) *, ** oraz ?. Aby ignorować całą zawartość wszystkich folderów nazwanych \"Raw\", użyj \"**/Raw/**\". Aby ignorować wszystkie pliki kończące się na \".tif\", użyj \"**/*.tif\". Aby ignorować ścieżkę absolutną, użyj \"/ścieżka/do/ignorowania/**\".",
       "admin_user": "Administrator",
       "asset_offline_description":
-          "Ten zewnętrzny zasób biblioteki nie jest już dostępny na dysku i został przeniesiony do kosza. Jeśli plik został przeniesiony w obrębie biblioteki, sprawdź swoją oś czasu pod kątem nowego odpowiadającego zasobu. Aby przywrócić ten zasób, upewnij się, że ścieżka pliku poniżej jest dostępna dla Curator Photos i przeskanuj bibliotekę.",
+          "Ten zewnętrzny zasób biblioteki nie jest już dostępny na dysku i został przeniesiony do kosza. Jeśli plik został przeniesiony w obrębie biblioteki, sprawdź swoją oś czasu pod kątem nowego odpowiadającego zasobu. Aby przywrócić ten zasób, upewnij się, że ścieżka pliku poniżej jest dostępna dla Personal Cloud Photos i przeskanuj bibliotekę.",
       "authentication_settings": "Ustawienia Uwierzytelnienia",
       "authentication_settings_description": "Zarządzaj hasłem, OAuth i innymi ustawienia uwierzytelnienia",
       "authentication_settings_disable_all":
@@ -18886,7 +18906,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfiguracja pochodzi z pliku konfiguracyjnego",
       "confirm_delete_library": "Czy na pewno chcesz usunąć bibliotekę {library}?",
       "confirm_delete_library_assets":
-          "Czy na pewno chcesz usunąć tę bibliotekę? Spowoduje to usunięcie {count, plural, one {# zawartego zasobu} other {wszystkich # zawartych zasobów}} z Curator Photos i nie będzie możliwe cofnięcie tej operacji. Pliki pozostaną na dysku.",
+          "Czy na pewno chcesz usunąć tę bibliotekę? Spowoduje to usunięcie {count, plural, one {# zawartego zasobu} other {wszystkich # zawartych zasobów}} z Personal Cloud Photos i nie będzie możliwe cofnięcie tej operacji. Pliki pozostaną na dysku.",
       "confirm_email_below": "Aby potwierdzić, wpisz \"{email}\" poniżej",
       "confirm_reprocess_all_faces":
           "Czy na pewno chcesz ponownie przetworzyć wszystkie twarze? Spowoduje to utratę nazwanych osób.",
@@ -19013,7 +19033,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Włącz funkcję mapy",
       "map_gps_settings": "Mapa i ustawienia lokalizacji",
       "map_gps_settings_description": "Zarządzaj mapą oraz ustawieniami odwróconego geokodowania",
-      "map_implications": "Funkcja mapy opiera się na zewnętrznej usłudze kafelków (tiles.curatorphotos.cloud)",
+      "map_implications": "Funkcja mapy opiera się na zewnętrznej usłudze kafelków (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Styl jasny",
       "map_manage_reverse_geocoding_settings": "Zarządzaj Ustawieniem <link> Odwrotne Geokodowanie</link>",
       "map_reverse_geocoding": "Odwrotne Geokodowanie",
@@ -19040,8 +19060,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "UWAŻAJ: Nie można tego później zmienić!",
       "notification_email_from_address": "Z adresu",
       "notification_email_from_address_description":
-          "Adres e-mail nadawcy, na przykład: „Curator Photos Photo Server <noreply@example.com>”. Upewnij się, że używasz adresu z którego masz prawo wysyłać wiadomości.",
-      "notification_email_host_description": "Host serwera e-mail (np. smtp.curatorphotos.app)",
+          "Adres e-mail nadawcy, na przykład: „Personal Cloud Photos Photo Server <noreply@example.com>”. Upewnij się, że używasz adresu z którego masz prawo wysyłać wiadomości.",
+      "notification_email_host_description": "Host serwera e-mail (np. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignoruj niepoprawny certyfikat",
       "notification_email_ignore_certificate_errors_description":
           "Ignoruj błąd walidacji certyfikatu TLS (nie zalecane)",
@@ -19145,9 +19165,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Szablony Powiadomień",
       "template_settings_description": "Zarządzaj niestandardowymi szablonami powiadomień e-mail",
       "theme_custom_css_settings": "Własny CSS",
-      "theme_custom_css_settings_description": "Własny CSS pozwala na zmianę wyglądu aplikacji Curator Photos.",
+      "theme_custom_css_settings_description": "Własny CSS pozwala na zmianę wyglądu aplikacji Personal Cloud Photos.",
       "theme_settings": "Ustawienia Motywu",
-      "theme_settings_description": "Zarządzaj wyglądem aplikacji Curator Photos w przeglądarce",
+      "theme_settings_description": "Zarządzaj wyglądem aplikacji Personal Cloud Photos w przeglądarce",
       "these_files_matched_by_checksum": "Pliki te są powiązane na podstawie ich sum kontrolnych",
       "thumbnail_generation_job": "Stwórz Miniaturki",
       "thumbnail_generation_job_description":
@@ -19282,7 +19302,7 @@ class CodegenLoader extends AssetLoader {
         "Niektóre urządzenia bardzo wolno ładują miniatury z zasobów na urządzeniu. Aktywuj to ustawienie, aby ładować zdalne obrazy.",
     "advanced_settings_prefer_remote_title": "Preferuj obrazy zdalne",
     "advanced_settings_proxy_headers_subtitle":
-        "Zdefiniuj nagłówki proxy, które Curator Photos powinien wysyłać z każdym żądaniem sieciowym",
+        "Zdefiniuj nagłówki proxy, które Personal Cloud Photos powinien wysyłać z każdym żądaniem sieciowym",
     "advanced_settings_proxy_headers_title": "Nagłówki proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Pomija weryfikację certyfikatu SSL dla punktu końcowego serwera. Wymagane w przypadku certyfikatów z podpisem własnym.",
@@ -19382,7 +19402,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Siatka Zdjęć",
     "asset_offline": "Zasób niedostępny",
     "asset_offline_description":
-        "Ten zewnętrzny zasób nie jest już dostępny na dysku. Aby uzyskać pomoc, skontaktuj się z administratorem Curator Photos.",
+        "Ten zewnętrzny zasób nie jest już dostępny na dysku. Aby uzyskać pomoc, skontaktuj się z administratorem Personal Cloud Photos.",
     "asset_restored_successfully": "Zasób został pomyślnie przywrócony",
     "asset_skipped": "Pominięto",
     "asset_skipped_in_trash": "W koszu",
@@ -19399,7 +19419,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {sztuka Elementu} other {szt. Elementów}} nie może być dodana do albumu",
     "assets_count": "{count, plural, one {# zasób} few {# zasoby} other {# zasobów}}",
     "assets_deleted_permanently": "{count} zostało trwale usuniętych",
-    "assets_deleted_permanently_from_server": "{count} zostało trwale usuniętych z serwera Curator Photos",
+    "assets_deleted_permanently_from_server": "{count} zostało trwale usuniętych z serwera Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Pomyślnie pobrano # plik - {error} plik nie powiódł się} few {Pomyślnie pobrano # pliki - {error} pliki nie powiodły się} other {Pomyślnie pobrano # plików - {error} pliki nie powiodły się}}",
     "assets_downloaded_successfully":
@@ -19416,7 +19436,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} pomyślnie przywrócono",
     "assets_trashed": "{count} szt. zostało wrzucone do kosza",
     "assets_trashed_count": "Wrzucono do kosza {count, plural, one {# zasób} few {# zasoby} other {# zasobów}}",
-    "assets_trashed_from_server": "{count} szt. usuniętych z serwera Curator Photos",
+    "assets_trashed_from_server": "{count} szt. usuniętych z serwera Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {Zasób był} few {Zasoby były} many {Zasobów było} other {Zasobów było}} już częścią albumu",
     "authorized_devices": "Upoważnione Urządzenia",
@@ -19428,7 +19448,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Wróć, zamknij lub odznacz",
     "background_location_permission": "Uprawnienia do lokalizacji w tle",
     "background_location_permission_content":
-        "Aby móc przełączać sieć podczas pracy w tle, Curator Photos musi *zawsze* mieć dostęp do dokładnej lokalizacji, aby aplikacja mogła odczytać nazwę sieci Wi-Fi",
+        "Aby móc przełączać sieć podczas pracy w tle, Personal Cloud Photos musi *zawsze* mieć dostęp do dokładnej lokalizacji, aby aplikacja mogła odczytać nazwę sieci Wi-Fi",
     "backup_album_selection_page_albums_device": "Albumy na urządzeniu ({number})",
     "backup_album_selection_page_albums_tap": "Stuknij, aby włączyć, stuknij dwukrotnie, aby wykluczyć",
     "backup_album_selection_page_assets_scatter":
@@ -19451,7 +19471,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Przejdź do ustawień",
     "backup_controller_page_background_battery_info_link": "Pokaż mi jak",
     "backup_controller_page_background_battery_info_message":
-        "Aby uzyskać najlepsze rezultaty podczas tworzenia kopii zapasowej w tle, należy wyłączyć wszelkie optymalizacje baterii ograniczające aktywność w tle dla Curator Photos w urządzeniu.\n\nPonieważ jest to zależne od urządzenia, proszę sprawdzić wymagane informacje dla producenta urządzenia.",
+        "Aby uzyskać najlepsze rezultaty podczas tworzenia kopii zapasowej w tle, należy wyłączyć wszelkie optymalizacje baterii ograniczające aktywność w tle dla Personal Cloud Photos w urządzeniu.\n\nPonieważ jest to zależne od urządzenia, proszę sprawdzić wymagane informacje dla producenta urządzenia.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optymalizacja Baterii",
     "backup_controller_page_background_charging": "Tylko podczas ładowania",
@@ -19513,7 +19533,7 @@ class CodegenLoader extends AssetLoader {
         "Czy na pewno chcesz zachować {count, plural, one {# zduplikowany zasób} few {# zduplikowane zasoby} other {# zduplikowanych zasobów}}? To spowoduje rozwiązanie wszystkich grup duplikatów bez usuwania czegokolwiek.",
     "bulk_trash_duplicates_confirmation":
         "Czy na pewno chcesz wrzucić do kosza {count, plural, one {# zduplikowany zasób} few {# zduplikowane zasoby} other {# zduplikowanych zasobów}}? Zostanie zachowany największy zasób z każdej grupy, a wszystkie pozostałe duplikaty zostaną wrzucone do kosza.",
-    "buy": "Kup Curator Photos",
+    "buy": "Kup Personal Cloud Photos",
     "cache_settings_album_thumbnails":
         "Miniatury na stronie biblioteki ({count, plural, one {# zasób} few {# zasoby} other {# zasobów}})",
     "cache_settings_clear_cache_button": "Wyczyść Cache",
@@ -19527,7 +19547,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Udostępnione miniatury albumów",
     "cache_settings_statistics_thumbnail": "Miniatury",
     "cache_settings_statistics_title": "Użycie Cache",
-    "cache_settings_subtitle": "Kontrolowanie zachowania buforowania aplikacji mobilnej Curator Photos",
+    "cache_settings_subtitle": "Kontrolowanie zachowania buforowania aplikacji mobilnej Personal Cloud Photos",
     "cache_settings_thumbnail_size":
         "Rozmiar pamięci podręcznej miniatur ({count, plural, one {# zasób} few {# zasoby} other {# zasobów}})",
     "cache_settings_tile_subtitle": "Kontroluj zachowanie lokalnego magazynu",
@@ -19614,7 +19634,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Kontynuuj",
     "control_bottom_app_bar_create_new_album": "Utwórz nowy album",
-    "control_bottom_app_bar_delete_from_immich": "Usuń z Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Usuń z Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Usuń z urządzenia",
     "control_bottom_app_bar_edit_location": "Edytuj lokalizację",
     "control_bottom_app_bar_edit_time": "Edytuj datę i godzinę",
@@ -19681,12 +19701,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Usuń",
     "delete_album": "Usuń album",
     "delete_api_key_prompt": "Czy na pewno chcesz usunąć ten klucz API?",
-    "delete_dialog_alert": "Te elementy zostaną trwale usunięte z Curator Photos i z Twojego urządzenia",
+    "delete_dialog_alert": "Te elementy zostaną trwale usunięte z Personal Cloud Photos i z Twojego urządzenia",
     "delete_dialog_alert_local":
-        "Elementy te zostaną trwale usunięte z Twojego urządzenia, ale nadal będą dostępne na serwerze Curator Photos",
+        "Elementy te zostaną trwale usunięte z Twojego urządzenia, ale nadal będą dostępne na serwerze Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Kopia zapasowa niektórych elementów nie jest tworzona w Curator Photos i zostanie trwale usunięta z Twojego urządzenia",
-    "delete_dialog_alert_remote": "Elementy te zostaną trwale usunięte z serwera Curator Photos",
+        "Kopia zapasowa niektórych elementów nie jest tworzona w Personal Cloud Photos i zostanie trwale usunięta z Twojego urządzenia",
+    "delete_dialog_alert_remote": "Elementy te zostaną trwale usunięte z serwera Personal Cloud Photos",
     "delete_dialog_ok_force": "Usuń mimo to",
     "delete_dialog_title": "Usuń trwale",
     "delete_duplicates_confirmation": "Czy na pewno chcesz trwale usunąć te duplikaty?",
@@ -19740,7 +19760,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Zarządzaj pobieraniem zasobów",
     "download_started": "Pobieranie rozpoczęte",
     "download_sucess": "Udane pobieranie",
-    "download_sucess_android": "Media zostały pobrane do DCIM/CuratorPhotos",
+    "download_sucess_android": "Media zostały pobrane do DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Oczekiwanie na ponowną próbę",
     "downloading": "Pobieranie",
     "downloading_asset_filename": "Pobieranie zasobu {filename}",
@@ -19781,7 +19801,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ten folder jest pusty",
     "empty_trash": "Opróżnij kosz",
     "empty_trash_confirmation":
-        "Czy na pewno chcesz opróżnić kosz? Spowoduje to trwałe usunięcie wszystkich zasobów znajdujących się w koszu z Curator Photos.\nNie można cofnąć tej operacji!",
+        "Czy na pewno chcesz opróżnić kosz? Spowoduje to trwałe usunięcie wszystkich zasobów znajdujących się w koszu z Personal Cloud Photos.\nNie można cofnąć tej operacji!",
     "enable": "Włącz",
     "enable_biometric_auth_description": "Wprowadź kod PIN aby włączyć logowanie biometryczne",
     "enabled": "Włączone",
@@ -20035,7 +20055,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignoruj zdjęcia w iCloud",
     "ignore_icloud_photos_description":
-        "Zdjęcia przechowywane w usłudze iCloud nie zostaną przesłane na serwer Curator Photos",
+        "Zdjęcia przechowywane w usłudze iCloud nie zostaną przesłane na serwer Personal Cloud Photos",
     "image": "Zdjęcie",
     "image_alt_text_date": "{isVideo, select, true {Wideo} other {Zdjęcie}} zrobione dnia {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Wideo} other {Zdjęcie}} zrobione z {person1} dnia {date}",
@@ -20059,8 +20079,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Pobieranie rozpoczęte",
     "image_viewer_page_state_provider_download_success": "Pobieranie zakończone",
     "image_viewer_page_state_provider_share_error": "Udostępnij błąd",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Interfejs internetowy Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Interfejs internetowy Personal Cloud Photos",
     "import_from_json": "Wczytaj z JSON",
     "import_path": "Ścieżka importu",
     "in_albums": "W {count, plural, one {# album} other {# albumy}}",
@@ -20130,7 +20150,7 @@ class CodegenLoader extends AssetLoader {
         "Aplikacja połączy się z serwerem za pośrednictwem tego adresu URL podczas korzystania z określonej sieci Wi-Fi",
     "location_permission": "Zezwolenie na lokalizację",
     "location_permission_content":
-        "Aby móc korzystać z funkcji automatycznego przełączania, Curator Photos potrzebuje uprawnienia do dokładnej lokalizacji, aby móc odczytać nazwę bieżącej sieci Wi-Fi",
+        "Aby móc korzystać z funkcji automatycznego przełączania, Personal Cloud Photos potrzebuje uprawnienia do dokładnej lokalizacji, aby móc odczytać nazwę bieżącej sieci Wi-Fi",
     "location_picker_choose_on_map": "Wybierz na mapie",
     "location_picker_latitude_error": "Wprowadź prawidłową szerokość geograficzną",
     "location_picker_latitude_hint": "Wpisz tutaj swoją szerokość geograficzną",
@@ -20304,7 +20324,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Powiadomienia",
     "notifications_setting_description": "Zarządzanie powiadomieniami",
     "oauth": "OAuth",
-    "official_immich_resources": "Oficjalne zasoby Curator Photos",
+    "official_immich_resources": "Oficjalne zasoby Personal Cloud Photos",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Od najstarszych",
@@ -20384,11 +20404,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Rozpocznij",
     "permission_onboarding_go_to_settings": "Przejdź do ustawień",
     "permission_onboarding_permission_denied":
-        "Odmowa pozwolenia. Aby korzystać z Curator Photos, przyznaj uprawnienia do zdjęć i filmów w Ustawieniach.",
+        "Odmowa pozwolenia. Aby korzystać z Personal Cloud Photos, przyznaj uprawnienia do zdjęć i filmów w Ustawieniach.",
     "permission_onboarding_permission_granted": "Pozwolenie udzielone! Wszystko gotowe.",
     "permission_onboarding_permission_limited":
-        "Pozwolenie ograniczone. Aby umożliwić Curator Photos tworzenie kopii zapasowych całej kolekcji galerii i zarządzanie nią, przyznaj uprawnienia do zdjęć i filmów w Ustawieniach.",
-    "permission_onboarding_request": "Curator Photos potrzebuje pozwolenia na przeglądanie Twoich zdjęć i filmów.",
+        "Pozwolenie ograniczone. Aby umożliwić Personal Cloud Photos tworzenie kopii zapasowych całej kolekcji galerii i zarządzanie nią, przyznaj uprawnienia do zdjęć i filmów w Ustawieniach.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos potrzebuje pozwolenia na przeglądanie Twoich zdjęć i filmów.",
     "person": "Osoba",
     "person_birthdate": "Urodzony {date}",
     "person_hidden": "{name}{hidden, select, true { (ukryty)} other {}}",
@@ -20441,12 +20462,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Publiczny album",
     "public_share": "Udostępnienie publiczne",
     "purchase_account_info": "Wspierający",
-    "purchase_activated_subtitle": "Dziękuję za wspieranie Curator Photos i oprogramowania open-source",
+    "purchase_activated_subtitle": "Dziękuję za wspieranie Personal Cloud Photos i oprogramowania open-source",
     "purchase_activated_time": "Aktywowane dnia {date}",
     "purchase_activated_title": "Twój klucz został pomyślnie aktywowany",
     "purchase_button_activate": "Aktywuj",
     "purchase_button_buy": "Kup",
-    "purchase_button_buy_immich": "Kup Curator Photos",
+    "purchase_button_buy_immich": "Kup Personal Cloud Photos",
     "purchase_button_never_show_again": "Nie pokazuj ponownie",
     "purchase_button_reminder": "Przypomnij za 30 dni",
     "purchase_button_remove_key": "Usuń klucz",
@@ -20456,13 +20477,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status wspierającego",
     "purchase_individual_title": "Osoba Prywatna",
     "purchase_input_suggestion": "Posiadasz klucz produktu? Wpisz go poniżej",
-    "purchase_license_subtitle": "Kup Curator Photos, aby wesprzeć jego dalszy rozwój",
+    "purchase_license_subtitle": "Kup Personal Cloud Photos, aby wesprzeć jego dalszy rozwój",
     "purchase_lifetime_description": "Jednorazowy zakup",
     "purchase_option_title": "OPCJE ZAKUPU",
     "purchase_panel_info_1":
-        "Tworzenie Curator Photos wymaga dużo czasu i wysiłku, a nasi inżynierowie pracują nad tym na pełen etat, aby uczynić go jak najlepszym. Naszą misją jest, aby oprogramowanie open-source i etyczne praktyki biznesowe stały się zrównoważonym źródłem dochodu dla deweloperów oraz stworzyć ekosystem szanujący prywatność z prawdziwymi alternatywami dla eksploatacyjnych usług w chmurze.",
+        "Tworzenie Personal Cloud Photos wymaga dużo czasu i wysiłku, a nasi inżynierowie pracują nad tym na pełen etat, aby uczynić go jak najlepszym. Naszą misją jest, aby oprogramowanie open-source i etyczne praktyki biznesowe stały się zrównoważonym źródłem dochodu dla deweloperów oraz stworzyć ekosystem szanujący prywatność z prawdziwymi alternatywami dla eksploatacyjnych usług w chmurze.",
     "purchase_panel_info_2":
-        "Ponieważ zobowiązujemy się do niewprowadzania paywalli, ten zakup nie zapewni Ci dodatkowych funkcji w Curator Photos. Polegamy na użytkownikach takich jak Ty, aby wspierać ciągły rozwój Curator Photos.",
+        "Ponieważ zobowiązujemy się do niewprowadzania paywalli, ten zakup nie zapewni Ci dodatkowych funkcji w Personal Cloud Photos. Polegamy na użytkownikach takich jak Ty, aby wspierać ciągły rozwój Personal Cloud Photos.",
     "purchase_panel_title": "Wsparcie projektu",
     "purchase_per_server": "Per serwer",
     "purchase_per_user": "Per użytkownik",
@@ -20688,7 +20709,7 @@ class CodegenLoader extends AssetLoader {
         "Podczas strumieniowego przesyłania wideo z serwera odtwarzaj oryginał, nawet jeśli transkodowanie jest dostępne. Może to prowadzić do buforowania. Filmy dostępne lokalnie są odtwarzane w oryginalnej jakości niezależnie od tego ustawienia.",
     "setting_video_viewer_original_video_title": "Wymuś oryginalne wideo",
     "settings": "Ustawienia",
-    "settings_require_restart": "Aby zastosować to ustawienie, uruchom ponownie Curator Photos",
+    "settings_require_restart": "Aby zastosować to ustawienie, uruchom ponownie Personal Cloud Photos",
     "settings_saved": "Ustawienia zapisane",
     "setup_pin_code": "Ustaw kod PIN",
     "share": "Udostępnij",
@@ -20818,14 +20839,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Wsparcie",
     "support_and_feedback": "Wsparcie i opinie",
     "support_third_party_description":
-        "Twoja instalacja Curator Photos została spakowana przez trzecią stronę. Problemy, które napotykasz, mogą być spowodowane przez ten pakiet, więc w pierwszej kolejności zgłaszaj problemy u nich, korzystając z poniższych linków.",
+        "Twoja instalacja Personal Cloud Photos została spakowana przez trzecią stronę. Problemy, które napotykasz, mogą być spowodowane przez ten pakiet, więc w pierwszej kolejności zgłaszaj problemy u nich, korzystając z poniższych linków.",
     "swap_merge_direction": "Zmień kierunek złączenia",
     "sync": "Synchronizuj",
     "sync_albums": "Synchronizuj albumy",
     "sync_albums_manual_subtitle":
         "Zsynchronizuj wszystkie przesłane filmy i zdjęcia z wybranymi albumami kopii zapasowych",
     "sync_upload_album_setting_subtitle":
-        "Twórz i przesyłaj swoje zdjęcia i filmy do wybranych albumów w Curator Photos",
+        "Twórz i przesyłaj swoje zdjęcia i filmy do wybranych albumów w Personal Cloud Photos",
     "tag": "Etykieta",
     "tag_assets": "Ustaw etykiety zasobów",
     "tag_created": "Stworzono etykietę: {tag}",
@@ -20875,7 +20896,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Tu znajdziesz wyrzucone zdjęcia i filmy.",
     "trash_page_delete_all": "Usuń wszystko",
     "trash_page_empty_trash_dialog_content":
-        "Czy chcesz opróżnić swoje usunięte zasoby? Przedmioty te zostaną trwale usunięte z Curator Photos",
+        "Czy chcesz opróżnić swoje usunięte zasoby? Przedmioty te zostaną trwale usunięte z Personal Cloud Photos",
     "trash_page_info": "Elementy przeniesione do kosza zostaną trwale usunięte po {days} dniach",
     "trash_page_no_assets": "Brak usuniętych zasobów",
     "trash_page_restore_all": "Przywrócić wszystkie",
@@ -20926,7 +20947,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Błędy",
     "upload_status_uploaded": "Przesłano",
     "upload_success": "Przesyłanie powiodło się, odśwież stronę, aby zobaczyć nowo przesłane zasoby.",
-    "upload_to_immich": "Prześlij do Curator Photos ({count})",
+    "upload_to_immich": "Prześlij do Personal Cloud Photos ({count})",
     "uploading": "Przesyłanie",
     "url": "URL",
     "usage": "Użycie",
@@ -20955,7 +20976,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Wersja",
     "version_announcement_closing": "Twój przyjaciel Aleks",
     "version_announcement_message":
-        "Witaj! Dostępna jest nowa wersja Curator Photos. Poświęć trochę czasu na zapoznanie się z <link>informacjami o wydaniu</link>, aby upewnić się, że twoja konfiguracja jest aktualna, aby uniknąć błędów, szczególnie jeśli używasz WatchTower lub jakiegokolwiek mechanizmu odpowiedzialnego za automatyczne aktualizowanie Curator Photos.",
+        "Witaj! Dostępna jest nowa wersja Personal Cloud Photos. Poświęć trochę czasu na zapoznanie się z <link>informacjami o wydaniu</link>, aby upewnić się, że twoja konfiguracja jest aktualna, aby uniknąć błędów, szczególnie jeśli używasz WatchTower lub jakiegokolwiek mechanizmu odpowiedzialnego za automatyczne aktualizowanie Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "informacje o wydaniu",
     "version_announcement_overlay_text_1": "Cześć przyjacielu, jest nowe wydanie",
     "version_announcement_overlay_text_2": "prosimy o poświęcenie czasu na odwiedzenie ",
@@ -20991,7 +21012,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Ostrzeżenie",
     "week": "Tydzień",
     "welcome": "Witaj",
-    "welcome_to_immich": "Witamy w Curator Photos",
+    "welcome_to_immich": "Witamy w Personal Cloud Photos",
     "wifi_name": "Nazwa Wi-Fi",
     "wrong_pin_code": "Nieprawidłowy kod PIN",
     "year": "Rok",
@@ -21040,7 +21061,7 @@ class CodegenLoader extends AssetLoader {
           "Додайте шаблони виключень. Підстановка з використанням *, ** та ? підтримується. Для ігнорування всіх файлів у будь-якому каталозі з ім'ям «Raw», використовуйте \"**/Raw/**\". Для ігнорування всіх файлів, що закінчуються на \".tif\", використовуйте \"**/*.tif\". Для ігнорування абсолютного шляху використовуйте \"/path/to/ignore/**\".",
       "admin_user": "Адміністратор",
       "asset_offline_description":
-          "Цей зовнішній бібліотечний актив більше не знайдено на диску і був переміщений до смітника. Якщо файл був переміщений у межах бібліотеки, перевірте свій таймлайн на наявність нового відповідного активу. Щоб відновити цей актив, переконайтеся, що шлях файлу нижче доступний для Curator Photos, і проскануйте бібліотеку.",
+          "Цей зовнішній бібліотечний актив більше не знайдено на диску і був переміщений до смітника. Якщо файл був переміщений у межах бібліотеки, перевірте свій таймлайн на наявність нового відповідного активу. Щоб відновити цей актив, переконайтеся, що шлях файлу нижче доступний для Personal Cloud Photos, і проскануйте бібліотеку.",
       "authentication_settings": "Налаштування аутентифікації",
       "authentication_settings_description": "Управління паролями, OAuth та іншими налаштуваннями аутентифікації",
       "authentication_settings_disable_all":
@@ -21056,7 +21077,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Налаштовано за допомогою конфіг-файлу",
       "confirm_delete_library": "Ви дійсно бажаєте видалити бібліотеку \"{library}\"?",
       "confirm_delete_library_assets":
-          "Ви впевнені, що хочете видалити цю бібліотеку? Це безповоротно видалить {count, plural, one {# елемент} other {all # елементи}} з Curator Photos . Файли залишаться на диску.",
+          "Ви впевнені, що хочете видалити цю бібліотеку? Це безповоротно видалить {count, plural, one {# елемент} other {all # елементи}} з Personal Cloud Photos . Файли залишаться на диску.",
       "confirm_email_below": "Для підтвердження введіть \"{email}\" нижче",
       "confirm_reprocess_all_faces":
           "Ви впевнені, що хочете повторно визначити всі обличчя? Це також призведе до видалення імен з усіх облич.",
@@ -21185,7 +21206,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Увімкнути функції мапи",
       "map_gps_settings": "Налаштування карти та GPS",
       "map_gps_settings_description": "Керування налаштуваннями карти та GPS (зворотний геокодинг)",
-      "map_implications": "Функція карти використовує зовнішній сервіс плиток (tiles.curatorphotos.cloud)",
+      "map_implications": "Функція карти використовує зовнішній сервіс плиток (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Світлий стиль",
       "map_manage_reverse_geocoding_settings": "Керувати налаштуваннями <link>зворотного геокодування</link>",
       "map_reverse_geocoding": "Зворотне геокодування",
@@ -21212,8 +21233,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "ПРИМІТКА: Це не можна змінити пізніше!",
       "notification_email_from_address": "З адреси",
       "notification_email_from_address_description":
-          "Адреса електронної пошти відправника, наприклад: \"Curator Photos Photo Server <noreply@example.com>\". Переконайтеся, що використовуєте адресу, з якої вам дозволено надсилати листи.",
-      "notification_email_host_description": "Хост поштового сервера (наприклад, smtp.curatorphotos.app)",
+          "Адреса електронної пошти відправника, наприклад: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Переконайтеся, що використовуєте адресу, з якої вам дозволено надсилати листи.",
+      "notification_email_host_description": "Хост поштового сервера (наприклад, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ігнорувати помилки сертифіката",
       "notification_email_ignore_certificate_errors_description":
           "Ігнорувати помилки перевірки сертифікатів TLS (не рекомендується)",
@@ -21316,9 +21337,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Шаблони сповіщень",
       "template_settings_description": "Керувати шаблонами для сповіщень",
       "theme_custom_css_settings": "Власний CSS",
-      "theme_custom_css_settings_description": "Каскадні таблиці стилів дозволяють настроювати дизайн Curator Photos.",
+      "theme_custom_css_settings_description":
+          "Каскадні таблиці стилів дозволяють настроювати дизайн Personal Cloud Photos.",
       "theme_settings": "Налаштування теми",
-      "theme_settings_description": "Налаштування персоналізації веб-інтерфейсу Curator Photos",
+      "theme_settings_description": "Налаштування персоналізації веб-інтерфейсу Personal Cloud Photos",
       "thumbnail_generation_job": "Створення мініатюр",
       "thumbnail_generation_job_description":
           "Створити великі, малі та розмиті мініатюри для кожного ресурсу, а також мініатюри для кожної особи",
@@ -21453,7 +21475,7 @@ class CodegenLoader extends AssetLoader {
         "Деякі пристрої вельми повільно завантажують мініатюри із елементів на пристрої. Активуйте для завантаження віддалених мініатюр натомість.",
     "advanced_settings_prefer_remote_title": "Перевага віддаленим зображенням",
     "advanced_settings_proxy_headers_subtitle":
-        "Визначте заголовки проксі-сервера, які Curator Photos має надсилати з кожним мережевим запитом",
+        "Визначте заголовки проксі-сервера, які Personal Cloud Photos має надсилати з кожним мережевим запитом",
     "advanced_settings_proxy_headers_title": "Проксі-заголовки",
     "advanced_settings_self_signed_ssl_subtitle":
         "Пропускає перевірку SSL-сертифіката сервера. Потрібне для самопідписаних сертифікатів.",
@@ -21553,7 +21575,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Фото-сітка",
     "asset_offline": "Актив вимкнено",
     "asset_offline_description":
-        "Цей зовнішній актив більше не знайдено на диску. Будь ласка, зверніться до адміністратора Curator Photos за допомогою.",
+        "Цей зовнішній актив більше не знайдено на диску. Будь ласка, зверніться до адміністратора Personal Cloud Photos за допомогою.",
     "asset_restored_successfully": "Елемент успішно відновлено",
     "asset_skipped": "Пропущено",
     "asset_skipped_in_trash": "У смітнику",
@@ -21570,7 +21592,7 @@ class CodegenLoader extends AssetLoader {
     "assets_cannot_be_added_to_album_count": "{count, plural, one {Ресурс} other {Ресурси}} не можна додати до альбому",
     "assets_count": "{count, plural, one {# ресурс} few {# ресурси} other {# ресурсів}}",
     "assets_deleted_permanently": "{count} елемент(и) остаточно видалено",
-    "assets_deleted_permanently_from_server": "{count} елемент(и) видалено назавжди з сервера Curator Photos",
+    "assets_deleted_permanently_from_server": "{count} елемент(и) видалено назавжди з сервера Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Завантажено # файл — {error} файл не вдалося} other {Завантажено # файлів — {error} файлів не вдалося}}",
     "assets_downloaded_successfully":
@@ -21587,7 +21609,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} елемент(и) успішно відновлено",
     "assets_trashed": "{count} елемент(и) поміщено до кошика",
     "assets_trashed_count": "Поміщено в смітник {count, plural, one {# ресурс} few {# ресурси} other {# ресурсів}}",
-    "assets_trashed_from_server": "{count} елемент(и) поміщено до кошика на сервері Curator Photos",
+    "assets_trashed_from_server": "{count} елемент(и) поміщено до кошика на сервері Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {Ресурс був} few {Ресурси були} other {Ресурси були}} вже частиною альбому",
     "authorized_devices": "Авторизовані пристрої",
@@ -21599,7 +21621,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Повернутися, закрити або скасувати вибір",
     "background_location_permission": "Дозвіл до місцезнаходження у фоні",
     "background_location_permission_content":
-        "Щоб перемикати мережі у фоновому режимі, Curator Photos має *завжди* мати доступ до точної геолокації, щоб зчитувати назву Wi-Fi мережі",
+        "Щоб перемикати мережі у фоновому режимі, Personal Cloud Photos має *завжди* мати доступ до точної геолокації, щоб зчитувати назву Wi-Fi мережі",
     "backup_album_selection_page_albums_device": "Альбоми на пристрої ({count})",
     "backup_album_selection_page_albums_tap": "Торкніться, щоб включити, двічі, щоб виключити",
     "backup_album_selection_page_assets_scatter":
@@ -21622,7 +21644,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Перейдіть до налаштувань",
     "backup_controller_page_background_battery_info_link": "Покажіть мені як",
     "backup_controller_page_background_battery_info_message":
-        "Для найкращого фонового резервного копіювання вимкніть будь-яку оптимізацію акумулятора, яка обмежує фонову активність для Curator Photos.\n\nСпосіб залежить від конкретного пристрою, тому шукайте необхідну інформацію у виробника вашого пристрою.",
+        "Для найкращого фонового резервного копіювання вимкніть будь-яку оптимізацію акумулятора, яка обмежує фонову активність для Personal Cloud Photos.\n\nСпосіб залежить від конкретного пристрою, тому шукайте необхідну інформацію у виробника вашого пристрою.",
     "backup_controller_page_background_battery_info_ok": "ОК",
     "backup_controller_page_background_battery_info_title": "Оптимізація батареї",
     "backup_controller_page_background_charging": "Лише під час заряджання",
@@ -21685,7 +21707,7 @@ class CodegenLoader extends AssetLoader {
         "Ви впевнені, що хочете залишити {count, plural, one {# дубльований ресурс} few {# дубльовані ресурси} other {# дубльованих ресурсів}}? Це дозволить вирішити всі групи дублікатів без видалення чого-небудь.",
     "bulk_trash_duplicates_confirmation":
         "Ви впевнені, що хочете викинути в смітник {count, plural, one {# дубльований ресурс} few {# дубльовані ресурси} other {# дубльованих ресурсів}} масово? Це залишить найбільший ресурс у кожній групі і викине в смітник всі інші дублікати.",
-    "buy": "Придбайте Curator Photos",
+    "buy": "Придбайте Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Очистити кеш",
     "cache_settings_clear_cache_button_title":
         "Очищає кеш програми. Це суттєво знизить продуктивність програми, доки кеш не буде перебудовано.",
@@ -21782,7 +21804,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Контекст",
     "continue": "Продовжуйте",
     "control_bottom_app_bar_create_new_album": "Створити новий альбом",
-    "control_bottom_app_bar_delete_from_immich": "Видалити з Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Видалити з Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Видалити з пристрою",
     "control_bottom_app_bar_edit_location": "Редагувати місцезнаходження",
     "control_bottom_app_bar_edit_time": "Редагувати дату та час",
@@ -21848,12 +21870,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Видалити",
     "delete_album": "Видалити альбом",
     "delete_api_key_prompt": "Ви впевнені, що хочете видалити цей ключ API?",
-    "delete_dialog_alert": "Ці елементи будуть остаточно видалені з серверу Curator Photos та вашого пристрою",
+    "delete_dialog_alert": "Ці елементи будуть остаточно видалені з серверу Personal Cloud Photos та вашого пристрою",
     "delete_dialog_alert_local":
-        "Ці елементи будуть остаточно видалені з вашого пристрою, але залишаться доступними на сервері Curator Photos",
+        "Ці елементи будуть остаточно видалені з вашого пристрою, але залишаться доступними на сервері Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Деякі елементи не були збережені на сервері Curator Photos і будуть остаточно видалені з вашого пристрою",
-    "delete_dialog_alert_remote": "Ці елементи будуть назавжди видалені з серверу Curator Photos",
+        "Деякі елементи не були збережені на сервері Personal Cloud Photos і будуть остаточно видалені з вашого пристрою",
+    "delete_dialog_alert_remote": "Ці елементи будуть назавжди видалені з серверу Personal Cloud Photos",
     "delete_dialog_ok_force": "Все одно видалити",
     "delete_dialog_title": "Видалити остаточно",
     "delete_duplicates_confirmation": "Ви впевнені, що хочете назавжди видалити ці дублікати?",
@@ -21907,7 +21929,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Керування налаштуваннями, пов'язаними з завантаженням ресурсів",
     "download_started": "Завантаження розпочато",
     "download_sucess": "Успішне завантаження",
-    "download_sucess_android": "Медіафайли завантажено в DCIM/CuratorPhotos",
+    "download_sucess_android": "Медіафайли завантажено в DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Очікування повторної спроби",
     "downloading": "Скачування",
     "downloading_asset_filename": "Завантаження ресурсу {filename}",
@@ -21947,7 +21969,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ця папка порожня",
     "empty_trash": "Очистити смітник",
     "empty_trash_confirmation":
-        "Ви впевнені, що хочете очистити смітник? Це остаточно видалить всі ресурси в смітнику з Curator Photos.\nЦю дію не можна скасувати!",
+        "Ви впевнені, що хочете очистити смітник? Це остаточно видалить всі ресурси в смітнику з Personal Cloud Photos.\nЦю дію не можна скасувати!",
     "enable": "Увімкнути",
     "enable_biometric_auth_description": "Введіть свій PIN-код, щоб увімкнути біометричну автентифікацію",
     "enabled": "Увімкнено",
@@ -22202,7 +22224,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Година",
     "id": "ID",
     "ignore_icloud_photos": "Пропускати файли з iCloud",
-    "ignore_icloud_photos_description": "Не завантажувати файли в Curator Photos, якщо вони зберігаються в iCloud",
+    "ignore_icloud_photos_description":
+        "Не завантажувати файли в Personal Cloud Photos, якщо вони зберігаються в iCloud",
     "image": "Зображення",
     "image_alt_text_date": "{isVideo, select, true {Відео} other {Зображення}} знято {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Відео} other {Зображення}} з {person1} зроблено {date}",
@@ -22226,8 +22249,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Завантаження почалося",
     "image_viewer_page_state_provider_download_success": "Усіпшно завантажено",
     "image_viewer_page_state_provider_share_error": "Помилка спільного доступу",
-    "immich_logo": "Логотип Curator Photos",
-    "immich_web_interface": "Веб інтерфейс Curator Photos",
+    "immich_logo": "Логотип Personal Cloud Photos",
+    "immich_web_interface": "Веб інтерфейс Personal Cloud Photos",
     "import_from_json": "Імпорт з JSON",
     "import_path": "Шлях імпорту",
     "in_albums": "У {count, plural, one {# альбомі} other {# альбомах}}",
@@ -22298,7 +22321,7 @@ class CodegenLoader extends AssetLoader {
         "Додаток підключатиметься до сервера через цей URL, коли використовується вказана Wi-Fi мережа",
     "location_permission": "Дозвіл до місцезнаходження",
     "location_permission_content":
-        "Щоб перемикати мережі у фоновому режимі, Curator Photos має завжди мати доступ до точної геолокації, щоб зчитувати назву Wi-Fi мережі",
+        "Щоб перемикати мережі у фоновому режимі, Personal Cloud Photos має завжди мати доступ до точної геолокації, щоб зчитувати назву Wi-Fi мережі",
     "location_picker_choose_on_map": "Обрати на мапі",
     "location_picker_latitude_error": "Вкажіть дійсну широту",
     "location_picker_latitude_hint": "Вкажіть широту",
@@ -22472,7 +22495,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Сповіщення",
     "notifications_setting_description": "Керування сповіщеннями",
     "oauth": "OAuth",
-    "official_immich_resources": "Офіційні ресурси Curator Photos",
+    "official_immich_resources": "Офіційні ресурси Personal Cloud Photos",
     "offline": "Офлайн",
     "ok": "ОК",
     "oldest_first": "Спочатку найстарші",
@@ -22550,11 +22573,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Розпочати",
     "permission_onboarding_go_to_settings": "Перейти до налаштувань",
     "permission_onboarding_permission_denied":
-        "Доступ заборонено. Для використання Curator Photos надайте дозволи до \"Фото та відео\" в налаштуваннях.",
+        "Доступ заборонено. Для використання Personal Cloud Photos надайте дозволи до \"Фото та відео\" в налаштуваннях.",
     "permission_onboarding_permission_granted": "Доступ надано! Все готово.",
     "permission_onboarding_permission_limited":
-        "Обмежений доступ. Аби дозволити Curator Photos резервне копіювання та керування вашою галереєю, надайте доступ до знімків та відео у Налаштуваннях.",
-    "permission_onboarding_request": "Curator Photos потребує доступу до ваших знімків та відео.",
+        "Обмежений доступ. Аби дозволити Personal Cloud Photos резервне копіювання та керування вашою галереєю, надайте доступ до знімків та відео у Налаштуваннях.",
+    "permission_onboarding_request": "Personal Cloud Photos потребує доступу до ваших знімків та відео.",
     "person": "Людина",
     "person_birthdate": "Народився {date}",
     "person_hidden": "{name}{hidden, select, true { (приховано)} other {}}",
@@ -22606,12 +22629,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Публічний альбом",
     "public_share": "Публічний доступ",
     "purchase_account_info": "Підтримка",
-    "purchase_activated_subtitle": "Дякуємо за підтримку Curator Photos та програмного забезпечення з відкритим кодом",
+    "purchase_activated_subtitle":
+        "Дякуємо за підтримку Personal Cloud Photos та програмного забезпечення з відкритим кодом",
     "purchase_activated_time": "Активовано {date}",
     "purchase_activated_title": "Ваш ключ було успішно активовано",
     "purchase_button_activate": "Активувати",
     "purchase_button_buy": "Купити",
-    "purchase_button_buy_immich": "Купити Curator Photos",
+    "purchase_button_buy_immich": "Купити Personal Cloud Photos",
     "purchase_button_never_show_again": "Ніколи більше не показувати",
     "purchase_button_reminder": "Нагадати через 30 днів",
     "purchase_button_remove_key": "Видалити ключ",
@@ -22622,13 +22646,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Статус підтримки",
     "purchase_individual_title": "Індивідуальний",
     "purchase_input_suggestion": "Маєте ключ продукту? Введіть ключ нижче",
-    "purchase_license_subtitle": "Купіть Curator Photos, щоб підтримати подальший розвиток сервісу",
+    "purchase_license_subtitle": "Купіть Personal Cloud Photos, щоб підтримати подальший розвиток сервісу",
     "purchase_lifetime_description": "Назавжди",
     "purchase_option_title": "ВАРІАНТИ КУПІВЛІ",
     "purchase_panel_info_1":
-        "Розробка Curator Photos вимагає багато часу та зусиль. Ми маємо штатних інженерів, які працюють над тим, щоб зробити його якомога кращим. Наша місія — зробити програмне забезпечення з відкритим кодом та етичні бізнес-практики стійким джерелом доходу для розробників і створити екосистему, що поважає приватність, з реальними альтернативами експлуататорським хмарним сервісам.",
+        "Розробка Personal Cloud Photos вимагає багато часу та зусиль. Ми маємо штатних інженерів, які працюють над тим, щоб зробити його якомога кращим. Наша місія — зробити програмне забезпечення з відкритим кодом та етичні бізнес-практики стійким джерелом доходу для розробників і створити екосистему, що поважає приватність, з реальними альтернативами експлуататорським хмарним сервісам.",
     "purchase_panel_info_2":
-        "Оскільки ми зобов’язуємося не додавати платні обмеження, ця покупка не надасть вам додаткових функцій в Curator Photos. Ми покладаємося на таких користувачів, як ви, щоб підтримувати подальший розвиток Curator Photos.",
+        "Оскільки ми зобов’язуємося не додавати платні обмеження, ця покупка не надасть вам додаткових функцій в Personal Cloud Photos. Ми покладаємося на таких користувачів, як ви, щоб підтримувати подальший розвиток Personal Cloud Photos.",
     "purchase_panel_title": "Підтримати проєкт",
     "purchase_per_server": "На сервер",
     "purchase_per_user": "На користувача",
@@ -22983,14 +23007,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Підтримка",
     "support_and_feedback": "Підтримка та зворотний зв'язок",
     "support_third_party_description":
-        "Вашу установку Curator Photos було упаковано третьою стороною. Проблеми, з якими ви стикаєтесь, можуть бути викликані цим пакетом, тому спочатку зверніться до них за допомогою, використовуючи наведені нижче посилання.",
+        "Вашу установку Personal Cloud Photos було упаковано третьою стороною. Проблеми, з якими ви стикаєтесь, можуть бути викликані цим пакетом, тому спочатку зверніться до них за допомогою, використовуючи наведені нижче посилання.",
     "swap_merge_direction": "Змінити напрямок об'єднання",
     "sync": "Синхронізувати",
     "sync_albums": "Синхронізувати альбоми",
     "sync_albums_manual_subtitle":
         "Синхронізувати всі завантажені фото та відео у вибрані альбоми для резервного копіювання",
     "sync_upload_album_setting_subtitle":
-        "Створюйте та завантажуйте свої фотографії та відео до вибраних альбомів на сервер Curator Photos",
+        "Створюйте та завантажуйте свої фотографії та відео до вибраних альбомів на сервер Personal Cloud Photos",
     "tag": "Тег",
     "tag_assets": "Додати теги",
     "tag_created": "Створено тег: {tag}",
@@ -23041,7 +23065,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Тут з'являтимуться видалені фото та відео.",
     "trash_page_delete_all": "Видалити усі",
     "trash_page_empty_trash_dialog_content":
-        "Ви хочете очистити кошик? Ці елементи будуть остаточно видалені з Curator Photos",
+        "Ви хочете очистити кошик? Ці елементи будуть остаточно видалені з Personal Cloud Photos",
     "trash_page_info": "Поміщені у кошик елементи буде остаточно видалено через {days} днів",
     "trash_page_no_assets": "Віддалені елементи відсутні",
     "trash_page_restore_all": "Відновити усі",
@@ -23091,7 +23115,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Помилки",
     "upload_status_uploaded": "Завантажено",
     "upload_success": "Завантаження успішне. Оновіть сторінку, щоб побачити нові завантажені ресурси.",
-    "upload_to_immich": "Завантажити в Curator Photos ({count})",
+    "upload_to_immich": "Завантажити в Personal Cloud Photos ({count})",
     "uploading": "Завантаження",
     "url": "URL",
     "usage": "Використання",
@@ -23120,7 +23144,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Версія",
     "version_announcement_closing": "Твій друг, Алекс",
     "version_announcement_message":
-        "Привіт! Доступна нова версія Curator Photos. Будь ласка, приділіть трохи часу для ознайомлення з <link>примітками до випуску</link>, щоб переконатися, що ваша установка оновлена і уникнути можливих помилок у налаштуваннях, особливо якщо ви використовуєте WatchTower або будь-який інший механізм, який автоматично оновлює ваш екземпляр Immich.",
+        "Привіт! Доступна нова версія Personal Cloud Photos. Будь ласка, приділіть трохи часу для ознайомлення з <link>примітками до випуску</link>, щоб переконатися, що ваша установка оновлена і уникнути можливих помилок у налаштуваннях, особливо якщо ви використовуєте WatchTower або будь-який інший механізм, який автоматично оновлює ваш екземпляр Immich.",
     "version_history": "Історія версій",
     "version_history_item": "Встановлено {version} {date}",
     "video": "Відео",
@@ -23151,7 +23175,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Попередження",
     "week": "Тиждень",
     "welcome": "Ласкаво просимо",
-    "welcome_to_immich": "Ласкаво просимо до Curator Photos",
+    "welcome_to_immich": "Ласкаво просимо до Personal Cloud Photos",
     "wifi_name": "Назва Wi-Fi",
     "wrong_pin_code": "Неправильний PIN-код",
     "year": "Рік",
@@ -23200,7 +23224,7 @@ class CodegenLoader extends AssetLoader {
           "Lisää mallit, jonka mukaan jätetään tiedostoja pois. Jokerimerkit *, ** ja ? ovat tuettuna. Jättääksesi pois kaikki tiedostot mistä tahansa löytyvästä kansiosta \"Raw\" käytä \"**/Raw/**\". Jättääksesi pois kaikki \". tif\" päätteiset tiedot, käytä \"**/*.tif\". Jättääksesi pois tarkan tiedostopolun, käytä \"/path/to/ignore/**\".",
       "admin_user": "Ylläpitäjä",
       "asset_offline_description":
-          "Ulkoista kirjaston resurssia ei enää löydy levyltä, ja se on siirretty roskakoriin. Jos tiedosto siirrettiin kirjaston sisällä, tarkista aikajanaltasi uusi vastaava resurssi. Palautaaksesi tämän resurssin, varmista, että alla oleva tiedostopolku on Curator Photosin käytettävissä ja skannaa kirjasto uudelleen.",
+          "Ulkoista kirjaston resurssia ei enää löydy levyltä, ja se on siirretty roskakoriin. Jos tiedosto siirrettiin kirjaston sisällä, tarkista aikajanaltasi uusi vastaava resurssi. Palautaaksesi tämän resurssin, varmista, että alla oleva tiedostopolku on Personal Cloud Photosin käytettävissä ja skannaa kirjasto uudelleen.",
       "authentication_settings": "Autentikointiasetukset",
       "authentication_settings_description": "Hallitse salasana-, OAuth- ja muut autentikoinnin asetukset",
       "authentication_settings_disable_all":
@@ -23216,7 +23240,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Asetukset on tällä hetkellä määritelty tiedostosta",
       "confirm_delete_library": "Haluatko varmasti poistaa kirjaston {library}?",
       "confirm_delete_library_assets":
-          "Oletko varma että haluat poistaa tämän kirjaston? Tämä poistaa {count, plural, one {# kohteen} other {# kohdetta}} Curator Photosistä eikä sitä voida perua. Tiedostot jäävät levylle.",
+          "Oletko varma että haluat poistaa tämän kirjaston? Tämä poistaa {count, plural, one {# kohteen} other {# kohdetta}} Personal Cloud Photosistä eikä sitä voida perua. Tiedostot jäävät levylle.",
       "confirm_email_below": "Kirjota \"{email}\" vahvistaaksesi",
       "confirm_reprocess_all_faces":
           "Haluatko varmasti käsitellä uudelleen kaikki kasvot? Tämä poistaa myös nimetyt henkilöt.",
@@ -23342,7 +23366,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Ota käyttöön karttatoiminnot",
       "map_gps_settings": "Kartta- ja GPS-asetukset",
       "map_gps_settings_description": "Hallitse kartan ja GPS:n (käänteisen geokoodauksen) asetuksia",
-      "map_implications": "Karttaominaisuus käyttää ulkoista karttapalvelua (tiles.curatorphotos.cloud)",
+      "map_implications": "Karttaominaisuus käyttää ulkoista karttapalvelua (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Vaalea teema",
       "map_manage_reverse_geocoding_settings": "Hallitse <link>käänteisen geokoodauksen</link> asetuksia",
       "map_reverse_geocoding": "Käänteinen Geokoodaus",
@@ -23367,8 +23391,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "Huom: Tätä ei voi enää myöhemmin vaihtaa!",
       "notification_email_from_address": "Lähettäjän osoite",
       "notification_email_from_address_description":
-          "Lähettäjän sähköpostiosoite. Esimerkiksi \"Curator Photos-kuvapalvelin <noreply@example.com>\". Varmista, että käytetystä osoiteesta on lupa lähettää sähköposteja.",
-      "notification_email_host_description": "Sähköpostipalvelin (esim. smtp.curatorphotos.app)",
+          "Lähettäjän sähköpostiosoite. Esimerkiksi \"Personal Cloud Photos-kuvapalvelin <noreply@example.com>\". Varmista, että käytetystä osoiteesta on lupa lähettää sähköposteja.",
+      "notification_email_host_description": "Sähköpostipalvelin (esim. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Älä huomioi varmennevirheitä",
       "notification_email_ignore_certificate_errors_description":
           "Älä huomioi TLS-varmenteiden validointivirheitä (ei suositeltu)",
@@ -23469,9 +23493,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Ilmoitusmallit",
       "template_settings_description": "Hallitse yksilöllisten ilmoitusten malleja",
       "theme_custom_css_settings": "Mukautettu CSS",
-      "theme_custom_css_settings_description": "Mukauta Curator Photosin ulkoasua CSS:llä.",
+      "theme_custom_css_settings_description": "Mukauta Personal Cloud Photosin ulkoasua CSS:llä.",
       "theme_settings": "Teeman asetukset",
-      "theme_settings_description": "Kustomoi Curator Photosin web-käyttöliittymää",
+      "theme_settings_description": "Kustomoi Personal Cloud Photosin web-käyttöliittymää",
       "these_files_matched_by_checksum": "Näillä tiedostoilla on yhteinen tarkistussumma",
       "thumbnail_generation_job": "Luo pikkukuvat",
       "thumbnail_generation_job_description":
@@ -23607,7 +23631,7 @@ class CodegenLoader extends AssetLoader {
         "Jotkut laitteet ovat erittäin hitaita lataamaan esikatselukuvia laitteen kohteista. Aktivoi tämä asetus käyttääksesi etäkuvia.",
     "advanced_settings_prefer_remote_title": "Suosi etäkuvia",
     "advanced_settings_proxy_headers_subtitle":
-        "Määritä välityspalvelimen otsikot(proxy headers), jotka Curator Photosin tulisi lähettää jokaisen verkkopyynnön mukana",
+        "Määritä välityspalvelimen otsikot(proxy headers), jotka Personal Cloud Photosin tulisi lähettää jokaisen verkkopyynnön mukana",
     "advanced_settings_proxy_headers_title": "Proxy Headers",
     "advanced_settings_self_signed_ssl_subtitle":
         "Ohita SSL sertifikaattivarmennus palvelimen päätepisteellä. Vaaditaan self-signed -sertifikaateissa.",
@@ -23700,7 +23724,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Kuvaruudukko",
     "asset_offline": "Aineisto offline-tilassa",
     "asset_offline_description":
-        "Tätä ulkoista resurssia ei enää löydy levyltä. Ole hyvä ja ota yhteyttä Curator Photos-järjestelmänvalvojaan saadaksesi apua.",
+        "Tätä ulkoista resurssia ei enää löydy levyltä. Ole hyvä ja ota yhteyttä Personal Cloud Photos-järjestelmänvalvojaan saadaksesi apua.",
     "asset_restored_successfully": "Kohde palautettu onnistuneesti",
     "asset_skipped": "Ohitettu",
     "asset_skipped_in_trash": "Roskakorissa",
@@ -23715,7 +23739,7 @@ class CodegenLoader extends AssetLoader {
         "Lisätty {count, plural, one {# kohde} other {# kohdetta}} {hasName, select, true {<b>{name}</b>} other {uuteen albumiin}}",
     "assets_count": "{count, plural, one {# media} other {# mediaa}}",
     "assets_deleted_permanently": "{count} kohdetta poistettu pysyvästi",
-    "assets_deleted_permanently_from_server": "{count} objektia poistettu pysyvästi Curator Photos-palvelimelta",
+    "assets_deleted_permanently_from_server": "{count} objektia poistettu pysyvästi Personal Cloud Photos-palvelimelta",
     "assets_moved_to_trash_count": "Siirretty {count, plural, one {# media} other {# mediaa}} roskakoriin",
     "assets_permanently_deleted_count": "{count, plural, one {# media} other {# mediaa}} poistettu pysyvästi",
     "assets_removed_count": "{count, plural, one {# media} other {# mediaa}} poistettu",
@@ -23726,7 +23750,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} kohdetta palautettu onnistuneesti",
     "assets_trashed": "{count} kohdetta siirretty roskakoriin",
     "assets_trashed_count": "{count, plural, one {# media} other {# mediaa}} siirretty roskakoriin",
-    "assets_trashed_from_server": "{count} kohdetta siirretty roskakoriin Curator Photos-palvelimelta",
+    "assets_trashed_from_server": "{count} kohdetta siirretty roskakoriin Personal Cloud Photos-palvelimelta",
     "assets_were_part_of_album_count": "{count, plural, one {Media oli} other {Mediat olivat}} jo albumissa",
     "authorized_devices": "Valtuutetut laitteet",
     "automatic_endpoint_switching_subtitle":
@@ -23736,7 +23760,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Palaa, sulje tai poista valinnat",
     "background_location_permission": "Taustasijainnin käyttöoikeus",
     "background_location_permission_content":
-        "Jotta sovellus voi vaihtaa verkkoa taustalla toimiessaan, Curator Photosillä on *aina* oltava pääsy tarkkaan sijaintiin, jotta se voi lukea Wi-Fi-verkon nimen",
+        "Jotta sovellus voi vaihtaa verkkoa taustalla toimiessaan, Personal Cloud Photosillä on *aina* oltava pääsy tarkkaan sijaintiin, jotta se voi lukea Wi-Fi-verkon nimen",
     "backup_album_selection_page_albums_device": "Laitteen albumit ({count})",
     "backup_album_selection_page_albums_tap": "Napauta sisällyttääksesi, kaksoisnapauta jättääksesi pois",
     "backup_album_selection_page_assets_scatter":
@@ -23760,7 +23784,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Siirry asetuksiin",
     "backup_controller_page_background_battery_info_link": "Näytä minulle miten",
     "backup_controller_page_background_battery_info_message":
-        "Kytke pois päältä kaikki Curator Photosin taustatyöskentelyyn liittyvät akun optimoinnit, jotta varmistat taustavarmuuskopioinnin parhaan mahdollisen toiminnan.\n\nKoska tämä on laitekohtaista, tarkista tarvittavat toimet laitevalmistajan ohjeista.",
+        "Kytke pois päältä kaikki Personal Cloud Photosin taustatyöskentelyyn liittyvät akun optimoinnit, jotta varmistat taustavarmuuskopioinnin parhaan mahdollisen toiminnan.\n\nKoska tämä on laitekohtaista, tarkista tarvittavat toimet laitevalmistajan ohjeista.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Akun optimointi",
     "backup_controller_page_background_charging": "Vain laitteen ollessa kytkettynä laturiin",
@@ -23834,7 +23858,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Jaettujen albumien esikatselukuvat",
     "cache_settings_statistics_thumbnail": "Esikatselukuvat",
     "cache_settings_statistics_title": "Välimuistin käyttö",
-    "cache_settings_subtitle": "Hallitse Curator Photos-mobiilisovelluksen välimuistin käyttöä",
+    "cache_settings_subtitle": "Hallitse Personal Cloud Photos-mobiilisovelluksen välimuistin käyttöä",
     "cache_settings_thumbnail_size": "Esikatselukuvien välimuistin koko ({} kohdetta)",
     "cache_settings_tile_subtitle": "Hallitse paikallista tallenustilaa",
     "cache_settings_tile_title": "Paikallinen tallennustila",
@@ -23918,7 +23942,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Konteksti",
     "continue": "Jatka",
     "control_bottom_app_bar_create_new_album": "Luo uusi albumi",
-    "control_bottom_app_bar_delete_from_immich": "Poista Curator Photosistä",
+    "control_bottom_app_bar_delete_from_immich": "Poista Personal Cloud Photosistä",
     "control_bottom_app_bar_delete_from_local": "Poista laitteelta",
     "control_bottom_app_bar_edit_location": "Muokkaa sijaintia",
     "control_bottom_app_bar_edit_time": "Muokkaa aikaa",
@@ -23986,10 +24010,10 @@ class CodegenLoader extends AssetLoader {
     "delete_api_key_prompt": "Haluatko varmasti poistaa tämän API-avaimen?",
     "delete_dialog_alert": "Nämä kohteet poistetaan pysyvästi Immich:stä ja laitteeltasi",
     "delete_dialog_alert_local":
-        "Kohteet poistetaan pysyvästi laitteelta, mutta ovat saatavilla Curator Photos-palvelimella",
+        "Kohteet poistetaan pysyvästi laitteelta, mutta ovat saatavilla Personal Cloud Photos-palvelimella",
     "delete_dialog_alert_local_non_backed_up":
-        "Joitain kohteista ei ole varmuuskopioitu Curator Photosiin ja ne poistetaan laitteelta pysyvästi",
-    "delete_dialog_alert_remote": "Kohteet poistetaan pysyvästi Curator Photos-palvelimelta",
+        "Joitain kohteista ei ole varmuuskopioitu Personal Cloud Photosiin ja ne poistetaan laitteelta pysyvästi",
+    "delete_dialog_alert_remote": "Kohteet poistetaan pysyvästi Personal Cloud Photos-palvelimelta",
     "delete_dialog_ok_force": "Poista kuitenkin",
     "delete_dialog_title": "Poista pysyvästi",
     "delete_duplicates_confirmation": "Haluatko varmasti poistaa nämä kaksoiskappaleet pysyvästi?",
@@ -24042,7 +24066,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Hallitse aineiston lataukseen liittyviä asetuksia",
     "download_started": "Lataus aloitettu",
     "download_sucess": "Lataus onnistui",
-    "download_sucess_android": "Media on ladattu DCIM/CuratorPhotos",
+    "download_sucess_android": "Media on ladattu DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Odotetaan uudelleenyritystä",
     "downloading": "Ladataan",
     "downloading_asset_filename": "Ladataan mediaa {filename}",
@@ -24335,7 +24359,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "Tunti",
     "id": "ID",
     "ignore_icloud_photos": "Ohita iCloud-kuvat",
-    "ignore_icloud_photos_description": "iCloudiin tallennettuja kuvia ei ladata Curator Photos-palvelimelle",
+    "ignore_icloud_photos_description": "iCloudiin tallennettuja kuvia ei ladata Personal Cloud Photos-palvelimelle",
     "image": "Kuva",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Kuva}} otettu {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Kuva}} otettu {person1} kanssa {date}",
@@ -24358,8 +24382,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Lataaminen aloitettu",
     "image_viewer_page_state_provider_download_success": "Lataus onnistui",
     "image_viewer_page_state_provider_share_error": "Jakovirhe",
-    "immich_logo": "Curator Photos-logo",
-    "immich_web_interface": "Curator Photos-verkkokäyttöliittymä",
+    "immich_logo": "Personal Cloud Photos-logo",
+    "immich_web_interface": "Personal Cloud Photos-verkkokäyttöliittymä",
     "import_from_json": "Tuo JSON-tiedostosta",
     "import_path": "Tuontipolku",
     "in_albums": "{count, plural, one {# Albumissa} other {# albumissa}}",
@@ -24422,7 +24446,7 @@ class CodegenLoader extends AssetLoader {
         "Sovellus muodostaa yhteyden palvelimeen tämän URL-osoitteen kautta, kun käytetään määritettyä Wi-Fi-verkkoa",
     "location_permission": "Sijainnin käyttöoikeus",
     "location_permission_content":
-        "Automaattisen vaihtotoiminnon käyttämiseksi Curator Photos tarvitsee tarkan sijainnin käyttöoikeuden, jotta se voi lukea nykyisen Wi-Fi-verkon nimen",
+        "Automaattisen vaihtotoiminnon käyttämiseksi Personal Cloud Photos tarvitsee tarkan sijainnin käyttöoikeuden, jotta se voi lukea nykyisen Wi-Fi-verkon nimen",
     "location_picker_choose_on_map": "Valitse kartalta",
     "location_picker_latitude_error": "Lisää kelvollinen leveysaste",
     "location_picker_latitude_hint": "Syötä leveysaste",
@@ -24594,7 +24618,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Ilmoitukset",
     "notifications_setting_description": "Hallitse ilmoituksia",
     "oauth": "OAuth",
-    "official_immich_resources": "Viralliset Curator Photos-resurssit",
+    "official_immich_resources": "Viralliset Personal Cloud Photos-resurssit",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Vanhin ensin",
@@ -24667,11 +24691,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Aloittaminen",
     "permission_onboarding_go_to_settings": "Siirry asetuksiin",
     "permission_onboarding_permission_denied":
-        "Kielletty käyttöoikeus. Käyttääksesi Curator Photosiä, myönnä oikeus kuviin ja videoihin asetuksista.",
+        "Kielletty käyttöoikeus. Käyttääksesi Personal Cloud Photosiä, myönnä oikeus kuviin ja videoihin asetuksista.",
     "permission_onboarding_permission_granted": "Käyttöoikeus myönnetty! Kaikki valmista.",
     "permission_onboarding_permission_limited":
-        "Rajoitettu käyttöoikeus. Salliaksesi Curator Photosin varmuuskopioida ja hallita koko kuvakirjastoasi, myönnä oikeus kuviin ja videoihin asetuksista.",
-    "permission_onboarding_request": "Curator Photos vaatii käyttöoikeuden kuvien ja videoiden käyttämiseen.",
+        "Rajoitettu käyttöoikeus. Salliaksesi Personal Cloud Photosin varmuuskopioida ja hallita koko kuvakirjastoasi, myönnä oikeus kuviin ja videoihin asetuksista.",
+    "permission_onboarding_request": "Personal Cloud Photos vaatii käyttöoikeuden kuvien ja videoiden käyttämiseen.",
     "person": "Henkilö",
     "person_birthdate": "Syntynyt {date}",
     "person_hidden": "{name}{hidden, select, true { (piilotettu)} other {}}",
@@ -24724,12 +24748,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Julkinen albumi",
     "public_share": "Julkinen jako",
     "purchase_account_info": "Tukija",
-    "purchase_activated_subtitle": "Kiitos Curator Photosin ja avoimen lähdekoodin ohjelmiston tukemisesta",
+    "purchase_activated_subtitle": "Kiitos Personal Cloud Photosin ja avoimen lähdekoodin ohjelmiston tukemisesta",
     "purchase_activated_time": "Aktivoitu {date}",
     "purchase_activated_title": "Avaimesi on aktivoitu onnistuneesti",
     "purchase_button_activate": "Aktivoi",
     "purchase_button_buy": "Osta",
-    "purchase_button_buy_immich": "Osta Curator Photos",
+    "purchase_button_buy_immich": "Osta Personal Cloud Photos",
     "purchase_button_never_show_again": "Älä näytä koskaan uudelleen",
     "purchase_button_reminder": "Muistuta minua 30 päivän kuluessa",
     "purchase_button_remove_key": "Poista avain",
@@ -24739,13 +24763,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Tukijan tila",
     "purchase_individual_title": "Yksittäinen",
     "purchase_input_suggestion": "Onko sinulla tuoteavain? Syötä avain alle",
-    "purchase_license_subtitle": "Osta Curator Photos tukeaksesi palvelun jatkuvaa kehittämistä",
+    "purchase_license_subtitle": "Osta Personal Cloud Photos tukeaksesi palvelun jatkuvaa kehittämistä",
     "purchase_lifetime_description": "Elinikäinen osto",
     "purchase_option_title": "OSTOVAIHTOEHDOT",
     "purchase_panel_info_1":
-        "Curator Photosin rakentaminen vie paljon aikaa ja vaivannäköä, ja meillä on kokopäiväisiä insinöörejä työskentelemässä sen parissa, jotta voimme tehdä siitä mahdollisimman hyvän. Missiomme on, että avoimen lähdekoodin ohjelmistosta ja eettisistä liiketoimintakäytännöistä tulee kestävä tulonlähde kehittäjille, sekä luoda yksityisyyttä kunnioittava ekosysteemi, jossa on todellisia vaihtoehtoja hyväksikäyttöön perustuville pilvipalveluille.",
+        "Personal Cloud Photosin rakentaminen vie paljon aikaa ja vaivannäköä, ja meillä on kokopäiväisiä insinöörejä työskentelemässä sen parissa, jotta voimme tehdä siitä mahdollisimman hyvän. Missiomme on, että avoimen lähdekoodin ohjelmistosta ja eettisistä liiketoimintakäytännöistä tulee kestävä tulonlähde kehittäjille, sekä luoda yksityisyyttä kunnioittava ekosysteemi, jossa on todellisia vaihtoehtoja hyväksikäyttöön perustuville pilvipalveluille.",
     "purchase_panel_info_2":
-        "Koska olemme sitoutuneet siihen, ettemme lisää maksumuuria, tämä osto ei anna sinulle mitään lisäominaisuuksia Curator Photosissa. Luotamme kaltaisiisi käyttäjiin tukeaksemme Curator Photosin jatkuvaa kehittämistä.",
+        "Koska olemme sitoutuneet siihen, ettemme lisää maksumuuria, tämä osto ei anna sinulle mitään lisäominaisuuksia Personal Cloud Photosissa. Luotamme kaltaisiisi käyttäjiin tukeaksemme Personal Cloud Photosin jatkuvaa kehittämistä.",
     "purchase_panel_title": "Tue projektia",
     "purchase_per_server": "Per palvelin",
     "purchase_per_user": "Per käyttäjä",
@@ -24968,7 +24992,7 @@ class CodegenLoader extends AssetLoader {
         "Kun toistat videota palvelimelta, toista alkuperäinen, vaikka transkoodattu versio olisi saatavilla. Tämä voi johtaa puskurointiin. Paikalliset videot toistetaan aina alkuperäislaadulla.",
     "setting_video_viewer_original_video_title": "Pakota alkuperäinen video",
     "settings": "Asetukset",
-    "settings_require_restart": "Käynnistä Curator Photos uudelleen ottaaksesti tämän asetuksen käyttöön",
+    "settings_require_restart": "Käynnistä Personal Cloud Photos uudelleen ottaaksesti tämän asetuksen käyttöön",
     "settings_saved": "Asetukset tallennettu",
     "setup_pin_code": "Määritä PIN-koodi",
     "share": "Jaa",
@@ -25096,13 +25120,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Tuki",
     "support_and_feedback": "Tuki ja palaute",
     "support_third_party_description":
-        "Curator Photos-asennuksesi on pakattu kolmannen osapuolen toimesta. Kohtaamasi ongelmat saattavat johtua tästä paketista, joten ilmoita niistä ensisijaisesti heille alla olevien linkkien kautta.",
+        "Personal Cloud Photos-asennuksesi on pakattu kolmannen osapuolen toimesta. Kohtaamasi ongelmat saattavat johtua tästä paketista, joten ilmoita niistä ensisijaisesti heille alla olevien linkkien kautta.",
     "swap_merge_direction": "Käännä yhdistämissuunta",
     "sync": "Synkronoi",
     "sync_albums": "Synkronoi albumit",
     "sync_albums_manual_subtitle": "Synkronoi kaikki ladatut videot ja valokuvat valittuihin varmuuskopioalbumeihin",
     "sync_upload_album_setting_subtitle":
-        "Luo ja lataa valokuvasi ja videosi valittuihin albumeihin Curator Photosissä",
+        "Luo ja lataa valokuvasi ja videosi valittuihin albumeihin Personal Cloud Photosissä",
     "tag": "Lisää tunniste",
     "tag_assets": "Lisää tunnisteita",
     "tag_created": "Luotu tunniste: {tag}",
@@ -25198,7 +25222,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Virheet",
     "upload_status_uploaded": "Ladattu",
     "upload_success": "Lataus onnistui. Päivitä sivu jotta näet latauksesi.",
-    "upload_to_immich": "Lähetä Curator Photosiin ({count})",
+    "upload_to_immich": "Lähetä Personal Cloud Photosiin ({count})",
     "uploading": "Lähettään",
     "url": "URL",
     "usage": "Käyttö",
@@ -25226,7 +25250,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versio",
     "version_announcement_closing": "Ystäväsi Alex",
     "version_announcement_message":
-        "Hei! Sovelluksen uusi versio on saatavilla. Käythän vilkaisemassa <link>julkaisun tiedot</link> ja varmistathan, että ohjelman määritykset ovat ajan tasalla. Erityisesti, jos käytössä on Watchtower tai jokin muu mekanismi Curator Photos-sovelluksen automaattista päivitystä varten.",
+        "Hei! Sovelluksen uusi versio on saatavilla. Käythän vilkaisemassa <link>julkaisun tiedot</link> ja varmistathan, että ohjelman määritykset ovat ajan tasalla. Erityisesti, jos käytössä on Watchtower tai jokin muu mekanismi Personal Cloud Photos-sovelluksen automaattista päivitystä varten.",
     "version_announcement_overlay_release_notes": "julkaisutiedoissa",
     "version_announcement_overlay_text_1": "Hei, kaveri! Uusi palvelinversio on saatavilla sovelluksesta",
     "version_announcement_overlay_text_2": "Ota hetki aikaa vieraillaksesi ",
@@ -25262,7 +25286,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Varoitus",
     "week": "Viikko",
     "welcome": "Tervetuloa",
-    "welcome_to_immich": "Tervetuloa Curator Photosiin",
+    "welcome_to_immich": "Tervetuloa Personal Cloud Photosiin",
     "wifi_name": "Wi-Fi-verkon nimi",
     "wrong_pin_code": "Väärä PIN-koodi",
     "year": "Vuosi",
@@ -25321,7 +25345,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "config தற்போது ஒரு config கோப்பு மூலம் அமைக்கப்பட்டுள்ளது",
       "confirm_delete_library": "{library} படங்கள் நூலகத்தை நிச்சயமாக நீக்க விரும்புகிறீர்களா?",
       "confirm_delete_library_assets":
-          "இந்த நூலகத்தை நிச்சயமாக நீக்க விரும்புகிறீர்களா? இது Curator Photos இலிருந்து {count, plural, one {# contained asset} other {all # contained assets}} நீக்கிவிடும், மேலும் செயல்தவிர்க்க முடியாது. கோப்புகள் வட்டில் இருக்கும்.",
+          "இந்த நூலகத்தை நிச்சயமாக நீக்க விரும்புகிறீர்களா? இது Personal Cloud Photos இலிருந்து {count, plural, one {# contained asset} other {all # contained assets}} நீக்கிவிடும், மேலும் செயல்தவிர்க்க முடியாது. கோப்புகள் வட்டில் இருக்கும்.",
       "confirm_email_below": "உறுதிப்படுத்த, கீழே \"{email}\" என தட்டச்சு செய்யவும்",
       "confirm_reprocess_all_faces":
           "எல்லா முகங்களையும் மீண்டும் செயலாக்க விரும்புகிறீர்களா? இது பெயரிடப்பட்ட நபர்களையும் அழிக்கும்.",
@@ -25442,7 +25466,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "மேப்பிங் அம்சங்களை இயக்கவும்",
       "map_gps_settings": "வரைபடம் & சி.பி.எச் அமைப்புகள்",
       "map_gps_settings_description": "வரைபடம் & சி.பி.எச் (தலைகீழ் சியோகோடிங்) அமைப்புகளை நிர்வகிக்கவும்",
-      "map_implications": "வரைபட நற்பொருத்தம் வெளிப்புற ஓடு சேவையை நம்பியுள்ளது (tiles.curatorphotos.cloud)",
+      "map_implications": "வரைபட நற்பொருத்தம் வெளிப்புற ஓடு சேவையை நம்பியுள்ளது (tiles.personalcloudphotos.cloud)",
       "map_light_style": "வெள்ளை தீம்",
       "map_manage_reverse_geocoding_settings": "<link>ரிவர்ஸ் ஜியோகோடிங்</link> அமைப்புகளை நிர்வகிக்கவும்",
       "map_reverse_geocoding": "புவி இருப்பிடத்தை தீர்மானித்தல்",
@@ -25471,7 +25495,7 @@ class CodegenLoader extends AssetLoader {
       "notification_email_from_address_description":
           "அனுப்புநரின் மின்னஞ்சல் முகவரி, எடுத்துக்காட்டாக: \"இம்மிச் புகைப்பட சேவையகம் <noreply@example.com>\"",
       "notification_email_host_description":
-          "மின்னஞ்சல் சேவையகத்தின் ஹோஸ்ட் (எடுத்துக்காட்டாக: smtp.curatorphotos.app)",
+          "மின்னஞ்சல் சேவையகத்தின் ஹோஸ்ட் (எடுத்துக்காட்டாக: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "சான்றிதழ் பிழைகளை புறக்கணிக்கவும்",
       "notification_email_ignore_certificate_errors_description":
           "TLS சான்றிதழ் சரிபார்ப்பு பிழைகளை புறக்கணிக்கவும் (பரிந்துரைக்கப்படவில்லை)",
@@ -25573,7 +25597,8 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "அறிவிப்பு வார்ப்புருக்கள்",
       "template_settings_description": "அறிவிப்புகளுக்கு தனிப்பயன் வார்ப்புருக்கள் நிர்வகிக்கவும்.",
       "theme_custom_css_settings": "தனிப்பயன் CSS",
-      "theme_custom_css_settings_description": "CSS அம்சம் Curator Photos வடிவமைப்பை தனிப்பயனாக்க அனுமதிக்கிறது.",
+      "theme_custom_css_settings_description":
+          "CSS அம்சம் Personal Cloud Photos வடிவமைப்பை தனிப்பயனாக்க அனுமதிக்கிறது.",
       "theme_settings": "தீம் அமைப்புகள்",
       "theme_settings_description": "இம்மிச் வலை இடைமுகத்தின் தனிப்பயனாக்கத்தை நிர்வகிக்கவும்",
       "thumbnail_generation_job": "சிறுபடங்களை உருவாக்கவும்",
@@ -26761,7 +26786,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Dagdagan ng pattern para maibukod. Supportado ang pag-tutugma gamit ang *, **, at ?. Para hindi maisama ang mga file sa direktoryo na may pangalang \"Raw\", gamitin ang \"**/Raw/**\". Para hindi maisama ang lahat ng mga file na nagtatapos sa \".tif\", gamitin ang \"**/*.tif\". Para hindi maisama ang isang tiyak na folder, gamitin ang \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Ang external library asset na ito ay hindi na makikita sa disk at nailipat na sa trash. Kung ang file ay nailipat sa loob ng library, tignan ang iyong timeline para sa kaukulang asset. Para maibalik ang asset na ito, siguraduhin na ang file path ay maa-access ng Curator Photos para iscan ang library.",
+          "Ang external library asset na ito ay hindi na makikita sa disk at nailipat na sa trash. Kung ang file ay nailipat sa loob ng library, tignan ang iyong timeline para sa kaukulang asset. Para maibalik ang asset na ito, siguraduhin na ang file path ay maa-access ng Personal Cloud Photos para iscan ang library.",
       "authentication_settings": "Setting ng mga Pagkakakilanlan",
       "authentication_settings_description": "Pamahalaan ang password, OAuth, and iba pang setting ng pagkakakilanlan",
       "authentication_settings_disable_all":
@@ -26777,7 +26802,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Ang mga setting ay kasalukuyang naka-set mula sa config file",
       "confirm_delete_library": "Sigurado ka na gusto mo tanggalin ang {library} library?",
       "confirm_delete_library_assets":
-          "Sigurado ka bang gusto mong burahin ang library na ito? Ang {count, plural, one {# na lamang asset} other {lahat ng # na nilalamang asset}} mula sa Curator Photos ay mabubura at hindi maibabalik. Ang mga file ay mananatili sa disk.",
+          "Sigurado ka bang gusto mong burahin ang library na ito? Ang {count, plural, one {# na lamang asset} other {lahat ng # na nilalamang asset}} mula sa Personal Cloud Photos ay mabubura at hindi maibabalik. Ang mga file ay mananatili sa disk.",
       "confirm_email_below": "Para isigurado, i-type ito sa baba: \"{email}\"",
       "confirm_reprocess_all_faces":
           "Sigurado ka bang gusto mong i-process muli lahat ng mga mukha? Mabubura nito ang mga taong napangalanan na.",
@@ -26950,7 +26975,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Pridávanie vzorov na vylúčenie. Globovanie pomocou *, ** a ? je podporované. Ak chcete ignorovať všetky súbory v akomkoľvek adresári s názvom \"Raw\", použite \"**/Raw/**\". Ak chcete ignorovať všetky súbory končiace na \".tif\", použite \"**/*.tif\". Ak chcete ignorovať absolútnu cestu, použite príkaz \"/cesta/k/ignorovanym/**\".",
       "asset_offline_description":
-          "Táto položka externej knižnice sa už na disku nenachádza a bola presunutá do koša. Pokiaľ bol súbor presunutý v rámci knižnice, skontrolujte časovú os a vyhľadajte nové odpovedajúce položky. Ak chcete túto položku obnoviť, uistite sa, že je cesta k nižšie uvedenému súboru prístupná pre aplikáciu Curator Photos a prehľadajte knižnicu.",
+          "Táto položka externej knižnice sa už na disku nenachádza a bola presunutá do koša. Pokiaľ bol súbor presunutý v rámci knižnice, skontrolujte časovú os a vyhľadajte nové odpovedajúce položky. Ak chcete túto položku obnoviť, uistite sa, že je cesta k nižšie uvedenému súboru prístupná pre aplikáciu Personal Cloud Photos a prehľadajte knižnicu.",
       "authentication_settings": "Overovanie a prihlásenie",
       "authentication_settings_description": "Spravovať heslo, protokol OAuth a ďalšie nastavenia overenia",
       "authentication_settings_disable_all":
@@ -26966,7 +26991,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurácia je v súčasnosti nastavená konfiguračným súborom",
       "confirm_delete_library": "Naozaj chcete vymazať knižnicu {library}?",
       "confirm_delete_library_assets":
-          "Ste si istí, že chcete vymazať túto knižnicu? Tato operácia nenávratne odstráni {count, plural, one {# contained asset} other {all # contained assets}} súborov z Curator Photos. Súbory budú ponechané na disku.",
+          "Ste si istí, že chcete vymazať túto knižnicu? Tato operácia nenávratne odstráni {count, plural, one {# contained asset} other {all # contained assets}} súborov z Personal Cloud Photos. Súbory budú ponechané na disku.",
       "confirm_email_below": "Pre potvrdenie zadajte \"{email}\" nižšie",
       "confirm_reprocess_all_faces":
           "Naozaj chcete spracovať všetky tváre znova? Tento proces vymaže pomenovaných ľudí.",
@@ -27094,7 +27119,7 @@ class CodegenLoader extends AssetLoader {
       "map_gps_settings": "Mapa & GPS",
       "map_gps_settings_description": "Správa nastavení máp a GPS reverzného geokódovania",
       "map_implications":
-          "Táto funkčnosť sa spolieha na externý servis spracovania mapových dlaždíc (tiles.curatorphotos.cloud)",
+          "Táto funkčnosť sa spolieha na externý servis spracovania mapových dlaždíc (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Svetlý štýl",
       "map_manage_reverse_geocoding_settings": "Správa nastavení <link>Reverzného geokódovania</link>",
       "map_reverse_geocoding": "Reverzné Geokódovanie",
@@ -27121,8 +27146,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "POZNÁMKA: Toto nie je možné neskôr zmeniť!",
       "notification_email_from_address": "Z adresy",
       "notification_email_from_address_description":
-          "E-mailová adresa odosielateľa, napríklad: \"Curator Photos Foto Server <email@napriklad.sk>\". Uistite sa, že používate adresu, z ktorej máte povolené odosielať e-maily.",
-      "notification_email_host_description": "Adresa emailového serveru (príklad: smtp.curatorphotos.app)",
+          "E-mailová adresa odosielateľa, napríklad: \"Personal Cloud Photos Foto Server <email@napriklad.sk>\". Uistite sa, že používate adresu, z ktorej máte povolené odosielať e-maily.",
+      "notification_email_host_description": "Adresa emailového serveru (príklad: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorovať chyby certifikátu",
       "notification_email_ignore_certificate_errors_description":
           "Ignorovať chyby pri overení TLS certifikátu (neodporúča sa)",
@@ -27221,9 +27246,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Šablóna upozornení",
       "template_settings_description": "Spravovanie vlastných šablón upozornení",
       "theme_custom_css_settings": "Vlastné CSS",
-      "theme_custom_css_settings_description": "CSS štýly umožňujú prispôsobiť dizajn Curator Photos.",
+      "theme_custom_css_settings_description": "CSS štýly umožňujú prispôsobiť dizajn Personal Cloud Photos.",
       "theme_settings": "Motívy",
-      "theme_settings_description": "Spravovať prispôsobenie webového rozhrania Curator Photos",
+      "theme_settings_description": "Spravovať prispôsobenie webového rozhrania Personal Cloud Photos",
       "these_files_matched_by_checksum": "Tieto súbory zodpovedajú kontrolným súčtom",
       "thumbnail_generation_job": "Generovať Miniatúry",
       "thumbnail_generation_job_description":
@@ -27443,7 +27468,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotografická mriežka",
     "asset_offline": "Médium je offline",
     "asset_offline_description":
-        "Toto externý obsah sa už nenachádza na disku. Požiadajte o pomoc svojho správcu Curator Photos.",
+        "Toto externý obsah sa už nenachádza na disku. Požiadajte o pomoc svojho správcu Personal Cloud Photos.",
     "asset_restored_successfully": "Asset restored successfully",
     "asset_skipped": "Preskočené",
     "asset_skipped_in_trash": "V koši",
@@ -27497,7 +27522,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Prejsť do nastavení",
     "backup_controller_page_background_battery_info_link": "Ukáž mi ako",
     "backup_controller_page_background_battery_info_message":
-        "Ak chcete dosiahnuť najlepšie výsledky pri zálohovaní na pozadí, vypnite všetky optimalizácie batérie, ktoré obmedzujú aktivitu na pozadí pre Curator Photos. \n\nKeďže to závisí od zariadenia, skontrolujte požadované informácie pre výrobcu vášho zariadenia.",
+        "Ak chcete dosiahnuť najlepšie výsledky pri zálohovaní na pozadí, vypnite všetky optimalizácie batérie, ktoré obmedzujú aktivitu na pozadí pre Personal Cloud Photos. \n\nKeďže to závisí od zariadenia, skontrolujte požadované informácie pre výrobcu vášho zariadenia.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optimalizácia batérie",
     "backup_controller_page_background_charging": "Len počas nabíjania",
@@ -27555,7 +27580,7 @@ class CodegenLoader extends AssetLoader {
         "Naozaj chceš ponechať {count, plural, one {# duplicitný súbor} other {# duplicitné súbory}}? Týmto sa vysporiadaš so všetkými duplicitnými skupinami bez mazania súborov.",
     "bulk_trash_duplicates_confirmation":
         "Naozaj chcete hromadne vymazať {count, plural, one {# duplicitný súbor} other {# duplicitné súbory}}? Týmto si ponecháš z každej skupiny najväčší súbor a vymažeš všetky ostatné duplicitné súbory v skupine.",
-    "buy": "Kúpiť Curator Photos",
+    "buy": "Kúpiť Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Náhľady stránok knižnice (položiek {})",
     "cache_settings_clear_cache_button": "Vymazať vyrovnávaciu pamäť",
     "cache_settings_clear_cache_button_title":
@@ -27568,7 +27593,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Zdieľané náhľady albumov",
     "cache_settings_statistics_thumbnail": "Náhľady",
     "cache_settings_statistics_title": "Použitie vyrovnávacej pamäte",
-    "cache_settings_subtitle": "Ovládanie správania mobilnej aplikácie Curator Photos v medzipamäti",
+    "cache_settings_subtitle": "Ovládanie správania mobilnej aplikácie Personal Cloud Photos v medzipamäti",
     "cache_settings_thumbnail_size": "Veľkosť vyrovnávacej pamäte náhľadov (položiek {})",
     "cache_settings_tile_subtitle": "Ovládanie správania lokálneho úložiska",
     "cache_settings_tile_title": "Lokálne úložisko",
@@ -27642,7 +27667,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontext",
     "continue": "Pokračovať",
     "control_bottom_app_bar_create_new_album": "Vytvoriť nový album",
-    "control_bottom_app_bar_delete_from_immich": "Vymazať z aplikácie Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Vymazať z aplikácie Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Vymazať zo zariadenia",
     "control_bottom_app_bar_edit_location": "Upraviť polohu",
     "control_bottom_app_bar_edit_time": "Upraviť dátum a čas",
@@ -27707,12 +27732,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Vymazať",
     "delete_album": "Odstrániť album",
     "delete_api_key_prompt": "Naozaj chcete odstrániť tento API kľúč?",
-    "delete_dialog_alert": "Tieto položky budú natrvalo odstránené z Curator Photos a z vášho zariadenia.",
+    "delete_dialog_alert": "Tieto položky budú natrvalo odstránené z Personal Cloud Photos a z vášho zariadenia.",
     "delete_dialog_alert_local":
-        "Tieto položky budú permanentne vymazané z vašeho zariadenia, ale budú stále k dispozícií na serveri Curator Photos",
+        "Tieto položky budú permanentne vymazané z vašeho zariadenia, ale budú stále k dispozícií na serveri Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Niektoré položky nie sú zálohované na Curator Photos a budú permanentne vymazané z vášho zariadenia",
-    "delete_dialog_alert_remote": "Tieto položky budú permanentne vymazané zo serveru Curator Photos",
+        "Niektoré položky nie sú zálohované na Personal Cloud Photos a budú permanentne vymazané z vášho zariadenia",
+    "delete_dialog_alert_remote": "Tieto položky budú permanentne vymazané zo serveru Personal Cloud Photos",
     "delete_dialog_ok_force": "Napriek tomu vymazať",
     "delete_dialog_title": "Vymazať natrvalo",
     "delete_duplicates_confirmation": "Naozaj chcete nenávratne odstrániť tieto duplikáty?",
@@ -27763,7 +27788,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings": "Stiahnuť",
     "download_settings_description": "Spravovať nastavenia súvisiace so sťahovaním položiek",
     "download_started": "Sťahovanie spustené",
-    "download_sucess_android": "Médiá boli stiahnuté do DCIM/CuratorPhotos",
+    "download_sucess_android": "Médiá boli stiahnuté do DCIM/PersonalCloudPhotos",
     "downloading": "Sťahuje sa",
     "downloading_asset_filename": "Sťahuje sa položka {filename}",
     "downloading_media": "Sťahovanie médií",
@@ -27802,7 +27827,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Tento priečinok je prázdny",
     "empty_trash": "Vyprázdniť kôš",
     "empty_trash_confirmation":
-        "Naozaj chcete vyprázdniť kôš? Nenávratne sa vymažú všetky položky z Curator Photos.\nTáto akcia sa nedá vrátiť!",
+        "Naozaj chcete vyprázdniť kôš? Nenávratne sa vymažú všetky položky z Personal Cloud Photos.\nTáto akcia sa nedá vrátiť!",
     "enable": "Aktivovať",
     "enabled": "Aktivovaný",
     "end_date": "Koncový dátum",
@@ -28052,8 +28077,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Sťahovanie sa začalo",
     "image_viewer_page_state_provider_download_success": "Sťahovanie bolo úspešné",
     "image_viewer_page_state_provider_share_error": "Chyba zdieľania",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Webové rozhranie Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Webové rozhranie Personal Cloud Photos",
     "import_from_json": "Importovať z JSON",
     "import_path": "Cesta na import",
     "in_albums": "V {count, plural, one {# albume} other {# albumoch}}",
@@ -28109,7 +28134,7 @@ class CodegenLoader extends AssetLoader {
     "loading_search_results_failed": "Načítanie výsledkov hľadania sa nepodarilo",
     "local_network": "Miestna sieť",
     "location_permission_content":
-        "Na používanie funkcie automatického prepínania potrebuje aplikácia Curator Photos presné povolenie na určenie polohy, aby mohla prečítať názov aktuálnej Wi-Fi siete",
+        "Na používanie funkcie automatického prepínania potrebuje aplikácia Personal Cloud Photos presné povolenie na určenie polohy, aby mohla prečítať názov aktuálnej Wi-Fi siete",
     "location_picker_choose_on_map": "Zvoľte na mape",
     "location_picker_latitude_error": "Zadajte platnú zemepisnú šírku",
     "location_picker_latitude_hint": "Zadajte sem vašu zemepisnú šírku",
@@ -28270,7 +28295,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Oznámenia",
     "notifications_setting_description": "Spravovať upozornenia",
     "oauth": "OAuth",
-    "official_immich_resources": "Oficiálne Curator Photos zdroje",
+    "official_immich_resources": "Oficiálne Personal Cloud Photos zdroje",
     "offline": "Offline",
     "ok": "OK",
     "oldest_first": "Najstaršie prvé",
@@ -28345,11 +28370,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Začať",
     "permission_onboarding_go_to_settings": "Prejsť do nastavení",
     "permission_onboarding_permission_denied":
-        "Prístup zamietnutý. Ak chcete používať Curator Photos, udeľte v Nastaveniach povolenia na fotografie a videá.",
+        "Prístup zamietnutý. Ak chcete používať Personal Cloud Photos, udeľte v Nastaveniach povolenia na fotografie a videá.",
     "permission_onboarding_permission_granted": "Povolenie udelené! Všetko je nastavené.",
     "permission_onboarding_permission_limited":
-        "Povolenie obmedzené. Ak chcete, aby Curator Photos zálohoval a spravoval celú vašu zbierku galérie, udeľte v Nastaveniach povolenia na fotografie a videá.",
-    "permission_onboarding_request": "Curator Photos vyžaduje povolenie na prezeranie vašich fotografií a videí.",
+        "Povolenie obmedzené. Ak chcete, aby Personal Cloud Photos zálohoval a spravoval celú vašu zbierku galérie, udeľte v Nastaveniach povolenia na fotografie a videá.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos vyžaduje povolenie na prezeranie vašich fotografií a videí.",
     "person": "Osoba",
     "person_birthdate": "Narodený dňa {date}",
     "person_hidden": "{name}{hidden, select, true { (skryté)} other {}}",
@@ -28392,12 +28418,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Verejný album",
     "public_share": "Verejné zdieľanie",
     "purchase_account_info": "Podporovateľ",
-    "purchase_activated_subtitle": "Ďakujeme za podporu Curator Photos a softvéru s otvorenými zdrojákmi",
+    "purchase_activated_subtitle": "Ďakujeme za podporu Personal Cloud Photos a softvéru s otvorenými zdrojákmi",
     "purchase_activated_time": "Aktivované {date}",
     "purchase_activated_title": "Váš kľúč je úspešne aktivovaný",
     "purchase_button_activate": "Aktivovať",
     "purchase_button_buy": "Kúpiť",
-    "purchase_button_buy_immich": "Kúpiť Curator Photos",
+    "purchase_button_buy_immich": "Kúpiť Personal Cloud Photos",
     "purchase_button_never_show_again": "Už viac nezobrazovať",
     "purchase_button_reminder": "Pripomenúť mi o 30 dní",
     "purchase_button_remove_key": "Odobrať kľúč",
@@ -28407,13 +28433,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Stav podporovateľa",
     "purchase_individual_title": "Jednotlivec",
     "purchase_input_suggestion": "Máte produktový kľúč? Zadajte ho nižšie",
-    "purchase_license_subtitle": "Kúpte si Curator Photos a podporte neustály vývoj tejto služby",
+    "purchase_license_subtitle": "Kúpte si Personal Cloud Photos a podporte neustály vývoj tejto služby",
     "purchase_lifetime_description": "Doživotná platnosť",
     "purchase_option_title": "MOŽNOSTI NÁKUPU",
     "purchase_panel_info_1":
-        "Vývoj Curator Photos zaberá veľa času a úsilia, a máme zamestnaných fulltime inžinierov, aby ho spravili ako sa najlepšie dá. Naša misia je, aby sa open-source softvér a etické biznis praktiky stali udržateľným zdrojom príjmu pre vývojárov a vytvorili ekosystém rešpektujúci súkromie so skutočnými náhradami voči zneužívajúcim cloudovým službám.",
+        "Vývoj Personal Cloud Photos zaberá veľa času a úsilia, a máme zamestnaných fulltime inžinierov, aby ho spravili ako sa najlepšie dá. Naša misia je, aby sa open-source softvér a etické biznis praktiky stali udržateľným zdrojom príjmu pre vývojárov a vytvorili ekosystém rešpektujúci súkromie so skutočnými náhradami voči zneužívajúcim cloudovým službám.",
     "purchase_panel_info_2":
-        "Keďže sme zaviazaní nezavádzať platené verzie, nezískate týmto nákupom žiadne prídavné funkcie. Spoliehame sa na používateľov, ako ste vy, že podporia neustály vývoj aplikácie Curator Photos.",
+        "Keďže sme zaviazaní nezavádzať platené verzie, nezískate týmto nákupom žiadne prídavné funkcie. Spoliehame sa na používateľov, ako ste vy, že podporia neustály vývoj aplikácie Personal Cloud Photos.",
     "purchase_panel_title": "Podporiť projekt",
     "purchase_per_server": "Za server",
     "purchase_per_user": "Za používateľa",
@@ -28625,7 +28651,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_total_progress_title": "Zobraziť celkový priebeh zálohovania na pozadí",
     "setting_video_viewer_looping_title": "Opakovanie",
     "settings": "Nastavenia",
-    "settings_require_restart": "Na použitie tohto nastavenia reštartujte Curator Photos",
+    "settings_require_restart": "Na použitie tohto nastavenia reštartujte Personal Cloud Photos",
     "settings_saved": "Nastavenia boli uložené",
     "share": "Zdieľať",
     "share_add_photos": "Pridať fotografie",
@@ -28751,7 +28777,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Podpora",
     "support_and_feedback": "Podpora a spätná väzba",
     "support_third_party_description":
-        "Vaša inštalácia Curator Photos bola pripravená treťou stranou. Problémy, ktoré sa vyskytli, môžu byť spôsobené týmto balíčkom, preto sa na nich obráťte v prvom rade cez nasledujúce odkazy.",
+        "Vaša inštalácia Personal Cloud Photos bola pripravená treťou stranou. Problémy, ktoré sa vyskytli, môžu byť spôsobené týmto balíčkom, preto sa na nich obráťte v prvom rade cez nasledujúce odkazy.",
     "swap_merge_direction": "Vymeniť smer zlúčenia",
     "sync": "Synchronizovať",
     "sync_albums": "Synchronizovať albumy",
@@ -28799,7 +28825,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Vymazané fotografie a videá sa zobrazia tu.",
     "trash_page_delete_all": "Vymazať všetky",
     "trash_page_empty_trash_dialog_content":
-        "Skutočne chcete vyprázdniť kôš? Tieto položky budú permanentne odstránené z Curator Photos",
+        "Skutočne chcete vyprázdniť kôš? Tieto položky budú permanentne odstránené z Personal Cloud Photos",
     "trash_page_info": "Médiá v koši sa permanentne odstránia po {days} dňoch",
     "trash_page_no_assets": "Žiadne médiá v koši",
     "trash_page_restore_all": "Obnoviť všetky",
@@ -28846,7 +28872,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Chyby",
     "upload_status_uploaded": "Nahrané",
     "upload_success": "Nahrávanie úspešné, pridané súbory sa zobrazia po obnovení stránky.",
-    "upload_to_immich": "Nahrať na Curator Photos ({count})",
+    "upload_to_immich": "Nahrať na Personal Cloud Photos ({count})",
     "uploading": "Nahrávanie",
     "url": "Odkaz URL",
     "usage": "Použitie",
@@ -28872,7 +28898,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Verzia",
     "version_announcement_closing": "Tvoj kamarát, Alex",
     "version_announcement_message":
-        "Ahoj! Nová verzia Curator Photos je dostupná. Prosím prečítajte si <link>poznámky k vydaniu</link>, aby ste sa uistili, že inštalácia bude aktuálna bez problémov, najmä ak používate WatchTower alebo akýkoľvek spôsob automatickej aktualizácie Curator Photos servera.",
+        "Ahoj! Nová verzia Personal Cloud Photos je dostupná. Prosím prečítajte si <link>poznámky k vydaniu</link>, aby ste sa uistili, že inštalácia bude aktuálna bez problémov, najmä ak používate WatchTower alebo akýkoľvek spôsob automatickej aktualizácie Personal Cloud Photos servera.",
     "version_announcement_overlay_release_notes": "poznámky k vydaniu",
     "version_announcement_overlay_text_1": "Ahoj, je tu nová verzia",
     "version_announcement_overlay_text_2": "nájdite si čas na návštevu ",
@@ -28908,7 +28934,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Varovanie",
     "week": "Týždeň",
     "welcome": "Vitajte",
-    "welcome_to_immich": "Vitajte v Curator Photos",
+    "welcome_to_immich": "Vitajte v Personal Cloud Photos",
     "wifi_name": "Názov Wi-Fi",
     "wrong_pin_code": "Nesprávny PIN kód",
     "year": "Rok",
@@ -29068,7 +29094,7 @@ class CodegenLoader extends AssetLoader {
           "Adicione padrões de exclusão. Utilizar *, ** ou ? são suportados. Para ignorar todos os ficheiros em qualquer diretório chamado \"Raw\", use \"**/Raw/**'. Para ignorar todos os ficheiros que finalizam em \".tif\", use \"**/*.tif\". Para ignorar um caminho absoluto, use \"/caminho/para/ignorar/**\".",
       "admin_user": "Utilizador Administrador",
       "asset_offline_description":
-          "Este ficheiro proveniente de uma biblioteca externa deixou de estar disponível no disco e foi movido para a reciclagem. Se o ficheiro foi movido no interior da biblioteca, procure na linha de tempo pelo novo ficheiro correspondente. Para restaurar este ficheiro, certifique-se que o caminho do ficheiro abaixo pode ser acedido pelo Curator Photos e analise a biblioteca.",
+          "Este ficheiro proveniente de uma biblioteca externa deixou de estar disponível no disco e foi movido para a reciclagem. Se o ficheiro foi movido no interior da biblioteca, procure na linha de tempo pelo novo ficheiro correspondente. Para restaurar este ficheiro, certifique-se que o caminho do ficheiro abaixo pode ser acedido pelo Personal Cloud Photos e analise a biblioteca.",
       "authentication_settings": "Definições de Autenticação",
       "authentication_settings_description": "Gerir palavras-passe, OAuth, e outras definições de autenticação",
       "authentication_settings_disable_all":
@@ -29084,7 +29110,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "A configuração está atualmente definida por um ficheiro de configuração",
       "confirm_delete_library": "Tem a certeza de que deseja eliminar a biblioteca {library} ?",
       "confirm_delete_library_assets":
-          "Tem a certeza de que deseja eliminar esta biblioteca? Isto eliminará {count, plural, one {# ficheiro incluído} other {todos os # ficheiros incluídos}} do Curator Photos e esta ação não pode ser anulada. Os ficheiros permanecerão no disco.",
+          "Tem a certeza de que deseja eliminar esta biblioteca? Isto eliminará {count, plural, one {# ficheiro incluído} other {todos os # ficheiros incluídos}} do Personal Cloud Photos e esta ação não pode ser anulada. Os ficheiros permanecerão no disco.",
       "confirm_email_below": "Para confirmar, escreva \"{email}\" abaixo",
       "confirm_reprocess_all_faces":
           "Tem a certeza de que deseja reprocessar todos os rostos? Isto também limpará os nomes das pessoas.",
@@ -29211,7 +29237,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Ativar funcionalidades de mapa",
       "map_gps_settings": "Mapas e Definições de GPS",
       "map_gps_settings_description": "Gerir Definições de Mapas e GPS (Geocodificação Reversa)",
-      "map_implications": "A funcionalidade do mapa necessita um serviço externo (tiles.curatorphotos.cloud)",
+      "map_implications": "A funcionalidade do mapa necessita um serviço externo (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Tema Claro",
       "map_manage_reverse_geocoding_settings": "Gerir definições de <link>Geocodificação Reversa</link>",
       "map_reverse_geocoding": "Geocodificação Reversa",
@@ -29239,8 +29265,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Isto não pode ser alterado posteriormente!",
       "notification_email_from_address": "A partir do endereço",
       "notification_email_from_address_description":
-          "Endereço de e-mail do remetente, por exemplo: \"Servidor de Fotos Curator Photos <noreply@example.com>\". Certifique-se de que utiliza um endereço através do qual pode enviar e-mails.",
-      "notification_email_host_description": "Host do servidor de e-mail (por exemplo, smtp.curatorphotos.app)",
+          "Endereço de e-mail do remetente, por exemplo: \"Servidor de Fotos Personal Cloud Photos <noreply@example.com>\". Certifique-se de que utiliza um endereço através do qual pode enviar e-mails.",
+      "notification_email_host_description": "Host do servidor de e-mail (por exemplo, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorar erros de certificado",
       "notification_email_ignore_certificate_errors_description":
           "Ignorar erros de validação de certificado TLS (não recomendado)",
@@ -29349,9 +29375,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gerir modelos personalizados para notificações",
       "theme_custom_css_settings": "CSS Personalizado",
       "theme_custom_css_settings_description":
-          "Folhas de estilo em cascata (CSS) permitem que o design do Curator Photos seja personalizado.",
+          "Folhas de estilo em cascata (CSS) permitem que o design do Personal Cloud Photos seja personalizado.",
       "theme_settings": "Definições de Tema",
-      "theme_settings_description": "Gerir a personalização da interface web do Curator Photos",
+      "theme_settings_description": "Gerir a personalização da interface web do Personal Cloud Photos",
       "these_files_matched_by_checksum": "Estes ficheiros são correspondidos pelas suas somas de verificação",
       "thumbnail_generation_job": "Gerar miniaturas",
       "thumbnail_generation_job_description":
@@ -29490,7 +29516,7 @@ class CodegenLoader extends AssetLoader {
         "Alguns dispositivos são extremamente lentos para carregar miniaturas da memória. Ative esta opção para preferir imagens do servidor.",
     "advanced_settings_prefer_remote_title": "Preferir imagens do servidor",
     "advanced_settings_proxy_headers_subtitle":
-        "Defina os cabeçalhos do proxy que o Curator Photos deve enviar em todas comunicações com a rede",
+        "Defina os cabeçalhos do proxy que o Personal Cloud Photos deve enviar em todas comunicações com a rede",
     "advanced_settings_proxy_headers_title": "Cabeçalhos do Proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Não validar o certificado SSL com o endereço do servidor. Isto é necessário para certificados auto-assinados.",
@@ -29589,7 +29615,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grade de fotos",
     "asset_offline": "Ficheiro Indisponível",
     "asset_offline_description":
-        "Este ficheiro externo deixou de estar disponível no disco. Contacte o seu administrador do Curator Photos para obter ajuda.",
+        "Este ficheiro externo deixou de estar disponível no disco. Contacte o seu administrador do Personal Cloud Photos para obter ajuda.",
     "asset_restored_successfully": "Arquivo restaurado com sucesso",
     "asset_skipped": "Ignorado",
     "asset_skipped_in_trash": "Na reciclagem",
@@ -29608,7 +29634,7 @@ class CodegenLoader extends AssetLoader {
     "assets_count": "{count, plural, one {# ficheiro} other {# ficheiros}}",
     "assets_deleted_permanently": "{count} ficheiro(s) eliminado(s) permanentemente",
     "assets_deleted_permanently_from_server":
-        "{count} ficheiro(s) eliminado(s) permanentemente do servidor Curator Photos",
+        "{count} ficheiro(s) eliminado(s) permanentemente do servidor Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {# ficheiro transferido - {error} ficheiro falhou} other {# ficheiros transferidos - {error} ficheiros falharam}}",
     "assets_downloaded_successfully":
@@ -29625,7 +29651,8 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} ficheiro(s) restaurados com sucesso",
     "assets_trashed": "{count} ficheiro(s) enviado(s) para a reciclagem",
     "assets_trashed_count": "{count, plural, one {# ficheiro enviado} other {# ficheiros enviados}} para a reciclagem",
-    "assets_trashed_from_server": "{count} ficheiro(s) do servidor Curator Photos foi/foram enviados para a reciclagem",
+    "assets_trashed_from_server":
+        "{count} ficheiro(s) do servidor Personal Cloud Photos foi/foram enviados para a reciclagem",
     "assets_were_part_of_album_count":
         "{count, plural, one {O ficheiro já fazia} other {Os ficheiros já faziam}} parte do álbum",
     "authorized_devices": "Dispositivos Autorizados",
@@ -29637,7 +29664,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Voltar, fechar ou desmarcar",
     "background_location_permission": "Permissão de localização em segundo plano",
     "background_location_permission_content":
-        "Para que seja possível trocar a URL quando estiver executando em segundo plano, o Curator Photos deve *sempre* ter a permissão de localização precisa para que o aplicativo consiga ler o nome da rede Wi-Fi",
+        "Para que seja possível trocar a URL quando estiver executando em segundo plano, o Personal Cloud Photos deve *sempre* ter a permissão de localização precisa para que o aplicativo consiga ler o nome da rede Wi-Fi",
     "backup_album_selection_page_albums_device": "Álbuns no dispositivo ({count})",
     "backup_album_selection_page_albums_tap": "Toque para incluir, duplo toque para excluir",
     "backup_album_selection_page_assets_scatter":
@@ -29661,7 +29688,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ir para as configurações",
     "backup_controller_page_background_battery_info_link": "Mostre-me como",
     "backup_controller_page_background_battery_info_message":
-        "Para obter a melhor experiência de backup em segundo plano, desative todas as otimizações de bateria que restrinjam a atividade em segundo plano do Curator Photos.\n\nComo isso é específico por dispositivo, consulte as informações de como fazer isso com o fabricante do dispositivo.",
+        "Para obter a melhor experiência de backup em segundo plano, desative todas as otimizações de bateria que restrinjam a atividade em segundo plano do Personal Cloud Photos.\n\nComo isso é específico por dispositivo, consulte as informações de como fazer isso com o fabricante do dispositivo.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Otimizações de bateria",
     "backup_controller_page_background_charging": "Apenas enquanto carrega a bateria",
@@ -29723,7 +29750,7 @@ class CodegenLoader extends AssetLoader {
         "Tem a certeza de que deseja manter {count, plural, one {# ficheiro duplicado} other {# ficheiros duplicados}}? Isto resolverá todos os grupos duplicados sem eliminar nada.",
     "bulk_trash_duplicates_confirmation":
         "Tem a certeza de que deseja mover para a reciclagem {count, plural, one {# ficheiro duplicado} other {# ficheiros duplicados}}? Isto manterá o maior ficheiro de cada grupo e irá mover para a reciclagem todos os outros duplicados.",
-    "buy": "Comprar Curator Photos",
+    "buy": "Comprar Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniaturas da página da biblioteca ({} ficheiros)",
     "cache_settings_clear_cache_button": "Limpar cache",
     "cache_settings_clear_cache_button_title":
@@ -29736,7 +29763,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniaturas de álbuns compartilhados",
     "cache_settings_statistics_thumbnail": "Miniaturas",
     "cache_settings_statistics_title": "Uso de cache",
-    "cache_settings_subtitle": "Controle o comportamento de cache do aplicativo Curator Photos",
+    "cache_settings_subtitle": "Controle o comportamento de cache do aplicativo Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Tamanho da cache das miniaturas ({} ficheiros)",
     "cache_settings_tile_subtitle": "Controlar o comportamento do armazenamento local",
     "cache_settings_tile_title": "Armazenamento local",
@@ -29822,7 +29849,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contexto",
     "continue": "Continuar",
     "control_bottom_app_bar_create_new_album": "Criar novo álbum",
-    "control_bottom_app_bar_delete_from_immich": "Excluir do Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Excluir do Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Excluir do dispositivo",
     "control_bottom_app_bar_edit_location": "Editar Localização",
     "control_bottom_app_bar_edit_time": "Editar Data & Hora",
@@ -29889,12 +29916,13 @@ class CodegenLoader extends AssetLoader {
     "delete": "Eliminar",
     "delete_album": "Eliminar álbum",
     "delete_api_key_prompt": "Tem a certeza de que deseja eliminar esta chave de API?",
-    "delete_dialog_alert": "Esses arquivos serão permanentemente apagados do Curator Photos e de seu dispositivo",
+    "delete_dialog_alert":
+        "Esses arquivos serão permanentemente apagados do Personal Cloud Photos e de seu dispositivo",
     "delete_dialog_alert_local":
-        "Estes arquivos serão permanentemente excluídos do seu dispositivo, mas continuarão disponíveis no servidor Curator Photos",
+        "Estes arquivos serão permanentemente excluídos do seu dispositivo, mas continuarão disponíveis no servidor Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
         "Não há backup de alguns dos arquivos no servidor e eles serão excluídos permanentemente do seu dispositivo",
-    "delete_dialog_alert_remote": "Estes arquivos serão permanentemente excluídos do servidor Curator Photos",
+    "delete_dialog_alert_remote": "Estes arquivos serão permanentemente excluídos do servidor Personal Cloud Photos",
     "delete_dialog_ok_force": "Excluir mesmo assim",
     "delete_dialog_title": "Excluir Permanentemente",
     "delete_duplicates_confirmation": "Tem a certeza de que deseja eliminar permanentemente estes itens duplicados?",
@@ -29948,7 +29976,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Gerir definições relacionadas com a transferência de ficheiros",
     "download_started": "Iniciando",
     "download_sucess": "Baixado com sucesso",
-    "download_sucess_android": "O arquivo foi baixado na pasta DCIM/CuratorPhotos",
+    "download_sucess_android": "O arquivo foi baixado na pasta DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Tentando novamente",
     "downloading": "A transferir",
     "downloading_asset_filename": "A transferir o ficheiro {filename}",
@@ -29988,7 +30016,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Esta pasta está vazia",
     "empty_trash": "Esvaziar reciclagem",
     "empty_trash_confirmation":
-        "Tem a certeza de que deseja esvaziar a reciclagem? Isto removerá todos os ficheiros da reciclagem do Curator Photos permanentemente.\nNão é possível anular esta ação!",
+        "Tem a certeza de que deseja esvaziar a reciclagem? Isto removerá todos os ficheiros da reciclagem do Personal Cloud Photos permanentemente.\nNão é possível anular esta ação!",
     "enable": "Ativar",
     "enable_biometric_auth_description": "Insira o código PIN para ativar a autenticação biométrica",
     "enabled": "Ativado",
@@ -30243,7 +30271,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "ignorar fotos no iCloud",
     "ignore_icloud_photos_description":
-        "Fotos que estão armazenadas no iCloud não serão carregadas para o servidor do Curator Photos",
+        "Fotos que estão armazenadas no iCloud não serão carregadas para o servidor do Personal Cloud Photos",
     "image": "Imagem",
     "image_alt_text_date": "{isVideo, select, true {Vídeo gravado} other {Foto tirada}} em {date}",
     "image_alt_text_date_1_person":
@@ -30268,8 +30296,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Baixando arquivo",
     "image_viewer_page_state_provider_download_success": "Baixado com sucesso",
     "image_viewer_page_state_provider_share_error": "Erro ao compartilhar",
-    "immich_logo": "Logotipo do Curator Photos",
-    "immich_web_interface": "Interface Web do Curator Photos",
+    "immich_logo": "Logotipo do Personal Cloud Photos",
+    "immich_web_interface": "Interface Web do Personal Cloud Photos",
     "import_from_json": "Importar a partir de JSON",
     "import_path": "Caminho de importação",
     "in_albums": "Em {count, plural, one {# álbum} other {# álbuns}}",
@@ -30516,7 +30544,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notificações",
     "notifications_setting_description": "Gerir notificações",
     "oauth": "OAuth",
-    "official_immich_resources": "Recursos oficiais do Curator Photos",
+    "official_immich_resources": "Recursos oficiais do Personal Cloud Photos",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Mais antigo primeiro",
@@ -30594,11 +30622,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Começar",
     "permission_onboarding_go_to_settings": "Ir para as configurações",
     "permission_onboarding_permission_denied":
-        "Permissão negada. Para utilizar o Curator Photos, conceda permissões de fotos e vídeo nas configurações.",
+        "Permissão negada. Para utilizar o Personal Cloud Photos, conceda permissões de fotos e vídeo nas configurações.",
     "permission_onboarding_permission_granted": "Permissão concedida! Está tudo pronto.",
     "permission_onboarding_permission_limited":
-        "Permissão limitada. Para permitir que o Curator Photos faça backups e gerencie sua galeria, conceda permissões para fotos e vídeos nas configurações.",
-    "permission_onboarding_request": "O Curator Photos requer autorização para ver as suas fotos e vídeos.",
+        "Permissão limitada. Para permitir que o Personal Cloud Photos faça backups e gerencie sua galeria, conceda permissões para fotos e vídeos nas configurações.",
+    "permission_onboarding_request": "O Personal Cloud Photos requer autorização para ver as suas fotos e vídeos.",
     "person": "Pessoa",
     "person_birthdate": "Nasceu a {date}",
     "person_hidden": "{name}{hidden, select, true { (oculto)} other {}}",
@@ -30650,12 +30678,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Álbum público",
     "public_share": "Partilhar Publicamente",
     "purchase_account_info": "Apoiante",
-    "purchase_activated_subtitle": "Agradecemos por apoiar o Curator Photos e software de código aberto",
+    "purchase_activated_subtitle": "Agradecemos por apoiar o Personal Cloud Photos e software de código aberto",
     "purchase_activated_time": "Ativado em {date}",
     "purchase_activated_title": "A sua chave foi ativada com sucesso",
     "purchase_button_activate": "Ativar",
     "purchase_button_buy": "Comprar",
-    "purchase_button_buy_immich": "Comprar Curator Photos",
+    "purchase_button_buy_immich": "Comprar Personal Cloud Photos",
     "purchase_button_never_show_again": "Não mostrar de novo",
     "purchase_button_reminder": "Relembrar-me daqui a 30 dias",
     "purchase_button_remove_key": "Remover chave",
@@ -30666,13 +30694,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status de apoiante",
     "purchase_individual_title": "Particular",
     "purchase_input_suggestion": "Tem uma chave de produto? Insira a chave abaixo",
-    "purchase_license_subtitle": "Compre o Curator Photos para apoiar o desenvolvimento contínuo do serviço",
+    "purchase_license_subtitle": "Compre o Personal Cloud Photos para apoiar o desenvolvimento contínuo do serviço",
     "purchase_lifetime_description": "Compra vitalícia",
     "purchase_option_title": "OPÇÕES DE COMPRA",
     "purchase_panel_info_1":
-        "O desenvolvimento do Curator Photos requer muito tempo e esforço, e temos engenheiros a tempo inteiro a trabalhar nele para melhorá-lo quanto possível. A nossa missão é para que o software de código aberto e práticas de negócio éticas se tornem numa fonte de rendimento sustentável para os desenvolvedores e criar um ecossistema que respeite a privacidade dos utilizadores e que ofereça alternativas reais a serviços cloud explorativos.",
+        "O desenvolvimento do Personal Cloud Photos requer muito tempo e esforço, e temos engenheiros a tempo inteiro a trabalhar nele para melhorá-lo quanto possível. A nossa missão é para que o software de código aberto e práticas de negócio éticas se tornem numa fonte de rendimento sustentável para os desenvolvedores e criar um ecossistema que respeite a privacidade dos utilizadores e que ofereça alternativas reais a serviços cloud explorativos.",
     "purchase_panel_info_2":
-        "Como estamos comprometidos a não adicionar acesso pago, esta compra não lhe dará acesso a nenhuma funcionalidade adicional do Curator Photos. Contamos com utilizadores como você para dar suporte ao desenvolvimento contínuo do Curator Photos.",
+        "Como estamos comprometidos a não adicionar acesso pago, esta compra não lhe dará acesso a nenhuma funcionalidade adicional do Personal Cloud Photos. Contamos com utilizadores como você para dar suporte ao desenvolvimento contínuo do Personal Cloud Photos.",
     "purchase_panel_title": "Apoie o projeto",
     "purchase_per_server": "Por servidor",
     "purchase_per_user": "Por utilizador",
@@ -30899,7 +30927,7 @@ class CodegenLoader extends AssetLoader {
         "Ao transmitir um vídeo do servidor, usar o arquivo original, mesmo quando uma versão transcodificada esteja disponível. Pode fazer com que o vídeo demore para carregar. Vídeos disponíveis localmente são exibidos na qualidade original independente desta configuração.",
     "setting_video_viewer_original_video_title": "Forçar vídeo original",
     "settings": "Definições",
-    "settings_require_restart": "Reinicie o Curator Photos para aplicar essa configuração",
+    "settings_require_restart": "Reinicie o Personal Cloud Photos para aplicar essa configuração",
     "settings_saved": "Definições guardadas",
     "setup_pin_code": "Configurar um código PIN",
     "share": "Partilhar",
@@ -31028,12 +31056,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Apoio",
     "support_and_feedback": "Apoio e feedback",
     "support_third_party_description":
-        "A sua instalação do Curator Photos foi empacotada por terceiros. Quaisquer problemas que possa vir a ter poderão ser causados por esse pacote, por isso, em primeiro lugar, relate problemas aos criadores desse pacote utilizando os links abaixo.",
+        "A sua instalação do Personal Cloud Photos foi empacotada por terceiros. Quaisquer problemas que possa vir a ter poderão ser causados por esse pacote, por isso, em primeiro lugar, relate problemas aos criadores desse pacote utilizando os links abaixo.",
     "swap_merge_direction": "Alternar direção da união",
     "sync": "Sincronizar",
     "sync_albums": "Sincronizar álbuns",
     "sync_albums_manual_subtitle": "Sincronizar todas as fotos e vídeos enviados para o álbum de backup selecionado",
-    "sync_upload_album_setting_subtitle": "Crie e envie suas fotos e vídeos para o álbum selecionado no Curator Photos",
+    "sync_upload_album_setting_subtitle":
+        "Crie e envie suas fotos e vídeos para o álbum selecionado no Personal Cloud Photos",
     "tag": "Etiqueta",
     "tag_assets": "Etiquetar ficheiros",
     "tag_created": "Criada a etiqueta {tag}",
@@ -31084,7 +31113,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Fotos e vídeos enviados para a reciclagem aparecem aqui.",
     "trash_page_delete_all": "Excluir tudo",
     "trash_page_empty_trash_dialog_content":
-        "Deseja esvaziar a lixera? Estes arquivos serão apagados de forma permanente do Curator Photos",
+        "Deseja esvaziar a lixera? Estes arquivos serão apagados de forma permanente do Personal Cloud Photos",
     "trash_page_info": "Ficheiros na reciclagem irão ser eliminados permanentemente após {days} dias",
     "trash_page_no_assets": "Lixeira vazia",
     "trash_page_restore_all": "Restaurar tudo",
@@ -31133,7 +31162,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Erros",
     "upload_status_uploaded": "Enviado",
     "upload_success": "Carregamento realizado com sucesso, atualize a página para ver os novos ficheiros carregados.",
-    "upload_to_immich": "Enviar para o Curator Photos ({count})",
+    "upload_to_immich": "Enviar para o Personal Cloud Photos ({count})",
     "uploading": "Enviando",
     "url": "URL",
     "usage": "Utilização",
@@ -31163,7 +31192,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versão",
     "version_announcement_closing": "O seu amigo, Alex",
     "version_announcement_message":
-        "Olá! Está disponível uma nova versão do Curator Photos. Por favor leia as <link>notas de lançamento</link> para garantir que as suas configurações estão atualizadas e para evitar quaisquer erros, especialmente se usar o WatchTower ou qualquer mecanismo que lide com a atualização automática do Curator Photos.",
+        "Olá! Está disponível uma nova versão do Personal Cloud Photos. Por favor leia as <link>notas de lançamento</link> para garantir que as suas configurações estão atualizadas e para evitar quaisquer erros, especialmente se usar o WatchTower ou qualquer mecanismo que lide com a atualização automática do Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "notas da versão",
     "version_announcement_overlay_text_1": "Olá, há um novo lançamento de",
     "version_announcement_overlay_text_2": "por favor, Verifique com calma as ",
@@ -31199,7 +31228,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Aviso",
     "week": "Semana",
     "welcome": "Bem-vindo(a)",
-    "welcome_to_immich": "Bem-vindo(a) ao Curator Photos",
+    "welcome_to_immich": "Bem-vindo(a) ao Personal Cloud Photos",
     "wifi_name": "Nome da rede Wi-Fi",
     "wrong_pin_code": "Código PIN errado",
     "year": "Ano",
@@ -31246,7 +31275,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Дадайце шаблоны выключэнняў. Падтрымліваецца выкарыстанне сімвалаў * , ** і ?. Каб ігнараваць усе файлы ў любой дырэкторыі з назвай \"Raw\", выкарыстоўвайце \"**/Raw/**\". Каб ігнараваць усе файлы, якія заканчваюцца на \".tif\", выкарыстоўвайце \"**/.tif\". Каб ігнараваць абсолютны шлях, выкарыстоўвайце \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Гэты знешні бібліятэчны актыў больш не знойдзены на дыску і быў перамешчаны ў сметніцу. Калі файл быў перамешчаны ў межах бібліятэкі, праверце вашу хроніку для новага адпаведнага актыва. Каб аднавіць гэты актыў, пераканайцеся, што шлях да файла ніжэй даступны для Curator Photos і адскануйце бібліятэку.",
+          "Гэты знешні бібліятэчны актыў больш не знойдзены на дыску і быў перамешчаны ў сметніцу. Калі файл быў перамешчаны ў межах бібліятэкі, праверце вашу хроніку для новага адпаведнага актыва. Каб аднавіць гэты актыў, пераканайцеся, што шлях да файла ніжэй даступны для Personal Cloud Photos і адскануйце бібліятэку.",
       "authentication_settings": "Налады праверкі сапраўднасці",
       "authentication_settings_description": "Кіраванне паролямі, OAuth, і іншыя налады праверкі сапраўднасці",
       "authentication_settings_disable_all":
@@ -31263,7 +31292,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Канфігурацыя ў зараз усталявана праз файл канфігурацыі",
       "confirm_delete_library": "Вы ўпэўнены што жадаеце выдаліць {library} бібліятэку?",
       "confirm_delete_library_assets":
-          "Вы ўпэўнены, што хочаце выдаліць гэтую бібліятэку? Гэта прывядзе да выдалення {count, plural, one {# актыву} other {усіх # актываў}}, якія змяшчаюцца ў Curator Photos, і гэта дзеянне немагчыма будзе адмяніць. Файлы застануцца на дыску.",
+          "Вы ўпэўнены, што хочаце выдаліць гэтую бібліятэку? Гэта прывядзе да выдалення {count, plural, one {# актыву} other {усіх # актываў}}, якія змяшчаюцца ў Personal Cloud Photos, і гэта дзеянне немагчыма будзе адмяніць. Файлы застануцца на дыску.",
       "confirm_email_below": "Каб пацвердзіць, увядзіце \"{email}\" ніжэй",
       "confirm_reprocess_all_faces":
           "Вы ўпэўнены, што хочаце пераапрацаваць усе твары? Гэта таксама прывядзе да выдалення імя людзей.",
@@ -31320,7 +31349,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Версія",
     "version_announcement_closing": "Твой сябар, Алекс",
     "version_announcement_message":
-        "Вітаем! Даступная новая версія Curator Photos. Калі ласка, знайдзіце час, каб прачытаць <link>нататкі да выпуску</link>, каб пераканацца, што ваша налада актуальная і пазбегнуць магчымых памылак канфігурацыі, асабліва калі вы карыстаецеся WatchTower або іншымі механізмамі, якія аўтаматычна абнаўляюць вашу інстанцыю Curator Photos.",
+        "Вітаем! Даступная новая версія Personal Cloud Photos. Калі ласка, знайдзіце час, каб прачытаць <link>нататкі да выпуску</link>, каб пераканацца, што ваша налада актуальная і пазбегнуць магчымых памылак канфігурацыі, асабліва калі вы карыстаецеся WatchTower або іншымі механізмамі, якія аўтаматычна абнаўляюць вашу інстанцыю Personal Cloud Photos.",
     "version_history": "Гісторыя версій",
     "version_history_item": "Усталявана версія {version} на {date}",
     "video": "Відэа",
@@ -31344,7 +31373,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Папярэджанне",
     "week": "Тыдзень",
     "welcome": "Вітаем",
-    "welcome_to_immich": "Вітаем у Curator Photos",
+    "welcome_to_immich": "Вітаем у Personal Cloud Photos",
     "year": "Год",
     "years_ago": "{years, plural, one {# год} other {# гадоў}} таму",
     "yes": "Так",
@@ -31394,7 +31423,7 @@ class CodegenLoader extends AssetLoader {
           "Add exclusion patterns. Globbing using *, **, and ? is supported. To ignore all files in any directory named \"Raw\", use \"**/Raw/**\". To ignore all files ending in \".tif\", use \"**/*.tif\". To ignore an absolute path, use \"/path/to/ignore/**\".",
       "admin_user": "Admin User",
       "asset_offline_description":
-          "This external library asset is no longer found on disk and has been moved to trash. If the file was moved within the library, check your timeline for the new corresponding asset. To restore this asset, please ensure that the file path below can be accessed by Curator Photos and scan the library.",
+          "This external library asset is no longer found on disk and has been moved to trash. If the file was moved within the library, check your timeline for the new corresponding asset. To restore this asset, please ensure that the file path below can be accessed by Personal Cloud Photos and scan the library.",
       "authentication_settings": "Authentication Settings",
       "authentication_settings_description": "Manage password, OAuth, and other authentication settings",
       "authentication_settings_disable_all":
@@ -31410,9 +31439,9 @@ class CodegenLoader extends AssetLoader {
       "backup_onboarding_3_description":
           "total copies of your data, including the original files. This includes 1 offsite copy and 2 local copies.",
       "backup_onboarding_description":
-          "A <backblaze-link>3-2-1 backup strategy</backblaze-link> is recommended to protect your data. You should keep copies of your uploaded photos/videos as well as the Curator Photos database for a comprehensive backup solution.",
+          "A <backblaze-link>3-2-1 backup strategy</backblaze-link> is recommended to protect your data. You should keep copies of your uploaded photos/videos as well as the Personal Cloud Photos database for a comprehensive backup solution.",
       "backup_onboarding_footer":
-          "For more information about backing up Curator Photos, please refer to the <link>documentation</link>.",
+          "For more information about backing up Personal Cloud Photos, please refer to the <link>documentation</link>.",
       "backup_onboarding_parts_title": "A 3-2-1 backup includes:",
       "backup_onboarding_title": "Backups",
       "backup_settings": "Database Dump Settings",
@@ -31421,7 +31450,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Config is currently set by a config file",
       "confirm_delete_library": "Are you sure you want to delete {library} library?",
       "confirm_delete_library_assets":
-          "Are you sure you want to delete this library? This will delete {count, plural, one {# contained asset} other {all # contained assets}} from Curator Photos and cannot be undone. Files will remain on disk.",
+          "Are you sure you want to delete this library? This will delete {count, plural, one {# contained asset} other {all # contained assets}} from Personal Cloud Photos and cannot be undone. Files will remain on disk.",
       "confirm_email_below": "To confirm, type \"{email}\" below",
       "confirm_reprocess_all_faces": "Are you sure you want to reprocess all faces? This will also clear named people.",
       "confirm_user_password_reset": "Are you sure you want to reset {user}'s password?",
@@ -31545,7 +31574,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Enable map features",
       "map_gps_settings": "Map & GPS Settings",
       "map_gps_settings_description": "Manage Map & GPS (Reverse Geocoding) Settings",
-      "map_implications": "The map feature relies on an external tile service (tiles.curatorphotos.cloud)",
+      "map_implications": "The map feature relies on an external tile service (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Light style",
       "map_manage_reverse_geocoding_settings": "Manage <link>Reverse Geocoding</link> settings",
       "map_reverse_geocoding": "Reverse Geocoding",
@@ -31587,8 +31616,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTE: This cannot be changed later!",
       "notification_email_from_address": "From address",
       "notification_email_from_address_description":
-          "Sender email address, for example: \"Curator Photos Photo Server <noreply@example.com>\". Make sure to use an address you're allowed to send emails from.",
-      "notification_email_host_description": "Host of the email server (e.g. smtp.curatorphotos.app)",
+          "Sender email address, for example: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Make sure to use an address you're allowed to send emails from.",
+      "notification_email_host_description": "Host of the email server (e.g. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignore certificate errors",
       "notification_email_ignore_certificate_errors_description":
           "Ignore TLS certificate validation errors (not recommended)",
@@ -31691,9 +31720,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Manage custom templates for notifications",
       "theme_custom_css_settings": "Custom CSS",
       "theme_custom_css_settings_description":
-          "Cascading Style Sheets allow the design of Curator Photos to be customized.",
+          "Cascading Style Sheets allow the design of Personal Cloud Photos to be customized.",
       "theme_settings": "Theme Settings",
-      "theme_settings_description": "Manage customization of the Curator Photos web interface",
+      "theme_settings_description": "Manage customization of the Personal Cloud Photos web interface",
       "these_files_matched_by_checksum": "These files are matched by their checksums",
       "thumbnail_generation_job": "Generate Thumbnails",
       "thumbnail_generation_job_description":
@@ -31832,7 +31861,7 @@ class CodegenLoader extends AssetLoader {
         "Some devices are painfully slow to load thumbnails from local assets. Activate this setting to load remote images instead.",
     "advanced_settings_prefer_remote_title": "Prefer remote images",
     "advanced_settings_proxy_headers_subtitle":
-        "Define proxy headers Curator Photos should send with each network request",
+        "Define proxy headers Personal Cloud Photos should send with each network request",
     "advanced_settings_proxy_headers_title": "Proxy Headers",
     "advanced_settings_readonly_mode_subtitle":
         "Enables the read-only mode where the photos can be only viewed, things like selecting multiple images, sharing, casting, delete are all disabled. Enable/Disable read-only via user avatar from the main screen",
@@ -31937,7 +31966,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Photo Grid",
     "asset_offline": "Asset Offline",
     "asset_offline_description":
-        "This external asset is no longer found on disk. Please contact your Curator Photos administrator for help.",
+        "This external asset is no longer found on disk. Please contact your Personal Cloud Photos administrator for help.",
     "asset_restored_successfully": "Asset restored successfully",
     "asset_skipped": "Skipped",
     "asset_skipped_in_trash": "In trash",
@@ -31955,7 +31984,8 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Asset} other {Assets}} cannot be added to any of the albums",
     "assets_count": "{count, plural, one {# asset} other {# assets}}",
     "assets_deleted_permanently": "{count} asset(s) deleted permanently",
-    "assets_deleted_permanently_from_server": "{count} asset(s) deleted permanently from the Curator Photos server",
+    "assets_deleted_permanently_from_server":
+        "{count} asset(s) deleted permanently from the Personal Cloud Photos server",
     "assets_downloaded_failed":
         "{count, plural, one {Downloaded # file - {error} file failed} other {Downloaded # files - {error} files failed}}",
     "assets_downloaded_successfully":
@@ -31970,7 +32000,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} asset(s) restored successfully",
     "assets_trashed": "{count} asset(s) trashed",
     "assets_trashed_count": "Trashed {count, plural, one {# asset} other {# assets}}",
-    "assets_trashed_from_server": "{count} asset(s) trashed from the Curator Photos server",
+    "assets_trashed_from_server": "{count} asset(s) trashed from the Personal Cloud Photos server",
     "assets_were_part_of_album_count": "{count, plural, one {Asset was} other {Assets were}} already part of the album",
     "assets_were_part_of_albums_count":
         "{count, plural, one {Asset was} other {Assets were}} already part of the albums",
@@ -31983,7 +32013,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Back, close, or deselect",
     "background_location_permission": "Background location permission",
     "background_location_permission_content":
-        "In order to switch networks when running in the background, Curator Photos must *always* have precise location access so the app can read the Wi-Fi network's name",
+        "In order to switch networks when running in the background, Personal Cloud Photos must *always* have precise location access so the app can read the Wi-Fi network's name",
     "backup": "Backup",
     "backup_album_selection_page_albums_device": "Albums on device ({count})",
     "backup_album_selection_page_albums_tap": "Tap to include, double tap to exclude",
@@ -32007,7 +32037,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Go to settings",
     "backup_controller_page_background_battery_info_link": "Show me how",
     "backup_controller_page_background_battery_info_message":
-        "For the best background backup experience, please disable any battery optimizations restricting background activity for Curator Photos.\n\nSince this is device-specific, please lookup the required information for your device manufacturer.",
+        "For the best background backup experience, please disable any battery optimizations restricting background activity for Personal Cloud Photos.\n\nSince this is device-specific, please lookup the required information for your device manufacturer.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Battery optimizations",
     "backup_controller_page_background_charging": "Only while charging",
@@ -32075,7 +32105,7 @@ class CodegenLoader extends AssetLoader {
         "Are you sure you want to keep {count, plural, one {# duplicate asset} other {# duplicate assets}}? This will resolve all duplicate groups without deleting anything.",
     "bulk_trash_duplicates_confirmation":
         "Are you sure you want to bulk trash {count, plural, one {# duplicate asset} other {# duplicate assets}}? This will keep the largest asset of each group and trash all other duplicates.",
-    "buy": "Purchase Curator Photos",
+    "buy": "Purchase Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Library page thumbnails ({count} assets)",
     "cache_settings_clear_cache_button": "Clear cache",
     "cache_settings_clear_cache_button_title":
@@ -32088,7 +32118,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Shared album thumbnails",
     "cache_settings_statistics_thumbnail": "Thumbnails",
     "cache_settings_statistics_title": "Cache usage",
-    "cache_settings_subtitle": "Control the caching behaviour of the Curator Photos mobile application",
+    "cache_settings_subtitle": "Control the caching behaviour of the Personal Cloud Photos mobile application",
     "cache_settings_thumbnail_size": "Thumbnail cache size ({count} assets)",
     "cache_settings_tile_subtitle": "Control the local storage behaviour",
     "cache_settings_tile_title": "Local Storage",
@@ -32182,7 +32212,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Context",
     "continue": "Continue",
     "control_bottom_app_bar_create_new_album": "Create new album",
-    "control_bottom_app_bar_delete_from_immich": "Delete from Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Delete from Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Delete from device",
     "control_bottom_app_bar_edit_location": "Edit Location",
     "control_bottom_app_bar_edit_time": "Edit Date & Time",
@@ -32244,7 +32274,7 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_remote_code_allow_access": "Allow access",
       "sign_in_screen_remote_code_cancel": "Cancel",
       "sign_in_screen_remote_code_description":
-          "We have sent a one-time code to authorize this device to access your Curator. Check your email for the code and enter it here. If you do not see it in your inbox, please check your spam folder.",
+          "We have sent a one-time code to authorize this device to access your Personal Cloud Photos. Check your email for the code and enter it here. If you do not see it in your inbox, please check your spam folder.",
       "sign_in_screen_remote_code_resend": "Resend code",
       "sign_in_screen_remote_code_skip": "Skip",
       "sign_in_screen_remote_code_title": "Allow remote access",
@@ -32295,12 +32325,12 @@ class CodegenLoader extends AssetLoader {
     "delete_action_prompt": "{count} deleted",
     "delete_album": "Delete album",
     "delete_api_key_prompt": "Are you sure you want to delete this API key?",
-    "delete_dialog_alert": "These items will be permanently deleted from Curator Photos and from your device",
+    "delete_dialog_alert": "These items will be permanently deleted from Personal Cloud Photos and from your device",
     "delete_dialog_alert_local":
-        "These items will be permanently removed from your device but still be available on the Curator Photos server",
+        "These items will be permanently removed from your device but still be available on the Personal Cloud Photos server",
     "delete_dialog_alert_local_non_backed_up":
-        "Some of the items aren't backed up to Curator Photos and will be permanently removed from your device",
-    "delete_dialog_alert_remote": "These items will be permanently deleted from the Curator Photos server",
+        "Some of the items aren't backed up to Personal Cloud Photos and will be permanently removed from your device",
+    "delete_dialog_alert_remote": "These items will be permanently deleted from the Personal Cloud Photos server",
     "delete_dialog_ok_force": "Delete Anyway",
     "delete_dialog_title": "Delete Permanently",
     "delete_duplicates_confirmation": "Are you sure you want to permanently delete these duplicates?",
@@ -32359,7 +32389,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Manage settings related to asset download",
     "download_started": "Download started",
     "download_sucess": "Download success",
-    "download_sucess_android": "The media has been downloaded to DCIM/CuratorPhotos",
+    "download_sucess_android": "The media has been downloaded to DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Waiting to retry",
     "downloading": "Downloading",
     "downloading_asset_filename": "Downloading asset {filename}",
@@ -32405,7 +32435,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "This folder is empty",
     "empty_trash": "Empty trash",
     "empty_trash_confirmation":
-        "Are you sure you want to empty the trash? This will remove all the assets in trash permanently from Curator Photos.\nYou cannot undo this action!",
+        "Are you sure you want to empty the trash? This will remove all the assets in trash permanently from Personal Cloud Photos.\nYou cannot undo this action!",
     "enable": "Enable",
     "enable_backup": "Enable Backup",
     "enable_biometric_auth_description": "Enter your PIN code to enable biometric authentication",
@@ -32682,7 +32712,7 @@ class CodegenLoader extends AssetLoader {
     "idle": "Idle",
     "ignore_icloud_photos": "Ignore iCloud photos",
     "ignore_icloud_photos_description":
-        "Photos that are stored on iCloud will not be uploaded to the Curator Photos server",
+        "Photos that are stored on iCloud will not be uploaded to the Personal Cloud Photos server",
     "image": "Image",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} taken on {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} taken with {person1} on {date}",
@@ -32705,8 +32735,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Download Started",
     "image_viewer_page_state_provider_download_success": "Download Success",
     "image_viewer_page_state_provider_share_error": "Share Error",
-    "immich_logo": "Curator Photos Logo",
-    "immich_web_interface": "Curator Photos Web Interface",
+    "immich_logo": "Personal Cloud Photos Logo",
+    "immich_web_interface": "Personal Cloud Photos Web Interface",
     "import_from_json": "Import from JSON",
     "import_path": "Import path",
     "in_albums": "In {count, plural, one {# album} other {# albums}}",
@@ -32783,7 +32813,7 @@ class CodegenLoader extends AssetLoader {
         "The app will connect to the server through this URL when using the specified Wi-Fi network",
     "location_permission": "Location permission",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current Wi-Fi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current Wi-Fi network's name",
     "location_picker_choose_on_map": "Choose on map",
     "location_picker_latitude_error": "Enter a valid latitude",
     "location_picker_latitude_hint": "Enter your latitude here",
@@ -32937,11 +32967,12 @@ class CodegenLoader extends AssetLoader {
     "no_assets_message": "CLICK TO UPLOAD YOUR FIRST PHOTO",
     "no_assets_to_show": "No assets to show",
     "no_cast_devices_found": "No cast devices found",
-    "no_duplicates_found": "No duplicates were found.",
+    "no_duplicates_found": "No duplicates were found",
     "no_exif_info_available": "No exif info available",
     "no_explore_results_message": "Upload more photos to explore your collection.",
     "no_favorites_message": "Add favorites to quickly find your best pictures and videos",
     "no_libraries_message": "Create an external library to view your photos and videos",
+    "no_location_assets": "Select a date to manage location data for photos and videos from that day",
     "no_locked_photos_message":
         "Photos and videos in the locked folder are hidden and won't show up as you browse or search your library.",
     "no_name": "No Name",
@@ -32966,7 +32997,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifications",
     "notifications_setting_description": "Manage notifications",
     "oauth": "OAuth",
-    "official_immich_resources": "Official Curator Photos Resources",
+    "official_immich_resources": "Official Personal Cloud Photos Resources",
     "offline": "Offline",
     "offset": "Offset",
     "ok": "Ok",
@@ -32977,6 +33008,25 @@ class CodegenLoader extends AssetLoader {
     "onboarding_privacy_description":
         "The following (optional) features rely on external services, and can be disabled at any time in settings.",
     "onboarding_server_welcome_description": "Let's get your instance set up with some common settings.",
+    "onboarding_step_1_text":
+        "Automatically back up photos and videos to Personal Cloud. No manual steps, just peace of mind knowing your media is secure.",
+    "onboarding_step_1_title": "Welcome to Personal Cloud Photos",
+    "onboarding_step_2_text":
+        "Automatically back up photos and videos to Personal Cloud Photos. No manual steps, just peace of mind knowing your media is secure.",
+    "onboarding_step_2_title": "Automatic backups",
+    "onboarding_step_3_text":
+        "Explore your photo library in a clean, intuitive interface. Personal Cloud Photos makes it easy to view, sort, and manage all your media in one place.",
+    "onboarding_step_3_title": "Browse and organize",
+    "onboarding_step_4_text":
+        "Share photos with anyone via secure links. You can set expiration dates for links to keep your memories private over time.",
+    "onboarding_step_4_text_bottom":
+        "Invite members of your Personal Cloud family to collaborate on albums knowing your content is encrypted and protected.",
+    "onboarding_step_4_title": "Secure sharing made simple",
+    "onboarding_step_5_text":
+        "Personal Cloud’s AI-powered search helps you instantly locate images by content, location, or date.",
+    "onboarding_step_5_text_bottom":
+        "Facial recognition identifies your family and friends to guarantee you always find that special moment.",
+    "onboarding_step_5_title": "Find your photos smarter",
     "onboarding_theme_description":
         "Choose a color theme for your instance. You can change this later in your settings.",
     "onboarding_user_welcome_description": "Let's get you started!",
@@ -33047,11 +33097,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Get started",
     "permission_onboarding_go_to_settings": "Go to settings",
     "permission_onboarding_permission_denied":
-        "Permission denied. To use Curator Photos, grant photo and video permissions in Settings.",
+        "Permission denied. To use Personal Cloud Photos, grant photo and video permissions in Settings.",
     "permission_onboarding_permission_granted": "Permission granted! You are all set.",
     "permission_onboarding_permission_limited":
-        "Permission limited. To let Curator Photos backup and manage your entire gallery collection, grant photo and video permissions in Settings.",
-    "permission_onboarding_request": "Curator Photos requires permission to view your photos and videos.",
+        "Permission limited. To let Personal Cloud Photos backup and manage your entire gallery collection, grant photo and video permissions in Settings.",
+    "permission_onboarding_request": "Personal Cloud Photos requires permission to view your photos and videos.",
     "person": "Person",
     "person_age_months": "{months, plural, one {# month} other {# months}} old",
     "person_age_year_months": "1 year, {months, plural, one {# month} other {# months}} old",
@@ -33104,12 +33154,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Public album",
     "public_share": "Public Share",
     "purchase_account_info": "Supporter",
-    "purchase_activated_subtitle": "Thank you for supporting Curator Photos and open-source software",
+    "purchase_activated_subtitle": "Thank you for supporting Personal Cloud Photos and open-source software",
     "purchase_activated_time": "Activated on {date}",
     "purchase_activated_title": "Your key has been successfully activated",
     "purchase_button_activate": "Activate",
     "purchase_button_buy": "Buy",
-    "purchase_button_buy_immich": "Buy Curator Photos",
+    "purchase_button_buy_immich": "Buy Personal Cloud Photos",
     "purchase_button_never_show_again": "Never show again",
     "purchase_button_reminder": "Remind me in 30 days",
     "purchase_button_remove_key": "Remove key",
@@ -33119,13 +33169,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Supporter status",
     "purchase_individual_title": "Individual",
     "purchase_input_suggestion": "Have a product key? Enter the key below",
-    "purchase_license_subtitle": "Buy Curator Photos to support the continued development of the service",
+    "purchase_license_subtitle": "Buy Personal Cloud Photos to support the continued development of the service",
     "purchase_lifetime_description": "Lifetime purchase",
     "purchase_option_title": "PURCHASE OPTIONS",
     "purchase_panel_info_1":
-        "Building Curator Photos takes a lot of time and effort, and we have full-time engineers working on it to make it as good as we possibly can. Our mission is for open-source software and ethical business practices to become a sustainable income source for developers and to create a privacy-respecting ecosystem with real alternatives to exploitative cloud services.",
+        "Building Personal Cloud Photos takes a lot of time and effort, and we have full-time engineers working on it to make it as good as we possibly can. Our mission is for open-source software and ethical business practices to become a sustainable income source for developers and to create a privacy-respecting ecosystem with real alternatives to exploitative cloud services.",
     "purchase_panel_info_2":
-        "As we're committed not to add paywalls, this purchase will not grant you any additional features in Curator Photos. We rely on users like you to support Curator Photos's ongoing development.",
+        "As we're committed not to add paywalls, this purchase will not grant you any additional features in Personal Cloud Photos. We rely on users like you to support Personal Cloud Photos's ongoing development.",
     "purchase_panel_title": "Support the project",
     "purchase_per_server": "Per server",
     "purchase_per_user": "Per user",
@@ -33370,7 +33420,7 @@ class CodegenLoader extends AssetLoader {
         "When streaming a video from the server, play the original even when a transcode is available. May lead to buffering. Videos available locally are played in original quality regardless of this setting.",
     "setting_video_viewer_original_video_title": "Force original video",
     "settings": "Settings",
-    "settings_require_restart": "Please restart Curator Photos to apply this setting",
+    "settings_require_restart": "Please restart Personal Cloud Photos to apply this setting",
     "settings_saved": "Settings saved",
     "setup_pin_code": "Setup a PIN code",
     "share": "Share",
@@ -33465,6 +33515,7 @@ class CodegenLoader extends AssetLoader {
     "sign_out": "Sign Out",
     "sign_up": "Sign up",
     "size": "Size",
+    "skip": "Skip",
     "skip_to_content": "Skip to content",
     "skip_to_folders": "Skip to folders",
     "skip_to_tags": "Skip to tags",
@@ -33507,7 +33558,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Support",
     "support_and_feedback": "Support & Feedback",
     "support_third_party_description":
-        "Your Curator Photos installation was packaged by a third-party. Issues you experience may be caused by that package, so please raise issues with them in the first instance using the links below.",
+        "Your Personal Cloud Photos installation was packaged by a third-party. Issues you experience may be caused by that package, so please raise issues with them in the first instance using the links below.",
     "swap_merge_direction": "Swap merge direction",
     "sync": "Sync",
     "sync_albums": "Sync albums",
@@ -33515,7 +33566,7 @@ class CodegenLoader extends AssetLoader {
     "sync_local": "Sync Local",
     "sync_remote": "Sync Remote",
     "sync_upload_album_setting_subtitle":
-        "Create and upload your photos and videos to the selected albums on Curator Photos",
+        "Create and upload your photos and videos to the selected albums on Personal Cloud Photos",
     "tag": "Tag",
     "tag_assets": "Tag assets",
     "tag_created": "Created tag: {tag}",
@@ -33570,7 +33621,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Trashed photos and videos will show up here.",
     "trash_page_delete_all": "Delete All",
     "trash_page_empty_trash_dialog_content":
-        "Do you want to empty your trashed assets? These items will be permanently removed from Curator Photos",
+        "Do you want to empty your trashed assets? These items will be permanently removed from Personal Cloud Photos",
     "trash_page_info": "Trashed items will be permanently deleted after {days} days",
     "trash_page_no_assets": "No trashed assets",
     "trash_page_restore_all": "Restore All",
@@ -33626,7 +33677,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Errors",
     "upload_status_uploaded": "Uploaded",
     "upload_success": "Upload success, refresh the page to see new upload assets.",
-    "upload_to_immich": "Upload to Curator Photos ({count})",
+    "upload_to_immich": "Upload to Personal Cloud Photos ({count})",
     "uploading": "Uploading",
     "uploading_media": "Uploading media",
     "url": "URL",
@@ -33658,7 +33709,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Version",
     "version_announcement_closing": "Your friend, Alex",
     "version_announcement_message":
-        "Hi there! A new version of Curator Photos is available. Please take some time to read the <link>release notes</link> to ensure your setup is up-to-date to prevent any misconfigurations, especially if you use WatchTower or any mechanism that handles updating your Curator Photos instance automatically.",
+        "Hi there! A new version of Personal Cloud Photos is available. Please take some time to read the <link>release notes</link> to ensure your setup is up-to-date to prevent any misconfigurations, especially if you use WatchTower or any mechanism that handles updating your Personal Cloud Photos instance automatically.",
     "version_history": "Version History",
     "version_history_item": "Installed {version} on {date}",
     "video": "Video",
@@ -33679,6 +33730,7 @@ class CodegenLoader extends AssetLoader {
     "view_next_asset": "View next asset",
     "view_previous_asset": "View previous asset",
     "view_qr_code": "View QR code",
+    "view_similar_photos": "View similar photos",
     "view_stack": "View Stack",
     "view_user": "View User",
     "viewer_remove_from_stack": "Remove from Stack",
@@ -33689,7 +33741,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Warning",
     "week": "Week",
     "welcome": "Welcome",
-    "welcome_to_immich": "Welcome to Curator Photos",
+    "welcome_to_immich": "Welcome to Personal Cloud Photos",
     "wifi_name": "Wi-Fi Name",
     "wrong_pin_code": "Wrong PIN code",
     "year": "Year",
@@ -33733,7 +33785,7 @@ class CodegenLoader extends AssetLoader {
     "added_to_favorites_count": "{count, number} დაემატა რჩეულებში",
     "admin": {
       "asset_offline_description":
-          "ეს საგარეო ბიბლიოთეკის აქტივი დისკზე ვერ მოიძებნა და სანაგვეში იქნა მოთავსებული. თუ ფაილი ბიბლიოთეკის შიგნით მდებარეობს, შეამოწმეთ შესაბამისი აქტივი ტაიმლაინზე. ამ აქტივის აღსადგენად, დარწმუნდით რომ ქვემოთ მოცემული ფაილის მისამართი Curator Photos-ის მიერ წვდომადია და დაასკანერეთ ბიბლიოთეკა.",
+          "ეს საგარეო ბიბლიოთეკის აქტივი დისკზე ვერ მოიძებნა და სანაგვეში იქნა მოთავსებული. თუ ფაილი ბიბლიოთეკის შიგნით მდებარეობს, შეამოწმეთ შესაბამისი აქტივი ტაიმლაინზე. ამ აქტივის აღსადგენად, დარწმუნდით რომ ქვემოთ მოცემული ფაილის მისამართი Personal Cloud Photos-ის მიერ წვდომადია და დაასკანერეთ ბიბლიოთეკა.",
       "authentication_settings": "ავთენტიკაციის პარამეტრები",
       "authentication_settings_description": "პაროლის, OAuth-ის და სხვა ავტენთიფიკაციის პარამეტრების მართვა",
       "authentication_settings_disable_all":
@@ -33750,7 +33802,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "მიმდინარე კონფიგურაცია ფაილის მიერ არის დაყენებული",
       "confirm_delete_library": "ნამდვილად გინდა {library} ბიბლიოთეკის წაშლა?",
       "confirm_delete_library_assets":
-          "მართლა გსურთ ამ ბიბლიოთეკის წაშლა? ეს ქმედება Curator Photos-იდან წაშლის ყველა მონიშნულ აქტივს და შეუქცევადია. ფაილები მყარ დისკზე ხელუხლებელი დარჩება.",
+          "მართლა გსურთ ამ ბიბლიოთეკის წაშლა? ეს ქმედება Personal Cloud Photos-იდან წაშლის ყველა მონიშნულ აქტივს და შეუქცევადია. ფაილები მყარ დისკზე ხელუხლებელი დარჩება.",
       "confirm_email_below": "დასადასტურებლად, ქვემოთ აკრიფე \"{email}\"",
       "confirm_reprocess_all_faces":
           "მართლა გსურთ ყველა სახის თავიდან დამუშავება? ეს ქმედება ხალხისათვის მინიჭებულ სახელებს გაწმენდს.",
@@ -33915,7 +33967,7 @@ class CodegenLoader extends AssetLoader {
     "added_to_favorites_count": "Суйласа илнине {count, number} хушнӑ",
     "admin": {
       "asset_offline_description":
-          "Библиотекӑн ҫак тулаш файлне дискра урӑх тупайман, карҫинккана куҫарнӑ. Енчен те файла вулавӑш ӑшне куҫарнӑ пулсан, тивӗҫлӗ ҫӗнӗ ресурс тупас тесен хӑвӑрӑн вӑхӑтлӑх шкалӑна тӗрӗслӗр. Ҫак файла ҫӗнӗрен чӗртес тесен файл патне каймалли ҫула Curator Photos валли аяларах ҫитернине курса ӗненӗр, библиотекӑна сканерланине пурнӑҫлӑр.",
+          "Библиотекӑн ҫак тулаш файлне дискра урӑх тупайман, карҫинккана куҫарнӑ. Енчен те файла вулавӑш ӑшне куҫарнӑ пулсан, тивӗҫлӗ ҫӗнӗ ресурс тупас тесен хӑвӑрӑн вӑхӑтлӑх шкалӑна тӗрӗслӗр. Ҫак файла ҫӗнӗрен чӗртес тесен файл патне каймалли ҫула Personal Cloud Photos валли аяларах ҫитернине курса ӗненӗр, библиотекӑна сканерланине пурнӑҫлӑр.",
       "authentication_settings_disable_all":
           "Эсир кӗмелли пур меслетсене те чарса лартасшӑн тесе шутлатӑр-и? Кӗмелли шӑтӑка пӗтӗмпех уҫаҫҫӗ.",
       "background_task_job": "Курăнман ӗҫсем",
@@ -34033,7 +34085,7 @@ class CodegenLoader extends AssetLoader {
           "Aggiungi modelli di esclusione. È supportato il globbing utilizzando *, ** e ?. Per ignorare tutti i file in qualsiasi directory denominata \"Raw\", usa \"**/Raw/**\". Per ignorare tutti i file con estensione \".tif\", usa \"**/*.tif\". Per ignorare un percorso assoluto, usa \"/percorso/da/ignorare/**\".",
       "admin_user": "Utente amministratore",
       "asset_offline_description":
-          "Questa risorsa della libreria esterna non si trova più sul disco ed è stata spostata nel cestino. Se il file è stato spostato all'interno della libreria, controlla la timeline per la nuova risorsa corrispondente. Per ripristinare questa risorsa, assicurati che Curator Photos possa accedere al percorso del file ed esegui la scansione della libreria.",
+          "Questa risorsa della libreria esterna non si trova più sul disco ed è stata spostata nel cestino. Se il file è stato spostato all'interno della libreria, controlla la timeline per la nuova risorsa corrispondente. Per ripristinare questa risorsa, assicurati che Personal Cloud Photos possa accedere al percorso del file ed esegui la scansione della libreria.",
       "authentication_settings": "Impostazioni di Autenticazione",
       "authentication_settings_description": "Gestisci password, OAuth e altre impostazioni di autenticazione",
       "authentication_settings_disable_all":
@@ -34049,7 +34101,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "La configurazione è attualmente impostata da un file di configurazione",
       "confirm_delete_library": "Sei sicuro di voler cancellare la libreria {library}?",
       "confirm_delete_library_assets":
-          "Sei sicuro di voler cancellare questa libreria? Questo cancellerà {count, plural, one {# asset} other {tutti e # gli assets}} da Curator Photos senza possibilità di tornare indietro. I file non verranno cancellati.",
+          "Sei sicuro di voler cancellare questa libreria? Questo cancellerà {count, plural, one {# asset} other {tutti e # gli assets}} da Personal Cloud Photos senza possibilità di tornare indietro. I file non verranno cancellati.",
       "confirm_email_below": "Per confermare, scrivi \"{email}\" qui sotto",
       "confirm_reprocess_all_faces":
           "Sei sicuro di voler riprocessare tutti i volti? Questo cancellerà tutte le persone nominate.",
@@ -34176,7 +34228,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Abilita funzionalità della mappa",
       "map_gps_settings": "Impostazioni Mappe & GPS",
       "map_gps_settings_description": "Gestisci le impostazioni di Mappe & GPS (Geocoding Inverso)",
-      "map_implications": "La funzionalità mappa si basa su un servizio tile esterno (tiles.curatorphotos.cloud)",
+      "map_implications": "La funzionalità mappa si basa su un servizio tile esterno (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Tema chiaro",
       "map_manage_reverse_geocoding_settings": "Gestisci impostazioni <link>Geocodifica inversa</link>",
       "map_reverse_geocoding": "Geocodifica inversa",
@@ -34203,8 +34255,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Non potrà essere modificato in futuro!",
       "notification_email_from_address": "Indirizzo mittente",
       "notification_email_from_address_description":
-          "Indirizzo email mittente, ad esempio: \"Server Foto Curator Photos <noreply@example.com>\". Assicurati di utilizzare un indirizzo da cui sei autorizzato a inviare email.",
-      "notification_email_host_description": "Host del server email (es. smtp.curatorphotos.app)",
+          "Indirizzo email mittente, ad esempio: \"Server Foto Personal Cloud Photos <noreply@example.com>\". Assicurati di utilizzare un indirizzo da cui sei autorizzato a inviare email.",
+      "notification_email_host_description": "Host del server email (es. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignora errori di certificato",
       "notification_email_ignore_certificate_errors_description":
           "Ignora errori di validazione del certificato TLS (sconsigliato)",
@@ -34312,9 +34364,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gestisci i modelli personalizzati per le notifiche",
       "theme_custom_css_settings": "CSS Personalizzato",
       "theme_custom_css_settings_description":
-          "I Cascading Style Sheets (CSS) permettono di personalizzare l'interfaccia di Curator Photos.",
+          "I Cascading Style Sheets (CSS) permettono di personalizzare l'interfaccia di Personal Cloud Photos.",
       "theme_settings": "Impostazioni Tema",
-      "theme_settings_description": "Gestisci la personalizzazione dell'interfaccia web di Curator Photos",
+      "theme_settings_description": "Gestisci la personalizzazione dell'interfaccia web di Personal Cloud Photos",
       "these_files_matched_by_checksum": "File abbinati per checksum",
       "thumbnail_generation_job": "Generazione Miniature",
       "thumbnail_generation_job_description":
@@ -34452,7 +34504,7 @@ class CodegenLoader extends AssetLoader {
         "Alcuni dispositivi sono molto lenti a caricare le anteprime delle immagini dal dispositivo. Attivare questa impostazione per caricare invece le immagini remote.",
     "advanced_settings_prefer_remote_title": "Preferisci immagini remote",
     "advanced_settings_proxy_headers_subtitle":
-        "Definisci gli header per i proxy che Curator Photos dovrebbe inviare con ogni richiesta di rete",
+        "Definisci gli header per i proxy che Personal Cloud Photos dovrebbe inviare con ogni richiesta di rete",
     "advanced_settings_proxy_headers_title": "Header Proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Salta la verifica dei certificati SSL del server. Richiesto con l'uso di certificati self-signed.",
@@ -34549,7 +34601,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Griglia foto",
     "asset_offline": "Risorsa Offline",
     "asset_offline_description":
-        "Questo media non è stato trovato nel disco. Contatta il tuo amministratore di Curator Photos per assistenza.",
+        "Questo media non è stato trovato nel disco. Contatta il tuo amministratore di Personal Cloud Photos per assistenza.",
     "asset_restored_successfully": "Asset ripristinato con successo",
     "asset_skipped": "Saltato",
     "asset_skipped_in_trash": "Nel cestino",
@@ -34566,7 +34618,8 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {L'asset} other {Gli asset}} non possono essere aggiunti all'album",
     "assets_count": "{count, plural, other {# asset}}",
     "assets_deleted_permanently": "{count} elementi cancellati definitivamente",
-    "assets_deleted_permanently_from_server": "{count} elementi cancellati definitivamente dal server Curator Photos",
+    "assets_deleted_permanently_from_server":
+        "{count} elementi cancellati definitivamente dal server Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Scaricato # file - {error} file non riusciti} other {Scaricati # file - {error} file non riusciti}}",
     "assets_downloaded_successfully":
@@ -34582,7 +34635,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} elementi ripristinati",
     "assets_trashed": "{count} elementi cestinati",
     "assets_trashed_count": "{count, plural, one {Spostato # asset} other {Spostati # assets}} nel cestino",
-    "assets_trashed_from_server": "{count} elementi cestinati dal server Curator Photos",
+    "assets_trashed_from_server": "{count} elementi cestinati dal server Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {L'asset era} other {Gli asset erano}} già parte dell'album",
     "authorized_devices": "Dispositivi autorizzati",
@@ -34594,7 +34647,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Indietro, chiudi o deseleziona",
     "background_location_permission": "Permesso di localizzazione in background",
     "background_location_permission_content":
-        "Per fare in modo che sia possibile cambiare rete quando è in esecuzione in background, Curator Photos deve *sempre* avere accesso alla tua posizione precisa in modo da poter leggere il nome della rete Wi-Fi",
+        "Per fare in modo che sia possibile cambiare rete quando è in esecuzione in background, Personal Cloud Photos deve *sempre* avere accesso alla tua posizione precisa in modo da poter leggere il nome della rete Wi-Fi",
     "backup_album_selection_page_albums_device": "Album sul dispositivo ({count})",
     "backup_album_selection_page_albums_tap": "Tap per includere, doppio tap per escludere",
     "backup_album_selection_page_assets_scatter":
@@ -34617,7 +34670,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Vai alle impostazioni",
     "backup_controller_page_background_battery_info_link": "Mostrami come",
     "backup_controller_page_background_battery_info_message":
-        "Per una migliore esperienza di backup, disabilita le ottimizzazioni della batteria per l'app Curator Photos.\n\nDal momento che è una funzionalità specifica del dispositivo, per favore consulta il manuale del produttore.",
+        "Per una migliore esperienza di backup, disabilita le ottimizzazioni della batteria per l'app Personal Cloud Photos.\n\nDal momento che è una funzionalità specifica del dispositivo, per favore consulta il manuale del produttore.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Ottimizzazioni batteria",
     "backup_controller_page_background_charging": "Solo durante la ricarica",
@@ -34680,7 +34733,7 @@ class CodegenLoader extends AssetLoader {
         "Sei sicuro di voler tenere {count, plural, one {# asset duplicato} other {# assets duplicati}}? Questa operazione risolverà tutti i gruppi duplicati senza cancellare nulla.",
     "bulk_trash_duplicates_confirmation":
         "Sei davvero sicuro di voler cancellare {count, plural, one {# asset duplicato} other {# assets duplicati}}? Questa operazione manterrà l'asset più pesante di ogni gruppo e cancellerà permanentemente tutti gli altri duplicati.",
-    "buy": "Acquista Curator Photos",
+    "buy": "Acquista Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Anteprime pagine librerie ({} elementi)",
     "cache_settings_clear_cache_button": "Pulisci cache",
     "cache_settings_clear_cache_button_title":
@@ -34693,7 +34746,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Anteprime album condivisi",
     "cache_settings_statistics_thumbnail": "Anteprime",
     "cache_settings_statistics_title": "Uso della cache",
-    "cache_settings_subtitle": "Controlla il comportamento della cache dell'applicazione mobile Curator Photos",
+    "cache_settings_subtitle": "Controlla il comportamento della cache dell'applicazione mobile Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Dimensione cache anteprime ({} elementi)",
     "cache_settings_tile_subtitle": "Controlla il comportamento dello storage locale",
     "cache_settings_tile_title": "Archiviazione locale",
@@ -34779,7 +34832,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contesto",
     "continue": "Continua",
     "control_bottom_app_bar_create_new_album": "Crea nuovo album",
-    "control_bottom_app_bar_delete_from_immich": "Elimina da Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Elimina da Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Elimina dal dispositivo",
     "control_bottom_app_bar_edit_location": "Modifica posizione",
     "control_bottom_app_bar_edit_time": "Modifica data e ora",
@@ -34846,12 +34899,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Elimina",
     "delete_album": "Elimina album",
     "delete_api_key_prompt": "Sei sicuro di voler eliminare questa chiave API?",
-    "delete_dialog_alert": "Questi oggetti saranno eliminati definitivamente da Curator Photos e dal tuo device",
+    "delete_dialog_alert": "Questi oggetti saranno eliminati definitivamente da Personal Cloud Photos e dal tuo device",
     "delete_dialog_alert_local":
-        "Questi elementi verranno eliminati definitivamente dal dispositivo, ma saranno ancora disponibili sul server Curator Photos",
+        "Questi elementi verranno eliminati definitivamente dal dispositivo, ma saranno ancora disponibili sul server Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Alcuni degli elementi non sono stati caricati su Curator Photos e saranno rimossi definitivamente dal tuo dispositivo",
-    "delete_dialog_alert_remote": "Questi elementi verranno eliminati permanentemente dal server Curator Photos",
+        "Alcuni degli elementi non sono stati caricati su Personal Cloud Photos e saranno rimossi definitivamente dal tuo dispositivo",
+    "delete_dialog_alert_remote": "Questi elementi verranno eliminati permanentemente dal server Personal Cloud Photos",
     "delete_dialog_ok_force": "Elimina comunque",
     "delete_dialog_title": "Elimina definitivamente",
     "delete_duplicates_confirmation": "Sei sicuro di voler eliminare questi duplicati per sempre?",
@@ -34905,7 +34958,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Gestisci le impostazioni relative al download delle risorse",
     "download_started": "Download avviato",
     "download_sucess": "Download completato",
-    "download_sucess_android": "I contenuti multimediali sono stati scaricati in DCIM/CuratorPhotos",
+    "download_sucess_android": "I contenuti multimediali sono stati scaricati in DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "In attesa di riprovare",
     "downloading": "Scaricando",
     "downloading_asset_filename": "Scaricando la risorsa {filename}",
@@ -34945,7 +34998,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "La cartella è vuota",
     "empty_trash": "Svuota cestino",
     "empty_trash_confirmation":
-        "Sei sicuro di volere svuotare il cestino? Questo rimuoverà tutte le risorse nel cestino in modo permanente da Curator Photos.\nNon puoi annullare questa azione!",
+        "Sei sicuro di volere svuotare il cestino? Questo rimuoverà tutte le risorse nel cestino in modo permanente da Personal Cloud Photos.\nNon puoi annullare questa azione!",
     "enable": "Abilita",
     "enable_biometric_auth_description": "Inserire il codice PIN per abilitare l'autenticazione biometrica",
     "enabled": "Abilitato",
@@ -35203,7 +35256,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignora foto iCloud",
     "ignore_icloud_photos_description":
-        "Le foto che sono memorizzate su iCloud non verranno caricate sul server Curator Photos",
+        "Le foto che sono memorizzate su iCloud non verranno caricate sul server Personal Cloud Photos",
     "image": "Immagine",
     "image_alt_text_date": "{isVideo, select, true {Video girato} other {Foto scattata}} il {date}",
     "image_alt_text_date_1_person":
@@ -35228,8 +35281,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Download iniziato",
     "image_viewer_page_state_provider_download_success": "Download con successo",
     "image_viewer_page_state_provider_share_error": "Errore di condivisione",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Interfaccia Web Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Interfaccia Web Personal Cloud Photos",
     "import_from_json": "Importa da JSON",
     "import_path": "Importa percorso",
     "in_albums": "In {count, plural, one {# album} other {# album}}",
@@ -35299,7 +35352,7 @@ class CodegenLoader extends AssetLoader {
         "L'app si collegherà al server tramite questo URL quando è in uso la rete Wi-Fi specificata",
     "location_permission": "Permesso di localizzazione",
     "location_permission_content":
-        "Per usare la funzione di cambio automatico, Curator Photos necessita del permesso di localizzazione così da poter leggere il nome della rete Wi-Fi in uso",
+        "Per usare la funzione di cambio automatico, Personal Cloud Photos necessita del permesso di localizzazione così da poter leggere il nome della rete Wi-Fi in uso",
     "location_picker_choose_on_map": "Scegli una mappa",
     "location_picker_latitude_error": "Inserisci una latitudine valida",
     "location_picker_latitude_hint": "Inserisci la tua latitudine qui",
@@ -35474,7 +35527,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifiche",
     "notifications_setting_description": "Gestisci notifiche",
     "oauth": "OAuth",
-    "official_immich_resources": "Risorse Ufficiali Curator Photos",
+    "official_immich_resources": "Risorse Ufficiali Personal Cloud Photos",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Prima vecchi",
@@ -35551,11 +35604,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Inizia",
     "permission_onboarding_go_to_settings": "Vai a Impostazioni",
     "permission_onboarding_permission_denied":
-        "Permessi negati. Per usare Curator Photos concedi i permessi ai video e foto dalle impostazioni.",
+        "Permessi negati. Per usare Personal Cloud Photos concedi i permessi ai video e foto dalle impostazioni.",
     "permission_onboarding_permission_granted": "Concessi i permessi! Ora sei tutto apposto.",
     "permission_onboarding_permission_limited":
-        "Permessi limitati. Per consentire a Curator Photos di gestire e fare i backup di tutta la galleria, concedi i permessi Foto e Video dalle Impostazioni.",
-    "permission_onboarding_request": "Curator Photos richiede i permessi per vedere le tue foto e video.",
+        "Permessi limitati. Per consentire a Personal Cloud Photos di gestire e fare i backup di tutta la galleria, concedi i permessi Foto e Video dalle Impostazioni.",
+    "permission_onboarding_request": "Personal Cloud Photos richiede i permessi per vedere le tue foto e video.",
     "person": "Persona",
     "person_birthdate": "Nato il {date}",
     "person_hidden": "{name}{hidden, select, true { (nascosto)} other {}}",
@@ -35608,12 +35661,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Album pubblico",
     "public_share": "Condivisione Pubblica",
     "purchase_account_info": "Contributore",
-    "purchase_activated_subtitle": "Grazie per supportare Curator Photos e i software open source",
+    "purchase_activated_subtitle": "Grazie per supportare Personal Cloud Photos e i software open source",
     "purchase_activated_time": "Attivato il {date}",
     "purchase_activated_title": "La tua chiave è stata attivata con successo",
     "purchase_button_activate": "Attiva",
     "purchase_button_buy": "Acquista",
-    "purchase_button_buy_immich": "Acquista Curator Photos",
+    "purchase_button_buy_immich": "Acquista Personal Cloud Photos",
     "purchase_button_never_show_again": "Non mostrare più",
     "purchase_button_reminder": "Ricordamelo tra 30 giorni",
     "purchase_button_remove_key": "Rimuovi chiave",
@@ -35623,13 +35676,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Stato di Contributore",
     "purchase_individual_title": "Individuale",
     "purchase_input_suggestion": "Hai una chiave del prodotto? Inseriscila qui sotto",
-    "purchase_license_subtitle": "Acquista Curator Photos per supportare lo sviluppo continuo del servizio",
+    "purchase_license_subtitle": "Acquista Personal Cloud Photos per supportare lo sviluppo continuo del servizio",
     "purchase_lifetime_description": "Acquisto a vita",
     "purchase_option_title": "OPZIONI DI ACQUISTO",
     "purchase_panel_info_1":
-        "Costruire Curator Photos richiede molto tempo e impegno, e abbiamo ingegneri a tempo pieno che lavorano per renderlo il migliore possibile. La nostra missione è fare in modo che i software open source e le pratiche aziendali etiche diventino una fonte di reddito sostenibile per gli sviluppatori e creare un ecosistema che rispetti la privacy, offrendo vere alternative ai servizi cloud sfruttatori.",
+        "Costruire Personal Cloud Photos richiede molto tempo e impegno, e abbiamo ingegneri a tempo pieno che lavorano per renderlo il migliore possibile. La nostra missione è fare in modo che i software open source e le pratiche aziendali etiche diventino una fonte di reddito sostenibile per gli sviluppatori e creare un ecosistema che rispetti la privacy, offrendo vere alternative ai servizi cloud sfruttatori.",
     "purchase_panel_info_2":
-        "Poiché siamo impegnati a non aggiungere barriere di pagamento, questo acquisto non ti offrirà funzionalità aggiuntive in Curator Photos. Contiamo su utenti come te per sostenere lo sviluppo continuo di Curator Photos.",
+        "Poiché siamo impegnati a non aggiungere barriere di pagamento, questo acquisto non ti offrirà funzionalità aggiuntive in Personal Cloud Photos. Contiamo su utenti come te per sostenere lo sviluppo continuo di Personal Cloud Photos.",
     "purchase_panel_title": "Contribuisci al progetto",
     "purchase_per_server": "Per server",
     "purchase_per_user": "Per utente",
@@ -35854,7 +35907,7 @@ class CodegenLoader extends AssetLoader {
         "Quando riproduci un video dal server, riproduci l'originale anche se è disponibile una versione transcodificata. Questo potrebbe portare a buffering. I video disponibili localmente sono sempre riprodotti a qualità originale indipendentemente da questa impostazione.",
     "setting_video_viewer_original_video_title": "Forza video originale",
     "settings": "Impostazioni",
-    "settings_require_restart": "Si prega di riavviare Curator Photos perché vengano applicate le impostazioni",
+    "settings_require_restart": "Si prega di riavviare Personal Cloud Photos perché vengano applicate le impostazioni",
     "settings_saved": "Impostazioni salvate",
     "setup_pin_code": "Configura un codice PIN",
     "share": "Condivisione",
@@ -35913,7 +35966,7 @@ class CodegenLoader extends AssetLoader {
     "sharing_enter_password": "Inserisci la password per accedere a questa pagina.",
     "sharing_page_album": "Album condivisi",
     "sharing_page_description":
-        "Crea un album condiviso per condividere foto e video con gli utenti della tua rete Curator Photos.",
+        "Crea un album condiviso per condividere foto e video con gli utenti della tua rete Personal Cloud Photos.",
     "sharing_page_empty_list": "LISTA VUOTA",
     "sharing_sidebar_description": "Mostra un link a Condivisione nella barra laterale",
     "sharing_silver_appbar_create_shared_album": "Crea album condiviso",
@@ -35984,12 +36037,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Supporto",
     "support_and_feedback": "Supporto & Feedback",
     "support_third_party_description":
-        "La tua installazione di Curator Photos è stata costruita da terze parti. I problemi che riscontri potrebbero essere causati da altri pacchetti, quindi ti preghiamo di sollevare il problema in prima istanza utilizzando i link sottostanti.",
+        "La tua installazione di Personal Cloud Photos è stata costruita da terze parti. I problemi che riscontri potrebbero essere causati da altri pacchetti, quindi ti preghiamo di sollevare il problema in prima istanza utilizzando i link sottostanti.",
     "swap_merge_direction": "Scambia direzione di unione",
     "sync": "Sincronizza",
     "sync_albums": "Sincronizza album",
     "sync_albums_manual_subtitle": "Sincronizza tutti i video e le foto caricate sull'album di backup selezionato",
-    "sync_upload_album_setting_subtitle": "Crea e carica le tue foto e video sull'album selezionato in Curator Photos",
+    "sync_upload_album_setting_subtitle":
+        "Crea e carica le tue foto e video sull'album selezionato in Personal Cloud Photos",
     "tag": "Tag",
     "tag_assets": "Tagga risorse",
     "tag_created": "Tag creata: {tag}",
@@ -36040,7 +36094,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Le foto cestinate saranno mostrate qui.",
     "trash_page_delete_all": "Elimina tutti",
     "trash_page_empty_trash_dialog_content":
-        "Vuoi eliminare gli elementi nel cestino? Questi elementi saranno eliminati definitivamente da Curator Photos",
+        "Vuoi eliminare gli elementi nel cestino? Questi elementi saranno eliminati definitivamente da Personal Cloud Photos",
     "trash_page_info": "Gli elementi cestinati saranno eliminati definitivamente dopo {days} giorni",
     "trash_page_no_assets": "Nessun elemento cestinato",
     "trash_page_restore_all": "Ripristina tutto",
@@ -36088,7 +36142,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Errori",
     "upload_status_uploaded": "Caricato",
     "upload_success": "Caricamento completato con successo, aggiorna la pagina per vedere i nuovi asset caricati.",
-    "upload_to_immich": "Carica su Curator Photos ({count})",
+    "upload_to_immich": "Carica su Personal Cloud Photos ({count})",
     "uploading": "Caricamento",
     "url": "URL",
     "usage": "Utilizzo",
@@ -36118,7 +36172,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versione",
     "version_announcement_closing": "Il tuo amico, Alex",
     "version_announcement_message":
-        "Ehilà! È stata rilasciata una nuova versione di Curator Photos. Leggi le <link>release notes</link> e assicurati che i tuoi file di configurazione siano aggiornati per evitare problemi e incongruenze, soprattutto se utilizzi WatchTower o altri strumenti per aggiornare Curator Photos in automatico.",
+        "Ehilà! È stata rilasciata una nuova versione di Personal Cloud Photos. Leggi le <link>release notes</link> e assicurati che i tuoi file di configurazione siano aggiornati per evitare problemi e incongruenze, soprattutto se utilizzi WatchTower o altri strumenti per aggiornare Personal Cloud Photos in automatico.",
     "version_announcement_overlay_release_notes": "note di rilascio",
     "version_announcement_overlay_text_1": "Ciao, c'è una nuova versione di",
     "version_announcement_overlay_text_2": "per favore prenditi il tuo tempo per visitare le ",
@@ -36154,7 +36208,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Attenzione",
     "week": "Settimana",
     "welcome": "Benvenuto",
-    "welcome_to_immich": "Benvenuto in Curator Photos",
+    "welcome_to_immich": "Benvenuto in Personal Cloud Photos",
     "wifi_name": "Nome rete Wi-Fi",
     "wrong_pin_code": "Codice PIN errato",
     "year": "Anno",
@@ -36202,7 +36256,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Dodajte uzorke izuzimanja. Globiranje pomoću *, ** i ? je podržano. Za ignoriranje svih datoteka u bilo kojem direktoriju pod nazivom \"Raw\", koristite \"**/Raw/**\". Da biste zanemarili sve datoteke koje završavaju na \".tif\", koristite \"**/*.tif\". Da biste zanemarili apsolutni put, koristite \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Ovo sredstvo vanjske knjižnice više nije pronađeno na disku i premješteno je u smeće. Ako je datoteka premještena unutar biblioteke, provjerite svoju vremensku traku za novo odgovarajuće sredstvo. Da biste vratili ovo sredstvo, provjerite može li Curator Photos pristupiti donjoj stazi datoteke i skenirajte biblioteku.",
+          "Ovo sredstvo vanjske knjižnice više nije pronađeno na disku i premješteno je u smeće. Ako je datoteka premještena unutar biblioteke, provjerite svoju vremensku traku za novo odgovarajuće sredstvo. Da biste vratili ovo sredstvo, provjerite može li Personal Cloud Photos pristupiti donjoj stazi datoteke i skenirajte biblioteku.",
       "authentication_settings": "Postavke autentikacije",
       "authentication_settings_description": "Uredi lozinku, OAuth, i druge postavke autentikacije",
       "authentication_settings_disable_all":
@@ -36218,7 +36272,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfiguracija je trenutno postavljena konfiguracijskom datotekom",
       "confirm_delete_library": "Jeste li sigurni da želite izbrisati biblioteku {library}?",
       "confirm_delete_library_assets":
-          "Jeste li sigurni da želite izbrisati ovu biblioteku? Time će {count, plural, one {biti izbrisana # sadržana stavka} few {biti izbrisane sve # sadržane stavke} other {biti izbrisano svih # sadržanih stavki}} iz Curator Photosa i to se ne može poništiti. Datoteke će ostati na disku.",
+          "Jeste li sigurni da želite izbrisati ovu biblioteku? Time će {count, plural, one {biti izbrisana # sadržana stavka} few {biti izbrisane sve # sadržane stavke} other {biti izbrisano svih # sadržanih stavki}} iz Personal Cloud Photosa i to se ne može poništiti. Datoteke će ostati na disku.",
       "confirm_email_below": "Za potvrdu upišite \"{email}\" ispod",
       "confirm_reprocess_all_faces":
           "Jeste li sigurni da želite ponovno obraditi sva lica? Ovo će također obrisati imenovane osobe.",
@@ -36345,7 +36399,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Omogući značajke karte",
       "map_gps_settings": "Postavke Karte i GPS-a",
       "map_gps_settings_description": "Upravljajte Postavkama Karte i GPS-a (Obrnuto Geokodiranje)",
-      "map_implications": "Značajka karte se oslanja na vanjsku uslugu pločica (tiles.curatorphotos.cloud)",
+      "map_implications": "Značajka karte se oslanja na vanjsku uslugu pločica (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Svijetli stil",
       "map_manage_reverse_geocoding_settings": "Upravljajte postavkama <link>Obrnutog Geokodiranja</link>",
       "map_reverse_geocoding": "Obrnuto Geokodiranje",
@@ -36372,8 +36426,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NAPOMENA: Ovo se ne može promijeniti kasnije!",
       "notification_email_from_address": "Od adrese",
       "notification_email_from_address_description":
-          "E-mail adresa pošiljatelja, na primjer: \"Curator Photos Photo Server <noreply@example.com>\". Obavezno koristite adresu s koje vam je dopušteno slanje e-pošte.",
-      "notification_email_host_description": "Poslužitelja e-pošte (npr. smtp.curatorphotos.app)",
+          "E-mail adresa pošiljatelja, na primjer: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Obavezno koristite adresu s koje vam je dopušteno slanje e-pošte.",
+      "notification_email_host_description": "Poslužitelja e-pošte (npr. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignoriraj pogreške certifikata",
       "notification_email_ignore_certificate_errors_description":
           "Ignoriraj pogreške provjere valjanosti TLS certifikata (nije preporučeno)",
@@ -36476,9 +36530,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Upravljaj prilagođenim predlošcima za obavijesti",
       "theme_custom_css_settings": "Prilagođeni CSS",
       "theme_custom_css_settings_description":
-          "Kaskadni listovi stilova (CSS) omogućuju prilagođavanje dizajna Curator Photosa.",
+          "Kaskadni listovi stilova (CSS) omogućuju prilagođavanje dizajna Personal Cloud Photosa.",
       "theme_settings": "Postavke tema",
-      "theme_settings_description": "Upravljajte prilagodbom Curator Photos web sučelja",
+      "theme_settings_description": "Upravljajte prilagodbom Personal Cloud Photos web sučelja",
       "these_files_matched_by_checksum": "Ove datoteke se podudaraju prema njihovim kontrolnim zbrojevima",
       "thumbnail_generation_job": "Generirajte sličice",
       "thumbnail_generation_job_description":
@@ -36615,7 +36669,7 @@ class CodegenLoader extends AssetLoader {
         "Neki uređaji sporo učitavaju sličice s resursa na uređaju. Aktivirajte ovu postavku kako biste umjesto toga učitali slike s udaljenih izvora.",
     "advanced_settings_prefer_remote_title": "Preferiraj udaljene slike",
     "advanced_settings_proxy_headers_subtitle":
-        "Definirajte zaglavlja posrednika koja Curator Photos treba slati sa svakim mrežnim zahtjevom.",
+        "Definirajte zaglavlja posrednika koja Personal Cloud Photos treba slati sa svakim mrežnim zahtjevom.",
     "advanced_settings_proxy_headers_title": "Proxy zaglavlja",
     "advanced_settings_self_signed_ssl_subtitle":
         "Preskoči provjeru SSL certifikata za krajnju točku poslužitelja. Potrebno za samo-potpisane certifikate.",
@@ -36711,7 +36765,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Mreža Fotografija",
     "asset_offline": "Sredstvo izvan mreže",
     "asset_offline_description":
-        "Ovaj materijal je izvan mreže. Curator Photos ne može pristupiti lokaciji datoteke. Provjerite je li sredstvo dostupno, a zatim ponovno skenirajte biblioteku.",
+        "Ovaj materijal je izvan mreže. Personal Cloud Photos ne može pristupiti lokaciji datoteke. Provjerite je li sredstvo dostupno, a zatim ponovno skenirajte biblioteku.",
     "asset_restored_successfully": "Resurs uspješno obnovljen",
     "asset_skipped": "Preskočeno",
     "asset_skipped_in_trash": "U smeću",
@@ -36728,7 +36782,8 @@ class CodegenLoader extends AssetLoader {
         "{count, plural,\n one {Nije moguće dodati medij u album}\n few {Nije moguće dodati # medija u album}\n other {Nije moguće dodati # medija u album}\n}",
     "assets_count": "{count, plural, one {# asset} other {# assets}}",
     "assets_deleted_permanently": "{count} resurs(i) uspješno uklonjeni",
-    "assets_deleted_permanently_from_server": "{count} resurs(i) trajno obrisan(i) sa Curator Photos poslužitelja",
+    "assets_deleted_permanently_from_server":
+        "{count} resurs(i) trajno obrisan(i) sa Personal Cloud Photos poslužitelja",
     "assets_moved_to_trash_count": "{count, plural, one {# asset} other {# asset}} premješteno u smeće",
     "assets_permanently_deleted_count": "Trajno izbrisano {count, plural, one {# asset} other {# assets}}",
     "assets_removed_count": "Uklonjeno {count, plural, one {# asset} other {# assets}}",
@@ -36739,7 +36794,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} resurs(i) uspješno obnovljen(i)",
     "assets_trashed": "{count} resurs(i) premješten(i) u smeće",
     "assets_trashed_count": "Bačeno u smeće {count, plural, one {# asset} other {# assets}}",
-    "assets_trashed_from_server": "{count} resurs(i) premješten(i) u smeće s Curator Photos poslužitelja",
+    "assets_trashed_from_server": "{count} resurs(i) premješten(i) u smeće s Personal Cloud Photos poslužitelja",
     "assets_were_part_of_album_count": "{count, plural, one {Asset was} other {Assets were}} već dio albuma",
     "authorized_devices": "Ovlašteni Uređaji",
     "automatic_endpoint_switching_subtitle":
@@ -36749,7 +36804,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Natrag, zatvorite ili poništite odabir",
     "background_location_permission": "Dozvola za lokaciju u pozadini",
     "background_location_permission_content":
-        "Kako bi prebacivao mreže dok radi u pozadini, Curator Photos mora *uvijek* imati pristup preciznoj lokaciji kako bi aplikacija mogla pročitati naziv Wi-Fi mreže",
+        "Kako bi prebacivao mreže dok radi u pozadini, Personal Cloud Photos mora *uvijek* imati pristup preciznoj lokaciji kako bi aplikacija mogla pročitati naziv Wi-Fi mreže",
     "backup_album_selection_page_albums_device": "Albumi na uređaju ({count})",
     "backup_album_selection_page_albums_tap": "Dodirnite za uključivanje, dvostruki dodir za isključivanje",
     "backup_album_selection_page_assets_scatter":
@@ -36772,7 +36827,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Idite u postavke",
     "backup_controller_page_background_battery_info_link": "Pokaži mi kako",
     "backup_controller_page_background_battery_info_message":
-        "Za najbolje iskustvo sigurnosnog kopiranja u pozadini, molimo onemogućite sve optimizacije baterije koje ograničavaju pozadinsku aktivnost Curator Photosa.\n\nBudući da je ovo specifično za uređaj, molimo potražite potrebne informacije za proizvođača vašeg uređaja.",
+        "Za najbolje iskustvo sigurnosnog kopiranja u pozadini, molimo onemogućite sve optimizacije baterije koje ograničavaju pozadinsku aktivnost Personal Cloud Photosa.\n\nBudući da je ovo specifično za uređaj, molimo potražite potrebne informacije za proizvođača vašeg uređaja.",
     "backup_controller_page_background_battery_info_ok": "U redu",
     "backup_controller_page_background_battery_info_title": "Optimizacije baterije",
     "backup_controller_page_background_charging": "Samo tijekom punjenja",
@@ -36834,7 +36889,7 @@ class CodegenLoader extends AssetLoader {
         "Jeste li sigurni da želite zadržati {count, plural, one {# duplicate asset} other {# duplicate asset}}? Ovo će riješiti sve duplicirane grupe bez brisanja ičega.",
     "bulk_trash_duplicates_confirmation":
         "Jeste li sigurni da želite na veliko baciti u smeće {count, plural, one {# duplicate asset} other {# duplicate asset}}? Ovo će zadržati najveće sredstvo svake grupe i baciti sve ostale duplikate u smeće.",
-    "buy": "Kupi Curator Photos",
+    "buy": "Kupi Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Sličice na stranici biblioteke ({} resursa)",
     "cache_settings_clear_cache_button": "Očisti predmemoriju",
     "cache_settings_clear_cache_button_title":
@@ -36847,7 +36902,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Sličice dijeljenih albuma",
     "cache_settings_statistics_thumbnail": "Sličice",
     "cache_settings_statistics_title": "Korištenje predmemorije",
-    "cache_settings_subtitle": "Upravljajte ponašanjem predmemorije mobilne aplikacije Curator Photos",
+    "cache_settings_subtitle": "Upravljajte ponašanjem predmemorije mobilne aplikacije Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Veličina predmemorije sličica ({} stavki)",
     "cache_settings_tile_subtitle": "Upravljajte ponašanjem lokalne pohrane",
     "cache_settings_tile_title": "Lokalna pohrana",
@@ -36932,7 +36987,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Nastavi",
     "control_bottom_app_bar_create_new_album": "Kreiraj novi album",
-    "control_bottom_app_bar_delete_from_immich": "Izbriši iz Curator Photosa",
+    "control_bottom_app_bar_delete_from_immich": "Izbriši iz Personal Cloud Photosa",
     "control_bottom_app_bar_delete_from_local": "Izbriši s uređaja",
     "control_bottom_app_bar_edit_location": "Uredi lokaciju",
     "control_bottom_app_bar_edit_time": "Uredi datum i vrijeme",
@@ -36997,12 +37052,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Izbriši",
     "delete_album": "Izbriši album",
     "delete_api_key_prompt": "Jeste li sigurni da želite izbrisati ovaj API ključ?",
-    "delete_dialog_alert": "Ove stavke bit će trajno izbrisane iz Curator Photosa i s vašeg uređaja",
+    "delete_dialog_alert": "Ove stavke bit će trajno izbrisane iz Personal Cloud Photosa i s vašeg uređaja",
     "delete_dialog_alert_local":
-        "Ove stavke bit će trajno uklonjene s vašeg uređaja, ali će i dalje biti dostupne na Curator Photos poslužitelju",
+        "Ove stavke bit će trajno uklonjene s vašeg uređaja, ali će i dalje biti dostupne na Personal Cloud Photos poslužitelju",
     "delete_dialog_alert_local_non_backed_up":
-        "Neke od stavki nisu sigurnosno kopirane na Curator Photos i bit će trajno uklonjene s vašeg uređaja",
-    "delete_dialog_alert_remote": "Ove stavke bit će trajno izbrisane s Curator Photos poslužitelja",
+        "Neke od stavki nisu sigurnosno kopirane na Personal Cloud Photos i bit će trajno uklonjene s vašeg uređaja",
+    "delete_dialog_alert_remote": "Ove stavke bit će trajno izbrisane s Personal Cloud Photos poslužitelja",
     "delete_dialog_ok_force": "Izbriši svejedno",
     "delete_dialog_title": "Trajno izbriši",
     "delete_duplicates_confirmation": "Jeste li sigurni da želite trajno izbrisati ove duplikate?",
@@ -37055,7 +37110,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Upravljajte postavkama koje se odnose na preuzimanje sredstava",
     "download_started": "Preuzimanje započeto",
     "download_sucess": "Preuzimanje uspješno",
-    "download_sucess_android": "Medij je preuzet u DCIM/CuratorPhotos",
+    "download_sucess_android": "Medij je preuzet u DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Čeka se ponovni pokušaj",
     "downloading": "Preuzimanje",
     "downloading_asset_filename": "Preuzimanje materijala {filename}",
@@ -37095,7 +37150,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ova mapa je prazna",
     "empty_trash": "Isprazni smeće",
     "empty_trash_confirmation":
-        "Jeste li sigurni da želite isprazniti smeće? Time će se iz Curator Photosa trajno ukloniti sva sredstva u otpadu.\nNe možete poništiti ovu radnju!",
+        "Jeste li sigurni da želite isprazniti smeće? Time će se iz Personal Cloud Photosa trajno ukloniti sva sredstva u otpadu.\nNe možete poništiti ovu radnju!",
     "enable": "Omogući",
     "enable_biometric_auth_description": "Unesite svoj PIN kod za omogućavanje biometrijske autentikacije",
     "enabled": "Omogućeno",
@@ -37351,7 +37406,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignoriraj iCloud fotografije",
     "ignore_icloud_photos_description":
-        "Fotografije pohranjene na iCloudu neće biti učitane na Curator Photos poslužitelj",
+        "Fotografije pohranjene na iCloudu neće biti učitane na Personal Cloud Photos poslužitelj",
     "image": "Slika",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} snimljeno {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} snimljeno s {person1} {date}",
@@ -37374,8 +37429,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Preuzimanje započelo",
     "image_viewer_page_state_provider_download_success": "Uspješno Preuzimanje",
     "image_viewer_page_state_provider_share_error": "Greška pri dijeljenju",
-    "immich_logo": "Curator Photos Logo",
-    "immich_web_interface": "Curator Photos Web Sučelje",
+    "immich_logo": "Personal Cloud Photos Logo",
+    "immich_web_interface": "Personal Cloud Photos Web Sučelje",
     "import_from_json": "Uvoz iz JSON-a",
     "import_path": "Putanja uvoza",
     "in_albums": "U {count, plural, one {# album} other {# albuma}}",
@@ -37442,7 +37497,7 @@ class CodegenLoader extends AssetLoader {
         "Aplikacija će se povezati s poslužiteljem putem ovog URL-a kada koristi određenu Wi-Fi mrežu",
     "location_permission": "Dozvola za lokaciju",
     "location_permission_content":
-        "Kako bi koristio značajku automatskog prebacivanja, Curator Photos treba dozvolu za preciznu lokaciju kako bi mogao očitati naziv trenutne Wi-Fi mreže",
+        "Kako bi koristio značajku automatskog prebacivanja, Personal Cloud Photos treba dozvolu za preciznu lokaciju kako bi mogao očitati naziv trenutne Wi-Fi mreže",
     "location_picker_choose_on_map": "Odaberi na karti",
     "location_picker_latitude_error": "Unesite valjanu geografsku širinu",
     "location_picker_latitude_hint": "Unesite ovdje svoju geografsku širinu",
@@ -37612,7 +37667,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Obavijesti",
     "notifications_setting_description": "Upravljanje obavijestima",
     "oauth": "OAuth",
-    "official_immich_resources": "Službeni Curator Photos resursi",
+    "official_immich_resources": "Službeni Personal Cloud Photos resursi",
     "offline": "Izvan mreže",
     "ok": "Ok",
     "oldest_first": "Prvo najstarije",
@@ -37685,11 +37740,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Započni",
     "permission_onboarding_go_to_settings": "Idi u postavke",
     "permission_onboarding_permission_denied":
-        "Dopuštenje odbijeno. Za korištenje Curator Photosa, dodijelite dopuštenja za fotografije i videozapise u Postavkama.",
+        "Dopuštenje odbijeno. Za korištenje Personal Cloud Photosa, dodijelite dopuštenja za fotografije i videozapise u Postavkama.",
     "permission_onboarding_permission_granted": "Dopuštenje dodijeljeno! Sve je spremno.",
     "permission_onboarding_permission_limited":
-        "Dopuštenje ograničeno. Da biste Curator Photosu dopustili sigurnosno kopiranje i upravljanje cijelom galerijom, dodijelite dopuštenja za fotografije i videozapise u Postavkama.",
-    "permission_onboarding_request": "Curator Photos zahtijeva dopuštenje za pregled vaših fotografija i videozapisa.",
+        "Dopuštenje ograničeno. Da biste Personal Cloud Photosu dopustili sigurnosno kopiranje i upravljanje cijelom galerijom, dodijelite dopuštenja za fotografije i videozapise u Postavkama.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos zahtijeva dopuštenje za pregled vaših fotografija i videozapisa.",
     "person": "Osoba",
     "person_birthdate": "Rođen/a {date}",
     "person_hidden": "{name}{hidden, select, true { (skriveno)} other {}}",
@@ -37742,12 +37798,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Javni album",
     "public_share": "Javno dijeljenje",
     "purchase_account_info": "Podržava softver",
-    "purchase_activated_subtitle": "Hvala što podržavate Curator Photos i softver otvorenog koda",
+    "purchase_activated_subtitle": "Hvala što podržavate Personal Cloud Photos i softver otvorenog koda",
     "purchase_activated_time": "Aktivirano {date}",
     "purchase_activated_title": "Vaš ključ je uspješno aktiviran",
     "purchase_button_activate": "Aktiviraj",
     "purchase_button_buy": "Kupi",
-    "purchase_button_buy_immich": "Kupi Curator Photos",
+    "purchase_button_buy_immich": "Kupi Personal Cloud Photos",
     "purchase_button_never_show_again": "Nikad više ne prikazuj",
     "purchase_button_reminder": "Podsjeti me za 30 dana",
     "purchase_button_remove_key": "Ukloni ključ",
@@ -37757,13 +37813,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status podržavanja",
     "purchase_individual_title": "Pojedinačna licenca",
     "purchase_input_suggestion": "Imate ključ proizvoda? Unesite ključ ispod",
-    "purchase_license_subtitle": "Kupite Curator Photos kako biste podržali kontinuirani razvoj usluge",
+    "purchase_license_subtitle": "Kupite Personal Cloud Photos kako biste podržali kontinuirani razvoj usluge",
     "purchase_lifetime_description": "Doživotna kupnja",
     "purchase_option_title": "MOGUĆNOSTI KUPNJE",
     "purchase_panel_info_1":
-        "Za izgradnju Curator Photosa potrebno je puno vremena i truda, a mi imamo inženjere koji rade na tome s punim radnim vremenom kako bismo ga učinili što boljim. Naša je misija da softver otvorenog koda i etička poslovna praksa postanu održivi izvor prihoda za programere i da se stvori ekosustav koji poštuje privatnost sa stvarnim alternativama eksploatacijskim uslugama u oblaku.",
+        "Za izgradnju Personal Cloud Photosa potrebno je puno vremena i truda, a mi imamo inženjere koji rade na tome s punim radnim vremenom kako bismo ga učinili što boljim. Naša je misija da softver otvorenog koda i etička poslovna praksa postanu održivi izvor prihoda za programere i da se stvori ekosustav koji poštuje privatnost sa stvarnim alternativama eksploatacijskim uslugama u oblaku.",
     "purchase_panel_info_2":
-        "Budući da se obvezujemo da nećemo dodavati dodatne pretplate, ova vam kupnja neće dodijeliti nikakve dodatne značajke u Curator Photosu. Oslanjamo se na korisnike poput vas da podržimo stalni razvoj Curator Photosa.",
+        "Budući da se obvezujemo da nećemo dodavati dodatne pretplate, ova vam kupnja neće dodijeliti nikakve dodatne značajke u Personal Cloud Photosu. Oslanjamo se na korisnike poput vas da podržimo stalni razvoj Personal Cloud Photosa.",
     "purchase_panel_title": "Podrži projekt",
     "purchase_per_server": "Po serveru",
     "purchase_per_user": "Po korisniku",
@@ -37986,7 +38042,7 @@ class CodegenLoader extends AssetLoader {
         "Prilikom strujanja videozapisa s poslužitelja, reproducirajte original čak i kada je dostupna transkodirana verzija. Može doći do međuspremanja. Videozapisi dostupni lokalno reproduciraju se u originalnoj kvaliteti bez obzira na ovu postavku.",
     "setting_video_viewer_original_video_title": "Forsiraj originalni videozapis",
     "settings": "Postavke",
-    "settings_require_restart": "Ponovno pokrenite Curator Photos da biste primijenili ovu postavku",
+    "settings_require_restart": "Ponovno pokrenite Personal Cloud Photos da biste primijenili ovu postavku",
     "settings_saved": "Postavke su spremljene",
     "setup_pin_code": "Postavi PIN kod",
     "share": "Podijeli",
@@ -38116,14 +38172,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Podrška",
     "support_and_feedback": "Podrška i povratne informacije",
     "support_third_party_description":
-        "Vaša Curator Photos instalacija je pakirana od strane treće strane. Problemi koje doživljavate mogu biti uzrokovani tim paketom, stoga vas molimo da probleme prvo prijavite njima putem poveznica u nastavku.",
+        "Vaša Personal Cloud Photos instalacija je pakirana od strane treće strane. Problemi koje doživljavate mogu biti uzrokovani tim paketom, stoga vas molimo da probleme prvo prijavite njima putem poveznica u nastavku.",
     "swap_merge_direction": "Zamijeni smjer spajanja",
     "sync": "Sink.",
     "sync_albums": "Sinkroniziraj albume",
     "sync_albums_manual_subtitle":
         "Sinkroniziraj sve prenesene videozapise i fotografije u odabrane albume za sigurnosnu kopiju",
     "sync_upload_album_setting_subtitle":
-        "Kreiraj i prenesi svoje fotografije i videozapise u odabrane albume na Curator Photosu",
+        "Kreiraj i prenesi svoje fotografije i videozapise u odabrane albume na Personal Cloud Photosu",
     "tag": "Oznaka",
     "tag_assets": "Označi stavke",
     "tag_created": "Kreirana oznaka: {tag}",
@@ -38174,7 +38230,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Ovdje će se prikazati bačene fotografije i videozapisi.",
     "trash_page_delete_all": "Izbriši sve",
     "trash_page_empty_trash_dialog_content":
-        "Želite li isprazniti svoje stavke u smeću? Ove stavke bit će trajno uklonjene iz Curator Photos",
+        "Želite li isprazniti svoje stavke u smeću? Ove stavke bit će trajno uklonjene iz Personal Cloud Photos",
     "trash_page_info": "Stavke u smeću bit će trajno izbrisane nakon {days} dana",
     "trash_page_no_assets": "Nema stavki u smeću",
     "trash_page_restore_all": "Vrati sve",
@@ -38222,7 +38278,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Greške",
     "upload_status_uploaded": "Preneseno",
     "upload_success": "Prijenos uspješan, osvježite stranicu da biste vidjeli nove prenesene stavke.",
-    "upload_to_immich": "Prenesi na Curator Photos ({count})",
+    "upload_to_immich": "Prenesi na Personal Cloud Photos ({count})",
     "uploading": "Prijenos u tijeku",
     "url": "URL",
     "usage": "Korištenje",
@@ -38251,7 +38307,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Verzija",
     "version_announcement_closing": "Vaš prijatelj, Alex",
     "version_announcement_message":
-        "Bok! Dostupna je nova verzija Curator Photosa. Odvojite malo vremena da pročitate <link>bilješke o izdanju</link> kako biste bili sigurni da je vaše postavljanje ažurno kako biste spriječili bilo kakve pogrešne konfiguracije, pogotovo ako koristite WatchTower ili bilo koji mehanizam koji automatski upravlja ažuriranjem vaše instance Curator Photosa.",
+        "Bok! Dostupna je nova verzija Personal Cloud Photosa. Odvojite malo vremena da pročitate <link>bilješke o izdanju</link> kako biste bili sigurni da je vaše postavljanje ažurno kako biste spriječili bilo kakve pogrešne konfiguracije, pogotovo ako koristite WatchTower ili bilo koji mehanizam koji automatski upravlja ažuriranjem vaše instance Personal Cloud Photosa.",
     "version_announcement_overlay_release_notes": "napomene o izdanju",
     "version_announcement_overlay_text_1": "Bok prijatelju, dostupno je novo izdanje",
     "version_announcement_overlay_text_2": "molimo odvojite vrijeme da posjetite ",
@@ -38287,7 +38343,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Upozorenje",
     "week": "Tjedan",
     "welcome": "Dobrodošli",
-    "welcome_to_immich": "Dobrodošli u Curator Photos",
+    "welcome_to_immich": "Dobrodošli u Personal Cloud Photos",
     "wifi_name": "Naziv Wi-Fi mreže",
     "wrong_pin_code": "Krivi PIN kod",
     "year": "Godina",
@@ -38342,7 +38398,7 @@ class CodegenLoader extends AssetLoader {
           "Lisa välistamismustreid. Toetatud on metamärgid *, ** ja ?. Kõikide kataloogis nimega \"Raw\" olevate failide ignoreerimiseks kasuta \"**/Raw/**\". Kõikide .tif failide ignoreerimiseks kasuta \"**/*.tif\". Absouutse tee ignoreerimiseks kasuta \"/path/to/ignore/**\".",
       "admin_user": "Administraator",
       "asset_offline_description":
-          "Seda välise kogu üksust ei leitud kettalt ning see liigutati prügikasti. Kui faili asukoht kogu siseselt muutus, leiad vastava uue üksuse oma ajajoonelt. Üksuse taastamiseks veendu, et allpool toodud failitee on Curator Photos'ile kättesaadav ning skaneeri kogu uuesti.",
+          "Seda välise kogu üksust ei leitud kettalt ning see liigutati prügikasti. Kui faili asukoht kogu siseselt muutus, leiad vastava uue üksuse oma ajajoonelt. Üksuse taastamiseks veendu, et allpool toodud failitee on Personal Cloud Photos'ile kättesaadav ning skaneeri kogu uuesti.",
       "authentication_settings": "Autentimise seaded",
       "authentication_settings_description": "Halda parooli, OAuth ja muid autentimise seadeid",
       "authentication_settings_disable_all":
@@ -38358,7 +38414,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfiguratsioon on määratud konfifaili abil",
       "confirm_delete_library": "Kas oled kindel, et soovid kustutada {library} kogu?",
       "confirm_delete_library_assets":
-          "Kas oled kindel, et soovid selle kogu kustutada? Sellega kustutatakse {count, plural, one {# sisalduv üksus} other {kõik # sisalduvat üksust}} Curator Photos'ist ning seda ei saa tagasi võtta. Failid jäävad kettale alles.",
+          "Kas oled kindel, et soovid selle kogu kustutada? Sellega kustutatakse {count, plural, one {# sisalduv üksus} other {kõik # sisalduvat üksust}} Personal Cloud Photos'ist ning seda ei saa tagasi võtta. Failid jäävad kettale alles.",
       "confirm_email_below": "Kinnitamiseks sisesta allpool \"{email}\"",
       "confirm_reprocess_all_faces":
           "Kas oled kindel, et soovid kõik näod uuesti töödelda? See eemaldab kõik nimega isikud.",
@@ -38484,7 +38540,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Luba kaardi funktsioonid",
       "map_gps_settings": "Kaardi ja GPS-i seaded",
       "map_gps_settings_description": "Halda kaardi ja GPS-i (pöördgeokodeerimise) seadeid",
-      "map_implications": "Kaardifunktsioon kasutab välist kaarditeenust (tiles.curatorphotos.cloud)",
+      "map_implications": "Kaardifunktsioon kasutab välist kaarditeenust (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Hele stiil",
       "map_manage_reverse_geocoding_settings": "Halda <link>pöördgeokodeerimise</link> seadeid",
       "map_reverse_geocoding": "Pöördgeokodeerimine",
@@ -38511,8 +38567,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "MÄRKUS: Seda ei saa hiljem muuta!",
       "notification_email_from_address": "Saatja aadress",
       "notification_email_from_address_description":
-          "Saatja e-posti aadress, näiteks: \"Curator Photos Photo Server <noreply@example.com>\". Kasuta kindlasti aadressi, millelt sul on luba e-kirju saata.",
-      "notification_email_host_description": "E-posti serveri host (nt. smtp.curatorphotos.app)",
+          "Saatja e-posti aadress, näiteks: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Kasuta kindlasti aadressi, millelt sul on luba e-kirju saata.",
+      "notification_email_host_description": "E-posti serveri host (nt. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignoreeri sertifikaadi vigu",
       "notification_email_ignore_certificate_errors_description":
           "Ignoreeri TLS sertifikaadi valideerimise vigu (mittesoovituslik)",
@@ -38611,9 +38667,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Teavituse mallid",
       "template_settings_description": "Teavituste mallide haldamine",
       "theme_custom_css_settings": "Kohandatud CSS",
-      "theme_custom_css_settings_description": "Cascading Style Sheets lubab Curator Photos'i kujunduse kohandamist.",
+      "theme_custom_css_settings_description":
+          "Cascading Style Sheets lubab Personal Cloud Photos'i kujunduse kohandamist.",
       "theme_settings": "Teema seaded",
-      "theme_settings_description": "Halda Curator Photos'i veebiliidese kohandamist",
+      "theme_settings_description": "Halda Personal Cloud Photos'i veebiliidese kohandamist",
       "these_files_matched_by_checksum": "Need failid ühtivad kontrollsumma alusel",
       "thumbnail_generation_job": "Pisipiltide genereerimine",
       "thumbnail_generation_job_description":
@@ -38747,7 +38804,7 @@ class CodegenLoader extends AssetLoader {
         "Mõned seadmed laadivad seadmes olevate üksuste pisipilte piinavalt aeglaselt. Aktiveeri see seadistus, et laadida selle asemel kaugpilte.",
     "advanced_settings_prefer_remote_title": "Eelista kaugpilte",
     "advanced_settings_proxy_headers_subtitle":
-        "Määra vaheserveri päised, mida Curator Photos peaks iga päringuga saatma",
+        "Määra vaheserveri päised, mida Personal Cloud Photos peaks iga päringuga saatma",
     "advanced_settings_proxy_headers_title": "Vaheserveri päised",
     "advanced_settings_self_signed_ssl_subtitle":
         "Jätab serveri lõpp-punkti SSL-sertifikaadi kontrolli vahele. Nõutud endasigneeritud sertifikaatide jaoks.",
@@ -38842,7 +38899,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotoruudustik",
     "asset_offline": "Üksus pole kättesaadav",
     "asset_offline_description":
-        "Seda välise kogu üksust ei leitud kettalt. Abi saamiseks palun võta ühendust oma Curator Photos'i administraatoriga.",
+        "Seda välise kogu üksust ei leitud kettalt. Abi saamiseks palun võta ühendust oma Personal Cloud Photos'i administraatoriga.",
     "asset_restored_successfully": "Üksus edukalt taastatud",
     "asset_skipped": "Vahele jäetud",
     "asset_skipped_in_trash": "Prügikastis",
@@ -38858,7 +38915,7 @@ class CodegenLoader extends AssetLoader {
     "assets_cannot_be_added_to_album_count": "{count, plural, one {Üksust} other {Üksuseid}} ei saa albumisse lisada",
     "assets_count": "{count, plural, one {# üksus} other {# üksust}}",
     "assets_deleted_permanently": "{count} üksus(t) jäädavalt kustutatud",
-    "assets_deleted_permanently_from_server": "{count} üksus(t) Curator Photos'i serverist jäädavalt kustutatud",
+    "assets_deleted_permanently_from_server": "{count} üksus(t) Personal Cloud Photos'i serverist jäädavalt kustutatud",
     "assets_downloaded_failed":
         "{count, plural, one {# fail allalaaditud - {error} fail ebaõnnestus} other {# faili allalaaditud - {error} faili ebaõnnestus}}",
     "assets_downloaded_successfully":
@@ -38873,7 +38930,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} üksus(t) edukalt taastatud",
     "assets_trashed": "{count} üksus(t) liigutatud prügikasti",
     "assets_trashed_count": "{count, plural, one {# üksus} other {# üksust}} liigutatud prügikasti",
-    "assets_trashed_from_server": "{count} üksus(t) liigutatud Curator Photos'i serveris prügikasti",
+    "assets_trashed_from_server": "{count} üksus(t) liigutatud Personal Cloud Photos'i serveris prügikasti",
     "assets_were_part_of_album_count": "{count, plural, one {Üksus oli} other {Üksused olid}} juba osa albumist",
     "authorized_devices": "Autoriseeritud seadmed",
     "automatic_endpoint_switching_subtitle":
@@ -38969,7 +39026,7 @@ class CodegenLoader extends AssetLoader {
         "Kas oled kindel, et soovid {count, plural, one {# dubleeritud üksuse} other {# dubleeritud üksust}} alles jätta? Sellega märgitakse kõik duplikaadigrupid lahendatuks ilma midagi kustutamata.",
     "bulk_trash_duplicates_confirmation":
         "Kas oled kindel, et soovid {count, plural, one {# dubleeritud üksuse} other {# dubleeritud üksust}} masskustutada? Sellega jäetakse alles iga grupi suurim üksus ning duplikaadid liigutatakse prügikasti.",
-    "buy": "Osta Curator Photos",
+    "buy": "Osta Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Tühjenda puhver",
     "cache_settings_clear_cache_button_title":
         "Tühjendab rakenduse puhvri. See mõjutab oluliselt rakenduse jõudlust, kuni puhver uuesti täidetakse.",
@@ -39190,7 +39247,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Halda üksuste allalaadimise seadeid",
     "download_started": "Allalaadimine alustatud",
     "download_sucess": "Allalaadimine õnnestus",
-    "download_sucess_android": "Meediumid laaditi alla kataloogi DCIM/CuratorPhotos",
+    "download_sucess_android": "Meediumid laaditi alla kataloogi DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Uuesti proovimise ootel",
     "downloading": "Allalaadimine",
     "downloading_asset_filename": "Üksuse {filename} allalaadimine",
@@ -39230,7 +39287,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "See kaust on tühi",
     "empty_trash": "Tühjenda prügikast",
     "empty_trash_confirmation":
-        "Kas oled kindel, et soovid prügikasti tühjendada? See eemaldab kõik seal olevad üksused Curator Photos'ist jäädavalt.\nSeda tegevust ei saa tagasi võtta!",
+        "Kas oled kindel, et soovid prügikasti tühjendada? See eemaldab kõik seal olevad üksused Personal Cloud Photos'ist jäädavalt.\nSeda tegevust ei saa tagasi võtta!",
     "enable": "Luba",
     "enable_biometric_auth_description": "Biomeetrilise autentimise lubamiseks sisesta oma PIN-kood",
     "enabled": "Lubatud",
@@ -39503,8 +39560,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Allalaadimine alustatud",
     "image_viewer_page_state_provider_download_success": "Allalaadimine õnnestus",
     "image_viewer_page_state_provider_share_error": "Jagamise viga",
-    "immich_logo": "Curator Photos'i logo",
-    "immich_web_interface": "Curator Photos'i veebiliides",
+    "immich_logo": "Personal Cloud Photos'i logo",
+    "immich_web_interface": "Personal Cloud Photos'i veebiliides",
     "import_from_json": "Impordi JSON-formaadist",
     "import_path": "Imporditee",
     "in_albums": "{count, plural, one {# albumis} other {# albumis}}",
@@ -39573,7 +39630,7 @@ class CodegenLoader extends AssetLoader {
     "local_network_sheet_info": "Rakendus ühendub valitud Wi-Fi võrgus olles serveriga selle URL-i kaudu",
     "location_permission": "Asukoha luba",
     "location_permission_content":
-        "Automaatseks ümberlülitumiseks vajab Curator Photos täpse asukoha luba, et saaks lugeda aktiivse WiFi-võrgu nime",
+        "Automaatseks ümberlülitumiseks vajab Personal Cloud Photos täpse asukoha luba, et saaks lugeda aktiivse WiFi-võrgu nime",
     "location_picker_choose_on_map": "Vali kaardil",
     "location_picker_latitude_error": "Sisesta korrektne laiuskraad",
     "location_picker_latitude_hint": "Sisesta laiuskraad siia",
@@ -39745,7 +39802,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Teavitused",
     "notifications_setting_description": "Halda teavitusi",
     "oauth": "OAuth",
-    "official_immich_resources": "Ametlikud Curator Photos'i ressursid",
+    "official_immich_resources": "Ametlikud Personal Cloud Photos'i ressursid",
     "offline": "Ühendus puudub",
     "ok": "OK",
     "oldest_first": "Vanemad eespool",
@@ -39875,12 +39932,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Avalik album",
     "public_share": "Avalik jagamine",
     "purchase_account_info": "Toetaja",
-    "purchase_activated_subtitle": "Aitäh, et toetad Curator Photos'it ja avatud lähtekoodiga tarkvara",
+    "purchase_activated_subtitle": "Aitäh, et toetad Personal Cloud Photos'it ja avatud lähtekoodiga tarkvara",
     "purchase_activated_time": "Aktiveeritud {date}",
     "purchase_activated_title": "Sinu võtme aktiveerimine õnnestus",
     "purchase_button_activate": "Aktiveeri",
     "purchase_button_buy": "Osta",
-    "purchase_button_buy_immich": "Osta Curator Photos",
+    "purchase_button_buy_immich": "Osta Personal Cloud Photos",
     "purchase_button_never_show_again": "Ära näita enam",
     "purchase_button_reminder": "Tuleta mulle 30 päeva pärast meelde",
     "purchase_button_remove_key": "Eemalda võti",
@@ -39890,13 +39947,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Toetaja staatus",
     "purchase_individual_title": "Individuaalne",
     "purchase_input_suggestion": "Sul on juba tootevõti? Sisesta see allpool",
-    "purchase_license_subtitle": "Osta Curator Photos, et toetada selle jätkuvat arendust",
+    "purchase_license_subtitle": "Osta Personal Cloud Photos, et toetada selle jätkuvat arendust",
     "purchase_lifetime_description": "Eluaegne ost",
     "purchase_option_title": "OSTMISE VALIKUD",
     "purchase_panel_info_1":
-        "Curator Photos'i arendamine nõuab palju aega ja vaeva ning meie täiskohaga insenerid töötavad selle nimel, et teha see nii heaks kui vähegi võimalik. Meie missiooniks on muuta avatud lähtekoodiga tarkvara ja eetilised äritavad arendajatele jätkusuutlikuks sissetulekuallikaks ning luua privaatsust austav ökosüsteem, mis pakub tõelisi alternatiive ekspluatatiivsetele pilveteenustele.",
+        "Personal Cloud Photos'i arendamine nõuab palju aega ja vaeva ning meie täiskohaga insenerid töötavad selle nimel, et teha see nii heaks kui vähegi võimalik. Meie missiooniks on muuta avatud lähtekoodiga tarkvara ja eetilised äritavad arendajatele jätkusuutlikuks sissetulekuallikaks ning luua privaatsust austav ökosüsteem, mis pakub tõelisi alternatiive ekspluatatiivsetele pilveteenustele.",
     "purchase_panel_info_2":
-        "Kuna oleme otsustanud maksumüüre mitte lisada, ei anna see ost sulle Curator Photos'is lisavõimalusi. Me loodame Curator Photos'i jätkuvaks arenduseks sinusuguste kasutajate toetusele.",
+        "Kuna oleme otsustanud maksumüüre mitte lisada, ei anna see ost sulle Personal Cloud Photos'is lisavõimalusi. Me loodame Personal Cloud Photos'i jätkuvaks arenduseks sinusuguste kasutajate toetusele.",
     "purchase_panel_title": "Toeta projekti",
     "purchase_per_server": "Serveri kohta",
     "purchase_per_user": "Kasutaja kohta",
@@ -40249,7 +40306,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Tugi",
     "support_and_feedback": "Tugi ja tagasiside",
     "support_third_party_description":
-        "Sinu Curator Photos'i install on kolmanda osapoole pakendatud. Probleemid, mida täheldad, võivad olla põhjustatud selle pakendamise poolt, seega võta esmajärjekorras nendega ühendust, kasutades allolevaid linke.",
+        "Sinu Personal Cloud Photos'i install on kolmanda osapoole pakendatud. Probleemid, mida täheldad, võivad olla põhjustatud selle pakendamise poolt, seega võta esmajärjekorras nendega ühendust, kasutades allolevaid linke.",
     "swap_merge_direction": "Muuda ühendamise suunda",
     "sync": "Sünkrooni",
     "sync_albums": "Sünkrooni albumid",
@@ -40383,7 +40440,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versioon",
     "version_announcement_closing": "Sinu sõber, Alex",
     "version_announcement_message":
-        "Hei! Saadaval on uus Curator Photos'i versioon. Palun võta aega, et lugeda <link>väljalasketeadet</link> ning veendu, et su seadistus on ajakohane, et vältida konfiguratsiooniprobleeme, eriti kui kasutad WatchTower'it või muud mehhanismi, mis Curator Photos'it automaatselt uuendab.",
+        "Hei! Saadaval on uus Personal Cloud Photos'i versioon. Palun võta aega, et lugeda <link>väljalasketeadet</link> ning veendu, et su seadistus on ajakohane, et vältida konfiguratsiooniprobleeme, eriti kui kasutad WatchTower'it või muud mehhanismi, mis Personal Cloud Photos'it automaatselt uuendab.",
     "version_announcement_overlay_title": "Uus serveri versioon saadaval 🎉",
     "version_history": "Versiooniajalugu",
     "version_history_item": "Versioon {version} paigaldatud {date}",
@@ -40414,7 +40471,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Hoiatus",
     "week": "Nädal",
     "welcome": "Tere tulemast",
-    "welcome_to_immich": "Tere tulemast Curator Photos'isse",
+    "welcome_to_immich": "Tere tulemast Personal Cloud Photos'isse",
     "wifi_name": "WiFi-võrgu nimi",
     "wrong_pin_code": "Vale PIN-kood",
     "year": "Aasta",
@@ -40490,7 +40547,7 @@ class CodegenLoader extends AssetLoader {
           "Ajouter des schémas d'exclusion. Les caractères génériques *, ** et ? sont pris en charge. Pour ignorer tous les fichiers dans un répertoire nommé « Raw », utilisez « **/Raw/** ». Pour ignorer tous les fichiers se terminant par « .tif », utilisez « **/*.tif ». Pour ignorer un chemin absolu, utilisez « /chemin/à/ignorer/** ».",
       "admin_user": "Administrateur",
       "asset_offline_description":
-          "Ce média de la bibliothèque externe n'est plus présent sur le disque et a été déplacé vers la corbeille. Si le fichier a été déplacé dans la bibliothèque, vérifiez votre chronologie pour le nouveau média correspondant. Pour restaurer ce média, veuillez vous assurer que le chemin du fichier ci-dessous peut être accédé par Curator Photos et lancez l'analyse de la bibliothèque.",
+          "Ce média de la bibliothèque externe n'est plus présent sur le disque et a été déplacé vers la corbeille. Si le fichier a été déplacé dans la bibliothèque, vérifiez votre chronologie pour le nouveau média correspondant. Pour restaurer ce média, veuillez vous assurer que le chemin du fichier ci-dessous peut être accédé par Personal Cloud Photos et lancez l'analyse de la bibliothèque.",
       "authentication_settings": "Paramètres d'authentification",
       "authentication_settings_description":
           "Gérer le mot de passe, l'authentification OAuth et d'autres paramètres d'authentification",
@@ -40507,7 +40564,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "La configuration est actuellement définie par un fichier de configuration",
       "confirm_delete_library": "Êtes-vous sûr de vouloir supprimer la bibliothèque {library} ?",
       "confirm_delete_library_assets":
-          "Êtes-vous sûr de vouloir supprimer cette bibliothèque ? Cette opération supprimera de Curator Photos {count, plural, one {le média} other {les # médias}} qu'elle contient et ne pourra pas être annulée. Les fichiers resteront sur le disque.",
+          "Êtes-vous sûr de vouloir supprimer cette bibliothèque ? Cette opération supprimera de Personal Cloud Photos {count, plural, one {le média} other {les # médias}} qu'elle contient et ne pourra pas être annulée. Les fichiers resteront sur le disque.",
       "confirm_email_below": "Pour confirmer, tapez « {email} » ci-dessous",
       "confirm_reprocess_all_faces":
           "Êtes-vous sûr de vouloir retraiter tous les visages ? Cela effacera également les personnes déjà identifiées.",
@@ -40637,7 +40694,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Activer la carte",
       "map_gps_settings": "Paramètres de la carte et GPS",
       "map_gps_settings_description": "Gérer les paramètres de la Carte & GPS",
-      "map_implications": "La carte repose sur un service de tuiles externe (tiles.curatorphotos.cloud)",
+      "map_implications": "La carte repose sur un service de tuiles externe (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Thème clair",
       "map_manage_reverse_geocoding_settings": "Gérer les <link> paramètres de géocodage inversé</link>",
       "map_reverse_geocoding": "Géocodage inversé",
@@ -40666,9 +40723,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "REMARQUE : Il n'est pas possible de modifier ce paramètre ultérieurement !",
       "notification_email_from_address": "Depuis l'adresse",
       "notification_email_from_address_description":
-          "Adresse courriel de l'expéditeur, par exemple : « Serveur de photos Curator Photos <nepasrepondre@exemple.org> ». Assurez-vous d'utiliser une adresse à partir de laquelle vous pouvez envoyer des courriels.",
+          "Adresse courriel de l'expéditeur, par exemple : « Serveur de photos Personal Cloud Photos <nepasrepondre@exemple.org> ». Assurez-vous d'utiliser une adresse à partir de laquelle vous pouvez envoyer des courriels.",
       "notification_email_host_description":
-          "Hôte du serveur de messagerie électronique (par exemple, smtp.curatorphotos.app)",
+          "Hôte du serveur de messagerie électronique (par exemple, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorer les erreurs de certificat",
       "notification_email_ignore_certificate_errors_description":
           "Ignorer les erreurs de validation du certificat TLS (non recommandé)",
@@ -40781,9 +40838,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gérer les modèles personnalisés pour les notifications",
       "theme_custom_css_settings": "CSS personnalisé",
       "theme_custom_css_settings_description":
-          "Les feuilles de style en cascade (CSS) permettent de personnaliser l'apparence de Curator Photos.",
+          "Les feuilles de style en cascade (CSS) permettent de personnaliser l'apparence de Personal Cloud Photos.",
       "theme_settings": "Paramètres du thème",
-      "theme_settings_description": "Gérer la personnalisation de l'interface web de Curator Photos",
+      "theme_settings_description": "Gérer la personnalisation de l'interface web de Personal Cloud Photos",
       "these_files_matched_by_checksum": "Ces fichiers sont identiques d'après leur somme de contrôle",
       "thumbnail_generation_job": "Génération des miniatures",
       "thumbnail_generation_job_description":
@@ -40905,7 +40962,7 @@ class CodegenLoader extends AssetLoader {
       "version_check_enabled_description": "Activer la vérification périodique de nouvelle version",
       "version_check_implications": "Le contrôle de version repose sur une communication périodique avec github.com",
       "version_check_settings": "Vérification de la version",
-      "version_check_settings_description": "Gérer la vérification de nouvelle version de Curator Photos",
+      "version_check_settings_description": "Gérer la vérification de nouvelle version de Personal Cloud Photos",
       "video_conversion_job": "Transcodage des vidéos",
       "video_conversion_job_description":
           "Transcodage des vidéos pour une compatibilité améliorée avec les navigateurs et les différents appareils",
@@ -41022,7 +41079,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grille de photos",
     "asset_offline": "Média hors ligne",
     "asset_offline_description":
-        "Ce média externe n'est plus accessible sur le disque. Veuillez contacter votre administrateur Curator Photos pour obtenir de l'aide.",
+        "Ce média externe n'est plus accessible sur le disque. Veuillez contacter votre administrateur Personal Cloud Photos pour obtenir de l'aide.",
     "asset_restored_successfully": "Élément restauré avec succès",
     "asset_skipped": "Sauté",
     "asset_skipped_in_trash": "À la corbeille",
@@ -41039,7 +41096,8 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Le média ne peut pas être ajouté} other {Les médias ne peuvent pas être ajoutés}} à l'album",
     "assets_count": "{count, plural, one {# média} other {# médias}}",
     "assets_deleted_permanently": "{count} média(s) supprimé(s) définitivement",
-    "assets_deleted_permanently_from_server": "{count} média(s) supprimé(s) définitivement du serveur Curator Photos",
+    "assets_deleted_permanently_from_server":
+        "{count} média(s) supprimé(s) définitivement du serveur Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {# fichier téléchargé - échec du fichier {error}} other {# fichiers téléchargés - échec des fichiers {error}}}",
     "assets_downloaded_successfully":
@@ -41055,7 +41113,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} élément(s) restauré(s) avec succès",
     "assets_trashed": "{count} média(s) déplacé(s) vers la corbeille",
     "assets_trashed_count": "{count, plural, one {# média} other {# médias}} mis à la corbeille",
-    "assets_trashed_from_server": "{count} média(s) déplacé(s) vers la corbeille du serveur Curator Photos",
+    "assets_trashed_from_server": "{count} média(s) déplacé(s) vers la corbeille du serveur Personal Cloud Photos",
     "assets_were_part_of_album_count": "{count, plural, one {Un média est} other {Des médias sont}} déjà dans l'album",
     "authorized_devices": "Appareils autorisés",
     "automatic_endpoint_switching_subtitle":
@@ -41066,7 +41124,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Retournez en arrière, fermez ou désélectionnez",
     "background_location_permission": "Permission de localisation en arrière plan",
     "background_location_permission_content":
-        "Afin de pouvoir changer d'adresse en arrière plan, Curator Photos doit avoir *en permanence* accès à la localisation précise, afin d'accéder au le nom du réseau Wi-Fi utilisé",
+        "Afin de pouvoir changer d'adresse en arrière plan, Personal Cloud Photos doit avoir *en permanence* accès à la localisation précise, afin d'accéder au le nom du réseau Wi-Fi utilisé",
     "backup_album_selection_page_albums_device": "Albums sur l'appareil ({count})",
     "backup_album_selection_page_albums_tap": "Tapez pour inclure, tapez deux fois pour exclure",
     "backup_album_selection_page_assets_scatter":
@@ -41090,7 +41148,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Aller aux paramètres",
     "backup_controller_page_background_battery_info_link": "Montrez-moi comment",
     "backup_controller_page_background_battery_info_message":
-        "Pour une expérience optimale de la sauvegarde en arrière-plan, veuillez désactiver toute optimisation de la batterie limitant l'activité en arrière-plan pour Curator Photos.\n\nÉtant donné que cela est spécifique à chaque appareil, veuillez consulter les informations requises pour le fabricant de votre appareil.",
+        "Pour une expérience optimale de la sauvegarde en arrière-plan, veuillez désactiver toute optimisation de la batterie limitant l'activité en arrière-plan pour Personal Cloud Photos.\n\nÉtant donné que cela est spécifique à chaque appareil, veuillez consulter les informations requises pour le fabricant de votre appareil.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optimisation de la batterie",
     "backup_controller_page_background_charging": "Seulement pendant la charge",
@@ -41153,7 +41211,7 @@ class CodegenLoader extends AssetLoader {
         "Êtes-vous sûr de vouloir conserver {count, plural, one {# doublon} other {# doublons}} ? Cela résoudra tous les groupes de doublons sans rien supprimer.",
     "bulk_trash_duplicates_confirmation":
         "Êtes-vous sûr de vouloir mettre à la corbeille {count, plural, one {# doublon} other {# doublons}} ? Cette opération permet de conserver le plus grand média de chaque groupe et de mettre à la corbeille tous les autres doublons.",
-    "buy": "Acheter Curator Photos",
+    "buy": "Acheter Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Page des miniatures de la bibliothèque ({} médias)",
     "cache_settings_clear_cache_button": "Effacer le cache",
     "cache_settings_clear_cache_button_title":
@@ -41166,7 +41224,8 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniatures de l'album partagé",
     "cache_settings_statistics_thumbnail": "Miniatures",
     "cache_settings_statistics_title": "Utilisation du cache",
-    "cache_settings_subtitle": "Contrôler le comportement de mise en cache de l'application mobile Curator Photos",
+    "cache_settings_subtitle":
+        "Contrôler le comportement de mise en cache de l'application mobile Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Taille du cache des miniatures ({} médias)",
     "cache_settings_tile_subtitle": "Contrôler le comportement du stockage local",
     "cache_settings_tile_title": "Stockage local",
@@ -41252,7 +41311,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contexte",
     "continue": "Continuer",
     "control_bottom_app_bar_create_new_album": "Créer un nouvel album",
-    "control_bottom_app_bar_delete_from_immich": "Supprimer de Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Supprimer de Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Supprimer de l'appareil",
     "control_bottom_app_bar_edit_location": "Modifier la localisation",
     "control_bottom_app_bar_edit_time": "Modifier la date et l'heure",
@@ -41320,12 +41379,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Supprimer",
     "delete_album": "Supprimer l'album",
     "delete_api_key_prompt": "Voulez-vous vraiment supprimer cette clé API ?",
-    "delete_dialog_alert": "Ces médias seront définitivement supprimés de Curator Photos et de votre appareil",
+    "delete_dialog_alert": "Ces médias seront définitivement supprimés de Personal Cloud Photos et de votre appareil",
     "delete_dialog_alert_local":
-        "Ces médias seront définitivement supprimés de votre appareil mais resteront disponibles sur le serveur de Curator Photos",
+        "Ces médias seront définitivement supprimés de votre appareil mais resteront disponibles sur le serveur de Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Certains médias ne sont pas sauvegardés sur Curator Photos et seront définitivement supprimés de votre appareil",
-    "delete_dialog_alert_remote": "Ces médias seront définitivement supprimés du serveur Curator Photos",
+        "Certains médias ne sont pas sauvegardés sur Personal Cloud Photos et seront définitivement supprimés de votre appareil",
+    "delete_dialog_alert_remote": "Ces médias seront définitivement supprimés du serveur Personal Cloud Photos",
     "delete_dialog_ok_force": "Supprimer tout de même",
     "delete_dialog_title": "Supprimer définitivement",
     "delete_duplicates_confirmation": "Êtes-vous certain de vouloir supprimer définitivement ces doublons ?",
@@ -41380,7 +41439,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Gérer les paramètres de téléchargement des médias",
     "download_started": "Téléchargement commencé",
     "download_sucess": "Téléchargement réussi",
-    "download_sucess_android": "Le média a été téléchargé dans DCIM/CuratorPhotos",
+    "download_sucess_android": "Le média a été téléchargé dans DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Téléchargement en attente du prochain essai",
     "downloading": "Téléchargement",
     "downloading_asset_filename": "Téléchargement du média {filename}",
@@ -41420,7 +41479,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ce dossier est vide",
     "empty_trash": "Vider la corbeille",
     "empty_trash_confirmation":
-        "Êtes-vous sûr de vouloir vider la corbeille ? Cela supprimera définitivement de Curator Photos tous les médias qu'elle contient.\nVous ne pouvez pas annuler cette action !",
+        "Êtes-vous sûr de vouloir vider la corbeille ? Cela supprimera définitivement de Personal Cloud Photos tous les médias qu'elle contient.\nVous ne pouvez pas annuler cette action !",
     "enable": "Active",
     "enable_biometric_auth_description": "Entrez votre code PIN pour activer l'authentification biométrique",
     "enabled": "Activé",
@@ -41682,7 +41741,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignorer les photos iCloud",
     "ignore_icloud_photos_description":
-        "Les photos stockées sur iCloud ne sont pas téléversées sur le serveur Curator Photos",
+        "Les photos stockées sur iCloud ne sont pas téléversées sur le serveur Personal Cloud Photos",
     "image": "Image",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} prise le {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} prise avec {person1} le {date}",
@@ -41705,8 +41764,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Téléchargement démarré",
     "image_viewer_page_state_provider_download_success": "Téléchargement réussi",
     "image_viewer_page_state_provider_share_error": "Erreur de partage",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Interface Web Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Interface Web Personal Cloud Photos",
     "import_from_json": "Importer depuis un fichier JSON",
     "import_path": "Chemin d'importation",
     "in_albums": "Dans {count, plural, one {# album} other {# albums}}",
@@ -41777,7 +41836,7 @@ class CodegenLoader extends AssetLoader {
         "L'application va se connecter au serveur via cette URL quand l'appareil est connecté à ce réseau Wi-Fi",
     "location_permission": "Autorisation de localisation",
     "location_permission_content":
-        "Afin de pouvoir changer d'adresse automatiquement, Curator Photos doit avoir accès à la localisation précise, afin d'accéder au nom du réseau wifi utilisé",
+        "Afin de pouvoir changer d'adresse automatiquement, Personal Cloud Photos doit avoir accès à la localisation précise, afin d'accéder au nom du réseau wifi utilisé",
     "location_picker_choose_on_map": "Sélectionner sur la carte",
     "location_picker_latitude_error": "Saisir une latitude correcte",
     "location_picker_latitude_hint": "Saisir la latitude ici",
@@ -41954,7 +42013,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifications",
     "notifications_setting_description": "Gérer les notifications",
     "oauth": "OAuth",
-    "official_immich_resources": "Ressources Curator Photos officielles",
+    "official_immich_resources": "Ressources Personal Cloud Photos officielles",
     "offline": "Hors ligne",
     "ok": "OK",
     "oldest_first": "Anciens en premier",
@@ -42034,11 +42093,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Commencer",
     "permission_onboarding_go_to_settings": "Accéder aux paramètres",
     "permission_onboarding_permission_denied":
-        "Permission refusée. Pour utiliser Curator Photos, accordez lautorisation pour les photos et vidéos dans les Paramètres.",
+        "Permission refusée. Pour utiliser Personal Cloud Photos, accordez lautorisation pour les photos et vidéos dans les Paramètres.",
     "permission_onboarding_permission_granted": "Permission accordée ! Vous êtes prêts.",
     "permission_onboarding_permission_limited":
-        "Permission limitée. Pour permettre à Curator Photos de sauvegarder et de gérer l'ensemble de votre bibliothèque, accordez l'autorisation pour les photos et vidéos dans les Paramètres.",
-    "permission_onboarding_request": "Curator Photos nécessite l'autorisation d'accéder à vos photos et vidéos.",
+        "Permission limitée. Pour permettre à Personal Cloud Photos de sauvegarder et de gérer l'ensemble de votre bibliothèque, accordez l'autorisation pour les photos et vidéos dans les Paramètres.",
+    "permission_onboarding_request": "Personal Cloud Photos nécessite l'autorisation d'accéder à vos photos et vidéos.",
     "person": "Personne",
     "person_birthdate": "Né(e) le {date}",
     "person_hidden": "{name}{hidden, select, true { (caché)} other {}}",
@@ -42091,12 +42150,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Album public",
     "public_share": "Partage public",
     "purchase_account_info": "Contributeur",
-    "purchase_activated_subtitle": "Merci d'avoir apporté votre soutien à Curator Photos et aux logiciels open source",
+    "purchase_activated_subtitle":
+        "Merci d'avoir apporté votre soutien à Personal Cloud Photos et aux logiciels open source",
     "purchase_activated_time": "Activé le {date}",
     "purchase_activated_title": "Votre clé a été activée avec succès",
     "purchase_button_activate": "Activer",
     "purchase_button_buy": "Acheter",
-    "purchase_button_buy_immich": "Acheter Curator Photos",
+    "purchase_button_buy_immich": "Acheter Personal Cloud Photos",
     "purchase_button_never_show_again": "Ne plus l'afficher",
     "purchase_button_reminder": "Me le rappeler dans 30 jours",
     "purchase_button_remove_key": "Supprimer la clé",
@@ -42107,13 +42167,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Statut de contributeur",
     "purchase_individual_title": "Utilisateur",
     "purchase_input_suggestion": "Si vous avez déjà une clé de produit, renseignez-la ci-dessous",
-    "purchase_license_subtitle": "Acheter Curator Photos pour soutenir le développement de ce service",
+    "purchase_license_subtitle": "Acheter Personal Cloud Photos pour soutenir le développement de ce service",
     "purchase_lifetime_description": "Achat à vie",
     "purchase_option_title": "OPTIONS D'ACHAT",
     "purchase_panel_info_1":
-        "Développer Curator Photos nécessite du temps et de l'énergie, et nous avons des ingénieurs qui travaillent à plein temps pour en faire le meilleur produit possible. Notre mission est de générer, pour les logiciels open source et les pratiques de travail éthique, une source de revenus suffisante pour les développeurs et de créer un écosystème respectueux de la vie privée grâce a des alternatives crédibles aux services cloud peu scrupuleux.",
+        "Développer Personal Cloud Photos nécessite du temps et de l'énergie, et nous avons des ingénieurs qui travaillent à plein temps pour en faire le meilleur produit possible. Notre mission est de générer, pour les logiciels open source et les pratiques de travail éthique, une source de revenus suffisante pour les développeurs et de créer un écosystème respectueux de la vie privée grâce a des alternatives crédibles aux services cloud peu scrupuleux.",
     "purchase_panel_info_2":
-        "Étant donné que nous nous engageons à ne pas ajouter de fonctionnalités payantes, cet achat ne vous donnera pas de fonctionnalités supplémentaires dans Curator Photos. Nous comptons sur des utilisateurs comme vous pour soutenir le développement continu de Curator Photos.",
+        "Étant donné que nous nous engageons à ne pas ajouter de fonctionnalités payantes, cet achat ne vous donnera pas de fonctionnalités supplémentaires dans Personal Cloud Photos. Nous comptons sur des utilisateurs comme vous pour soutenir le développement continu de Personal Cloud Photos.",
     "purchase_panel_title": "Soutenir le projet",
     "purchase_per_server": "Par serveur",
     "purchase_per_user": "Par utilisateur",
@@ -42341,7 +42401,7 @@ class CodegenLoader extends AssetLoader {
         "Lors de la diffusion d'une vidéo depuis le serveur, lisez l'original même si un transcodage est disponible. Cela peut entraîner de la mise en mémoire tampon. Les vidéos disponibles localement sont lues en qualité d'origine, quel que soit ce paramètre.",
     "setting_video_viewer_original_video_title": "Forcer la vidéo originale",
     "settings": "Paramètres",
-    "settings_require_restart": "Veuillez redémarrer Curator Photos pour appliquer ce paramètre",
+    "settings_require_restart": "Veuillez redémarrer Personal Cloud Photos pour appliquer ce paramètre",
     "settings_saved": "Paramètres sauvegardés",
     "setup_pin_code": "Définir un code PIN",
     "share": "Partager",
@@ -42472,13 +42532,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Soutenir",
     "support_and_feedback": "Support & Retours",
     "support_third_party_description":
-        "Votre installation de Curator Photos est packagée via une application tierce. Si vous rencontrez des anomalies, elles peuvent venir de ce packaging tiers, merci de créer les anomalies avec ces tiers en premier lieu en utilisant les liens ci-dessous.",
+        "Votre installation de Personal Cloud Photos est packagée via une application tierce. Si vous rencontrez des anomalies, elles peuvent venir de ce packaging tiers, merci de créer les anomalies avec ces tiers en premier lieu en utilisant les liens ci-dessous.",
     "swap_merge_direction": "Inverser la direction de fusion",
     "sync": "Synchroniser",
     "sync_albums": "Synchroniser dans des albums",
     "sync_albums_manual_subtitle": "Synchroniser toutes les vidéos et photos téléversées dans les albums sélectionnés",
     "sync_upload_album_setting_subtitle":
-        "Crée et téléverse vos photos et vidéos dans les albums sélectionnés sur Curator Photos",
+        "Crée et téléverse vos photos et vidéos dans les albums sélectionnés sur Personal Cloud Photos",
     "tag": "Étiquette",
     "tag_assets": "Étiqueter les médias",
     "tag_created": "Étiquette créée : {tag}",
@@ -42528,7 +42588,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Les photos et vidéos supprimées s'afficheront ici.",
     "trash_page_delete_all": "Tout supprimer",
     "trash_page_empty_trash_dialog_content":
-        "Voulez-vous vider les médias de la corbeille ? Ces objets seront définitivement retirés de Curator Photos",
+        "Voulez-vous vider les médias de la corbeille ? Ces objets seront définitivement retirés de Personal Cloud Photos",
     "trash_page_info": "Les médias mis à la corbeille seront définitivement supprimés au bout de {days} jours",
     "trash_page_no_assets": "Aucun élément dans la corbeille",
     "trash_page_restore_all": "Tout restaurer",
@@ -42576,7 +42636,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Erreurs",
     "upload_status_uploaded": "Envoyé",
     "upload_success": "Envoi réussi. Rafraîchissez la page pour voir les nouveaux médias envoyés.",
-    "upload_to_immich": "Téléverser vers Curator Photos ({count})",
+    "upload_to_immich": "Téléverser vers Personal Cloud Photos ({count})",
     "uploading": "Envoi",
     "url": "URL",
     "usage": "Utilisation",
@@ -42635,7 +42695,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Attention",
     "week": "Semaine",
     "welcome": "Bienvenue",
-    "welcome_to_immich": "Bienvenue sur Curator Photos",
+    "welcome_to_immich": "Bienvenue sur Personal Cloud Photos",
     "wifi_name": "Nom du réseau wifi",
     "wrong_pin_code": "Code PIN erroné",
     "year": "Année",
@@ -42684,7 +42744,7 @@ class CodegenLoader extends AssetLoader {
           "Προσθέστε μοτίβα αποκλεισμού. Υποστηρίζεται η επιλογή πολλών με *, **, και ?. Για να αγνοηθούν όλα τα αρχεία σε έναν φάκελο με το όνομα \"Raw\", χρησιμοποιήστε \"**/Raw/**\". Για να αγνοηθούν όλα τα αρχεία με κατάληξη \".tif\", χρησιμοποιήστε \"**/*.tif\". Για να αγνοηθεί μία απόλυτη διαδρομή, χρησιμοποιήστε \"/path/to/ignore/**\".",
       "admin_user": "Διαχειριστής",
       "asset_offline_description":
-          "Αυτό το στοιχείο εξωτερικής βιβλιοθήκης δε βρίσκεται πλέον στο δίσκο και έχει μεταφερθεί στα απορρίμματα. Εάν το αρχείο έχει μετακινηθεί εντός της βιβλιοθήκης, ελέγξτε το χρονολόγιο φωτογραφιών σας για το νέο αντίστοιχο στοιχείο. Για να επαναφέρετε αυτό το στοιχείο, βεβαιωθείτε ότι το παρακάτω μονοπάτι αρχείου είναι προσβάσιμο από το Curator Photos και σαρώστε τη βιβλιοθήκη.",
+          "Αυτό το στοιχείο εξωτερικής βιβλιοθήκης δε βρίσκεται πλέον στο δίσκο και έχει μεταφερθεί στα απορρίμματα. Εάν το αρχείο έχει μετακινηθεί εντός της βιβλιοθήκης, ελέγξτε το χρονολόγιο φωτογραφιών σας για το νέο αντίστοιχο στοιχείο. Για να επαναφέρετε αυτό το στοιχείο, βεβαιωθείτε ότι το παρακάτω μονοπάτι αρχείου είναι προσβάσιμο από το Personal Cloud Photos και σαρώστε τη βιβλιοθήκη.",
       "authentication_settings": "Ρυθμίσεις Ελέγχου Ταυτότητας",
       "authentication_settings_description":
           "Διαχείριση κωδικού πρόσβασης, OAuth και άλλων ρυθμίσεων ελέγχου ταυτότητας",
@@ -42701,7 +42761,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Η παραμετροποίηση γίνεται, προς το παρόν, μέσω ενός αρχείου παραμέτρων",
       "confirm_delete_library": "Είστε βέβαιοι ότι θέλετε να διαγράψετε τη βιβλιοθήκη {library};",
       "confirm_delete_library_assets":
-          "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτή τη βιβλιοθήκη; Αυτό θα διαγράψει τα {count, plural, one {# contained asset} other {all # contained assets}} από το Curator Photos και δεν μπορεί να αναιρεθεί. Τα αρχεία θα παραμείνουν στον δίσκο.",
+          "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτή τη βιβλιοθήκη; Αυτό θα διαγράψει τα {count, plural, one {# contained asset} other {all # contained assets}} από το Personal Cloud Photos και δεν μπορεί να αναιρεθεί. Τα αρχεία θα παραμείνουν στον δίσκο.",
       "confirm_email_below": "Για επιβεβαίωση, πληκτρολογήστε \"{email}\" παρακάτω",
       "confirm_reprocess_all_faces":
           "Είστε βέβαιοι ότι θέλετε να επεξεργαστείτε ξανά όλα τα πρόσωπα; Αυτό θα εκκαθαρίσει ακόμα και τα άτομα στα οποία έχετε ήδη ορίσει το όνομα.",
@@ -42832,7 +42892,7 @@ class CodegenLoader extends AssetLoader {
       "map_gps_settings": "Ρυθμίσεις Χάρτη & GPS",
       "map_gps_settings_description": "Διαχείριση Ρυθμίσεων Χάρτη & GPS (Αντίστροφη γεωκωδικοποίηση)",
       "map_implications":
-          "Η λειτουργία χάρτη βασίζεται σε εξωτερικές υπηρεσίες για τα πλακίδια (tiles.curatorphotos.cloud)",
+          "Η λειτουργία χάρτη βασίζεται σε εξωτερικές υπηρεσίες για τα πλακίδια (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Φωτεινό Θέμα",
       "map_manage_reverse_geocoding_settings": "Διαχείριση ρυθμίσεων <link>Αντίστροφης Γεωκωδικοποίησης</link>",
       "map_reverse_geocoding": "Αντίστροφη Γεωκωδικοποίηση",
@@ -42860,8 +42920,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "ΣΗΜΕΊΩΣΗ: Αυτό δεν μπορεί να τροποποιηθεί αργότερα!",
       "notification_email_from_address": "Διεύθυνση αποστολέα",
       "notification_email_from_address_description":
-          "Διεύθυνση αποστολέα, πχ: \"Curator Photos Photo Server <noreply@example.com>\". Βεβαιωθείτε ότι έχετε δικαίωμα χρήσης της διεύθυνσης που χρησιμοποιείτε.",
-      "notification_email_host_description": "Πάροχος του email server (πχ smtp.curatorphotos.app)",
+          "Διεύθυνση αποστολέα, πχ: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Βεβαιωθείτε ότι έχετε δικαίωμα χρήσης της διεύθυνσης που χρησιμοποιείτε.",
+      "notification_email_host_description": "Πάροχος του email server (πχ smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Παράβλεψη των σφαλμάτων πιστοποίησης",
       "notification_email_ignore_certificate_errors_description":
           "Παράβλεψη σφαλμάτων επικύρωσης της πιστοποίησης TLS (δεν προτείνεται)",
@@ -42969,9 +43029,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Διαχείριση προσαρμοσμένων προτύπων για ειδοποιήσεις",
       "theme_custom_css_settings": "Προσαρμοσμένο CSS",
       "theme_custom_css_settings_description":
-          "Τα Cascading Style Sheets(CSS) επιτρέπει την προσαρμογή του σχεδιασμού του Curator Photos.",
+          "Τα Cascading Style Sheets(CSS) επιτρέπει την προσαρμογή του σχεδιασμού του Personal Cloud Photos.",
       "theme_settings": "Ρυθμίσεις Θέματος",
-      "theme_settings_description": "Διαχείριση της προσαρμογής του ιστότοπου του Curator Photos",
+      "theme_settings_description": "Διαχείριση της προσαρμογής του ιστότοπου του Personal Cloud Photos",
       "these_files_matched_by_checksum":
           "Αυτά τα αρχεία αντιστοιχίζονται με βάση τα checksums(μοναδικές αλγοριθμικές τιμές των περιεχομένων ενός αρχείου) τους",
       "thumbnail_generation_job": "Δημιουργία Μικρογραφιών",
@@ -43111,7 +43171,7 @@ class CodegenLoader extends AssetLoader {
         "Μερικές συσκευές αργούν πολύ να φορτώσουν μικρογραφίες από αρχεία στη συσκευή. Ενεργοποιήστε αυτήν τη ρύθμιση για να φορτώνονται αντί αυτού απομακρυσμένες εικόνες.",
     "advanced_settings_prefer_remote_title": "Προτίμηση απομακρυσμένων εικόνων",
     "advanced_settings_proxy_headers_subtitle":
-        "Καθορισμός κεφαλίδων διακομιστή μεσολάβησης που το Curator Photos πρέπει να στέλνει με κάθε αίτημα δικτύου",
+        "Καθορισμός κεφαλίδων διακομιστή μεσολάβησης που το Personal Cloud Photos πρέπει να στέλνει με κάθε αίτημα δικτύου",
     "advanced_settings_proxy_headers_title": "Κεφαλίδες διακομιστή μεσολάβησης",
     "advanced_settings_self_signed_ssl_subtitle":
         "Παρακάμπτει τον έλεγχο πιστοποιητικού SSL του διακομιστή. Απαραίτητο για αυτο-υπογεγραμμένα πιστοποιητικά.",
@@ -43211,7 +43271,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Πλέγμα φωτογραφιών",
     "asset_offline": "Αντικείμενο εκτός σύνδεσης",
     "asset_offline_description":
-        "Αυτό το εξωτερικό αντικείμενο δεν βρέθηκε πλέον στον δίσκο. Παρακαλώ επικοινωνήστε με τον διαχειριστή του Curator Photos για βοήθεια.",
+        "Αυτό το εξωτερικό αντικείμενο δεν βρέθηκε πλέον στον δίσκο. Παρακαλώ επικοινωνήστε με τον διαχειριστή του Personal Cloud Photos για βοήθεια.",
     "asset_restored_successfully": "Το στοιχείο αποκαταστάθηκε με επιτυχία",
     "asset_skipped": "Παραλείφθηκε",
     "asset_skipped_in_trash": "Στον κάδο απορριμμάτων",
@@ -43229,7 +43289,7 @@ class CodegenLoader extends AssetLoader {
     "assets_count": "{count, plural, one {# αρχείο} other {# αρχεία}}",
     "assets_deleted_permanently": "{count} τα στοιχεία διαγράφηκαν οριστικά",
     "assets_deleted_permanently_from_server":
-        "{count} τα στοιχεία διαγράφηκαν οριστικά από το διακομιστή Curator Photos",
+        "{count} τα στοιχεία διαγράφηκαν οριστικά από το διακομιστή Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Έγινε λήψη # αρχείου - {error} αρχείο απέτυχε} other {Έγινε λήψη # αρχείων - {error} αρχεία απέτυχαν}}",
     "assets_downloaded_successfully":
@@ -43246,7 +43306,7 @@ class CodegenLoader extends AssetLoader {
     "assets_trashed": "{count} στοιχεία μεταφέρθηκαν στον κάδο απορριμμάτων",
     "assets_trashed_count": "Μετακιν. στον κάδο απορριμάτων {count, plural, one {# στοιχείο} other {# στοιχεία}}",
     "assets_trashed_from_server":
-        "{count} στοιχεία μεταφέρθηκαν στον κάδο απορριμμάτων από το διακομιστή Curator Photos",
+        "{count} στοιχεία μεταφέρθηκαν στον κάδο απορριμμάτων από το διακομιστή Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {Το στοιχείο ανήκει} other {Τα στοιχεία ανήκουν}} ήδη στο άλμπουμ",
     "authorized_devices": "Εξουσιοδοτημένες Συσκευές",
@@ -43258,7 +43318,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Πίσω, κλείσιμο ή αποεπιλογή",
     "background_location_permission": "Άδεια τοποθεσίας στο παρασκήνιο",
     "background_location_permission_content":
-        "Το Curator Photos για να μπορεί να αλλάζει δίκτυα όταν τρέχει στο παρασκήνιο, πρέπει *πάντα* να έχει πρόσβαση στην ακριβή τοποθεσία ώστε η εφαρμογή να μπορεί να διαβάζει το όνομα του δικτύου Wi-Fi",
+        "Το Personal Cloud Photos για να μπορεί να αλλάζει δίκτυα όταν τρέχει στο παρασκήνιο, πρέπει *πάντα* να έχει πρόσβαση στην ακριβή τοποθεσία ώστε η εφαρμογή να μπορεί να διαβάζει το όνομα του δικτύου Wi-Fi",
     "backup_album_selection_page_albums_device": "Άλμπουμ στη συσκευή ({count})",
     "backup_album_selection_page_albums_tap": "Πάτημα για συμπερίληψη, διπλό πάτημα για εξαίρεση",
     "backup_album_selection_page_assets_scatter":
@@ -43282,7 +43342,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Μετάβαση στις ρυθμίσεις",
     "backup_controller_page_background_battery_info_link": "Δείξε μου πως",
     "backup_controller_page_background_battery_info_message":
-        "Για την καλύτερη εμπειρία δημιουργίας αντιγράφων ασφαλείας στο παρασκήνιο, απενεργοποιήστε οποιαδήποτε βελτιστοποίηση μπαταρίας περιορίζει τη δραστηριότητα στο παρασκήνιο για το Curator Photos. \n\nΔεδομένου ότι ο τρόπος εξαρτάται από τη συσκευή σας, παρακαλούμε ψάξτε τις απαραίτητες πληροφορίες για τον κατασκευαστή της συσκευής σας.",
+        "Για την καλύτερη εμπειρία δημιουργίας αντιγράφων ασφαλείας στο παρασκήνιο, απενεργοποιήστε οποιαδήποτε βελτιστοποίηση μπαταρίας περιορίζει τη δραστηριότητα στο παρασκήνιο για το Personal Cloud Photos. \n\nΔεδομένου ότι ο τρόπος εξαρτάται από τη συσκευή σας, παρακαλούμε ψάξτε τις απαραίτητες πληροφορίες για τον κατασκευαστή της συσκευής σας.",
     "backup_controller_page_background_battery_info_ok": "ΟΚ",
     "backup_controller_page_background_battery_info_title": "Βελτιστοποιήσεις μπαταρίας",
     "backup_controller_page_background_charging": "Μόνο κατά τη φόρτιση",
@@ -43349,7 +43409,7 @@ class CodegenLoader extends AssetLoader {
         "Είστε σίγουροι ότι θέλετε να κρατήσετε {count, plural, one {# διπλότυπο αρχείο} other {# διπλότυπα αρχεία}}; Αυτό θα επιλύσει όλες τις ομάδες διπλοτύπων χωρίς να διαγράψει τίποτα.",
     "bulk_trash_duplicates_confirmation":
         "Είστε σίγουροι ότι θέλετε να βάλετε στον κάδο απορριμμάτων {count, plural, one {# διπλότυπο αρχείο} other {# διπλότυπα αρχεία}}; Αυτό θα κρατήσει το μεγαλύτερο αρχείο από κάθε ομάδα και θα βάλει στον κάδο απορριμμάτων όλα τα άλλα διπλότυπα.",
-    "buy": "Αγοράστε το Curator Photos",
+    "buy": "Αγοράστε το Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Μικρογραφίες σελίδας βιβλιοθήκης ({} στοιχεία)",
     "cache_settings_clear_cache_button": "Εκκαθάριση προσωρινής μνήμης",
     "cache_settings_clear_cache_button_title":
@@ -43448,7 +43508,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Συμφραζόμενα",
     "continue": "Συνέχεια",
     "control_bottom_app_bar_create_new_album": "Δημιουργία νέου άλμπουμ",
-    "control_bottom_app_bar_delete_from_immich": "Διαγραφή από το Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Διαγραφή από το Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Διαγραφή από τη συσκευή",
     "control_bottom_app_bar_edit_location": "Επεξεργασία Τοποθεσίας",
     "control_bottom_app_bar_edit_time": "Επεξεργασία Ημερομηνίας & Ώρας",
@@ -43517,12 +43577,13 @@ class CodegenLoader extends AssetLoader {
     "delete": "Διαγραφή",
     "delete_album": "Διαγραφή άλμπουμ",
     "delete_api_key_prompt": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό κλειδί API;",
-    "delete_dialog_alert": "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από το Curator Photos και από τη συσκευή σας",
+    "delete_dialog_alert":
+        "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από το Personal Cloud Photos και από τη συσκευή σας",
     "delete_dialog_alert_local":
-        "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από την συσκευή σας αλλα θα παραμείνουν διαθέσιμα στον διακομιστή Curator Photos",
+        "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από την συσκευή σας αλλα θα παραμείνουν διαθέσιμα στον διακομιστή Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Κάποια από τα αντικείμενα δεν έχουν αντίγραφα ασφαλείας στο Curator Photos και θα διαγραφούν οριστικά από τη συσκευή σας",
-    "delete_dialog_alert_remote": "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από τον διακομιστή Curator Photos",
+        "Κάποια από τα αντικείμενα δεν έχουν αντίγραφα ασφαλείας στο Personal Cloud Photos και θα διαγραφούν οριστικά από τη συσκευή σας",
+    "delete_dialog_alert_remote": "Αυτά τα αντικείμενα θα διαγραφούν οριστικά από τον διακομιστή Personal Cloud Photos",
     "delete_dialog_ok_force": "Διαγραφή όπως και να έχει",
     "delete_dialog_title": "Οριστική Διαγραφή",
     "delete_duplicates_confirmation": "Είστε σίγουροι ότι επιθυμείτε τη μόνιμη διαγραφή αυτών των διπλότυπων;",
@@ -43577,7 +43638,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Διαχείριση ρυθμίσεων που σχετίζονται με τη λήψη στοιχείων",
     "download_started": "Η λήψη ξεκίνησε",
     "download_sucess": "Επιτυχία λήψης",
-    "download_sucess_android": "Το μέσο έχει ληφθεί στο DCIM/CuratorPhotos",
+    "download_sucess_android": "Το μέσο έχει ληφθεί στο DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Αναμονή για επανάληψη",
     "downloading": "Γίνεται λήψη",
     "downloading_asset_filename": "Λήψη στοιχείου {filename}",
@@ -43617,7 +43678,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Αυτός ο φάκελος είναι κενός",
     "empty_trash": "Άδειασμα κάδου απορριμμάτων",
     "empty_trash_confirmation":
-        "Είστε σίγουροι οτι θέλετε να αδειάσετε τον κάδο απορριμμάτων; Αυτό θα αφαιρέσει μόνιμα όλα τα στοιχεία του κάδου απορριμμάτων του Curator Photos. \nΑυτή η ενέργεια δεν μπορεί να αναιρεθεί!",
+        "Είστε σίγουροι οτι θέλετε να αδειάσετε τον κάδο απορριμμάτων; Αυτό θα αφαιρέσει μόνιμα όλα τα στοιχεία του κάδου απορριμμάτων του Personal Cloud Photos. \nΑυτή η ενέργεια δεν μπορεί να αναιρεθεί!",
     "enable": "Ενεργοποίηση",
     "enable_biometric_auth_description": "Εισάγετε τον κωδικό PIN σας για να ενεργοποιήσετε την βιομετρική ταυτοποίηση",
     "enabled": "Ενεργοποιημένο",
@@ -43878,7 +43939,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Αγνοήστε τις φωτογραφίες iCloud",
     "ignore_icloud_photos_description":
-        "Οι φωτογραφίες που είναι αποθηκευμένες στο iCloud δεν θα μεταφορτωθούν στον διακομιστή Curator Photos",
+        "Οι φωτογραφίες που είναι αποθηκευμένες στο iCloud δεν θα μεταφορτωθούν στον διακομιστή Personal Cloud Photos",
     "image": "Εικόνα",
     "image_alt_text_date": "{isVideo, select, true {Βίντεο} other {Εικόνα}} που τραβήχτηκε στις {date}",
     "image_alt_text_date_1_person":
@@ -43903,8 +43964,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Ξεκίνησε Λήψη",
     "image_viewer_page_state_provider_download_success": "Επιτυχία Λήψης",
     "image_viewer_page_state_provider_share_error": "Σφάλμα Κοινής Χρήσης",
-    "immich_logo": "Λογότυπο Curator Photos",
-    "immich_web_interface": "Ιστότοπος Curator Photos",
+    "immich_logo": "Λογότυπο Personal Cloud Photos",
+    "immich_web_interface": "Ιστότοπος Personal Cloud Photos",
     "import_from_json": "Εισαγωγή από αρχείο JSON",
     "import_path": "Εισαγωγή διαδρομής",
     "in_albums": "Μέσα σε {count, plural, one {# άλμπουμ} other {# άλμπουμ}}",
@@ -43975,7 +44036,7 @@ class CodegenLoader extends AssetLoader {
         "Η εφαρμογή θα συνδεθεί με τον διακομιστή μέσω αυτού του URL όταν χρησιμοποιείται το καθορισμένο δίκτυο Wi-Fi",
     "location_permission": "Άδεια τοποθεσίας",
     "location_permission_content":
-        "Για να χρησιμοποιηθεί η λειτουργία αυτόματης εναλλαγής, το Curator Photos χρειάζεται άδεια για την ακριβή τοποθεσία της συσκευής ώστε να μπορεί να διαβάζει το όνομα του τρέχοντος δικτύου Wi-Fi",
+        "Για να χρησιμοποιηθεί η λειτουργία αυτόματης εναλλαγής, το Personal Cloud Photos χρειάζεται άδεια για την ακριβή τοποθεσία της συσκευής ώστε να μπορεί να διαβάζει το όνομα του τρέχοντος δικτύου Wi-Fi",
     "location_picker_choose_on_map": "Επιλέξτε στο χάρτη",
     "location_picker_latitude_error": "Εισαγάγετε ένα έγκυρο γεωγραφικό πλάτος",
     "location_picker_latitude_hint": "Εισαγάγετε το γεωγραφικό πλάτος σας εδώ",
@@ -44155,7 +44216,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Ειδοποιήσεις",
     "notifications_setting_description": "Διαχείριση ειδοποιήσεων",
     "oauth": "OAuth",
-    "official_immich_resources": "Επίσημοι Πόροι του Curator Photos",
+    "official_immich_resources": "Επίσημοι Πόροι του Personal Cloud Photos",
     "offline": "Εκτός σύνδεσης",
     "ok": "Έγινε",
     "oldest_first": "Τα παλαιότερα πρώτα",
@@ -44234,11 +44295,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Ξεκινήστε",
     "permission_onboarding_go_to_settings": "Μεταβείτε στις ρυθμίσεις",
     "permission_onboarding_permission_denied":
-        "Η άδεια απορρίφθηκε. Για να χρησιμοποιήσετε το Curator Photos, παραχωρήστε δικαιώματα φωτογραφίας και βίντεο στις Ρυθμίσεις.",
+        "Η άδεια απορρίφθηκε. Για να χρησιμοποιήσετε το Personal Cloud Photos, παραχωρήστε δικαιώματα φωτογραφίας και βίντεο στις Ρυθμίσεις.",
     "permission_onboarding_permission_granted": "Δόθηκε άδεια! Είστε έτοιμοι.",
     "permission_onboarding_permission_limited":
-        "Περιορισμένη άδεια. Για να επιτρέψετε στο Curator Photos να δημιουργεί αντίγραφα ασφαλείας και να διαχειρίζεται ολόκληρη τη συλλογή σας, παραχωρήστε άδειες φωτογραφιών και βίντεο στις Ρυθμίσεις.",
-    "permission_onboarding_request": "Το Curator Photos απαιτεί άδεια πρόσβασεις στις φωτογραφίες και τα βίντεό σας.",
+        "Περιορισμένη άδεια. Για να επιτρέψετε στο Personal Cloud Photos να δημιουργεί αντίγραφα ασφαλείας και να διαχειρίζεται ολόκληρη τη συλλογή σας, παραχωρήστε άδειες φωτογραφιών και βίντεο στις Ρυθμίσεις.",
+    "permission_onboarding_request":
+        "Το Personal Cloud Photos απαιτεί άδεια πρόσβασεις στις φωτογραφίες και τα βίντεό σας.",
     "person": "Άτομο",
     "person_birthdate": "Γεννηθείς στις {date}",
     "person_hidden": "{name}{hidden, select, true { (κρυφό)} other {}}",
@@ -44290,12 +44352,12 @@ class CodegenLoader extends AssetLoader {
     "public_share": "Δημόσια Κοινή Χρήση",
     "purchase_account_info": "Υποστηρικτής",
     "purchase_activated_subtitle":
-        "Σας ευχαριστούμε για την υποστήριξη του Curator Photos και λογισμικών ανοιχτού κώδικα",
+        "Σας ευχαριστούμε για την υποστήριξη του Personal Cloud Photos και λογισμικών ανοιχτού κώδικα",
     "purchase_activated_time": "Ενεργοποιήθηκε στις {date}",
     "purchase_activated_title": "Το κλειδί σας ενεργοποιήθηκε με επιτυχία",
     "purchase_button_activate": "Ενεργοποίηση",
     "purchase_button_buy": "Αγορά",
-    "purchase_button_buy_immich": "Αγορά Curator Photos",
+    "purchase_button_buy_immich": "Αγορά Personal Cloud Photos",
     "purchase_button_never_show_again": "Να μην εμφανιστεί ποτέ ξανά",
     "purchase_button_reminder": "Υπενθύμιση σε 30 μέρες",
     "purchase_button_remove_key": "Αφαίρεση κλειδιού",
@@ -44305,13 +44367,14 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Κατάσταση υποστηρικτή",
     "purchase_individual_title": "Ατομο",
     "purchase_input_suggestion": "Έχετε ένα κλειδί προϊόντος; Εισαγάγετε το κλειδί παρακάτω",
-    "purchase_license_subtitle": "Αγοράστε το Curator Photos για να υποστηρίξετε τη συνεχή ανάπτυξη της υπηρεσίας",
+    "purchase_license_subtitle":
+        "Αγοράστε το Personal Cloud Photos για να υποστηρίξετε τη συνεχή ανάπτυξη της υπηρεσίας",
     "purchase_lifetime_description": "Αγορά εφ' όρου ζωής",
     "purchase_option_title": "ΕΠΙΛΟΓΕΣ ΑΓΟΡΑΣ",
     "purchase_panel_info_1":
-        "Η ανάπτυξη του Curator Photos απαιτεί πολύ χρόνο και προσπάθεια, και έχουμε μηχανικούς πλήρους απασχόλησης που εργάζονται σε αυτό για να το κάνουμε όσο το δυνατόν καλύτερο. Η αποστολή μας είναι το λογισμικό ανοιχτού κώδικα και οι ηθικές επιχειρηματικές πρακτικές να γίνουν βιώσιμη πηγή εισοδήματος για προγραμματιστές και να δημιουργήσουμε ένα οικοσύστημα που σέβεται το απόρρητο, με πραγματικές εναλλακτικές λύσεις στις υπηρεσίες cloud που παρουσιάζουν συμπεριφορές εκμετάλλευσης.",
+        "Η ανάπτυξη του Personal Cloud Photos απαιτεί πολύ χρόνο και προσπάθεια, και έχουμε μηχανικούς πλήρους απασχόλησης που εργάζονται σε αυτό για να το κάνουμε όσο το δυνατόν καλύτερο. Η αποστολή μας είναι το λογισμικό ανοιχτού κώδικα και οι ηθικές επιχειρηματικές πρακτικές να γίνουν βιώσιμη πηγή εισοδήματος για προγραμματιστές και να δημιουργήσουμε ένα οικοσύστημα που σέβεται το απόρρητο, με πραγματικές εναλλακτικές λύσεις στις υπηρεσίες cloud που παρουσιάζουν συμπεριφορές εκμετάλλευσης.",
     "purchase_panel_info_2":
-        "Καθώς δεσμευόμαστε να μην προσθέσουμε φραγμούς με σκοπό το κέρδος, αυτή η αγορά δεν θα σας προσφέρει πρόσθετες δυνατότητες στο Curator Photos. Βασιζόμαστε σε χρήστες όπως εσείς για την υποστήριξη της συνεχούς ανάπτυξης του Curator Photos.",
+        "Καθώς δεσμευόμαστε να μην προσθέσουμε φραγμούς με σκοπό το κέρδος, αυτή η αγορά δεν θα σας προσφέρει πρόσθετες δυνατότητες στο Personal Cloud Photos. Βασιζόμαστε σε χρήστες όπως εσείς για την υποστήριξη της συνεχούς ανάπτυξης του Personal Cloud Photos.",
     "purchase_panel_title": "Υποστηρίξτε το πρότζεκτ",
     "purchase_per_server": "Ανά διακομιστή",
     "purchase_per_user": "Ανά χρήστη",
@@ -44541,7 +44604,7 @@ class CodegenLoader extends AssetLoader {
         "Όταν μεταδίδετε ένα βίντεο από τον διακομιστή, αναπαράγετε το αυθεντικό ακόμη και όταν υπάρχει διαθέσιμο με διαφορετική κωδικοποίηση. Μπορεί να προκαλέσει καθυστέρηση φόρτωσης. Τα βίντεο που είναι διαθέσιμα τοπικά, αναπαράγονται στην αυθεντική ποιότητα, ανεξαρτήτως αυτής της ρύθμισης.",
     "setting_video_viewer_original_video_title": "Αναγκαστική αναπαραγωγή αυθεντικού βίντεο",
     "settings": "Ρυθμίσεις",
-    "settings_require_restart": "Επανεκκινήστε το Curator Photos για να εφαρμόσετε αυτήν τη ρύθμιση",
+    "settings_require_restart": "Επανεκκινήστε το Personal Cloud Photos για να εφαρμόσετε αυτήν τη ρύθμιση",
     "settings_saved": "Οι ρυθμίσεις αποθηκεύτηκαν",
     "setup_pin_code": "Ρύθμιση κωδικού PIN",
     "share": "Κοινοποίηση",
@@ -44671,14 +44734,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Υποστήριξη",
     "support_and_feedback": "Υποστήριξη & Σχόλια",
     "support_third_party_description":
-        "Η εγκατάσταση του Curator Photos που χρησιμοποιείτε, έχει πακεταριστεί από τρίτους. Τα προβλήματα που αντιμετωπίζετε μπορεί να οφείλονται σε αυτό το πακέτο, οπότε παρακαλούμε να αναφέρετε τα προβλήματα πρώτα σε εκείνους, χρησιμοποιώντας τους παρακάτω συνδέσμους.",
+        "Η εγκατάσταση του Personal Cloud Photos που χρησιμοποιείτε, έχει πακεταριστεί από τρίτους. Τα προβλήματα που αντιμετωπίζετε μπορεί να οφείλονται σε αυτό το πακέτο, οπότε παρακαλούμε να αναφέρετε τα προβλήματα πρώτα σε εκείνους, χρησιμοποιώντας τους παρακάτω συνδέσμους.",
     "swap_merge_direction": "Εναλλαγή κατεύθυνσης συγχώνευσης",
     "sync": "Συγχρονισμός",
     "sync_albums": "Συγχρονισμός άλμπουμ",
     "sync_albums_manual_subtitle":
         "Συγχρονίστε όλα τα μεταφορτωμένα βίντεο και φωτογραφίες με τα επιλεγμένα εφεδρικά άλμπουμ",
     "sync_upload_album_setting_subtitle":
-        "Δημιουργήστε και ανεβάστε τις φωτογραφίες και τα βίντεό σας στα επιλεγμένα άλμπουμ στο Curator Photos",
+        "Δημιουργήστε και ανεβάστε τις φωτογραφίες και τα βίντεό σας στα επιλεγμένα άλμπουμ στο Personal Cloud Photos",
     "tag": "Ετικέτα",
     "tag_assets": "Ετικετοποίηση στοιχείων",
     "tag_created": "Δημιουργήθηκε ετικέτα: {tag}",
@@ -44732,7 +44795,7 @@ class CodegenLoader extends AssetLoader {
         "Οι φωτογραφίες και τα βίντεο που βρίσκονται στον κάδο απορριμμάτων θα εμφανίζονται εδώ.",
     "trash_page_delete_all": "Διαγραφή όλων",
     "trash_page_empty_trash_dialog_content":
-        "Θέλετε να αδειάσετε τα περιουσιακά σας στοιχεία στον κάδο απορριμμάτων; Αυτά τα στοιχεία θα καταργηθούν οριστικά από το Curator Photos",
+        "Θέλετε να αδειάσετε τα περιουσιακά σας στοιχεία στον κάδο απορριμμάτων; Αυτά τα στοιχεία θα καταργηθούν οριστικά από το Personal Cloud Photos",
     "trash_page_info": "Τα στοιχεία που έχουν απορριφθεί θα διαγραφούν οριστικά μετά από {days} ημέρες",
     "trash_page_no_assets": "Δεν υπάρχουν περιουσιακά στοιχεία που έχουν απορριφθεί",
     "trash_page_restore_all": "Επαναφορά Όλων",
@@ -44781,7 +44844,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Σφάλματα",
     "upload_status_uploaded": "Μεταφορτώθηκαν",
     "upload_success": "Η μεταφόρτωση ολοκληρώθηκε, ανανεώστε τη σελίδα για να δείτε τα νέα αντικείμενα.",
-    "upload_to_immich": "Μεταφόρτωση στο Curator Photos ({count})",
+    "upload_to_immich": "Μεταφόρτωση στο Personal Cloud Photos ({count})",
     "uploading": "Μεταφορτώνεται",
     "url": "URL",
     "usage": "Χρήση",
@@ -44811,7 +44874,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Έκδοση",
     "version_announcement_closing": "Ο φίλος σου, Alex",
     "version_announcement_message":
-        "Γειά σας! Μια νέα έκδοση του Curator Photos είναι διαθέσιμη. Παρακαλούμε αφιερώστε λίγο χρόνο για να διαβάσετε τις <link>σημειώσεις έκδοσης</link> ώστε να βεβαιωθείτε ότι η ρύθμιση σας είναι ενημερωμένη και να αποφύγετε τυχόν σφάλματα, ειδικά αν χρησιμοποιείτε το WatchTower ή οποιοδήποτε μηχανισμό που διαχειρίζεται αυτόματα την ενημέρωση της εγκατάστασης του Curator Photos σας.",
+        "Γειά σας! Μια νέα έκδοση του Personal Cloud Photos είναι διαθέσιμη. Παρακαλούμε αφιερώστε λίγο χρόνο για να διαβάσετε τις <link>σημειώσεις έκδοσης</link> ώστε να βεβαιωθείτε ότι η ρύθμιση σας είναι ενημερωμένη και να αποφύγετε τυχόν σφάλματα, ειδικά αν χρησιμοποιείτε το WatchTower ή οποιοδήποτε μηχανισμό που διαχειρίζεται αυτόματα την ενημέρωση της εγκατάστασης του Personal Cloud Photos σας.",
     "version_announcement_overlay_release_notes": "σημειώσεις έκδοσης",
     "version_announcement_overlay_text_1": "Γειά σας, υπάρχει μια νέα έκδοση του",
     "version_announcement_overlay_text_2": "παρακαλώ αφιερώστε χρόνο να επισκεφθείτε το ",
@@ -44858,7 +44921,7 @@ class CodegenLoader extends AssetLoader {
     "zoom_image": "Ζουμ Εικόνας",
   };
   static const Map<String, dynamic> _bg = {
-    "about": "За Curator Photos",
+    "about": "За Personal Cloud Photos",
     "account": "Акаунт",
     "account_settings": "Настройки на профила",
     "acknowledge": "Потвърждавам",
@@ -44896,7 +44959,7 @@ class CodegenLoader extends AssetLoader {
           "Добави модели за изключване. Поддържа се \"globbing\" с помощта на *, ** и ?. За да игнорирате всички файлове в директория с име \"Raw\", използвайте \"**/Raw/**\". За да игнорирате всички файлове, завършващи на \".tif\", използвайте \"**/*.tif\". За да игнорирате абсолютен път, използвайте \"/path/to/ignore/**\".",
       "admin_user": "Администратор",
       "asset_offline_description":
-          "Този външен библиотечен елемент не може да бъде открит на диска и е преместен в кошчето за боклук. Ако файлът е преместен в библиотеката, проверете вашата история за нов съответстващ елемент. За да възстановите елемента, моля проверете дали файловият път отдолу може да бъде достъпен от Curator Photos и сканирайте библиотеката.",
+          "Този външен библиотечен елемент не може да бъде открит на диска и е преместен в кошчето за боклук. Ако файлът е преместен в библиотеката, проверете вашата история за нов съответстващ елемент. За да възстановите елемента, моля проверете дали файловият път отдолу може да бъде достъпен от Personal Cloud Photos и сканирайте библиотеката.",
       "authentication_settings": "Настройки за удостоверяване",
       "authentication_settings_description": "Управление на парола, OAuth и други настройки за удостоверяване",
       "authentication_settings_disable_all":
@@ -44912,7 +44975,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Конфигурацията е зададена от файл",
       "confirm_delete_library": "Сигурни ли сте че искате да изтриете библиотеката - {library} ?",
       "confirm_delete_library_assets":
-          "Сигурни ли сте че искате да изтриете тази библиотека? Това ще изтрие {count, plural, one {# съдържания елемент} other {всички # съдържани елементи}} от Curator Photos и е необратимо. Файловете остават на диска.",
+          "Сигурни ли сте че искате да изтриете тази библиотека? Това ще изтрие {count, plural, one {# съдържания елемент} other {всички # съдържани елементи}} от Personal Cloud Photos и е необратимо. Файловете остават на диска.",
       "confirm_email_below": "За потвърждение, моля въведете \"{email}\" отдолу",
       "confirm_reprocess_all_faces":
           "Сигурни ли сте, че искате да се обработят лицата отново? Това ще изчисти всички именувани хора.",
@@ -45039,7 +45102,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Активиране на картата",
       "map_gps_settings": "Настройки на картата и GPS",
       "map_gps_settings_description": "Управление на настройките на картата и GPS (обратно геокодиране)",
-      "map_implications": "Функцията за карта разчита на външна услуга (tiles.curatorphotos.cloud)",
+      "map_implications": "Функцията за карта разчита на външна услуга (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Светъл стил",
       "map_manage_reverse_geocoding_settings": "Управление на настройките за <link>обратно геокодиране</link>",
       "map_reverse_geocoding": "Обратно геокодиране",
@@ -45066,8 +45129,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "ВНИМАНИЕ: Това не може да бъде променено по-късно!",
       "notification_email_from_address": "От адрес",
       "notification_email_from_address_description":
-          "Електронна поща на изпращача, например: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "Хост на сървъра за електронна поща (например: smtp.curatorphotos.app)",
+          "Електронна поща на изпращача, например: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description":
+          "Хост на сървъра за електронна поща (например: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Игнорирайте сертификационни грешки",
       "notification_email_ignore_certificate_errors_description":
           "Игнорирай грешки свързани с валидация на TLS сертификат (не се препоръчва)",
@@ -45171,9 +45235,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Управление на шаблони за известия",
       "theme_custom_css_settings": "Персонализиран CSS",
       "theme_custom_css_settings_description":
-          "Каскадните стилови таблици позволяват персонализиране на дизайна на Curator Photos.",
+          "Каскадните стилови таблици позволяват персонализиране на дизайна на Personal Cloud Photos.",
       "theme_settings": "Настройки на темата",
-      "theme_settings_description": "Управление на персонализирането на уеб интерфейса на Curator Photos",
+      "theme_settings_description": "Управление на персонализирането на уеб интерфейса на Personal Cloud Photos",
       "these_files_matched_by_checksum": "Тези файлове се сравняват по контролните им суми (checksums)",
       "thumbnail_generation_job": "Генериране на миниатюри",
       "thumbnail_generation_job_description":
@@ -45408,7 +45472,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Разполагане на снимки",
     "asset_offline": "Елементът е офлайн",
     "asset_offline_description":
-        "Този външен актив вече не се намира на диска. Моля, свържете се с администратора на Curator Photos за помощ.",
+        "Този външен актив вече не се намира на диска. Моля, свържете се с администратора на Personal Cloud Photos за помощ.",
     "asset_restored_successfully": "Успешно възстановен обект",
     "asset_skipped": "Пропуснато",
     "asset_skipped_in_trash": "В кошчето",
@@ -45537,7 +45601,7 @@ class CodegenLoader extends AssetLoader {
         "Сигурни ли сте, че искате да запазите {count, plural, one {# дублиран файл} other {# дублирани файла}}? Това ще потвърди всички групи дубликати, без да изтрива нищо.",
     "bulk_trash_duplicates_confirmation":
         "Сигурни ли сте, че искате да преместите в кошчето масово {count, plural, one {# дублиран файл} other {# дублирани файла}}? Това ще запази най-големия файл от всяка група и ще премести в кошчето всички други дубликати.",
-    "buy": "Купете Curator Photos",
+    "buy": "Купете Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Изчисти кеша",
     "cache_settings_clear_cache_button_title":
         "Изчиства кеша на приложението. Това ще повлияе производителността на приложението докато кеша не бъде създаден отново.",
@@ -45799,7 +45863,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Тази папка е празна",
     "empty_trash": "Изпразване на кош",
     "empty_trash_confirmation":
-        "Сигурни ли сте, че искате да изпразните кошчето? Това ще премахне всичко в кошчето за постоянно от Curator Photos.\nНе можете да отмените това действие!",
+        "Сигурни ли сте, че искате да изпразните кошчето? Това ще премахне всичко в кошчето за постоянно от Personal Cloud Photos.\nНе можете да отмените това действие!",
     "enable": "Включване",
     "enable_biometric_auth_description": "Въведете вашия PIN код, за да разрешите биометрично удостоверяване",
     "enabled": "Включено",
@@ -46076,8 +46140,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Започна изтегляне",
     "image_viewer_page_state_provider_download_success": "Успешно изтегляне",
     "image_viewer_page_state_provider_share_error": "Грешка при споделяне",
-    "immich_logo": "Curator Photos лого",
-    "immich_web_interface": "Уеб интерфейс на Curator Photos",
+    "immich_logo": "Personal Cloud Photos лого",
+    "immich_web_interface": "Уеб интерфейс на Personal Cloud Photos",
     "import_from_json": "Импортиране от JSON",
     "import_path": "Път за импортиране",
     "in_albums": "В {count, plural, one {# албум} other {# албума}}",
@@ -46324,7 +46388,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Известия",
     "notifications_setting_description": "Управление на известията",
     "oauth": "OAuth",
-    "official_immich_resources": "Официална информация за Curator Photos",
+    "official_immich_resources": "Официална информация за Personal Cloud Photos",
     "offline": "Офлайн",
     "ok": "Добре",
     "oldest_first": "Най-старите първи",
@@ -46457,12 +46521,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Публичен албум",
     "public_share": "Публично споделяне",
     "purchase_account_info": "Поддръжник",
-    "purchase_activated_subtitle": "Благодарим ви, че подкрепяте Curator Photos и софтуера с отворен код",
+    "purchase_activated_subtitle": "Благодарим ви, че подкрепяте Personal Cloud Photos и софтуера с отворен код",
     "purchase_activated_time": "Активиран на {date}",
     "purchase_activated_title": "Вашият ключ беше успешно активиран",
     "purchase_button_activate": "Активирай",
     "purchase_button_buy": "Купи",
-    "purchase_button_buy_immich": "Купи Curator Photos",
+    "purchase_button_buy_immich": "Купи Personal Cloud Photos",
     "purchase_button_never_show_again": "Не показвай повече",
     "purchase_button_reminder": "Припомни ми след 30 дни",
     "purchase_button_remove_key": "Махни ключа",
@@ -46472,13 +46536,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Статус на поддръжник",
     "purchase_individual_title": "Индивидуален",
     "purchase_input_suggestion": "Имате продуктов ключ? Въведете ключа по-долу",
-    "purchase_license_subtitle": "Закупете Curator Photos, за да подкрепите продължаващото развитие на услугата",
+    "purchase_license_subtitle": "Закупете Personal Cloud Photos, за да подкрепите продължаващото развитие на услугата",
     "purchase_lifetime_description": "Покупка за цял живот",
     "purchase_option_title": "ОПЦИИ ЗА ЗАКУПУВАНЕ",
     "purchase_panel_info_1":
-        "Създаването на Curator Photos отнема много време и усилия, и имаме инженери на пълно работно време, които работят по него, за да го направим възможно най-добро. Нашата мисия е софтуерът с отворен код и етичните бизнес практики да се превърнат в устойчив източник на доходи за разработчиците и да създадем екосистема, която уважава личната неприкосновеност и предлага истински алтернативи на експлоататорските облачни услуги.",
+        "Създаването на Personal Cloud Photos отнема много време и усилия, и имаме инженери на пълно работно време, които работят по него, за да го направим възможно най-добро. Нашата мисия е софтуерът с отворен код и етичните бизнес практики да се превърнат в устойчив източник на доходи за разработчиците и да създадем екосистема, която уважава личната неприкосновеност и предлага истински алтернативи на експлоататорските облачни услуги.",
     "purchase_panel_info_2":
-        "Тъй като сме ангажирани да не добавяме платени стени, тази покупка няма да ви предостави допълнителни функции в Curator Photos. Ние разчитаме на потребители като вас, за да подкрепяте продължаващото развитие на Curator Photos.",
+        "Тъй като сме ангажирани да не добавяме платени стени, тази покупка няма да ви предостави допълнителни функции в Personal Cloud Photos. Ние разчитаме на потребители като вас, за да подкрепяте продължаващото развитие на Personal Cloud Photos.",
     "purchase_panel_title": "Поддържайте проекта",
     "purchase_per_server": "на сървър",
     "purchase_per_user": "на потребител",
@@ -46833,7 +46897,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Поддръжка",
     "support_and_feedback": "Поддръжка и обратна връзка",
     "support_third_party_description":
-        "Вашата инсталация на Curator Photos е пакетирана от трета страна. Проблемите, които изпитвате, може да са причинени от този пакет, затова моля, първо подавайте проблемите си към тях чрез линковете по-долу.",
+        "Вашата инсталация на Personal Cloud Photos е пакетирана от трета страна. Проблемите, които изпитвате, може да са причинени от този пакет, затова моля, първо подавайте проблемите си към тях чрез линковете по-долу.",
     "swap_merge_direction": "Размяна посоката на сливане",
     "sync": "Синхронизиране",
     "sync_albums": "Синхронизиране на албуми",
@@ -46967,7 +47031,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Версия",
     "version_announcement_closing": "Твой приятел, Алекс",
     "version_announcement_message":
-        "Здравейте! Налична е нова версия на Curator Photos. Моля, отделете време да прочетете <link>бележките за изданието</link>, за да се уверите, че настройката ви е актуална и да предотвратите всякакви неправилни конфигурации, особено ако използвате WatchTower или друг механизъм за автоматично обновяване на вашата инстанция на Curator Photos.",
+        "Здравейте! Налична е нова версия на Personal Cloud Photos. Моля, отделете време да прочетете <link>бележките за изданието</link>, за да се уверите, че настройката ви е актуална и да предотвратите всякакви неправилни конфигурации, особено ако използвате WatchTower или друг механизъм за автоматично обновяване на вашата инстанция на Personal Cloud Photos.",
     "version_history": "История на версиите",
     "version_history_item": "Инсталирана {version} на {date}",
     "video": "Видеоклип",
@@ -46997,7 +47061,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Внимание",
     "week": "Седмица",
     "welcome": "Добре дошли",
-    "welcome_to_immich": "Добре дошли в Curator Photos",
+    "welcome_to_immich": "Добре дошли в Personal Cloud Photos",
     "wifi_name": "Wi-Fi мрежа",
     "wrong_pin_code": "Грешен PIN код",
     "year": "Година",
@@ -47043,7 +47107,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Adăugați modele de excludere. Globing folosind *, ** și ? este suportat. Pentru a ignora toate fișierele din orice director numit „Raw”, utilizați „**/Raw/**”. Pentru a ignora toate fișierele care se termină în „.tif”, utilizați „**/*.tif”. Pentru a ignora o cale absolută, utilizați „/path/to/ignore/**”.",
       "asset_offline_description":
-          "Acest material din biblioteca externă nu se mai găsește pe disc și a fost mutat în coșul de gunoi. Dacă fișierul a fost mutat în bibliotecă, verificați cronologia pentru noul material corespunzător. Pentru a restabili acest material, asigurați-vă că calea fișierului de mai jos poate fi accesată de Curator Photos și scanați biblioteca.",
+          "Acest material din biblioteca externă nu se mai găsește pe disc și a fost mutat în coșul de gunoi. Dacă fișierul a fost mutat în bibliotecă, verificați cronologia pentru noul material corespunzător. Pentru a restabili acest material, asigurați-vă că calea fișierului de mai jos poate fi accesată de Personal Cloud Photos și scanați biblioteca.",
       "authentication_settings": "Setări de Autentificare",
       "authentication_settings_description": "Gestionează parola, OAuth și alte setări de autentificare",
       "authentication_settings_disable_all":
@@ -47059,7 +47123,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Configurația este setată în prezent de un fișier de configurare",
       "confirm_delete_library": "Sigur doriți să ștergeți biblioteca {library}?",
       "confirm_delete_library_assets":
-          "Sigur doriți să ștergeți această bibliotecă? Aceasta va șterge {count, plural, one {# contained asset} other {all # contained assets}} din Curator Photos și nu poate fi anulată. Fișierele vor rămâne pe disc.",
+          "Sigur doriți să ștergeți această bibliotecă? Aceasta va șterge {count, plural, one {# contained asset} other {all # contained assets}} din Personal Cloud Photos și nu poate fi anulată. Fișierele vor rămâne pe disc.",
       "confirm_email_below": "Pentru a confirma, tastați „{email}” mai jos",
       "confirm_reprocess_all_faces":
           "Sigur doriți să reprocesați toate fețele? Acest lucru va șterge și persoanele cu nume.",
@@ -47186,7 +47250,7 @@ class CodegenLoader extends AssetLoader {
       "map_gps_settings": "Setări Hartă & GPS",
       "map_gps_settings_description": "Gestionare setări Hartă & GPS (localizare inversă)",
       "map_implications":
-          "Caracteristica hărții se bazează pe un serviciu extern de planșe (tiles.curatorphotos.cloud)",
+          "Caracteristica hărții se bazează pe un serviciu extern de planșe (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Mod deschis",
       "map_manage_reverse_geocoding_settings": "Gestionare setări <link>Localizare Inversă</link>",
       "map_reverse_geocoding": "Localizare inversă",
@@ -47215,8 +47279,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTĂ: Nu se va mai putea modifica ulterior!",
       "notification_email_from_address": "De la adresa",
       "notification_email_from_address_description":
-          "Adresa expeditorului, spre exemplu: „Curator Photos Photo Server <noreply@example.com>”",
-      "notification_email_host_description": "Adresa serverului de email (ex. smtp.curatorphotos.app)",
+          "Adresa expeditorului, spre exemplu: „Personal Cloud Photos Photo Server <noreply@example.com>”",
+      "notification_email_host_description": "Adresa serverului de email (ex. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ingnoră erorile de certificat",
       "notification_email_ignore_certificate_errors_description":
           "Ignoră erorile de validare a certificatului TLS (nerecomandat)",
@@ -47319,9 +47383,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gestionați șabloanele personalizate pentru notificări.",
       "theme_custom_css_settings": "CSS personalizat",
       "theme_custom_css_settings_description":
-          "Foile de stil în cascadă (CSS) permit personalizarea designului Curator Photos.",
+          "Foile de stil în cascadă (CSS) permit personalizarea designului Personal Cloud Photos.",
       "theme_settings": "Setări Temă",
-      "theme_settings_description": "Gestionează personalizarea interfeței web Curator Photos",
+      "theme_settings_description": "Gestionează personalizarea interfeței web Personal Cloud Photos",
       "these_files_matched_by_checksum": "Aceste fișiere sunt comparate folosind sumele de control",
       "thumbnail_generation_job": "Generare Miniaturi",
       "thumbnail_generation_job_description":
@@ -47547,7 +47611,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grilă fotografii",
     "asset_offline": "Resursă Offline",
     "asset_offline_description":
-        "Această resursă externă nu mai este găsită pe disc. Contactează te rog administratorul tău Curator Photos pentru ajutor.",
+        "Această resursă externă nu mai este găsită pe disc. Contactează te rog administratorul tău Personal Cloud Photos pentru ajutor.",
     "asset_restored_successfully": "Asset restored successfully",
     "asset_skipped": "Sărit",
     "asset_skipped_in_trash": "În coșul de gunoi",
@@ -47593,7 +47657,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Mergi la setări",
     "backup_controller_page_background_battery_info_link": "Arată-mi cum",
     "backup_controller_page_background_battery_info_message":
-        "Pentru cea mai bună experiență a backup-ului în fundal, te rugăm să dezactivezi orice optimizare pentru baterie care restricționează activitatea în fundal pentru Curator Photos.\n\nDeoarece aceasta este specifică fiecărui dispozitiv, te rugăm verifică informațiile necesare tipului tău de dispozitiv.",
+        "Pentru cea mai bună experiență a backup-ului în fundal, te rugăm să dezactivezi orice optimizare pentru baterie care restricționează activitatea în fundal pentru Personal Cloud Photos.\n\nDeoarece aceasta este specifică fiecărui dispozitiv, te rugăm verifică informațiile necesare tipului tău de dispozitiv.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optimizări baterie",
     "backup_controller_page_background_charging": "Doar în timpul încărcării",
@@ -47648,7 +47712,7 @@ class CodegenLoader extends AssetLoader {
         "Ești sigur că vrei să păstrezi {count, plural, one {# resursă duplicată} other {# resurse duplicate}}? Aceasta va rezolva toate grupurile duplicate fără a șterge nimic.",
     "bulk_trash_duplicates_confirmation":
         "Ești sigur că vrei să muți în coșul de gunoi {count, plural, one {# resursă duplicată} other {# resurse duplicate}}? Aceasta va păstra cea mai mare resursă din fiecare grup și va muta în coșul de gunoi toate celelalte duplicate.",
-    "buy": "Achiziționați Curator Photos",
+    "buy": "Achiziționați Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniaturi pagină galerie ({} resurse)",
     "cache_settings_clear_cache_button": "Șterge cache",
     "cache_settings_clear_cache_button_title":
@@ -47661,7 +47725,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniaturi pentru albumele distribuite",
     "cache_settings_statistics_thumbnail": "Miniaturi",
     "cache_settings_statistics_title": "Memorie cache utilizată",
-    "cache_settings_subtitle": "Controlează modul de cache al aplicației Curator Photos",
+    "cache_settings_subtitle": "Controlează modul de cache al aplicației Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Mărime cache miniatura ({} resurse)",
     "cache_settings_tile_subtitle": "Controlează modul stocării locale",
     "cache_settings_tile_title": "Stocare locală",
@@ -47721,7 +47785,7 @@ class CodegenLoader extends AssetLoader {
     "contain": "Încadrează",
     "continue": "Continuați",
     "control_bottom_app_bar_create_new_album": "Creează album nou",
-    "control_bottom_app_bar_delete_from_immich": "Șterge din Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Șterge din Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Șterge din dispozitiv",
     "control_bottom_app_bar_edit_location": "Editează locație",
     "control_bottom_app_bar_edit_time": "Editează Data și Ora",
@@ -47778,12 +47842,12 @@ class CodegenLoader extends AssetLoader {
     "delete_album": "Ștergere album",
     "delete_api_key_prompt": "Sunteți sigur că doriți să ștergeți această cheie API?",
     "delete_dialog_alert":
-        "Aceste elemente vor fi șterse permanent de pe server-ul Curator Photos și din dispozitivul tău",
+        "Aceste elemente vor fi șterse permanent de pe server-ul Personal Cloud Photos și din dispozitivul tău",
     "delete_dialog_alert_local":
-        "Aceste fișiere vor fi șterse permanent din dispozitiv, dar vor fi disponibile pe server-ul Curator Photos",
+        "Aceste fișiere vor fi șterse permanent din dispozitiv, dar vor fi disponibile pe server-ul Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Pentru unele fișere nu s-a făcut backup în Curator Photos și vor fi șterse permanent din dispozitiv",
-    "delete_dialog_alert_remote": "Aceste fișiere vor fi șterse permanent de pe server-ul Curator Photos",
+        "Pentru unele fișere nu s-a făcut backup în Personal Cloud Photos și vor fi șterse permanent din dispozitiv",
+    "delete_dialog_alert_remote": "Aceste fișiere vor fi șterse permanent de pe server-ul Personal Cloud Photos",
     "delete_dialog_ok_force": "Șterge oricum",
     "delete_dialog_title": "Șterge permanent",
     "delete_duplicates_confirmation": "Sunteți sigur că doriți să ștergeți permanent aceste duplicate?",
@@ -47857,7 +47921,7 @@ class CodegenLoader extends AssetLoader {
     "editor_crop_tool_h2_rotation": "Rotire",
     "empty_trash": "Goliți coșul de gunoi",
     "empty_trash_confirmation":
-        "Sunteți sigur că doriți să goliți coșul de gunoi? Acest lucru va elimina definitiv din Curator Photos toate resursele din coșul de gunoi.\nNu puteți anula această acțiune!",
+        "Sunteți sigur că doriți să goliți coșul de gunoi? Acest lucru va elimina definitiv din Personal Cloud Photos toate resursele din coșul de gunoi.\nNu puteți anula această acțiune!",
     "enable": "Permite",
     "enabled": "Activat",
     "end_date": "Data de încheiere",
@@ -48092,8 +48156,8 @@ class CodegenLoader extends AssetLoader {
         "{isVideo, select, true {Video} other {imagine}} preluată în {city}, {country} cu {person1}, {person2}, și {additionalCount, number} alții în {date}",
     "image_viewer_page_state_provider_download_success": "Descărcare cu succes",
     "image_viewer_page_state_provider_share_error": "Eroare distribuire",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Interfața Web Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Interfața Web Personal Cloud Photos",
     "import_from_json": "Importă din JSON",
     "import_path": "Calea de import",
     "in_albums": "În {count, plural, one {# album} other {# albume}}",
@@ -48148,7 +48212,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "Încărcare",
     "loading_search_results_failed": "Încărcarea rezultatelor căutării nu a reușit",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "location_picker_choose_on_map": "Alege pe hartă",
     "location_picker_latitude_error": "Introdu o latitudine validă",
     "location_picker_latitude_hint": "Introdu latitudinea aici",
@@ -48283,14 +48347,14 @@ class CodegenLoader extends AssetLoader {
         "Notă: Pentru a aplica eticheta de stocare la resursele încărcate anterior, rulați",
     "notes": "Note",
     "notification_permission_dialog_content":
-        "Pentru a activa notificările, mergi în Setări > Curator Photos și selectează permite.",
+        "Pentru a activa notificările, mergi în Setări > Personal Cloud Photos și selectează permite.",
     "notification_permission_list_tile_content": "Acordă permisiunea pentru a activa notificările.",
     "notification_permission_list_tile_enable_button": "Activează notificările",
     "notification_permission_list_tile_title": "Permisiuni de notificare",
     "notification_toggle_setting_description": "Activați notificările prin email",
     "notifications": "Notificări",
     "notifications_setting_description": "Gestionați notificările",
-    "official_immich_resources": "Resurse Oficiale Curator Photos",
+    "official_immich_resources": "Resurse Oficiale Personal Cloud Photos",
     "ok": "Bine",
     "oldest_first": "Cel mai vechi mai întâi",
     "onboarding": "Integrare",
@@ -48356,12 +48420,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Începe",
     "permission_onboarding_go_to_settings": "Mergi la setări",
     "permission_onboarding_permission_denied":
-        "Permisiune refuzată. Pentru a utiliza Curator Photos, acordă permisiuni pentru fotografii și videoclipuri în Setări.",
+        "Permisiune refuzată. Pentru a utiliza Personal Cloud Photos, acordă permisiuni pentru fotografii și videoclipuri în Setări.",
     "permission_onboarding_permission_granted": "Permisiune acordată! Sunteți gata.",
     "permission_onboarding_permission_limited":
-        "Permisiune limitată. Pentru a permite Curator Photos să facă copii de siguranță și să gestioneze întreaga colecție de galerii, acordă permisiuni pentru fotografii și videoclipuri în Setări.",
+        "Permisiune limitată. Pentru a permite Personal Cloud Photos să facă copii de siguranță și să gestioneze întreaga colecție de galerii, acordă permisiuni pentru fotografii și videoclipuri în Setări.",
     "permission_onboarding_request":
-        "Curator Photos necesită permisiunea de a vizualiza fotografiile și videoclipurile tale.",
+        "Personal Cloud Photos necesită permisiunea de a vizualiza fotografiile și videoclipurile tale.",
     "person": "Persoanǎ",
     "person_birthdate": "Născut pe {date}",
     "person_hidden": "{name}{hidden, select, true { (ascuns)} other {}}",
@@ -48401,12 +48465,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Album public",
     "public_share": "Distribuire Publică",
     "purchase_account_info": "Suporter",
-    "purchase_activated_subtitle": "Vă mulțumim că susțineți Curator Photos și software-ul open-source",
+    "purchase_activated_subtitle": "Vă mulțumim că susțineți Personal Cloud Photos și software-ul open-source",
     "purchase_activated_time": "Activat pe data de {date}",
     "purchase_activated_title": "Cheia dvs. a fost activată cu succes",
     "purchase_button_activate": "Activați",
     "purchase_button_buy": "Cumpărați",
-    "purchase_button_buy_immich": "Cumpărați Curator Photos",
+    "purchase_button_buy_immich": "Cumpărați Personal Cloud Photos",
     "purchase_button_never_show_again": "Nu mai arăta niciodată",
     "purchase_button_reminder": "Amintește-mi în 30 de zile",
     "purchase_button_remove_key": "Eliminați cheia",
@@ -48415,13 +48479,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_1": "Pentru un individ",
     "purchase_individual_description_2": "Statutul de suporter",
     "purchase_input_suggestion": "Aveți o cheie de produs? Introduceți cheia mai jos",
-    "purchase_license_subtitle": "Cumpărați Curator Photos pentru a sprijini dezvoltarea continuă a serviciului",
+    "purchase_license_subtitle": "Cumpărați Personal Cloud Photos pentru a sprijini dezvoltarea continuă a serviciului",
     "purchase_lifetime_description": "Achiziție pe viață",
     "purchase_option_title": "OPȚIUNI DE CUMPĂRARE",
     "purchase_panel_info_1":
-        "Dezvoltarea Curator Photos necesită mult timp și efort și avem ingineri cu normă întreagă care lucrează la ea pentru a o face cât se poate de bună. Misiunea noastră este ca software-ul open-source și practicile de afaceri etice să devină o sursă de venit durabilă pentru dezvoltatori și să se creeze un ecosistem care să respecte confidențialitatea, cu alternative reale la serviciile cloud care exploatează.",
+        "Dezvoltarea Personal Cloud Photos necesită mult timp și efort și avem ingineri cu normă întreagă care lucrează la ea pentru a o face cât se poate de bună. Misiunea noastră este ca software-ul open-source și practicile de afaceri etice să devină o sursă de venit durabilă pentru dezvoltatori și să se creeze un ecosistem care să respecte confidențialitatea, cu alternative reale la serviciile cloud care exploatează.",
     "purchase_panel_info_2":
-        "Deoarece ne-am angajat să nu adăugăm planuri de plată, această achiziție nu vă va oferi nicio funcție suplimentară în Curator Photos. Ne bazăm pe utilizatori ca dvs. pentru a sprijini dezvoltarea continuă a lui Curator Photos.",
+        "Deoarece ne-am angajat să nu adăugăm planuri de plată, această achiziție nu vă va oferi nicio funcție suplimentară în Personal Cloud Photos. Ne bazăm pe utilizatori ca dvs. pentru a sprijini dezvoltarea continuă a lui Personal Cloud Photos.",
     "purchase_panel_title": "Susțineți proiectul",
     "purchase_remove_product_key": "Eliminați Cheia Produsului",
     "purchase_remove_product_key_prompt": "Sigur doriți să eliminați cheia de produs?",
@@ -48602,7 +48666,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_total_progress_subtitle": "Progresul general al încărcării (resurse finalizate/total)",
     "setting_notifications_total_progress_title": "Afișează progresul total al copiilor de siguranță în fundal",
     "settings": "Setări",
-    "settings_require_restart": "Te rugăm să repornești Curator Photos pentru a aplica această setare",
+    "settings_require_restart": "Te rugăm să repornești Personal Cloud Photos pentru a aplica această setare",
     "settings_saved": "Setările au fost salvate",
     "share": "Distribuiți",
     "share_add_photos": "Adaugă fotografii",
@@ -48722,7 +48786,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Suport tehnic",
     "support_and_feedback": "Suport tehnic și feedback",
     "support_third_party_description":
-        "Instalarea dvs. Curator Photos a fost pregătită de o terță parte. Problemele pe care le întâmpinați pot fi cauzate de acel pachet, așa că vă rugăm să ridicați probleme cu ei în primă instanță utilizând linkurile de mai jos.",
+        "Instalarea dvs. Personal Cloud Photos a fost pregătită de o terță parte. Problemele pe care le întâmpinați pot fi cauzate de acel pachet, așa că vă rugăm să ridicați probleme cu ei în primă instanță utilizând linkurile de mai jos.",
     "swap_merge_direction": "Schimbați direcția de îmbinare",
     "sync": "Sincronizare",
     "tag": "Etichetă",
@@ -48768,7 +48832,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Fotografiile și videoclipurile mutate în coșul de gunoi vor apărea aici.",
     "trash_page_delete_all": "Șterge tot",
     "trash_page_empty_trash_dialog_content":
-        "Dorești să golești coșul? Aceste fișiere vor fi șterse permanent din Curator Photos",
+        "Dorești să golești coșul? Aceste fișiere vor fi șterse permanent din Personal Cloud Photos",
     "trash_page_info": "Resursele din coș vor fi șterse permanent după {days} zile",
     "trash_page_no_assets": "Nici o resursă in coș",
     "trash_page_restore_all": "Restaurează toate fișierele",
@@ -48831,7 +48895,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versiune",
     "version_announcement_closing": "Prietenul tǎu, Alex",
     "version_announcement_message":
-        "Bună! Este disponibilă o nouă versiune de Curator Photos. Vă rugăm să vă faceți timp să citiți <link>notele de lansare</link> pentru a vă asigura că configurația dvs. este actualizată pentru a preveni orice configurare greșită, mai ales dacă utilizați WatchTower sau orice mecanism care se ocupă de actualizarea automată a instanței dvs. Curator Photos.",
+        "Bună! Este disponibilă o nouă versiune de Personal Cloud Photos. Vă rugăm să vă faceți timp să citiți <link>notele de lansare</link> pentru a vă asigura că configurația dvs. este actualizată pentru a preveni orice configurare greșită, mai ales dacă utilizați WatchTower sau orice mecanism care se ocupă de actualizarea automată a instanței dvs. Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "informații update",
     "version_announcement_overlay_text_1": "Salut, există un update nou pentru",
     "version_announcement_overlay_text_2": "te rugăm verifică ",
@@ -48866,7 +48930,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Avertisment",
     "week": "Sǎptǎmânǎ",
     "welcome": "Bun venit",
-    "welcome_to_immich": "Bun venit la Curator Photos",
+    "welcome_to_immich": "Bun venit la Personal Cloud Photos",
     "wifi_name": "WiFi Name",
     "year": "An",
     "years_ago": "acum {years, plural, one {# an} other {# ani}} în urmă",
@@ -48912,7 +48976,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "बहिष्करण पैटर्न जोड़ें. *, **, और ? का उपयोग करके ग्लोबिंग करना समर्थित है। \"Raw\" नामक किसी भी निर्देशिका की सभी फ़ाइलों को अनदेखा करने के लिए, \"**/Raw/**\" का उपयोग करें। \".tif\" से समाप्त होने वाली सभी फ़ाइलों को अनदेखा करने के लिए, \"**/*.tif\" का उपयोग करें। किसी पूर्ण पथ को अनदेखा करने के लिए, \"/path/to/ignore/**\" का उपयोग करें।",
       "asset_offline_description":
-          "यह बाहरी लाइब्रेरी एसेट अब डिस्क पर मौजूद नहीं है और इसे ट्रैश में डाल दिया गया है। यदि फ़ाइल को लाइब्रेरी के भीतर कहीं ले जाया गया था, तो नई संबंधित एसेट के लिए अपनी टाइमलाइन देखें। इस एसेट को वापस पाने के लिए, कृपया सुनिश्चित करें कि नीचे दिए गए फ़ाइल पथ को Curator Photos द्वारा एक्सेस किया जा सकता है और फिर लाइब्रेरी को स्कैन करें।",
+          "यह बाहरी लाइब्रेरी एसेट अब डिस्क पर मौजूद नहीं है और इसे ट्रैश में डाल दिया गया है। यदि फ़ाइल को लाइब्रेरी के भीतर कहीं ले जाया गया था, तो नई संबंधित एसेट के लिए अपनी टाइमलाइन देखें। इस एसेट को वापस पाने के लिए, कृपया सुनिश्चित करें कि नीचे दिए गए फ़ाइल पथ को Personal Cloud Photos द्वारा एक्सेस किया जा सकता है और फिर लाइब्रेरी को स्कैन करें।",
       "authentication_settings": "प्रमाणीकरण सेटिंग्स",
       "authentication_settings_description": "पासवर्ड, OAuth और अन्य प्रमाणीकरण सेटिंग्स प्रबंधित करें",
       "authentication_settings_disable_all":
@@ -49083,7 +49147,7 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "नोट: इसे बाद में बदला नहीं जा सकता!",
       "notification_email_from_address": "इस पते से",
       "notification_email_from_address_description":
-          "प्रेषक का ईमेल पता, उदाहरण के लिए: \"Curator Photos फोटो सर्वर <noreply@example.com>\"",
+          "प्रेषक का ईमेल पता, उदाहरण के लिए: \"Personal Cloud Photos फोटो सर्वर <noreply@example.com>\"",
       "notification_email_host_description": "ईमेल सर्वर का होस्ट (उदा. smtp.immitch.app)",
       "notification_email_ignore_certificate_errors": "प्रमाणपत्र त्रुटियों पर ध्यान न दें",
       "notification_email_ignore_certificate_errors_description":
@@ -49187,7 +49251,7 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "सूचनाओं के लिए कस्टम टेम्प्लेट प्रबंधित करें",
       "theme_custom_css_settings": "कस्टम सीएसएस",
       "theme_custom_css_settings_description":
-          "कैस्केडिंग स्टाइल शीट्स Curator Photos के डिज़ाइन को अनुकूलित करने की अनुमति देती हैं।",
+          "कैस्केडिंग स्टाइल शीट्स Personal Cloud Photos के डिज़ाइन को अनुकूलित करने की अनुमति देती हैं।",
       "theme_settings": "थीम सेटिंग",
       "theme_settings_description": "इम्मीच वेब इंटरफ़ेस का अनुकूलन प्रबंधित करें",
       "thumbnail_generation_job": "थंबनेल उत्पन्न करें",
@@ -49412,13 +49476,14 @@ class CodegenLoader extends AssetLoader {
     "asset_uploading": "अपलोड हो रहा है..।",
     "assets": "संपत्तियां",
     "assets_deleted_permanently": "{count} संपत्ति(याँ) स्थायी रूप से हटा दी गईं",
-    "assets_deleted_permanently_from_server": "{count} संपत्ति(याँ) Curator Photos सर्वर से स्थायी रूप से हटा दी गईं",
+    "assets_deleted_permanently_from_server":
+        "{count} संपत्ति(याँ) Personal Cloud Photos सर्वर से स्थायी रूप से हटा दी गईं",
     "assets_removed_permanently_from_device": "{count} संपत्ति(याँ) आपके डिवाइस से स्थायी रूप से हटा दी गईं",
     "assets_restore_confirmation":
         "क्या आप वाकई अपनी सभी नष्ट की गई संपत्तियों को पुनर्स्थापित करना चाहते हैं? आप इस क्रिया को पूर्ववत नहीं कर सकते!",
     "assets_restored_successfully": "{count} संपत्ति(याँ) सफलतापूर्वक पुनर्स्थापित की गईं",
     "assets_trashed": "{count} संपत्ति(याँ) कचरे में डाली गईं",
-    "assets_trashed_from_server": "{count} संपत्ति(याँ) Curator Photos सर्वर से कचरे में डाली गईं",
+    "assets_trashed_from_server": "{count} संपत्ति(याँ) Personal Cloud Photos सर्वर से कचरे में डाली गईं",
     "authorized_devices": "अधिकृत उपकरण",
     "back": "वापस",
     "back_close_deselect": "वापस जाएँ, बंद करें, या अचयनित करें",
@@ -49550,7 +49615,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "संपत्ति डाउनलोड से संबंधित सेटिंग्स प्रबंधित करें",
     "download_started": "डाउनलोड प्रारंभ हुआ",
     "download_sucess": "डाउनलोड सफल",
-    "download_sucess_android": "मीडिया DCIM/CuratorPhotos में डाउनलोड हो गया है",
+    "download_sucess_android": "मीडिया DCIM/PersonalCloudPhotos में डाउनलोड हो गया है",
     "download_waiting_to_retry": "पुनः प्रयास करने का इंतजार कर रहा है",
     "downloading": "डाउनलोड",
     "downloading_media": "मीडिया डाउनलोड हो रहा है",
@@ -49578,7 +49643,7 @@ class CodegenLoader extends AssetLoader {
     "email": "ईमेल",
     "empty_trash": "कूड़ेदान खाली करें",
     "empty_trash_confirmation":
-        "क्या आपको यकीन है कि आप कचरा खाली करना चाहते हैं? यह Curator Photos से स्थायी रूप से कचरा में सभी संपत्तियों को हटा देगा।\nआप इस कार्रवाई को नहीं रोक सकते!",
+        "क्या आपको यकीन है कि आप कचरा खाली करना चाहते हैं? यह Personal Cloud Photos से स्थायी रूप से कचरा में सभी संपत्तियों को हटा देगा।\nआप इस कार्रवाई को नहीं रोक सकते!",
     "enable": "सक्षम",
     "enabled": "सक्रिय",
     "end_date": "अंतिम तिथि",
@@ -49748,11 +49813,12 @@ class CodegenLoader extends AssetLoader {
     "host": "मेज़बान",
     "hour": "घंटा",
     "ignore_icloud_photos": "आइक्लाउड फ़ोटो को अनदेखा करें",
-    "ignore_icloud_photos_description": "आइक्लाउड पर स्टोर की गई फ़ोटोज़ Curator Photos सर्वर पर अपलोड नहीं की जाएंगी",
+    "ignore_icloud_photos_description":
+        "आइक्लाउड पर स्टोर की गई फ़ोटोज़ Personal Cloud Photos सर्वर पर अपलोड नहीं की जाएंगी",
     "image": "छवि",
     "image_saved_successfully": "इमेज सहेज दी गई",
-    "immich_logo": "Curator Photos लोगो",
-    "immich_web_interface": "Curator Photos वेब इंटरफ़ेस",
+    "immich_logo": "Personal Cloud Photos लोगो",
+    "immich_web_interface": "Personal Cloud Photos वेब इंटरफ़ेस",
     "import_from_json": "JSON से आयात करें",
     "import_path": "आयात पथ",
     "in_archive": "पुरालेख में",
@@ -49793,7 +49859,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "लोड हो रहा है",
     "loading_search_results_failed": "खोज परिणाम लोड करना विफल रहा",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "log_out": "लॉग आउट",
     "log_out_all_devices": "सभी डिवाइस लॉग आउट करें",
     "logged_out_all_devices": "सभी डिवाइस लॉग आउट कर दिए गए",
@@ -49938,11 +50004,11 @@ class CodegenLoader extends AssetLoader {
     "public_album": "सार्वजनिक एल्बम",
     "public_share": "सार्वजनिक शेयर",
     "purchase_account_info": "समर्थक",
-    "purchase_activated_subtitle": "Curator Photos और ओपन-सोर्स सॉफ़्टवेयर का समर्थन करने के लिए धन्यवाद",
+    "purchase_activated_subtitle": "Personal Cloud Photos और ओपन-सोर्स सॉफ़्टवेयर का समर्थन करने के लिए धन्यवाद",
     "purchase_activated_title": "आपकी कुंजी सफलतापूर्वक सक्रिय कर दी गई है",
     "purchase_button_activate": "सक्रिय",
     "purchase_button_buy": "खरीदना",
-    "purchase_button_buy_immich": "Curator Photos खरीदें",
+    "purchase_button_buy_immich": "Personal Cloud Photos खरीदें",
     "purchase_button_never_show_again": "फिर कभी दिखाई मत देना",
     "purchase_button_reminder": "मुझे 30 दिन में याद दिलाएं",
     "purchase_button_remove_key": "कुंजी निकालें",
@@ -49952,13 +50018,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "समर्थक स्थिति",
     "purchase_individual_title": "व्यक्ति",
     "purchase_input_suggestion": "क्या आपके पास उत्पाद कुंजी है? नीचे कुंजी दर्ज करें",
-    "purchase_license_subtitle": "सेवा के निरंतर विकास का समर्थन करने के लिए Curator Photos खरीदें",
+    "purchase_license_subtitle": "सेवा के निरंतर विकास का समर्थन करने के लिए Personal Cloud Photos खरीदें",
     "purchase_lifetime_description": "जीवन भर की खरीदारी",
     "purchase_option_title": "खरीद विकल्प",
     "purchase_panel_info_1":
-        "Curator Photos को बनाने में बहुत समय और प्रयास लगता है, और हमारे पास इसे जितना संभव हो सके उतना अच्छा बनाने के लिए पूर्णकालिक इंजीनियर इस पर काम कर रहे हैं।",
+        "Personal Cloud Photos को बनाने में बहुत समय और प्रयास लगता है, और हमारे पास इसे जितना संभव हो सके उतना अच्छा बनाने के लिए पूर्णकालिक इंजीनियर इस पर काम कर रहे हैं।",
     "purchase_panel_info_2":
-        "चूंकि हम पेवॉल नहीं जोड़ने के लिए प्रतिबद्ध हैं, इसलिए यह खरीदारी आपको Curator Photos में कोई अतिरिक्त सुविधाएं नहीं देगी।",
+        "चूंकि हम पेवॉल नहीं जोड़ने के लिए प्रतिबद्ध हैं, इसलिए यह खरीदारी आपको Personal Cloud Photos में कोई अतिरिक्त सुविधाएं नहीं देगी।",
     "purchase_panel_title": "परियोजना का समर्थन करें",
     "purchase_per_server": "प्रति सर्वर",
     "purchase_per_user": "प्रति उपयोगकर्ता",
@@ -50158,7 +50224,7 @@ class CodegenLoader extends AssetLoader {
     "sync_albums": "एल्बम्स सिंक करें",
     "sync_albums_manual_subtitle": "चुने हुए बैकअप एल्बम्स में सभी अपलोड की गई वीडियो और फ़ोटो सिंक करें",
     "sync_upload_album_setting_subtitle":
-        "अपनी फ़ोटो और वीडियो बनाएँ और उन्हें Curator Photos पर चुने हुए एल्बम्स में अपलोड करें",
+        "अपनी फ़ोटो और वीडियो बनाएँ और उन्हें Personal Cloud Photos पर चुने हुए एल्बम्स में अपलोड करें",
     "template": "खाका",
     "theme": "विषय",
     "theme_selection": "थीम चयन",
@@ -50185,7 +50251,7 @@ class CodegenLoader extends AssetLoader {
     "trash_emptied": "कचरा खाली कर दिया",
     "trash_no_results_message": "ट्रैश की गई फ़ोटो और वीडियो यहां दिखाई देंगे।",
     "trash_page_empty_trash_dialog_content":
-        "क्या आप अपनी कूड़ेदान संपत्तियों को खाली करना चाहते हैं? इन आइटमों को Curator Photos से स्थायी रूप से हटा दिया जाएगा",
+        "क्या आप अपनी कूड़ेदान संपत्तियों को खाली करना चाहते हैं? इन आइटमों को Personal Cloud Photos से स्थायी रूप से हटा दिया जाएगा",
     "trash_page_restore_all": "सभी को पुनः स्थानांतरित करें",
     "trash_page_select_assets_btn": "संपत्तियों को चयन करें",
     "type": "प्रकार",
@@ -50249,7 +50315,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "चेतावनी",
     "week": "सप्ताह",
     "welcome": "स्वागत",
-    "welcome_to_immich": "Curator Photos में आपका स्वागत है",
+    "welcome_to_immich": "Personal Cloud Photos में आपका स्वागत है",
     "wifi_name": "WiFi Name",
     "year": "वर्ष",
     "yes": "हाँ",
@@ -50295,7 +50361,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Afegeix patrons d'exclusió. Es permet englobar fent ús de *, **, i ?. Per a ignorar els fitxers de qualsevol directori anomenat \"Raw\" introduïu \"**/Raw/**\". Per a ignorar els fitxers acabats en \".tif\" introduïu \"**/*.tif\". Per a ignorar una ruta absoluta, utilitzeu \"/ruta/a/ignorar/**\".",
       "asset_offline_description":
-          "Aquest recurs de la biblioteca externa ja no es troba al disc i s'ha mogut a la paperera. Si el fitxer s'ha mogut dins de la biblioteca, comproveu la vostra línia de temps per trobar el nou recurs corresponent. Per restaurar aquest recurs, assegureu-vos que Curator Photos pugui accedir a la ruta del fitxer següent i escanegeu la biblioteca.",
+          "Aquest recurs de la biblioteca externa ja no es troba al disc i s'ha mogut a la paperera. Si el fitxer s'ha mogut dins de la biblioteca, comproveu la vostra línia de temps per trobar el nou recurs corresponent. Per restaurar aquest recurs, assegureu-vos que Personal Cloud Photos pugui accedir a la ruta del fitxer següent i escanegeu la biblioteca.",
       "authentication_settings": "Configuració de l'autenticació",
       "authentication_settings_description": "Gestiona la contrasenya, OAuth i altres configuracions de l'autenticació",
       "authentication_settings_disable_all":
@@ -50312,7 +50378,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "La configuració està definida per un fitxer de configuració",
       "confirm_delete_library": "Esteu segurs que voleu eliminar la llibreria {library}?",
       "confirm_delete_library_assets":
-          "Esteu segurs que voleu esborrar aquesta llibreria? Això esborrarà {count, plural, one {# contained asset} other {all # contained assets}} d'Curator Photos i no es podrà desfer. Els fitxers romandran al disc.",
+          "Esteu segurs que voleu esborrar aquesta llibreria? Això esborrarà {count, plural, one {# contained asset} other {all # contained assets}} d'Personal Cloud Photos i no es podrà desfer. Els fitxers romandran al disc.",
       "confirm_email_below": "Per a confirmar, escriviu \"{email}\" a sota",
       "confirm_reprocess_all_faces":
           "Esteu segur que voleu reprocessar totes les cares? Això també esborrarà la gent que heu anomenat.",
@@ -50439,7 +50505,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Habilita característiques del mapa",
       "map_gps_settings": "Configuració de mapa i GPS",
       "map_gps_settings_description": "Gestiona la configuració de mapa i GPS (Geocodificació inversa)",
-      "map_implications": "La funció mapa depèn del servei extern de tesel·les (tiles.curatorphotos.cloud)",
+      "map_implications": "La funció mapa depèn del servei extern de tesel·les (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Tema clar",
       "map_manage_reverse_geocoding_settings": "Gestiona els paràmetres de <link>geocodificació inversa</link>",
       "map_reverse_geocoding": "Geocodificació inversa",
@@ -50467,9 +50533,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Això és irreversible!",
       "notification_email_from_address": "Des de l'adreça",
       "notification_email_from_address_description":
-          "Adreça de correu electrònic del remitent, per exemple: \"Curator Photos Photo Server <noreply@example.com>\"",
+          "Adreça de correu electrònic del remitent, per exemple: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
       "notification_email_host_description":
-          "Amfitrió del servidor de correu electrònic (p.ex. smtp.curatorphotos.app)",
+          "Amfitrió del servidor de correu electrònic (p.ex. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignora els errors de certificat",
       "notification_email_ignore_certificate_errors_description":
           "Ignora els errors de validació de certificat TLS (no recomanat)",
@@ -50579,9 +50645,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gestiona les plantilles personalitzades per les notificacions",
       "theme_custom_css_settings": "CSS personalitzat",
       "theme_custom_css_settings_description":
-          "Els Fulls d'Estil en Cascada permeten personalitzar el disseny d'Curator Photos.",
+          "Els Fulls d'Estil en Cascada permeten personalitzar el disseny d'Personal Cloud Photos.",
       "theme_settings": "Configuració del tema",
-      "theme_settings_description": "Gestiona la personalització de la interfície web Curator Photos",
+      "theme_settings_description": "Gestiona la personalització de la interfície web Personal Cloud Photos",
       "these_files_matched_by_checksum": "Aquests fitxers coincideixen amb els seus checksums",
       "thumbnail_generation_job": "Generar miniatures",
       "thumbnail_generation_job_description":
@@ -50718,7 +50784,7 @@ class CodegenLoader extends AssetLoader {
         "Alguns dispositius són molt lents en carregar miniatures dels elements del dispositiu. Activeu aquest paràmetre per carregar imatges remotes en el seu lloc.",
     "advanced_settings_prefer_remote_title": "Prefereix imatges remotes",
     "advanced_settings_proxy_headers_subtitle":
-        "Definiu les capçaleres de proxy que Curator Photos per enviar amb cada sol·licitud de xarxa",
+        "Definiu les capçaleres de proxy que Personal Cloud Photos per enviar amb cada sol·licitud de xarxa",
     "advanced_settings_proxy_headers_title": "Capçaleres de proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Omet la verificació del certificat SSL del servidor. Requerit per a certificats autosignats.",
@@ -50817,7 +50883,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Graella de fotos",
     "asset_offline": "Element fora de línia",
     "asset_offline_description":
-        "Aquest recurs extern ja no es troba al disc. Poseu-vos en contacte amb el vostre administrador d'Curator Photos per obtenir ajuda.",
+        "Aquest recurs extern ja no es troba al disc. Poseu-vos en contacte amb el vostre administrador d'Personal Cloud Photos per obtenir ajuda.",
     "asset_restored_successfully": "Element recuperat correctament",
     "asset_skipped": "Saltat",
     "asset_skipped_in_trash": "A la paperera",
@@ -50833,7 +50899,8 @@ class CodegenLoader extends AssetLoader {
     "assets_cannot_be_added_to_album_count": "{count, plural, one {Asset} other {Assets}} no es pot afegir a l'àlbum",
     "assets_count": "{count, plural, one {# recurs} other {# recursos}}",
     "assets_deleted_permanently": "{} element(s) esborrats permanentment",
-    "assets_deleted_permanently_from_server": "{} element(s) esborrats permanentment del servidor d'Curator Photos",
+    "assets_deleted_permanently_from_server":
+        "{} element(s) esborrats permanentment del servidor d'Personal Cloud Photos",
     "assets_moved_to_trash_count": "{count, plural, one {# recurs mogut} other {# recursos moguts}} a la paperera",
     "assets_permanently_deleted_count":
         "{count, plural, one {# recurs esborrat} other {# recursos esborrats}} permanentment",
@@ -50845,7 +50912,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} element(s) recuperats correctament",
     "assets_trashed": "{count} element(s) enviat a la paperera",
     "assets_trashed_count": "{count, plural, one {# element enviat} other {# elements enviats}} a la paperera",
-    "assets_trashed_from_server": "{} element(s) enviat a la paperera del servidor d'Curator Photos",
+    "assets_trashed_from_server": "{} element(s) enviat a la paperera del servidor d'Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {L'element ja és} other {Els elements ja són}} part de l'àlbum",
     "authorized_devices": "Dispositius autoritzats",
@@ -50857,7 +50924,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Tornar, tancar o anul·lar la selecció",
     "background_location_permission": "Permís d'ubicació en segon pla",
     "background_location_permission_content":
-        "Per canviar de xarxa quan s'executa en segon pla, Curator Photos ha de *sempre* tenir accés a la ubicació precisa perquè l'aplicació pugui llegir el nom de la xarxa Wi-Fi",
+        "Per canviar de xarxa quan s'executa en segon pla, Personal Cloud Photos ha de *sempre* tenir accés a la ubicació precisa perquè l'aplicació pugui llegir el nom de la xarxa Wi-Fi",
     "backup_album_selection_page_albums_device": "Àlbums al dispositiu ({})",
     "backup_album_selection_page_albums_tap": "Un toc per incloure, doble toc per excloure",
     "backup_album_selection_page_assets_scatter":
@@ -50880,7 +50947,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Vés a configuració",
     "backup_controller_page_background_battery_info_link": "Mostra'm com",
     "backup_controller_page_background_battery_info_message":
-        "Per obtenir la millor experiència de copia de seguretat en segon pla, desactiveu qualsevol optimització de bateria que restringeixi l'activitat en segon pla per a Curator Photos.\n\nAtès que això és específic del dispositiu, busqueu la informació necessària per al fabricant del vostre dispositiu",
+        "Per obtenir la millor experiència de copia de seguretat en segon pla, desactiveu qualsevol optimització de bateria que restringeixi l'activitat en segon pla per a Personal Cloud Photos.\n\nAtès que això és específic del dispositiu, busqueu la informació necessària per al fabricant del vostre dispositiu",
     "backup_controller_page_background_battery_info_ok": "D'acord",
     "backup_controller_page_background_battery_info_title": "Optimitzacions de bateria",
     "backup_controller_page_background_charging": "Només mentre es carrega",
@@ -50943,7 +51010,7 @@ class CodegenLoader extends AssetLoader {
         "Esteu segur que voleu mantenir {count, plural, one {# recurs duplicat} other {# recursos duplicats}}? Això resoldrà tots els grups duplicats sense eliminar res.",
     "bulk_trash_duplicates_confirmation":
         "Esteu segur que voleu enviar a les escombraries {count, plural, one {# recurs duplicat} other {# recursos duplicats}}? Això mantindrà el recurs més gran de cada grup i eliminarà la resta de duplicats.",
-    "buy": "Comprar Curator Photos",
+    "buy": "Comprar Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniatures de la pàgina de la biblioteca ({} elements)",
     "cache_settings_clear_cache_button": "Neteja la memòria cau",
     "cache_settings_clear_cache_button_title":
@@ -50956,7 +51023,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniatures d'àlbums compartits",
     "cache_settings_statistics_thumbnail": "Miniatures",
     "cache_settings_statistics_title": "Ús de memòria cau",
-    "cache_settings_subtitle": "Controla el comportament de la memòria cau de l'aplicació mòbil Curator Photos",
+    "cache_settings_subtitle": "Controla el comportament de la memòria cau de l'aplicació mòbil Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Mida de la memòria cau de les miniatures ({} elements)",
     "cache_settings_tile_subtitle": "Controla el comportament de l'emmagatzematge local",
     "cache_settings_tile_title": "Emmagatzematge local",
@@ -51042,7 +51109,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Context",
     "continue": "Continuar",
     "control_bottom_app_bar_create_new_album": "Crea un àlbum nou",
-    "control_bottom_app_bar_delete_from_immich": "Suprimeix del Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Suprimeix del Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Suprimeix del dispositiu",
     "control_bottom_app_bar_edit_location": "Edita la ubicació",
     "control_bottom_app_bar_edit_time": "Edita data i hora",
@@ -51110,12 +51177,12 @@ class CodegenLoader extends AssetLoader {
     "delete_album": "Esborra l'àlbum",
     "delete_api_key_prompt": "Esteu segurs que voleu eliminar aquesta clau API?",
     "delete_dialog_alert":
-        "Aquests elements seran eliminats de manera permanent d'Curator Photos i del vostre dispositiu.",
+        "Aquests elements seran eliminats de manera permanent d'Personal Cloud Photos i del vostre dispositiu.",
     "delete_dialog_alert_local":
-        "Aquests elements s'eliminaran permanentment del vostre dispositiu, però encara estaran disponibles al servidor Curator Photos",
+        "Aquests elements s'eliminaran permanentment del vostre dispositiu, però encara estaran disponibles al servidor Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Alguns dels elements no tenen còpia de seguretat a Curator Photos i s'eliminaran permanentment del dispositiu",
-    "delete_dialog_alert_remote": "Aquests elements s'eliminaran permanentment del servidor Curator Photos",
+        "Alguns dels elements no tenen còpia de seguretat a Personal Cloud Photos i s'eliminaran permanentment del dispositiu",
+    "delete_dialog_alert_remote": "Aquests elements s'eliminaran permanentment del servidor Personal Cloud Photos",
     "delete_dialog_ok_force": "Suprimeix de totes maneres",
     "delete_dialog_title": "Esborra permanentment",
     "delete_duplicates_confirmation": "Esteu segurs que voleu eliminar aquests duplicats permanentment?",
@@ -51170,7 +51237,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Gestioneu la configuració relacionada amb la descàrrega de recursos",
     "download_started": "Descàrrega ha començat",
     "download_sucess": "Descarregat amb èxit",
-    "download_sucess_android": "El multimedia s'ha descarregat a DCIM/CuratorPhotos",
+    "download_sucess_android": "El multimedia s'ha descarregat a DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Esperant per tornar-ho a intentar",
     "downloading": "Baixant",
     "downloading_asset_filename": "Descarregant l'element {filename}",
@@ -51210,7 +51277,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Aquesta carpeta és buida",
     "empty_trash": "Buidar la paperera",
     "empty_trash_confirmation":
-        "Esteu segur que voleu buidar la paperera? Això eliminarà tots els recursos a la paperera permanentment d'Curator Photos.\nNo podeu desfer aquesta acció!",
+        "Esteu segur que voleu buidar la paperera? Això eliminarà tots els recursos a la paperera permanentment d'Personal Cloud Photos.\nNo podeu desfer aquesta acció!",
     "enable": "Activar",
     "enable_biometric_auth_description": "Introduïu el codi PIN per a habilitar l'autenticació biomètrica",
     "enabled": "Activat",
@@ -51465,7 +51532,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Hora",
     "id": "ID",
     "ignore_icloud_photos": "Ignora fotos d'iCloud",
-    "ignore_icloud_photos_description": "Les fotos emmagatzemades a iCloud no es penjaran al servidor Curator Photos",
+    "ignore_icloud_photos_description":
+        "Les fotos emmagatzemades a iCloud no es penjaran al servidor Personal Cloud Photos",
     "image": "Imatge",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} presa el {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} pres/a amb {person1} el {date}",
@@ -51488,8 +51556,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Baixada començada",
     "image_viewer_page_state_provider_download_success": "Baixada amb èxit",
     "image_viewer_page_state_provider_share_error": "Error en compartir",
-    "immich_logo": "Logotip d'Curator Photos",
-    "immich_web_interface": "Interfície web Curator Photos",
+    "immich_logo": "Logotip d'Personal Cloud Photos",
+    "immich_web_interface": "Interfície web Personal Cloud Photos",
     "import_from_json": "Importar des de JSON",
     "import_path": "Ruta d'importació",
     "in_albums": "A {count, plural, one {# àlbum} other {# àlbums}}",
@@ -51560,7 +51628,7 @@ class CodegenLoader extends AssetLoader {
         "L'aplicació es connectarà al servidor mitjançant aquest URL quan utilitzeu la xarxa Wi-Fi especificada",
     "location_permission": "Permís d'ubicació",
     "location_permission_content":
-        "Per utilitzar la funció de canvi automàtic, Curator Photos necessita un permís de ubicació precisa perquè pugui llegir el nom de la xarxa WiFi actual",
+        "Per utilitzar la funció de canvi automàtic, Personal Cloud Photos necessita un permís de ubicació precisa perquè pugui llegir el nom de la xarxa WiFi actual",
     "location_picker_choose_on_map": "Escollir en el mapa",
     "location_picker_latitude_error": "Introdueix una latitud vàlida",
     "location_picker_latitude_hint": "Introdueix aquí la latitud",
@@ -51734,7 +51802,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notificacions",
     "notifications_setting_description": "Gestiona les notificacions",
     "oauth": "OAuth",
-    "official_immich_resources": "Recursos oficials d'Curator Photos",
+    "official_immich_resources": "Recursos oficials d'Personal Cloud Photos",
     "offline": "Fora de línia",
     "ok": "D'acord",
     "oldest_first": "El més vell primer",
@@ -51813,11 +51881,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Comença",
     "permission_onboarding_go_to_settings": "Ves a la configuració",
     "permission_onboarding_permission_denied":
-        "S'ha denegat el permís. Per utilitzar Curator Photos, concediu permisos de fotos i vídeos a Configuració.",
+        "S'ha denegat el permís. Per utilitzar Personal Cloud Photos, concediu permisos de fotos i vídeos a Configuració.",
     "permission_onboarding_permission_granted": "Permís concedit! Tot a punt.",
     "permission_onboarding_permission_limited":
-        "Permís limitat. Per a permetre que Curator Photos faci còpies de seguretat i gestioni tota la col·lecció de la galeria, concediu permisos de fotos i vídeos a Configuració.",
-    "permission_onboarding_request": "Curator Photos requereix permís per veure les vostres fotos i vídeos.",
+        "Permís limitat. Per a permetre que Personal Cloud Photos faci còpies de seguretat i gestioni tota la col·lecció de la galeria, concediu permisos de fotos i vídeos a Configuració.",
+    "permission_onboarding_request": "Personal Cloud Photos requereix permís per veure les vostres fotos i vídeos.",
     "person": "Persona",
     "person_birthdate": "Nascut a {date}",
     "person_hidden": "{name}{hidden, select, true { (ocultat)} other {}}",
@@ -51870,12 +51938,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Àlbum públic",
     "public_share": "Compartit públicament",
     "purchase_account_info": "Contribuent",
-    "purchase_activated_subtitle": "Gràcies per donar suport a Curator Photos i al programari de codi obert",
+    "purchase_activated_subtitle": "Gràcies per donar suport a Personal Cloud Photos i al programari de codi obert",
     "purchase_activated_time": "Activat el {date, date}",
     "purchase_activated_title": "La teva clau s'ha activat correctament",
     "purchase_button_activate": "Activar",
     "purchase_button_buy": "Comprar",
-    "purchase_button_buy_immich": "Compra Curator Photos",
+    "purchase_button_buy_immich": "Compra Personal Cloud Photos",
     "purchase_button_never_show_again": "No mostrar mai més",
     "purchase_button_reminder": "Recordar en 30 dies",
     "purchase_button_remove_key": "Elimina la clau",
@@ -51886,13 +51954,14 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Estat de la contribució",
     "purchase_individual_title": "Individual",
     "purchase_input_suggestion": "Tens una clau de producte? Introduïu la clau a continuació",
-    "purchase_license_subtitle": "Compra Curator Photos per donar suport al desenvolupament continuat del servei",
+    "purchase_license_subtitle":
+        "Compra Personal Cloud Photos per donar suport al desenvolupament continuat del servei",
     "purchase_lifetime_description": "Compra de per vida",
     "purchase_option_title": "OPCIONS DE COMPRA",
     "purchase_panel_info_1":
-        "Crear Curator Photos requereix molt de temps i esforç, tenim enginyers a temps complet treballant-hi per fer-ho tan bo com sigui possible. La nostra missió és que el programari de codi obert i les pràctiques empresarials ètiques es converteixin en una font d'ingressos sostenible per als desenvolupadors i creïn un ecosistema que respecti la privacitat amb alternatives reals als serveis cloud explotadors.",
+        "Crear Personal Cloud Photos requereix molt de temps i esforç, tenim enginyers a temps complet treballant-hi per fer-ho tan bo com sigui possible. La nostra missió és que el programari de codi obert i les pràctiques empresarials ètiques es converteixin en una font d'ingressos sostenible per als desenvolupadors i creïn un ecosistema que respecti la privacitat amb alternatives reals als serveis cloud explotadors.",
     "purchase_panel_info_2":
-        "Com que estem compromesos a no afegir murs de pagament, aquesta compra no us atorgarà cap funció addicional a Curator Photos. Confiem en usuaris com tu per donar suport al desenvolupament continu d'Curator Photos.",
+        "Com que estem compromesos a no afegir murs de pagament, aquesta compra no us atorgarà cap funció addicional a Personal Cloud Photos. Confiem en usuaris com tu per donar suport al desenvolupament continu d'Personal Cloud Photos.",
     "purchase_panel_title": "Donar suport al projecte",
     "purchase_per_server": "Per servidor",
     "purchase_per_user": "Per usuari",
@@ -52118,7 +52187,7 @@ class CodegenLoader extends AssetLoader {
         "Quan reproduïu un vídeo des del servidor, reproduïu l'original encara que hi hagi una transcodificació disponible. Pot conduir a l'amortització. Els vídeos disponibles localment es reprodueixen en qualitat original independentment d'aquesta configuració.",
     "setting_video_viewer_original_video_title": "Força el vídeo original",
     "settings": "Configuració",
-    "settings_require_restart": "Si us plau, reinicieu Curator Photos per a aplicar aquest canvi",
+    "settings_require_restart": "Si us plau, reinicieu Personal Cloud Photos per a aplicar aquest canvi",
     "settings_saved": "Configuració desada",
     "setup_pin_code": "Configurar un codi PIN",
     "share": "Comparteix",
@@ -52247,14 +52316,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Suport",
     "support_and_feedback": "Suport i comentaris",
     "support_third_party_description":
-        "La vostra instal·lació Curator Photos la va empaquetar un tercer. Els problemes que experimenteu poden ser causats per aquest paquet així que, si us plau, plantegeu els poblemes amb ells en primer lloc mitjançant els enllaços següents.",
+        "La vostra instal·lació Personal Cloud Photos la va empaquetar un tercer. Els problemes que experimenteu poden ser causats per aquest paquet així que, si us plau, plantegeu els poblemes amb ells en primer lloc mitjançant els enllaços següents.",
     "swap_merge_direction": "Canvia la direcció d'unió",
     "sync": "Sincronitza",
     "sync_albums": "Sincronitzar àlbums",
     "sync_albums_manual_subtitle":
         "Sincronitza tots els vídeos i fotos penjats amb els àlbums de còpia de seguretat seleccionats",
     "sync_upload_album_setting_subtitle":
-        "Creeu i pugeu les seves fotos i vídeos als àlbums seleccionats a Curator Photos",
+        "Creeu i pugeu les seves fotos i vídeos als àlbums seleccionats a Personal Cloud Photos",
     "tag": "Etiqueta",
     "tag_assets": "Etiquetar actius",
     "tag_created": "Etiqueta creada: {tag}",
@@ -52306,7 +52375,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Les imatges i vídeos que s'enviïn a la paperera es mostraran aquí.",
     "trash_page_delete_all": "Eliminar-ho tot",
     "trash_page_empty_trash_dialog_content":
-        "Segur que voleu eliminar els elements? Aquests elements seran eliminats permanentment de Curator Photos",
+        "Segur que voleu eliminar els elements? Aquests elements seran eliminats permanentment de Personal Cloud Photos",
     "trash_page_info": "Els elements que s'enviïn a la paperera s'eliminaran permanentment després de {} dies",
     "trash_page_no_assets": "No hi ha elements a la paperera",
     "trash_page_restore_all": "Restaura-ho tot",
@@ -52354,7 +52423,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Errors",
     "upload_status_uploaded": "Carregat",
     "upload_success": "Pujada correcta, actualitza la pàgina per veure nous recursos de pujada.",
-    "upload_to_immich": "Puja a Curator Photos ({})",
+    "upload_to_immich": "Puja a Personal Cloud Photos ({})",
     "uploading": "Pujant",
     "url": "URL",
     "usage": "Ús",
@@ -52384,7 +52453,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versió",
     "version_announcement_closing": "El teu amic Alex",
     "version_announcement_message":
-        "Hola! Hi ha una nova versió d'Curator Photos, si us plau, preneu-vos una estona per llegir les <link>notes de llançament</link> per assegurar que la teva configuració estigui actualitzada per evitar qualsevol error de configuració, especialment si utilitzeu WatchTower o qualsevol mecanisme que gestioni l'actualització automàtica de la vostra instància Curator Photos.",
+        "Hola! Hi ha una nova versió d'Personal Cloud Photos, si us plau, preneu-vos una estona per llegir les <link>notes de llançament</link> per assegurar que la teva configuració estigui actualitzada per evitar qualsevol error de configuració, especialment si utilitzeu WatchTower o qualsevol mecanisme que gestioni l'actualització automàtica de la vostra instància Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "notes de llançament",
     "version_announcement_overlay_text_1": "Hola amic, hi ha una nova versió d'",
     "version_announcement_overlay_text_2": "si us plau, pren-te una estona per visitar les ",
@@ -52420,7 +52489,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Avís",
     "week": "Setmana",
     "welcome": "Benvingut",
-    "welcome_to_immich": "Benvingut a Curator Photos",
+    "welcome_to_immich": "Benvingut a Personal Cloud Photos",
     "wifi_name": "Nom WiFi",
     "year": "Any",
     "years_ago": "Fa {years, plural, one {# any} other {# anys}}",
@@ -52528,7 +52597,7 @@ class CodegenLoader extends AssetLoader {
         "Апп нээгээгүй байх үед нөөцлөлт хийх бол Settings > General > Background App Refresh хандаж идэвхижүүлнэ үү.",
     "backup_controller_page_background_app_refresh_disabled_title": "Апп нээгээгүй байх үед нөөцлөлт идэвхигүй.",
     "backup_controller_page_background_app_refresh_enable_button_text": "Тохиргоо хэсэгт очих",
-    "buy": "Curator Photos худалдаж авах",
+    "buy": "Personal Cloud Photos худалдаж авах",
     "camera": "Камер",
     "camera_brand": "Камерын үйлдвэр",
     "camera_model": "Камерын загвар",
@@ -52623,7 +52692,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Dodajte obrasce isključenja. Korištenje *, ** i ? je podržano. Da biste ignorisali sve datoteke u bilo kom direktorijumu pod nazivom „Rav“, koristite „**/Rav/**“. Da biste ignorisali sve datoteke koje se završavaju na „.tif“, koristite „**/*.tif“. Da biste ignorisali apsolutnu putanju, koristite „/path/to/ignore/**“.",
       "asset_offline_description":
-          "Ovo eksterno bibliotečko sredstvo se više ne nalazi na disku i premešteno je u smeće. Ako je datoteka premeštena unutar biblioteke, proverite svoju vremensku liniju za novo odgovarajuće sredstvo. Da biste vratili ovo sredstvo, uverite se da Curator Photos može da pristupi dole navedenoj putanji datoteke i skenirajte biblioteku.",
+          "Ovo eksterno bibliotečko sredstvo se više ne nalazi na disku i premešteno je u smeće. Ako je datoteka premeštena unutar biblioteke, proverite svoju vremensku liniju za novo odgovarajuće sredstvo. Da biste vratili ovo sredstvo, uverite se da Personal Cloud Photos može da pristupi dole navedenoj putanji datoteke i skenirajte biblioteku.",
       "authentication_settings": "Podešavanja za autentifikaciju",
       "authentication_settings_description": "Upravljajte lozinkom, OAuth-om i drugim podešavanjima autentifikacije",
       "authentication_settings_disable_all":
@@ -52640,7 +52709,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfiguraciju trenutno postavlja konfiguracioni fajl",
       "confirm_delete_library": "Da li stvarno želite da izbrišete biblioteku {library} ?",
       "confirm_delete_library_assets":
-          "Da li ste sigurni da želite da izbrišete ovu biblioteku? Ovo će izbrisati {count, plural, one {1 sadrženu datoteku} few {# sadržene datoteke} other {# sadrženih datoteka}} iz Curator Photos i akcija se ne može opozvati. Datoteke će ostati na disku.",
+          "Da li ste sigurni da želite da izbrišete ovu biblioteku? Ovo će izbrisati {count, plural, one {1 sadrženu datoteku} few {# sadržene datoteke} other {# sadrženih datoteka}} iz Personal Cloud Photos i akcija se ne može opozvati. Datoteke će ostati na disku.",
       "confirm_email_below": "Da biste potvrdili, unesite \"{email}\" ispod",
       "confirm_reprocess_all_faces":
           "Da li ste sigurni da želite da ponovo obradite sva lica? Ovo će takođe obrisati imenovane osobe.",
@@ -52767,7 +52836,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Omogućite karakteristike mape",
       "map_gps_settings": "Map & GPS podešavanja",
       "map_gps_settings_description": "Upravljajte postavkama mape i GPS-a (obrnuto geokodiranje)",
-      "map_implications": "Funkcija mape se oslanja na eksternu uslugu pločica (tiles.curatorphotos.cloud)",
+      "map_implications": "Funkcija mape se oslanja na eksternu uslugu pločica (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Svetli stil",
       "map_manage_reverse_geocoding_settings": "Upravljajte podešavanjima <link>Obrnuto geokodiranje</link>",
       "map_reverse_geocoding": "Obrnuto geokodiranje",
@@ -52794,8 +52863,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NAPOMENA: Ovo se kasnije ne može promeniti!",
       "notification_email_from_address": "Sa adrese",
       "notification_email_from_address_description":
-          "Adresa e-pošte pošiljaoca, na primer: \"Curator Photos foto server <noreply@example.com>\"",
-      "notification_email_host_description": "Host servera e-pošte (npr. smtp.curatorphotos.app)",
+          "Adresa e-pošte pošiljaoca, na primer: \"Personal Cloud Photos foto server <noreply@example.com>\"",
+      "notification_email_host_description": "Host servera e-pošte (npr. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Zanemarite greške sertifikata",
       "notification_email_ignore_certificate_errors_description":
           "Ignorišite greške u validaciji TLS sertifikata (ne preporučuje se)",
@@ -52899,9 +52968,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Upravljajte prilagođenim šablonima za obaveštenja",
       "theme_custom_css_settings": "Prilagođeni CSS",
       "theme_custom_css_settings_description":
-          "Kaskadni listovi stilova (CSS) omogućavaju prilagođavanje dizajna Curator Photos.",
+          "Kaskadni listovi stilova (CSS) omogućavaju prilagođavanje dizajna Personal Cloud Photos.",
       "theme_settings": "Podešavanje tema",
-      "theme_settings_description": "Upravljajte prilagođavanjem Curator Photos web interfejsa",
+      "theme_settings_description": "Upravljajte prilagođavanjem Personal Cloud Photos web interfejsa",
       "these_files_matched_by_checksum": "Ovim datotekama se podudaraju njihovi kontrolni-zbirovi",
       "thumbnail_generation_job": "Generišite sličice",
       "thumbnail_generation_job_description":
@@ -53037,7 +53106,7 @@ class CodegenLoader extends AssetLoader {
         "Neki uređaji veoma sporo učitavaju sličice sa sredstava na uređaju. Aktivirajte ovo podešavanje da biste umesto toga učitali udaljene slike.",
     "advanced_settings_prefer_remote_title": "Preferirajte udaljene slike",
     "advanced_settings_proxy_headers_subtitle":
-        "Definišite proksi zaglavlja koje Curator Photos treba da pošalje sa svakim mrežnim zahtevom",
+        "Definišite proksi zaglavlja koje Personal Cloud Photos treba da pošalje sa svakim mrežnim zahtevom",
     "advanced_settings_proxy_headers_title": "Proksi Headeri (headers)",
     "advanced_settings_self_signed_ssl_subtitle":
         "Preskače verifikaciju SSL sertifikata za krajnju tačku servera. Obavezno za samopotpisane sertifikate.",
@@ -53130,7 +53199,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Mrežni prikaz fotografija",
     "asset_offline": "Datoteka odsutna",
     "asset_offline_description":
-        "Ova vanjska datoteka se više ne nalazi na disku. Molimo kontaktirajte svog Curator Photos administratora za pomoć.",
+        "Ova vanjska datoteka se više ne nalazi na disku. Molimo kontaktirajte svog Personal Cloud Photos administratora za pomoć.",
     "asset_restored_successfully": "Imovina je uspešno vraćena",
     "asset_skipped": "Preskočeno",
     "asset_skipped_in_trash": "U otpad",
@@ -53145,7 +53214,7 @@ class CodegenLoader extends AssetLoader {
         "Dodato {count, plural, one {# datoteka} other {# datoteke}} u {hasName, select, true {<b>{name}</b>} other {novi album}}",
     "assets_count": "{count, plural, one {# datoteka} few {# datoteke} other {# datoteka}}",
     "assets_deleted_permanently": "{count} elemenata trajno obrisano",
-    "assets_deleted_permanently_from_server": "{count} resurs(a) trajno obrisan(a) sa Curator Photos servera",
+    "assets_deleted_permanently_from_server": "{count} resurs(a) trajno obrisan(a) sa Personal Cloud Photos servera",
     "assets_moved_to_trash_count":
         "Premešteno {count, plural, one {# datoteka} few {# datoteke} other {# datoteka}} u otpad",
     "assets_permanently_deleted_count":
@@ -53158,7 +53227,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} elemenata uspešno vraćeno",
     "assets_trashed": "{count} elemenata je prebačeno u otpad",
     "assets_trashed_count": "Bačeno u otpad {count, plural, one {# datoteka} few{# datoteke} other {# datoteka}}",
-    "assets_trashed_from_server": "{count} resurs(a) obrisanih sa Curator Photos servera",
+    "assets_trashed_from_server": "{count} resurs(a) obrisanih sa Personal Cloud Photos servera",
     "assets_were_part_of_album_count": "{count, plural, one {Datoteka je} other {Datoteke su}} već deo albuma",
     "authorized_devices": "Ovlašćeni uređaji",
     "automatic_endpoint_switching_subtitle":
@@ -53168,7 +53237,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Nazad, zatvorite ili opozovite izbor",
     "background_location_permission": "Dozvola za lokaciju u pozadini",
     "background_location_permission_content":
-        "Da bi se menjale mreže dok se radi u pozadini, Curator Photos mora *uvek* imati precizan pristup lokaciji kako bi aplikacija mogla da pročita ime Wi-Fi mreže",
+        "Da bi se menjale mreže dok se radi u pozadini, Personal Cloud Photos mora *uvek* imati precizan pristup lokaciji kako bi aplikacija mogla da pročita ime Wi-Fi mreže",
     "backup_album_selection_page_albums_device": "Albuma na uređaju ({count})",
     "backup_album_selection_page_albums_tap": "Dodirni da uključiš, dodirni dvaput da isključiš",
     "backup_album_selection_page_assets_scatter":
@@ -53192,7 +53261,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Idi u podešavanja",
     "backup_controller_page_background_battery_info_link": "Pokaži mi kako",
     "backup_controller_page_background_battery_info_message":
-        "Za najpouzdanije pravljenje rezervnih kopija, ugasite bilo koju opciju u optimizacijama koje bi sprečavale Curator Photos sa pravilnim radom.\n\nOvaj postupak varira od uređaja do uređaja, proverite potrebne korake za Vaš uređaj.",
+        "Za najpouzdanije pravljenje rezervnih kopija, ugasite bilo koju opciju u optimizacijama koje bi sprečavale Personal Cloud Photos sa pravilnim radom.\n\nOvaj postupak varira od uređaja do uređaja, proverite potrebne korake za Vaš uređaj.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optimizacija Baterije",
     "backup_controller_page_background_charging": "Samo tokom punjenja",
@@ -53249,7 +53318,7 @@ class CodegenLoader extends AssetLoader {
         "Da li ste sigurni da želite da zadržite {count, plural, one {1 dupliranu datoteku} few {# duplirane datoteke} other {# dupliranih datoteka}}? Ovo će rešiti sve duplirane grupe bez brisanja bilo čega.",
     "bulk_trash_duplicates_confirmation":
         "Da li ste sigurni da želite grupno da odbacite {count, plural, one {1 dupliranu datoteku} few {# duplirane datoteke} other {# dupliranih datoteka}}? Ovo će zadržati najveću datoteku svake grupe i odbaciti sve ostale duplikate.",
-    "buy": "Kupite licencu Curator Photos",
+    "buy": "Kupite licencu Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Sličice na stranici biblioteke",
     "cache_settings_clear_cache_button": "Obriši keš memoriju",
     "cache_settings_clear_cache_button_title":
@@ -53261,7 +53330,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Minijature deljenih albuma",
     "cache_settings_statistics_thumbnail": "Minijature",
     "cache_settings_statistics_title": "Iskorišćena keš memorija",
-    "cache_settings_subtitle": "Kontrole za keš memoriju mobilne aplikacije Curator Photos",
+    "cache_settings_subtitle": "Kontrole za keš memoriju mobilne aplikacije Personal Cloud Photos",
     "cache_settings_tile_subtitle": "Kontrolišite ponašanje lokalnog skladištenja",
     "cache_settings_tile_title": "Lokalna memorija",
     "cache_settings_title": "Opcije za keširanje",
@@ -53336,7 +53405,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Nastavi",
     "control_bottom_app_bar_create_new_album": "Kreiraj novi album",
-    "control_bottom_app_bar_delete_from_immich": "Obriši iz Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Obriši iz Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Obriši sa uređaja",
     "control_bottom_app_bar_edit_location": "Izmeni lokaciju",
     "control_bottom_app_bar_edit_time": "Izmeni datum i vreme",
@@ -53401,12 +53470,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Obriši",
     "delete_album": "Obriši album",
     "delete_api_key_prompt": "Da li ste sigurni da želite da izbrišete ovaj API ključ (key)?",
-    "delete_dialog_alert": "Ove stvari će permanentno biti obrisane sa Curator Photos i Vašeg uređaja",
+    "delete_dialog_alert": "Ove stvari će permanentno biti obrisane sa Personal Cloud Photos i Vašeg uređaja",
     "delete_dialog_alert_local":
-        "Ove stavke će biti trajno uklonjene sa vašeg uređaja, ali će i dalje biti dostupne na Curator Photos serveru",
+        "Ove stavke će biti trajno uklonjene sa vašeg uređaja, ali će i dalje biti dostupne na Personal Cloud Photos serveru",
     "delete_dialog_alert_local_non_backed_up":
-        "Neke stavke nisu rezervno kopirane na Curator Photos i biće trajno uklonjene sa vašeg uređaja",
-    "delete_dialog_alert_remote": "Ove stavke će biti trajno izbrisane sa Curator Photos servera",
+        "Neke stavke nisu rezervno kopirane na Personal Cloud Photos i biće trajno uklonjene sa vašeg uređaja",
+    "delete_dialog_alert_remote": "Ove stavke će biti trajno izbrisane sa Personal Cloud Photos servera",
     "delete_dialog_ok_force": "Ipak obriši",
     "delete_dialog_title": "Obriši permanentno",
     "delete_duplicates_confirmation": "Da li ste sigurni da želite da trajno izbrišete ove duplikate?",
@@ -53457,7 +53526,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Upravljajte podešavanjima vezanim za preuzimanje datoteka",
     "download_started": "Preuzimanje je započeto",
     "download_sucess": "Preuzimanje je uspešno",
-    "download_sucess_android": "Mediji su preuzeti na DCIM/Curator Photos",
+    "download_sucess_android": "Mediji su preuzeti na DCIM/Personal Cloud Photos",
     "download_waiting_to_retry": "Čekanje na ponovni pokušaj",
     "downloading": "Preuzimanje u toku",
     "downloading_asset_filename": "Preuzimanje datoteke {filename}",
@@ -53495,7 +53564,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ova mapa je prazna",
     "empty_trash": "Ispraznite smeće",
     "empty_trash_confirmation":
-        "Da li ste sigurni da želite da ispraznite smeće? Ovo će trajno ukloniti sve datoteke u smeću iz Curator Photos.\nNe možete poništiti ovu radnju!",
+        "Da li ste sigurni da želite da ispraznite smeće? Ovo će trajno ukloniti sve datoteke u smeću iz Personal Cloud Photos.\nNe možete poništiti ovu radnju!",
     "enable": "Omogući (Enable)",
     "enabled": "Omogućeno (Enabled)",
     "end_date": "Krajnji datum",
@@ -53736,7 +53805,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignorišite iCloud fotografije",
     "ignore_icloud_photos_description":
-        "Fotografije koje su sačuvane na iCloud-u neće biti otpremljene na Curator Photos server",
+        "Fotografije koje su sačuvane na iCloud-u neće biti otpremljene na Personal Cloud Photos server",
     "image": "Fotografija",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} snimljeno {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} snimljeno sa {person1} {date}",
@@ -53759,8 +53828,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Preuzimanje je započeto",
     "image_viewer_page_state_provider_download_success": "Preuzimanje Uspešno",
     "image_viewer_page_state_provider_share_error": "Greška pri deljenju",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Web interfejs Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Web interfejs Personal Cloud Photos",
     "import_from_json": "Uvezi iz JSON-a",
     "import_path": "Putanja uvoza",
     "in_albums": "U {count, plural, one {# albumu} few {# albuma} other {# albuma}}",
@@ -53819,7 +53888,7 @@ class CodegenLoader extends AssetLoader {
         "Aplikacija će se povezati sa serverom preko ove URL adrese kada koristi navedenu Vi-Fi mrežu",
     "location_permission": "Dozvola za lokaciju",
     "location_permission_content":
-        "Da bi koristio funkciju automatskog prebacivanja, Curator Photos je potrebna precizna dozvola za lokaciju kako bi mogao da pročita naziv trenutne Wi-Fi mreže",
+        "Da bi koristio funkciju automatskog prebacivanja, Personal Cloud Photos je potrebna precizna dozvola za lokaciju kako bi mogao da pročita naziv trenutne Wi-Fi mreže",
     "location_picker_choose_on_map": "Izaberite na mapi",
     "location_picker_latitude_error": "Unesite važeću geografsku širinu",
     "location_picker_latitude_hint": "Unesite svoju geografsku širinu ovde",
@@ -53973,7 +54042,7 @@ class CodegenLoader extends AssetLoader {
     "notification_toggle_setting_description": "Omogućite obaveštenja putem e-pošte",
     "notifications": "Notifikacije",
     "notifications_setting_description": "Upravljajte obaveštenjima",
-    "official_immich_resources": "Zvanični Curator Photos resursi",
+    "official_immich_resources": "Zvanični Personal Cloud Photos resursi",
     "offline": "Odsutan (Offline)",
     "oldest_first": "Najstarije prvo",
     "on_this_device": "Na ovom uređaju",
@@ -54044,11 +54113,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Započnite",
     "permission_onboarding_go_to_settings": "Idi na podešavanja",
     "permission_onboarding_permission_denied":
-        "Dozvola odbijena. Da biste koristili Curator Photos, dodelite dozvole za fotografije i video zapise u Podešavanjima.",
+        "Dozvola odbijena. Da biste koristili Personal Cloud Photos, dodelite dozvole za fotografije i video zapise u Podešavanjima.",
     "permission_onboarding_permission_granted": "Dozvola odobrena! Spremni ste.",
     "permission_onboarding_permission_limited":
-        "Dozvola ograničena. Da biste omogućili Curator Photos da pravi rezervne kopije i upravlja celom vašom kolekcijom galerije, dodelite dozvole za fotografije i video zapise u Podešavanjima.",
-    "permission_onboarding_request": "Curator Photos zahteva dozvolu da vidi vaše fotografije i video zapise.",
+        "Dozvola ograničena. Da biste omogućili Personal Cloud Photos da pravi rezervne kopije i upravlja celom vašom kolekcijom galerije, dodelite dozvole za fotografije i video zapise u Podešavanjima.",
+    "permission_onboarding_request": "Personal Cloud Photos zahteva dozvolu da vidi vaše fotografije i video zapise.",
     "person": "Osoba",
     "person_birthdate": "Rođen(a) {date}",
     "person_hidden": "{name}{hidden, select, true { (skriveno)} other {}}",
@@ -54096,12 +54165,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Javni album",
     "public_share": "Javno deljenje",
     "purchase_account_info": "Podržavam softver",
-    "purchase_activated_subtitle": "Hvala vam što podržavate Curator Photos i softver otvorenog koda",
+    "purchase_activated_subtitle": "Hvala vam što podržavate Personal Cloud Photos i softver otvorenog koda",
     "purchase_activated_time": "Aktivirano {date}",
     "purchase_activated_title": "Vaš ključ je uspešno aktiviran",
     "purchase_button_activate": "Aktiviraj",
     "purchase_button_buy": "Kupi",
-    "purchase_button_buy_immich": "Kupite Curator Photos",
+    "purchase_button_buy_immich": "Kupite Personal Cloud Photos",
     "purchase_button_never_show_again": "Nikada više ne prikazuj",
     "purchase_button_reminder": "Podseti me za 30 dana",
     "purchase_button_remove_key": "Uklonite ključ",
@@ -54112,13 +54181,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status podrške",
     "purchase_individual_title": "Individualna licenca",
     "purchase_input_suggestion": "Imate ključ proizvoda? Unesite ključ ispod",
-    "purchase_license_subtitle": "Kupite Curator Photos da biste podržali kontinuirani razvoj usluge",
+    "purchase_license_subtitle": "Kupite Personal Cloud Photos da biste podržali kontinuirani razvoj usluge",
     "purchase_lifetime_description": "Doživotna licenca",
     "purchase_option_title": "OPCIJE KUPOVINE",
     "purchase_panel_info_1":
-        "Izgradnja Curator Photos zahteva mnogo vremena i truda, a imamo inženjere koji rade na tome sa punim radnim vremenom kako bismo je učinili što je moguće boljom. Naša misija je da softver otvorenog koda i etičke poslovne prakse postanu održiv izvor prihoda za programere i da stvorimo ekosistem koji poštuje privatnost sa stvarnim alternativama eksploatativnim uslugama u oblaku.",
+        "Izgradnja Personal Cloud Photos zahteva mnogo vremena i truda, a imamo inženjere koji rade na tome sa punim radnim vremenom kako bismo je učinili što je moguće boljom. Naša misija je da softver otvorenog koda i etičke poslovne prakse postanu održiv izvor prihoda za programere i da stvorimo ekosistem koji poštuje privatnost sa stvarnim alternativama eksploatativnim uslugama u oblaku.",
     "purchase_panel_info_2":
-        "Pošto smo se obavezali da nećemo dodavati platne zidove, ova kupovina vam neće dati nikakve dodatne funkcije u Curator Photos. Oslanjamo se na korisnike poput vas da podrže Curator Photos stalni razvoj.",
+        "Pošto smo se obavezali da nećemo dodavati platne zidove, ova kupovina vam neće dati nikakve dodatne funkcije u Personal Cloud Photos. Oslanjamo se na korisnike poput vas da podrže Personal Cloud Photos stalni razvoj.",
     "purchase_panel_title": "Podržite projekat",
     "purchase_per_server": "Po serveru",
     "purchase_per_user": "Po korisniku",
@@ -54332,7 +54401,7 @@ class CodegenLoader extends AssetLoader {
         "Prilikom strimovanja videa sa servera, reprodukujte original čak i kada je dostupno transkodiranje. Može dovesti do baferovanja. Video snimci dostupni lokalno se reprodukuju u originalnom kvalitetu bez obzira na ovo podešavanje.",
     "setting_video_viewer_original_video_title": "Prisilno originalni video",
     "settings": "Podešavanja",
-    "settings_require_restart": "Restartujte Curator Photos da primenite ovu promenu",
+    "settings_require_restart": "Restartujte Personal Cloud Photos da primenite ovu promenu",
     "settings_saved": "Podešavanja sačuvana",
     "setup_pin_code": "Podesite PIN kod",
     "share": "Podeli",
@@ -54454,14 +54523,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Podrška",
     "support_and_feedback": "Podrška i povratne informacije",
     "support_third_party_description":
-        "Vaša Curator Photos instalacija je spakovana od strane treće strane. Problemi sa kojima se suočavate mogu biti uzrokovani tim paketom, pa vas molimo da im prvo postavite probleme koristeći donje veze.",
+        "Vaša Personal Cloud Photos instalacija je spakovana od strane treće strane. Problemi sa kojima se suočavate mogu biti uzrokovani tim paketom, pa vas molimo da im prvo postavite probleme koristeći donje veze.",
     "swap_merge_direction": "Zamenite pravac spajanja",
     "sync": "Sinhronizacija",
     "sync_albums": "Sinhronizuj albume",
     "sync_albums_manual_subtitle":
         "Sinhronizujte sve otpremljene video zapise i fotografije sa izabranim rezervnim albumima",
     "sync_upload_album_setting_subtitle":
-        "Kreirajte i otpremite svoje fotografije i video zapise u odabrane albume na Curator Photos",
+        "Kreirajte i otpremite svoje fotografije i video zapise u odabrane albume na Personal Cloud Photos",
     "tag": "Oznaka (tag)",
     "tag_assets": "Označite (tag) sredstva",
     "tag_created": "Napravljena oznaka (tag): {tag}",
@@ -54512,7 +54581,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Slike i video zapisi u otpadu će se pojaviti ovde.",
     "trash_page_delete_all": "Obriši sve",
     "trash_page_empty_trash_dialog_content":
-        "Da li želite da ispraznite svoja premeštena sredstva? Ovi predmeti će biti trajno uklonjeni iz Curator Photos",
+        "Da li želite da ispraznite svoja premeštena sredstva? Ovi predmeti će biti trajno uklonjeni iz Personal Cloud Photos",
     "trash_page_info": "Stavke izbačene iz otpada biće trajno obrisane nakon {days} dana",
     "trash_page_no_assets": "Nema elemenata u otpadu",
     "trash_page_restore_all": "Vrati sve",
@@ -54558,7 +54627,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Greške",
     "upload_status_uploaded": "Otpremljeno (Uploaded)",
     "upload_success": "Otpremanje je uspešno, osvežite stranicu da biste videli nova sredstva za otpremanje (upload).",
-    "upload_to_immich": "Otpremi u Curator Photos ({count})",
+    "upload_to_immich": "Otpremi u Personal Cloud Photos ({count})",
     "uploading": "Otpremanje",
     "usage": "Upotreba",
     "use_current_connection": "koristi trenutnu vezu",
@@ -54612,7 +54681,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Upozorenje",
     "week": "Nedelja",
     "welcome": "Dobrodošli",
-    "welcome_to_immich": "Dobrodošli u Curator Photos",
+    "welcome_to_immich": "Dobrodošli u Personal Cloud Photos",
     "wifi_name": "Naziv Wi-Fi mreže",
     "year": "Godina",
     "years_ago": "pre {years, plural, one {# godine} other {# godina}}",
@@ -54658,7 +54727,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "규칙에 *, ** 및 ? 를 사용할 수 있습니다. 이름이 \"Raw\"인 디렉터리의 모든 파일을 제외하려면 \"**/Raw/**\"를, \".tif\"로 끝나는 모든 파일을 제외하려면 \"**/*.tif\"를 사용하고, 절대 경로의 경우 \"/path/to/ignore/**\"와 같은 방식으로 사용합니다.",
       "asset_offline_description":
-          "외부 라이브러리에 포함된 이 항목을 디스크에서 더이상 찾을 수 없어 휴지통으로 이동되었습니다. 파일이 라이브러리 내에서 이동된 경우 타임라인에서 새로 연결된 항목을 확인하세요. 항목을 복원하려면 아래의 파일 경로에 Curator Photos가 접근할 수 있는지 확인하고 라이브러리 스캔을 진행하세요.",
+          "외부 라이브러리에 포함된 이 항목을 디스크에서 더이상 찾을 수 없어 휴지통으로 이동되었습니다. 파일이 라이브러리 내에서 이동된 경우 타임라인에서 새로 연결된 항목을 확인하세요. 항목을 복원하려면 아래의 파일 경로에 Personal Cloud Photos가 접근할 수 있는지 확인하고 라이브러리 스캔을 진행하세요.",
       "authentication_settings": "인증 설정",
       "authentication_settings_description": "비밀번호, OAuth 및 기타 인증 설정 관리",
       "authentication_settings_disable_all": "로그인 수단을 모두 비활성화하시겠습니까? 로그인이 완전히 비활성화됩니다.",
@@ -54673,7 +54742,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "현재 구성은 설정 파일을 통해 지정되어 있습니다.",
       "confirm_delete_library": "{library} 라이브러리를 삭제하시겠습니까?",
       "confirm_delete_library_assets":
-          "이 라이브러리를 삭제하시겠습니까? Curator Photos에서 항목 {count, plural, one {#개} other {#개}}가 삭제되며 되돌릴 수 없습니다. 원본 파일은 삭제되지 않습니다.",
+          "이 라이브러리를 삭제하시겠습니까? Personal Cloud Photos에서 항목 {count, plural, one {#개} other {#개}}가 삭제되며 되돌릴 수 없습니다. 원본 파일은 삭제되지 않습니다.",
       "confirm_email_below": "계속 진행하려면 아래에 \"{email}\" 입력",
       "confirm_reprocess_all_faces": "모든 얼굴을 다시 처리하시겠습니까? 이름이 지정된 인물을 포함한 모든 인물이 삭제됩니다.",
       "confirm_user_password_reset": "{user}님의 비밀번호를 재설정하시겠습니까?",
@@ -54786,7 +54855,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "지도 기능 활성화",
       "map_gps_settings": "지도 및 GPS 설정",
       "map_gps_settings_description": "지도 및 GPS (역지오코딩) 설정 관리",
-      "map_implications": "지도 기능은 외부 타일 서비스(tiles.curatorphotos.cloud)에 의존합니다.",
+      "map_implications": "지도 기능은 외부 타일 서비스(tiles.personalcloudphotos.cloud)에 의존합니다.",
       "map_light_style": "라이트 스타일",
       "map_manage_reverse_geocoding_settings": "<link>역지오코딩</link> 설정 관리",
       "map_reverse_geocoding": "역지오코딩",
@@ -54811,8 +54880,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "주의: 추후 변경할 수 없습니다!",
       "notification_email_from_address": "보낸 사람 이메일",
       "notification_email_from_address_description":
-          "보낸 사람의 이메일 주소, 예: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "이메일 서버의 호스트 (예: smtp.curatorphotos.app)",
+          "보낸 사람의 이메일 주소, 예: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description": "이메일 서버의 호스트 (예: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "인증서 오류 무시",
       "notification_email_ignore_certificate_errors_description": "TLS 인증서 유효성 검사 오류 무시 (권장되지 않음)",
       "notification_email_password_description": "이메일 서버 인증 시 사용할 비밀번호",
@@ -54903,9 +54972,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "알림 템플릿",
       "template_settings_description": "알림을 위한 사용자 지정 템플릿을 관리합니다.",
       "theme_custom_css_settings": "사용자 정의 CSS",
-      "theme_custom_css_settings_description": "Curator Photos에 적용할 사용자 정의 CSS(Cascading Style Sheets) 설정",
+      "theme_custom_css_settings_description": "Personal Cloud Photos에 적용할 사용자 정의 CSS(Cascading Style Sheets) 설정",
       "theme_settings": "테마 설정",
-      "theme_settings_description": "Curator Photos 웹 인터페이스 사용자 정의",
+      "theme_settings_description": "Personal Cloud Photos 웹 인터페이스 사용자 정의",
       "these_files_matched_by_checksum": "체크섬이 동일한 파일 목록입니다.",
       "thumbnail_generation_job": "섬네일 생성",
       "thumbnail_generation_job_description": "각 항목에 대한 큰 섬네일, 작은 섬네일, 흐린 섬네일 및 인물 섬네일 생성",
@@ -55021,7 +55090,7 @@ class CodegenLoader extends AssetLoader {
     "advanced_settings_log_level_title": "로그 레벨: {level}",
     "advanced_settings_prefer_remote_subtitle": "일부 기기의 경우 기기 내의 섬네일을 로드하는 속도가 매우 느립니다. 서버 이미지를 대신 로드하려면 이 설정을 활성화하세요.",
     "advanced_settings_prefer_remote_title": "서버 이미지 선호",
-    "advanced_settings_proxy_headers_subtitle": "네트워크 요청을 보낼 때 Curator Photos가 사용할 프록시 헤더를 정의합니다.",
+    "advanced_settings_proxy_headers_subtitle": "네트워크 요청을 보낼 때 Personal Cloud Photos가 사용할 프록시 헤더를 정의합니다.",
     "advanced_settings_proxy_headers_title": "프록시 헤더",
     "advanced_settings_self_signed_ssl_subtitle": "서버 엔드포인트에 대한 SSL 인증서 확인을 건너뜁니다. 자체 서명된 인증서를 사용하는 경우 활성화하세요.",
     "advanced_settings_self_signed_ssl_title": "자체 서명된 SSL 인증서 허용",
@@ -55143,7 +55212,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "뒤로, 닫기, 선택 취소",
     "background_location_permission": "백그라운드 위치 권한",
     "background_location_permission_content":
-        "백그라운드에서 네트워크를 전환하려면, Curator Photos가 Wi-Fi 네트워크 이름을 확인할 수 있도록 '정확한 위치' 권한을 항상 허용해야 합니다.",
+        "백그라운드에서 네트워크를 전환하려면, Personal Cloud Photos가 Wi-Fi 네트워크 이름을 확인할 수 있도록 '정확한 위치' 권한을 항상 허용해야 합니다.",
     "backup_album_selection_page_albums_device": "기기의 앨범 ({count})",
     "backup_album_selection_page_albums_tap": "한 번 탭하면 포함되고, 두 번 탭하면 제외됩니다.",
     "backup_album_selection_page_assets_scatter": "각 항목은 여러 앨범에 포함될 수 있으며, 백업 진행 중에도 대상 앨범을 포함하거나 제외할 수 있습니다.",
@@ -55165,7 +55234,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "설정으로 이동",
     "backup_controller_page_background_battery_info_link": "설정 방법",
     "backup_controller_page_background_battery_info_message":
-        "최상의 백그라운드 백업 환경을 위해 Curator Photos 백그라운드 활동을 제한하는 배터리 최적화 기능을 비활성화하세요.\n\n기기마다 설정 방법에 차이가 있어 제조 업체에서 관련 정보를 찾아보세요.",
+        "최상의 백그라운드 백업 환경을 위해 Personal Cloud Photos 백그라운드 활동을 제한하는 배터리 최적화 기능을 비활성화하세요.\n\n기기마다 설정 방법에 차이가 있어 제조 업체에서 관련 정보를 찾아보세요.",
     "backup_controller_page_background_battery_info_ok": "확인",
     "backup_controller_page_background_battery_info_title": "배터리 최적화",
     "backup_controller_page_background_charging": "충전 중에만",
@@ -55225,7 +55294,7 @@ class CodegenLoader extends AssetLoader {
         "중복된 항목 {count, plural, one {#개를} other {#개를}} 그대로 유지하시겠습니까? 이 작업은 어떤 항목도 삭제하지 않고, 모든 중복 그룹을 확인한 것으로 처리합니다.",
     "bulk_trash_duplicates_confirmation":
         "중복된 항목 {count, plural, one {#개를} other {#개를}} 일괄 휴지통으로 이동하시겠습니까? 이 작업은 각 그룹에서 가장 큰 항목만 남기고 나머지 중복 항목을 휴지통으로 이동합니다.",
-    "buy": "Curator Photos 구매",
+    "buy": "Personal Cloud Photos 구매",
     "cache_settings_album_thumbnails": "라이브러리 페이지 섬네일 ({})",
     "cache_settings_clear_cache_button": "캐시 지우기",
     "cache_settings_clear_cache_button_title": "앱 캐시를 지웁니다. 이 작업은 캐시가 다시 생성될 때까지 앱 성능에 상당한 영향을 미칠 수 있습니다.",
@@ -55237,7 +55306,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "공유 앨범 섬네일",
     "cache_settings_statistics_thumbnail": "섬네일",
     "cache_settings_statistics_title": "캐시 사용률",
-    "cache_settings_subtitle": "Curator Photos 모바일 앱의 캐싱 동작 제어",
+    "cache_settings_subtitle": "Personal Cloud Photos 모바일 앱의 캐싱 동작 제어",
     "cache_settings_thumbnail_size": "섬네일 캐시 크기 ({})",
     "cache_settings_tile_subtitle": "로컬 스토리지 동작 제어",
     "cache_settings_tile_title": "로컬 스토리지",
@@ -55314,7 +55383,7 @@ class CodegenLoader extends AssetLoader {
     "context": "내용",
     "continue": "계속",
     "control_bottom_app_bar_create_new_album": "앨범 생성",
-    "control_bottom_app_bar_delete_from_immich": "Curator Photos에서 삭제",
+    "control_bottom_app_bar_delete_from_immich": "Personal Cloud Photos에서 삭제",
     "control_bottom_app_bar_delete_from_local": "기기에서 삭제",
     "control_bottom_app_bar_edit_location": "위치 편집",
     "control_bottom_app_bar_edit_time": "날짜 변경",
@@ -55378,10 +55447,10 @@ class CodegenLoader extends AssetLoader {
     "delete": "삭제",
     "delete_album": "앨범 삭제",
     "delete_api_key_prompt": "API 키를 삭제하시겠습니까?",
-    "delete_dialog_alert": "이 항목들이 Curator Photos와 기기에서 영구적으로 삭제됩니다.",
-    "delete_dialog_alert_local": "이 항목들이 기기에서 영구적으로 삭제됩니다. Curator Photos 서버에서는 삭제되지 않습니다.",
-    "delete_dialog_alert_local_non_backed_up": "일부 항목이 Curator Photos에 백업되지 않았으며, 기기에서 영구적으로 삭제됩니다.",
-    "delete_dialog_alert_remote": "이 항목들이 Curator Photos 서버에서 영구적으로 삭제됩니다.",
+    "delete_dialog_alert": "이 항목들이 Personal Cloud Photos와 기기에서 영구적으로 삭제됩니다.",
+    "delete_dialog_alert_local": "이 항목들이 기기에서 영구적으로 삭제됩니다. Personal Cloud Photos 서버에서는 삭제되지 않습니다.",
+    "delete_dialog_alert_local_non_backed_up": "일부 항목이 Personal Cloud Photos에 백업되지 않았으며, 기기에서 영구적으로 삭제됩니다.",
+    "delete_dialog_alert_remote": "이 항목들이 Personal Cloud Photos 서버에서 영구적으로 삭제됩니다.",
     "delete_dialog_ok_force": "무시하고 삭제",
     "delete_dialog_title": "영구적으로 삭제",
     "delete_duplicates_confirmation": "이 중복 항목들을 영구적으로 삭제하시겠습니까?",
@@ -55432,7 +55501,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "다운로드 설정 관리",
     "download_started": "다운로드가 시작되었습니다.",
     "download_sucess": "다운로드가 완료되었습니다.",
-    "download_sucess_android": "미디어가 DCIM/CuratorPhotos 폴더에 저장되었습니다.",
+    "download_sucess_android": "미디어가 DCIM/PersonalCloudPhotos 폴더에 저장되었습니다.",
     "download_waiting_to_retry": "재시도 대기 중",
     "downloading": "다운로드",
     "downloading_asset_filename": "{filename} 다운로드 중...",
@@ -55471,7 +55540,7 @@ class CodegenLoader extends AssetLoader {
     "email_notifications": "이메일 알림",
     "empty_folder": "폴더가 비어 있음",
     "empty_trash": "휴지통 비우기",
-    "empty_trash_confirmation": "휴지통을 비우시겠습니까? 휴지통에 있는 모든 항목이 Curator Photos에서 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다!",
+    "empty_trash_confirmation": "휴지통을 비우시겠습니까? 휴지통에 있는 모든 항목이 Personal Cloud Photos에서 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다!",
     "enable": "활성화",
     "enable_biometric_auth_description": "생체 인증을 사용하려면 PIN 코드를 입력하세요.",
     "enabled": "활성화됨",
@@ -55709,7 +55778,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "시간",
     "id": "ID",
     "ignore_icloud_photos": "iCloud 사진 제외",
-    "ignore_icloud_photos_description": "iCloud에 저장된 사진이 Curator Photos에 업로드되지 않습니다.",
+    "ignore_icloud_photos_description": "iCloud에 저장된 사진이 Personal Cloud Photos에 업로드되지 않습니다.",
     "image": "이미지",
     "image_alt_text_date": "{date} 촬영한 {isVideo, select, true {동영상} other {사진}}",
     "image_alt_text_date_1_person": "{date} {person1}님과 함께한 {isVideo, select, true {동영상} other {사진}}",
@@ -55731,8 +55800,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "다운로드가 시작되었습니다.",
     "image_viewer_page_state_provider_download_success": "다운로드 완료",
     "image_viewer_page_state_provider_share_error": "공유 오류",
-    "immich_logo": "Curator Photos 로고",
-    "immich_web_interface": "Curator Photos 웹 인터페이스",
+    "immich_logo": "Personal Cloud Photos 로고",
+    "immich_web_interface": "Personal Cloud Photos 웹 인터페이스",
     "import_from_json": "JSON에서 가져오기",
     "import_path": "가져올 경로",
     "in_albums": "포함된 앨범 {count, plural, one {#개} other {#개}}",
@@ -55789,7 +55858,8 @@ class CodegenLoader extends AssetLoader {
     "local_network": "로컬 네트워크",
     "local_network_sheet_info": "지정한 Wi-Fi에 연결된 경우 앱은 해당 URL을 통해 서버에 연결합니다.",
     "location_permission": "위치 권한",
-    "location_permission_content": "자동 전환 기능을 사용하려면 Curator Photos가 현재 Wi-Fi 네트워크 이름을 확인하기 위한 '정확한 위치' 권한이 필요합니다.",
+    "location_permission_content":
+        "자동 전환 기능을 사용하려면 Personal Cloud Photos가 현재 Wi-Fi 네트워크 이름을 확인하기 위한 '정확한 위치' 권한이 필요합니다.",
     "location_picker_choose_on_map": "지도에서 선택",
     "location_picker_latitude_error": "유효한 위도를 입력하세요.",
     "location_picker_latitude_hint": "이곳에 위도 입력",
@@ -55952,7 +56022,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "알림",
     "notifications_setting_description": "알림 설정 관리",
     "oauth": "OAuth",
-    "official_immich_resources": "Curator Photos 공식 리소스",
+    "official_immich_resources": "Personal Cloud Photos 공식 리소스",
     "offline": "오프라인",
     "ok": "확인",
     "oldest_first": "오래된 순",
@@ -56021,10 +56091,10 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_continue_anyway": "무시하고 진행",
     "permission_onboarding_get_started": "시작하기",
     "permission_onboarding_go_to_settings": "설정으로 이동",
-    "permission_onboarding_permission_denied": "권한이 없습니다. Curator Photos를 사용하려면 설정에서 사진 및 동영상 권한을 부여하세요.",
+    "permission_onboarding_permission_denied": "권한이 없습니다. Personal Cloud Photos를 사용하려면 설정에서 사진 및 동영상 권한을 부여하세요.",
     "permission_onboarding_permission_granted": "권한이 부여되었습니다! 준비가 완료되었습니다.",
     "permission_onboarding_permission_limited":
-        "권한이 없습니다. Curator Photos가 전체 갤러리 컬렉션을 백업하고 관리할 수 있도록 하려면 설정에서 사진 및 동영상 권한을 부여하세요.",
+        "권한이 없습니다. Personal Cloud Photos가 전체 갤러리 컬렉션을 백업하고 관리할 수 있도록 하려면 설정에서 사진 및 동영상 권한을 부여하세요.",
     "permission_onboarding_request": "사진 및 동영상 권한이 필요합니다.",
     "person": "인물",
     "person_birthdate": "{date} 출생",
@@ -56070,12 +56140,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "공개 앨범",
     "public_share": "모든 사용자와 공유",
     "purchase_account_info": "서포터",
-    "purchase_activated_subtitle": "Curator Photos와 오픈 소스 소프트웨어를 지원해주셔서 감사합니다.",
+    "purchase_activated_subtitle": "Personal Cloud Photos와 오픈 소스 소프트웨어를 지원해주셔서 감사합니다.",
     "purchase_activated_time": "{date} 등록됨",
     "purchase_activated_title": "제품 키가 성공적으로 등록되었습니다.",
     "purchase_button_activate": "등록",
     "purchase_button_buy": "구매",
-    "purchase_button_buy_immich": "Curator Photos 구매",
+    "purchase_button_buy_immich": "Personal Cloud Photos 구매",
     "purchase_button_never_show_again": "다시 보지 않기",
     "purchase_button_reminder": "30일 후에 다시 알림",
     "purchase_button_remove_key": "제품 키 제거",
@@ -56085,13 +56155,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "서포터 배지",
     "purchase_individual_title": "개인",
     "purchase_input_suggestion": "제품 키를 보유하고 있나요? 아래에 제품 키를 입력하세요.",
-    "purchase_license_subtitle": "Curator Photos를 구매하여 지속적인 개발에 도움을 주세요.",
+    "purchase_license_subtitle": "Personal Cloud Photos를 구매하여 지속적인 개발에 도움을 주세요.",
     "purchase_lifetime_description": "일회성 구매",
     "purchase_option_title": "구매 옵션",
     "purchase_panel_info_1":
-        "Curator Photos를 개발하는 데는 많은 시간과 노력이 필요합니다. 우리는 좋은 앱을 만들기 위해 풀 타임 개발자와 함께하고 있으며, 최종적으로 오픈 소스 소프트웨어와 비즈니스 행동 윤리가 개발자에게 지속 가능한 수입원을 제공하고 착취적인 클라우드 서비스를 대체할 수 있는 개인 정보 보호 생태계를 구축하는 것을 원합니다.",
+        "Personal Cloud Photos를 개발하는 데는 많은 시간과 노력이 필요합니다. 우리는 좋은 앱을 만들기 위해 풀 타임 개발자와 함께하고 있으며, 최종적으로 오픈 소스 소프트웨어와 비즈니스 행동 윤리가 개발자에게 지속 가능한 수입원을 제공하고 착취적인 클라우드 서비스를 대체할 수 있는 개인 정보 보호 생태계를 구축하는 것을 원합니다.",
     "purchase_panel_info_2":
-        "유료 기능을 추가하지 않기로 약속했기에 이 구매는 어떠한 추가 기능도 제공하지 않습니다. 우리는 Curator Photos의 지속적인 개발을 지원하는 사용자 여러분에게 의존하고 있습니다.",
+        "유료 기능을 추가하지 않기로 약속했기에 이 구매는 어떠한 추가 기능도 제공하지 않습니다. 우리는 Personal Cloud Photos의 지속적인 개발을 지원하는 사용자 여러분에게 의존하고 있습니다.",
     "purchase_panel_title": "프로젝트 지원",
     "purchase_per_server": "서버당",
     "purchase_per_user": "사용자당",
@@ -56304,7 +56374,7 @@ class CodegenLoader extends AssetLoader {
         "서버에서 동영상을 스트리밍할 때, 트랜스코딩된 버전이 있더라도 원본을 재생합니다. 이로 인해 버퍼링이 발생할 수 있습니다. 기기에 있는 동영상은 이 설정과 관계없이 항상 원본 화질로 재생됩니다.",
     "setting_video_viewer_original_video_title": "원본 동영상 강제 사용",
     "settings": "설정",
-    "settings_require_restart": "설정을 적용하려면 Curator Photos를 다시 시작하세요.",
+    "settings_require_restart": "설정을 적용하려면 Personal Cloud Photos를 다시 시작하세요.",
     "settings_saved": "설정이 저장되었습니다.",
     "setup_pin_code": "PIN 코드 설정",
     "share": "공유",
@@ -56432,12 +56502,12 @@ class CodegenLoader extends AssetLoader {
     "support": "지원",
     "support_and_feedback": "지원 & 제안",
     "support_third_party_description":
-        "서드파티 패키지를 이용하여 Curator Photos가 설치된 것으로 보입니다. 현재 발생하는 문제는 해당 패키지가 원인일 수 있으므로, 먼저 아래 링크를 통해 패키지 개발자에게 문의해주세요.",
+        "서드파티 패키지를 이용하여 Personal Cloud Photos가 설치된 것으로 보입니다. 현재 발생하는 문제는 해당 패키지가 원인일 수 있으므로, 먼저 아래 링크를 통해 패키지 개발자에게 문의해주세요.",
     "swap_merge_direction": "병합 방향 변경",
     "sync": "동기화",
     "sync_albums": "앨범 동기화",
     "sync_albums_manual_subtitle": "업로드한 모든 동영상과 사진을 선택한 백업 앨범에 동기화",
-    "sync_upload_album_setting_subtitle": "선택한 앨범을 Curator Photos에 생성하고 사진 및 동영상 업로드",
+    "sync_upload_album_setting_subtitle": "선택한 앨범을 Personal Cloud Photos에 생성하고 사진 및 동영상 업로드",
     "tag": "태그",
     "tag_assets": "항목 태그",
     "tag_created": "태그 생성됨: {tag}",
@@ -56485,7 +56555,7 @@ class CodegenLoader extends AssetLoader {
     "trash_emptied": "휴지통을 비웠습니다.",
     "trash_no_results_message": "삭제된 사진과 동영상이 여기에 표시됩니다.",
     "trash_page_delete_all": "모두 삭제",
-    "trash_page_empty_trash_dialog_content": "휴지통을 비우시겠습니까? 휴지통에 있는 모든 항목이 Curator Photos에서 영구적으로 제거됩니다.",
+    "trash_page_empty_trash_dialog_content": "휴지통을 비우시겠습니까? 휴지통에 있는 모든 항목이 Personal Cloud Photos에서 영구적으로 제거됩니다.",
     "trash_page_info": "휴지통으로 이동된 항목은 {days}일 후 영구적으로 삭제됩니다.",
     "trash_page_no_assets": "휴지통이 비어 있음",
     "trash_page_restore_all": "모두 복원",
@@ -56530,7 +56600,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "오류",
     "upload_status_uploaded": "완료",
     "upload_success": "업로드가 완료되었습니다. 업로드된 항목을 보려면 페이지를 새로고침하세요.",
-    "upload_to_immich": "Curator Photos에 업로드 ({count})",
+    "upload_to_immich": "Personal Cloud Photos에 업로드 ({count})",
     "uploading": "업로드 중",
     "url": "URL",
     "usage": "사용량",
@@ -56558,10 +56628,10 @@ class CodegenLoader extends AssetLoader {
     "version": "버전",
     "version_announcement_closing": "당신의 친구, Alex가",
     "version_announcement_message":
-        "안녕하세요! 새 버전의 Curator Photos를 사용할 수 있습니다. 잘못된 구성을 방지하고 Curator Photos를 최신 상태로 유지하기 위해 잠시 시간을 내어 <link>릴리스 노트</link>를 읽어보는 것을 권장합니다. 특히 WatchTower 등의 자동 업데이트 기능을 사용하는 경우 의도하지 않은 동작을 방지하기 위해 더더욱 권장됩니다.",
+        "안녕하세요! 새 버전의 Personal Cloud Photos를 사용할 수 있습니다. 잘못된 구성을 방지하고 Personal Cloud Photos를 최신 상태로 유지하기 위해 잠시 시간을 내어 <link>릴리스 노트</link>를 읽어보는 것을 권장합니다. 특히 WatchTower 등의 자동 업데이트 기능을 사용하는 경우 의도하지 않은 동작을 방지하기 위해 더더욱 권장됩니다.",
     "version_announcement_overlay_release_notes": "릴리스 노트",
     "version_announcement_overlay_text_1": "안녕하세요,",
-    "version_announcement_overlay_text_2": "새 버전의 Curator Photos를 사용할 수 있습니다. ",
+    "version_announcement_overlay_text_2": "새 버전의 Personal Cloud Photos를 사용할 수 있습니다. ",
     "version_announcement_overlay_text_3":
         " WatchTower 등의 자동 업데이트 기능을 사용하는 경우 의도하지 않은 동작을 방지하기 위해 docker-compose.yml 및 .env 구성이 최신인지 확인하세요.",
     "version_announcement_overlay_title": "새 서버 버전 사용 가능 🎉",
@@ -56654,7 +56724,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Engadir patróns de exclusión. Admítense caracteres comodín usando *, ** e ?. Para ignorar todos os ficheiros en calquera directorio chamado \"Raw\", emprega \"**/Raw/**\". Para ignorar todos os ficheiros que rematen en \".tif\", usa \"**/*.tif\". Para ignorar unha ruta absoluta, emprega \"/ruta/a/ignorar/**\".",
       "asset_offline_description":
-          "Este activo da biblioteca externa xa non se atopa no disco e moveuse ao lixo. Se o ficheiro se moveu dentro da biblioteca, comproba a túa liña de tempo para o novo activo correspondente. Para restaurar este activo, asegúrate de que Curator Photos poida acceder á ruta do ficheiro a continuación e escanee a biblioteca.",
+          "Este activo da biblioteca externa xa non se atopa no disco e moveuse ao lixo. Se o ficheiro se moveu dentro da biblioteca, comproba a túa liña de tempo para o novo activo correspondente. Para restaurar este activo, asegúrate de que Personal Cloud Photos poida acceder á ruta do ficheiro a continuación e escanee a biblioteca.",
       "authentication_settings": "Configuración de autenticación",
       "authentication_settings_description": "Xestionar contrasinal, OAuth e outras configuracións de autenticación",
       "authentication_settings_disable_all":
@@ -56670,7 +56740,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "A configuración establécese actualmente mediante un ficheiro de configuración",
       "confirm_delete_library": "Estás seguro de que queres eliminar a biblioteca {library}?",
       "confirm_delete_library_assets":
-          "Estás seguro de que queres eliminar esta biblioteca? Isto eliminará {count, plural, one {# activo contido} other {todos os # activos contidos}} de Curator Photos e non se pode desfacer. Os ficheiros permanecerán no disco.",
+          "Estás seguro de que queres eliminar esta biblioteca? Isto eliminará {count, plural, one {# activo contido} other {todos os # activos contidos}} de Personal Cloud Photos e non se pode desfacer. Os ficheiros permanecerán no disco.",
       "confirm_email_below": "Para confirmar, escriba \"{email}\" a continuación",
       "confirm_reprocess_all_faces":
           "Estás seguro de que queres reprocesar todas as caras? Isto tamén borrará as persoas nomeadas.",
@@ -56797,7 +56867,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Activar funcións do mapa",
       "map_gps_settings": "Configuración do Mapa e GPS",
       "map_gps_settings_description": "Xestionar a configuración do Mapa e GPS (Xeocodificación Inversa)",
-      "map_implications": "A función do mapa depende dun servizo de teselas externo (tiles.curatorphotos.cloud)",
+      "map_implications": "A función do mapa depende dun servizo de teselas externo (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Estilo claro",
       "map_manage_reverse_geocoding_settings": "Xestionar configuración de <link>Xeocodificación Inversa</link>",
       "map_reverse_geocoding": "Xeocodificación Inversa",
@@ -56824,8 +56894,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Isto non se pode cambiar máis tarde!",
       "notification_email_from_address": "Enderezo do remitente",
       "notification_email_from_address_description":
-          "Enderezo de correo electrónico do remitente, por exemplo: \"Servidor de Fotos Curator Photos <noreply@example.com>\"",
-      "notification_email_host_description": "Host do servidor de correo electrónico (p. ex. smtp.curatorphotos.app)",
+          "Enderezo de correo electrónico do remitente, por exemplo: \"Servidor de Fotos Personal Cloud Photos <noreply@example.com>\"",
+      "notification_email_host_description":
+          "Host do servidor de correo electrónico (p. ex. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorar erros de certificado",
       "notification_email_ignore_certificate_errors_description":
           "Ignorar erros de validación do certificado TLS (non recomendado)",
@@ -56927,9 +56998,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Xestionar modelos personalizados para notificacións.",
       "theme_custom_css_settings": "CSS Personalizado",
       "theme_custom_css_settings_description":
-          "As Follas de Estilo en Cascada permiten personalizar o deseño de Curator Photos.",
+          "As Follas de Estilo en Cascada permiten personalizar o deseño de Personal Cloud Photos.",
       "theme_settings": "Configuración do Tema",
-      "theme_settings_description": "Xestionar a personalización da interface web de Curator Photos",
+      "theme_settings_description": "Xestionar a personalización da interface web de Personal Cloud Photos",
       "these_files_matched_by_checksum": "Estes ficheiros coinciden polas súas sumas de verificación",
       "thumbnail_generation_job": "Xerar Miniaturas",
       "thumbnail_generation_job_description":
@@ -57066,7 +57137,7 @@ class CodegenLoader extends AssetLoader {
         "Algúns dispositivos son extremadamente lentos para cargar miniaturas de activos no dispositivo. Active esta configuración para cargar imaxes remotas no seu lugar.",
     "advanced_settings_prefer_remote_title": "Preferir imaxes remotas",
     "advanced_settings_proxy_headers_subtitle":
-        "Definir cabeceiras de proxy que Curator Photos debería enviar con cada solicitude de rede",
+        "Definir cabeceiras de proxy que Personal Cloud Photos debería enviar con cada solicitude de rede",
     "advanced_settings_proxy_headers_title": "Cabeceiras de Proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Omite a verificación do certificado SSL para o punto final do servidor. Requirido para certificados autofirmados.",
@@ -57160,7 +57231,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grella de Fotos",
     "asset_offline": "Activo Fóra de Liña",
     "asset_offline_description":
-        "Este activo externo xa non se atopa no disco. Por favor, contacta co teu administrador de Curator Photos para obter axuda.",
+        "Este activo externo xa non se atopa no disco. Por favor, contacta co teu administrador de Personal Cloud Photos para obter axuda.",
     "asset_restored_successfully": "Activo restaurado correctamente",
     "asset_skipped": "Omitido",
     "asset_skipped_in_trash": "No lixo",
@@ -57176,7 +57247,7 @@ class CodegenLoader extends AssetLoader {
     "assets_count": "{count, plural, one {# activo} other {# activos}}",
     "assets_deleted_permanently": "{count} activo(s) eliminado(s) permanentemente",
     "assets_deleted_permanently_from_server":
-        "{count} activo(s) eliminado(s) permanentemente do servidor Curator Photos",
+        "{count} activo(s) eliminado(s) permanentemente do servidor Personal Cloud Photos",
     "assets_moved_to_trash_count": "Movido {count, plural, one {# activo} other {# activos}} ao lixo",
     "assets_permanently_deleted_count": "Eliminados permanentemente {count, plural, one {# activo} other {# activos}}",
     "assets_removed_count": "Eliminados {count, plural, one {# activo} other {# activos}}",
@@ -57187,7 +57258,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} activo(s) restaurado(s) correctamente",
     "assets_trashed": "{count} activo(s) movido(s) ao lixo",
     "assets_trashed_count": "Movido {count, plural, one {# activo} other {# activos}} ao lixo",
-    "assets_trashed_from_server": "{count} activo(s) movido(s) ao lixo desde o servidor Curator Photos",
+    "assets_trashed_from_server": "{count} activo(s) movido(s) ao lixo desde o servidor Personal Cloud Photos",
     "assets_were_part_of_album_count":
         "{count, plural, one {O activo xa era} other {Os activos xa eran}} parte do álbum",
     "authorized_devices": "Dispositivos Autorizados",
@@ -57198,7 +57269,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Atrás, pechar ou deseleccionar",
     "background_location_permission": "Permiso de ubicación en segundo plano",
     "background_location_permission_content":
-        "Para cambiar de rede cando se executa en segundo plano, Curator Photos debe ter *sempre* acceso á ubicación precisa para que a aplicación poida ler o nome da rede Wi-Fi",
+        "Para cambiar de rede cando se executa en segundo plano, Personal Cloud Photos debe ter *sempre* acceso á ubicación precisa para que a aplicación poida ler o nome da rede Wi-Fi",
     "backup_album_selection_page_albums_device": "Álbums no dispositivo ({count})",
     "backup_album_selection_page_albums_tap": "Tocar para incluír, dobre toque para excluír",
     "backup_album_selection_page_assets_scatter":
@@ -57222,7 +57293,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ir a axustes",
     "backup_controller_page_background_battery_info_link": "Móstrame como",
     "backup_controller_page_background_battery_info_message":
-        "Para a mellor experiencia de copia de seguridade en segundo plano, desactiva calquera optimización de batería que restrinxa a actividade en segundo plano para Curator Photos.\n\nDado que isto é específico do dispositivo, busque a información requirida para o fabricante do teu dispositivo.",
+        "Para a mellor experiencia de copia de seguridade en segundo plano, desactiva calquera optimización de batería que restrinxa a actividade en segundo plano para Personal Cloud Photos.\n\nDado que isto é específico do dispositivo, busque a información requirida para o fabricante do teu dispositivo.",
     "backup_controller_page_background_battery_info_ok": "Aceptar",
     "backup_controller_page_background_battery_info_title": "Optimizacións da batería",
     "backup_controller_page_background_charging": "Só mentres se carga",
@@ -57281,7 +57352,7 @@ class CodegenLoader extends AssetLoader {
         "Estás seguro de que queres conservar {count, plural, one {# activo duplicado} other {# activos duplicados}}? Isto resolverá todos os grupos duplicados sen eliminar nada.",
     "bulk_trash_duplicates_confirmation":
         "Estás seguro de que queres mover masivamente ao lixo {count, plural, one {# activo duplicado} other {# activos duplicados}}? Isto conservará o activo máis grande de cada grupo e moverá ao lixo todos os demais duplicados.",
-    "buy": "Comprar Curator Photos",
+    "buy": "Comprar Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniaturas da páxina da biblioteca ({} activos)",
     "cache_settings_clear_cache_button": "Borrar caché",
     "cache_settings_clear_cache_button_title":
@@ -57294,7 +57365,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniaturas de álbums compartidos",
     "cache_settings_statistics_thumbnail": "Miniaturas",
     "cache_settings_statistics_title": "Uso da caché",
-    "cache_settings_subtitle": "Controlar o comportamento da caché da aplicación móbil Curator Photos",
+    "cache_settings_subtitle": "Controlar o comportamento da caché da aplicación móbil Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Tamaño da caché de miniaturas ({} activos)",
     "cache_settings_tile_subtitle": "Controlar o comportamento do almacenamento local",
     "cache_settings_tile_title": "Almacenamento Local",
@@ -57371,7 +57442,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contexto",
     "continue": "Continuar",
     "control_bottom_app_bar_create_new_album": "Crear novo álbum",
-    "control_bottom_app_bar_delete_from_immich": "Eliminar de Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Eliminar de Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Eliminar do dispositivo",
     "control_bottom_app_bar_edit_location": "Editar ubicación",
     "control_bottom_app_bar_edit_time": "Editar Data e Hora",
@@ -57435,12 +57506,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Eliminar",
     "delete_album": "Eliminar álbum",
     "delete_api_key_prompt": "Estás seguro de que queres eliminar esta chave API?",
-    "delete_dialog_alert": "Estes elementos eliminaranse permanentemente de Curator Photos e do teu dispositivo",
+    "delete_dialog_alert": "Estes elementos eliminaranse permanentemente de Personal Cloud Photos e do teu dispositivo",
     "delete_dialog_alert_local":
-        "Estes elementos eliminaranse permanentemente do teu dispositivo pero aínda estarán dispoñibles no servidor Curator Photos",
+        "Estes elementos eliminaranse permanentemente do teu dispositivo pero aínda estarán dispoñibles no servidor Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Algúns dos elementos non teñen copia de seguridade en Curator Photos e eliminaranse permanentemente do teu dispositivo",
-    "delete_dialog_alert_remote": "Estes elementos eliminaranse permanentemente do servidor Curator Photos",
+        "Algúns dos elementos non teñen copia de seguridade en Personal Cloud Photos e eliminaranse permanentemente do teu dispositivo",
+    "delete_dialog_alert_remote": "Estes elementos eliminaranse permanentemente do servidor Personal Cloud Photos",
     "delete_dialog_ok_force": "Eliminar Igualmente",
     "delete_dialog_title": "Eliminar Permanentemente",
     "delete_duplicates_confirmation": "Estás seguro de que queres eliminar permanentemente estes duplicados?",
@@ -57492,7 +57563,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Xestionar configuracións relacionadas coa descarga de activos",
     "download_started": "Descarga iniciada",
     "download_sucess": "Descarga exitosa",
-    "download_sucess_android": "Os medios descargáronse en DCIM/CuratorPhotos",
+    "download_sucess_android": "Os medios descargáronse en DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Agardando para reintentar",
     "downloading": "Descargando",
     "downloading_asset_filename": "Descargando activo {filename}",
@@ -57528,7 +57599,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Este cartafol está baleiro",
     "empty_trash": "Baleirar lixo",
     "empty_trash_confirmation":
-        "Estás seguro de que queres baleirar o lixo? Isto eliminará permanentemente todos os activos no lixo de Curator Photos. Non podes desfacer esta acción!",
+        "Estás seguro de que queres baleirar o lixo? Isto eliminará permanentemente todos os activos no lixo de Personal Cloud Photos. Non podes desfacer esta acción!",
     "enable": "Activar",
     "enabled": "Activado",
     "end_date": "Data de fin",
@@ -57767,7 +57838,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "Hora",
     "ignore_icloud_photos": "Ignorar fotos de iCloud",
     "ignore_icloud_photos_description":
-        "As fotos que están almacenadas en iCloud non se cargarán ao servidor Curator Photos",
+        "As fotos que están almacenadas en iCloud non se cargarán ao servidor Personal Cloud Photos",
     "image": "Imaxe",
     "image_alt_text_date": "{isVideo, select, true {Vídeo} other {Imaxe}} tomado/a o {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Vídeo} other {Imaxe}} tomado/a con {person1} o {date}",
@@ -57790,8 +57861,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Descarga Iniciada",
     "image_viewer_page_state_provider_download_success": "Descarga Exitosa",
     "image_viewer_page_state_provider_share_error": "Erro ao Compartir",
-    "immich_logo": "Logo de Curator Photos",
-    "immich_web_interface": "Interface Web de Curator Photos",
+    "immich_logo": "Logo de Personal Cloud Photos",
+    "immich_web_interface": "Interface Web de Personal Cloud Photos",
     "import_from_json": "Importar desde JSON",
     "import_path": "Ruta de importación",
     "in_albums": "En {count, plural, one {# álbum} other {# álbums}}",
@@ -57850,7 +57921,7 @@ class CodegenLoader extends AssetLoader {
         "A aplicación conectarase ao servidor a través desta URL cando use a rede wifi especificada",
     "location_permission": "Permiso de ubicación",
     "location_permission_content":
-        "Para usar a función de cambio automático, Curator Photos necesita permiso de ubicación precisa para poder ler o nome da rede WiFi actual",
+        "Para usar a función de cambio automático, Personal Cloud Photos necesita permiso de ubicación precisa para poder ler o nome da rede WiFi actual",
     "location_picker_choose_on_map": "Elixir no mapa",
     "location_picker_latitude_error": "Introducir unha latitude válida",
     "location_picker_latitude_hint": "Introduza a túa latitude aquí",
@@ -58004,7 +58075,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notificacións",
     "notifications_setting_description": "Xestionar notificacións",
     "oauth": "OAuth",
-    "official_immich_resources": "Recursos Oficiais de Curator Photos",
+    "official_immich_resources": "Recursos Oficiais de Personal Cloud Photos",
     "offline": "Fóra de liña",
     "ok": "Aceptar",
     "oldest_first": "Máis antigos primeiro",
@@ -58076,11 +58147,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Comezar",
     "permission_onboarding_go_to_settings": "Ir a axustes",
     "permission_onboarding_permission_denied":
-        "Permiso denegado. Para usar Curator Photos, conceda permisos de fotos e vídeos en Axustes.",
+        "Permiso denegado. Para usar Personal Cloud Photos, conceda permisos de fotos e vídeos en Axustes.",
     "permission_onboarding_permission_granted": "Permiso concedido! Xa está todo listo.",
     "permission_onboarding_permission_limited":
-        "Permiso limitado. Para permitir que Curator Photos faga copia de seguridade e xestione toda a túa colección da galería, conceda permisos de fotos e vídeos en Configuración.",
-    "permission_onboarding_request": "Curator Photos require permiso para ver as túas fotos e vídeos.",
+        "Permiso limitado. Para permitir que Personal Cloud Photos faga copia de seguridade e xestione toda a túa colección da galería, conceda permisos de fotos e vídeos en Configuración.",
+    "permission_onboarding_request": "Personal Cloud Photos require permiso para ver as túas fotos e vídeos.",
     "person": "Persoa",
     "person_birthdate": "Nacido/a o {date}",
     "person_hidden": "{name}{hidden, select, true { (oculto)} other {}}",
@@ -58123,12 +58194,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Álbum público",
     "public_share": "Compartir Público",
     "purchase_account_info": "Seguidor/a",
-    "purchase_activated_subtitle": "Grazas por apoiar Curator Photos e o software de código aberto",
+    "purchase_activated_subtitle": "Grazas por apoiar Personal Cloud Photos e o software de código aberto",
     "purchase_activated_time": "Activado o {date}",
     "purchase_activated_title": "A súa chave activouse correctamente",
     "purchase_button_activate": "Activar",
     "purchase_button_buy": "Comprar",
-    "purchase_button_buy_immich": "Comprar Curator Photos",
+    "purchase_button_buy_immich": "Comprar Personal Cloud Photos",
     "purchase_button_never_show_again": "Non mostrar nunca máis",
     "purchase_button_reminder": "Lembrarme en 30 días",
     "purchase_button_remove_key": "Eliminar chave",
@@ -58138,13 +58209,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_1": "Para un individuo",
     "purchase_individual_description_2": "Estado de seguidor/a",
     "purchase_input_suggestion": "Ten unha chave de produto? Introduza a chave a continuación",
-    "purchase_license_subtitle": "Compre Curator Photos para apoiar o desenvolvemento continuado do servizo",
+    "purchase_license_subtitle": "Compre Personal Cloud Photos para apoiar o desenvolvemento continuado do servizo",
     "purchase_lifetime_description": "Compra vitalicia",
     "purchase_option_title": "OPCIÓNS DE COMPRA",
     "purchase_panel_info_1":
-        "Construír Curator Photos leva moito tempo e esforzo, e temos enxeñeiros a tempo completo traballando nel para facelo o mellor posible. A nosa misión é que o software de código aberto e as prácticas comerciais éticas se convertan nunha fonte de ingresos sostible para os desenvolvedores e crear un ecosistema respectuoso coa privacidade con alternativas reais aos servizos na nube explotadores.",
+        "Construír Personal Cloud Photos leva moito tempo e esforzo, e temos enxeñeiros a tempo completo traballando nel para facelo o mellor posible. A nosa misión é que o software de código aberto e as prácticas comerciais éticas se convertan nunha fonte de ingresos sostible para os desenvolvedores e crear un ecosistema respectuoso coa privacidade con alternativas reais aos servizos na nube explotadores.",
     "purchase_panel_info_2":
-        "Como estamos comprometidos a non engadir muros de pago, esta compra non che outorgará ningunha función adicional en Curator Photos. Dependemos de usuarios coma ti para apoiar o desenvolvemento continuo de Curator Photos.",
+        "Como estamos comprometidos a non engadir muros de pago, esta compra non che outorgará ningunha función adicional en Personal Cloud Photos. Dependemos de usuarios coma ti para apoiar o desenvolvemento continuo de Personal Cloud Photos.",
     "purchase_panel_title": "Apoiar o proxecto",
     "purchase_per_server": "Por servidor",
     "purchase_per_user": "Por usuario",
@@ -58360,7 +58431,7 @@ class CodegenLoader extends AssetLoader {
         "Ao transmitir un vídeo desde o servidor, reproducir o orixinal aínda que haxa unha transcodificación dispoñible. Pode provocar buffering. Os vídeos dispoñibles localmente repródúcense en calidade orixinal independentemente desta configuración.",
     "setting_video_viewer_original_video_title": "Forzar vídeo orixinal",
     "settings": "Configuración",
-    "settings_require_restart": "Por favor, reinicie Curator Photos para aplicar esta configuración",
+    "settings_require_restart": "Por favor, reinicie Personal Cloud Photos para aplicar esta configuración",
     "settings_saved": "Configuración gardada",
     "share": "Compartir",
     "share_add_photos": "Engadir fotos",
@@ -58484,14 +58555,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Soporte",
     "support_and_feedback": "Soporte e Comentarios",
     "support_third_party_description":
-        "A túa instalación de Curator Photos foi empaquetada por un terceiro. Os problemas que experimente poden ser causados por ese paquete, así que por favor, comunica os problemas con eles en primeira instancia usando as ligazóns a continuación.",
+        "A túa instalación de Personal Cloud Photos foi empaquetada por un terceiro. Os problemas que experimente poden ser causados por ese paquete, así que por favor, comunica os problemas con eles en primeira instancia usando as ligazóns a continuación.",
     "swap_merge_direction": "Intercambiar dirección de fusión",
     "sync": "Sincronizar",
     "sync_albums": "Sincronizar álbums",
     "sync_albums_manual_subtitle":
         "Sincronizar todos os vídeos e fotos cargados aos álbums de copia de seguridade seleccionados",
     "sync_upload_album_setting_subtitle":
-        "Crear e suba as túas fotos e vídeos aos álbums seleccionados en Curator Photos",
+        "Crear e suba as túas fotos e vídeos aos álbums seleccionados en Personal Cloud Photos",
     "tag": "Etiqueta",
     "tag_assets": "Etiquetar activos",
     "tag_created": "Etiqueta creada: {tag}",
@@ -58541,7 +58612,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "As fotos e vídeos movidos ao lixo aparecerán aquí.",
     "trash_page_delete_all": "Eliminar Todo",
     "trash_page_empty_trash_dialog_content":
-        "Queres baleirar os teus activos no lixo? Estes elementos eliminaranse permanentemente de Curator Photos",
+        "Queres baleirar os teus activos no lixo? Estes elementos eliminaranse permanentemente de Personal Cloud Photos",
     "trash_page_info": "Os elementos no lixo eliminaranse permanentemente despois de {days} días",
     "trash_page_no_assets": "Non hai activos no lixo",
     "trash_page_restore_all": "Restaurar Todo",
@@ -58584,7 +58655,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Erros",
     "upload_status_uploaded": "Subido",
     "upload_success": "Subida exitosa, actualice a páxina para ver os novos activos subidos.",
-    "upload_to_immich": "Subir a Curator Photos ({count})",
+    "upload_to_immich": "Subir a Personal Cloud Photos ({count})",
     "uploading": "Subindo",
     "usage": "Uso",
     "use_current_connection": "usar conexión actual",
@@ -58607,7 +58678,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versión",
     "version_announcement_closing": "O seu amigo, Alex",
     "version_announcement_message":
-        "Ola! Unha nova versión de Curator Photos está dispoñible. Por favor, toma un tempo para ler as <link>notas de lanzamento</link> para asegurarse de que a túa configuración está actualizada para evitar calquera configuración incorrecta, especialmente se usas WatchTower ou calquera mecanismo que xestione a actualización automática da  túa instancia de Curator Photos.",
+        "Ola! Unha nova versión de Personal Cloud Photos está dispoñible. Por favor, toma un tempo para ler as <link>notas de lanzamento</link> para asegurarse de que a túa configuración está actualizada para evitar calquera configuración incorrecta, especialmente se usas WatchTower ou calquera mecanismo que xestione a actualización automática da  túa instancia de Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "notas de lanzamento",
     "version_announcement_overlay_text_1": "Ola amigo/a, hai unha nova versión de",
     "version_announcement_overlay_text_2": "por favor, toma o teu tempo para visitar as ",
@@ -58642,7 +58713,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Aviso",
     "week": "Semana",
     "welcome": "Benvido/a",
-    "welcome_to_immich": "Benvido/a a Curator Photos",
+    "welcome_to_immich": "Benvido/a a Personal Cloud Photos",
     "wifi_name": "Nome da Wi-Fi",
     "year": "Ano",
     "years_ago": "Hai {years, plural, one {# ano} other {# anos}}",
@@ -58689,7 +58760,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "הוספת דפוסי החרגה. נתמכת התאמת דפוסים באמצעות *, ** ו-?. כדי להתעלם מכל הקבצים בתיקיה כלשהי בשם \"Raw\", יש להשתמש ב \"**/Raw/**\". כדי להתעלם מכל הקבצים המסתיימים ב \"tif.\", יש להשתמש ב \"tif.*/**\". כדי להתעלם מנתיב מוחלט, יש להשתמש ב \"**/נתיב/להתעלמות\".",
       "asset_offline_description":
-          "תמונה מספרייה חיצונית זו לא נמצאת יותר בדיסק והועברה לאשפה. אם הקובץ הועבר מתוך הספרייה, נא לבדוק את ציר הזמן שלך עבור התמונה המקבילה החדש. כדי לשחזר תמונה זו, נא לוודא ש-Curator Photos יכול לגשת אל נתיב הקובץ למטה ולסרוק מחדש את הספרייה.",
+          "תמונה מספרייה חיצונית זו לא נמצאת יותר בדיסק והועברה לאשפה. אם הקובץ הועבר מתוך הספרייה, נא לבדוק את ציר הזמן שלך עבור התמונה המקבילה החדש. כדי לשחזר תמונה זו, נא לוודא ש-Personal Cloud Photos יכול לגשת אל נתיב הקובץ למטה ולסרוק מחדש את הספרייה.",
       "authentication_settings": "הגדרות התחברות",
       "authentication_settings_description": "ניהול סיסמה, OAuth, והגדרות התחברות אחרות",
       "authentication_settings_disable_all":
@@ -58705,7 +58776,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "התצורה מוגדרת כעת על ידי קובץ תצורה",
       "confirm_delete_library": "האם באמת ברצונך למחוק את הספרייה {library}?",
       "confirm_delete_library_assets":
-          "האם באמת ברצונך למחוק את הספרייה הזו? זה ימחק את {count, plural, one {תמונה # המוכלת} other {כל # תמונות המוכלים}} בה מ-Curator Photos ואינו ניתן לביטול. קבצים יישארו בדיסק.",
+          "האם באמת ברצונך למחוק את הספרייה הזו? זה ימחק את {count, plural, one {תמונה # המוכלת} other {כל # תמונות המוכלים}} בה מ-Personal Cloud Photos ואינו ניתן לביטול. קבצים יישארו בדיסק.",
       "confirm_email_below": "כדי לאשר, יש להקליד \"{email}\" למטה",
       "confirm_reprocess_all_faces": "האם באמת ברצונך לעבד מחדש את כל הפנים? זה גם ינקה אנשים בעלי שם.",
       "confirm_user_password_reset": "האם באמת ברצונך לאפס את הסיסמה של המשתמש {user}?",
@@ -58826,7 +58897,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "אפשר תכונות מפה",
       "map_gps_settings": "הגדרות מפה & GPS",
       "map_gps_settings_description": "ניהול הגדרות מפה & GPS (קידוד גאוגרפי הפוך)",
-      "map_implications": "תכונת המפה מסתמכת על שירות אריח חיצוני (tiles.curatorphotos.cloud)",
+      "map_implications": "תכונת המפה מסתמכת על שירות אריח חיצוני (tiles.personalcloudphotos.cloud)",
       "map_light_style": "עיצוב בהיר",
       "map_manage_reverse_geocoding_settings": "ניהול הגדרות <link>קידוד גאוגרפי הפוך</link>",
       "map_reverse_geocoding": "קידוד גיאוגרפי הפוך",
@@ -58851,8 +58922,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "הערה: אי אפשר לשנות זאת מאוחר יותר!",
       "notification_email_from_address": "מכתובת",
       "notification_email_from_address_description":
-          "כתובת דוא\"ל של השולח, לדוגמה: \"Curator Photos שרת תמונות <noreply@example.com>\". יש לוודא שנעשה שימוש בכתובת ממנה הנך מורשה לשלוח דוא\"ל.",
-      "notification_email_host_description": "מארח שרת הדוא\"ל (למשל smtp.curatorphotos.app)",
+          "כתובת דוא\"ל של השולח, לדוגמה: \"Personal Cloud Photos שרת תמונות <noreply@example.com>\". יש לוודא שנעשה שימוש בכתובת ממנה הנך מורשה לשלוח דוא\"ל.",
+      "notification_email_host_description": "מארח שרת הדוא\"ל (למשל smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "התעלם משגיאות תעודה",
       "notification_email_ignore_certificate_errors_description": "התעלם משגיאות אימות תעודת TLS (לא מומלץ)",
       "notification_email_password_description": "סיסמה לשימוש בעת אימות עם שרת הדוא\"ל",
@@ -58948,9 +59019,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "ניהול תבניות מותאמות אישית עבור התראות",
       "theme_custom_css_settings": "CSS בהתאמה אישית",
       "theme_custom_css_settings_description":
-          "גיליונות סגנון מדורגים (CSS) מאפשרים התאמה אישית של העיצוב של Curator Photos.",
+          "גיליונות סגנון מדורגים (CSS) מאפשרים התאמה אישית של העיצוב של Personal Cloud Photos.",
       "theme_settings": "הגדרות ערכת נושא",
-      "theme_settings_description": "ניהול התאמה אישית של ממשק האינטרנט של Curator Photos",
+      "theme_settings_description": "ניהול התאמה אישית של ממשק האינטרנט של Personal Cloud Photos",
       "these_files_matched_by_checksum": "קבצים אלה תואמים לפי סיכומי הביקורת שלהם",
       "thumbnail_generation_job": "צור תמונות ממוזערות",
       "thumbnail_generation_job_description":
@@ -59175,7 +59246,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "רשת תמונות",
     "asset_offline": "תמונה לא מקוונת",
     "asset_offline_description":
-        "התמונה החיצונית הזאת כבר לא נמצאת בדיסק. נא ליצור קשר עם מנהל Curator Photos שלך לקבלת עזרה.",
+        "התמונה החיצונית הזאת כבר לא נמצאת בדיסק. נא ליצור קשר עם מנהל Personal Cloud Photos שלך לקבלת עזרה.",
     "asset_restored_successfully": "תמונה שוחזרה בהצלחה",
     "asset_skipped": "דילג",
     "asset_skipped_in_trash": "באשפה",
@@ -59191,7 +59262,7 @@ class CodegenLoader extends AssetLoader {
     "assets_cannot_be_added_to_album_count": "לא ניתן להוסיף את ה{count, plural, one {תמונה} other {תמונות}} לאלבום",
     "assets_count": "{count, plural, one {תמונה #} other {# תמונות}}",
     "assets_deleted_permanently": "{count} תמונות נמחקו לצמיתות",
-    "assets_deleted_permanently_from_server": "{count} תמונות נמחקו לצמיתות משרת ה-Curator Photos",
+    "assets_deleted_permanently_from_server": "{count} תמונות נמחקו לצמיתות משרת ה-Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {הורד קובץ # - קובץ {error} נכשל} other {ירדו # קבצים - {error} קבצים נכשלו}}",
     "assets_downloaded_successfully": "{count, plural, one {קובץ # ירד בהצלחה} other {# קבצים ירדו בהצלחה}}",
@@ -59301,7 +59372,7 @@ class CodegenLoader extends AssetLoader {
         "האם באמת ברצונך להשאיר {count, plural, one {תמונה # כפולה} other {# תמונות כפולות}}? זה יסגור את כל הקבוצות הכפולות מבלי למחוק דבר.",
     "bulk_trash_duplicates_confirmation":
         "האם באמת ברצונך להעביר לאשפה בכמות גדולה {count, plural, one {תמונה # כפולה} other {# תמונות כפולות}}? זה ישמור על התמונה הגדולה ביותר של כל קבוצה ויעביר לאשפה את כל שאר הכפילויות.",
-    "buy": "רכוש את Curator Photos",
+    "buy": "רכוש את Personal Cloud Photos",
     "cache_settings_album_thumbnails": "תמונות ממוזערות של דף ספרייה ({} תמונות)",
     "cache_settings_clear_cache_button": "ניקוי מטמון",
     "cache_settings_clear_cache_button_title":
@@ -59314,7 +59385,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "תמונות ממוזערות של אלבום משותף",
     "cache_settings_statistics_thumbnail": "תמונות ממוזערות",
     "cache_settings_statistics_title": "שימוש במטמון",
-    "cache_settings_subtitle": "הגדר כיצד אפליקציית Curator Photos שומרת נתונים באופן זמני",
+    "cache_settings_subtitle": "הגדר כיצד אפליקציית Personal Cloud Photos שומרת נתונים באופן זמני",
     "cache_settings_thumbnail_size": "גודל מטמון תמונה ממוזערת ({} תמונות)",
     "cache_settings_tile_subtitle": "שלוט בהתנהגות האחסון המקומי",
     "cache_settings_tile_title": "אחסון מקומי",
@@ -59519,7 +59590,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "ניהול הגדרות הקשורות להורדת תמונות",
     "download_started": "הורדה החלה",
     "download_sucess": "הצלחת הורדה",
-    "download_sucess_android": "המדיה הורדה אל DCIM/CuratorPhotos",
+    "download_sucess_android": "המדיה הורדה אל DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "מחכה כדי לנסות שוב",
     "downloading": "מוריד",
     "downloading_asset_filename": "מוריד תמונה {filename}",
@@ -59831,8 +59902,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "ההורדה החלה",
     "image_viewer_page_state_provider_download_success": "הצלחת הורדה",
     "image_viewer_page_state_provider_share_error": "שיתוף שגיאה",
-    "immich_logo": "הלוגו של Curator Photos",
-    "immich_web_interface": "ממשק האינטרנט של Curator Photos",
+    "immich_logo": "הלוגו של Personal Cloud Photos",
+    "immich_web_interface": "ממשק האינטרנט של Personal Cloud Photos",
     "import_from_json": "ייבוא מ-JSON",
     "import_path": "נתיב ייבוא",
     "in_albums": "ב{count, plural, one {אלבום #} other {# אלבומים}}",
@@ -60068,7 +60139,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "התראות",
     "notifications_setting_description": "ניהול התראות",
     "oauth": "OAuth",
-    "official_immich_resources": "מקורות רשמיים של Curator Photos",
+    "official_immich_resources": "מקורות רשמיים של Personal Cloud Photos",
     "offline": "לא מקוון",
     "ok": "בסדר",
     "oldest_first": "הישן ביותר ראשון",
@@ -60196,12 +60267,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "אלבום ציבורי",
     "public_share": "שיתוף ציבורי",
     "purchase_account_info": "תומך",
-    "purchase_activated_subtitle": "תודה לך על התמיכה ב-Curator Photos ובתוכנות קוד-פתוח",
+    "purchase_activated_subtitle": "תודה לך על התמיכה ב-Personal Cloud Photos ובתוכנות קוד-פתוח",
     "purchase_activated_time": "הופעל ב-{date}",
     "purchase_activated_title": "המפתח שלך הופעל בהצלחה",
     "purchase_button_activate": "הפעל",
     "purchase_button_buy": "קנה",
-    "purchase_button_buy_immich": "קנה את Curator Photos",
+    "purchase_button_buy_immich": "קנה את Personal Cloud Photos",
     "purchase_button_never_show_again": "לעולם אל תראה שוב",
     "purchase_button_reminder": "הזכר לי בעוד 30 יום",
     "purchase_button_remove_key": "הסר מפתח",
@@ -60211,13 +60282,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "מעמד תומך",
     "purchase_individual_title": "יחיד",
     "purchase_input_suggestion": "יש לך מפתח מוצר? הכנס את המפתח למטה",
-    "purchase_license_subtitle": "קנה את Curator Photos כדי לתמוך בפיתוח המתמשך של השירות",
+    "purchase_license_subtitle": "קנה את Personal Cloud Photos כדי לתמוך בפיתוח המתמשך של השירות",
     "purchase_lifetime_description": "רכישה לכל החיים",
     "purchase_option_title": "אפשרויות רכישה",
     "purchase_panel_info_1":
-        "בניית Curator Photos לוקחת הרבה זמן ומאמץ, ויש לנו מהנדסים במשרה מלאה שעובדים על זה כדי לעשות את זה הכי טוב שאנחנו יכולים. המשימה שלנו היא שתוכנות קוד-פתוח ושיטות עסקיות אתיות יהיו מקור הכנסה בר-קיימא למפתחים וליצור אקוסיסטם המכבדת פרטיות עם חלופות אמיתיות לשירותי ענן נצלנים.",
+        "בניית Personal Cloud Photos לוקחת הרבה זמן ומאמץ, ויש לנו מהנדסים במשרה מלאה שעובדים על זה כדי לעשות את זה הכי טוב שאנחנו יכולים. המשימה שלנו היא שתוכנות קוד-פתוח ושיטות עסקיות אתיות יהיו מקור הכנסה בר-קיימא למפתחים וליצור אקוסיסטם המכבדת פרטיות עם חלופות אמיתיות לשירותי ענן נצלנים.",
     "purchase_panel_info_2":
-        "מכיוון שאנחנו מחויבים לא להוסיף חומות תשלום, הרכישה הזאת לא תקנה לך תכונות נוספות כלשהן ב-Curator Photos. אנחנו סומכים על משתמשים כמוך שיתמכו בפיתוח המתמשך של Curator Photos.",
+        "מכיוון שאנחנו מחויבים לא להוסיף חומות תשלום, הרכישה הזאת לא תקנה לך תכונות נוספות כלשהן ב-Personal Cloud Photos. אנחנו סומכים על משתמשים כמוך שיתמכו בפיתוח המתמשך של Personal Cloud Photos.",
     "purchase_panel_title": "תמוך בפרויקט",
     "purchase_per_server": "עבור שרת",
     "purchase_per_user": "עבור משתמש",
@@ -60568,7 +60639,7 @@ class CodegenLoader extends AssetLoader {
     "support": "תמיכה",
     "support_and_feedback": "תמיכה & משוב",
     "support_third_party_description":
-        "התקנת ה-Curator Photos שלך נארזה על ידי צד שלישי. בעיות שאתה חווה עשויות להיגרם על ידי חבילה זו, אז בבקשה תעלה בעיות איתם ראשית כל באמצעות הקישורים למטה.",
+        "התקנת ה-Personal Cloud Photos שלך נארזה על ידי צד שלישי. בעיות שאתה חווה עשויות להיגרם על ידי חבילה זו, אז בבקשה תעלה בעיות איתם ראשית כל באמצעות הקישורים למטה.",
     "swap_merge_direction": "החלף כיוון מיזוג",
     "sync": "סנכרן",
     "sync_albums": "סנכרן אלבומים",
@@ -60698,7 +60769,7 @@ class CodegenLoader extends AssetLoader {
     "version": "גרסה",
     "version_announcement_closing": "החבר שלך, אלכס",
     "version_announcement_message":
-        "שלום לך! זמינה גרסה חדשה של Curator Photos. נא לקחת זמן מה לקרוא את <link>הערות הפרסום</link> כדי לוודא שההתקנה שלך עדכנית על מנת למנוע תצורות שגויות, במיוחד אם נעשה שימוש ב-WatchTower או בכל מנגנון שמטפל בעדכון מופע ה-Curator Photos שלך באופן אוטומטי.",
+        "שלום לך! זמינה גרסה חדשה של Personal Cloud Photos. נא לקחת זמן מה לקרוא את <link>הערות הפרסום</link> כדי לוודא שההתקנה שלך עדכנית על מנת למנוע תצורות שגויות, במיוחד אם נעשה שימוש ב-WatchTower או בכל מנגנון שמטפל בעדכון מופע ה-Personal Cloud Photos שלך באופן אוטומטי.",
     "version_announcement_overlay_release_notes": "הערות פרסום",
     "version_announcement_overlay_text_1": "הי חבר/ה, יש מהדורה חדשה של",
     "version_announcement_overlay_text_2": "אנא קח/י את הזמן שלך לבקר ב ",
@@ -60734,7 +60805,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "אזהרה",
     "week": "שבוע",
     "welcome": "ברוכים הבאים",
-    "welcome_to_immich": "ברוכים הבאים אל Curator Photos",
+    "welcome_to_immich": "ברוכים הבאים אל Personal Cloud Photos",
     "wifi_name": "שם הרשת האלחוטית",
     "wrong_pin_code": "קוד PIN שגוי",
     "year": "שנה",
@@ -60781,7 +60852,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Thêm quy tắc loại trừ. Hỗ trợ sử dụng ký tự *, **, và ?. Để bỏ qua tất cả các tập tin bất kỳ trong thư mục tên \"Raw\", hãy dùng \"**/Raw/**\". Để bỏ qua các tập tin có đuôi \".tif\", hãy dùng \"**/*.tif\". Để bỏ qua một đường dẫn cố định, hãy dùng \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Ảnh thư viện bên ngoài này không còn trên ổ đĩa và đã bị chuyển vào thùng rác. Nếu ảnh đã bị di chuyển trong thư viện, kiểm tra dòng thời gian của bạn để tìm ảnh mới tương ứng. Để khôi phục, hãy đảm bảo Curator Photos có thể truy cập đường dẫn ảnh bên dưới và quét lại thư viện.",
+          "Ảnh thư viện bên ngoài này không còn trên ổ đĩa và đã bị chuyển vào thùng rác. Nếu ảnh đã bị di chuyển trong thư viện, kiểm tra dòng thời gian của bạn để tìm ảnh mới tương ứng. Để khôi phục, hãy đảm bảo Personal Cloud Photos có thể truy cập đường dẫn ảnh bên dưới và quét lại thư viện.",
       "authentication_settings": "Đăng nhập",
       "authentication_settings_description": "Quản lý mật khẩu, OAuth và các cài đặt xác thực khác",
       "authentication_settings_disable_all":
@@ -60797,7 +60868,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Cấu hình hiện tại đang được đặt bởi một tập tin cấu hình",
       "confirm_delete_library": "Bạn có chắc chắn muốn xóa thư viện {library} không?",
       "confirm_delete_library_assets":
-          "Bạn có chắc chắn muốn xóa thư viện này không? Thao tác này sẽ xóa {count, plural, one {# ảnh} other {tất cả # ảnh}} có trong Curator Photos và không thể hoàn tác. Các tập tin sẽ vẫn còn trên ổ đĩa.",
+          "Bạn có chắc chắn muốn xóa thư viện này không? Thao tác này sẽ xóa {count, plural, one {# ảnh} other {tất cả # ảnh}} có trong Personal Cloud Photos và không thể hoàn tác. Các tập tin sẽ vẫn còn trên ổ đĩa.",
       "confirm_email_below": "Để xác nhận, nhập \"{email}\" bên dưới",
       "confirm_reprocess_all_faces":
           "Bạn có chắc chắn muốn xử lý lại tất cả các khuôn mặt? Thao tác này sẽ xoá tên người đã được gán.",
@@ -60922,7 +60993,8 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Bật tính năng bản đồ",
       "map_gps_settings": "Bản đồ & GPS",
       "map_gps_settings_description": "Quản lý cài đặt Bản đồ & GPS (Mã hóa địa lý ngược)",
-      "map_implications": "Tính năng bản đồ phụ thuộc vào dịch vụ thẻ bản đồ bên ngoài (tiles.curatorphotos.cloud)",
+      "map_implications":
+          "Tính năng bản đồ phụ thuộc vào dịch vụ thẻ bản đồ bên ngoài (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Giao diện sáng",
       "map_manage_reverse_geocoding_settings": "Quản lý cài đặt <link>Mã hóa địa lý ngược</link>",
       "map_reverse_geocoding": "Mã hoá Địa lý Ngược (Reverse Geocoding)",
@@ -60949,8 +61021,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "LƯU Ý: Cài đặt này không thể thay đổi được sau khi lưu!",
       "notification_email_from_address": "Địa chỉ email người gửi",
       "notification_email_from_address_description":
-          "Địa chỉ email của người gửi, ví dụ: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "Địa chỉ máy chủ email (ví dụ: smtp.curatorphotos.app)",
+          "Địa chỉ email của người gửi, ví dụ: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description": "Địa chỉ máy chủ email (ví dụ: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Bỏ qua các lỗi chứng chỉ",
       "notification_email_ignore_certificate_errors_description":
           "Bỏ qua lỗi xác thực chứng chỉ TLS (không khuyến nghị)",
@@ -61050,9 +61122,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Mẫu thông báo",
       "template_settings_description": "Quản lý các mẫu thông báo tùy chỉnh",
       "theme_custom_css_settings": "CSS tùy chỉnh",
-      "theme_custom_css_settings_description": "Cascading Style Sheets cho phép tùy chỉnh thiết kế của Curator Photos.",
+      "theme_custom_css_settings_description":
+          "Cascading Style Sheets cho phép tùy chỉnh thiết kế của Personal Cloud Photos.",
       "theme_settings": "Chủ đề",
-      "theme_settings_description": "Quản lý tùy chỉnh giao diện web của Curator Photos",
+      "theme_settings_description": "Quản lý tùy chỉnh giao diện web của Personal Cloud Photos",
       "thumbnail_generation_job": "Tạo hình thu nhỏ",
       "thumbnail_generation_job_description":
           "Tạo hình thu nhỏ lớn, nhỏ và mờ cho mỗi ảnh, cũng như hình thu nhỏ cho mỗi người",
@@ -61184,7 +61257,8 @@ class CodegenLoader extends AssetLoader {
     "advanced_settings_prefer_remote_subtitle":
         "Trên một số thiết bị, việc tải hình thu nhỏ từ ảnh trên thiết bị diễn ra chậm. Kích hoạt cài đặt này để tải ảnh từ máy chủ.",
     "advanced_settings_prefer_remote_title": "Ưu tiên ảnh từ máy chủ",
-    "advanced_settings_proxy_headers_subtitle": "Xác định các tiêu đề proxy Curator Photos sẽ gửi kèm mỗi yêu cầu mạng",
+    "advanced_settings_proxy_headers_subtitle":
+        "Xác định các tiêu đề proxy Personal Cloud Photos sẽ gửi kèm mỗi yêu cầu mạng",
     "advanced_settings_proxy_headers_title": "Tiêu đề proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Bỏ qua xác minh chứng chỉ SSL cho máy chủ cuối. Yêu cầu cho chứng chỉ tự ký.",
@@ -61280,7 +61354,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Lưới ảnh",
     "asset_offline": "Ảnh Ngoại tuyến",
     "asset_offline_description":
-        "Tập tin bên ngoài này không còn trên ổ đĩa. Vui lòng liên hệ quản trị viên Curator Photos của bạn để được trợ giúp.",
+        "Tập tin bên ngoài này không còn trên ổ đĩa. Vui lòng liên hệ quản trị viên Personal Cloud Photos của bạn để được trợ giúp.",
     "asset_restored_successfully": "Đã khôi phục ảnh thành công",
     "asset_skipped": "Đã bỏ qua",
     "asset_skipped_in_trash": "Trong thùng rác",
@@ -61295,7 +61369,7 @@ class CodegenLoader extends AssetLoader {
         "Đã thêm {count, plural, one {# mục} other {# mục}} vào {hasName, select, true {<b>{name}</b>} other {album mới}}",
     "assets_count": "{count, plural, one {# mục} other {# mục}}",
     "assets_deleted_permanently": "Đã xoá vĩnh viễn {count} mục",
-    "assets_deleted_permanently_from_server": "Đã xoá vĩnh viễn {count} mục khỏi máy chủ Curator Photos",
+    "assets_deleted_permanently_from_server": "Đã xoá vĩnh viễn {count} mục khỏi máy chủ Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Đã tải xuống # tập tin - {error} tập tin thất bại} other {Đã tải xuống # tập tin - {error} tập tin thất bại}}",
     "assets_downloaded_successfully":
@@ -61310,7 +61384,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "Đã khôi phục {count} mục thành công",
     "assets_trashed": "Đã chuyển {count} mục vào thùng rác",
     "assets_trashed_count": "Đã chuyển {count, plural, one {# mục} other {# mục}} vào thùng rác",
-    "assets_trashed_from_server": "Đã chuyển {count} mục từ máy chủ Curator Photos vào thùng rác",
+    "assets_trashed_from_server": "Đã chuyển {count} mục từ máy chủ Personal Cloud Photos vào thùng rác",
     "assets_were_part_of_album_count": "{count, plural, one {Mục đã} other {Các mục đã}} có trong album",
     "authorized_devices": "Thiết bị được ủy quyền",
     "automatic_endpoint_switching_subtitle":
@@ -61321,7 +61395,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Quay lại, đóng, hoặc bỏ chọn",
     "background_location_permission": "Quyền truy cập vị trí ở nền",
     "background_location_permission_content":
-        "Để chuyển đổi mạng khi chạy ở chế độ nền, Curator Photos *luôn* phải có quyền truy cập vị trí chính xác để ứng dụng có thể đọc tên mạng Wi-Fi",
+        "Để chuyển đổi mạng khi chạy ở chế độ nền, Personal Cloud Photos *luôn* phải có quyền truy cập vị trí chính xác để ứng dụng có thể đọc tên mạng Wi-Fi",
     "backup_album_selection_page_albums_device": "Album trên thiết bị ({count})",
     "backup_album_selection_page_albums_tap": "Nhấn để chọn, nhấn đúp để bỏ qua",
     "backup_album_selection_page_assets_scatter":
@@ -61344,7 +61418,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Đi tới cài đặt",
     "backup_controller_page_background_battery_info_link": "Hãy chỉ cho tôi cách làm",
     "backup_controller_page_background_battery_info_message":
-        "Để có trải nghiệm sao lưu nền tốt nhất, vui lòng vô hiệu hóa bất kỳ tối ưu hóa pin nào đang hạn chế hoạt động nền của Curator Photos.\n\nVì điều này phụ thuộc vào thiết bị, vui lòng tham khảo thông tin cần thiết của nhà sản xuất thiết bị của bạn.",
+        "Để có trải nghiệm sao lưu nền tốt nhất, vui lòng vô hiệu hóa bất kỳ tối ưu hóa pin nào đang hạn chế hoạt động nền của Personal Cloud Photos.\n\nVì điều này phụ thuộc vào thiết bị, vui lòng tham khảo thông tin cần thiết của nhà sản xuất thiết bị của bạn.",
     "backup_controller_page_background_battery_info_ok": "Đồng ý",
     "backup_controller_page_background_battery_info_title": "Tiết kiệm pin",
     "backup_controller_page_background_charging": "Chỉ khi đang sạc",
@@ -61406,7 +61480,7 @@ class CodegenLoader extends AssetLoader {
         "Bạn có chắc chắn muốn giữ lại {count, plural, one {# mục trùng lặp} other {# mục trùng lặp}} không? Điều này sẽ xử lý tất cả các nhóm ảnh trùng lặp mà không xóa bất kỳ thứ gì.",
     "bulk_trash_duplicates_confirmation":
         "Bạn có chắc chắn muốn đưa {count, plural, one {# mục trùng lặp} other {# mục trùng lặp}} vào thùng rác không? Điều này sẽ giữ lại ảnh chất lượng nhất của mỗi nhóm và đưa tất cả các bản trùng lặp khác vào thùng rác.",
-    "buy": "Mua Curator Photos",
+    "buy": "Mua Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Xoá bộ nhớ đệm",
     "cache_settings_clear_cache_button_title":
         "Xóa bộ nhớ đệm của ứng dụng. Điều này sẽ ảnh hưởng đến hiệu suất của ứng dụng đến khi bộ nhớ đệm được tạo lại.",
@@ -61418,7 +61492,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Hình thu nhỏ album chia sẻ",
     "cache_settings_statistics_thumbnail": "Hình thu nhỏ",
     "cache_settings_statistics_title": "Mức sử dụng bộ nhớ đệm",
-    "cache_settings_subtitle": "Kiểm soát hành vi bộ nhớ đệm của ứng dụng Curator Photos",
+    "cache_settings_subtitle": "Kiểm soát hành vi bộ nhớ đệm của ứng dụng Personal Cloud Photos",
     "cache_settings_tile_subtitle": "Kiểm soát cách xử lý lưu trữ cục bộ",
     "cache_settings_tile_title": "Lưu trữ cục bộ",
     "cache_settings_title": "Cài đặt bộ nhớ đệm",
@@ -61502,7 +61576,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Ngữ cảnh",
     "continue": "Tiếp tục",
     "control_bottom_app_bar_create_new_album": "Tạo album mới",
-    "control_bottom_app_bar_delete_from_immich": "Xóa khỏi Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Xóa khỏi Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Xóa khỏi thiết bị",
     "control_bottom_app_bar_edit_location": "Chỉnh sửa vị trí",
     "control_bottom_app_bar_edit_time": "Chỉnh sửa Ngày và Giờ",
@@ -61569,12 +61643,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Xóa",
     "delete_album": "Xóa album",
     "delete_api_key_prompt": "Bạn có chắc chắn muốn xóa khóa API này không?",
-    "delete_dialog_alert": "Những mục này sẽ bị xóa vĩnh viễn khỏi Curator Photos và thiết bị của bạn",
+    "delete_dialog_alert": "Những mục này sẽ bị xóa vĩnh viễn khỏi Personal Cloud Photos và thiết bị của bạn",
     "delete_dialog_alert_local":
-        "Những mục này sẽ bị xóa vĩnh viễn khỏi thiết bị của bạn nhưng vẫn còn lưu trữ trên máy chủ Curator Photos",
+        "Những mục này sẽ bị xóa vĩnh viễn khỏi thiết bị của bạn nhưng vẫn còn lưu trữ trên máy chủ Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Một số mục chưa được sao lưu lên Curator Photos và sẽ bị xóa vĩnh viễn khỏi thiết bị của bạn",
-    "delete_dialog_alert_remote": "Những mục này sẽ bị xóa vĩnh viễn khỏi máy chủ Curator Photos",
+        "Một số mục chưa được sao lưu lên Personal Cloud Photos và sẽ bị xóa vĩnh viễn khỏi thiết bị của bạn",
+    "delete_dialog_alert_remote": "Những mục này sẽ bị xóa vĩnh viễn khỏi máy chủ Personal Cloud Photos",
     "delete_dialog_ok_force": "Xóa Vĩnh Viễn",
     "delete_dialog_title": "Xoá vĩnh viễn",
     "delete_duplicates_confirmation": "Bạn có chắc chắn muốn xóa vĩnh viễn các bản trùng lặp này không?",
@@ -61628,7 +61702,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Quản lý cài đặt liên quan đến việc tải ảnh xuống",
     "download_started": "Đã bắt đầu tải xuống",
     "download_sucess": "Tải xuống thành công",
-    "download_sucess_android": "Phương tiện đã được tải vào DCIM/CuratorPhotos",
+    "download_sucess_android": "Phương tiện đã được tải vào DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Đang chờ thử lại",
     "downloading": "Đang tải xuống",
     "downloading_asset_filename": "Đang tải xuống tập tin {filename}",
@@ -61668,7 +61742,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Thư mục rỗng",
     "empty_trash": "Dọn sạch thùng rác",
     "empty_trash_confirmation":
-        "Bạn có chắc chắn muốn dọn sạch thùng rác không? Điều này sẽ xóa vĩnh viễn tất cả các mục trong thùng rác khỏi Curator Photos.\nBạn không thể hoàn tác hành động này!",
+        "Bạn có chắc chắn muốn dọn sạch thùng rác không? Điều này sẽ xóa vĩnh viễn tất cả các mục trong thùng rác khỏi Personal Cloud Photos.\nBạn không thể hoàn tác hành động này!",
     "enable": "Bật",
     "enable_biometric_auth_description": "Nhập mã PIN của bạn để bật xác thực sinh trắc học",
     "enabled": "Đã bật",
@@ -61918,7 +61992,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Giờ",
     "id": "ID",
     "ignore_icloud_photos": "Bỏ qua ảnh iCloud",
-    "ignore_icloud_photos_description": "Ảnh được lưu trữ trên iCloud sẽ không được tải lên máy chủ Curator Photos",
+    "ignore_icloud_photos_description":
+        "Ảnh được lưu trữ trên iCloud sẽ không được tải lên máy chủ Personal Cloud Photos",
     "image": "Hình ảnh",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Hình ảnh}} được chụp vào {date}",
     "image_alt_text_date_1_person":
@@ -61943,8 +62018,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Đã bắt đầu tải xuống",
     "image_viewer_page_state_provider_download_success": "Tải xuống thành công",
     "image_viewer_page_state_provider_share_error": "Chia sẻ không thành công",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Giao diện web Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Giao diện web Personal Cloud Photos",
     "import_from_json": "Nhập từ JSON",
     "import_path": "Đường dẫn nhập",
     "in_albums": "Trong {count, plural, one {# album} other {# album}}",
@@ -62012,7 +62087,7 @@ class CodegenLoader extends AssetLoader {
     "local_network_sheet_info": "Ứng dụng sẽ kết nối với máy chủ qua URL này khi sử dụng mạng Wi-Fi được chỉ định",
     "location_permission": "Quyền truy cập vị trí",
     "location_permission_content":
-        "Để sử dụng tính năng tự động chuyển đổi, Curator Photos cần có quyền vị trí chính xác để có thể đọc tên của mạng Wi-Fi hiện tại",
+        "Để sử dụng tính năng tự động chuyển đổi, Personal Cloud Photos cần có quyền vị trí chính xác để có thể đọc tên của mạng Wi-Fi hiện tại",
     "location_picker_choose_on_map": "Chọn trên bản đồ",
     "location_picker_latitude_error": "Nhập vĩ độ hợp lệ",
     "location_picker_latitude_hint": "Nhập vĩ độ của bạn",
@@ -62182,7 +62257,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Thông báo",
     "notifications_setting_description": "Quản lý thông báo",
     "oauth": "OAuth",
-    "official_immich_resources": "Tài nguyên chính thức của Curator Photos",
+    "official_immich_resources": "Tài nguyên chính thức của Personal Cloud Photos",
     "offline": "Ngoại tuyến",
     "ok": "Đồng ý",
     "oldest_first": "Cũ nhất trước",
@@ -62260,11 +62335,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Bắt đầu",
     "permission_onboarding_go_to_settings": "Đi tới cài đặt",
     "permission_onboarding_permission_denied":
-        "Không có quyền truy cập vào ảnh của bạn. Để sử dụng Curator Photos, hãy cấp quyền truy cập vào thư viện ảnh trong Cài đặt.",
+        "Không có quyền truy cập vào ảnh của bạn. Để sử dụng Personal Cloud Photos, hãy cấp quyền truy cập vào thư viện ảnh trong Cài đặt.",
     "permission_onboarding_permission_granted": "Cấp quyền hoàn tất! Bạn có thể bắt đầu.",
     "permission_onboarding_permission_limited":
-        "Quyền truy cập vào ảnh của bạn bị hạn chế. Để Curator Photos sao lưu và quản lý toàn bộ thư viện ảnh của bạn, hãy cấp quyền truy cập toàn bộ ảnh trong Cài đặt.",
-    "permission_onboarding_request": "Curator Photos cần quyền để xem ảnh và video của bạn.",
+        "Quyền truy cập vào ảnh của bạn bị hạn chế. Để Personal Cloud Photos sao lưu và quản lý toàn bộ thư viện ảnh của bạn, hãy cấp quyền truy cập toàn bộ ảnh trong Cài đặt.",
+    "permission_onboarding_request": "Personal Cloud Photos cần quyền để xem ảnh và video của bạn.",
     "person": "Mọi người",
     "person_birthdate": "Sinh vào {date}",
     "person_hidden": "{name}{hidden, select, true { (đã ẩn)} other {}}",
@@ -62313,12 +62388,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Album công khai",
     "public_share": "Chia sẻ công khai",
     "purchase_account_info": "Người hỗ trợ",
-    "purchase_activated_subtitle": "Cảm ơn bạn đã hỗ trợ Curator Photos và phần mềm mã nguồn mở",
+    "purchase_activated_subtitle": "Cảm ơn bạn đã hỗ trợ Personal Cloud Photos và phần mềm mã nguồn mở",
     "purchase_activated_time": "Đã kích hoạt vào {date}",
     "purchase_activated_title": "Khóa của bạn đã được kích hoạt thành công",
     "purchase_button_activate": "Kích hoạt",
     "purchase_button_buy": "Mua",
-    "purchase_button_buy_immich": "Mua Curator Photos",
+    "purchase_button_buy_immich": "Mua Personal Cloud Photos",
     "purchase_button_never_show_again": "Không hiển thị lại",
     "purchase_button_reminder": "Nhắc tôi trong 30 ngày",
     "purchase_button_remove_key": "Xóa khóa",
@@ -62329,13 +62404,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Trạng thái người hỗ trợ",
     "purchase_individual_title": "Cá nhân",
     "purchase_input_suggestion": "Có khóa sản phẩm? Nhập khóa bên dưới",
-    "purchase_license_subtitle": "Mua Curator Photos để hỗ trợ sự phát triển liên tục của dịch vụ",
+    "purchase_license_subtitle": "Mua Personal Cloud Photos để hỗ trợ sự phát triển liên tục của dịch vụ",
     "purchase_lifetime_description": "Mua trọn đời",
     "purchase_option_title": "TÙY CHỌN MUA HÀNG",
     "purchase_panel_info_1":
-        "Việc xây dựng Curator Photos tốn nhiều thời gian và công sức, và chúng tôi có các kỹ sư toàn thời gian làm việc để làm cho nó tốt nhất có thể. Sứ mệnh của chúng tôi là phần mềm mã nguồn mở và các hoạt động kinh doanh có đạo đức trở thành nguồn thu nhập bền vững cho các nhà phát triển, đồng thời tạo ra một hệ sinh thái bảo vệ quyền riêng tư với các lựa chọn thay thế thực sự cho các dịch vụ đám mây lợi dụng người dùng.",
+        "Việc xây dựng Personal Cloud Photos tốn nhiều thời gian và công sức, và chúng tôi có các kỹ sư toàn thời gian làm việc để làm cho nó tốt nhất có thể. Sứ mệnh của chúng tôi là phần mềm mã nguồn mở và các hoạt động kinh doanh có đạo đức trở thành nguồn thu nhập bền vững cho các nhà phát triển, đồng thời tạo ra một hệ sinh thái bảo vệ quyền riêng tư với các lựa chọn thay thế thực sự cho các dịch vụ đám mây lợi dụng người dùng.",
     "purchase_panel_info_2":
-        "Vì chúng tôi cam kết không thêm các tường thu phí, việc mua này sẽ không cấp cho bạn bất kỳ tính năng bổ sung nào trong Curator Photos. Chúng tôi phụ thuộc vào những người dùng như bạn để hỗ trợ sự phát triển liên tục của Curator Photos.",
+        "Vì chúng tôi cam kết không thêm các tường thu phí, việc mua này sẽ không cấp cho bạn bất kỳ tính năng bổ sung nào trong Personal Cloud Photos. Chúng tôi phụ thuộc vào những người dùng như bạn để hỗ trợ sự phát triển liên tục của Personal Cloud Photos.",
     "purchase_panel_title": "Hỗ trợ dự án",
     "purchase_per_server": "Mỗi máy chủ",
     "purchase_per_user": "Mỗi người dùng",
@@ -62556,7 +62631,7 @@ class CodegenLoader extends AssetLoader {
         "Khi phát trực tuyến video từ máy chủ, hãy phát video gốc ngay cả khi có bản chuyển mã. Có thể dẫn đến tình trạng chờ. Video có sẵn trên máy được phát ở chất lượng gốc bất kể cài đặt này.",
     "setting_video_viewer_original_video_title": "Dùng video gốc",
     "settings": "Cài đặt",
-    "settings_require_restart": "Vui lòng khởi động lại Curator Photos để áp dụng cài đặt này",
+    "settings_require_restart": "Vui lòng khởi động lại Personal Cloud Photos để áp dụng cài đặt này",
     "settings_saved": "Đã lưu cài đặt",
     "setup_pin_code": "Thiết lập mã PIN",
     "share": "Chia sẻ",
@@ -62684,12 +62759,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Hỗ trợ",
     "support_and_feedback": "Hỗ trợ & Góp ý",
     "support_third_party_description":
-        "Bản cài đặt Curator Photos của bạn được đóng gói bởi một bên thứ ba. Các sự cố bạn gặp phải có thể do gói đó gây ra, vì vậy vui lòng báo cáo sự cố với họ trước bằng cách sử dụng các liên kết bên dưới.",
+        "Bản cài đặt Personal Cloud Photos của bạn được đóng gói bởi một bên thứ ba. Các sự cố bạn gặp phải có thể do gói đó gây ra, vì vậy vui lòng báo cáo sự cố với họ trước bằng cách sử dụng các liên kết bên dưới.",
     "swap_merge_direction": "Đổi hướng hợp nhất",
     "sync": "Đồng bộ",
     "sync_albums": "Đồng bộ album",
     "sync_albums_manual_subtitle": "Đồng bộ hóa tất cả video và ảnh đã tải lên vào album sao lưu đã chọn",
-    "sync_upload_album_setting_subtitle": "Tạo và tải lên ảnh và video của bạn vào album đã chọn trên Curator Photos",
+    "sync_upload_album_setting_subtitle":
+        "Tạo và tải lên ảnh và video của bạn vào album đã chọn trên Personal Cloud Photos",
     "tag": "Thẻ",
     "tag_assets": "Gắn thẻ",
     "tag_created": "Đã tạo thẻ: {tag}",
@@ -62740,7 +62816,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Ảnh và video đã bị xoá sẽ hiển thị ở đây.",
     "trash_page_delete_all": "Xoá tất cả",
     "trash_page_empty_trash_dialog_content":
-        "Bạn có muốn dọn sạch thùng rác của mình không? Những mục này sẽ bị xoá vĩnh viễn khỏi Curator Photos",
+        "Bạn có muốn dọn sạch thùng rác của mình không? Những mục này sẽ bị xoá vĩnh viễn khỏi Personal Cloud Photos",
     "trash_page_info": "Những mục này sẽ bị xoá sau {days} ngày",
     "trash_page_no_assets": "Không có mục nào",
     "trash_page_restore_all": "Khôi phục tất cả",
@@ -62787,7 +62863,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Lỗi",
     "upload_status_uploaded": "Đã tải lên",
     "upload_success": "Tải lên thành công, làm mới trang để xem các tập tin mới tải lên.",
-    "upload_to_immich": "Tải lên Curator Photos ({count})",
+    "upload_to_immich": "Tải lên Personal Cloud Photos ({count})",
     "uploading": "Đang tải lên",
     "url": "URL",
     "usage": "Sử dụng",
@@ -62816,7 +62892,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Phiên bản",
     "version_announcement_closing": "Bạn của bạn, Alex",
     "version_announcement_message":
-        "Chào bạn! Một phiên bản mới của Curator Photos đã phát hành. Vui lòng dành thời gian để xem <link>danh sách thay đổi</link> để đảm bảo cấu hình của bạn được cập nhật để tránh lỗi cấu hình sai, đặc biệt nếu bạn sử dụng WatchTower hoặc bất kỳ cơ chế tự động cập nhật Immich của bạn.",
+        "Chào bạn! Một phiên bản mới của Personal Cloud Photos đã phát hành. Vui lòng dành thời gian để xem <link>danh sách thay đổi</link> để đảm bảo cấu hình của bạn được cập nhật để tránh lỗi cấu hình sai, đặc biệt nếu bạn sử dụng WatchTower hoặc bất kỳ cơ chế tự động cập nhật Immich của bạn.",
     "version_history": "Lịch sử phiên bản",
     "version_history_item": "Đã cài đặt {version} vào {date}",
     "video": "Video",
@@ -62846,7 +62922,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Cảnh báo",
     "week": "Tuần",
     "welcome": "Chào mừng",
-    "welcome_to_immich": "Chào mừng đến với Curator Photos",
+    "welcome_to_immich": "Chào mừng đến với Personal Cloud Photos",
     "wifi_name": "Tên Wi-Fi",
     "wrong_pin_code": "Mã PIN không đúng",
     "year": "Năm",
@@ -62895,7 +62971,7 @@ class CodegenLoader extends AssetLoader {
           "Legg til ekskluderingsmønstre. Globbing med *, ** og ? støttes. For å ignorere alle filer i en hvilken som helst mappe som heter \"Raw\", bruk \"**/Raw/**\". For å ignorere alle filer som slutter på \".tif\", bruk \"**/*.tif\". For å ignorere en absolutt filplassering, bruk \"/filsti/til/ignorer/**\".",
       "admin_user": "Administrasjonsbruker",
       "asset_offline_description":
-          "Denne eksterne bibliotekressursen finnes ikke lenger på disk og har blitt flyttet til papirkurven. Hvis filen ble flyttet innad i biblioteket, sjekk tidslinjen din for den tilsvarende ressursen. For å gjenopprette ressursen, vennligst sørg for at filstien under er tilgjengelig for Curator Photos og skan biblioteket.",
+          "Denne eksterne bibliotekressursen finnes ikke lenger på disk og har blitt flyttet til papirkurven. Hvis filen ble flyttet innad i biblioteket, sjekk tidslinjen din for den tilsvarende ressursen. For å gjenopprette ressursen, vennligst sørg for at filstien under er tilgjengelig for Personal Cloud Photos og skan biblioteket.",
       "authentication_settings": "Godkjenningsinnstillinger",
       "authentication_settings_description": "Administrer passord, OAuth, og andre innstillinger for autentisering",
       "authentication_settings_disable_all":
@@ -62911,7 +62987,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurasjonen er for øyeblikket satt av en konfigurasjonsfil",
       "confirm_delete_library": "Er du sikker på at du vil slette biblioteket {library}?",
       "confirm_delete_library_assets":
-          "Er du sikker på at du vil slette dette biblioteket? Dette vil slette alle {count, plural, one {# contained asset} other {all # contained assets}} tilhørende eiendeler fra Curator Photos og kan ikke angres. Filene vil forbli på disken.",
+          "Er du sikker på at du vil slette dette biblioteket? Dette vil slette alle {count, plural, one {# contained asset} other {all # contained assets}} tilhørende eiendeler fra Personal Cloud Photos og kan ikke angres. Filene vil forbli på disken.",
       "confirm_email_below": "For å bekrefte, skriv inn \"{email}\" nedenfor",
       "confirm_reprocess_all_faces":
           "Er du sikker på at du vil behandle alle ansikter på nytt? Dette vil også fjerne navngitte personer.",
@@ -63038,7 +63114,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Aktiver kartfunksjoner",
       "map_gps_settings": "Kart & GPS Innstillinger",
       "map_gps_settings_description": "Administrer innstillinger for kart og GPS (Reversert geokoding)",
-      "map_implications": "Kartfunksjonen er avhengig av en ekstern bilde tjeneste (tiles.curatorphotos.cloud)",
+      "map_implications": "Kartfunksjonen er avhengig av en ekstern bilde tjeneste (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Lys stil",
       "map_manage_reverse_geocoding_settings": "Administrer instillinger for <link>Omvendt Geokoding</link>",
       "map_reverse_geocoding": "Omvendt geokoding",
@@ -63065,8 +63141,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "MERK: Dette kan ikke endres senere!",
       "notification_email_from_address": "Fra adresse",
       "notification_email_from_address_description":
-          "Avsenderens e-postadresse, for eksempel: \"Curator Photos Photo Server <noreply@example.com>\". Bruk en e-postadresse du har tillatelse til å sende epost fra.",
-      "notification_email_host_description": "Verten til e-posts serveren (f.eks. smtp.curatorphotos.app)",
+          "Avsenderens e-postadresse, for eksempel: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Bruk en e-postadresse du har tillatelse til å sende epost fra.",
+      "notification_email_host_description": "Verten til e-posts serveren (f.eks. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorer sertifikatfeil",
       "notification_email_ignore_certificate_errors_description":
           "Ignorer valideringsfeil for TLS-sertifikat (ikke anbefalt)",
@@ -63165,9 +63241,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Administrer tilpassede maler for varsling",
       "theme_custom_css_settings": "Egendefinert CSS",
       "theme_custom_css_settings_description":
-          "Cascading Style Sheets gjør det mulig å tilpasse designet av Curator Photos.",
+          "Cascading Style Sheets gjør det mulig å tilpasse designet av Personal Cloud Photos.",
       "theme_settings": "Tema innstillinger",
-      "theme_settings_description": "Administrer tilpasning av Curator Photos webgrensesnitt",
+      "theme_settings_description": "Administrer tilpasning av Personal Cloud Photos webgrensesnitt",
       "these_files_matched_by_checksum": "Disse filene er matchet ved hjelp av deres checksum",
       "thumbnail_generation_job": "Generer miniatyrbilder",
       "thumbnail_generation_job_description":
@@ -63303,7 +63379,7 @@ class CodegenLoader extends AssetLoader {
         "Noen enheter er veldige trege til å hente mikrobilder fra enheten. Aktiver denne innstillingen for å hente de eksternt istedenfor.",
     "advanced_settings_prefer_remote_title": "Foretrekk eksterne bilder",
     "advanced_settings_proxy_headers_subtitle":
-        "Definer proxy headere som Curator Photos skal benytte ved enhver nettverksrequest",
+        "Definer proxy headere som Personal Cloud Photos skal benytte ved enhver nettverksrequest",
     "advanced_settings_proxy_headers_title": "Proxy headere",
     "advanced_settings_self_signed_ssl_subtitle":
         "Hopper over SSL sertifikatverifikasjon for server-endepunkt. Påkrevet for selvsignerte sertifikater.",
@@ -63398,7 +63474,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Fotorutenett",
     "asset_offline": "Fil utilgjengelig",
     "asset_offline_description":
-        "Dette elementet er offline. Curator Photos kan ikke aksessere dets lokasjon. Vennlist påse at elementet er tilgijengelig og skann så biblioteket på nytt.",
+        "Dette elementet er offline. Personal Cloud Photos kan ikke aksessere dets lokasjon. Vennlist påse at elementet er tilgijengelig og skann så biblioteket på nytt.",
     "asset_restored_successfully": "Objekt(er) gjenopprettet",
     "asset_skipped": "Hoppet over",
     "asset_skipped_in_trash": "I søppelbøtten",
@@ -63415,7 +63491,7 @@ class CodegenLoader extends AssetLoader {
         "{count, plural, one {Asset} other {Assets}} kan ikke legges til i albumet",
     "assets_count": "{count, plural, one {# fil} other {# filer}}",
     "assets_deleted_permanently": "{count} objekt(er) slettet permanent",
-    "assets_deleted_permanently_from_server": "{count} objekt(er) slettet permanent fra Curator Photos-serveren",
+    "assets_deleted_permanently_from_server": "{count} objekt(er) slettet permanent fra Personal Cloud Photos-serveren",
     "assets_downloaded_failed":
         "{count, plural, one {Nedlasting av # fil - {error} fil feilet} other {Nedlastede # filer - {error} filer feilet}}",
     "assets_downloaded_successfully":
@@ -63430,7 +63506,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} objekt(er) gjenopprettet",
     "assets_trashed": "{count} objekt(er) slettet",
     "assets_trashed_count": "Kastet {count, plural, one {# asset} other {# assets}}",
-    "assets_trashed_from_server": "{count} objekt(er) slettet fra Curator Photos serveren",
+    "assets_trashed_from_server": "{count} objekt(er) slettet fra Personal Cloud Photos serveren",
     "assets_were_part_of_album_count":
         "{count, plural, one {Asset was} other {Assets were}} er allerede lagt til i albumet",
     "authorized_devices": "Autoriserte enheter",
@@ -63442,7 +63518,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Tilbake, lukk eller fjern merking",
     "background_location_permission": "Bakgrunnstillatelse for plassering",
     "background_location_permission_content":
-        "For å bytte nettverk når du kjører i bakgrunnen, må Curator Photos *alltid* ha presis posisjonstilgang slik at appen kan lese Wi-Fi-nettverkets navn",
+        "For å bytte nettverk når du kjører i bakgrunnen, må Personal Cloud Photos *alltid* ha presis posisjonstilgang slik at appen kan lese Wi-Fi-nettverkets navn",
     "backup_album_selection_page_albums_device": "Album på enhet ({count})",
     "backup_album_selection_page_albums_tap": "Trykk for å inkludere, dobbelttrykk for å ekskludere",
     "backup_album_selection_page_assets_scatter":
@@ -63465,7 +63541,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Gå til innstillinger",
     "backup_controller_page_background_battery_info_link": "Vis meg hvordan",
     "backup_controller_page_background_battery_info_message":
-        "For at sikkerhetskopiering i bakgrunnen skal fungere optimalt, deaktiver enhver batterioptimalisering som kan begrense bakgrunnsaktiviteten til Curator Photos.\n\nSiden dette er en enhetsspesifikk justering, må du finne det i innstillingene på enheten din.",
+        "For at sikkerhetskopiering i bakgrunnen skal fungere optimalt, deaktiver enhver batterioptimalisering som kan begrense bakgrunnsaktiviteten til Personal Cloud Photos.\n\nSiden dette er en enhetsspesifikk justering, må du finne det i innstillingene på enheten din.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Batterioptimalisering",
     "backup_controller_page_background_charging": "Kun ved lading",
@@ -63528,7 +63604,7 @@ class CodegenLoader extends AssetLoader {
         "Er du sikker på at du vil beholde {count, plural, one {# duplicate asset} other {# duplicate assets}} dupliserte filer? Dette vil løse alle dupliserte grupper uten å slette noe.",
     "bulk_trash_duplicates_confirmation":
         "Er du sikker på ønsker å slette {count, plural, one {# duplicate asset} other {# duplicate assets}} dupliserte filer? Dette vil beholde største filen fra hver gruppe, samt slette alle andre duplikater.",
-    "buy": "Kjøp Curator Photos",
+    "buy": "Kjøp Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Tøm buffer",
     "cache_settings_clear_cache_button_title":
         "Tømmer app-ens buffer. Dette vil ha betydelig innvirkning på appens ytelse inntil bufferen er gjenoppbygd.",
@@ -63540,7 +63616,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Delte albumminiatyrbilder",
     "cache_settings_statistics_thumbnail": "Miniatyrbilder",
     "cache_settings_statistics_title": "Bufferbruk",
-    "cache_settings_subtitle": "Kontroller bufringsadferden til Curator Photos-appen",
+    "cache_settings_subtitle": "Kontroller bufringsadferden til Personal Cloud Photos-appen",
     "cache_settings_tile_subtitle": "Kontroller lokal lagring",
     "cache_settings_tile_title": "Lokal lagring",
     "cache_settings_title": "Bufringsinnstillinger",
@@ -63625,7 +63701,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Fortsett",
     "control_bottom_app_bar_create_new_album": "Lag nytt album",
-    "control_bottom_app_bar_delete_from_immich": "Slett fra Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Slett fra Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Slett fra enhet",
     "control_bottom_app_bar_edit_location": "Endre lokasjon",
     "control_bottom_app_bar_edit_time": "Endre Dato og tid",
@@ -63692,12 +63768,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Slett",
     "delete_album": "Slett album",
     "delete_api_key_prompt": "Er du sikker på at du vil slette denne API-nøkkelen?",
-    "delete_dialog_alert": "Disse objektene vil bli slettet permanent fra Curator Photos og fra enheten din",
+    "delete_dialog_alert": "Disse objektene vil bli slettet permanent fra Personal Cloud Photos og fra enheten din",
     "delete_dialog_alert_local":
-        "Disse objektene vil bli permanent slettet fra enheten din, men vil fortsatt være tilgjengelige fra Curator Photos serveren",
+        "Disse objektene vil bli permanent slettet fra enheten din, men vil fortsatt være tilgjengelige fra Personal Cloud Photos serveren",
     "delete_dialog_alert_local_non_backed_up":
-        "Noen av objektene er ikke sikkerhetskopiert til Curator Photos og vil bli permanent fjernet fra enheten din",
-    "delete_dialog_alert_remote": "Disse objektene vil bli permanent slettet fra Curator Photos serveren",
+        "Noen av objektene er ikke sikkerhetskopiert til Personal Cloud Photos og vil bli permanent fjernet fra enheten din",
+    "delete_dialog_alert_remote": "Disse objektene vil bli permanent slettet fra Personal Cloud Photos serveren",
     "delete_dialog_ok_force": "Slett uansett",
     "delete_dialog_title": "Slett permanent",
     "delete_duplicates_confirmation": "Er du sikker på at du vil slette disse duplikatene permanent?",
@@ -63751,7 +63827,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Administrer innstillinger relatert til nedlasting av filer",
     "download_started": "Nedlasting startet",
     "download_sucess": "Nedlasting vellykket",
-    "download_sucess_android": "Objektet har blitt lastet ned til DCIM/CuratorPhotos",
+    "download_sucess_android": "Objektet har blitt lastet ned til DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Venter på nytt forsøk",
     "downloading": "Laster ned",
     "downloading_asset_filename": "Last ned {filename}",
@@ -63791,7 +63867,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Denne mappen er tom",
     "empty_trash": "Tøm papirkurv",
     "empty_trash_confirmation":
-        "Er du sikker på at du vil tømme søppelbøtta? Dette vil slette alle filene i søppelbøtta permanent fra Curator Photos.\nDu kan ikke angre denne handlingen!",
+        "Er du sikker på at du vil tømme søppelbøtta? Dette vil slette alle filene i søppelbøtta permanent fra Personal Cloud Photos.\nDu kan ikke angre denne handlingen!",
     "enable": "Aktivere",
     "enable_biometric_auth_description": "Skriv inn PINkoden for å aktivere biometrisk autentisering",
     "enabled": "Aktivert",
@@ -64042,7 +64118,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "Time",
     "id": "ID",
     "ignore_icloud_photos": "Ignorer iCloud bilder",
-    "ignore_icloud_photos_description": "Bilder som er lagret på iCloud vil ikke lastes opp til Curator Photos",
+    "ignore_icloud_photos_description": "Bilder som er lagret på iCloud vil ikke lastes opp til Personal Cloud Photos",
     "image": "Bilde",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} tatt på {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} tatt med {person1} den {date}",
@@ -64065,8 +64141,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Nedlasting startet",
     "image_viewer_page_state_provider_download_success": "Nedlasting vellykket",
     "image_viewer_page_state_provider_share_error": "Delingsfeil",
-    "immich_logo": "Curator Photos Logo",
-    "immich_web_interface": "Curator Photos webgrensesnitt",
+    "immich_logo": "Personal Cloud Photos Logo",
+    "immich_web_interface": "Personal Cloud Photos webgrensesnitt",
     "import_from_json": "Importer fra JSON",
     "import_path": "Import-sti",
     "in_albums": "I {count, plural, one {# album} other {# albums}}",
@@ -64136,7 +64212,7 @@ class CodegenLoader extends AssetLoader {
         "Appen vil koble til serveren via denne URL-en når du bruker det angitte Wi-Fi-nettverket",
     "location_permission": "Stedstillatelse",
     "location_permission_content":
-        "For å bruke funksjonen for automatisk veksling trenger Curator Photos nøyaktig plasseringstillatelse slik at den kan lese navnet på det gjeldende Wi-Fi-nettverket",
+        "For å bruke funksjonen for automatisk veksling trenger Personal Cloud Photos nøyaktig plasseringstillatelse slik at den kan lese navnet på det gjeldende Wi-Fi-nettverket",
     "location_picker_choose_on_map": "Velg på kart",
     "location_picker_latitude_error": "Skriv inn en gyldig bredddegrad",
     "location_picker_latitude_hint": "Skriv inn breddegrad her",
@@ -64310,7 +64386,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifikasjoner",
     "notifications_setting_description": "Administrer varsler",
     "oauth": "OAuth",
-    "official_immich_resources": "Offisielle Curator Photos Resurser",
+    "official_immich_resources": "Offisielle Personal Cloud Photos Resurser",
     "offline": "Frakoblet",
     "ok": "Ok",
     "oldest_first": "Eldste først",
@@ -64387,11 +64463,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Kom i gang",
     "permission_onboarding_go_to_settings": "Gå til innstillinger",
     "permission_onboarding_permission_denied":
-        "Tilgang avvist. For å bruke Curator Photos, tillat å vise bilde og videoer i Innstillinger.",
+        "Tilgang avvist. For å bruke Personal Cloud Photos, tillat å vise bilde og videoer i Innstillinger.",
     "permission_onboarding_permission_granted": "Tilgang gitt! Du er i gang.",
     "permission_onboarding_permission_limited":
-        "Begrenset tilgang. For å la Curator Photos sikkerhetskopiere og håndtere galleriet, tillatt bilde- og video-tilgang i Innstillinger.",
-    "permission_onboarding_request": "Curator Photos trenger tilgang til å se dine bilder og videoer.",
+        "Begrenset tilgang. For å la Personal Cloud Photos sikkerhetskopiere og håndtere galleriet, tillatt bilde- og video-tilgang i Innstillinger.",
+    "permission_onboarding_request": "Personal Cloud Photos trenger tilgang til å se dine bilder og videoer.",
     "person": "Person",
     "person_birthdate": "Født den {date}",
     "person_hidden": "{name}{hidden, select, true { (skjult)} other {}}",
@@ -64440,12 +64516,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Offentlige album",
     "public_share": "Offentlig deling",
     "purchase_account_info": "Støttespiller",
-    "purchase_activated_subtitle": "Takk for at du støtter Curator Photos og åpen kildekode programvare",
+    "purchase_activated_subtitle": "Takk for at du støtter Personal Cloud Photos og åpen kildekode programvare",
     "purchase_activated_time": "Aktiver den {date}",
     "purchase_activated_title": "Du produktnøkkel har vellyket blitt aktivert",
     "purchase_button_activate": "Aktiver",
     "purchase_button_buy": "Kjøp",
-    "purchase_button_buy_immich": "Kjøp Curator Photos",
+    "purchase_button_buy_immich": "Kjøp Personal Cloud Photos",
     "purchase_button_never_show_again": "Aldri vis igjen",
     "purchase_button_reminder": "Påminn meg om 30 dager",
     "purchase_button_remove_key": "Ta bort produktnøkkel",
@@ -64455,13 +64531,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Støttespiller status",
     "purchase_individual_title": "Individuell",
     "purchase_input_suggestion": "Har du en produktnøkkel? Legg til denne under",
-    "purchase_license_subtitle": "Kjøp Curator Photos for å støtte den videre utviklingen av systemet",
+    "purchase_license_subtitle": "Kjøp Personal Cloud Photos for å støtte den videre utviklingen av systemet",
     "purchase_lifetime_description": "Kjøp for livstid",
     "purchase_option_title": "KJØPSVALG",
     "purchase_panel_info_1":
-        "Å lage Curator Photos tar mye tid og energi, og nå har vi en fulltidsansatt utvikler som jobber med å gjøre produktet så godt vi kan. Vårt oppdrag er for åpen-kildekode programvare og etisk virksomhets praktisk å kunne bli bærekraftig inntekt for utviklere og for å lage privat repekterte økesystem med mulighet for å tilby skytjeneste.",
+        "Å lage Personal Cloud Photos tar mye tid og energi, og nå har vi en fulltidsansatt utvikler som jobber med å gjøre produktet så godt vi kan. Vårt oppdrag er for åpen-kildekode programvare og etisk virksomhets praktisk å kunne bli bærekraftig inntekt for utviklere og for å lage privat repekterte økesystem med mulighet for å tilby skytjeneste.",
     "purchase_panel_info_2":
-        "Siden har forpliktet oss ikke å legge til betalingsmurer, vil dette kjøpet ikke gi deg noen tilleggsfunksjoner i Curator Photos. Vi er avhengige av brukere som deg for å støtte Curator Photos pågående utvikling.",
+        "Siden har forpliktet oss ikke å legge til betalingsmurer, vil dette kjøpet ikke gi deg noen tilleggsfunksjoner i Personal Cloud Photos. Vi er avhengige av brukere som deg for å støtte Personal Cloud Photos pågående utvikling.",
     "purchase_panel_title": "Hjelp prosjektet",
     "purchase_per_server": "For hver server",
     "purchase_per_user": "For hver bruker",
@@ -64686,7 +64762,7 @@ class CodegenLoader extends AssetLoader {
         "Når det streames en video fra serveren, spill originalkvaliteten selv om en omkodet versjon finnes. Dette kan medføre buffring. Videoer som er lagret lokalt på enheten spilles i originalkvalitet uavhengig av denne innstillingen.",
     "setting_video_viewer_original_video_title": "Tving original video",
     "settings": "Innstillinger",
-    "settings_require_restart": "Vennligst restart Curator Photos for å aktivere denne innstillingen",
+    "settings_require_restart": "Vennligst restart Personal Cloud Photos for å aktivere denne innstillingen",
     "settings_saved": "Innstillinger lagret",
     "setup_pin_code": "Sett opp en PINkode",
     "share": "Del",
@@ -64815,13 +64891,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Støtte",
     "support_and_feedback": "Støtte og Tilbakemelding",
     "support_third_party_description":
-        "Curator Photos-installasjonen din ble pakket av en tredjepart. Problemer du opplever kan være forårsaket av den pakken, så vennligst ta opp problemer med dem i første omgang ved å bruke koblingene nedenfor.",
+        "Personal Cloud Photos-installasjonen din ble pakket av en tredjepart. Problemer du opplever kan være forårsaket av den pakken, så vennligst ta opp problemer med dem i første omgang ved å bruke koblingene nedenfor.",
     "swap_merge_direction": "Bytt retning på sammenslåingen",
     "sync": "Synkroniser",
     "sync_albums": "Synkroniser albumer",
     "sync_albums_manual_subtitle": "Synkroniser alle opplastede videoer og bilder til det valgte backupalbumet",
     "sync_upload_album_setting_subtitle":
-        "Opprett og last opp dine bilder og videoer til det valgte albumet på Curator Photos",
+        "Opprett og last opp dine bilder og videoer til det valgte albumet på Personal Cloud Photos",
     "tag": "Tagg",
     "tag_assets": "Merk ressurser",
     "tag_created": "Lag merke: {tag}",
@@ -64871,7 +64947,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Her vises bilder og videoer som er flyttet til papirkurven.",
     "trash_page_delete_all": "Slett alt",
     "trash_page_empty_trash_dialog_content":
-        "Vil du tømme søppelbøtten? Objektene vil bli permanent fjernet fra Curator Photos",
+        "Vil du tømme søppelbøtten? Objektene vil bli permanent fjernet fra Personal Cloud Photos",
     "trash_page_info": "Objekter i søppelbøtten blir permanent fjernet etter {days} dager",
     "trash_page_no_assets": "Ingen forkastede objekter",
     "trash_page_restore_all": "Gjenopprett alt",
@@ -64919,7 +64995,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Feil",
     "upload_status_uploaded": "Opplastet",
     "upload_success": "Opplasting vellykket, oppdater siden for å se nye opplastninger.",
-    "upload_to_immich": "Last opp til Curator Photos ({count})",
+    "upload_to_immich": "Last opp til Personal Cloud Photos ({count})",
     "uploading": "Laster opp",
     "url": "URL",
     "usage": "Bruk",
@@ -64948,7 +65024,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versjon",
     "version_announcement_closing": "Din venn, Alex",
     "version_announcement_message":
-        "Hei! En ny versjon av Curator Photos er tilgjengelig. Vennligst ta deg tid til å lese <link>utgivelsesnotatene</link> for å sikre at oppsettet ditt er oppdatert for å forhindre feilkonfigurasjoner, spesielt hvis du bruker WatchTower eller en annen mekanisme som håndterer oppdatering av Immich-forekomsten din automatisk.",
+        "Hei! En ny versjon av Personal Cloud Photos er tilgjengelig. Vennligst ta deg tid til å lese <link>utgivelsesnotatene</link> for å sikre at oppsettet ditt er oppdatert for å forhindre feilkonfigurasjoner, spesielt hvis du bruker WatchTower eller en annen mekanisme som håndterer oppdatering av Immich-forekomsten din automatisk.",
     "version_history": "Verson Historie",
     "version_history_item": "Installert {version} den {date}",
     "video": "Video",
@@ -64978,7 +65054,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Advarsel",
     "week": "Uke",
     "welcome": "Velkommen",
-    "welcome_to_immich": "Velkommen til Curator Photos",
+    "welcome_to_immich": "Velkommen til Personal Cloud Photos",
     "wifi_name": "Wi-Fi Navn",
     "wrong_pin_code": "Feil PINkode",
     "year": "År",
@@ -65029,7 +65105,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "تنظیم فعلی توسط یک فایل پیکربندی انجام شده است",
       "confirm_delete_library": "آیا مطمئن هستید که می‌خواهید کتابخانه {library} را حذف کنید؟",
       "confirm_delete_library_assets":
-          "آیا مطمئن هستید که می‌خواهید این کتابخانه را حذف کنید؟ این عمل باعث حذف {count, plural, one {# فایل داخلی} other {همه # فایل داخلی}} از Curator Photos خواهد شد و قابل بازگشت نیست. فایل‌ها بر روی دیسک باقی خواهند ماند.",
+          "آیا مطمئن هستید که می‌خواهید این کتابخانه را حذف کنید؟ این عمل باعث حذف {count, plural, one {# فایل داخلی} other {همه # فایل داخلی}} از Personal Cloud Photos خواهد شد و قابل بازگشت نیست. فایل‌ها بر روی دیسک باقی خواهند ماند.",
       "confirm_email_below": "برای تأیید، \"{email}\" را در زیر تایپ کنید",
       "confirm_reprocess_all_faces":
           "آیا مطمئن هستید که می‌خواهید تمام چهره‌ها را مجددا پردازش کنید؟ این عمل باعث پاک شدن افراد مشخص شده نیز خواهد شد.",
@@ -65144,8 +65220,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "توجه: این را نمی توان بعداً تغییر داد!",
       "notification_email_from_address": "آدرس فرستنده",
       "notification_email_from_address_description":
-          "آدرس ایمیل فرستنده، به عنوان مثال:\"Curator Photos سرور عکس <noreply@example.com>\"",
-      "notification_email_host_description": "میزبان سرور ایمیل (مثلاً smtp.curatorphotos.app)",
+          "آدرس ایمیل فرستنده، به عنوان مثال:\"Personal Cloud Photos سرور عکس <noreply@example.com>\"",
+      "notification_email_host_description": "میزبان سرور ایمیل (مثلاً smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "خطاهای گواهی را نادیده بگیر",
       "notification_email_ignore_certificate_errors_description":
           "خطاهای اعتبارسنجی گواهی TLS را نادیده بگیر (توصیه نمی‌شود)",
@@ -65222,9 +65298,9 @@ class CodegenLoader extends AssetLoader {
       "system_settings": "تنظیمات سیستم",
       "theme_custom_css_settings": "CSS سفارشی",
       "theme_custom_css_settings_description":
-          "برگه‌های سبک آبشاری (CSS) امکان سفارشی‌سازی طراحی Curator Photos را فراهم می‌کنند.",
+          "برگه‌های سبک آبشاری (CSS) امکان سفارشی‌سازی طراحی Personal Cloud Photos را فراهم می‌کنند.",
       "theme_settings": "تنظیمات پوسته",
-      "theme_settings_description": "مدیریت سفارشی‌سازی رابط کاربری وب Curator Photos",
+      "theme_settings_description": "مدیریت سفارشی‌سازی رابط کاربری وب Personal Cloud Photos",
       "these_files_matched_by_checksum": "این فایل‌ها با استفاده از چک‌سام‌هایشان مطابقت دارند",
       "thumbnail_generation_job": "ایجاد تصاویر بندانگشتی",
       "thumbnail_generation_job_description":
@@ -65501,8 +65577,8 @@ class CodegenLoader extends AssetLoader {
     "host": "میزبان",
     "hour": "ساعت",
     "image": "تصویر",
-    "immich_logo": "لوگوی Curator Photos",
-    "immich_web_interface": "رابط وب Curator Photos",
+    "immich_logo": "لوگوی Personal Cloud Photos",
+    "immich_web_interface": "رابط وب Personal Cloud Photos",
     "import_from_json": "وارد کردن از JSON",
     "import_path": "مسیر وارد کردن",
     "in_archive": "در بایگانی",
@@ -65840,7 +65916,7 @@ class CodegenLoader extends AssetLoader {
           "Přidání vzorů vyloučení. Podporováno je globování pomocí *, ** a ?. Chcete-li ignorovat všechny soubory v jakémkoli adresáři s názvem \"Raw\", použijte \"**/Raw/**\". Chcete-li ignorovat všechny soubory končící na \".tif\", použijte \"**/*.tif\". Chcete-li ignorovat absolutní cestu, použijte příkaz \"/path/to/ignore/**\".",
       "admin_user": "Administrátor",
       "asset_offline_description":
-          "Tato položka externí knihovny se již na disku nenachází a byla přesunuta do koše. Pokud byl soubor přesunut v rámci knihovny, zkontrolujte časovou osu a vyhledejte nové odpovídající položku. Chcete-li tuto položku obnovit, ujistěte se, že je cesta k níže uvedenému souboru přístupná pomocí aplikace Curator Photos a prohledejte knihovnu.",
+          "Tato položka externí knihovny se již na disku nenachází a byla přesunuta do koše. Pokud byl soubor přesunut v rámci knihovny, zkontrolujte časovou osu a vyhledejte nové odpovídající položku. Chcete-li tuto položku obnovit, ujistěte se, že je cesta k níže uvedenému souboru přístupná pomocí aplikace Personal Cloud Photos a prohledejte knihovnu.",
       "authentication_settings": "Přihlašování",
       "authentication_settings_description": "Správa hesel, OAuth a dalších nastavení ověření",
       "authentication_settings_disable_all":
@@ -65856,7 +65932,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurace je aktuálně prováděna konfiguračním souborem",
       "confirm_delete_library": "Opravdu chcete odstranit knihovnu {library}?",
       "confirm_delete_library_assets":
-          "Opravdu chcete tuto knihovnu odstranit? Tím se z Curator Photos odstraní {count, plural, one {# obsažená položka} few {všechny # obsažené položky} other {všech # obsažených položek}} a nelze to vrátit zpět. Soubory zůstanou na disku.",
+          "Opravdu chcete tuto knihovnu odstranit? Tím se z Personal Cloud Photos odstraní {count, plural, one {# obsažená položka} few {všechny # obsažené položky} other {všech # obsažených položek}} a nelze to vrátit zpět. Soubory zůstanou na disku.",
       "confirm_email_below": "Pro potvrzení zadejte níže \"{email}\"",
       "confirm_reprocess_all_faces":
           "Opravdu chcete znovu zpracovat všechny obličeje? Tím se vymažou i pojmenované osoby.",
@@ -65983,7 +66059,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Povolit funkce mapy",
       "map_gps_settings": "Mapa a GPS",
       "map_gps_settings_description": "Správa nastavení mapy a GPS (Reverzní geokódování)",
-      "map_implications": "Funkce mapy závisí na externí dlaždicové službě (tiles.curatorphotos.cloud)",
+      "map_implications": "Funkce mapy závisí na externí dlaždicové službě (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Světlý motiv",
       "map_manage_reverse_geocoding_settings": "Správa nastavení <link>Reverzního geokódování</link>",
       "map_reverse_geocoding": "Reverzní geokódování",
@@ -66010,8 +66086,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "UPOZORNĚNÍ: Toto nelze později změnit!",
       "notification_email_from_address": "Adresa Od",
       "notification_email_from_address_description":
-          "E-mailová adresa odesílatele, např.: „Curator Photos Photo Server <noreply@example.com>“",
-      "notification_email_host_description": "Adresa e-mailového serveru (např. smtp.curatorphotos.app)",
+          "E-mailová adresa odesílatele, např.: „Personal Cloud Photos Photo Server <noreply@example.com>“",
+      "notification_email_host_description": "Adresa e-mailového serveru (např. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorovat chyby certifikátů",
       "notification_email_ignore_certificate_errors_description":
           "Ignorovat chyby ověření certifikátu TLS (nedoporučuje se)",
@@ -66115,9 +66191,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Šablony oznámení",
       "template_settings_description": "Správa vlastních šablon oznámení",
       "theme_custom_css_settings": "Vlastní CSS",
-      "theme_custom_css_settings_description": "Kaskádové styly umožňují přizpůsobit design aplikace Curator Photos.",
+      "theme_custom_css_settings_description":
+          "Kaskádové styly umožňují přizpůsobit design aplikace Personal Cloud Photos.",
       "theme_settings": "Motivy",
-      "theme_settings_description": "Správa přizpůsobení webového rozhraní Curator Photos",
+      "theme_settings_description": "Správa přizpůsobení webového rozhraní Personal Cloud Photos",
       "these_files_matched_by_checksum": "Tyto soubory jsou porovnávány podle jejich kontrolních součtů",
       "thumbnail_generation_job": "Generování miniatur",
       "thumbnail_generation_job_description":
@@ -66254,7 +66331,7 @@ class CodegenLoader extends AssetLoader {
         "U některých zařízení je načítání miniatur z prostředků v zařízení velmi pomalé. Aktivujte toto nastavení, aby se místo toho načítaly vzdálené obrázky.",
     "advanced_settings_prefer_remote_title": "Preferovat vzdálené obrázky",
     "advanced_settings_proxy_headers_subtitle":
-        "Definice hlaviček proxy serveru, které by měl Curator Photos odesílat s každým síťovým požadavkem",
+        "Definice hlaviček proxy serveru, které by měl Personal Cloud Photos odesílat s každým síťovým požadavkem",
     "advanced_settings_proxy_headers_title": "Proxy hlavičky",
     "advanced_settings_self_signed_ssl_subtitle":
         "Vynechá ověření SSL certifikátu serveru. Vyžadováno pro self-signed certifikáty.",
@@ -66351,7 +66428,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Mřížka fotografií",
     "asset_offline": "Offline položka",
     "asset_offline_description":
-        "Toto externí položka se již na disku nenachází. Obraťte se na Curator Photos správce a požádejte o pomoc.",
+        "Toto externí položka se již na disku nenachází. Obraťte se na Personal Cloud Photos správce a požádejte o pomoc.",
     "asset_restored_successfully": "Položka úspěšně obnovena",
     "asset_skipped": "Přeskočeno",
     "asset_skipped_in_trash": "V koši",
@@ -66368,7 +66445,7 @@ class CodegenLoader extends AssetLoader {
     "assets_cannot_be_added_to_album_count": "{count, plural, one {Položku} other {Položky}} nelze přidat do alba",
     "assets_count": "{count, plural, one {# položka} few {# položky} other {# položek}}",
     "assets_deleted_permanently": "{count} položek trvale odstraněno",
-    "assets_deleted_permanently_from_server": "{} položek trvale odstraněno z Curator Photos serveru",
+    "assets_deleted_permanently_from_server": "{} položek trvale odstraněno z Personal Cloud Photos serveru",
     "assets_downloaded_failed":
         "{count, plural, one {Stažen # soubor - {error} souborů selhalo} few {Staženy # soubory - {error} souborů selhalo} other {Staženo # souborů - {error} souborů selhalo}}",
     "assets_downloaded_successfully":
@@ -66388,7 +66465,7 @@ class CodegenLoader extends AssetLoader {
     "assets_trashed": "{count} položek vyhozeno do koše",
     "assets_trashed_count":
         "{count, plural, one {Vyhozena # položka} few {Vyhozeny # položky} other {Vyhozeno # položek}}",
-    "assets_trashed_from_server": "{count} položek vyhozeno do koše na Curator Photos serveru",
+    "assets_trashed_from_server": "{count} položek vyhozeno do koše na Personal Cloud Photos serveru",
     "assets_were_part_of_album_count": "{count, plural, one {Položka byla} other {Položky byly}} součástí alba",
     "authorized_devices": "Autorizovaná zařízení",
     "automatic_endpoint_switching_subtitle":
@@ -66399,7 +66476,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Zpět, zavřít nebo zrušit výběr",
     "background_location_permission": "Povolení polohy na pozadí",
     "background_location_permission_content":
-        "Aby bylo možné přepínat sítě při běhu na pozadí, musí mít Curator Photos *vždy* přístup k přesné poloze, aby mohl zjistit název Wi-Fi sítě",
+        "Aby bylo možné přepínat sítě při běhu na pozadí, musí mít Personal Cloud Photos *vždy* přístup k přesné poloze, aby mohl zjistit název Wi-Fi sítě",
     "backup_album_selection_page_albums_device": "Alba v zařízení ({count})",
     "backup_album_selection_page_albums_tap": "Klepnutím na položku ji zahrnete, opětovným klepnutím ji vyloučíte",
     "backup_album_selection_page_assets_scatter":
@@ -66422,7 +66499,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Přejít do nastavení",
     "backup_controller_page_background_battery_info_link": "Ukaž mi jak",
     "backup_controller_page_background_battery_info_message":
-        "Chcete-li dosáhnout nejlepších výsledků při zálohování na pozadí, vypněte všechny optimalizace baterie, které omezují aktivitu na pozadí pro Curator Photos ve vašem zařízení. \n\nJelikož je to závislé na typu zařízení, vyhledejte požadované informace pro výrobce vašeho zařízení.",
+        "Chcete-li dosáhnout nejlepších výsledků při zálohování na pozadí, vypněte všechny optimalizace baterie, které omezují aktivitu na pozadí pro Personal Cloud Photos ve vašem zařízení. \n\nJelikož je to závislé na typu zařízení, vyhledejte požadované informace pro výrobce vašeho zařízení.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Optimalizace baterie",
     "backup_controller_page_background_charging": "Pouze během nabíjení",
@@ -66484,7 +66561,7 @@ class CodegenLoader extends AssetLoader {
         "Opravdu si chcete ponechat {count, plural, one {# duplicitní položku} few {# duplicitní položky} other {# duplicitních položek}}? Tím se vyřeší všechny duplicitní skupiny, aniž by se cokoli odstranilo.",
     "bulk_trash_duplicates_confirmation":
         "Opravdu chcete hromadně vyhodit {count, plural, one {# duplicitní položku} few {# duplicitní položky} other {# duplicitních položek}}? Tím se zachová největší položka z každé skupiny a všechny ostatní duplikáty se vyhodí.",
-    "buy": "Zakoupit Curator Photos",
+    "buy": "Zakoupit Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Náhledy stránek knihovny (položek {})",
     "cache_settings_clear_cache_button": "Vymazat vyrovnávací paměť",
     "cache_settings_clear_cache_button_title":
@@ -66497,7 +66574,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Sdílené náhledy alb",
     "cache_settings_statistics_thumbnail": "Náhledy",
     "cache_settings_statistics_title": "Použití vyrovnávací paměti",
-    "cache_settings_subtitle": "Ovládání chování mobilní aplikace Curator Photos v mezipaměti",
+    "cache_settings_subtitle": "Ovládání chování mobilní aplikace Personal Cloud Photos v mezipaměti",
     "cache_settings_thumbnail_size": "Velikost vyrovnávací paměti náhledů (položek {})",
     "cache_settings_tile_subtitle": "Ovládání chování místního úložiště",
     "cache_settings_tile_title": "Místní úložiště",
@@ -66583,7 +66660,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontext",
     "continue": "Pokračovat",
     "control_bottom_app_bar_create_new_album": "Vytvořit nové album",
-    "control_bottom_app_bar_delete_from_immich": "Smazat ze serveru Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Smazat ze serveru Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Smazat ze zařízení",
     "control_bottom_app_bar_edit_location": "Upravit polohu",
     "control_bottom_app_bar_edit_time": "Upravit datum a čas",
@@ -66649,12 +66726,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Smazat",
     "delete_album": "Smazat album",
     "delete_api_key_prompt": "Opravdu chcete tento API klíč odstranit?",
-    "delete_dialog_alert": "Tyto položky budou trvale smazány z aplikace Curator Photos i z vašeho zařízení",
+    "delete_dialog_alert": "Tyto položky budou trvale smazány z aplikace Personal Cloud Photos i z vašeho zařízení",
     "delete_dialog_alert_local":
-        "Tyto položky budou z vašeho zařízení trvale smazány, ale budou stále k dispozici na Curator Photos serveru",
+        "Tyto položky budou z vašeho zařízení trvale smazány, ale budou stále k dispozici na Personal Cloud Photos serveru",
     "delete_dialog_alert_local_non_backed_up":
-        "Některé položky nejsou zálohovány na Curator Photos server a budou ze zařízení trvale smazány",
-    "delete_dialog_alert_remote": "Tyto položky budou trvale smazány z Curator Photos serveru",
+        "Některé položky nejsou zálohovány na Personal Cloud Photos server a budou ze zařízení trvale smazány",
+    "delete_dialog_alert_remote": "Tyto položky budou trvale smazány z Personal Cloud Photos serveru",
     "delete_dialog_ok_force": "Přesto smazat",
     "delete_dialog_title": "Smazat trvale",
     "delete_duplicates_confirmation": "Opravdu chcete tyto duplicity trvale odstranit?",
@@ -66708,7 +66785,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Správa nastavení souvisejících se stahováním",
     "download_started": "Stahování zahájeno",
     "download_sucess": "Stažení úspěšné",
-    "download_sucess_android": "Média byla stažena do DCIM/CuratorPhotos",
+    "download_sucess_android": "Média byla stažena do DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Čekání na opakovaný pokus",
     "downloading": "Stahování",
     "downloading_asset_filename": "Stahování položky {filename}",
@@ -66748,7 +66825,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Tato složka je prázdná",
     "empty_trash": "Vyprázdnit koš",
     "empty_trash_confirmation":
-        "Opravdu chcete vysypat koš? Tím se z Curator Photos trvale odstraní všechny položky v koši.\nTuto akci nelze vrátit zpět!",
+        "Opravdu chcete vysypat koš? Tím se z Personal Cloud Photos trvale odstraní všechny položky v koši.\nTuto akci nelze vrátit zpět!",
     "enable": "Povolit",
     "enable_biometric_auth_description": "Zadejte váš PIN kód pro povolení biometrického ověřování",
     "enabled": "Povoleno",
@@ -66999,7 +67076,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Hodina",
     "id": "ID",
     "ignore_icloud_photos": "Ignorovat fotografie na iCloudu",
-    "ignore_icloud_photos_description": "Fotografie uložené na iCloudu se nebudou nahrávat na Curator Photos server",
+    "ignore_icloud_photos_description":
+        "Fotografie uložené na iCloudu se nebudou nahrávat na Personal Cloud Photos server",
     "image": "Obrázek",
     "image_alt_text_date": "{isVideo, select, true {Video pořízeno} other {Obrázek pořízen}} {date}",
     "image_alt_text_date_1_person":
@@ -67024,8 +67102,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Stahování zahájeno",
     "image_viewer_page_state_provider_download_success": "Stahování bylo úspěšné",
     "image_viewer_page_state_provider_share_error": "Chyba sdílení",
-    "immich_logo": "Curator Photos Logo",
-    "immich_web_interface": "Webové rozhraní Curator Photos",
+    "immich_logo": "Personal Cloud Photos Logo",
+    "immich_web_interface": "Webové rozhraní Personal Cloud Photos",
     "import_from_json": "Import z JSONu",
     "import_path": "Cesta importu",
     "in_albums": "{count, plural, one {V # albu} few {Ve # albech} other {V # albech}}",
@@ -67097,7 +67175,7 @@ class CodegenLoader extends AssetLoader {
         "Aplikace se při použití zadané sítě Wi-Fi připojí k serveru prostřednictvím tohoto URL",
     "location_permission": "Oprávnění polohy",
     "location_permission_content":
-        "Aby bylo možné používat funkci automatického přepínání, potřebuje Curator Photos oprávnění k přesné poloze, aby mohl přečíst název aktuální sítě Wi-Fi",
+        "Aby bylo možné používat funkci automatického přepínání, potřebuje Personal Cloud Photos oprávnění k přesné poloze, aby mohl přečíst název aktuální sítě Wi-Fi",
     "location_picker_choose_on_map": "Vyberte na mapě",
     "location_picker_latitude_error": "Zadejte platnou zeměpisnou šířku",
     "location_picker_latitude_hint": "Zadejte vlastní zeměpisnou šířku",
@@ -67272,7 +67350,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Oznámení",
     "notifications_setting_description": "Správa oznámení",
     "oauth": "OAuth",
-    "official_immich_resources": "Oficiální zdroje Curator Photos",
+    "official_immich_resources": "Oficiální zdroje Personal Cloud Photos",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Nejstarší první",
@@ -67349,11 +67427,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Začít",
     "permission_onboarding_go_to_settings": "Přejít do nastavení",
     "permission_onboarding_permission_denied":
-        "Přístup odepřen. Pro používání Curator Photos je nutné povolit přístup k fotkám a videím v nastavení.",
+        "Přístup odepřen. Pro používání Personal Cloud Photos je nutné povolit přístup k fotkám a videím v nastavení.",
     "permission_onboarding_permission_granted": "Přístup povolen! Vše je připraveno.",
     "permission_onboarding_permission_limited":
-        "Přístup omezen. Chcete-li používat Curator Photos k zálohování a správě celé vaší kolekce galerií, povolte v nastavení přístup k fotkám a videím.",
-    "permission_onboarding_request": "Curator Photos potřebuje přístup k zobrazení vašich fotek a videí.",
+        "Přístup omezen. Chcete-li používat Personal Cloud Photos k zálohování a správě celé vaší kolekce galerií, povolte v nastavení přístup k fotkám a videím.",
+    "permission_onboarding_request": "Personal Cloud Photos potřebuje přístup k zobrazení vašich fotek a videí.",
     "person": "Osoba",
     "person_birthdate": "Narozen(a) {date}",
     "person_hidden": "{name}{hidden, select, true { (skryto)} other {}}",
@@ -67406,12 +67484,12 @@ class CodegenLoader extends AssetLoader {
     "public_share": "Veřejné sdílení",
     "purchase_account_info": "Podporovatel",
     "purchase_activated_subtitle":
-        "Děkujeme vám za podporu aplikace Curator Photos a softwaru s otevřeným zdrojovým kódem",
+        "Děkujeme vám za podporu aplikace Personal Cloud Photos a softwaru s otevřeným zdrojovým kódem",
     "purchase_activated_time": "Aktivováno dne {date}",
     "purchase_activated_title": "Váš klíč byl úspěšně aktivován",
     "purchase_button_activate": "Aktivovat",
     "purchase_button_buy": "Koupit",
-    "purchase_button_buy_immich": "Koupit Curator Photos",
+    "purchase_button_buy_immich": "Koupit Personal Cloud Photos",
     "purchase_button_never_show_again": "Nikdy již nezobrazovat",
     "purchase_button_reminder": "Připomenout za 30 dní",
     "purchase_button_remove_key": "Odstranit klíč",
@@ -67422,13 +67500,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Stav podporovatele",
     "purchase_individual_title": "Individuální",
     "purchase_input_suggestion": "Máte produktový klíč? Zadejte ho níže",
-    "purchase_license_subtitle": "Koupit Curator Photos a podpořit další rozvoj služby",
+    "purchase_license_subtitle": "Koupit Personal Cloud Photos a podpořit další rozvoj služby",
     "purchase_lifetime_description": "Doživotní platnost",
     "purchase_option_title": "MOŽNOSTI ZAKOUPENÍ",
     "purchase_panel_info_1":
-        "Tvorba aplikace Curator Photos vyžaduje spoustu času a úsilí, a proto na ní pracují vývojáři na plný úvazek, aby byla co nejlepší. Naším cílem je, aby se software s otevřeným zdrojovým kódem a etické obchodní postupy staly udržitelným zdrojem příjmů pro vývojáře a aby vznikl ekosystém respektující soukromí se skutečnými alternativami k ziskuchtivým službám.",
+        "Tvorba aplikace Personal Cloud Photos vyžaduje spoustu času a úsilí, a proto na ní pracují vývojáři na plný úvazek, aby byla co nejlepší. Naším cílem je, aby se software s otevřeným zdrojovým kódem a etické obchodní postupy staly udržitelným zdrojem příjmů pro vývojáře a aby vznikl ekosystém respektující soukromí se skutečnými alternativami k ziskuchtivým službám.",
     "purchase_panel_info_2":
-        "Protože jsme se zavázali, že nebudeme zavádět paywally, nezískáte tímto nákupem žádné další funkce v aplikaci Curator Photos. Spoléháme na uživatele, jako jste vy, že podpoří neustálý vývoj aplikace.",
+        "Protože jsme se zavázali, že nebudeme zavádět paywally, nezískáte tímto nákupem žádné další funkce v aplikaci Personal Cloud Photos. Spoléháme na uživatele, jako jste vy, že podpoří neustálý vývoj aplikace.",
     "purchase_panel_title": "Podpořit projekt",
     "purchase_per_server": "Za server",
     "purchase_per_user": "Za uživatele",
@@ -67654,7 +67732,7 @@ class CodegenLoader extends AssetLoader {
         "Při streamování videa ze serveru přehrávat originál, i když je k dispozici překódovaná verze. Může vést k bufferování. Videa dostupná lokálně se přehrávají v původní kvalitě bez ohledu na toto nastavení.",
     "setting_video_viewer_original_video_title": "Vynutit původní video",
     "settings": "Nastavení",
-    "settings_require_restart": "Pro použití tohoto nastavení restartujte Curator Photos",
+    "settings_require_restart": "Pro použití tohoto nastavení restartujte Personal Cloud Photos",
     "settings_saved": "Nastavení uloženo",
     "setup_pin_code": "Nastavení PIN kódu",
     "share": "Sdílet",
@@ -67785,12 +67863,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Podpora",
     "support_and_feedback": "Podpora a zpětná vazba",
     "support_third_party_description":
-        "Vaše Curator Photos instalace byla připravena třetí stranou. Problémy, které se u vás vyskytly, mohou být způsobeny tímto balíčkem, proto se na ně obraťte v první řadě pomocí níže uvedených odkazů.",
+        "Vaše Personal Cloud Photos instalace byla připravena třetí stranou. Problémy, které se u vás vyskytly, mohou být způsobeny tímto balíčkem, proto se na ně obraťte v první řadě pomocí níže uvedených odkazů.",
     "swap_merge_direction": "Obrátit směr sloučení",
     "sync": "Synchronizovat",
     "sync_albums": "Synchronizovat alba",
     "sync_albums_manual_subtitle": "Synchronizovat všechna nahraná videa a fotografie do vybraných záložních alb",
-    "sync_upload_album_setting_subtitle": "Vytvořit a nahrát fotografie a videa do vybraných alb na Curator Photos",
+    "sync_upload_album_setting_subtitle":
+        "Vytvořit a nahrát fotografie a videa do vybraných alb na Personal Cloud Photos",
     "tag": "Značka",
     "tag_assets": "Přiřadit značku",
     "tag_created": "Vytvořena značka: {tag}",
@@ -67891,7 +67970,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Chyby",
     "upload_status_uploaded": "Nahráno",
     "upload_success": "Nahrání proběhlo úspěšně, obnovením stránky se zobrazí nově nahrané položky.",
-    "upload_to_immich": "Nahrát do Curator Photos ({count})",
+    "upload_to_immich": "Nahrát do Personal Cloud Photos ({count})",
     "uploading": "Nahrávání",
     "url": "URL",
     "usage": "Využití",
@@ -67921,7 +68000,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Verze",
     "version_announcement_closing": "Váš přítel Alex",
     "version_announcement_message":
-        "Ahoj! K dispozici je nová verze aplikace Curator Photos. Věnujte prosím chvíli přečtení <link>poznámek k vydání</link> a ujistěte se, že je vaše nastavení aktuální, abyste předešli případným chybným konfiguracím, zejména pokud používáte WatchTower nebo jiný mechanismus, který se stará o automatickou aktualizaci instance aplikace Curator Photos.",
+        "Ahoj! K dispozici je nová verze aplikace Personal Cloud Photos. Věnujte prosím chvíli přečtení <link>poznámek k vydání</link> a ujistěte se, že je vaše nastavení aktuální, abyste předešli případným chybným konfiguracím, zejména pokud používáte WatchTower nebo jiný mechanismus, který se stará o automatickou aktualizaci instance aplikace Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "poznámky k vydání",
     "version_announcement_overlay_text_1": "Ahoj, k dispozici je nová verze",
     "version_announcement_overlay_text_2": "najděte si čas na návštěvu ",
@@ -67957,7 +68036,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Upozornění",
     "week": "Týden",
     "welcome": "Vítejte",
-    "welcome_to_immich": "Vítejte v Curator Photos",
+    "welcome_to_immich": "Vítejte v Personal Cloud Photos",
     "wifi_name": "Název Wi-Fi",
     "wrong_pin_code": "Chybný PIN kód",
     "year": "Rok",
@@ -68001,7 +68080,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "మినహాయింపు నమూనాలను జోడించండి. *, ** మరియు ?ని ఉపయోగించి గ్లోబింగ్‌కు మద్దతు ఉంది. \"Raw\" అనే పేరు గల ఏదైనా డైరెక్టరీలోని అన్ని ఫైల్‌లను విస్మరించడానికి, \"**/Raw/**\"ని ఉపయోగించండి. \".tif\"తో ముగిసే అన్ని ఫైల్‌లను విస్మరించడానికి, \"**/*.tif\"ని ఉపయోగించండి. సంపూర్ణ మార్గాన్ని విస్మరించడానికి, \"/path/to/ignore/**\"ని ఉపయోగించండి.",
       "asset_offline_description":
-          "ఈ బాహ్య లైబ్రరీ ఫైల్ ఇకపై డిస్క్‌లో కనుగొనబడలేదు మరియు ట్రాష్‌కు తరలించబడింది. ఫైల్ లైబ్రరీలోకి తరలించబడితే, కొత్త సంబంధిత ఫైల్ కోసం మీ టైమ్‌లైన్‌ను తనిఖీ చేయండి. ఈ ఫైల్ని పునరుద్ధరించడానికి, దయచేసి దిగువన ఉన్న ఫైల్ పాత్‌ను Curator Photos యాక్సెస్ చేయగలదని నిర్ధారించుకోండి మరియు లైబ్రరీని స్కాన్ చేయండి.",
+          "ఈ బాహ్య లైబ్రరీ ఫైల్ ఇకపై డిస్క్‌లో కనుగొనబడలేదు మరియు ట్రాష్‌కు తరలించబడింది. ఫైల్ లైబ్రరీలోకి తరలించబడితే, కొత్త సంబంధిత ఫైల్ కోసం మీ టైమ్‌లైన్‌ను తనిఖీ చేయండి. ఈ ఫైల్ని పునరుద్ధరించడానికి, దయచేసి దిగువన ఉన్న ఫైల్ పాత్‌ను Personal Cloud Photos యాక్సెస్ చేయగలదని నిర్ధారించుకోండి మరియు లైబ్రరీని స్కాన్ చేయండి.",
       "authentication_settings": "ప్రమాణీకరణ సెట్టింగ్‌లు",
       "authentication_settings_description": "పాస్‌వర్డ్, OAuth మరియు ఇతర ప్రమాణీకరణ సెట్టింగ్‌లను నిర్వహించండి",
       "authentication_settings_disable_all":
@@ -68017,7 +68096,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "కాన్ఫిగరేషన్ ప్రస్తుతం కాన్ఫిగరేషన్ ఫైల్ ద్వారా సెట్ చేయబడింది",
       "confirm_delete_library": "మీరు ఖచ్చితంగా {library} లైబ్రరీని తొలగించాలనుకుంటున్నారా?",
       "confirm_delete_library_assets":
-          "మీరు ఖచ్చితంగా ఈ లైబ్రరీని తొలగించాలనుకుంటున్నారా? ఇది Curator Photos నుండి {count, plural, one {# కలిగి ఉన్న ఆస్తి} other {all # కలిగి ఉన్న ఆస్తులు}} తొలగిస్తుంది మరియు రద్దు చేయబడదు. ఫైల్‌లు డిస్క్‌లో ఉంటాయి.",
+          "మీరు ఖచ్చితంగా ఈ లైబ్రరీని తొలగించాలనుకుంటున్నారా? ఇది Personal Cloud Photos నుండి {count, plural, one {# కలిగి ఉన్న ఆస్తి} other {all # కలిగి ఉన్న ఆస్తులు}} తొలగిస్తుంది మరియు రద్దు చేయబడదు. ఫైల్‌లు డిస్క్‌లో ఉంటాయి.",
       "confirm_email_below": "నిర్ధారించడానికి, క్రింద \"{email}\" టైప్ చేయండి",
       "confirm_reprocess_all_faces":
           "మీరు ఖచ్చితంగా అన్ని ముఖాలను రీప్రాసెస్ చేయాలనుకుంటున్నారా? ఇది పేరున్న వ్యక్తులను కూడా క్లియర్ చేస్తుంది.",
@@ -68137,7 +68216,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "మ్యాప్ లక్షణాలను ప్రారంభించండి",
       "map_gps_settings": "మ్యాప్ & GPS సెట్టింగ్‌లు",
       "map_gps_settings_description": "మ్యాప్ & GPS (రివర్స్ జియోకోడింగ్) సెట్టింగ్‌లను నిర్వహించండి",
-      "map_implications": "మ్యాప్ ఫీచర్ బాహ్య టైల్ సేవపై ఆధారపడి ఉంటుంది (tiles.curatorphotos.cloud)",
+      "map_implications": "మ్యాప్ ఫీచర్ బాహ్య టైల్ సేవపై ఆధారపడి ఉంటుంది (tiles.personalcloudphotos.cloud)",
       "map_light_style": "పగటి శైలి",
       "map_manage_reverse_geocoding_settings": "<link>రివర్స్ జియోకోడింగ్</link> సెట్టింగ్‌లను నిర్వహించండి",
       "map_reverse_geocoding": "రివర్స్ జియోకోడింగ్",
@@ -68165,8 +68244,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "గమనిక: దీనిని తర్వాత మార్చలేము!",
       "notification_email_from_address": "నుండి",
       "notification_email_from_address_description":
-          "పంపినవారి ఇమెయిల్ చిరునామా, ఉదాహరణకు: \"Curator Photos Photo Server <noreply@example.com>\"",
-      "notification_email_host_description": "ఇమెయిల్ సర్వర్ యొక్క హోస్ట్ (ఉదా. smtp.curatorphotos.app)",
+          "పంపినవారి ఇమెయిల్ చిరునామా, ఉదాహరణకు: \"Personal Cloud Photos Photo Server <noreply@example.com>\"",
+      "notification_email_host_description": "ఇమెయిల్ సర్వర్ యొక్క హోస్ట్ (ఉదా. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "సర్టిఫికెట్ లోపాలను విస్మరించండి",
       "notification_email_ignore_certificate_errors_description":
           "TLS సర్టిఫికెట్ ధ్రువీకరణ లోపాలను విస్మరించండి (సిఫార్సు చేయబడలేదు)",
@@ -68265,9 +68344,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "నోటిఫికేషన్‌ల కోసం అనుకూల టెంప్లేట్‌లను నిర్వహించండి.",
       "theme_custom_css_settings": "కస్టమ్ CSS",
       "theme_custom_css_settings_description":
-          "క్యాస్కేడింగ్ స్టైల్ షీట్‌లు Curator Photos డిజైన్‌ను అనుకూలీకరించడానికి అనుమతిస్తాయి.",
+          "క్యాస్కేడింగ్ స్టైల్ షీట్‌లు Personal Cloud Photos డిజైన్‌ను అనుకూలీకరించడానికి అనుమతిస్తాయి.",
       "theme_settings": "థీమ్ సెట్టింగ్‌లు",
-      "theme_settings_description": "Curator Photos వెబ్ ఇంటర్‌ఫేస్ యొక్క అనుకూలీకరణను నిర్వహించండి",
+      "theme_settings_description": "Personal Cloud Photos వెబ్ ఇంటర్‌ఫేస్ యొక్క అనుకూలీకరణను నిర్వహించండి",
       "thumbnail_generation_job": "థంబ్‌నెయిల్‌లను రూపొందించండి",
       "thumbnail_generation_job_description":
           "ప్రతి ఆస్తికి పెద్ద, చిన్న మరియు అస్పష్టమైన థంబ్‌నెయిల్‌లను, అలాగే ప్రతి వ్యక్తికి థంబ్‌నెయిల్‌లను రూపొందించండి",
@@ -68451,7 +68530,7 @@ class CodegenLoader extends AssetLoader {
     "asset_hashing": "హాషింగ్ చేస్తున్నాము…",
     "asset_offline": "ఆస్తి ఆఫ్‌లైన్‌లో ఉంది",
     "asset_offline_description":
-        "ఈ బాహ్య ఆస్తి ఇకపై డిస్క్‌లో కనబడటం లేదు. సహాయానికి దయచేసి మీ Curator Photos నిర్వాహకుడిని సంప్రదించండి.",
+        "ఈ బాహ్య ఆస్తి ఇకపై డిస్క్‌లో కనబడటం లేదు. సహాయానికి దయచేసి మీ Personal Cloud Photos నిర్వాహకుడిని సంప్రదించండి.",
     "asset_skipped": "దాటవేయబడింది",
     "asset_skipped_in_trash": "చెత్తబుట్టలో ఉంది",
     "asset_uploaded": "అప్‌లోడ్ చేయబడింది",
@@ -68487,7 +68566,7 @@ class CodegenLoader extends AssetLoader {
         "మీరు నిజంగానే {count, plural, one {# నకిలీ అసెట్‌ను} other {# నకిలీ అసెట్‌లను}} ఉంచాలనుకుంటున్నారా? ఇది అన్ని నకిలీ సమూహాలను ఏవీ తొలగించకుండా పరిష్కరిస్తుంది.",
     "bulk_trash_duplicates_confirmation":
         "మీరు నిజంగా {count, plural, one {# నకిలీ అసెట్} other {# నకిలీ అసెట్‌లు}} సమూహంగా చెత్తబుట్టలో వేయాలనుకుంటున్నారా? ప్రతి సమూహంలోని అతిపెద్ద అసెట్‌ను ఉంచి, మిగతా అన్ని నకిలీలను చెత్తబుట్టలో వేయబడతాయి.",
-    "buy": "Curator Photosను కొనండి",
+    "buy": "Personal Cloud Photosను కొనండి",
     "camera": "కెమెరా",
     "camera_brand": "కెమెరా బ్రాండ్",
     "camera_model": "కెమెరా మోడల్",
@@ -68648,7 +68727,7 @@ class CodegenLoader extends AssetLoader {
     "email": "ఇ-మెయిల్",
     "empty_trash": "చెత్తను ఖాళీ చేయి",
     "empty_trash_confirmation":
-        "మీరు ఖచ్చితంగా ట్రాష్‌ను ఖాళీ చేయాలనుకుంటున్నారా? ఇది ట్రాష్‌లోని అన్ని ఆస్తులను Curator Photos నుండి శాశ్వతంగా తొలగిస్తుంది.\nమీరు ఈ చర్యను రద్దు చేయలేరు!",
+        "మీరు ఖచ్చితంగా ట్రాష్‌ను ఖాళీ చేయాలనుకుంటున్నారా? ఇది ట్రాష్‌లోని అన్ని ఆస్తులను Personal Cloud Photos నుండి శాశ్వతంగా తొలగిస్తుంది.\nమీరు ఈ చర్యను రద్దు చేయలేరు!",
     "enable": "ప్రారంభించు",
     "enabled": "ప్రారంభించబడింది",
     "end_date": "ముగింపు తేదీ",
@@ -68849,8 +68928,8 @@ class CodegenLoader extends AssetLoader {
         "{isVideo, select, true {Video} other {Image}} {city}, {country} లో {person1}, {person2}, మరియు {person3} లతో {date}న తీయబడింది",
     "image_alt_text_date_place_4_or_more_people":
         "{isVideo, select, true {Video} other {Image}} {city}, {country} లో {person1}, {person2}, మరియు {additionalCount, number} others తో {date}న తీయబడింది",
-    "immich_logo": "Curator Photos లోగో",
-    "immich_web_interface": "Curator Photos వెబ్ ఇంటర్‌ఫేస్",
+    "immich_logo": "Personal Cloud Photos లోగో",
+    "immich_web_interface": "Personal Cloud Photos వెబ్ ఇంటర్‌ఫేస్",
     "import_from_json": "JSON నుండి దిగుమతి చేయండి",
     "import_path": "దిగుమతి మార్గం",
     "in_albums": "{count, plural, one {# album} other {# album}} లో",
@@ -68980,7 +69059,7 @@ class CodegenLoader extends AssetLoader {
     "notification_toggle_setting_description": "ఇమెయిల్ నోటిఫికేషన్‌లను ప్రారంభించండి",
     "notifications": "నోటిఫికేషన్‌లు",
     "notifications_setting_description": "నోటిఫికేషన్‌లను నిర్వహించండి",
-    "official_immich_resources": "అధికారిక Curator Photos వనరులు",
+    "official_immich_resources": "అధికారిక Personal Cloud Photos వనరులు",
     "offline": "ఆఫ్‌లైన్",
     "ok": "సరే",
     "oldest_first": "ముందుగా పాతది",
@@ -69066,12 +69145,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "పబ్లిక్ ఆల్బమ్",
     "public_share": "పబ్లిక్ షేర్",
     "purchase_account_info": "మద్దతుదారు",
-    "purchase_activated_subtitle": "Curator Photos మరియు ఓపెన్ సోర్స్ సాఫ్ట్‌వేర్‌లకు మద్దతు ఇచ్చినందుకు ధన్యవాదాలు",
+    "purchase_activated_subtitle":
+        "Personal Cloud Photos మరియు ఓపెన్ సోర్స్ సాఫ్ట్‌వేర్‌లకు మద్దతు ఇచ్చినందుకు ధన్యవాదాలు",
     "purchase_activated_time": "{date}న యాక్టివేట్ చేయబడింది",
     "purchase_activated_title": "మీ కీ విజయవంతంగా యాక్టివేట్ చేయబడింది",
     "purchase_button_activate": "యాక్టివేట్ చేయండి",
     "purchase_button_buy": "కొను",
-    "purchase_button_buy_immich": "Curator Photos ని కొను",
+    "purchase_button_buy_immich": "Personal Cloud Photos ని కొను",
     "purchase_button_never_show_again": "మళ్ళీ ఎప్పుడూ చూపించవద్దు",
     "purchase_button_reminder": "30 రోజుల్లో నాకు గుర్తు చేయి",
     "purchase_button_remove_key": "కీని తీసివేయండి",
@@ -69082,13 +69162,14 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "మద్దతుదారు స్థితి",
     "purchase_individual_title": "వ్యక్తిగత",
     "purchase_input_suggestion": "ఉత్పత్తి కీ ఉందా? కింద కీని నమోదు చేయండి",
-    "purchase_license_subtitle": "సేవ యొక్క నిరంతర అభివృద్ధికి మద్దతు ఇవ్వడానికి Curator Photosను కొనుగోలు చేయండి",
+    "purchase_license_subtitle":
+        "సేవ యొక్క నిరంతర అభివృద్ధికి మద్దతు ఇవ్వడానికి Personal Cloud Photosను కొనుగోలు చేయండి",
     "purchase_lifetime_description": "జీవితకాల కొనుగోలు",
     "purchase_option_title": "కొనుగోలు ఎంపికలు",
     "purchase_panel_info_1":
-        "Curator Photos ను నిర్మించడానికి చాలా సమయం మరియు కృషి అవసరం, మరియు మేము దానిని సాధ్యమైనంత ఉత్తమంగా చేయడానికి పూర్తి సమయం ఇంజనీర్లు దానిపై పనిచేస్తున్నారు. ఓపెన్-సోర్స్ సాఫ్ట్‌వేర్ మరియు నైతిక వ్యాపార పద్ధతులు డెవలపర్‌లకు స్థిరమైన ఆదాయ వనరుగా మారడం మరియు దోపిడీ క్లౌడ్ సేవలకు నిజమైన ప్రత్యామ్నాయాలతో గోప్యతను గౌరవించే పర్యావరణ వ్యవస్థను సృష్టించడం మా లక్ష్యం.",
+        "Personal Cloud Photos ను నిర్మించడానికి చాలా సమయం మరియు కృషి అవసరం, మరియు మేము దానిని సాధ్యమైనంత ఉత్తమంగా చేయడానికి పూర్తి సమయం ఇంజనీర్లు దానిపై పనిచేస్తున్నారు. ఓపెన్-సోర్స్ సాఫ్ట్‌వేర్ మరియు నైతిక వ్యాపార పద్ధతులు డెవలపర్‌లకు స్థిరమైన ఆదాయ వనరుగా మారడం మరియు దోపిడీ క్లౌడ్ సేవలకు నిజమైన ప్రత్యామ్నాయాలతో గోప్యతను గౌరవించే పర్యావరణ వ్యవస్థను సృష్టించడం మా లక్ష్యం.",
     "purchase_panel_info_2":
-        "మేము పేవాల్‌లను జోడించకూడదని కట్టుబడి ఉన్నందున, ఈ కొనుగోలు మీకు Curator Photos‌లో ఎటువంటి అదనపు ఫీచర్‌లను మంజూరు చేయదు. Curator Photos యొక్క కొనసాగుతున్న అభివృద్ధికి మద్దతు ఇవ్వడానికి మేము మీలాంటి వినియోగదారులపై ఆధారపడతాము.",
+        "మేము పేవాల్‌లను జోడించకూడదని కట్టుబడి ఉన్నందున, ఈ కొనుగోలు మీకు Personal Cloud Photos‌లో ఎటువంటి అదనపు ఫీచర్‌లను మంజూరు చేయదు. Personal Cloud Photos యొక్క కొనసాగుతున్న అభివృద్ధికి మద్దతు ఇవ్వడానికి మేము మీలాంటి వినియోగదారులపై ఆధారపడతాము.",
     "purchase_panel_title": "ప్రాజెక్ట్‌కు మద్దతు ఇవ్వండి",
     "purchase_per_server": "ప్రతీ సర్వర్‌కు",
     "purchase_per_user": "ప్రతి వినియోగదారునికి",
@@ -69303,7 +69384,7 @@ class CodegenLoader extends AssetLoader {
           "新增排除條件。支援使用「*」、「 **」、「?」來找尋符合規則的字串。如果要在任何名為「Raw」的目錄內排除所有符合條件的檔案，請使用「**/Raw/**」。如果要排除所有「.tif」結尾的檔案，請使用「**/*.tif」。如果要排除某個絕對路徑，請使用「/path/to/ignore/**」。",
       "admin_user": "管理員",
       "asset_offline_description":
-          "磁碟上找不到此外部相簿檔案，且已移至垃圾桶。如果檔案在相簿內被移動，請檢查時間軸中是否有新的相應的檔案。若要還原這份檔案，請確保 Curator Photos 可以寫入下列檔案路徑，並讀取掃描相簿內容。",
+          "磁碟上找不到此外部相簿檔案，且已移至垃圾桶。如果檔案在相簿內被移動，請檢查時間軸中是否有新的相應的檔案。若要還原這份檔案，請確保 Personal Cloud Photos 可以寫入下列檔案路徑，並讀取掃描相簿內容。",
       "authentication_settings": "驗證設定",
       "authentication_settings_description": "管理密碼、OAuth 與其他驗證設定",
       "authentication_settings_disable_all": "確定要停用所有登入方式嗎？這樣會完全無法登入。",
@@ -69318,7 +69399,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "已透過設定檔更新設定",
       "confirm_delete_library": "確定要刪除 {library} 相簿嗎？",
       "confirm_delete_library_assets":
-          "您確定要刪除此相簿嗎？這將從 Curator Photos 中刪除 {count, plural, one {個項目} other {個項目}} ，且無法復原。檔案仍會保留在硬碟中。",
+          "您確定要刪除此相簿嗎？這將從 Personal Cloud Photos 中刪除 {count, plural, one {個項目} other {個項目}} ，且無法復原。檔案仍會保留在硬碟中。",
       "confirm_email_below": "請在底下輸入 {email} 來確認",
       "confirm_reprocess_all_faces": "確定要重新處理所有臉孔嗎？這會清除已命名的人物。",
       "confirm_user_password_reset": "您確定要重設 {user} 的密碼嗎？",
@@ -69422,7 +69503,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "啟用地圖功能",
       "map_gps_settings": "地圖與 GPS 設定",
       "map_gps_settings_description": "管理地圖和 GPS（逆向地理編碼）設定",
-      "map_implications": "地圖功能依賴外部平貼服務（tiles.curatorphotos.cloud）",
+      "map_implications": "地圖功能依賴外部平貼服務（tiles.personalcloudphotos.cloud）",
       "map_light_style": "淺色樣式",
       "map_manage_reverse_geocoding_settings": "管理<link>逆向地理編碼</link>設定",
       "map_reverse_geocoding": "逆向地理編碼",
@@ -69447,8 +69528,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "*註：之後無法修改！",
       "notification_email_from_address": "寄件地址",
       "notification_email_from_address_description":
-          "Curator Photos Photo Server <noreply@example.com>。請確保寄件者信箱允許發送到收件者電子郵件的地址。",
-      "notification_email_host_description": "電子郵件伺服器主機（例：smtp.curatorphotos.app）",
+          "Personal Cloud Photos Photo Server <noreply@example.com>。請確保寄件者信箱允許發送到收件者電子郵件的地址。",
+      "notification_email_host_description": "電子郵件伺服器主機（例：smtp.personalcloudphotos.app）",
       "notification_email_ignore_certificate_errors": "忽略憑證錯誤",
       "notification_email_ignore_certificate_errors_description": "忽略 TLS 憑證驗證錯誤（不建議）",
       "notification_email_password_description": "以電子郵件伺服器驗證身份時的密碼",
@@ -69538,9 +69619,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "通知範本",
       "template_settings_description": "管理通知的自定義範本",
       "theme_custom_css_settings": "自訂 CSS",
-      "theme_custom_css_settings_description": "可以用層疊樣式表（CSS）來自訂 Curator Photos 的設計。",
+      "theme_custom_css_settings_description": "可以用層疊樣式表（CSS）來自訂 Personal Cloud Photos 的設計。",
       "theme_settings": "主題",
-      "theme_settings_description": "自訂 Curator Photos 的網頁界面",
+      "theme_settings_description": "自訂 Personal Cloud Photos 的網頁界面",
       "thumbnail_generation_job": "產生縮圖",
       "thumbnail_generation_job_description": "為每個檔案產生大、小及模糊縮圖，也為每位人物產生縮圖",
       "transcoding_acceleration_api": "加速 API",
@@ -69647,7 +69728,7 @@ class CodegenLoader extends AssetLoader {
     "advanced_settings_log_level_title": "日誌等級：{level}",
     "advanced_settings_prefer_remote_subtitle": "特定裝置載入縮圖的速度非常緩慢。開啟載入遠端項目的功能。",
     "advanced_settings_prefer_remote_title": "優先遙距項目",
-    "advanced_settings_proxy_headers_subtitle": "定義代理標頭，套用於Curator Photos的每次網絡請求",
+    "advanced_settings_proxy_headers_subtitle": "定義代理標頭，套用於Personal Cloud Photos的每次網絡請求",
     "advanced_settings_proxy_headers_title": "代理標頭",
     "advanced_settings_self_signed_ssl_subtitle": "略過伺服器端點的 SSL 證書驗證（該選項適用於使用自簽名證書的伺服器）。",
     "advanced_settings_self_signed_ssl_title": "允許自簽名 SSL 證書",
@@ -69738,7 +69819,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_subtitle": "照片排版設定",
     "asset_list_settings_title": "照片排列",
     "asset_offline": "項目離線",
-    "asset_offline_description": "磁碟中找不到此項目。請向您的 Curator Photos 管理員尋求協助。",
+    "asset_offline_description": "磁碟中找不到此項目。請向您的 Personal Cloud Photos 管理員尋求協助。",
     "asset_restored_successfully": "已復原所有項目",
     "asset_skipped": "跳過",
     "asset_skipped_in_trash": "移至垃圾桶",
@@ -69772,7 +69853,7 @@ class CodegenLoader extends AssetLoader {
     "back": "返回",
     "back_close_deselect": "返回、關閉及取消選取",
     "background_location_permission": "背景存取位置權限",
-    "background_location_permission_content": "開啟背景執行時自動切換網路，請充許 Curator Photos 一律充許使用精確位置權限，以確認 Wi-Fi 網路名稱",
+    "background_location_permission_content": "開啟背景執行時自動切換網路，請充許 Personal Cloud Photos 一律充許使用精確位置權限，以確認 Wi-Fi 網路名稱",
     "backup_album_selection_page_albums_device": "裝置上的相簿（{count}）",
     "backup_album_selection_page_albums_tap": "點擊選取，連續點擊兩次取消",
     "backup_album_selection_page_assets_scatter": "項目會分散在不同相簿。因此，可以設定要備份的相簿。",
@@ -69793,7 +69874,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "前往設定",
     "backup_controller_page_background_battery_info_link": "怎麼做",
     "backup_controller_page_background_battery_info_message":
-        "為了獲得最佳的背景備份體驗，請禁用會任何限制 Curator Photos 背景活動的電池優化。\n\n由於這是裝置相關的，因此請查找裝置製造商提供的資訊進行操作。",
+        "為了獲得最佳的背景備份體驗，請禁用會任何限制 Personal Cloud Photos 背景活動的電池優化。\n\n由於這是裝置相關的，因此請查找裝置製造商提供的資訊進行操作。",
     "backup_controller_page_background_battery_info_ok": "我知道了",
     "backup_controller_page_background_battery_info_title": "電池最佳化",
     "backup_controller_page_background_charging": "僅在充電時",
@@ -69851,7 +69932,7 @@ class CodegenLoader extends AssetLoader {
         "您確定要批量刪除 {count, plural, one {# 個重複檔案} other {# 個重複檔案}} 嗎？這將保留每組中的最大檔案，並永久刪除所有其他重複項。此操作無法撤銷！",
     "bulk_keep_duplicates_confirmation": "您確定要保留 {count, plural, one {# 個重複檔案} other {# 個重複檔案}} 嗎？這將解決所有重複組而不刪除任何內容。",
     "bulk_trash_duplicates_confirmation": "確定要一次丟掉 {count, plural, other {# 個重複的檔案}}嗎？這樣每組重複的檔案中，最大的會留下來，其它的會被丟進垃圾桶。",
-    "buy": "購置 Curator Photos",
+    "buy": "購置 Personal Cloud Photos",
     "cache_settings_clear_cache_button": "清除緩存",
     "cache_settings_clear_cache_button_title": "清除套用緩存。在重新生成緩存之前，將顯著影響套用的性能。",
     "cache_settings_duplicated_assets_clear_button": "清除",
@@ -69862,7 +69943,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "共享相簿縮圖",
     "cache_settings_statistics_thumbnail": "縮圖",
     "cache_settings_statistics_title": "緩存使用情況",
-    "cache_settings_subtitle": "控制 Curator Photos app 的緩存行為",
+    "cache_settings_subtitle": "控制 Personal Cloud Photos app 的緩存行為",
     "cache_settings_tile_subtitle": "設定本地存儲行為",
     "cache_settings_tile_title": "本地存儲",
     "cache_settings_title": "緩存設定",
@@ -69940,7 +70021,7 @@ class CodegenLoader extends AssetLoader {
     "context": "情境",
     "continue": "繼續",
     "control_bottom_app_bar_create_new_album": "新增相簿",
-    "control_bottom_app_bar_delete_from_immich": "從Curator Photos伺服器中刪除",
+    "control_bottom_app_bar_delete_from_immich": "從Personal Cloud Photos伺服器中刪除",
     "control_bottom_app_bar_delete_from_local": "從移動裝置中刪除",
     "control_bottom_app_bar_edit_location": "編輯位置資訊",
     "control_bottom_app_bar_edit_time": "編輯日期和時間",
@@ -70005,10 +70086,10 @@ class CodegenLoader extends AssetLoader {
     "delete": "刪除",
     "delete_album": "刪除相簿",
     "delete_api_key_prompt": "您確定要刪除這個 API Key嗎？",
-    "delete_dialog_alert": "這些項目將從 Curator Photos 和您的裝置中永久刪除",
-    "delete_dialog_alert_local": "這些項目將從您的移動裝置中永久刪除，但仍然可以從Curator Photos伺服器中再次獲取",
-    "delete_dialog_alert_local_non_backed_up": "部分項目還未備份至Curator Photos伺服器，將從您的移動裝置中永久刪除",
-    "delete_dialog_alert_remote": "這些項目將從Curator Photos伺服器中永久刪除",
+    "delete_dialog_alert": "這些項目將從 Personal Cloud Photos 和您的裝置中永久刪除",
+    "delete_dialog_alert_local": "這些項目將從您的移動裝置中永久刪除，但仍然可以從Personal Cloud Photos伺服器中再次獲取",
+    "delete_dialog_alert_local_non_backed_up": "部分項目還未備份至Personal Cloud Photos伺服器，將從您的移動裝置中永久刪除",
+    "delete_dialog_alert_remote": "這些項目將從Personal Cloud Photos伺服器中永久刪除",
     "delete_dialog_ok_force": "確認刪除",
     "delete_dialog_title": "永久刪除",
     "delete_duplicates_confirmation": "您確定要永久刪除這些重複項嗎？",
@@ -70060,7 +70141,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "管理與檔案下載相關的設定",
     "download_started": "開始下載",
     "download_sucess": "下載成功",
-    "download_sucess_android": "媒體已下載至 DCIM/CuratorPhotos",
+    "download_sucess_android": "媒體已下載至 DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "等待重試",
     "downloading": "下載中",
     "downloading_asset_filename": "正在下載 {filename}",
@@ -70099,7 +70180,7 @@ class CodegenLoader extends AssetLoader {
     "email_notifications": "Email 通知",
     "empty_folder": "此資料夾為空",
     "empty_trash": "清空垃圾桶",
-    "empty_trash_confirmation": "確定要清空垃圾桶嗎？這會永久刪除 Curator Photos 垃圾桶中所有的檔案。\n此步驟無法取消喔！",
+    "empty_trash_confirmation": "確定要清空垃圾桶嗎？這會永久刪除 Personal Cloud Photos 垃圾桶中所有的檔案。\n此步驟無法取消喔！",
     "enable": "啟用",
     "enable_biometric_auth_description": "輸入您的 PIN 碼以啟用生物辨識驗證",
     "enabled": "己啟用",
@@ -70339,7 +70420,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "時",
     "id": "ID",
     "ignore_icloud_photos": "忽略iCloud照片",
-    "ignore_icloud_photos_description": "存儲在iCloud中的照片不會上傳至Curator Photos伺服器",
+    "ignore_icloud_photos_description": "存儲在iCloud中的照片不會上傳至Personal Cloud Photos伺服器",
     "image": "圖片",
     "image_alt_text_date": "{isVideo, select, true {影片} other {圖片}}拍攝於 {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {影片} other {圖片}} 與 {person1} 一同於 {date} 拍攝",
@@ -70361,8 +70442,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "下載啓動",
     "image_viewer_page_state_provider_download_success": "下載成功",
     "image_viewer_page_state_provider_share_error": "共享出錯",
-    "immich_logo": "Curator Photos 標誌",
-    "immich_web_interface": "Curator Photos 網頁介面",
+    "immich_logo": "Personal Cloud Photos 標誌",
+    "immich_web_interface": "Personal Cloud Photos 網頁介面",
     "import_from_json": "匯入 JSON",
     "import_path": "匯入路徑",
     "in_albums": "在 {count, plural, other {# 本相簿}}中",
@@ -70419,7 +70500,7 @@ class CodegenLoader extends AssetLoader {
     "local_network": "本地網路",
     "local_network_sheet_info": "當使用指定的 Wi-Fi 網路時，應用程式將透過此網址連線至伺服器",
     "location_permission": "位置權限",
-    "location_permission_content": "Curator Photos 需要精確位置權限，以取得連接的 Wi-Fi 網路名稱",
+    "location_permission_content": "Personal Cloud Photos 需要精確位置權限，以取得連接的 Wi-Fi 網路名稱",
     "location_picker_choose_on_map": "在地圖上選擇",
     "location_picker_latitude_error": "輸入有效的緯度值",
     "location_picker_latitude_hint": "請在此處輸入您的緯度值",
@@ -70583,7 +70664,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "通知",
     "notifications_setting_description": "管理通知",
     "oauth": "OAuth",
-    "official_immich_resources": "官方 Curator Photos 資源",
+    "official_immich_resources": "官方 Personal Cloud Photos 資源",
     "offline": "離線",
     "ok": "確定",
     "oldest_first": "由舊至新",
@@ -70655,10 +70736,10 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_continue_anyway": "確認繼續",
     "permission_onboarding_get_started": "開始使用",
     "permission_onboarding_go_to_settings": "前往設定",
-    "permission_onboarding_permission_denied": "如要繼續，請允許 Curator Photos 存取相片和影片權限。",
+    "permission_onboarding_permission_denied": "如要繼續，請允許 Personal Cloud Photos 存取相片和影片權限。",
     "permission_onboarding_permission_granted": "已允許！一切就緒。",
-    "permission_onboarding_permission_limited": "如要繼續，請允許 Curator Photos 備份和管理您的相簿收藏，在設定中授予相片和影片權限。",
-    "permission_onboarding_request": "Curator Photos 需要權限才能查看您的相片和短片。",
+    "permission_onboarding_permission_limited": "如要繼續，請允許 Personal Cloud Photos 備份和管理您的相簿收藏，在設定中授予相片和影片權限。",
+    "permission_onboarding_request": "Personal Cloud Photos 需要權限才能查看您的相片和短片。",
     "person": "人物",
     "person_birthdate": "生於 {date}",
     "person_hidden": "{name}{hidden, select, true {（隱藏）} other {}}",
@@ -70703,12 +70784,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "公開相簿",
     "public_share": "公開分享",
     "purchase_account_info": "擁護者",
-    "purchase_activated_subtitle": "感謝您對 Curator Photos 及開源軟體的支援",
+    "purchase_activated_subtitle": "感謝您對 Personal Cloud Photos 及開源軟體的支援",
     "purchase_activated_time": "於 {date} 啟用",
     "purchase_activated_title": "金鑰成功啟用了",
     "purchase_button_activate": "啟用",
     "purchase_button_buy": "購置",
-    "purchase_button_buy_immich": "購置 Curator Photos",
+    "purchase_button_buy_immich": "購置 Personal Cloud Photos",
     "purchase_button_never_show_again": "不再顯示",
     "purchase_button_reminder": "過 30 天再提醒我",
     "purchase_button_remove_key": "移除金鑰",
@@ -70718,12 +70799,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "擁護者狀態",
     "purchase_individual_title": "個人",
     "purchase_input_suggestion": "有產品金鑰嗎？請在下面輸入金鑰",
-    "purchase_license_subtitle": "購置 Curator Photos 來支援軟體開發",
+    "purchase_license_subtitle": "購置 Personal Cloud Photos 來支援軟體開發",
     "purchase_lifetime_description": "終身購置",
     "purchase_option_title": "購置選項",
     "purchase_panel_info_1":
-        "開發 Curator Photos 可不是件容易的事，花了我們不少功夫。好在有一群全職工程師在背後默默努力，為的就是把它做到最好。我們的目標很簡單：讓開放原始碼軟體和正當的商業模式能成為開發者的長期飯碗，同時打造出重視隱私的生態系統，讓大家有個不被限制的雲端服務新選擇。",
-    "purchase_panel_info_2": "我們承諾不設付費牆，所以購置 Curator Photos 並不會讓您獲得額外的功能。我們是依賴使用者們的支援來開發 Curator Photos 的。",
+        "開發 Personal Cloud Photos 可不是件容易的事，花了我們不少功夫。好在有一群全職工程師在背後默默努力，為的就是把它做到最好。我們的目標很簡單：讓開放原始碼軟體和正當的商業模式能成為開發者的長期飯碗，同時打造出重視隱私的生態系統，讓大家有個不被限制的雲端服務新選擇。",
+    "purchase_panel_info_2":
+        "我們承諾不設付費牆，所以購置 Personal Cloud Photos 並不會讓您獲得額外的功能。我們是依賴使用者們的支援來開發 Personal Cloud Photos 的。",
     "purchase_panel_title": "支援這項專案",
     "purchase_per_server": "每臺伺服器",
     "purchase_per_user": "每位使用者",
@@ -70937,7 +71019,7 @@ class CodegenLoader extends AssetLoader {
         "從伺服器串流影片時，優先播放原始畫質（即使有轉檔的版本可用）。這可能會導致播放時出現緩衝情況。若影片已儲存在本機，則一律以原始畫質播放，與此設定無關。",
     "setting_video_viewer_original_video_title": "一律播放原始影片",
     "settings": "設定",
-    "settings_require_restart": "請重啓 Curator Photos 以使設定生效",
+    "settings_require_restart": "請重啓 Personal Cloud Photos 以使設定生效",
     "settings_saved": "設定已儲存",
     "setup_pin_code": "設定 PIN 碼",
     "share": "分享",
@@ -71064,12 +71146,12 @@ class CodegenLoader extends AssetLoader {
     "sunrise_on_the_beach": "日出的海灘",
     "support": "支援",
     "support_and_feedback": "支持與回饋",
-    "support_third_party_description": "您安裝的 Curator Photos 是由第三方打包的。您遇到的問題可能是該軟體包造成的，所以請先使用下面的鏈結向他們提出問題。",
+    "support_third_party_description": "您安裝的 Personal Cloud Photos 是由第三方打包的。您遇到的問題可能是該軟體包造成的，所以請先使用下面的鏈結向他們提出問題。",
     "swap_merge_direction": "交換合併方向",
     "sync": "同步",
     "sync_albums": "同步相簿",
     "sync_albums_manual_subtitle": "將所有上傳的短片和照片同步到選定的備份相簿",
-    "sync_upload_album_setting_subtitle": "新增照片和短片並上傳到 Curator Photos 上的選定相簿中",
+    "sync_upload_album_setting_subtitle": "新增照片和短片並上傳到 Personal Cloud Photos 上的選定相簿中",
     "tag": "標籤",
     "tag_assets": "標記檔案",
     "tag_created": "已建立標記：{tag}",
@@ -71117,7 +71199,7 @@ class CodegenLoader extends AssetLoader {
     "trash_emptied": "已清空回收桶",
     "trash_no_results_message": "垃圾桶中的照片和影片將顯示在這裡。",
     "trash_page_delete_all": "刪除全部",
-    "trash_page_empty_trash_dialog_content": "是否清空回收桶？這些項目將被從Curator Photos中永久刪除",
+    "trash_page_empty_trash_dialog_content": "是否清空回收桶？這些項目將被從Personal Cloud Photos中永久刪除",
     "trash_page_info": "回收桶中項目將在 {days} 天後永久刪除",
     "trash_page_no_assets": "暫無已刪除項目",
     "trash_page_restore_all": "恢復全部",
@@ -71162,7 +71244,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "錯誤",
     "upload_status_uploaded": "已上傳",
     "upload_success": "上傳成功，要查看新上傳的檔案請重新整理頁面。",
-    "upload_to_immich": "上傳至 Curator Photos ({count})",
+    "upload_to_immich": "上傳至 Personal Cloud Photos ({count})",
     "uploading": "上傳中",
     "url": "網址",
     "usage": "用量",
@@ -71190,7 +71272,7 @@ class CodegenLoader extends AssetLoader {
     "version": "版本",
     "version_announcement_closing": "敬祝順心，Alex",
     "version_announcement_message":
-        "嗨～新版本的 Curator Photos 推出了。為防止配置出錯，請花點時間閱讀<link>發行說明</link>，並確保設定是最新的，特別是使用 WatchTower 等自動更新工具時。",
+        "嗨～新版本的 Personal Cloud Photos 推出了。為防止配置出錯，請花點時間閱讀<link>發行說明</link>，並確保設定是最新的，特別是使用 WatchTower 等自動更新工具時。",
     "version_history": "版本紀錄",
     "version_history_item": "{date} 安裝了 {version}",
     "video": "影片",
@@ -71219,7 +71301,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "警告",
     "week": "週",
     "welcome": "歡迎",
-    "welcome_to_immich": "歡迎使用 Curator Photos",
+    "welcome_to_immich": "歡迎使用 Personal Cloud Photos",
     "wifi_name": "Wi-Fi 名稱",
     "wrong_pin_code": "PIN 碼錯誤",
     "year": "年",
@@ -71267,7 +71349,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Tambahkan pola pengecualian. Glob menggunakan *, **, dan ? didukung. Untuk mengabaikan semua berkas dalam direktori apa pun bernama \"Raw\", gunakan \"**/Raw/**\". Untuk mengabaikan semua berkas berakhiran dengan \".tif\", gunakan \"**/*.tif\". Untuk mengabaikan jalur absolut, gunakan \"/jalur/untuk/diabaikan/**\".",
       "asset_offline_description":
-          "Aset pustaka eksternal ini tidak ada di diska dan telah dipindahkan ke tempat sampah. Jika berkasnya dipindah dalam pustaka, periksa lini masa Anda untuk aset baru yang cocok. Untuk memulihkan aset ini, pastikan jalur berkas di bawah dapat diakses oleh Curator Photos dan pindai pustaka.",
+          "Aset pustaka eksternal ini tidak ada di diska dan telah dipindahkan ke tempat sampah. Jika berkasnya dipindah dalam pustaka, periksa lini masa Anda untuk aset baru yang cocok. Untuk memulihkan aset ini, pastikan jalur berkas di bawah dapat diakses oleh Personal Cloud Photos dan pindai pustaka.",
       "authentication_settings": "Pengaturan Autentikasi",
       "authentication_settings_description": "Kelola kata sandi, OAuth, dan pengaturan autentikasi lainnya",
       "authentication_settings_disable_all":
@@ -71284,7 +71366,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurasi saat ini ditetapkan oleh berkas konfigurasi",
       "confirm_delete_library": "Apakah Anda yakin ingin menghapus pustaka {library}?",
       "confirm_delete_library_assets":
-          "Apakah Anda yakin ingin menghapus pustaka ini? Ini akan menghapus {count, plural, one {# aset berisi} other {semua # aset berisi}} dari Curator Photos dan tidak dapat diurungkan. Berkas akan tetap tersedia di diska.",
+          "Apakah Anda yakin ingin menghapus pustaka ini? Ini akan menghapus {count, plural, one {# aset berisi} other {semua # aset berisi}} dari Personal Cloud Photos dan tidak dapat diurungkan. Berkas akan tetap tersedia di diska.",
       "confirm_email_below": "Untuk mengonfirmasi, ketik \"{email}\" di bawah",
       "confirm_reprocess_all_faces":
           "Apakah Anda yakin ingin memproses semua wajah? Ini juga akan menghapus nama orang.",
@@ -71439,8 +71521,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "CATATAN: Ini tidak akan dapat diubah lagi!",
       "notification_email_from_address": "Dari alamat",
       "notification_email_from_address_description":
-          "Alamat surel pengirim, misalnya: \"Server Foto Curator Photos <noreply@example.com>\"",
-      "notification_email_host_description": "Hos server surel (mis. smtp.curatorphotos.app)",
+          "Alamat surel pengirim, misalnya: \"Server Foto Personal Cloud Photos <noreply@example.com>\"",
+      "notification_email_host_description": "Hos server surel (mis. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Abaikan eror sertifikat",
       "notification_email_ignore_certificate_errors_description":
           "Abaikan eror validasi sertifikat TLS (tidak disarankan)",
@@ -71541,9 +71623,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Templat Notifikasi",
       "template_settings_description": "Kelola templat kustom untuk notifikasi.",
       "theme_custom_css_settings": "CSS Kustom",
-      "theme_custom_css_settings_description": "CSS memungkinkan desain Curator Photos untuk diubah.",
+      "theme_custom_css_settings_description": "CSS memungkinkan desain Personal Cloud Photos untuk diubah.",
       "theme_settings": "Pengaturan Tema",
-      "theme_settings_description": "Kelola kustomisasi antarmuka web Curator Photos",
+      "theme_settings_description": "Kelola kustomisasi antarmuka web Personal Cloud Photos",
       "these_files_matched_by_checksum": "Berkas ini cocok dengan checksum-nya",
       "thumbnail_generation_job": "Buat Gambar Kecil",
       "thumbnail_generation_job_description":
@@ -71761,7 +71843,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grid Foto",
     "asset_offline": "Aset Luring",
     "asset_offline_description":
-        "Aset eksternal ini tidak ada lagi di diska. Silakan hubungi administrator Curator Photos Anda untuk bantuan.",
+        "Aset eksternal ini tidak ada lagi di diska. Silakan hubungi administrator Personal Cloud Photos Anda untuk bantuan.",
     "asset_restored_successfully": "Asset restored successfully",
     "asset_skipped": "Dilewati",
     "asset_skipped_in_trash": "Dalam sampah",
@@ -71775,7 +71857,7 @@ class CodegenLoader extends AssetLoader {
         "Ditambahkan {count, plural, one {# aset} other {# aset}} ke {hasName, select, true {<b>{name}</b>} other {album baru}}",
     "assets_count": "{count, plural, one {# aset} other {# aset}}",
     "assets_deleted_permanently": "{count} aset dihapus secara permanen",
-    "assets_deleted_permanently_from_server": "{count} aset dihapus secara permanen dari server Curator Photos",
+    "assets_deleted_permanently_from_server": "{count} aset dihapus secara permanen dari server Personal Cloud Photos",
     "assets_moved_to_trash_count": "Dipindahkan {count, plural, one {# aset} other {# aset}} ke sampah",
     "assets_permanently_deleted_count": "{count, plural, one {# aset} other {# aset}} dihapus secara permanen",
     "assets_removed_count": "{count, plural, one {# aset} other {# aset}} dihapus",
@@ -71786,14 +71868,14 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} aset berhasil dipulihkan",
     "assets_trashed": "{count} aset dipindahkan ke sampah",
     "assets_trashed_count": "{count, plural, one {# aset} other {# aset}} dibuang ke sampah",
-    "assets_trashed_from_server": "{count} aset dipindahkan ke sampah dari server Curator Photos",
+    "assets_trashed_from_server": "{count} aset dipindahkan ke sampah dari server Personal Cloud Photos",
     "assets_were_part_of_album_count": "{count, plural, one {Aset telah} other {Aset telah}} menjadi bagian dari album",
     "authorized_devices": "Perangkat Terautentikasi",
     "back": "Kembali",
     "back_close_deselect": "Kembali, tutup, atau batalkan pemilihan",
     "background_location_permission": "Background location permission",
     "background_location_permission_content":
-        "In order to switch networks when running in the background, Curator Photos must *always* have precise location access so the app can read the Wi-Fi network's name",
+        "In order to switch networks when running in the background, Personal Cloud Photos must *always* have precise location access so the app can read the Wi-Fi network's name",
     "backup_album_selection_page_albums_device": "Album di perangkat ({count})",
     "backup_album_selection_page_albums_tap": "Sentuh untuk memilih, sentuh 2x untuk mengecualikan",
     "backup_album_selection_page_assets_scatter":
@@ -71869,7 +71951,7 @@ class CodegenLoader extends AssetLoader {
         "Apakah Anda yakin ingin menyimpan {count, plural, one {# aset duplikat} other {# aset duplikat}}? Ini akan menyelesaikan semua kelompok duplikat tanpa menghapus apa pun.",
     "bulk_trash_duplicates_confirmation":
         "Apakah Anda yakin ingin membuang {count, plural, one {# aset duplikat} other {# aset duplikat}} secara bersamaan? Ini akan menyimpan aset terbesar dari setiap kelompok dan membuang semua duplikat lainnya.",
-    "buy": "Beli Curator Photos",
+    "buy": "Beli Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Thumbnail halaman pustaka ({} aset)",
     "cache_settings_clear_cache_button": "Hapus cache",
     "cache_settings_clear_cache_button_title":
@@ -71882,7 +71964,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Thumbnail album berbagi",
     "cache_settings_statistics_thumbnail": "Thumbnail",
     "cache_settings_statistics_title": "Penggunaan cache",
-    "cache_settings_subtitle": "Menyetel proses cache aplikasi Curator Photos",
+    "cache_settings_subtitle": "Menyetel proses cache aplikasi Personal Cloud Photos",
     "cache_settings_tile_subtitle": "Control the local storage behaviour",
     "cache_settings_tile_title": "Penyimpanan Lokal",
     "cache_settings_title": "Setelan Cache",
@@ -71962,7 +72044,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Konteks",
     "continue": "Lanjutkan",
     "control_bottom_app_bar_create_new_album": "Buat album baru",
-    "control_bottom_app_bar_delete_from_immich": "Hapus dari Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Hapus dari Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Hapus dari perangkat",
     "control_bottom_app_bar_edit_location": "Edit Lokasi",
     "control_bottom_app_bar_edit_time": "Edit Tanggal & Waktu",
@@ -72028,12 +72110,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Hapus",
     "delete_album": "Hapus album",
     "delete_api_key_prompt": "Apakah Anda yakin ingin menghapus kunci API ini?",
-    "delete_dialog_alert": "Item ini akan dihapus permanen dari Curator Photos dan perangkat",
+    "delete_dialog_alert": "Item ini akan dihapus permanen dari Personal Cloud Photos dan perangkat",
     "delete_dialog_alert_local":
-        "Item ini akan dihapus secara permanen dari perangkatmu, namun masih akan tersedia di server Curator Photos",
+        "Item ini akan dihapus secara permanen dari perangkatmu, namun masih akan tersedia di server Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "Beberapa item belum dicadangkan ke Curator Photos dan akan dihapus secara permanen dari perangkatmu",
-    "delete_dialog_alert_remote": "Item ini akan dihapus secara permanen dari server Curator Photos",
+        "Beberapa item belum dicadangkan ke Personal Cloud Photos dan akan dihapus secara permanen dari perangkatmu",
+    "delete_dialog_alert_remote": "Item ini akan dihapus secara permanen dari server Personal Cloud Photos",
     "delete_dialog_ok_force": "Lanjutkan Hapus",
     "delete_dialog_title": "Hapus Permanen",
     "delete_duplicates_confirmation": "Apakah Anda yakin ingin menghapus duplikat ini secara permanen?",
@@ -72086,7 +72168,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Kelola pengaturan berkaitan dengan pengunduhan aset",
     "download_started": "Unduhan dimulai",
     "download_sucess": "Unduhan sukses",
-    "download_sucess_android": "The media has been downloaded to DCIM/CuratorPhotos",
+    "download_sucess_android": "The media has been downloaded to DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Menunggu untuk mencoba lagi",
     "downloading": "Mengunduh",
     "downloading_asset_filename": "Mengunduh aset {filename}",
@@ -72124,7 +72206,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "This folder is empty",
     "empty_trash": "Kosongkan sampah",
     "empty_trash_confirmation":
-        "Apakah Anda yakin ingin mengosongkan sampah? Ini akan menghapus semua aset dalam sampah secara permanen dari Curator Photos.\nAnda tidak dapat mengurungkan tindakan ini!",
+        "Apakah Anda yakin ingin mengosongkan sampah? Ini akan menghapus semua aset dalam sampah secara permanen dari Personal Cloud Photos.\nAnda tidak dapat mengurungkan tindakan ini!",
     "enable": "Aktifkan",
     "enable_biometric_auth_description": "Masukkan kode PIN Anda untuk mengaktifkan autentikasi biometrik",
     "enabled": "Diaktifkan",
@@ -72349,7 +72431,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignore iCloud photos",
     "ignore_icloud_photos_description":
-        "Photos that are stored on iCloud will not be uploaded to the Curator Photos server",
+        "Photos that are stored on iCloud will not be uploaded to the Personal Cloud Photos server",
     "image": "Gambar",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} pada tanggal {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} diambil oleh {person1} pada {date}",
@@ -72372,8 +72454,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Unduh dimulai",
     "image_viewer_page_state_provider_download_success": "Unduh Sukses",
     "image_viewer_page_state_provider_share_error": "Share Error",
-    "immich_logo": "Logo Curator Photos",
-    "immich_web_interface": "Antarmuka Web Curator Photos",
+    "immich_logo": "Logo Personal Cloud Photos",
+    "immich_web_interface": "Antarmuka Web Personal Cloud Photos",
     "import_from_json": "Impor dari JSON",
     "import_path": "Jalur pengimporan",
     "in_albums": "Dalam {count, plural, one {# album} other {# album}}",
@@ -72425,7 +72507,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "Memuat",
     "loading_search_results_failed": "Pemuatan hasil pencarian gagal",
     "location_permission_content":
-        "Untuk menggunakan fitur pengalihan otomatis, Curator Photos memerlukan izin lokasi yang akurat agar dapat membaca nama jaringan Wi-Fi saat ini",
+        "Untuk menggunakan fitur pengalihan otomatis, Personal Cloud Photos memerlukan izin lokasi yang akurat agar dapat membaca nama jaringan Wi-Fi saat ini",
     "location_picker_choose_on_map": "Pilih di peta",
     "location_picker_latitude_error": "Masukkan lintang yang sah",
     "location_picker_latitude_hint": "Masukkan lintang di sini",
@@ -72582,7 +72664,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifikasi",
     "notifications_setting_description": "Kelola notifikasi",
     "oauth": "OAuth",
-    "official_immich_resources": "Sumber Daya Curator Photos Resmi",
+    "official_immich_resources": "Sumber Daya Personal Cloud Photos Resmi",
     "offline": "Luring",
     "ok": "Oke",
     "oldest_first": "Terlawas dahulu",
@@ -72651,11 +72733,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_continue_anyway": "Lanjutkan saja",
     "permission_onboarding_go_to_settings": "Buka setelan",
     "permission_onboarding_permission_denied":
-        "Izin ditolak. Untuk menggunakan Curator Photos, berikan izin akses foto dan video di Setelan.",
+        "Izin ditolak. Untuk menggunakan Personal Cloud Photos, berikan izin akses foto dan video di Setelan.",
     "permission_onboarding_permission_granted": "Izin diberikan! Semua sudah siap.",
     "permission_onboarding_permission_limited":
-        "Izin dibatasi. Agai Curator Photos dapat mencadangkan dan mengatur seluruh koleksi galeri, izinkan akses foto dan video pada Setelan.",
-    "permission_onboarding_request": "Curator Photos memerlukan izin untuk melihat foto dan video kamu.",
+        "Izin dibatasi. Agai Personal Cloud Photos dapat mencadangkan dan mengatur seluruh koleksi galeri, izinkan akses foto dan video pada Setelan.",
+    "permission_onboarding_request": "Personal Cloud Photos memerlukan izin untuk melihat foto dan video kamu.",
     "person": "Orang",
     "person_birthdate": "Lahir pada {date}",
     "person_hidden": "{name}{hidden, select, true { (tersembunyi)} other {}}",
@@ -72703,12 +72785,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Album publik",
     "public_share": "Pembagian Publik",
     "purchase_account_info": "Pendukung",
-    "purchase_activated_subtitle": "Terima kasih telah mendukung Curator Photos dan perangkat lunak sumber terbuka",
+    "purchase_activated_subtitle":
+        "Terima kasih telah mendukung Personal Cloud Photos dan perangkat lunak sumber terbuka",
     "purchase_activated_time": "Di aktivasi pada {date}",
     "purchase_activated_title": "Kunci kamu telah sukses di aktivasi",
     "purchase_button_activate": "Aktifkan",
     "purchase_button_buy": "Beli",
-    "purchase_button_buy_immich": "Beli Curator Photos",
+    "purchase_button_buy_immich": "Beli Personal Cloud Photos",
     "purchase_button_never_show_again": "Jangan tampilkan lagi",
     "purchase_button_reminder": "Ingatkan saya pada 30 hari lagi",
     "purchase_button_remove_key": "Hapus kunci",
@@ -72718,13 +72801,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status pendukung",
     "purchase_individual_title": "Perorangan",
     "purchase_input_suggestion": "Punya kunci produk? Masukkan kunci di bawah ini",
-    "purchase_license_subtitle": "Beli Curator Photos untuk keberlangsungan pengembangan layanan",
+    "purchase_license_subtitle": "Beli Personal Cloud Photos untuk keberlangsungan pengembangan layanan",
     "purchase_lifetime_description": "Pembayaran seumur hidup",
     "purchase_option_title": "PILIHAN PEMBAYARAN",
     "purchase_panel_info_1":
-        "Membangun Curator Photos membutuhkan banyak waktu dan upaya, dan kami memiliki insinyur penuh waktu yang bekerja untuk membuatnya sebaik mungkin. Misi kami adalah agar perangkat lunak sumber terbuka dan praktik bisnis yang beretika menjadi sumber pendapatan yang berkelanjutan bagi para pengembang dan menciptakan ekosistem yang menghargai privasi dengan alternatif nyata untuk layanan cloud yang eksploitatif.",
+        "Membangun Personal Cloud Photos membutuhkan banyak waktu dan upaya, dan kami memiliki insinyur penuh waktu yang bekerja untuk membuatnya sebaik mungkin. Misi kami adalah agar perangkat lunak sumber terbuka dan praktik bisnis yang beretika menjadi sumber pendapatan yang berkelanjutan bagi para pengembang dan menciptakan ekosistem yang menghargai privasi dengan alternatif nyata untuk layanan cloud yang eksploitatif.",
     "purchase_panel_info_2":
-        "Karena kami berkomitmen untuk tidak menambahkan paywall, pembelian ini tidak akan memberi kamu fitur tambahan apa pun di Curator Photos. Kami mengandalkan pengguna seperti kamu untuk mendukung pengembangan Curator Photos yang sedang berlangsung.",
+        "Karena kami berkomitmen untuk tidak menambahkan paywall, pembelian ini tidak akan memberi kamu fitur tambahan apa pun di Personal Cloud Photos. Kami mengandalkan pengguna seperti kamu untuk mendukung pengembangan Personal Cloud Photos yang sedang berlangsung.",
     "purchase_panel_title": "Dukung proyek ini",
     "purchase_per_user": "Per pengguna",
     "purchase_remove_product_key": "Hapus Kunci Produk",
@@ -72918,7 +73001,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_subtitle": "Atur setelan notifikasi",
     "setting_video_viewer_looping_title": "Ulangi",
     "settings": "Pengaturan",
-    "settings_require_restart": "Harap mulai ulang Curator Photos untuk menerapkan pengaturan ini",
+    "settings_require_restart": "Harap mulai ulang Personal Cloud Photos untuk menerapkan pengaturan ini",
     "settings_saved": "Pengaturan disimpan",
     "setup_pin_code": "Pasang kode PIN",
     "share": "Bagikan",
@@ -73040,7 +73123,7 @@ class CodegenLoader extends AssetLoader {
     "support": "Dukungan",
     "support_and_feedback": "Dukungan & Masukan",
     "support_third_party_description":
-        "Pemasangan Curator Photos Anda telah dipaketkan oleh pihak ketiga. Masalah yang Anda alami dapat disebabkan oleh paket tersebut, jadi silakan ajukan isu dengan masalah tersebut menggunakan tautan di bawah.",
+        "Pemasangan Personal Cloud Photos Anda telah dipaketkan oleh pihak ketiga. Masalah yang Anda alami dapat disebabkan oleh paket tersebut, jadi silakan ajukan isu dengan masalah tersebut menggunakan tautan di bawah.",
     "swap_merge_direction": "Ganti arah penggabungan",
     "sync": "Sinkronisasikan",
     "tag_assets": "Tag aset",
@@ -73083,7 +73166,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Foto dan video di sampah akan muncul di sini.",
     "trash_page_delete_all": "Hapus Semua",
     "trash_page_empty_trash_dialog_content":
-        "Apakah kamu ingin menghapus semua aset di sampah? Item tersebut akan dihapus secara permanen dari Curator Photos",
+        "Apakah kamu ingin menghapus semua aset di sampah? Item tersebut akan dihapus secara permanen dari Personal Cloud Photos",
     "trash_page_info": "Item yang dipindahkan ke sampah akan terhapus secara permanen setelah {days} hari",
     "trash_page_no_assets": "Tidak ada aset di sampah",
     "trash_page_restore_all": "Pulihkan Semua",
@@ -73129,7 +73212,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Eror",
     "upload_status_uploaded": "Diunggah",
     "upload_success": "Pengunggahan berhasil, muat ulang laman untuk melihat aset terunggah yang baru.",
-    "upload_to_immich": "Unggah ke Curator Photos ({count})",
+    "upload_to_immich": "Unggah ke Personal Cloud Photos ({count})",
     "usage": "Penggunaan",
     "use_biometric": "Gunakan biometrik",
     "use_custom_date_range": "Gunakan jangka tanggal khusus saja",
@@ -73153,7 +73236,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versi",
     "version_announcement_closing": "Temanmu, Alex",
     "version_announcement_message":
-        "Hai! Versi baru Curator Photos telah tersedia. Harap luangkan waktu untuk membaca <link>catatan rilis</link> untuk memastikan pengaturan Anda terkini untuk mencegah kesalahan konfigurasi, terutama jika Anda menggunakan WatchTower atau mekanisme apa pun yang menangani pembaruan server Curator Photos secara otomatis.",
+        "Hai! Versi baru Personal Cloud Photos telah tersedia. Harap luangkan waktu untuk membaca <link>catatan rilis</link> untuk memastikan pengaturan Anda terkini untuk mencegah kesalahan konfigurasi, terutama jika Anda menggunakan WatchTower atau mekanisme apa pun yang menangani pembaruan server Personal Cloud Photos secara otomatis.",
     "version_announcement_overlay_release_notes": "release notes",
     "version_announcement_overlay_text_1": "Hi friend, there is a new release of",
     "version_announcement_overlay_text_2": "please take your time to visit the ",
@@ -73186,7 +73269,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Peringatan",
     "week": "Pekan",
     "welcome": "Selamat datang",
-    "welcome_to_immich": "Selamat datang di Curator Photos",
+    "welcome_to_immich": "Selamat datang di Personal Cloud Photos",
     "wifi_name": "Nama Wi-Fi",
     "wrong_pin_code": "Kode PIN salah",
     "year": "Tahun",
@@ -73236,7 +73319,7 @@ class CodegenLoader extends AssetLoader {
           "Adicione padrões de exclusão. Utilizar *, ** ou ? são suportados. Para ignorar todos os arquivos em qualquer diretório chamado \"Raw\", use \"**/Raw/**'. Para ignorar todos os arquivos que terminam em \".tif\", use \"**/*.tif\". Para ignorar um caminho absoluto, use \"/caminho/para/ignorar/**\".",
       "admin_user": "Usuário Administrador",
       "asset_offline_description":
-          "Este arquivo não foi encontrado na biblioteca externa, então foi enviado para a lixeira. Se o arquivo foi movido para outra pasta dentro da biblioteca, verifique sua linha do tempo para encontrar o arquivo novamente. Para restaurar este arquivo, certifique-se de que o caminho descrito abaixo pode ser acessado pelo Curator Photos e então escaneie a biblioteca.",
+          "Este arquivo não foi encontrado na biblioteca externa, então foi enviado para a lixeira. Se o arquivo foi movido para outra pasta dentro da biblioteca, verifique sua linha do tempo para encontrar o arquivo novamente. Para restaurar este arquivo, certifique-se de que o caminho descrito abaixo pode ser acessado pelo Personal Cloud Photos e então escaneie a biblioteca.",
       "authentication_settings": "Configurações de Autenticação",
       "authentication_settings_description": "Gerenciar senhas, OAuth, e outras configurações de autenticação",
       "authentication_settings_disable_all":
@@ -73252,7 +73335,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "A configuração está atualmente definida por um arquivo de configuração",
       "confirm_delete_library": "Você tem certeza que deseja excluir a biblioteca {library} ?",
       "confirm_delete_library_assets":
-          "Você tem certeza que deseja excluir esta biblioteca? Isso excluirá {count, plural, one {# arquivo contido do Curator Photos e não poderá ser desfeito. O arquivo permanecerá no disco} other {todos os # arquivos contidos do Curator Photos e não poderá ser desfeito. Os arquivos permanecerão no disco}}.",
+          "Você tem certeza que deseja excluir esta biblioteca? Isso excluirá {count, plural, one {# arquivo contido do Personal Cloud Photos e não poderá ser desfeito. O arquivo permanecerá no disco} other {todos os # arquivos contidos do Personal Cloud Photos e não poderá ser desfeito. Os arquivos permanecerão no disco}}.",
       "confirm_email_below": "Para confirmar, digite \"{email}\" abaixo",
       "confirm_reprocess_all_faces":
           "Tem certeza de que deseja reprocessar todos os rostos? Isso também limpará as pessoas nomeadas.",
@@ -73379,7 +73462,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Ativar recursos do mapa",
       "map_gps_settings": "Mapa e Configurações de GPS",
       "map_gps_settings_description": "Gerenciar Mapa e Configurações de GPS (Geocodificação Reversa)",
-      "map_implications": "O mapa depende de um serviço externo para funcionar (tiles.curatorphotos.cloud)",
+      "map_implications": "O mapa depende de um serviço externo para funcionar (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Tema Claro",
       "map_manage_reverse_geocoding_settings": "Gerenciar configurações de <link> Geocodificação reversa</link>",
       "map_reverse_geocoding": "Geocodificação reversa",
@@ -73407,8 +73490,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: Isto não pode ser alterado posteriormente!",
       "notification_email_from_address": "E-mail de origem",
       "notification_email_from_address_description":
-          "Endereço de e-mail do remetente, por exemplo: \"Curator Photos Photo Server <noreply@example.com>\". Tenha certeza de ter permissão para enviar e-mails a partir do endereço selecionado.",
-      "notification_email_host_description": "Host do servidor de e-mail (por exemplo, smtp.curatorphotos.app)",
+          "Endereço de e-mail do remetente, por exemplo: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Tenha certeza de ter permissão para enviar e-mails a partir do endereço selecionado.",
+      "notification_email_host_description": "Host do servidor de e-mail (por exemplo, smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorar erros de certificado",
       "notification_email_ignore_certificate_errors_description":
           "Ignorar erros de validação de certificado TLS (não recomendado)",
@@ -73517,9 +73600,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gerenciar modelos personalizados para notificações",
       "theme_custom_css_settings": "CSS customizado",
       "theme_custom_css_settings_description":
-          "Folhas de estilo em cascata permitem que o design do Curator Photos seja personalizado.",
+          "Folhas de estilo em cascata permitem que o design do Personal Cloud Photos seja personalizado.",
       "theme_settings": "Configurações de tema",
-      "theme_settings_description": "Gerencie a personalização da interface web do Curator Photos",
+      "theme_settings_description": "Gerencie a personalização da interface web do Personal Cloud Photos",
       "these_files_matched_by_checksum": "Esses arquivos são correspondidos por seus checksum",
       "thumbnail_generation_job": "Gerar Miniaturas",
       "thumbnail_generation_job_description":
@@ -73657,7 +73740,7 @@ class CodegenLoader extends AssetLoader {
         "Alguns dispositivos são extremamente lentos para carregar as miniaturas locais. Ative esta opção para preferir imagens do servidor.",
     "advanced_settings_prefer_remote_title": "Preferir imagens do servidor",
     "advanced_settings_proxy_headers_subtitle":
-        "Defina os cabeçalhos do proxy que o Curator Photos deve enviar em todas comunicações com a rede",
+        "Defina os cabeçalhos do proxy que o Personal Cloud Photos deve enviar em todas comunicações com a rede",
     "advanced_settings_proxy_headers_title": "Cabeçalhos do Proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Ignora a verificação do certificado SSL do servidor. Obrigatório para certificados auto assinados.",
@@ -73756,7 +73839,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Grade de Fotos",
     "asset_offline": "Arquivo indisponível",
     "asset_offline_description":
-        "Este arquivo externo não está mais disponível. Contate seu administrador do Curator Photos para obter ajuda.",
+        "Este arquivo externo não está mais disponível. Contate seu administrador do Personal Cloud Photos para obter ajuda.",
     "asset_restored_successfully": "Arquivo restaurado",
     "asset_skipped": "Ignorado",
     "asset_skipped_in_trash": "Na lixeira",
@@ -73775,7 +73858,7 @@ class CodegenLoader extends AssetLoader {
     "assets_count": "{count, plural, one {# arquivo} other {# arquivos}}",
     "assets_deleted_permanently": "{count} arquivo(s) deletado(s) permanentemente",
     "assets_deleted_permanently_from_server":
-        "{count} arquivo(s) deletado(s) permanentemente do servidor Curator Photos",
+        "{count} arquivo(s) deletado(s) permanentemente do servidor Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {# arquivo transferido - {error} arquivo falhou} other {# arquivos transferidos - {error} arquivos falharam}}",
     "assets_downloaded_successfully":
@@ -73804,7 +73887,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Voltar, fechar ou desmarcar",
     "background_location_permission": "Permissão de localização em segundo plano",
     "background_location_permission_content":
-        "Para que seja possível trocar a URL quando estiver executando em segundo plano, o Curator Photos deve *sempre* ter a permissão de localização precisa para que o aplicativo consiga ler o nome da rede Wi-Fi",
+        "Para que seja possível trocar a URL quando estiver executando em segundo plano, o Personal Cloud Photos deve *sempre* ter a permissão de localização precisa para que o aplicativo consiga ler o nome da rede Wi-Fi",
     "backup_album_selection_page_albums_device": "Álbuns no dispositivo ({count})",
     "backup_album_selection_page_albums_tap": "Toque para incluir, toque duas vezes para excluir",
     "backup_album_selection_page_assets_scatter":
@@ -73827,7 +73910,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ir para as configurações",
     "backup_controller_page_background_battery_info_link": "Mostre-me como",
     "backup_controller_page_background_battery_info_message":
-        "Para uma melhor experiência de backup em segundo plano, desative todas as otimizações de bateria que restrinjam a atividade em segundo plano do Curator Photos.\n\nComo isso é específico por dispositivo, consulte as informações de como fazer isso com o fabricante do seu dispositivo.",
+        "Para uma melhor experiência de backup em segundo plano, desative todas as otimizações de bateria que restrinjam a atividade em segundo plano do Personal Cloud Photos.\n\nComo isso é específico por dispositivo, consulte as informações de como fazer isso com o fabricante do seu dispositivo.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Otimizações de bateria",
     "backup_controller_page_background_charging": "Apenas durante o carregamento",
@@ -73889,7 +73972,7 @@ class CodegenLoader extends AssetLoader {
         "Tem certeza de que deseja manter {count, plural, one {# arquivo duplicado} other {# arquivos duplicados}}? Isso resolverá todos os grupos duplicados sem excluir nada.",
     "bulk_trash_duplicates_confirmation":
         "Tem a certeza de que deseja mover para a lixeira {count, plural, one {# arquivo duplicado} other {# arquivos duplicados}}? Isso manterá o maior arquivo de cada grupo e moverá para a lixeira todas as outras duplicidades.",
-    "buy": "Comprar o Curator Photos",
+    "buy": "Comprar o Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniaturas da biblioteca ({} arquivos)",
     "cache_settings_clear_cache_button": "Limpar o cache",
     "cache_settings_clear_cache_button_title":
@@ -73902,7 +73985,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniaturas de álbuns compartilhados",
     "cache_settings_statistics_thumbnail": "Miniaturas",
     "cache_settings_statistics_title": "Uso do cache",
-    "cache_settings_subtitle": "Controle o comportamento de cache do aplicativo Curator Photos",
+    "cache_settings_subtitle": "Controle o comportamento de cache do aplicativo Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Tamanho do cache de miniaturas ({} arquivos)",
     "cache_settings_tile_subtitle": "Controle o comportamento do armazenamento local",
     "cache_settings_tile_title": "Armazenamento Local",
@@ -73988,7 +74071,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contexto",
     "continue": "Continuar",
     "control_bottom_app_bar_create_new_album": "Criar novo álbum",
-    "control_bottom_app_bar_delete_from_immich": "Excluir do Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Excluir do Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Excluir do dispositivo",
     "control_bottom_app_bar_edit_location": "Editar Localização",
     "control_bottom_app_bar_edit_time": "Editar data e hora",
@@ -74055,12 +74138,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Excluir",
     "delete_album": "Excluir álbum",
     "delete_api_key_prompt": "Tem certeza de que deseja excluir esta chave de API?",
-    "delete_dialog_alert": "Esses itens serão excluídos permanentemente do Curator Photos e do seu dispositivo",
+    "delete_dialog_alert": "Esses itens serão excluídos permanentemente do Personal Cloud Photos e do seu dispositivo",
     "delete_dialog_alert_local":
-        "Estes arquivos serão permanentemente excluídos do seu dispositivo, mas continuarão disponíveis no servidor Curator Photos",
+        "Estes arquivos serão permanentemente excluídos do seu dispositivo, mas continuarão disponíveis no servidor Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
         "Não há backup de alguns dos arquivos no servidor e eles serão excluídos permanentemente do seu dispositivo",
-    "delete_dialog_alert_remote": "Esses arquivos serão excluídos permanentemente do servidor Curator Photos",
+    "delete_dialog_alert_remote": "Esses arquivos serão excluídos permanentemente do servidor Personal Cloud Photos",
     "delete_dialog_ok_force": "Excluir mesmo assim",
     "delete_dialog_title": "Excluir permanentemente",
     "delete_duplicates_confirmation": "Tem certeza de que deseja excluir permanentemente estas duplicidades?",
@@ -74114,7 +74197,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Gerenciar configurações relacionadas a transferência de arquivos",
     "download_started": "Baixando",
     "download_sucess": "Baixado com sucesso",
-    "download_sucess_android": "O arquivo foi salvo em DCIM/CuratorPhotos",
+    "download_sucess_android": "O arquivo foi salvo em DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Aguardando para tentar novamente",
     "downloading": "Baixando",
     "downloading_asset_filename": "Baixando arquivo {filename}",
@@ -74154,7 +74237,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "A pasta está vazia",
     "empty_trash": "Esvaziar lixo",
     "empty_trash_confirmation":
-        "Tem certeza de que deseja esvaziar a lixeira? Isso removerá permanentemente do Curator Photos todos os arquivos que estão na lixeira.\nVocê não pode desfazer esta ação!",
+        "Tem certeza de que deseja esvaziar a lixeira? Isso removerá permanentemente do Personal Cloud Photos todos os arquivos que estão na lixeira.\nVocê não pode desfazer esta ação!",
     "enable": "Habilitar",
     "enable_biometric_auth_description": "Insira seu código PIN para ativar a autenticação por biometria",
     "enabled": "Habilitado",
@@ -74408,7 +74491,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignorar fotos do iCloud",
     "ignore_icloud_photos_description":
-        "Fotos que estão armazenadas no iCloud não serão enviadas para o servidor do Curator Photos",
+        "Fotos que estão armazenadas no iCloud não serão enviadas para o servidor do Personal Cloud Photos",
     "image": "Imagem",
     "image_alt_text_date": "{isVideo, select, true {Vídeo gravado} other {Foto tirada}} em {date}",
     "image_alt_text_date_1_person":
@@ -74433,8 +74516,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Baixando arquivo",
     "image_viewer_page_state_provider_download_success": "Baixado com sucesso",
     "image_viewer_page_state_provider_share_error": "Erro ao compartilhar",
-    "immich_logo": "Logo do Curator Photos",
-    "immich_web_interface": "Interface Web do Curator Photos",
+    "immich_logo": "Logo do Personal Cloud Photos",
+    "immich_web_interface": "Interface Web do Personal Cloud Photos",
     "import_from_json": "Importar do JSON",
     "import_path": "Caminho de importação",
     "in_albums": "Em {count, plural, one {# álbum} other {# álbuns}}",
@@ -74680,7 +74763,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notificações",
     "notifications_setting_description": "Gerenciar notificações",
     "oauth": "OAuth",
-    "official_immich_resources": "Recursos oficiais do Curator Photos",
+    "official_immich_resources": "Recursos oficiais do Personal Cloud Photos",
     "offline": "Desconectado",
     "offline_paths": "Caminhos offline",
     "offline_paths_description":
@@ -74762,11 +74845,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Começar",
     "permission_onboarding_go_to_settings": "Ir para as configurações",
     "permission_onboarding_permission_denied":
-        "Permissão negada. Para utilizar o Curator Photos, conceda permissões de fotos e vídeo nas configurações.",
+        "Permissão negada. Para utilizar o Personal Cloud Photos, conceda permissões de fotos e vídeo nas configurações.",
     "permission_onboarding_permission_granted": "Permissão concedida! Tudo pronto.",
     "permission_onboarding_permission_limited":
-        "Permissão limitada. Para permitir que o Curator Photos faça backups e gerencie sua galeria, conceda permissões para fotos e vídeos nas configurações.",
-    "permission_onboarding_request": "Curator Photos requer permissão para visualizar suas fotos e vídeos.",
+        "Permissão limitada. Para permitir que o Personal Cloud Photos faça backups e gerencie sua galeria, conceda permissões para fotos e vídeos nas configurações.",
+    "permission_onboarding_request": "Personal Cloud Photos requer permissão para visualizar suas fotos e vídeos.",
     "person": "Pessoa",
     "person_birthdate": "Nasceu em {date}",
     "person_hidden": "{name}{hidden, select, true { (oculto)} other {}}",
@@ -74818,12 +74901,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Álbum público",
     "public_share": "Compartilhar Publicamente",
     "purchase_account_info": "Contribuidor",
-    "purchase_activated_subtitle": "Obrigado(a) por apoiar o Curator Photos e programas de código aberto",
+    "purchase_activated_subtitle": "Obrigado(a) por apoiar o Personal Cloud Photos e programas de código aberto",
     "purchase_activated_time": "Ativado em {date}",
     "purchase_activated_title": "Sua chave foi ativada com sucesso",
     "purchase_button_activate": "Ativar",
     "purchase_button_buy": "Comprar",
-    "purchase_button_buy_immich": "Comprar Curator Photos",
+    "purchase_button_buy_immich": "Comprar Personal Cloud Photos",
     "purchase_button_never_show_again": "Não mostrar novamente",
     "purchase_button_reminder": "Lembre-me em 30 dias",
     "purchase_button_remove_key": "Remover chave",
@@ -74833,13 +74916,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Status de contribuidor",
     "purchase_individual_title": "Indivíduo",
     "purchase_input_suggestion": "Tem uma chave de produto? Insira a chave abaixo",
-    "purchase_license_subtitle": "Compre o Curator Photos para apoiar o desenvolvimento contínuo do serviço",
+    "purchase_license_subtitle": "Compre o Personal Cloud Photos para apoiar o desenvolvimento contínuo do serviço",
     "purchase_lifetime_description": "Compra vitalícia",
     "purchase_option_title": "OPÇÕES DE COMPRA",
     "purchase_panel_info_1":
-        "Construir o Curator Photos leva muito tempo e esforço. Temos engenheiros trabalhando em tempo integral para torná-lo o melhor possível. Nossa missão é fazer com que programas de código aberto e práticas empresariais éticas se tornem uma fonte de renda sustentável para os desenvolvedores e também criar um ecossistema que respeite a privacidade, oferecendo alternativas reais aos serviços de nuvem exploratórios.",
+        "Construir o Personal Cloud Photos leva muito tempo e esforço. Temos engenheiros trabalhando em tempo integral para torná-lo o melhor possível. Nossa missão é fazer com que programas de código aberto e práticas empresariais éticas se tornem uma fonte de renda sustentável para os desenvolvedores e também criar um ecossistema que respeite a privacidade, oferecendo alternativas reais aos serviços de nuvem exploratórios.",
     "purchase_panel_info_2":
-        "Como estamos comprometidos em não adicionar funções bloqueadas por compras, esta compra não lhe concederá nenhum recurso adicional no Curator Photos. Nós contamos com usuários como você para apoiar o desenvolvimento contínuo do Curator Photos.",
+        "Como estamos comprometidos em não adicionar funções bloqueadas por compras, esta compra não lhe concederá nenhum recurso adicional no Personal Cloud Photos. Nós contamos com usuários como você para apoiar o desenvolvimento contínuo do Personal Cloud Photos.",
     "purchase_panel_title": "Apoiar o projeto",
     "purchase_per_server": "Por servidor",
     "purchase_per_user": "Por usuário",
@@ -75065,7 +75148,7 @@ class CodegenLoader extends AssetLoader {
         "Ao transmitir um vídeo do servidor, usar o arquivo original, mesmo quando uma versão transcodificada esteja disponível. Pode fazer com que o vídeo demore para carregar. Vídeos disponíveis localmente são exibidos na qualidade original independente desta configuração.",
     "setting_video_viewer_original_video_title": "Forçar vídeo original",
     "settings": "Configurações",
-    "settings_require_restart": "Reinicie o Curator Photos para aplicar esta configuração",
+    "settings_require_restart": "Reinicie o Personal Cloud Photos para aplicar esta configuração",
     "settings_saved": "Configurações salvas",
     "setup_pin_code": "Criar um código PIN",
     "share": "Compartilhar",
@@ -75195,12 +75278,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Ajuda",
     "support_and_feedback": "Ajuda & Feedback",
     "support_third_party_description":
-        "Sua instalação do Curator Photos é fornecida por terceiros. É possível que problemas sejam causados por eles, por isso, se tiver problemas, procure primeiro ajuda com eles utilizando os links abaixo.",
+        "Sua instalação do Personal Cloud Photos é fornecida por terceiros. É possível que problemas sejam causados por eles, por isso, se tiver problemas, procure primeiro ajuda com eles utilizando os links abaixo.",
     "swap_merge_direction": "Alternar direção da mesclagem",
     "sync": "Sincronizar",
     "sync_albums": "Sincronizar álbuns",
     "sync_albums_manual_subtitle": "Sincronize todos as fotos e vídeos enviados para os álbuns de backup selecionados",
-    "sync_upload_album_setting_subtitle": "Crie e envie suas fotos e vídeos para o álbum selecionado no Curator Photos",
+    "sync_upload_album_setting_subtitle":
+        "Crie e envie suas fotos e vídeos para o álbum selecionado no Personal Cloud Photos",
     "tag": "Marcador",
     "tag_assets": "Marcar arquivos",
     "tag_created": "Marcador criado: {tag}",
@@ -75251,7 +75335,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Fotos e vídeos enviados para o lixo aparecem aqui.",
     "trash_page_delete_all": "Excluir tudo",
     "trash_page_empty_trash_dialog_content":
-        "Deseja esvaziar a lixera? Estes arquivos serão apagados de forma permanente do Curator Photos",
+        "Deseja esvaziar a lixera? Estes arquivos serão apagados de forma permanente do Personal Cloud Photos",
     "trash_page_info": "Os itens da lixeira são excluídos de forma permanente após {days} dias",
     "trash_page_no_assets": "Lixeira vazia",
     "trash_page_restore_all": "Restaurar tudo",
@@ -75300,7 +75384,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Erros",
     "upload_status_uploaded": "Carregado",
     "upload_success": "Carregado com sucesso, atualize a página para ver os novos arquivos.",
-    "upload_to_immich": "Enviar para o Curator Photos ({count})",
+    "upload_to_immich": "Enviar para o Personal Cloud Photos ({count})",
     "uploading": "Enviando",
     "url": "URL",
     "usage": "Uso",
@@ -75330,7 +75414,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versão",
     "version_announcement_closing": "De seu amigo, Alex",
     "version_announcement_message":
-        "Olá! Uma nova versão do Curator Photos está disponível. Para evitar configurações incorretas, leia com calma a página de <link>notas da versão</link> e verifique se é necessário alterar alguma configuração, principalmente se você usa o WatchTower ou qualquer outro mecanismo que faça atualizações automáticas do Curator Photos.",
+        "Olá! Uma nova versão do Personal Cloud Photos está disponível. Para evitar configurações incorretas, leia com calma a página de <link>notas da versão</link> e verifique se é necessário alterar alguma configuração, principalmente se você usa o WatchTower ou qualquer outro mecanismo que faça atualizações automáticas do Personal Cloud Photos.",
     "version_announcement_overlay_release_notes": "notas de lançamento",
     "version_announcement_overlay_text_1": "Oi amigo, há um novo lançamento de",
     "version_announcement_overlay_text_2": "reserve um tempo para visitar o ",
@@ -75367,7 +75451,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Aviso",
     "week": "Semana",
     "welcome": "Bem-vindo(a)",
-    "welcome_to_immich": "Bem-vindo(a) ao Curator Photos",
+    "welcome_to_immich": "Bem-vindo(a) ao Personal Cloud Photos",
     "wifi_name": "Nome do Wi-Fi",
     "wrong_pin_code": "Código PIN incorreto",
     "year": "Ano",
@@ -75415,7 +75499,7 @@ class CodegenLoader extends AssetLoader {
           "Pievienojiet izlaišanas shēmas. Aizstājējzīmju izmantoša *, **, un ? tiek atbalstīta. Lai ignorētu visus failus jebkurā direktorijā ar nosaukumu “RAW”, izmantojiet “**/RAW/**”. Lai ignorētu visus failus, kas beidzas ar “. tif”, izmantojiet “**/*. tif”. Lai ignorētu absolūto ceļu, izmantojiet “/path/to/ignore/**”.",
       "admin_user": "Administrators",
       "asset_offline_description":
-          "Šis ārējās bibliotēkas resurss vairs nav atrodams diskā un ir pārvietots uz atkritumu grozu. Ja fails tika pārvietots bibliotēkas ietvaros, pārbaudiet, vai jūsu hronoloģijā ir jauns atbilstošais resurss. Lai atjaunotu šo resursu, pārliecinieties, vai Curator Photos var piekļūt tālāk norādītajam faila ceļam un skenēt bibliotēku.",
+          "Šis ārējās bibliotēkas resurss vairs nav atrodams diskā un ir pārvietots uz atkritumu grozu. Ja fails tika pārvietots bibliotēkas ietvaros, pārbaudiet, vai jūsu hronoloģijā ir jauns atbilstošais resurss. Lai atjaunotu šo resursu, pārliecinieties, vai Personal Cloud Photos var piekļūt tālāk norādītajam faila ceļam un skenēt bibliotēku.",
       "authentication_settings": "Autentifikācijas iestatījumi",
       "authentication_settings_description": "Paroļu, OAuth un citu autentifikācijas iestatījumu pārvaldība",
       "authentication_settings_disable_all":
@@ -75489,7 +75573,7 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "PIEZĪME: Vēlāk to vairs nevar mainīt!",
       "notification_email_from_address": "No adreses",
       "notification_email_from_address_description":
-          "Sūtītāja e-pasta adrese, piemēram: “Curator Photos foto serveris <noreply@example.com>”",
+          "Sūtītāja e-pasta adrese, piemēram: “Personal Cloud Photos foto serveris <noreply@example.com>”",
       "notification_email_host_description": "",
       "notification_email_ignore_certificate_errors": "Ignorēt sertifikātu kļūdas",
       "notification_email_ignore_certificate_errors_description":
@@ -75527,8 +75611,8 @@ class CodegenLoader extends AssetLoader {
       "template_email_preview": "Priekšskatījums",
       "template_settings_description": "Pielāgotu paziņojumu veidņu pārvaldība",
       "theme_custom_css_settings": "Pielāgots CSS",
-      "theme_custom_css_settings_description": "Cascading Style Sheets ļauj pielāgot Curator Photos izskatu.",
-      "theme_settings_description": "Curator Photos tīmekļa saskarnes pielāgojumu pārvaldība",
+      "theme_custom_css_settings_description": "Cascading Style Sheets ļauj pielāgot Personal Cloud Photos izskatu.",
+      "theme_settings_description": "Personal Cloud Photos tīmekļa saskarnes pielāgojumu pārvaldība",
       "thumbnail_generation_job": "Sīktēlu ģenerēšana",
       "transcoding_acceleration_api": "Paātrināšanas API",
       "transcoding_acceleration_nvenc": "NVENC (nepieciešams NVIDIA GPU)",
@@ -75650,7 +75734,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Doties uz iestatījumiem",
     "backup_controller_page_background_battery_info_link": "Parādīt, kā",
     "backup_controller_page_background_battery_info_message":
-        "Lai iegūtu vislabāko fona dublēšanas pieredzi, lūdzu, atspējojiet visas akumulatora optimizācijas, kas ierobežo Curator Photos fona aktivitāti.\n\nTā kā katrai ierīcei iestatījumi ir citādāki, lūdzu, meklējiet nepieciešamo informāciju pie ierīces ražotāja.",
+        "Lai iegūtu vislabāko fona dublēšanas pieredzi, lūdzu, atspējojiet visas akumulatora optimizācijas, kas ierobežo Personal Cloud Photos fona aktivitāti.\n\nTā kā katrai ierīcei iestatījumi ir citādāki, lūdzu, meklējiet nepieciešamo informāciju pie ierīces ražotāja.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Akumulatora optimizācija",
     "backup_controller_page_background_charging": "Tikai uzlādes laikā",
@@ -75716,7 +75800,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Koplietojamo albumu sīktēli",
     "cache_settings_statistics_thumbnail": "Sīktēli",
     "cache_settings_statistics_title": "Kešatmiņas lietojums",
-    "cache_settings_subtitle": "Kontrolēt Curator Photos mobilās lietotnes kešdarbi",
+    "cache_settings_subtitle": "Kontrolēt Personal Cloud Photos mobilās lietotnes kešdarbi",
     "cache_settings_thumbnail_size": "Sīktēlu keša lielums ({} aktīvi)",
     "cache_settings_tile_subtitle": "Kontrolēt lokālās krātuves uzvedību",
     "cache_settings_tile_title": "Lokālā Krātuve",
@@ -75763,7 +75847,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Konteksts",
     "continue": "Turpināt",
     "control_bottom_app_bar_create_new_album": "Izveidot jaunu albumu",
-    "control_bottom_app_bar_delete_from_immich": "Dzēst no Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Dzēst no Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Dzēst no ierīces",
     "control_bottom_app_bar_edit_location": "Rediģēt Atrašanās Vietu",
     "control_bottom_app_bar_edit_time": "Rediģēt Datumu un Laiku",
@@ -75796,12 +75880,12 @@ class CodegenLoader extends AssetLoader {
     "deduplication_criteria_1": "Attēla izmērs baitos",
     "delete": "Dzēst",
     "delete_album": "Dzēst albumu",
-    "delete_dialog_alert": "Šie vienumi tiks neatgriezeniski dzēsti no Curator Photos un jūsu ierīces",
+    "delete_dialog_alert": "Šie vienumi tiks neatgriezeniski dzēsti no Personal Cloud Photos un jūsu ierīces",
     "delete_dialog_alert_local":
-        "Šie vienumi tiks neatgriezeniski dzēsti no jūsu ierīces, bet joprojām būs pieejami Curator Photos serverī.",
+        "Šie vienumi tiks neatgriezeniski dzēsti no jūsu ierīces, bet joprojām būs pieejami Personal Cloud Photos serverī.",
     "delete_dialog_alert_local_non_backed_up":
-        "Daži no šiem elementiem netiek dublēti Curator Photos un tiks neatgriezeniski dzēsti no jūsu ierīces.",
-    "delete_dialog_alert_remote": "Šie vienumi tiks neatgriezeniski dzēsti no Curator Photos servera.",
+        "Daži no šiem elementiem netiek dublēti Personal Cloud Photos un tiks neatgriezeniski dzēsti no jūsu ierīces.",
+    "delete_dialog_alert_remote": "Šie vienumi tiks neatgriezeniski dzēsti no Personal Cloud Photos servera.",
     "delete_dialog_ok_force": "Tā pat dzēst",
     "delete_dialog_title": "Neatgriezeniski Dzēst",
     "delete_face": "Dzēst seju",
@@ -75942,7 +76026,7 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Lejupielāde Uzsākta",
     "image_viewer_page_state_provider_download_success": "Lejupielāde izdevās",
     "image_viewer_page_state_provider_share_error": "Kopīgošanas Kļūda",
-    "immich_logo": "Curator Photos logo",
+    "immich_logo": "Personal Cloud Photos logo",
     "import_from_json": "Importēt no JSON",
     "import_path": "Importa ceļš",
     "in_albums": "{count, plural, one {# albumā} other {# albumos}}",
@@ -75979,7 +76063,7 @@ class CodegenLoader extends AssetLoader {
     "list": "Saraksts",
     "loading": "Ielādē",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "location_picker_choose_on_map": "Izvēlēties uz kartes",
     "location_picker_latitude_error": "Ievadiet korektu ģeogrāfisko platumu",
     "location_picker_latitude_hint": "Ievadiet savu ģeogrāfisko platumu šeit",
@@ -76111,7 +76195,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Paziņojumi",
     "notifications_setting_description": "Paziņojumu pārvaldība",
     "oauth": "OAuth",
-    "official_immich_resources": "Oficiālie Curator Photos resursi",
+    "official_immich_resources": "Oficiālie Personal Cloud Photos resursi",
     "offline": "Bezsaistē",
     "ok": "Labi",
     "online": "Tiešsaistē",
@@ -76148,11 +76232,12 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Darba sākšana",
     "permission_onboarding_go_to_settings": "Doties uz iestatījumiem",
     "permission_onboarding_permission_denied":
-        "Atļauja liegta. Lai izmantotu Curator Photos, sadaļā Iestatījumi piešķiriet fotoattēlu un video atļaujas.",
+        "Atļauja liegta. Lai izmantotu Personal Cloud Photos, sadaļā Iestatījumi piešķiriet fotoattēlu un video atļaujas.",
     "permission_onboarding_permission_granted": "Atļauja piešķirta! Jūs esat gatavi darbam.",
     "permission_onboarding_permission_limited":
-        "Atļauja ierobežota. Lai atļautu Curator Photos dublēšanu un varētu pārvaldīt visu galeriju kolekciju, sadaļā Iestatījumi piešķiriet fotoattēlu un video atļaujas.",
-    "permission_onboarding_request": "Curator Photos nepieciešama atļauja skatīt jūsu fotoattēlus un videoklipus.",
+        "Atļauja ierobežota. Lai atļautu Personal Cloud Photos dublēšanu un varētu pārvaldīt visu galeriju kolekciju, sadaļā Iestatījumi piešķiriet fotoattēlu un video atļaujas.",
+    "permission_onboarding_request":
+        "Personal Cloud Photos nepieciešama atļauja skatīt jūsu fotoattēlus un videoklipus.",
     "person": "Persona",
     "photos": "Fotoattēli",
     "photos_from_previous_years": "Fotogrāfijas no iepriekšējiem gadiem",
@@ -76182,7 +76267,7 @@ class CodegenLoader extends AssetLoader {
     "purchase_button_select": "Izvēlēties",
     "purchase_individual_description_2": "Atbalstītāja statuss",
     "purchase_input_suggestion": "Vai tev ir produkta atslēga? Ievadi atslēgu zemāk",
-    "purchase_license_subtitle": "Nopērc Curator Photos licenci, lai atbalstītu turpmāku pakalpojuma attīstību",
+    "purchase_license_subtitle": "Nopērc Personal Cloud Photos licenci, lai atbalstītu turpmāku pakalpojuma attīstību",
     "purchase_lifetime_description": "Pirkums uz mūžu",
     "purchase_option_title": "IEGĀDES IESPĒJAS",
     "purchase_panel_title": "Atbalsti projektu",
@@ -76287,7 +76372,7 @@ class CodegenLoader extends AssetLoader {
     "setting_notifications_total_progress_title": "Rādīt fona dublējuma kopējo progresu",
     "setting_video_viewer_looping_title": "Cikliski",
     "settings": "Iestatījumi",
-    "settings_require_restart": "Lūdzu, restartējiet Curator Photos, lai lietotu šo iestatījumu",
+    "settings_require_restart": "Lūdzu, restartējiet Personal Cloud Photos, lai lietotu šo iestatījumu",
     "setup_pin_code": "Uzstādīt PIN kodu",
     "share": "Kopīgot",
     "share_add_photos": "Pievienot fotoattēlus",
@@ -76401,7 +76486,7 @@ class CodegenLoader extends AssetLoader {
     "trash_all": "Dzēst Visu",
     "trash_page_delete_all": "Dzēst Visu",
     "trash_page_empty_trash_dialog_content":
-        "Vai vēlaties iztukšot savus izmestos aktīvus? Tie tiks neatgriezeniski izņemti no Curator Photos",
+        "Vai vēlaties iztukšot savus izmestos aktīvus? Tie tiks neatgriezeniski izņemti no Personal Cloud Photos",
     "trash_page_info": "Atkritnes vienumi tiks neatgriezeniski dzēsti pēc {days} dienām",
     "trash_page_no_assets": "Atkritnē nav aktīvu",
     "trash_page_restore_all": "Atjaunot Visu",
@@ -76428,7 +76513,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_duplicates": "Dublikāti",
     "upload_status_errors": "Kļūdas",
     "upload_status_uploaded": "Augšupielādēts",
-    "upload_to_immich": "Upload to Curator Photos ({count})",
+    "upload_to_immich": "Upload to Personal Cloud Photos ({count})",
     "url": "URL",
     "usage": "Lietojums",
     "use_biometric": "Izmantot biometrisko autentifikāciju",
@@ -76445,7 +76530,7 @@ class CodegenLoader extends AssetLoader {
     "variables": "Mainīgie",
     "version": "Versija",
     "version_announcement_message":
-        "Sveiki! Ir pieejama jauna Curator Photos versija. Lūdzu, veltiet laiku, lai izlasītu <link>laidiena piezīmes</link> un pārliecinātos, ka jūsu iestatījumi ir atjaunināti, lai novērstu jebkādu nepareizu konfigurāciju, jo īpaši, ja izmantojat WatchTower vai citu mehānismu, kas automātiski atjaunina jūsu Curator Photos instanci.",
+        "Sveiki! Ir pieejama jauna Personal Cloud Photos versija. Lūdzu, veltiet laiku, lai izlasītu <link>laidiena piezīmes</link> un pārliecinātos, ka jūsu iestatījumi ir atjaunināti, lai novērstu jebkādu nepareizu konfigurāciju, jo īpaši, ja izmantojat WatchTower vai citu mehānismu, kas automātiski atjaunina jūsu Personal Cloud Photos instanci.",
     "version_history": "Versiju vēsture",
     "version_history_item": "{version} uzstādīta {date}",
     "video": "Videoklips",
@@ -76459,7 +76544,7 @@ class CodegenLoader extends AssetLoader {
     "waiting": "Gaida",
     "week": "Nedēļa",
     "welcome": "Laipni lūgti",
-    "welcome_to_immich": "Laipni lūgti Curator Photos",
+    "welcome_to_immich": "Laipni lūgti Personal Cloud Photos",
     "wifi_name": "Wi-Fi nosaukums",
     "wrong_pin_code": "Nepareizs PIN kods",
     "year": "Gads",
@@ -76501,7 +76586,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Voeg uitsluitingspatrone by. Globbing met *, ** en ? word ondersteun. Om alle lêers in enige lêergids genaamd \"Raw\" te ignoreer, gebruik \"**/Raw/**\". Om alle lêers wat op \".tif\" eindig, te ignoreer, gebruik \"**/*.tif\". Om 'n absolute pad te ignoreer, gebruik \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Hierdie eksterne biblioteekbate word nie meer op skyf gevind nie en is na die asblik geskuif. As die lêer binne die biblioteek geskuif is, gaan jou tydlyn na vir die nuwe ooreenstemmende bate. Om hierdie bate te herstel, maak asseblief seker dat die lêerpad hieronder deur Curator Photos verkry kan word en skandeer die biblioteek.",
+          "Hierdie eksterne biblioteekbate word nie meer op skyf gevind nie en is na die asblik geskuif. As die lêer binne die biblioteek geskuif is, gaan jou tydlyn na vir die nuwe ooreenstemmende bate. Om hierdie bate te herstel, maak asseblief seker dat die lêerpad hieronder deur Personal Cloud Photos verkry kan word en skandeer die biblioteek.",
       "authentication_settings": "Verifikasie instellings",
       "authentication_settings_description": "Bestuur wagwoord, OAuth en ander verifikasie instellings",
       "authentication_settings_disable_all":
@@ -76517,7 +76602,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Config word tans deur 'n konfigurasielêer gestel",
       "confirm_delete_library": "Is jy seker jy wil {library}-biblioteek uitvee?",
       "confirm_delete_library_assets":
-          "Is jy seker jy wil hierdie biblioteek uitvee? Dit sal {count, plural, one {# bevatte base} other {# bevatte bates}} uit Curator Photos uitvee en kan nie ongedaan gemaak word nie. Lêers sal op skyf bly.",
+          "Is jy seker jy wil hierdie biblioteek uitvee? Dit sal {count, plural, one {# bevatte base} other {# bevatte bates}} uit Personal Cloud Photos uitvee en kan nie ongedaan gemaak word nie. Lêers sal op skyf bly.",
       "confirm_email_below": "Om te bevestig, tik \"{email}\" hieronder",
       "confirm_reprocess_all_faces":
           "Is jy seker jy wil alle gesigte herverwerk? Dit sal ook genoemde mense skoonmaak.",
@@ -76605,7 +76690,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Tilføj udelukkelsesmønstre. Globbing ved hjælp af *, ** og ? understøttes. For at ignorere alle filer i enhver mappe med navnet \"Raw\", brug \"**/Raw/**\". For at ignorere alle filer, der slutter på \".tif\", brug \"**/*.tif\". For at ignorere en absolut sti, brug \"/sti/til/ignoreret/**\".",
       "asset_offline_description":
-          "Denne eksterne biblioteksressource findes ikke længere på disken og er blevet flyttet til papirkurven. Hvis filen blev flyttet inde i biblioteket, skal du tjekke din tidslinje for den nye tilsvarende ressource. For at gendanne denne ressource skal du sikre, at filstien nedenfor kan tilgås af Curator Photos og scanne biblioteket.",
+          "Denne eksterne biblioteksressource findes ikke længere på disken og er blevet flyttet til papirkurven. Hvis filen blev flyttet inde i biblioteket, skal du tjekke din tidslinje for den nye tilsvarende ressource. For at gendanne denne ressource skal du sikre, at filstien nedenfor kan tilgås af Personal Cloud Photos og scanne biblioteket.",
       "authentication_settings": "Godkendelsesindstillinger",
       "authentication_settings_description": "Administrer adgangskode, OAuth og andre godkendelsesindstillinger",
       "authentication_settings_disable_all":
@@ -76621,7 +76706,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "konfigurationen er i øjeblikket indstillet af en konfigurations fil",
       "confirm_delete_library": "Er du sikker på, at du vil slette {library} bibliotek?",
       "confirm_delete_library_assets":
-          "Er du sikker på, at du vil slette dette bibliotek? Dette vil slette {count, plural, one {# indeholdt mediefil} other {alle # indeholdte mediefiler}} fra Curator Photos og kan ikke gøres om. Filerne forbliver på disken.",
+          "Er du sikker på, at du vil slette dette bibliotek? Dette vil slette {count, plural, one {# indeholdt mediefil} other {alle # indeholdte mediefiler}} fra Personal Cloud Photos og kan ikke gøres om. Filerne forbliver på disken.",
       "confirm_email_below": "For at bekræfte, skriv \"{email}\" herunder",
       "confirm_reprocess_all_faces":
           "Er du sikker på, at du vil genbehandle alle ansigter? Dette vil også rydde navngivne personer.",
@@ -76748,7 +76833,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Aktivér kortfunktioner",
       "map_gps_settings": "Kort- og GPS-indstillinger",
       "map_gps_settings_description": "Håndter indstillinger for Kort og GPS (Omvendt Geokodning)",
-      "map_implications": "Kortfunktionen afhænger af en ekstern tile-service (tiles.curatorphotos.cloud)",
+      "map_implications": "Kortfunktionen afhænger af en ekstern tile-service (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Lyst tema",
       "map_manage_reverse_geocoding_settings": "Håndtér indstillinger for <link>Omvendt Geokoding</link>",
       "map_reverse_geocoding": "Omvendt geokodning",
@@ -76775,8 +76860,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "BEMÆRK: Dette kan ikke ændres senere!",
       "notification_email_from_address": "Fra adressse",
       "notification_email_from_address_description":
-          "Afsenderemailadresse, for eksempel: \"Curator Photos Billedserver <noreply@example.com>\". Vær sikker på du bruger en email du kan sende emails fra.",
-      "notification_email_host_description": "Host af emailserver (fx smtp.curatorphotos.app)",
+          "Afsenderemailadresse, for eksempel: \"Personal Cloud Photos Billedserver <noreply@example.com>\". Vær sikker på du bruger en email du kan sende emails fra.",
+      "notification_email_host_description": "Host af emailserver (fx smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorér certifikatfejl",
       "notification_email_ignore_certificate_errors_description":
           "Ignorér TLS-certifikatgodkendelsesfejl (ikke anbefalet)",
@@ -76876,9 +76961,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Administrer tilpassede skabeloner for notifikationer",
       "theme_custom_css_settings": "Brugerdefineret CSS",
       "theme_custom_css_settings_description":
-          "Cascading Style Sheets tillader at give Curator Photos et brugerdefineret look.",
+          "Cascading Style Sheets tillader at give Personal Cloud Photos et brugerdefineret look.",
       "theme_settings": "Temaindstillinger",
-      "theme_settings_description": "Administrér brugertilpasningen af Curator Photos's webinterface",
+      "theme_settings_description": "Administrér brugertilpasningen af Personal Cloud Photos's webinterface",
       "these_files_matched_by_checksum": "Disse filer er blevet matchet med deres checksummer",
       "thumbnail_generation_job": "Generér miniaturebilleder",
       "thumbnail_generation_job_description":
@@ -77013,7 +77098,7 @@ class CodegenLoader extends AssetLoader {
         "Nogle enheder tager meget lang tid om at indlæse miniaturebilleder af elementer på enheden. Aktiver denne indstilling for i stedetat indlæse elementer fra serveren.",
     "advanced_settings_prefer_remote_title": "Foretræk elementer på serveren",
     "advanced_settings_proxy_headers_subtitle":
-        "Define proxy headers Curator Photos should send with each network request",
+        "Define proxy headers Personal Cloud Photos should send with each network request",
     "advanced_settings_proxy_headers_title": "Proxy Headers",
     "advanced_settings_self_signed_ssl_subtitle":
         "Spring verificering af SSL-certifikat over for serverens endelokation. Kræves for selvsignerede certifikater.",
@@ -77110,7 +77195,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Billedgitter",
     "asset_offline": "Mediefil offline",
     "asset_offline_description":
-        "Denne eksterne mediefil kan ikke længere findes på drevet. Kontakt venligst din Curator Photos-administrator for hjælp.",
+        "Denne eksterne mediefil kan ikke længere findes på drevet. Kontakt venligst din Personal Cloud Photos-administrator for hjælp.",
     "asset_restored_successfully": "Elementet blev gendannet succesfuldt",
     "asset_skipped": "Sprunget over",
     "asset_skipped_in_trash": "I skraldespand",
@@ -77154,7 +77239,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Tilbage, luk eller fravælg",
     "background_location_permission": "Tilladelse til baggrundsplacering",
     "background_location_permission_content":
-        "For at skifte netværk, når appen kører i baggrunden, skal Curator Photos *altid* have præcis placeringsadgang, så appen kan læse WiFi-netværkets navn",
+        "For at skifte netværk, når appen kører i baggrunden, skal Personal Cloud Photos *altid* have præcis placeringsadgang, så appen kan læse WiFi-netværkets navn",
     "backup_album_selection_page_albums_device": "Albummer på enhed ({count})",
     "backup_album_selection_page_albums_tap": "Tryk en gang for at inkludere, tryk to gange for at ekskludere",
     "backup_album_selection_page_assets_scatter":
@@ -77240,7 +77325,7 @@ class CodegenLoader extends AssetLoader {
         "Er du sikker på, at du vil beholde {count, plural, one {# duplicate asset} other {# duplicate assets}}? Dette vil løse alle dubletgrupper uden at slette noget.",
     "bulk_trash_duplicates_confirmation":
         "Er du sikker på, at du vil masseslette {count, plural, one {# duplikeret objekt} other {# duplikerede objekter}}? Dette vil beholde det største objekt i hver gruppe og slette alle andre dubletter.",
-    "buy": "Køb Curator Photos",
+    "buy": "Køb Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Biblioteksminiaturebilleder ({} elementer)",
     "cache_settings_clear_cache_button": "Fjern cache",
     "cache_settings_clear_cache_button_title":
@@ -77253,7 +77338,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniaturebilleder til delte albummer",
     "cache_settings_statistics_thumbnail": "Miniaturebilleder",
     "cache_settings_statistics_title": "Cacheforbrug",
-    "cache_settings_subtitle": "Håndter cache-adfærden for Curator Photos-appen.",
+    "cache_settings_subtitle": "Håndter cache-adfærden for Personal Cloud Photos-appen.",
     "cache_settings_thumbnail_size": "Størrelse af miniaturebillede cache ({} elementer)",
     "cache_settings_tile_subtitle": "Kontroller den lokale lagerplads",
     "cache_settings_tile_title": "Lokal lagerplads",
@@ -77339,7 +77424,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Kontekst",
     "continue": "Fortsæt",
     "control_bottom_app_bar_create_new_album": "Opret nyt album",
-    "control_bottom_app_bar_delete_from_immich": "Slet fra Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Slet fra Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Slet fra enhed",
     "control_bottom_app_bar_edit_location": "Rediger placering",
     "control_bottom_app_bar_edit_time": "Rediger tid og dato",
@@ -77405,7 +77490,7 @@ class CodegenLoader extends AssetLoader {
     "delete": "Slet",
     "delete_album": "Slet album",
     "delete_api_key_prompt": "Er du sikker på, at du vil slette denne API-nøgle?",
-    "delete_dialog_alert": "Disse elementer vil blive slettet permanent fra Curator Photos og din enhed",
+    "delete_dialog_alert": "Disse elementer vil blive slettet permanent fra Personal Cloud Photos og din enhed",
     "delete_dialog_alert_local":
         "Disse elementer slettes permanent fra din enhed, men vil stadig være tilgængelige på serveren",
     "delete_dialog_alert_local_non_backed_up":
@@ -77464,7 +77549,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Administrer indstillinger relateret til mediefil-downloads",
     "download_started": "Download startet",
     "download_sucess": "Download færdig",
-    "download_sucess_android": "Mediet er blevet downloadet til DCIM/CuratorPhotos",
+    "download_sucess_android": "Mediet er blevet downloadet til DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Afventer at prøve igen",
     "downloading": "Downloader",
     "downloading_asset_filename": "Downloader mediefil {filename}",
@@ -77504,7 +77589,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Denne mappe er tom",
     "empty_trash": "Tøm papirkurv",
     "empty_trash_confirmation":
-        "Er du sikker på, at du vil tømme papirkurven? Dette vil fjerne alle objekter i papirkurven permanent fra Curator Photos.\nDu kan ikke fortryde denne handling!",
+        "Er du sikker på, at du vil tømme papirkurven? Dette vil fjerne alle objekter i papirkurven permanent fra Personal Cloud Photos.\nDu kan ikke fortryde denne handling!",
     "enable": "Aktivér",
     "enable_biometric_auth_description": "Indtast din PIN kode for at slå biometrisk adgangskontrol til",
     "enabled": "Aktiveret",
@@ -77756,7 +77841,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ID",
     "ignore_icloud_photos": "Ignorer iCloud-billeder",
     "ignore_icloud_photos_description":
-        "Billeder der er gemt på iCloud vil ikke blive uploadet til Curator Photos-serveren",
+        "Billeder der er gemt på iCloud vil ikke blive uploadet til Personal Cloud Photos-serveren",
     "image": "Billede",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} taget den {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} taget med {person1} den {date}",
@@ -77779,8 +77864,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Download startet",
     "image_viewer_page_state_provider_download_success": "Download succesfuld",
     "image_viewer_page_state_provider_share_error": "Delingsfejl",
-    "immich_logo": "Curator Photos logo",
-    "immich_web_interface": "Curator Photos webinterface",
+    "immich_logo": "Personal Cloud Photos logo",
+    "immich_web_interface": "Personal Cloud Photos webinterface",
     "import_from_json": "Importér fra JSON",
     "import_path": "Import-sti",
     "in_albums": "I {count, plural, one {# album} other {# albummer}}",
@@ -77850,7 +77935,7 @@ class CodegenLoader extends AssetLoader {
         "Appen vil oprette forbindelse til serveren via denne URL, når du bruger det angivne WiFi-netværk",
     "location_permission": "Tilladelse til placering",
     "location_permission_content":
-        "For automatisk at skifte netværk, skal Curator Photos *altid* have præcis placeringsadgang, så appen kan læse WiFi-netværkets navn",
+        "For automatisk at skifte netværk, skal Personal Cloud Photos *altid* have præcis placeringsadgang, så appen kan læse WiFi-netværkets navn",
     "location_picker_choose_on_map": "Vælg på kort",
     "location_picker_latitude_error": "Indtast en gyldig breddegrad",
     "location_picker_latitude_hint": "Indtast din breddegrad her",
@@ -78022,7 +78107,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifikationer",
     "notifications_setting_description": "Administrér notifikationer",
     "oauth": "OAuth",
-    "official_immich_resources": "Officielle Curator Photos-ressourcer",
+    "official_immich_resources": "Officielle Personal Cloud Photos-ressourcer",
     "offline": "Offline",
     "ok": "Ok",
     "oldest_first": "Ældste først",
@@ -78099,11 +78184,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Kom i gang",
     "permission_onboarding_go_to_settings": "Gå til indstillinger",
     "permission_onboarding_permission_denied":
-        "Tilladelse afvist. For at bruge Curator Photos, skal der gives tilladelse til at se billeder og videoer i indstillinger.",
+        "Tilladelse afvist. For at bruge Personal Cloud Photos, skal der gives tilladelse til at se billeder og videoer i indstillinger.",
     "permission_onboarding_permission_granted": "Tilladelse givet! Du er nu klar.",
     "permission_onboarding_permission_limited":
-        "Tilladelse begrænset. For at lade Curator Photos lave sikkerhedskopi og styre hele dit galleri, skal der gives tilladelse til billeder og videoer i indstillinger.",
-    "permission_onboarding_request": "Curator Photos kræver tilliadelse til at se dine billeder og videoer.",
+        "Tilladelse begrænset. For at lade Personal Cloud Photos lave sikkerhedskopi og styre hele dit galleri, skal der gives tilladelse til billeder og videoer i indstillinger.",
+    "permission_onboarding_request": "Personal Cloud Photos kræver tilliadelse til at se dine billeder og videoer.",
     "person": "Person",
     "person_birthdate": "Født den {date}",
     "person_hidden": "{name}{hidden, select, true { (skjult)} other {}}",
@@ -78152,12 +78237,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Offentligt album",
     "public_share": "Offentlig deling",
     "purchase_account_info": "Supporter",
-    "purchase_activated_subtitle": "Tak fordi du støtter Curator Photos og open source-software",
+    "purchase_activated_subtitle": "Tak fordi du støtter Personal Cloud Photos og open source-software",
     "purchase_activated_time": "Aktiveret den {date}",
     "purchase_activated_title": "Din nøgle er blevet aktiveret",
     "purchase_button_activate": "Aktiver",
     "purchase_button_buy": "Køb",
-    "purchase_button_buy_immich": "Køb Curator Photos",
+    "purchase_button_buy_immich": "Køb Personal Cloud Photos",
     "purchase_button_never_show_again": "Vis aldrig igen",
     "purchase_button_reminder": "Påmind mig om 30 dage",
     "purchase_button_remove_key": "Fjern nøgle",
@@ -78167,13 +78252,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Supporterstatus",
     "purchase_individual_title": "Individuel",
     "purchase_input_suggestion": "Har du en produktnøgle? Indtast nøglen nedenfor",
-    "purchase_license_subtitle": "Køb Curator Photos for at understøtte den fortsatte udvikling af tjenesten",
+    "purchase_license_subtitle": "Køb Personal Cloud Photos for at understøtte den fortsatte udvikling af tjenesten",
     "purchase_lifetime_description": "Livsvarigt køb",
     "purchase_option_title": "KØBSMULIGHEDER",
     "purchase_panel_info_1":
-        "At bygge Curator Photos tager meget tid og kræfter, og vi har fuldtidsingeniører, der arbejder på det for at gøre det så godt, som vi overhovedet kan. Vores mission er, at open source-software og etisk forretningspraksis bliver en bæredygtig indtægtskilde for udviklere og at skabe et privatlivsrespekterende økosystem med reelle alternativer til udnyttende cloud-tjenester.",
+        "At bygge Personal Cloud Photos tager meget tid og kræfter, og vi har fuldtidsingeniører, der arbejder på det for at gøre det så godt, som vi overhovedet kan. Vores mission er, at open source-software og etisk forretningspraksis bliver en bæredygtig indtægtskilde for udviklere og at skabe et privatlivsrespekterende økosystem med reelle alternativer til udnyttende cloud-tjenester.",
     "purchase_panel_info_2":
-        "Da vi er forpligtet til ikke at tilføje betalingsvægge, vil dette køb ikke give dig yderligere funktioner i Curator Photos. Vi er afhængige af, at brugere som dig støtter Curator Photos løbende udvikling.",
+        "Da vi er forpligtet til ikke at tilføje betalingsvægge, vil dette køb ikke give dig yderligere funktioner i Personal Cloud Photos. Vi er afhængige af, at brugere som dig støtter Personal Cloud Photos løbende udvikling.",
     "purchase_panel_title": "Støt projektet",
     "purchase_per_server": "Pr. server",
     "purchase_per_user": "Pr. bruger",
@@ -78397,7 +78482,7 @@ class CodegenLoader extends AssetLoader {
         "Når der streames video fra serveren, afspil da den originale selv når en omkodet udgave er tilgængelig. Kan føre til buffering. Videoer, der er tilgængelige lokalt, afspilles i original kvalitet uanset denne indstilling.",
     "setting_video_viewer_original_video_title": "Tving original video",
     "settings": "Indstillinger",
-    "settings_require_restart": "Genstart venligst Curator Photos for at anvende denne ændring",
+    "settings_require_restart": "Genstart venligst Personal Cloud Photos for at anvende denne ændring",
     "settings_saved": "Indstillinger er gemt",
     "setup_pin_code": "Sæt in PIN kode",
     "share": "Del",
@@ -78526,13 +78611,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Support",
     "support_and_feedback": "Support og Feedback",
     "support_third_party_description":
-        "Din Curator Photos-installation blev sammensat af en tredjepart. Problemer, du oplever, kan være forårsaget af denne udvikler, så rejs venligst problemer med dem i første omgang ved at bruge nedenstående links.",
+        "Din Personal Cloud Photos-installation blev sammensat af en tredjepart. Problemer, du oplever, kan være forårsaget af denne udvikler, så rejs venligst problemer med dem i første omgang ved at bruge nedenstående links.",
     "swap_merge_direction": "Byt retning for sammenfletning",
     "sync": "Synkronisér",
     "sync_albums": "Synkroniser albummer",
     "sync_albums_manual_subtitle": "Synkroniser alle uploadet billeder og videoer til de valgte backupalbummer",
     "sync_upload_album_setting_subtitle":
-        "Opret og upload dine billeder og videoer til de valgte albummer i Curator Photos",
+        "Opret og upload dine billeder og videoer til de valgte albummer i Personal Cloud Photos",
     "tag": "Tag",
     "tag_assets": "Tag mediefiler",
     "tag_created": "Oprettet tag: {tag}",
@@ -78583,7 +78668,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Billeder og videoer markeret til sletning vil blive vist her.",
     "trash_page_delete_all": "Slet alt",
     "trash_page_empty_trash_dialog_content":
-        "Vil du tømme papirkurven? Disse elementer vil blive permanent fjernet fra Curator Photos",
+        "Vil du tømme papirkurven? Disse elementer vil blive permanent fjernet fra Personal Cloud Photos",
     "trash_page_info": "Slettede elementer vil blive slettet permanent efter {days} dage",
     "trash_page_no_assets": "Ingen slettede elementer",
     "trash_page_restore_all": "Gendan alt",
@@ -78630,7 +78715,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Fejl",
     "upload_status_uploaded": "Uploadet",
     "upload_success": "Upload gennemført. Opdater siden for at se nye uploadaktiver.",
-    "upload_to_immich": "Upload til Curator Photos ({count})",
+    "upload_to_immich": "Upload til Personal Cloud Photos ({count})",
     "uploading": "Uploader",
     "url": "URL",
     "usage": "Forbrug",
@@ -78660,7 +78745,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Version",
     "version_announcement_closing": "Din ven, Alex",
     "version_announcement_message":
-        "Hej! En ny version af Curator Photos er tilgængelig. Brug venligst lidt tid på at læse <link>udgivelsesbemærkningerne</link> for at sikre, at din opsætning er opdateret for at forhindre fejlkonfigurationer, især hvis du bruger WatchTower eller en mekanisme, der håndterer automatisk opdatering af din Curator Photos-instans.",
+        "Hej! En ny version af Personal Cloud Photos er tilgængelig. Brug venligst lidt tid på at læse <link>udgivelsesbemærkningerne</link> for at sikre, at din opsætning er opdateret for at forhindre fejlkonfigurationer, især hvis du bruger WatchTower eller en mekanisme, der håndterer automatisk opdatering af din Personal Cloud Photos-instans.",
     "version_announcement_overlay_release_notes": "udgivelsesnoterne",
     "version_announcement_overlay_text_1": "Hej ven, der er en ny version af",
     "version_announcement_overlay_text_2": ". Besøg venligst ",
@@ -78696,7 +78781,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Advarsel",
     "week": "Uge",
     "welcome": "Velkommen",
-    "welcome_to_immich": "Velkommen til Curator Photos",
+    "welcome_to_immich": "Velkommen til Personal Cloud Photos",
     "wifi_name": "Wi-Fi navn",
     "wrong_pin_code": "Forkert PIN kode",
     "year": "År",
@@ -78743,7 +78828,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "เพิ่มรูปแบบข้อยกเว้น รองรับการใช้ *, ** และ ? หากต้องการละเว้นไฟล์ทั้งหมดในไดเร็กทอรีที่ชื่อว่า \"Raw\" ให้ใช้ \"**/Raw/**\" ถ้าต้องการละเว้นไฟล์ทั้งหมดที่ลงท้ายด้วย \".tif\" ให้ใช้ \"**/*.tif\" ถ้าต้องการละเว้นพาธที่เริ่มจากไดเรกทอรีบนสุดให้ใช้ \"/พาธ/ที่ต้องการ/ละเว้น/**\"",
       "asset_offline_description":
-          "ไฟล์ Asset ของไลบรารีภายนอกนี้ไม่พบในดิสก์แล้ว และถูกย้ายไปที่ถังขยะ หากไฟล์ถูกย้ายภายในไลบรารี โปรดตรวจสอบไทม์ไลน์ของคุณเพื่อหาแอสเซ็ตที่เกี่ยวข้องใหม่ หากต้องการกู้คืน Asset นี้ โปรดตรวจสอบให้แน่ใจว่า Curator Photos สามารถเข้าถึงเส้นทางไฟล์ด้านล่างได้ และทำการสแกนไลบรารีอีกครั้ง",
+          "ไฟล์ Asset ของไลบรารีภายนอกนี้ไม่พบในดิสก์แล้ว และถูกย้ายไปที่ถังขยะ หากไฟล์ถูกย้ายภายในไลบรารี โปรดตรวจสอบไทม์ไลน์ของคุณเพื่อหาแอสเซ็ตที่เกี่ยวข้องใหม่ หากต้องการกู้คืน Asset นี้ โปรดตรวจสอบให้แน่ใจว่า Personal Cloud Photos สามารถเข้าถึงเส้นทางไฟล์ด้านล่างได้ และทำการสแกนไลบรารีอีกครั้ง",
       "authentication_settings": "การตั้งค่าการเข้าถึง",
       "authentication_settings_description": "จัดการรหัสผ่าน, OAuth, และตั้งค่าการเข้าถึงอื่นๆ",
       "authentication_settings_disable_all":
@@ -78760,7 +78845,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "การตั้งค่าคอนฟิกกำลังถูกกำหนดโดยไฟล์คอนฟิก",
       "confirm_delete_library": "คุณแน่ใจว่าอยากลบคลังภาพ {library} หรือไม่?",
       "confirm_delete_library_assets":
-          "คุณแน่ใจว่าอยากลบคลังภาพนี้หรือไม่? สี่อทั้งหมด {count, plural, one {# สื่อ} other {all # สื่อ}} สี่อในคลังจะถูกลบออกจาก Curator Photos โดยถาวร ไฟล์จะยังคงอยู่บนดิสก์",
+          "คุณแน่ใจว่าอยากลบคลังภาพนี้หรือไม่? สี่อทั้งหมด {count, plural, one {# สื่อ} other {all # สื่อ}} สี่อในคลังจะถูกลบออกจาก Personal Cloud Photos โดยถาวร ไฟล์จะยังคงอยู่บนดิสก์",
       "confirm_email_below": "โปรดยืนยัน โดยการพิมพ์ \"{email}\" ข้างล่าง",
       "confirm_reprocess_all_faces": "คุณแน่ใจว่าคุณต้องการประมวลผลใบหน้าทั้งหมดใหม่? ชื่อคนจะถูกลบไปด้วย",
       "confirm_user_password_reset": "คุณแน่ใจว่าต้องการรีเซ็ตรหัสผ่านของ {user} หรือไม่?",
@@ -78882,7 +78967,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "เปิดใช้งานแผนที่",
       "map_gps_settings": "การตั้งค่าแผนที่และ GPS",
       "map_gps_settings_description": "จัดการการตั้งค่าแผนที่และ GPS (Reverse Geocoding)",
-      "map_implications": "ฟีเจอร์แผนที่ต้องการบริการแผ่นแผนที่จากภายนอก (tiles.curatorphotos.cloud)",
+      "map_implications": "ฟีเจอร์แผนที่ต้องการบริการแผ่นแผนที่จากภายนอก (tiles.personalcloudphotos.cloud)",
       "map_light_style": "แบบสว่าง",
       "map_manage_reverse_geocoding_settings": "จัดการการตั้งค่า<link>แปลงพิกัดภูมิศาสตร์ </link>",
       "map_reverse_geocoding": "ประมวลผลชื่อทางภูมิศาสตร์",
@@ -78908,8 +78993,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "หมายเหตุ: ไม่สามารถเปลี่ยนภายหลังได้!",
       "notification_email_from_address": "จากที่อยู่",
       "notification_email_from_address_description":
-          "อีเมลผู้ส่ง อย่างเช่น \"Curator Photos Photo Server <noreply@curatorphotos.app>\"",
-      "notification_email_host_description": "ที่อยู่เซิร์ฟเวอร์อีเมล (เช่น smtp.curatorphotos.app)",
+          "อีเมลผู้ส่ง อย่างเช่น \"Personal Cloud Photos Photo Server <noreply@personalcloudphotos.app>\"",
+      "notification_email_host_description": "ที่อยู่เซิร์ฟเวอร์อีเมล (เช่น smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "ไม่สนใจข้อผิดพลาดเกี่ยวกับใบรับรอง",
       "notification_email_ignore_certificate_errors_description": "ไม่สนใจการยืนยันใบรับรอง TLS ผิดพลาด (ไม่แนะนำ)",
       "notification_email_password_description": "รหัสผ่านที่ใช้เมื่อเข้าถึงเซิร์ฟเวอร์อีเมล",
@@ -79004,9 +79089,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "เทมเพลตการแจ้งเตือน",
       "template_settings_description": "ปรับแต่งเทมเพลตแจ้งเตือน",
       "theme_custom_css_settings": "CSS กําหนดเอง",
-      "theme_custom_css_settings_description": "Cascading Style Sheets ช่วยให้ปรับแต่งเค้าโครง Curator Photos ได้",
+      "theme_custom_css_settings_description":
+          "Cascading Style Sheets ช่วยให้ปรับแต่งเค้าโครง Personal Cloud Photos ได้",
       "theme_settings": "การตั้งค่าธีม",
-      "theme_settings_description": "จัดการการปรับแต่งหน้าเว็บ Curator Photos",
+      "theme_settings_description": "จัดการการปรับแต่งหน้าเว็บ Personal Cloud Photos",
       "thumbnail_generation_job": "สร้างภาพตัวอย่าง",
       "thumbnail_generation_job_description": "สร้างภาพตัวอย่างขนาดใหญ่ ขนาดเล็กและแบบเบลอ สําหรับแต่ละสื่อและบุคคล",
       "transcoding_acceleration_api": "API เร่งความเร็วแปลงสื่อ",
@@ -79225,7 +79311,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "ตารางรูปภาพ",
     "asset_offline": "สื่อออฟไลน์",
     "asset_offline_description":
-        "ไม่พบทรัพยากรภายนอกนี้ในดิสก์อีกต่อไป โปรดติดต่อผู้ดูแลระบบ Curator Photos ของคุณเพื่อขอความช่วยเหลือ",
+        "ไม่พบทรัพยากรภายนอกนี้ในดิสก์อีกต่อไป โปรดติดต่อผู้ดูแลระบบ Personal Cloud Photos ของคุณเพื่อขอความช่วยเหลือ",
     "asset_skipped": "ข้ามแล้ว",
     "asset_skipped_in_trash": "ในถังขยะ",
     "asset_uploaded": "อัปโหลดแล้ว",
@@ -79268,7 +79354,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "ไปยังการตั้งค่า",
     "backup_controller_page_background_battery_info_link": "แสดงให้ฉันเห็น",
     "backup_controller_page_background_battery_info_message":
-        "เพื่อประสบการณ์สำรองข้อมูลที่ดีที่สุด กรุณาปิดการตั้งค่าประสิทธิภาพแบตเตอรี่จำกัดกิจกรรมในเบื้องหลังสำหรับ Curator Photos\n\nเนื่องจากการตั้งค่าดังกล่าวเฉพาะเจาะจงสำหรับโทรศัพท์แต่ละเครื่อง กรุณาค้นหาข้อมูลจากผู้ผลิตโทรศัพท์ของคุณ",
+        "เพื่อประสบการณ์สำรองข้อมูลที่ดีที่สุด กรุณาปิดการตั้งค่าประสิทธิภาพแบตเตอรี่จำกัดกิจกรรมในเบื้องหลังสำหรับ Personal Cloud Photos\n\nเนื่องจากการตั้งค่าดังกล่าวเฉพาะเจาะจงสำหรับโทรศัพท์แต่ละเครื่อง กรุณาค้นหาข้อมูลจากผู้ผลิตโทรศัพท์ของคุณ",
     "backup_controller_page_background_battery_info_ok": "โอเค",
     "backup_controller_page_background_battery_info_title": "ประสิทธิภาพแบตเตอรี่",
     "backup_controller_page_background_charging": "ขณะชาร์จอย่างเดียว",
@@ -79324,7 +79410,7 @@ class CodegenLoader extends AssetLoader {
         "คุณแน่ใจหรือไม่ว่าต้องการเก็บ {count, plural, one {# duplicate asset} other {# duplicate asset}} ไว้ การดำเนินการนี้จะแก้ไขกลุ่มที่ซ้ำกันทั้งหมดโดยไม่ต้องลบสิ่งใดเลย",
     "bulk_trash_duplicates_confirmation":
         "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลจำนวนมาก {count, plural, one {# duplicate asset} other {# duplicate asset}} การทำเช่นนี้จะเก็บสื่อที่ใหญ่ที่สุดของแต่ละกลุ่มและลบข้อมูลซ้ำอื่น ๆ ทั้งหมด",
-    "buy": "ซื้อ Curator Photos",
+    "buy": "ซื้อ Personal Cloud Photos",
     "cache_settings_clear_cache_button": "ล้างแคช",
     "cache_settings_clear_cache_button_title": "ล้างแคชของแอพ จะส่งผลกระทบต่อประสิทธิภาพแอพจนกว่าแคชจะถูกสร้างใหม่",
     "cache_settings_duplicated_assets_clear_button": "ล้าง",
@@ -79335,7 +79421,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "รูปย่ออัลบั้มที่แชร์",
     "cache_settings_statistics_thumbnail": "รูปย่อ",
     "cache_settings_statistics_title": "การใช้งานแคช",
-    "cache_settings_subtitle": "ควบคุมพฤติกรรมการแคชของแอปพลิเคชัน Curator Photos",
+    "cache_settings_subtitle": "ควบคุมพฤติกรรมการแคชของแอปพลิเคชัน Personal Cloud Photos",
     "cache_settings_tile_subtitle": "ควบคุมพฤติกรรมของที่จัดเก็บในตัวเครื่อง",
     "cache_settings_tile_title": "ที่จัดเก็บในตัวเครื่อง",
     "cache_settings_title": "ตั้งค่าแคช",
@@ -79398,7 +79484,7 @@ class CodegenLoader extends AssetLoader {
     "context": "บริบท",
     "continue": "ต่อไป",
     "control_bottom_app_bar_create_new_album": "สร้างอัลบั้มใหม่",
-    "control_bottom_app_bar_delete_from_immich": "ลบจาก Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "ลบจาก Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "ลบจากเรื่อง",
     "control_bottom_app_bar_edit_location": "แก้ไขตำแหน่ง",
     "control_bottom_app_bar_edit_time": "แก้ไขวันและเวลา",
@@ -79456,12 +79542,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "ลบออก",
     "delete_album": "ลบอัลบั้ม",
     "delete_api_key_prompt": "คุณต้องการลบ API คีย์ นี้ใช่ไหม ?",
-    "delete_dialog_alert": "รายการดังกล่าวจะถูกลบจาก Curator Photos และเครื่องอย่างถาวร",
+    "delete_dialog_alert": "รายการดังกล่าวจะถูกลบจาก Personal Cloud Photos และเครื่องอย่างถาวร",
     "delete_dialog_alert_local":
-        "รายการดังกล่าวจะถูกลบจากเครื่องคุณอย่างถาวร แต่จะยังคงอยู่บนเซิร์ฟเวอร์ Curator Photos",
+        "รายการดังกล่าวจะถูกลบจากเครื่องคุณอย่างถาวร แต่จะยังคงอยู่บนเซิร์ฟเวอร์ Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
-        "รายการบางตัวไม่ได้ถูกสำรองบน Curator Photos และจะถูกลบจากเครื่องคุณอย่างถาวร",
-    "delete_dialog_alert_remote": "รายการดังกล่าวจะถูกลบจากเซิร์ฟเวอร์ Curator Photos อย่างถาวร",
+        "รายการบางตัวไม่ได้ถูกสำรองบน Personal Cloud Photos และจะถูกลบจากเครื่องคุณอย่างถาวร",
+    "delete_dialog_alert_remote": "รายการดังกล่าวจะถูกลบจากเซิร์ฟเวอร์ Personal Cloud Photos อย่างถาวร",
     "delete_dialog_ok_force": "ลบต่อไป",
     "delete_dialog_title": "ลบถาวร",
     "delete_duplicates_confirmation": "คุณแน่ใจที่ต้องการลบรายการซ้ำอย่างถาวรใช่ไหม ?",
@@ -79536,7 +79622,7 @@ class CodegenLoader extends AssetLoader {
     "email": "อีเมล",
     "empty_trash": "ทิ้งจากถังขยะ",
     "empty_trash_confirmation":
-        "คุณแน่ใจหรือไม่ว่าต้องการล้างถังขยะ การดำเนินการนี้จะลบทรัพยากรทั้งหมดในถังขยะออกจาก Curator Photos อย่างถาวร\nคุณไม่สามารถย้อนกลับการดำเนินการนี้ได้!",
+        "คุณแน่ใจหรือไม่ว่าต้องการล้างถังขยะ การดำเนินการนี้จะลบทรัพยากรทั้งหมดในถังขยะออกจาก Personal Cloud Photos อย่างถาวร\nคุณไม่สามารถย้อนกลับการดำเนินการนี้ได้!",
     "enable": "เปิดใช้งาน",
     "enabled": "เปิดใช้งาน",
     "end_date": "วันสิ้นสุด",
@@ -79767,8 +79853,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "ดาวน์โหลดเริ่มต้น",
     "image_viewer_page_state_provider_download_success": "ดาวน์โหลดสำเร็จ",
     "image_viewer_page_state_provider_share_error": "แชร์ผิดพลาด",
-    "immich_logo": "โลโก้ Curator Photos",
-    "immich_web_interface": "หน้าตาเว็บไซต์ Curator Photos",
+    "immich_logo": "โลโก้ Personal Cloud Photos",
+    "immich_web_interface": "หน้าตาเว็บไซต์ Personal Cloud Photos",
     "import_from_json": "นำเข้าจาก JSON",
     "import_path": "นำเข้าเส้นทาง",
     "in_albums": "ใน {count, plural, one {# album} other {# albums}}",
@@ -79820,7 +79906,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "กำลังโหลด",
     "loading_search_results_failed": "โหลดผลการค้นหาล้มเหลว",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "location_picker_choose_on_map": "เลือกบนแผนที่",
     "location_picker_latitude_error": "กรุณาเพิ่มละติจูตที่ถูกต้อง",
     "location_picker_latitude_hint": "เพิ่มละติจูตตรงนี้",
@@ -79964,7 +80050,7 @@ class CodegenLoader extends AssetLoader {
     "notification_toggle_setting_description": "เปิด/ปิด การแจ้งเตือนอีเมล",
     "notifications": "การแจ้งเตือน",
     "notifications_setting_description": "จัดการการแจ้งเตือน",
-    "official_immich_resources": "แหล่งข้อมูล Curator Photos อย่างเป็นทางการ",
+    "official_immich_resources": "แหล่งข้อมูล Personal Cloud Photos อย่างเป็นทางการ",
     "offline": "ออฟไลน์",
     "ok": "ตกลง",
     "oldest_first": "เรียงเก่าสุดก่อน",
@@ -79972,7 +80058,7 @@ class CodegenLoader extends AssetLoader {
     "onboarding_privacy_description":
         "คุณลักษณะ (ไม่จำเป็น) ต่อไปนี้ต้องอาศัยบริการภายนอก และสามารถปิดใช้งานได้ตลอดเวลาในการตั้งค่าการดูแลระบบ",
     "onboarding_theme_description": "เลือกธีมสี คุณสามารถเปลี่ยนแปลงได้ในภายหลังในการตั้งค่าของคุณ",
-    "onboarding_welcome_description": "มาตั้งค่า Curator Photos ของคุณ ด้วยการตั้งค่าทั่วไปกัน",
+    "onboarding_welcome_description": "มาตั้งค่า Personal Cloud Photos ของคุณ ด้วยการตั้งค่าทั่วไปกัน",
     "onboarding_welcome_user": "ยินดีต้อนรับคุณ {user}",
     "online": "ออนไลน์",
     "only_favorites": "รายการโปรดเท่านั้น",
@@ -80034,11 +80120,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "เริ่มต้น",
     "permission_onboarding_go_to_settings": "ไปยังการตั้งค่า",
     "permission_onboarding_permission_denied":
-        "ไม่อนุญาต ตั้งค่าสิทธิ์เข้าถึงรูปภาพและวิดีโอเพื่อใช้งาน Curator Photos",
+        "ไม่อนุญาต ตั้งค่าสิทธิ์เข้าถึงรูปภาพและวิดีโอเพื่อใช้งาน Personal Cloud Photos",
     "permission_onboarding_permission_granted": "ให้สิทธิ์สำเร็จ คุณพร้อมใช้งานแล้ว",
     "permission_onboarding_permission_limited":
-        "สิทธ์จำกัด เพื่อให้ Curator Photos สำรองข้อมูลและจัดการคลังภาพได้ ตั้งค่าสิทธิเข้าถึงรูปภาพและวิดีโอ",
-    "permission_onboarding_request": "Curator Photos จำเป็นจะต้องได้รับสิทธิ์ดูรูปภาพและวิดีโอ",
+        "สิทธ์จำกัด เพื่อให้ Personal Cloud Photos สำรองข้อมูลและจัดการคลังภาพได้ ตั้งค่าสิทธิเข้าถึงรูปภาพและวิดีโอ",
+    "permission_onboarding_request": "Personal Cloud Photos จำเป็นจะต้องได้รับสิทธิ์ดูรูปภาพและวิดีโอ",
     "person": "บุคคล",
     "person_birthdate": "เกิดวัน{date}",
     "photo_shared_all_users": "ดูเหมือนว่าคุณได้แชร์รูปภาพของคุณกับผู้ใช้ทั้งหมด หรือคุณไม่มีผู้ใช้ใดที่จะแชร์ด้วย",
@@ -80076,12 +80162,13 @@ class CodegenLoader extends AssetLoader {
     "public_album": "อัลบั้มสาธารณะ",
     "public_share": "แชร์แบบสาธารณะ",
     "purchase_account_info": "ผู้สนับสนุน",
-    "purchase_activated_subtitle": "ขอบคุณสำหรับการสนับสนุน Curator Photos และซอฟต์แวร์เสรี (Open source software)",
+    "purchase_activated_subtitle":
+        "ขอบคุณสำหรับการสนับสนุน Personal Cloud Photos และซอฟต์แวร์เสรี (Open source software)",
     "purchase_activated_time": "เปิดใช้งานวันที่ {date}",
     "purchase_activated_title": "รหัสของคุณถูกเปิดใช้งานเรียบร้อยแล้ว",
     "purchase_button_activate": "เปิดใช้งาน",
     "purchase_button_buy": "ซื้อ",
-    "purchase_button_buy_immich": "ซื้อ Curator Photos",
+    "purchase_button_buy_immich": "ซื้อ Personal Cloud Photos",
     "purchase_button_never_show_again": "ยังไม่ต้องแสดง",
     "purchase_button_reminder": "เตือนฉันในอีก 30 วัน",
     "purchase_button_remove_key": "ลบรหัส",
@@ -80091,13 +80178,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "สถานะผู้สนับสนุน",
     "purchase_individual_title": "บุคคลทั่วไป",
     "purchase_input_suggestion": "มีรหัสผลิตภัณฑ์หรือไม่? ใส่รหัสด้านล่าง",
-    "purchase_license_subtitle": "ซื้อ Curator Photos เพื่อรองรับการพัฒนาบริการอย่างต่อเนื่อง",
+    "purchase_license_subtitle": "ซื้อ Personal Cloud Photos เพื่อรองรับการพัฒนาบริการอย่างต่อเนื่อง",
     "purchase_lifetime_description": "ซื้อตลอดชีพ",
     "purchase_option_title": "ตัวเลือกการซื้อ",
     "purchase_panel_info_1":
-        "ทางทีม Curator Photos ต้องใช้เวลาและความพยายามอย่างมากในการพัฒนาระบบนี้ขึ้นมา และเรามีวิศวกรที่ทำงานเต็มเวลาเพื่อพัฒนาให้ดีที่สุดเท่าที่จะทำได้ ภารกิจของเราคือการทำให้ซอฟต์แวร์โอเพ่นซอร์สและแนวทางปฏิบัติทางธุรกิจที่ถูกต้องตามจริยธรรมกลายเป็นแหล่งรายได้ที่ยั่งยืนสำหรับนักพัฒนา และสร้างระบบนิเวศที่เคารพความเป็นส่วนตัวพร้อมทางเลือกอื่นที่เป็นรูปธรรมแทนบริการคลาวด์ที่เอารัดเอาเปรียบ",
+        "ทางทีม Personal Cloud Photos ต้องใช้เวลาและความพยายามอย่างมากในการพัฒนาระบบนี้ขึ้นมา และเรามีวิศวกรที่ทำงานเต็มเวลาเพื่อพัฒนาให้ดีที่สุดเท่าที่จะทำได้ ภารกิจของเราคือการทำให้ซอฟต์แวร์โอเพ่นซอร์สและแนวทางปฏิบัติทางธุรกิจที่ถูกต้องตามจริยธรรมกลายเป็นแหล่งรายได้ที่ยั่งยืนสำหรับนักพัฒนา และสร้างระบบนิเวศที่เคารพความเป็นส่วนตัวพร้อมทางเลือกอื่นที่เป็นรูปธรรมแทนบริการคลาวด์ที่เอารัดเอาเปรียบ",
     "purchase_panel_info_2":
-        "เนื่องจากเราให้คำมั่นว่า จะไม่เพิ่มระบบชำระเงินในระบบของเรา ดังนั้นการซื้อครั้งนี้จะไม่ทำให้คุณได้รับฟีเจอร์เพิ่มเติมใน Curator Photos เป็นพิเศษ เราอาศัยผู้คนแบบท่านในการสนับสนุนการพัฒนาอย่างต่อเนื่องของ Curator Photos",
+        "เนื่องจากเราให้คำมั่นว่า จะไม่เพิ่มระบบชำระเงินในระบบของเรา ดังนั้นการซื้อครั้งนี้จะไม่ทำให้คุณได้รับฟีเจอร์เพิ่มเติมใน Personal Cloud Photos เป็นพิเศษ เราอาศัยผู้คนแบบท่านในการสนับสนุนการพัฒนาอย่างต่อเนื่องของ Personal Cloud Photos",
     "purchase_panel_title": "สนับสนุนโครงการนี้",
     "purchase_per_server": "ต่อเซิร์ฟเวอร์",
     "purchase_per_user": "ต่อผู้ใช้งาน",
@@ -80408,7 +80495,7 @@ class CodegenLoader extends AssetLoader {
     "support": "สนับสนุน",
     "support_and_feedback": "สนับสนุน & ข้อเสนอแนะ",
     "support_third_party_description":
-        "การติดตั้ง Curator Photos ของคุณถูกจัดทำแพ็กเกจโดยบุคคลที่สาม ปัญหาที่คุณพบอาจเกิดจากแพ็กเกจดังกล่าว ดังนั้นโปรดแจ้งปัญหาที่เกิดขึ้นกับบุคคลที่สามก่อนโดยใช้ลิงก์ด้านล่าง",
+        "การติดตั้ง Personal Cloud Photos ของคุณถูกจัดทำแพ็กเกจโดยบุคคลที่สาม ปัญหาที่คุณพบอาจเกิดจากแพ็กเกจดังกล่าว ดังนั้นโปรดแจ้งปัญหาที่เกิดขึ้นกับบุคคลที่สามก่อนโดยใช้ลิงก์ด้านล่าง",
     "swap_merge_direction": "สลับด้านรวม",
     "sync": "ซิงค์",
     "tag": "แท็ก",
@@ -80450,7 +80537,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "รูปภาพหรือวิดีโอที่ถูกลบจะอยู่ที่นี่",
     "trash_page_delete_all": "ลบทั้งหมด",
     "trash_page_empty_trash_dialog_content":
-        "คุณแน่ใจว่าต้องการทิ้งขยะทั้งหมด ทรัพยากรพวกนี้จะถูกลบจาก Curator Photos ถาวร",
+        "คุณแน่ใจว่าต้องการทิ้งขยะทั้งหมด ทรัพยากรพวกนี้จะถูกลบจาก Personal Cloud Photos ถาวร",
     "trash_page_info": "ทรัพยากรที่ทิ้งจะถูกลบถาวรหลัง {days} วัน",
     "trash_page_no_assets": "ไม่มีทรัพยากรในขยะ",
     "trash_page_restore_all": "กู้คืนทั้งหมด",
@@ -80503,7 +80590,7 @@ class CodegenLoader extends AssetLoader {
     "variables": "ตัวแปร",
     "version": "รุ่น",
     "version_announcement_message":
-        "สวัสดี! Curator Photos เวอร์ชันใหม่พร้อมให้ใช้งานแล้ว โปรดใช้เวลาสักครู่เพื่ออ่าน <link>หมายเหตุการเผยแพร่</link> เพื่อให้แน่ใจว่าการตั้งค่าของคุณได้รับการอัปเดตแล้ว เพื่อป้องกันการกำหนดค่าผิดพลาด โดยเฉพาะอย่างยิ่งหากคุณใช้ WatchTower หรือกลไกอื่นๆ ที่จัดการการอัปเดตอินสแตนซ์ Curator Photos ของคุณโดยอัตโนมัติ",
+        "สวัสดี! Personal Cloud Photos เวอร์ชันใหม่พร้อมให้ใช้งานแล้ว โปรดใช้เวลาสักครู่เพื่ออ่าน <link>หมายเหตุการเผยแพร่</link> เพื่อให้แน่ใจว่าการตั้งค่าของคุณได้รับการอัปเดตแล้ว เพื่อป้องกันการกำหนดค่าผิดพลาด โดยเฉพาะอย่างยิ่งหากคุณใช้ WatchTower หรือกลไกอื่นๆ ที่จัดการการอัปเดตอินสแตนซ์ Personal Cloud Photos ของคุณโดยอัตโนมัติ",
     "version_announcement_overlay_release_notes": "รายงานการอัพเดท",
     "version_announcement_overlay_text_1": "สวัสดีเพื่อน ขณะนี้มีเวอร์ชั้นใหม่ของ",
     "version_announcement_overlay_text_2": "กรุณาใช้เวลาดู",
@@ -80533,7 +80620,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "คำเตือน",
     "week": "สัปดาห์",
     "welcome": "ยินดีต้อนรับ",
-    "welcome_to_immich": "ยินดีต้อนรับสู่ Curator Photos",
+    "welcome_to_immich": "ยินดีต้อนรับสู่ Personal Cloud Photos",
     "wifi_name": "WiFi Name",
     "year": "ปี",
     "years_ago": "{years, plural, one {# ปี} other {# ปี}} ที่แล้ว",
@@ -80579,7 +80666,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Lägg till exkluderande mönster. Matchning med jokertecken *, ** samt ? stödjs. För att ignorera alla filer i samtliga mappar som heter \"Raw\", använd \"**/Raw/**\". För att ignorera alla filer som slutar med \".tif\", använd \"**/*.tif\". För att ignorera en absolut sökväg, använd \"/sökväg/att/ignorera/**\".",
       "asset_offline_description":
-          "Denna externa bibliotekstillgång finns inte längre på disken och har flyttats till papperskorgen. Om filen flyttades inom biblioteket, kontrollera din tidslinje för den nya motsvarande tillgången. För att återställa denna tillgång, se till att filsökvägen nedan kan nås av Curator Photos och skanna biblioteket.",
+          "Denna externa bibliotekstillgång finns inte längre på disken och har flyttats till papperskorgen. Om filen flyttades inom biblioteket, kontrollera din tidslinje för den nya motsvarande tillgången. För att återställa denna tillgång, se till att filsökvägen nedan kan nås av Personal Cloud Photos och skanna biblioteket.",
       "authentication_settings": "Autentiseringsinställningar",
       "authentication_settings_description": "Hantera lösenord, OAuth, och andra autentiseringsinställningar",
       "authentication_settings_disable_all":
@@ -80595,7 +80682,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Konfigurationen är satt av en konfigurationsfil",
       "confirm_delete_library": "Är du säker på att du vill radera {library} album?",
       "confirm_delete_library_assets":
-          "Är du säker på att du vill radera detta album? {count, plural, one {# objekt} other {Samtliga # objekt}} kommer att tas bort från Curator Photos och åtgärden kan inte ångras. Filerna kommer att behållas på hårddisken.",
+          "Är du säker på att du vill radera detta album? {count, plural, one {# objekt} other {Samtliga # objekt}} kommer att tas bort från Personal Cloud Photos och åtgärden kan inte ångras. Filerna kommer att behållas på hårddisken.",
       "confirm_email_below": "För att bekräfta, skriv ”{email}” nedan",
       "confirm_reprocess_all_faces":
           "Är du säker på att du vill återprocessa alla ansikten? Detta kommer också rensa namngivna personer.",
@@ -80722,7 +80809,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Aktivera kartfunktioner",
       "map_gps_settings": "Karta & GPS Inställningar",
       "map_gps_settings_description": "Ändra kartor & GPS (Omvänd geokodning) inställningar",
-      "map_implications": "Kartfunktionen är beroende av en extern kartbitstjänst (tiles.curatorphotos.cloud)",
+      "map_implications": "Kartfunktionen är beroende av en extern kartbitstjänst (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Ljus stil",
       "map_manage_reverse_geocoding_settings": "Hantera inställningar för <link>Omvänd geokodning</link>",
       "map_reverse_geocoding": "Omvänd Geokodning",
@@ -80748,8 +80835,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "OBS: Detta kan inte ändras i efterhand!",
       "notification_email_from_address": "Från adress",
       "notification_email_from_address_description":
-          "Avsändarens epost, t.ex.: \"Curator Photos Fotoserver <noreply@example.com>\"",
-      "notification_email_host_description": "Värd för epostservern (t.ex. smtp.curatorphotos.app)",
+          "Avsändarens epost, t.ex.: \"Personal Cloud Photos Fotoserver <noreply@example.com>\"",
+      "notification_email_host_description": "Värd för epostservern (t.ex. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorera certifikatfel",
       "notification_email_ignore_certificate_errors_description":
           "Ignorera valideringsfel för TLS-certifikat (rekommenderas ej)",
@@ -80847,9 +80934,10 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "Notifikations Mall",
       "template_settings_description": "Hantera anpassade mallar för notifikationer",
       "theme_custom_css_settings": "Anpassad CSS",
-      "theme_custom_css_settings_description": "Cascading Style Sheets möjliggör designanpassningar av Curator Photos.",
+      "theme_custom_css_settings_description":
+          "Cascading Style Sheets möjliggör designanpassningar av Personal Cloud Photos.",
       "theme_settings": "Temainställningar",
-      "theme_settings_description": "Hantera anpassningar av webbgränssnittet för Curator Photos",
+      "theme_settings_description": "Hantera anpassningar av webbgränssnittet för Personal Cloud Photos",
       "these_files_matched_by_checksum": "Dessa filer matchas av deras kontrollsummor",
       "thumbnail_generation_job": "Generera Miniatyrer",
       "thumbnail_generation_job_description":
@@ -80983,7 +81071,7 @@ class CodegenLoader extends AssetLoader {
         "Vissa enheter är mycket långsamma på att ladda miniatyrer från objekt på enheten. Aktivera den här inställningen för att ladda bilder från servern istället.",
     "advanced_settings_prefer_remote_title": "Föredra bilder från servern",
     "advanced_settings_proxy_headers_subtitle":
-        "Definiera proxy-headers som Curator Photos ska skicka med i varje närverksanrop",
+        "Definiera proxy-headers som Personal Cloud Photos ska skicka med i varje närverksanrop",
     "advanced_settings_proxy_headers_title": "Proxy-headers",
     "advanced_settings_self_signed_ssl_subtitle":
         "Hoppar över SSL-certifikatverifiering för serverändpunkten. Krävs för självsignerade certifikat.",
@@ -81077,7 +81165,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Bildrutnät",
     "asset_offline": "Tillgång offline",
     "asset_offline_description":
-        "Denna externa tillgång finns inte längre på disken. Kontakta din Curator Photos-administratör för hjälp.",
+        "Denna externa tillgång finns inte längre på disken. Kontakta din Personal Cloud Photos-administratör för hjälp.",
     "asset_restored_successfully": "Objekt återställt",
     "asset_skipped": "Överhoppad",
     "asset_skipped_in_trash": "I papperskorgen",
@@ -81092,7 +81180,8 @@ class CodegenLoader extends AssetLoader {
         "Lade till {count, plural, one {# objekt} other {# objekt}} till {hasName, select, true {<b>{name}</b>} other {nytt album}}",
     "assets_count": "{count, plural, one {# objekt} other {# objekt}}",
     "assets_deleted_permanently": "{count} objekt har tagits bort permanent",
-    "assets_deleted_permanently_from_server": "{count} objekt har tagits bort permanent från Curator Photos-servern",
+    "assets_deleted_permanently_from_server":
+        "{count} objekt har tagits bort permanent från Personal Cloud Photos-servern",
     "assets_moved_to_trash_count": "Flyttade {count, plural, one {# asset} other {# assets}} till papperskorgen",
     "assets_permanently_deleted_count": "Raderad permanent {count, plural, one {# asset} other {# assets}}",
     "assets_removed_count": "Tog bort {count, plural, one {# asset} other {# assets}}",
@@ -81103,7 +81192,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} objekt har återställts",
     "assets_trashed": "{count} objekt raderade",
     "assets_trashed_count": "Till Papperskorgen {count, plural, one {# asset} other {# assets}}",
-    "assets_trashed_from_server": "{count} objekt raderade från Curator Photos-servern",
+    "assets_trashed_from_server": "{count} objekt raderade från Personal Cloud Photos-servern",
     "assets_were_part_of_album_count": "{count, plural, one {Asset was} other {Asset were}} är redan en del av albumet",
     "authorized_devices": "Auktoriserade enheter",
     "automatic_endpoint_switching_subtitle":
@@ -81113,7 +81202,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Tillbaka, stäng eller avmarkera",
     "background_location_permission": "Tillåtelse för bakgrundsplats",
     "background_location_permission_content":
-        "För att kunna byta nätverk när appen körs i bakgrunden måste Curator Photos *alltid* ha åtkomst till exakt plats så att appen kan läsa av Wi-Fi-nätverkets namn",
+        "För att kunna byta nätverk när appen körs i bakgrunden måste Personal Cloud Photos *alltid* ha åtkomst till exakt plats så att appen kan läsa av Wi-Fi-nätverkets namn",
     "backup_album_selection_page_albums_device": "Album på enhet ({count})",
     "backup_album_selection_page_albums_tap": "Tryck en gång för att inkludera, tryck två gånger för att exkludera",
     "backup_album_selection_page_assets_scatter":
@@ -81137,7 +81226,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Gå till inställningar",
     "backup_controller_page_background_battery_info_link": "Visa mig hur",
     "backup_controller_page_background_battery_info_message":
-        "För optimal säkerhetskopiering i bakgrunden bör du stänga av batterioptimering som begränsar bakgrundsaktivitet för Curator Photos.\n\nEftersom detta är enhetsspecifikt så bör du söka instruktioner från din enhetstillverkare.",
+        "För optimal säkerhetskopiering i bakgrunden bör du stänga av batterioptimering som begränsar bakgrundsaktivitet för Personal Cloud Photos.\n\nEftersom detta är enhetsspecifikt så bör du söka instruktioner från din enhetstillverkare.",
     "backup_controller_page_background_battery_info_ok": "OK",
     "backup_controller_page_background_battery_info_title": "Batterioptimering",
     "backup_controller_page_background_charging": "Endast vid laddning",
@@ -81200,7 +81289,7 @@ class CodegenLoader extends AssetLoader {
         "Är du säker på att du vill behålla {count, plural, one {# duplicate asset} other {# duplicate assets}}? Detta kommer att lösa alla dubbletter av grupper utan att ta bort någonting.",
     "bulk_trash_duplicates_confirmation":
         "Är du säker på att du vill skicka till papperskorgen {count, plural, one {# duplicate asset} other {# duplicate assets}}? Detta kommer att behålla den största tillgången i varje grupp och alla andra dubbletter kasseras.",
-    "buy": "Köp Curator Photos",
+    "buy": "Köp Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniatyrbilder för bibliotek ({} bilder och videor)",
     "cache_settings_clear_cache_button": "Rensa cacheminnet",
     "cache_settings_clear_cache_button_title":
@@ -81213,7 +81302,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Miniatyrbilder till delat album",
     "cache_settings_statistics_thumbnail": "Miniatyrbilder",
     "cache_settings_statistics_title": "Cacheförbrukning",
-    "cache_settings_subtitle": "Hantera cachebeteendet för Curator Photos-appen.",
+    "cache_settings_subtitle": "Hantera cachebeteendet för Personal Cloud Photos-appen.",
     "cache_settings_thumbnail_size": "Storlek på cacheminnet ({} bilder och videor)",
     "cache_settings_tile_subtitle": "Kontrollera beteende för lokal lagring",
     "cache_settings_tile_title": "Lokal Lagring",
@@ -81297,7 +81386,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Sammanhang",
     "continue": "Fortsätt",
     "control_bottom_app_bar_create_new_album": "Skapa nytt album",
-    "control_bottom_app_bar_delete_from_immich": "Ta bort från Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Ta bort från Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Ta bort från enhet",
     "control_bottom_app_bar_edit_location": "Redigera plats",
     "control_bottom_app_bar_edit_time": "Redigera Datum & Tid",
@@ -81363,12 +81452,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Radera",
     "delete_album": "Ta bort album",
     "delete_api_key_prompt": "Är du säker på att du vill ta bort denna API-nyckel?",
-    "delete_dialog_alert": "Dessa objekt kommer att raderas permanent från Curator Photos och din enhet",
+    "delete_dialog_alert": "Dessa objekt kommer att raderas permanent från Personal Cloud Photos och din enhet",
     "delete_dialog_alert_local":
-        "Dessa objekt kommer att tas bort från din enhet men fortsatt vara tillgängliga på Curator Photos-servern",
+        "Dessa objekt kommer att tas bort från din enhet men fortsatt vara tillgängliga på Personal Cloud Photos-servern",
     "delete_dialog_alert_local_non_backed_up":
-        "Några objekt har inte säkerhetskopierats till Curator Photos och kommer att tas bort permanent från din enhet",
-    "delete_dialog_alert_remote": "Dessa objekt kommer att tas bort permanent från Curator Photos-servern",
+        "Några objekt har inte säkerhetskopierats till Personal Cloud Photos och kommer att tas bort permanent från din enhet",
+    "delete_dialog_alert_remote": "Dessa objekt kommer att tas bort permanent från Personal Cloud Photos-servern",
     "delete_dialog_ok_force": "Ta Bort Ändå",
     "delete_dialog_title": "Radera permanent",
     "delete_duplicates_confirmation": "Är du säker på att du vill ta bort dessa dubbletter permanent?",
@@ -81421,7 +81510,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Hantera inställningar relaterade till nedladdning av objekt",
     "download_started": "Nedladdning påbörjad",
     "download_sucess": "Nedladdning lyckades",
-    "download_sucess_android": "Media har laddats ner till DCIM/CuratorPhotos",
+    "download_sucess_android": "Media har laddats ner till DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Väntar på omförsök",
     "downloading": "Laddar ner",
     "downloading_asset_filename": "Laddar ned objekt {filename}",
@@ -81461,7 +81550,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Mappen är tom",
     "empty_trash": "Töm papperskorg",
     "empty_trash_confirmation":
-        "Är du säker på att du vill tömma papperskorgen? Detta tar bort alla objekt i papperskorgen permanent från Curator Photos.\nDu kan inte ångra den här åtgärden!",
+        "Är du säker på att du vill tömma papperskorgen? Detta tar bort alla objekt i papperskorgen permanent från Personal Cloud Photos.\nDu kan inte ångra den här åtgärden!",
     "enable": "Aktivera",
     "enable_biometric_auth_description": "Skriv in din pinkod för att aktivera biometrisk autentisering",
     "enabled": "Aktiverad",
@@ -81713,7 +81802,8 @@ class CodegenLoader extends AssetLoader {
     "hour": "Timme",
     "id": "ID",
     "ignore_icloud_photos": "Ignorera iCloud-foton",
-    "ignore_icloud_photos_description": "Foton lagrade i iCloud kommer inte laddas upp till Curator Photos-servern",
+    "ignore_icloud_photos_description":
+        "Foton lagrade i iCloud kommer inte laddas upp till Personal Cloud Photos-servern",
     "image": "Bild",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Bild}} tagen {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} tagen med {person1} den {date}",
@@ -81736,8 +81826,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Nedladdning Påbörjad",
     "image_viewer_page_state_provider_download_success": "Nedladdningen Lyckades",
     "image_viewer_page_state_provider_share_error": "Delningsfel",
-    "immich_logo": "Curator Photos-logga",
-    "immich_web_interface": "Curator Photos Web gränssnitt",
+    "immich_logo": "Personal Cloud Photos-logga",
+    "immich_web_interface": "Personal Cloud Photos Web gränssnitt",
     "import_from_json": "Importera från JSON",
     "import_path": "Importsökväg",
     "in_albums": "I {count, plural, one {# album} other {# albums}}",
@@ -81798,7 +81888,7 @@ class CodegenLoader extends AssetLoader {
         "Appen kommer ansluta till servern via denna URL när det specificerade WiFi-nätverket används",
     "location_permission": "Plats-rättighet",
     "location_permission_content":
-        "För att använda funktionen för automatisk växling behöver Curator Photos behörighet till exakt plats så att appen kan läsa av det aktuella Wi-Fi-nätverkets namn",
+        "För att använda funktionen för automatisk växling behöver Personal Cloud Photos behörighet till exakt plats så att appen kan läsa av det aktuella Wi-Fi-nätverkets namn",
     "location_picker_choose_on_map": "Välj på karta",
     "location_picker_latitude_error": "Ange en giltig latitud",
     "location_picker_latitude_hint": "Ange din latitud här",
@@ -81969,7 +82059,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notifikationer",
     "notifications_setting_description": "Hantera aviseringar",
     "oauth": "OAuth",
-    "official_immich_resources": "Officiella Curator Photos-resurser",
+    "official_immich_resources": "Officiella Personal Cloud Photos-resurser",
     "offline": "Frånkopplad",
     "ok": "Ok",
     "oldest_first": "Äldst först",
@@ -82042,11 +82132,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Kom igång",
     "permission_onboarding_go_to_settings": "Gå till inställningar",
     "permission_onboarding_permission_denied":
-        "Rättighet nekad. För att använda Curator Photos, tillåt foto- och video-rättigheter i Inställningar.",
+        "Rättighet nekad. För att använda Personal Cloud Photos, tillåt foto- och video-rättigheter i Inställningar.",
     "permission_onboarding_permission_granted": "Rättigheten beviljad! Du är klar.",
     "permission_onboarding_permission_limited":
-        "Rättighet begränsad. För att låta Curator Photos säkerhetskopiera och hantera hela ditt galleri, tillåt foto- och video-rättigheter i Inställningar.",
-    "permission_onboarding_request": "Curator Photos kräver tillstånd för att se dina foton och videor.",
+        "Rättighet begränsad. För att låta Personal Cloud Photos säkerhetskopiera och hantera hela ditt galleri, tillåt foto- och video-rättigheter i Inställningar.",
+    "permission_onboarding_request": "Personal Cloud Photos kräver tillstånd för att se dina foton och videor.",
     "person": "Person",
     "person_birthdate": "Född {date}",
     "person_hidden": "{name}{hidden, select, true { (dold)} other {}}",
@@ -82095,12 +82185,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Publikt album",
     "public_share": "Offentlig delning",
     "purchase_account_info": "Supporter",
-    "purchase_activated_subtitle": "Tack för att du stödjer Curator Photos och open source-mjukvara",
+    "purchase_activated_subtitle": "Tack för att du stödjer Personal Cloud Photos och open source-mjukvara",
     "purchase_activated_time": "Aktiverad {date}",
     "purchase_activated_title": "Aktiveringan av din nyckel lyckades",
     "purchase_button_activate": "Aktivera",
     "purchase_button_buy": "Köp",
-    "purchase_button_buy_immich": "Köp Curator Photos",
+    "purchase_button_buy_immich": "Köp Personal Cloud Photos",
     "purchase_button_never_show_again": "Visa aldrig igen",
     "purchase_button_reminder": "Påminn mig om 30 dagar",
     "purchase_button_remove_key": "Ta bort nyckel",
@@ -82111,13 +82201,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Supporterstatus",
     "purchase_individual_title": "Individuell",
     "purchase_input_suggestion": "Har du en produktnyckel? Ange nyckeln nedan",
-    "purchase_license_subtitle": "Köp Curator Photos för att stödja den fortsatta utvecklingen av tjänsten",
+    "purchase_license_subtitle": "Köp Personal Cloud Photos för att stödja den fortsatta utvecklingen av tjänsten",
     "purchase_lifetime_description": "Livstidsköp",
     "purchase_option_title": "KÖPALTERNATIV",
     "purchase_panel_info_1":
-        "Att bygga Curator Photos kräver mycket tid och engagemang och våra tekniker jobbar heltid för att göra det så bra som vi möjligt kan. Vårt mål är att open source-mjukvara och etiska affärsmetoder ska bli en hållbar inkomstkälla för utvecklare och att skapa ett ekosystem som repekterar personlig integritet med verkliga alternativ till exploaterande molntjänster.",
+        "Att bygga Personal Cloud Photos kräver mycket tid och engagemang och våra tekniker jobbar heltid för att göra det så bra som vi möjligt kan. Vårt mål är att open source-mjukvara och etiska affärsmetoder ska bli en hållbar inkomstkälla för utvecklare och att skapa ett ekosystem som repekterar personlig integritet med verkliga alternativ till exploaterande molntjänster.",
     "purchase_panel_info_2":
-        "Då vi åtagit oss att inte ha betalväggar kommer detta köp inte att ge dig några utökade funktioner i Curator Photos. Vi sätter vår tillit till användare som du som stödjer Curator Photos fortsatta utveckling.",
+        "Då vi åtagit oss att inte ha betalväggar kommer detta köp inte att ge dig några utökade funktioner i Personal Cloud Photos. Vi sätter vår tillit till användare som du som stödjer Personal Cloud Photos fortsatta utveckling.",
     "purchase_panel_title": "Stöd projektet",
     "purchase_per_server": "Per server",
     "purchase_per_user": "Per användare",
@@ -82338,7 +82428,7 @@ class CodegenLoader extends AssetLoader {
         "Spela originalet när en video strömmas från servern, även när en transkodad version är tillgänglig. Kan leda till buffring. Videor som är tillgängliga lokalt spelas i originalkvalitet oavsett denna inställning.",
     "setting_video_viewer_original_video_title": "Tvinga orginalvideo",
     "settings": "Inställningar",
-    "settings_require_restart": "Starta om Curator Photos för att tillämpa den här inställningen",
+    "settings_require_restart": "Starta om Personal Cloud Photos för att tillämpa den här inställningen",
     "settings_saved": "Inställningar sparade",
     "setup_pin_code": "Konfigurera pinkod",
     "share": "Dela",
@@ -82466,13 +82556,13 @@ class CodegenLoader extends AssetLoader {
     "support": "Support",
     "support_and_feedback": "Support & Feedback",
     "support_third_party_description":
-        "Din Curator Photos-installation paketerades av en tredje part. Problem som du upplever kan orsakas av det paketet, så vänligen ta upp problem med dem i första hand med hjälp av länkarna nedan.",
+        "Din Personal Cloud Photos-installation paketerades av en tredje part. Problem som du upplever kan orsakas av det paketet, så vänligen ta upp problem med dem i första hand med hjälp av länkarna nedan.",
     "swap_merge_direction": "Byt sammanfogningsriktning",
     "sync": "Synka",
     "sync_albums": "Synka album",
     "sync_albums_manual_subtitle": "Synka alla uppladdade videor och foton till valda backup-album",
     "sync_upload_album_setting_subtitle":
-        "Skapa och ladda upp dina foton och videor till de valda albumen på Curator Photos",
+        "Skapa och ladda upp dina foton och videor till de valda albumen på Personal Cloud Photos",
     "tag": "Tagg",
     "tag_assets": "Tagga tillgångar",
     "tag_created": "Skapade tagg: {tag}",
@@ -82523,7 +82613,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Borttagna foton och videor kommer att visas här.",
     "trash_page_delete_all": "Ta Bort Alla",
     "trash_page_empty_trash_dialog_content":
-        "Vill du ta bort dina slängda objekt? De kommer att tas bort permanent från Curator Photos",
+        "Vill du ta bort dina slängda objekt? De kommer att tas bort permanent från Personal Cloud Photos",
     "trash_page_info": "Objekt i papperskorgen tas bort permanent efter {days} dagar",
     "trash_page_no_assets": "Inga slängda objekt",
     "trash_page_restore_all": "Återställ Alla",
@@ -82569,7 +82659,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Fel",
     "upload_status_uploaded": "Uppladdad",
     "upload_success": "Uppladdning lyckades, ladda om sidan för att se nya objekt.",
-    "upload_to_immich": "Ladda upp till Curator Photos ({count})",
+    "upload_to_immich": "Ladda upp till Personal Cloud Photos ({count})",
     "uploading": "Laddar upp",
     "url": "URL",
     "usage": "Användning",
@@ -82598,7 +82688,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Version",
     "version_announcement_closing": "Din vän, Alex",
     "version_announcement_message":
-        "Hej där! En ny version av Curator Photos är tillgänglig. Ta dig tid att läsa <link> versionsfakta </link> för att säkerställa att dina inställningar är uppdaterade för att förhindra eventuella felkonfigurationer, särskilt om du använder WatchTower eller någon mekanism som hanterar uppdatering av din Curator Photos instans automatiskt.",
+        "Hej där! En ny version av Personal Cloud Photos är tillgänglig. Ta dig tid att läsa <link> versionsfakta </link> för att säkerställa att dina inställningar är uppdaterade för att förhindra eventuella felkonfigurationer, särskilt om du använder WatchTower eller någon mekanism som hanterar uppdatering av din Personal Cloud Photos instans automatiskt.",
     "version_announcement_overlay_release_notes": "versionsinformation",
     "version_announcement_overlay_text_1": "Hej vännen, det finns en ny version av",
     "version_announcement_overlay_text_2": ". Ta gärna din tid att besöka ",
@@ -82634,7 +82724,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Varning",
     "week": "Vecka",
     "welcome": "Välkommen",
-    "welcome_to_immich": "Välkommen till Curator Photos",
+    "welcome_to_immich": "Välkommen till Personal Cloud Photos",
     "wifi_name": "Wi-Fi-namn",
     "wrong_pin_code": "Fel pinkod",
     "year": "År",
@@ -82681,7 +82771,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "Legg til utelatingsmønstre. Du kan bruke jokerteikna *, **, og ? for å finne filer som passar mønsteret. For å ignorere alle filer i ei mappe kalla \"Raw\", bruk \"Raw\", bruk \"**/Raw/**\". For å ignorere alle filer som sluttar på \".tif\", bruk \"**/*.tif\". For å ignorere ein absolutt sti, bruk \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "Denne eksterne bibliotekressursen finst ikkje lenger på disk og har blitt flytta til papirkurven. Om fila blei flytta innad i biblioteket, sjekk tidslinja di for den tilsvarande ressursen. For å gjenopprette ressursen, vennligst sørg for at filstien under er tilgjengeleg for Curator Photos og skann biblioteket.",
+          "Denne eksterne bibliotekressursen finst ikkje lenger på disk og har blitt flytta til papirkurven. Om fila blei flytta innad i biblioteket, sjekk tidslinja di for den tilsvarande ressursen. For å gjenopprette ressursen, vennligst sørg for at filstien under er tilgjengeleg for Personal Cloud Photos og skann biblioteket.",
       "authentication_settings": "Godkjenningsinnstillingar",
       "authentication_settings_description": "Handsam passord, OAuth, og godkjenningsinnstillingar",
       "authentication_settings_disable_all":
@@ -82698,7 +82788,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Oppsettet blir sett av ei oppsettfil",
       "confirm_delete_library": "Er du sikker at du vil slette biblioteket {library}?",
       "confirm_delete_library_assets":
-          "Er du sikker at du vil slette dette biblioteket? Det kjem til å slette {count, plural, one {# contained asset} other {all # contained assets}} frå Curator Photos og kan ikkje gjerast om. Filane blir verande på disken.",
+          "Er du sikker at du vil slette dette biblioteket? Det kjem til å slette {count, plural, one {# contained asset} other {all # contained assets}} frå Personal Cloud Photos og kan ikkje gjerast om. Filane blir verande på disken.",
       "confirm_email_below": "For å bekrefte, skriv \"{email}\" under",
       "confirm_reprocess_all_faces":
           "Er du sikker på at du vil behandle alle ansikt på nytt? Det vil òg fjerne namngjevne personar.",
@@ -83241,7 +83331,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Advarsel",
     "week": "Veke",
     "welcome": "Velkomen",
-    "welcome_to_immich": "Velkomen til Curator Photos",
+    "welcome_to_immich": "Velkomen til Personal Cloud Photos",
     "year": "År",
     "years_ago": "{years, plural, one {# År} other {# År}} sidan",
     "yes": "Ja",
@@ -83287,7 +83377,7 @@ class CodegenLoader extends AssetLoader {
           "Agrega patrones de exclusión. Puedes utilizar los caracteres *, ** y ? (globbing). Ejemplos: para ignorar todos los archivos en cualquier directorio llamado \"Raw\", utiliza \"**/Raw/**\". Para ignorar todos los archivos que terminan en \".tif\", utiliza \"**/*.tif\". Para ignorar una ruta absoluta, utiliza \"/carpeta/a/ignorar/**\".",
       "admin_user": "Usuario admin",
       "asset_offline_description":
-          "Este recurso externo de la biblioteca ya no se encuentra en el disco y se ha movido a la papelera. Si el archivo se movió dentro de la biblioteca, comprueba la línea temporal para el nuevo recurso correspondiente. Para restaurar este recurso, asegúrate de que Curator Photos puede acceder a la siguiente ruta de archivo y escanear la biblioteca.",
+          "Este recurso externo de la biblioteca ya no se encuentra en el disco y se ha movido a la papelera. Si el archivo se movió dentro de la biblioteca, comprueba la línea temporal para el nuevo recurso correspondiente. Para restaurar este recurso, asegúrate de que Personal Cloud Photos puede acceder a la siguiente ruta de archivo y escanear la biblioteca.",
       "authentication_settings": "Parámetros de autenticación",
       "authentication_settings_description": "Gestionar contraseñas, OAuth y otros parámetros de autenticación",
       "authentication_settings_disable_all":
@@ -83303,7 +83393,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "La configuración está definida por un archivo de configuración",
       "confirm_delete_library": "¿Estás seguro de que quieres eliminar la biblioteca {library}?",
       "confirm_delete_library_assets":
-          "¿Estás seguro de que quieras eliminar esta biblioteca? Esto eliminará los {count, plural, one {# contained asset} other {all # contained assets}} elementos en Curator Photos y no puede deshacerse. Los archivos permanecerán en disco.",
+          "¿Estás seguro de que quieras eliminar esta biblioteca? Esto eliminará los {count, plural, one {# contained asset} other {all # contained assets}} elementos en Personal Cloud Photos y no puede deshacerse. Los archivos permanecerán en disco.",
       "confirm_email_below": "Para confirmar, escribe \"{email}\" a continuación",
       "confirm_reprocess_all_faces":
           "¿Estás seguro de que deseas reprocesar todas las caras? Esto borrará a todas las personas que nombraste.",
@@ -83431,7 +83521,8 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Habilitar características del mapa",
       "map_gps_settings": "Configuración de mapas y GPS",
       "map_gps_settings_description": "Administrar la configuración de mapas y GPS (geocodificación inversa)",
-      "map_implications": "La función de mapa depende de un servicio externo de mosaicos (tiles.curatorphotos.cloud)",
+      "map_implications":
+          "La función de mapa depende de un servicio externo de mosaicos (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Estilo claro",
       "map_manage_reverse_geocoding_settings": "Gestionar los ajustes de la <link>geocodificación inversa</link>",
       "map_reverse_geocoding": "Geocodificación inversa",
@@ -83458,9 +83549,9 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "NOTA: ¡No se puede cambiar posteriormente!",
       "notification_email_from_address": "Desde",
       "notification_email_from_address_description":
-          "Dirección de correo electrónico del remitente, por ejemplo: \"Curator Photos Photo Server <noreply@example.com>\". Asegúrate de utilizar una dirección desde la que puedas enviar correos electrónicos.",
+          "Dirección de correo electrónico del remitente, por ejemplo: \"Personal Cloud Photos Photo Server <noreply@example.com>\". Asegúrate de utilizar una dirección desde la que puedas enviar correos electrónicos.",
       "notification_email_host_description":
-          "Host del servidor de correo electrónico (por ejemplo: smtp.curatorphotos.app)",
+          "Host del servidor de correo electrónico (por ejemplo: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Ignorar errores de certificado",
       "notification_email_ignore_certificate_errors_description":
           "Ignorar los errores de validación del certificado TLS (no recomendado)",
@@ -83574,9 +83665,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Gestione plantillas personalizadas para las notificaciones",
       "theme_custom_css_settings": "CSS Personalizado",
       "theme_custom_css_settings_description":
-          "Las Hojas de Estilo (CSS) permiten personalizar el diseño de Curator Photos.",
+          "Las Hojas de Estilo (CSS) permiten personalizar el diseño de Personal Cloud Photos.",
       "theme_settings": "Ajustes Tema",
-      "theme_settings_description": "Gestionar la personalización de la interfaz web de Curator Photos",
+      "theme_settings_description": "Gestionar la personalización de la interfaz web de Personal Cloud Photos",
       "these_files_matched_by_checksum": "Estos archivos coinciden con sus checksums",
       "thumbnail_generation_job": "Generar Miniaturas",
       "thumbnail_generation_job_description":
@@ -83715,7 +83806,7 @@ class CodegenLoader extends AssetLoader {
         "Algunos dispositivos tardan mucho en cargar las miniaturas de los elementos encontrados en el dispositivo. Activa esta opción para cargar imágenes remotas en su lugar.",
     "advanced_settings_prefer_remote_title": "Preferir imágenes remotas",
     "advanced_settings_proxy_headers_subtitle":
-        "Configura headers HTTP que Curator Photos incluirá en cada petición de red",
+        "Configura headers HTTP que Personal Cloud Photos incluirá en cada petición de red",
     "advanced_settings_proxy_headers_title": "Cabeceras Proxy",
     "advanced_settings_self_signed_ssl_subtitle":
         "Omitir verificación del certificado SSL del servidor. Requerido para certificados autofirmados.",
@@ -83812,7 +83903,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "Cuadrícula de fotos",
     "asset_offline": "Archivos sin conexión",
     "asset_offline_description":
-        "Este activo externo ya no se encuentra en el disco. Por favor, póngase en contacto con su administrador de Curator Photos para obtener ayuda.",
+        "Este activo externo ya no se encuentra en el disco. Por favor, póngase en contacto con su administrador de Personal Cloud Photos para obtener ayuda.",
     "asset_restored_successfully": "Elementos restaurados exitosamente",
     "asset_skipped": "Omitido",
     "asset_skipped_in_trash": "En la papelera",
@@ -83830,7 +83921,7 @@ class CodegenLoader extends AssetLoader {
     "assets_count": "{count, plural, one {# activo} other {# activos}}",
     "assets_deleted_permanently": "{count} elemento(s) eliminado(s) permanentemente",
     "assets_deleted_permanently_from_server":
-        "{count} recurso(s) eliminado(s) de forma permanente del servidor de Curator Photos",
+        "{count} recurso(s) eliminado(s) de forma permanente del servidor de Personal Cloud Photos",
     "assets_downloaded_failed":
         "{count, plural, one {Descargado archivo # - {error} archivo fallido} other {Descargados # archivos - {error} archivos fallidos}}",
     "assets_downloaded_successfully":
@@ -83846,7 +83937,8 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} elemento(s) restaurado(s) exitosamente",
     "assets_trashed": "{count} elemento(s) eliminado(s)",
     "assets_trashed_count": "Borrado {count, plural, one {# elemento} other {# elementos}}",
-    "assets_trashed_from_server": "{count} recurso(s) enviado(s) a la papelera desde el servidor de Curator Photos",
+    "assets_trashed_from_server":
+        "{count} recurso(s) enviado(s) a la papelera desde el servidor de Personal Cloud Photos",
     "assets_were_part_of_album_count": "{count, plural, one {Asset was} other {Assets were}} ya forma parte del álbum",
     "authorized_devices": "Dispositivos Autorizados",
     "automatic_endpoint_switching_subtitle":
@@ -83857,7 +83949,7 @@ class CodegenLoader extends AssetLoader {
     "back_close_deselect": "Atrás, cerrar o anular la selección",
     "background_location_permission": "Permiso de ubicación en segundo plano",
     "background_location_permission_content":
-        "Para poder cambiar de red mientras se ejecuta en segundo plano, Curator Photos debe tener *siempre* acceso a la ubicación precisa para que la aplicación pueda leer el nombre de la red Wi-Fi",
+        "Para poder cambiar de red mientras se ejecuta en segundo plano, Personal Cloud Photos debe tener *siempre* acceso a la ubicación precisa para que la aplicación pueda leer el nombre de la red Wi-Fi",
     "backup_album_selection_page_albums_device": "Álbumes en el dispositivo ({count})",
     "backup_album_selection_page_albums_tap": "Toque para incluir, doble toque para excluir",
     "backup_album_selection_page_assets_scatter":
@@ -83880,7 +83972,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Ir a configuración",
     "backup_controller_page_background_battery_info_link": "Muestrame cómo",
     "backup_controller_page_background_battery_info_message":
-        "Para obtener la mejor experiencia de copia de seguridad en segundo plano, desactiva cualquier optimización de batería que restrinja la actividad en segundo plano para Curator Photos.\n\nDado que esto es específico en cada dispositivo, busca la información necesaria de el fabricante de tu dispositivo.",
+        "Para obtener la mejor experiencia de copia de seguridad en segundo plano, desactiva cualquier optimización de batería que restrinja la actividad en segundo plano para Personal Cloud Photos.\n\nDado que esto es específico en cada dispositivo, busca la información necesaria de el fabricante de tu dispositivo.",
     "backup_controller_page_background_battery_info_ok": "Ok",
     "backup_controller_page_background_battery_info_title": "Optimizaciones de batería",
     "backup_controller_page_background_charging": "Solo mientras se carga",
@@ -83944,7 +84036,7 @@ class CodegenLoader extends AssetLoader {
         "¿Estas seguro de que desea mantener {count, plural, one {# duplicate asset} other {# duplicate assets}} archivos duplicados? Esto resolverá todos los grupos duplicados sin borrar nada.",
     "bulk_trash_duplicates_confirmation":
         "¿Estas seguro de que desea eliminar masivamente {count, plural, one {# duplicate asset} other {# duplicate assets}} archivos duplicados? Esto mantendrá el archivo más grande de cada grupo y eliminará todos los demás duplicados.",
-    "buy": "Comprar Curator Photos",
+    "buy": "Comprar Personal Cloud Photos",
     "cache_settings_album_thumbnails": "Miniaturas de la página de la biblioteca ({} elementos)",
     "cache_settings_clear_cache_button": "Borrar caché",
     "cache_settings_clear_cache_button_title":
@@ -83958,7 +84050,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_thumbnail": "Miniaturas",
     "cache_settings_statistics_title": "Uso de caché",
     "cache_settings_subtitle":
-        "Controla el comportamiento del almacenamiento en caché de la aplicación móvil Curator Photos",
+        "Controla el comportamiento del almacenamiento en caché de la aplicación móvil Personal Cloud Photos",
     "cache_settings_thumbnail_size": "Tamaño de la caché de miniaturas ({} elementos)",
     "cache_settings_tile_subtitle": "Controla el comportamiento del almacenamiento local",
     "cache_settings_tile_title": "Almacenamiento local",
@@ -84044,7 +84136,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Contexto",
     "continue": "Continuar",
     "control_bottom_app_bar_create_new_album": "Crear nuevo álbum",
-    "control_bottom_app_bar_delete_from_immich": "Borrar de Curator Photos",
+    "control_bottom_app_bar_delete_from_immich": "Borrar de Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Borrar del dispositivo",
     "control_bottom_app_bar_edit_location": "Editar ubicación",
     "control_bottom_app_bar_edit_time": "Editar fecha y hora",
@@ -84112,12 +84204,14 @@ class CodegenLoader extends AssetLoader {
     "delete": "Eliminar",
     "delete_album": "Eliminar álbum",
     "delete_api_key_prompt": "¿Está seguro de que desea eliminar esta clave API?",
-    "delete_dialog_alert": "Estos elementos serán eliminados permanentemente de Curator Photos y de tu dispositivo",
+    "delete_dialog_alert":
+        "Estos elementos serán eliminados permanentemente de Personal Cloud Photos y de tu dispositivo",
     "delete_dialog_alert_local":
-        "Estas imágenes van a ser borradas de tu dispositivo, pero seguirán disponibles en el servidor Curator Photos",
+        "Estas imágenes van a ser borradas de tu dispositivo, pero seguirán disponibles en el servidor Personal Cloud Photos",
     "delete_dialog_alert_local_non_backed_up":
         "Algunas de las imágenes no tienen copia de seguridad y serán borradas de forma permanente de tu dispositivo",
-    "delete_dialog_alert_remote": "Estas imágenes van a ser borradas de forma permanente del servidor Curator Photos",
+    "delete_dialog_alert_remote":
+        "Estas imágenes van a ser borradas de forma permanente del servidor Personal Cloud Photos",
     "delete_dialog_ok_force": "Borrar de todos modos",
     "delete_dialog_title": "Eliminar Permanentemente",
     "delete_duplicates_confirmation": "¿Está seguro de que desea eliminar permanentemente estos duplicados?",
@@ -84171,7 +84265,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Administrar configuraciones relacionadas con la descarga de archivos",
     "download_started": "Descarga iniciada",
     "download_sucess": "Descarga Exitosa",
-    "download_sucess_android": "Los archivos se han descargado en DCIM/CuratorPhotos",
+    "download_sucess_android": "Los archivos se han descargado en DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Esperando para reintentar",
     "downloading": "Descargando",
     "downloading_asset_filename": "Descargando archivo {filename}",
@@ -84211,7 +84305,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Esta carpeta está vacía",
     "empty_trash": "Vaciar papelera",
     "empty_trash_confirmation":
-        "¿Estás seguro de que quieres vaciar la papelera? Esto eliminará permanentemente todos los archivos de la basura de Curator Photos.\n¡No puedes deshacer esta acción!",
+        "¿Estás seguro de que quieres vaciar la papelera? Esto eliminará permanentemente todos los archivos de la basura de Personal Cloud Photos.\n¡No puedes deshacer esta acción!",
     "enable": "Habilitar",
     "enable_biometric_auth_description": "Introduce tu código PIN para habilitar la autentificación biométrica",
     "enabled": "Habilitado",
@@ -84467,7 +84561,7 @@ class CodegenLoader extends AssetLoader {
     "hour": "Hora",
     "id": "ID",
     "ignore_icloud_photos": "Ignorar fotos de iCloud",
-    "ignore_icloud_photos_description": "Las fotos almacenadas en iCloud no se subirán a Curator Photos",
+    "ignore_icloud_photos_description": "Las fotos almacenadas en iCloud no se subirán a Personal Cloud Photos",
     "image": "Imagen",
     "image_alt_text_date": "{isVideo, select, true {Video} other {Image}} tomada el {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Video} other {Image}} tomada con {person1} el {date}",
@@ -84490,8 +84584,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Descarga Iniciada",
     "image_viewer_page_state_provider_download_success": "Descarga exitosa",
     "image_viewer_page_state_provider_share_error": "Error al compartir",
-    "immich_logo": "Logo de Curator Photos",
-    "immich_web_interface": "Interfaz Web de Curator Photos",
+    "immich_logo": "Logo de Personal Cloud Photos",
+    "immich_web_interface": "Interfaz Web de Personal Cloud Photos",
     "import_from_json": "Importar desde JSON",
     "import_path": "Importar ruta",
     "in_albums": "En {count, plural, one {# álbum} other {# álbumes}}",
@@ -84561,7 +84655,7 @@ class CodegenLoader extends AssetLoader {
         "La aplicación se conectará al servidor a través de esta URL cuando utilice la red Wi-Fi especificada",
     "location_permission": "Permiso de ubicación",
     "location_permission_content":
-        "Para usar la función de cambio automático, Curator Photos necesita permiso de ubicación precisa para poder leer el nombre de la red Wi-Fi actual",
+        "Para usar la función de cambio automático, Personal Cloud Photos necesita permiso de ubicación precisa para poder leer el nombre de la red Wi-Fi actual",
     "location_picker_choose_on_map": "Elegir en el mapa",
     "location_picker_latitude_error": "Introduce una latitud válida",
     "location_picker_latitude_hint": "Introduce tu latitud aquí",
@@ -84738,7 +84832,7 @@ class CodegenLoader extends AssetLoader {
     "notifications": "Notificaciones",
     "notifications_setting_description": "Administrar notificaciones",
     "oauth": "OAuth",
-    "official_immich_resources": "Recursos oficiales de Curator Photos",
+    "official_immich_resources": "Recursos oficiales de Personal Cloud Photos",
     "offline": "Desconectado",
     "ok": "Sí",
     "oldest_first": "Los más antiguos primero",
@@ -84816,11 +84910,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Empezar",
     "permission_onboarding_go_to_settings": "Ir a configuración",
     "permission_onboarding_permission_denied":
-        "Permiso denegado. Para usar Curator Photos, concede permisos de fotos y videos en Configuración.",
+        "Permiso denegado. Para usar Personal Cloud Photos, concede permisos de fotos y videos en Configuración.",
     "permission_onboarding_permission_granted": "¡Permiso concedido! Todo listo.",
     "permission_onboarding_permission_limited":
-        "Permiso limitado. Para permitir que Curator Photos haga copia de seguridad y gestione toda tu colección de galería, concede permisos de fotos y videos en Configuración.",
-    "permission_onboarding_request": "Curator Photos requiere permiso para ver tus fotos y videos.",
+        "Permiso limitado. Para permitir que Personal Cloud Photos haga copia de seguridad y gestione toda tu colección de galería, concede permisos de fotos y videos en Configuración.",
+    "permission_onboarding_request": "Personal Cloud Photos requiere permiso para ver tus fotos y videos.",
     "person": "Persona",
     "person_birthdate": "Nacido el {date}",
     "person_hidden": "{name}{hidden, select, true { (oculto)} other {}}",
@@ -84873,12 +84967,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "Álbum público",
     "public_share": "Compartir públicamente",
     "purchase_account_info": "Seguidor",
-    "purchase_activated_subtitle": "Gracias por apoyar a Curator Photos y al software de código abierto",
+    "purchase_activated_subtitle": "Gracias por apoyar a Personal Cloud Photos y al software de código abierto",
     "purchase_activated_time": "Activado el {date}",
     "purchase_activated_title": "Su clave ha sido activada correctamente",
     "purchase_button_activate": "Activar",
     "purchase_button_buy": "Comprar",
-    "purchase_button_buy_immich": "Comprar Curator Photos",
+    "purchase_button_buy_immich": "Comprar Personal Cloud Photos",
     "purchase_button_never_show_again": "No volver a mostrar",
     "purchase_button_reminder": "Recuérdamelo en 30 días",
     "purchase_button_remove_key": "Quitar clave",
@@ -84889,13 +84983,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "Estado de soporte",
     "purchase_individual_title": "Individual",
     "purchase_input_suggestion": "¿Tiene una clave de producto? Introdúzcala a continuación",
-    "purchase_license_subtitle": "Compre Curator Photos para apoyar el desarrollo continuo del servicio",
+    "purchase_license_subtitle": "Compre Personal Cloud Photos para apoyar el desarrollo continuo del servicio",
     "purchase_lifetime_description": "Compra de por vida",
     "purchase_option_title": "OPCIONES DE COMPRA",
     "purchase_panel_info_1":
-        "Desarrollar Curator Photos requiere mucho tiempo y esfuerzo, y contamos con ingenieros a tiempo completo que trabajan en él para que sea lo mejor posible. Nuestra misión es que el software de código abierto y las prácticas comerciales éticas se conviertan en una fuente de ingresos sostenibles para los desarrolladores y crear un ecosistema que respete la privacidad con alternativas reales a los servicios en la nube de pago.",
+        "Desarrollar Personal Cloud Photos requiere mucho tiempo y esfuerzo, y contamos con ingenieros a tiempo completo que trabajan en él para que sea lo mejor posible. Nuestra misión es que el software de código abierto y las prácticas comerciales éticas se conviertan en una fuente de ingresos sostenibles para los desarrolladores y crear un ecosistema que respete la privacidad con alternativas reales a los servicios en la nube de pago.",
     "purchase_panel_info_2":
-        "Como nos comprometemos a no añadir pagos, esta compra no le otorgará ninguna característica adicional en Curator Photos. Confiamos en que los usuarios como usted apoyen el desarrollo continuo de Curator Photos.",
+        "Como nos comprometemos a no añadir pagos, esta compra no le otorgará ninguna característica adicional en Personal Cloud Photos. Confiamos en que los usuarios como usted apoyen el desarrollo continuo de Personal Cloud Photos.",
     "purchase_panel_title": "Apoya el proyecto",
     "purchase_per_server": "Por servidor",
     "purchase_per_user": "Por usuario",
@@ -85123,7 +85217,7 @@ class CodegenLoader extends AssetLoader {
         "Al reproducir un video en streaming desde el servidor, reproducir el original incluso cuando haya una transcodificación disponible. Puede causar buffering. Los videos disponibles localmente se reproducen en calidad original independientemente de esta configuración.",
     "setting_video_viewer_original_video_title": "Forzar vídeo original",
     "settings": "Ajustes",
-    "settings_require_restart": "Por favor, reinicia Curator Photos para aplicar este ajuste",
+    "settings_require_restart": "Por favor, reinicia Personal Cloud Photos para aplicar este ajuste",
     "settings_saved": "Ajustes guardados",
     "setup_pin_code": "Establecer un PIN",
     "share": "Compartir",
@@ -85252,14 +85346,14 @@ class CodegenLoader extends AssetLoader {
     "support": "Soporte",
     "support_and_feedback": "Soporte y comentarios",
     "support_third_party_description":
-        "Su instalación de Curator Photos fue empaquetada por un tercero. Los problemas que experimenta pueden ser causados por ese paquete, así que por favor plantee problemas con ellos en primer lugar usando los enlaces inferiores.",
+        "Su instalación de Personal Cloud Photos fue empaquetada por un tercero. Los problemas que experimenta pueden ser causados por ese paquete, así que por favor plantee problemas con ellos en primer lugar usando los enlaces inferiores.",
     "swap_merge_direction": "Alternar dirección de mezcla",
     "sync": "Sincronizar",
     "sync_albums": "Sincronizar álbumes",
     "sync_albums_manual_subtitle":
         "Sincroniza todos los videos y fotos subidos con los álbumes seleccionados a respaldar",
     "sync_upload_album_setting_subtitle":
-        "Crea y sube tus fotos y videos a los álbumes seleccionados en Curator Photos",
+        "Crea y sube tus fotos y videos a los álbumes seleccionados en Personal Cloud Photos",
     "tag": "Etiqueta",
     "tag_assets": "Etiquetar activos",
     "tag_created": "Etiqueta creada: {tag}",
@@ -85311,7 +85405,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Las fotos y videos que se envíen a la papelera aparecerán aquí.",
     "trash_page_delete_all": "Eliminar todos",
     "trash_page_empty_trash_dialog_content":
-        "¿Está seguro que quiere eliminar los elementos? Estos elementos serán eliminados de Curator Photos permanentemente",
+        "¿Está seguro que quiere eliminar los elementos? Estos elementos serán eliminados de Personal Cloud Photos permanentemente",
     "trash_page_info":
         "Los archivos en la papelera serán eliminados automáticamente de forma permanente después de {days} días",
     "trash_page_no_assets": "No hay elementos en la papelera",
@@ -85360,7 +85454,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Errores",
     "upload_status_uploaded": "Subido",
     "upload_success": "Subida realizada correctamente, actualice la página para ver los nuevos recursos de subida.",
-    "upload_to_immich": "Subir a Curator Photos ({count})",
+    "upload_to_immich": "Subir a Personal Cloud Photos ({count})",
     "uploading": "Subiendo",
     "url": "URL",
     "usage": "Uso",
@@ -85389,7 +85483,7 @@ class CodegenLoader extends AssetLoader {
     "version": "Versión",
     "version_announcement_closing": "Tu amigo, Alex",
     "version_announcement_message":
-        "¡Hola! Hay una nueva versión de Curator Photos disponible. Tómese un tiempo para leer las <link> notas de la versión </link> para asegurarse de que su configuración esté actualizada y evitar errores de configuración, especialmente si utiliza WatchTower o cualquier mecanismo que se encargue de actualizar su instancia de Curator Photos automáticamente.",
+        "¡Hola! Hay una nueva versión de Personal Cloud Photos disponible. Tómese un tiempo para leer las <link> notas de la versión </link> para asegurarse de que su configuración esté actualizada y evitar errores de configuración, especialmente si utiliza WatchTower o cualquier mecanismo que se encargue de actualizar su instancia de Personal Cloud Photos automáticamente.",
     "version_announcement_overlay_release_notes": "notas de versión",
     "version_announcement_overlay_text_1": "Hola amigo, hay una nueva versión de",
     "version_announcement_overlay_text_2": "por favor, tómate tu tiempo para visitar las ",
@@ -85425,7 +85519,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Advertencia",
     "week": "Semana",
     "welcome": "Bienvenido",
-    "welcome_to_immich": "Bienvenido a Curator Photos",
+    "welcome_to_immich": "Bienvenido a Personal Cloud Photos",
     "wifi_name": "Nombre Wi-Fi",
     "wrong_pin_code": "Código PIN incorrecto",
     "year": "Año",
@@ -85489,7 +85583,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "Конфигурацију тренутно поставља конфигурациони фајл",
       "confirm_delete_library": "Да ли стварно желите да избришете библиотеку {library} ?",
       "confirm_delete_library_assets":
-          "Да ли сте сигурни да желите да избришете ову библиотеку? Ово ће избрисати {count, plural, one {1 садржену датотеку} few {# садржене датотеке} other {# садржених датотека}} из Curator Photos и акција се не може опозвати. Датотеке ће остати на диску.",
+          "Да ли сте сигурни да желите да избришете ову библиотеку? Ово ће избрисати {count, plural, one {1 садржену датотеку} few {# садржене датотеке} other {# садржених датотека}} из Personal Cloud Photos и акција се не може опозвати. Датотеке ће остати на диску.",
       "confirm_email_below": "Да бисте потврдили, унесите \"{email}\" испод",
       "confirm_reprocess_all_faces":
           "Да ли сте сигурни да желите да поново обрадите сва лица? Ово ц́е такође обрисати именоване особе.",
@@ -85616,7 +85710,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "Омогуц́ите карактеристике мапе",
       "map_gps_settings": "Мап & ГПС подешавања",
       "map_gps_settings_description": "Управљајте поставкама мапе и ГПС-а (обрнуто геокодирање)",
-      "map_implications": "Функција мапе се ослања на екстерну услугу плочица (tiles.curatorphotos.cloud)",
+      "map_implications": "Функција мапе се ослања на екстерну услугу плочица (tiles.personalcloudphotos.cloud)",
       "map_light_style": "Светли стил",
       "map_manage_reverse_geocoding_settings": "Управљајте подешавањима <link>Обрнуто геокодирање</link>",
       "map_reverse_geocoding": "Обрнуто геокодирање",
@@ -85643,8 +85737,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "НАПОМЕНА: Ово се касније не може променити!",
       "notification_email_from_address": "Са адресе",
       "notification_email_from_address_description":
-          "Адреса е-поште пошиљаоца, на пример: \"Curator Photos foto server <noreply@example.com>\"",
-      "notification_email_host_description": "Хост сервера е-поште (нпр. smtp.curatorphotos.app)",
+          "Адреса е-поште пошиљаоца, на пример: \"Personal Cloud Photos foto server <noreply@example.com>\"",
+      "notification_email_host_description": "Хост сервера е-поште (нпр. smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "Занемарите грешке сертификата",
       "notification_email_ignore_certificate_errors_description":
           "Игноришите грешке у валидацији ТЛС сертификата (не препоручује се)",
@@ -85748,9 +85842,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings_description": "Управљајте прилагођеним шаблонима за обавештења.",
       "theme_custom_css_settings": "Прилагођени CSS",
       "theme_custom_css_settings_description":
-          "Каскадни листови стилова (CSS) омогућавају прилагођавање дизајна Curator Photos.",
+          "Каскадни листови стилова (CSS) омогућавају прилагођавање дизајна Personal Cloud Photos.",
       "theme_settings": "Подешавање тема",
-      "theme_settings_description": "Управљајте прилагођавањем Curator Photos web интерфејса",
+      "theme_settings_description": "Управљајте прилагођавањем Personal Cloud Photos web интерфејса",
       "these_files_matched_by_checksum": "Овим датотекама се подударају њихови контролни-збирови",
       "thumbnail_generation_job": "Генеришите сличице",
       "thumbnail_generation_job_description":
@@ -85995,7 +86089,7 @@ class CodegenLoader extends AssetLoader {
         "Додато {count, plural, one {# датотека} other {# датотеке}} у {hasName, select, true {<b>{name}</b>} other {нови албум}}",
     "assets_count": "{count, plural, one {# датотека} few {# датотеке} other {# датотека}}",
     "assets_deleted_permanently": "{count} елемената трајно обрисано",
-    "assets_deleted_permanently_from_server": "{count} ресурс(а) трајно обрисан(а) са Curator Photos сервера",
+    "assets_deleted_permanently_from_server": "{count} ресурс(а) трајно обрисан(а) са Personal Cloud Photos сервера",
     "assets_moved_to_trash_count":
         "Премештено {count, plural, one {# датотека} few {# датотеке} other {# датотека}} у отпад",
     "assets_permanently_deleted_count":
@@ -86008,7 +86102,7 @@ class CodegenLoader extends AssetLoader {
     "assets_restored_successfully": "{count} елемената успешно врац́ено",
     "assets_trashed": "{count} елемената је пребачено у отпад",
     "assets_trashed_count": "Бачено у отпад {count, plural, one {# датотека} few{# датотеке} other {# датотека}}",
-    "assets_trashed_from_server": "{count} ресурс(а) обрисаних са Curator Photos сервера",
+    "assets_trashed_from_server": "{count} ресурс(а) обрисаних са Personal Cloud Photos сервера",
     "assets_were_part_of_album_count": "{count, plural, one {Датотека је} other {Датотеке су}} вец́ део албума",
     "authorized_devices": "Овлашц́ени уређаји",
     "automatic_endpoint_switching_subtitle":
@@ -86042,7 +86136,7 @@ class CodegenLoader extends AssetLoader {
     "backup_controller_page_background_app_refresh_enable_button_text": "Иди у подешавања",
     "backup_controller_page_background_battery_info_link": "Покажи ми како",
     "backup_controller_page_background_battery_info_message":
-        "За најпоузданије прављење резервних копија, угасите било коју опцију у оптимизацијама које би спречавале Curator Photos са правилним радом.\n\nОвај поступак варира од уређаја до уређаја, проверите потребне кораке за Ваш уређај.",
+        "За најпоузданије прављење резервних копија, угасите било коју опцију у оптимизацијама које би спречавале Personal Cloud Photos са правилним радом.\n\nОвај поступак варира од уређаја до уређаја, проверите потребне кораке за Ваш уређај.",
     "backup_controller_page_background_battery_info_ok": "ОК",
     "backup_controller_page_background_battery_info_title": "Оптимизација Батерије",
     "backup_controller_page_background_charging": "Само током пуњења",
@@ -86101,7 +86195,7 @@ class CodegenLoader extends AssetLoader {
         "Да ли сте сигурни да желите да задржите {count, plural, one {1 дуплирану датотеку} few {# дуплиране датотеке} other {# дуплираних датотека}}? Ово ц́е решити све дуплиране групе без брисања било чега.",
     "bulk_trash_duplicates_confirmation":
         "Да ли сте сигурни да желите групно да одбаците {count, plural, one {1 дуплирану датотеку} few {# дуплиране датотеке} other {# дуплираних датотека}}? Ово ц́е задржати највец́у датотеку сваке групе и одбацити све остале дупликате.",
-    "buy": "Купите лиценцу Curator Photos",
+    "buy": "Купите лиценцу Personal Cloud Photos",
     "cache_settings_clear_cache_button": "Обриши кеш меморију",
     "cache_settings_clear_cache_button_title":
         "Ова опција брише кеш меморију апликације. Ово ће битно утицати на перформансе апликације док се кеш меморија не учита поново.",
@@ -86113,7 +86207,7 @@ class CodegenLoader extends AssetLoader {
     "cache_settings_statistics_shared": "Минијатуре дељених албума",
     "cache_settings_statistics_thumbnail": "Минијатуре",
     "cache_settings_statistics_title": "Искоришћена кеш меморија",
-    "cache_settings_subtitle": "Контrole за кеш меморију мобилне апликације Curator Photos",
+    "cache_settings_subtitle": "Контrole за кеш меморију мобилне апликације Personal Cloud Photos",
     "cache_settings_tile_subtitle": "Контролишите понашање локалног складиштења",
     "cache_settings_tile_title": "Локална меморија",
     "cache_settings_title": "Опције за кеширање",
@@ -86191,7 +86285,7 @@ class CodegenLoader extends AssetLoader {
     "context": "Контекст",
     "continue": "Настави",
     "control_bottom_app_bar_create_new_album": "Креирај нови албум",
-    "control_bottom_app_bar_delete_from_immich": "Обриши из Curator Photo",
+    "control_bottom_app_bar_delete_from_immich": "Обриши из Personal Cloud Photos",
     "control_bottom_app_bar_delete_from_local": "Обриши са уређаја",
     "control_bottom_app_bar_edit_location": "Измени локацију",
     "control_bottom_app_bar_edit_time": "Измени датум и време",
@@ -86257,12 +86351,12 @@ class CodegenLoader extends AssetLoader {
     "delete": "Обриши",
     "delete_album": "Обриши албум",
     "delete_api_key_prompt": "Да ли сте сигурни да желите да избришете овај АПИ кључ (кеy)?",
-    "delete_dialog_alert": "Ове ствари ће перманентно бити обрисане са Curator Photos и Вашег уређаја",
+    "delete_dialog_alert": "Ове ствари ће перманентно бити обрисане са Personal Cloud Photos и Вашег уређаја",
     "delete_dialog_alert_local":
-        "Ове ставке ц́е бити трајно уклоњене са вашег уређаја, али ц́е и даље бити доступне на Curator Photos серверу",
+        "Ове ставке ц́е бити трајно уклоњене са вашег уређаја, али ц́е и даље бити доступне на Personal Cloud Photos серверу",
     "delete_dialog_alert_local_non_backed_up":
-        "Неке ставке нису резервно копиране на Curator Photos и биц́е трајно уклоњене са вашег уређаја",
-    "delete_dialog_alert_remote": "Ове ставке ц́е бити трајно избрисане са Curator Photos сервера",
+        "Неке ставке нису резервно копиране на Personal Cloud Photos и биц́е трајно уклоњене са вашег уређаја",
+    "delete_dialog_alert_remote": "Ове ставке ц́е бити трајно избрисане са Personal Cloud Photos сервера",
     "delete_dialog_ok_force": "Ипак обриши",
     "delete_dialog_title": "Обриши перманентно",
     "delete_duplicates_confirmation": "Да ли сте сигурни да желите да трајно избришете ове дупликате?",
@@ -86315,7 +86409,7 @@ class CodegenLoader extends AssetLoader {
     "download_settings_description": "Управљајте подешавањима везаним за преузимање датотека",
     "download_started": "Преузимање је започето",
     "download_sucess": "Преузимање је успешно",
-    "download_sucess_android": "Медији су преузети на DCIM/CuratorPhotos",
+    "download_sucess_android": "Медији су преузети на DCIM/PersonalCloudPhotos",
     "download_waiting_to_retry": "Чекање на поновни покушај",
     "downloading": "Преузимање у току",
     "downloading_asset_filename": "Преузимање датотеке {filename}",
@@ -86353,7 +86447,7 @@ class CodegenLoader extends AssetLoader {
     "empty_folder": "Ова мапа је празна",
     "empty_trash": "Испразните смец́е",
     "empty_trash_confirmation":
-        "Да ли сте сигурни да желите да испразните смец́е? Ово ц́е трајно уклонити све датотеке у смец́у из Curator Photos.\nНе можете поништити ову радњу!",
+        "Да ли сте сигурни да желите да испразните смец́е? Ово ц́е трајно уклонити све датотеке у смец́у из Personal Cloud Photos.\nНе можете поништити ову радњу!",
     "enable": "Омогуц́и (Енабле)",
     "enabled": "Омогуц́ено (Енаблед)",
     "end_date": "Крајњи датум",
@@ -86597,7 +86691,7 @@ class CodegenLoader extends AssetLoader {
     "id": "ИД",
     "ignore_icloud_photos": "Игноришите iCloud фотографије",
     "ignore_icloud_photos_description":
-        "Фотографије које су сачуване на iCloud-у нец́е бити отпремљене на Curator Photos сервер",
+        "Фотографије које су сачуване на iCloud-у нец́е бити отпремљене на Personal Cloud Photos сервер",
     "image": "Фотографија",
     "image_alt_text_date": "{isVideo, select, true {Видео} other {Image}} снимљено {date}",
     "image_alt_text_date_1_person": "{isVideo, select, true {Видео} other {Image}} снимљено са {person1} {date}",
@@ -86620,8 +86714,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "Преузимање је започето",
     "image_viewer_page_state_provider_download_success": "Преузимање Успешно",
     "image_viewer_page_state_provider_share_error": "Грешка при дељењу",
-    "immich_logo": "Лого Curator Photos",
-    "immich_web_interface": "Wеб интерфејс Curator Photos",
+    "immich_logo": "Лого Personal Cloud Photos",
+    "immich_web_interface": "Wеб интерфејс Personal Cloud Photos",
     "import_from_json": "Увези из ЈСОН-а",
     "import_path": "Путања увоза",
     "in_albums": "У {count, plural, one {# албуму} few {# албума} other {# албума}}",
@@ -86681,7 +86775,7 @@ class CodegenLoader extends AssetLoader {
         "Апликација ц́е се повезати са сервером преко ове URL адресе када користи наведену Ви-Фи мрежу",
     "location_permission": "Дозвола за локацију",
     "location_permission_content":
-        "Да би користио функцију аутоматског пребацивања, Curator Photos је потребна прецизна дозвола за локацију како би могао да прочита назив тренутне Wi-Fi мреже",
+        "Да би користио функцију аутоматског пребацивања, Personal Cloud Photos је потребна прецизна дозвола за локацију како би могао да прочита назив тренутне Wi-Fi мреже",
     "location_picker_choose_on_map": "Изаберите на мапи",
     "location_picker_latitude_error": "Унесите важец́у географску ширину",
     "location_picker_latitude_hint": "Унесите своју географску ширину овде",
@@ -86910,11 +87004,11 @@ class CodegenLoader extends AssetLoader {
     "permission_onboarding_get_started": "Започните",
     "permission_onboarding_go_to_settings": "Иди на подешавања",
     "permission_onboarding_permission_denied":
-        "Дозвола одбијена. Да бисте користили Curator Photos, доделите дозволе за фотографије и видео записе у Подешавањима.",
+        "Дозвола одбијена. Да бисте користили Personal Cloud Photos, доделите дозволе за фотографије и видео записе у Подешавањима.",
     "permission_onboarding_permission_granted": "Дозвола одобрена! Спремни сте.",
     "permission_onboarding_permission_limited":
-        "Дозвола ограничена. Да бисте омогуц́или Curator Photos да прави резервне копије и управља целом вашом колекцијом галерије, доделите дозволе за фотографије и видео записе у Подешавањима.",
-    "permission_onboarding_request": "Curator Photos захтева дозволу да види ваше фотографије и видео записе.",
+        "Дозвола ограничена. Да бисте омогуц́или Personal Cloud Photos да прави резервне копије и управља целом вашом колекцијом галерије, доделите дозволе за фотографије и видео записе у Подешавањима.",
+    "permission_onboarding_request": "Personal Cloud Photos захтева дозволу да види ваше фотографије и видео записе.",
     "person": "Особа",
     "person_birthdate": "Рођен(а) {date}",
     "person_hidden": "{name}{hidden, select, true { (скривено)} other {}}",
@@ -87205,7 +87299,7 @@ class CodegenLoader extends AssetLoader {
         "Приликом стримовања видеа са сервера, репродукујте оригинал чак и када је доступно транскодирање. Може довести до баферовања. Видео снимци доступни локално се репродукују у оригиналном квалитету без обзира на ово подешавање.",
     "setting_video_viewer_original_video_title": "Присилно оригинални видео",
     "settings": "Подешавања",
-    "settings_require_restart": "Рестартујте Curator Photos да примените ову промену",
+    "settings_require_restart": "Рестартујте Personal Cloud Photos да примените ову промену",
     "settings_saved": "Подешавања сачувана",
     "setup_pin_code": "Подесите ПИН код",
     "share": "Подели",
@@ -87338,7 +87432,7 @@ class CodegenLoader extends AssetLoader {
     "sync_albums_manual_subtitle":
         "Синхронизујте све отпремљене видео записе и фотографије са изабраним резервним албумима",
     "sync_upload_album_setting_subtitle":
-        "Креирајте и отпремите своје фотографије и видео записе у одабране албуме на Curator Photos",
+        "Креирајте и отпремите своје фотографије и видео записе у одабране албуме на Personal Cloud Photos",
     "tag": "Ознака (tag)",
     "tag_assets": "Означите (tag) средства",
     "tag_created": "Направљена ознака (tag): {tag}",
@@ -87389,7 +87483,7 @@ class CodegenLoader extends AssetLoader {
     "trash_no_results_message": "Слике и видео записи у отпаду ц́е се појавити овде.",
     "trash_page_delete_all": "Обриши све",
     "trash_page_empty_trash_dialog_content":
-        "Да ли желите да испразните своја премештена средства? Ови предмети ц́е бити трајно уклоњени из Curator Photos",
+        "Да ли желите да испразните своја премештена средства? Ови предмети ц́е бити трајно уклоњени из Personal Cloud Photos",
     "trash_page_info": "Ставке избачене из отпада биц́е трајно обрисане након {days} дана",
     "trash_page_no_assets": "Нема елемената у отпаду",
     "trash_page_restore_all": "Врати све",
@@ -87435,7 +87529,7 @@ class CodegenLoader extends AssetLoader {
     "upload_status_errors": "Грешке",
     "upload_status_uploaded": "Отпремљено (Уплоадед)",
     "upload_success": "Отпремање је успешно, освежите страницу да бисте видели нова средства за отпремање (уплоад).",
-    "upload_to_immich": "Отпреми у Curator Photos ({count})",
+    "upload_to_immich": "Отпреми у Personal Cloud Photos ({count})",
     "uploading": "Отпремање",
     "url": "URL",
     "usage": "Употреба",
@@ -87491,7 +87585,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "Упозорење",
     "week": "Недеља",
     "welcome": "Добродошли",
-    "welcome_to_immich": "Добродошли у Curator Photos",
+    "welcome_to_immich": "Добродошли у Personal Cloud Photos",
     "wifi_name": "Назив Wi-Fi мреже",
     "year": "Година",
     "years_ago": "пре {years, plural, one {# године} other {# година}}",
@@ -87536,7 +87630,7 @@ class CodegenLoader extends AssetLoader {
       "add_exclusion_pattern_description":
           "إضافة أنماط الاستبعاد. يدعم التمويه باستخدام *، **، و؟. لتجاهل جميع الملفات في أي دليل يسمى \"Raw\"، استخدم \"**/Raw/**\". لتجاهل جميع الملفات التي تنتهي بـ \".tif\"، استخدم \"**/*.tif\". لتجاهل مسار مطلق، استخدم \"/path/to/ignore/**\".",
       "asset_offline_description":
-          "لم يعد هذا الأصل الخاص بالمكتبة الخارجية موجودًا على القرص وتم نقله إلى سلة المهملات. إذا تم نقل الملف داخل المكتبة، فتحقق من الجدول الزمني الخاص بك لمعرفة الأصل الجديد المقابل. لاستعادة هذا الأصل، يرجى التأكد من إمكانية الوصول إلى مسار الملف أدناه بواسطة Curator Photos ومن ثم قم بمسح المكتبة.",
+          "لم يعد هذا الأصل الخاص بالمكتبة الخارجية موجودًا على القرص وتم نقله إلى سلة المهملات. إذا تم نقل الملف داخل المكتبة، فتحقق من الجدول الزمني الخاص بك لمعرفة الأصل الجديد المقابل. لاستعادة هذا الأصل، يرجى التأكد من إمكانية الوصول إلى مسار الملف أدناه بواسطة Personal Cloud Photos ومن ثم قم بمسح المكتبة.",
       "authentication_settings": "إعدادات المصادقة",
       "authentication_settings_description": "إدارة كلمة المرور وOAuth وإعدادات المصادقة الأُخرى",
       "authentication_settings_disable_all":
@@ -87552,7 +87646,7 @@ class CodegenLoader extends AssetLoader {
       "config_set_by_file": "الإعدادات حاليًا معينة عن طريق ملف الاعدادات",
       "confirm_delete_library": "هل أنت متأكد أنك تريد حذف مكتبة {library}؟",
       "confirm_delete_library_assets":
-          "هل أنت متأكد أنك تريد حذف هذه المكتبة؟ سيؤدي ذلك إلى حذف {count, plural, one {# محتوى موجود} other {جميع # المحتويات الموجودة}} من Curator Photos ولا يمكن التراجع عنه. ستظل الملفات موجودة على القرص.",
+          "هل أنت متأكد أنك تريد حذف هذه المكتبة؟ سيؤدي ذلك إلى حذف {count, plural, one {# محتوى موجود} other {جميع # المحتويات الموجودة}} من Personal Cloud Photos ولا يمكن التراجع عنه. ستظل الملفات موجودة على القرص.",
       "confirm_email_below": "للتأكيد، اكتب \"{email}\" بالأسفل",
       "confirm_reprocess_all_faces":
           "هل أنت متأكد أنك تريد إعادة معالجة جميع الوجوه؟ سيخلي هذا كل الأشخاص الذين سَميتَهم.",
@@ -87669,7 +87763,7 @@ class CodegenLoader extends AssetLoader {
       "map_enable_description": "تفعيل ميزات الخرائط",
       "map_gps_settings": "إعدادات الخريطة ونظام تحديد المواقع",
       "map_gps_settings_description": "إدارة إعدادات الخريطة و نظام تحديد المواقع (عكس الترميز الجغرافي)",
-      "map_implications": "تعتمد ميزة الخريطة على خدمة خارجية (tiles.curatorphotos.cloud)",
+      "map_implications": "تعتمد ميزة الخريطة على خدمة خارجية (tiles.personalcloudphotos.cloud)",
       "map_light_style": "النمط الفاتح",
       "map_manage_reverse_geocoding_settings": "إدارة إعدادات <link>التكوين الجغرافي المعكوس</link>",
       "map_reverse_geocoding": "عكس الترميز الجغرافي",
@@ -87696,8 +87790,8 @@ class CodegenLoader extends AssetLoader {
       "note_cannot_be_changed_later": "ملاحظة: لا يمكن تغيير هذا لاحقًا!",
       "notification_email_from_address": "عنوان المرسل",
       "notification_email_from_address_description":
-          "عنوان البريد الإلكتروني للمرسل، على سبيل المثال: \"Curator Photos Photo Server noreply@example.com\"",
-      "notification_email_host_description": "مضيف خادم البريد الإلكتروني (مثلًا: smtp.curatorphotos.app)",
+          "عنوان البريد الإلكتروني للمرسل، على سبيل المثال: \"Personal Cloud Photos Photo Server noreply@example.com\"",
+      "notification_email_host_description": "مضيف خادم البريد الإلكتروني (مثلًا: smtp.personalcloudphotos.app)",
       "notification_email_ignore_certificate_errors": "تجاهل أخطاء الشهادة",
       "notification_email_ignore_certificate_errors_description": "تجاهل أخطاء التحقق من صحة شهادة TLS (غير مستحسن)",
       "notification_email_password_description": "كلمة المرور المستخدمة للمصادقة مع خادم البريد الإلكتروني",
@@ -87793,9 +87887,9 @@ class CodegenLoader extends AssetLoader {
       "template_settings": "قوالب الإشعارات",
       "template_settings_description": "إدارة القوالب المخصصة للإشعارات.",
       "theme_custom_css_settings": "CSS مخصص",
-      "theme_custom_css_settings_description": "أوراق الأنماط المتتالية تسمح بتخصيص تصميم Curator Photos.",
+      "theme_custom_css_settings_description": "أوراق الأنماط المتتالية تسمح بتخصيص تصميم Personal Cloud Photos.",
       "theme_settings": "إعدادات السمة",
-      "theme_settings_description": "إدارة تخصيص واجهة ويب Curator Photos",
+      "theme_settings_description": "إدارة تخصيص واجهة ويب Personal Cloud Photos",
       "these_files_matched_by_checksum": "تتم مطابقة هذه الملفات من خلال المجاميع الاختبارية الخاصة بهم",
       "thumbnail_generation_job": "إنشاء الصور المصغرة",
       "thumbnail_generation_job_description":
@@ -88004,7 +88098,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_settings_title": "شبكة الصور",
     "asset_offline": "المحتوى غير اتصال",
     "asset_offline_description":
-        "لم يعد هذا الأصل الخارجي موجودًا على القرص. يرجى الاتصال بمسؤول Curator Photos للحصول على المساعدة.",
+        "لم يعد هذا الأصل الخارجي موجودًا على القرص. يرجى الاتصال بمسؤول Personal Cloud Photos للحصول على المساعدة.",
     "asset_skipped": "تم تخطيه",
     "asset_skipped_in_trash": "في سلة المهملات",
     "asset_uploaded": "تم الرفع",
@@ -88097,7 +88191,7 @@ class CodegenLoader extends AssetLoader {
         "هل أنت متأكد من أنك تريد الاحتفاظ بـ {count, plural, one {# محتوى مكرر} other {# محتويات مكررة}}؟ سيؤدي هذا إلى حل جميع مجموعات النسخ المكررة دون حذف أي شيء.",
     "bulk_trash_duplicates_confirmation":
         "هل أنت متأكد من أنك تريد إرسال {count, plural, one {# محتوى مكرر} other {# محتويات مكررة}} إلى سلة المهملات ؟ سيحتفظ هذا بأكبر محتوى من كل مجموعة ويرسل جميع النسخ المكررة الأخرى إلى سلة المهملات.",
-    "buy": "شراء Curator Photos",
+    "buy": "شراء Personal Cloud Photos",
     "cache_settings_clear_cache_button": "مسح ذاكرة التخزين المؤقت",
     "cache_settings_clear_cache_button_title":
         "يقوم بمسح ذاكرة التخزين المؤقت للتطبيق.سيؤثر هذا بشكل كبير على أداء التطبيق حتى إعادة بناء ذاكرة التخزين المؤقت.",
@@ -88308,7 +88402,7 @@ class CodegenLoader extends AssetLoader {
     "email": "البريد الإلكتروني",
     "empty_trash": "أفرغ سلة المهملات",
     "empty_trash_confirmation":
-        "هل أنت متأكد أنك تريد إفراغ سلة المهملات؟ سيؤدي هذا إلى إزالة جميع المحتويات الموجودة في سلة المهملات بشكل نهائي من Curator Photos.\nلا يمكنك التراجع عن هذا الإجراء!",
+        "هل أنت متأكد أنك تريد إفراغ سلة المهملات؟ سيؤدي هذا إلى إزالة جميع المحتويات الموجودة في سلة المهملات بشكل نهائي من Personal Cloud Photos.\nلا يمكنك التراجع عن هذا الإجراء!",
     "enable": "تفعيل",
     "enabled": "مفعل",
     "end_date": "تاريخ الإنتهاء",
@@ -88544,8 +88638,8 @@ class CodegenLoader extends AssetLoader {
     "image_viewer_page_state_provider_download_started": "بدأ التنزيل",
     "image_viewer_page_state_provider_download_success": "تم التنزيل بنجاح",
     "image_viewer_page_state_provider_share_error": "خطأ في المشاركة",
-    "immich_logo": "شعار Curator Photos",
-    "immich_web_interface": "واجهة ويب Curator Photos",
+    "immich_logo": "شعار Personal Cloud Photos",
+    "immich_web_interface": "واجهة ويب Personal Cloud Photos",
     "import_from_json": "استيراد من JSON",
     "import_path": "مسار الاستيراد",
     "in_albums": "في {count, plural, one {# ألبوم } other {# ألبومات}}",
@@ -88598,7 +88692,7 @@ class CodegenLoader extends AssetLoader {
     "loading": "تحميل",
     "loading_search_results_failed": "فشل تحميل نتائج البحث",
     "location_permission_content":
-        "In order to use the auto-switching feature, Curator Photos needs precise location permission so it can read the current WiFi network's name",
+        "In order to use the auto-switching feature, Personal Cloud Photos needs precise location permission so it can read the current WiFi network's name",
     "location_picker_choose_on_map": "اختر على الخريطة",
     "location_picker_latitude_error": "أدخل خط عرض صالح",
     "location_picker_latitude_hint": "أدخل خط العرض الخاص بك هنا",
@@ -88738,7 +88832,7 @@ class CodegenLoader extends AssetLoader {
     "notification_toggle_setting_description": "تفعيل إشعارات البريد الإلكتروني",
     "notifications": "إشعارات",
     "notifications_setting_description": "إدارة الإشعارات",
-    "official_immich_resources": "الموارد الرسمية لشركة Curator Photos",
+    "official_immich_resources": "الموارد الرسمية لشركة Personal Cloud Photos",
     "offline": "غير متصل",
     "ok": "نعم",
     "oldest_first": "الأقدم أولا",
@@ -88850,12 +88944,12 @@ class CodegenLoader extends AssetLoader {
     "public_album": "الألبوم العام",
     "public_share": "مشاركة عامة",
     "purchase_account_info": "داعم",
-    "purchase_activated_subtitle": "شكرًا لك على دعمك لـ Curator Photos والبرمجيات مفتوحة المصدر",
+    "purchase_activated_subtitle": "شكرًا لك على دعمك لـ Personal Cloud Photos والبرمجيات مفتوحة المصدر",
     "purchase_activated_time": "تم التفعيل في {date}",
     "purchase_activated_title": "لقد تم تفعيل مفتاحك بنجاح",
     "purchase_button_activate": "تنشيط",
     "purchase_button_buy": "شراء",
-    "purchase_button_buy_immich": "شراء Curator Photos",
+    "purchase_button_buy_immich": "شراء Personal Cloud Photos",
     "purchase_button_never_show_again": "لا تظهر مرة أخرى أبدا",
     "purchase_button_reminder": "ذكّرني بعد 30 يومًا",
     "purchase_button_remove_key": "إزالة المفتاح",
@@ -88865,13 +88959,13 @@ class CodegenLoader extends AssetLoader {
     "purchase_individual_description_2": "حالة الداعم",
     "purchase_individual_title": "فردي",
     "purchase_input_suggestion": "هل لديك مفتاح المنتج؟ أدخل المفتاح أدناه",
-    "purchase_license_subtitle": "قم بشراء Curator Photos لدعم التطوير المستمر للخدمة",
+    "purchase_license_subtitle": "قم بشراء Personal Cloud Photos لدعم التطوير المستمر للخدمة",
     "purchase_lifetime_description": "الشراء لمدى الحياة",
     "purchase_option_title": "خيارات الشراء",
     "purchase_panel_info_1":
-        "يتطلب بناء Curator Photos الكثير من الوقت والجهد، ولدينا مهندسون يعملون بدوام كامل لجعله أفضل ما يمكن. مهمتنا هي أن تصبح البرمجيات مفتوحة المصدر وممارسات العمل الأخلاقية مصدر دخل مستدام للمطورين وإنشاء نظام بيئي يحترم الخصوصية مع بدائل حقيقية للخدمات السحابية الاستغلالية.",
+        "يتطلب بناء Personal Cloud Photos الكثير من الوقت والجهد، ولدينا مهندسون يعملون بدوام كامل لجعله أفضل ما يمكن. مهمتنا هي أن تصبح البرمجيات مفتوحة المصدر وممارسات العمل الأخلاقية مصدر دخل مستدام للمطورين وإنشاء نظام بيئي يحترم الخصوصية مع بدائل حقيقية للخدمات السحابية الاستغلالية.",
     "purchase_panel_info_2":
-        "نظرًا لأننا ملتزمون بعدم إضافة نظام حظر الاشتراك غير المدفوع، فإن هذا الشراء لن يمنحك أي ميزات إضافية في Curator Photos. نحن نعتمد على المستخدمين مثلك لدعم التطوير المستمر لـ Curator Photos.",
+        "نظرًا لأننا ملتزمون بعدم إضافة نظام حظر الاشتراك غير المدفوع، فإن هذا الشراء لن يمنحك أي ميزات إضافية في Personal Cloud Photos. نحن نعتمد على المستخدمين مثلك لدعم التطوير المستمر لـ Personal Cloud Photos.",
     "purchase_panel_title": "ادعم المشروع",
     "purchase_per_server": "لكل خادم",
     "purchase_per_user": "لكل مستخدم",
@@ -89167,7 +89261,7 @@ class CodegenLoader extends AssetLoader {
     "support": "الدعم",
     "support_and_feedback": "الدعم والتعليقات",
     "support_third_party_description":
-        "تم حزم تثبيت Curator Photos الخاص بك بواسطة جهة خارجية. قد تكون المشكلات التي تواجهها ناجمة عن هذه الحزمة، لذا يرجى طرح المشكلات معهم في المقام الأول باستخدام الروابط أدناه.",
+        "تم حزم تثبيت Personal Cloud Photos الخاص بك بواسطة جهة خارجية. قد تكون المشكلات التي تواجهها ناجمة عن هذه الحزمة، لذا يرجى طرح المشكلات معهم في المقام الأول باستخدام الروابط أدناه.",
     "swap_merge_direction": "تبديل اتجاه الدمج",
     "sync": "مزامنة",
     "tag": "العلامة",
@@ -89278,7 +89372,7 @@ class CodegenLoader extends AssetLoader {
     "version": "الإصدار",
     "version_announcement_closing": "صديقك، أليكس",
     "version_announcement_message":
-        "مرحبًا! يتوفر إصدار جديد من Immich. يُرجى تخصيص بعض الوقت لقراءة <link>ملاحظات الإصدار</link> للتأكد من تحديث إعداداتك لمنع أي أخطاء في التكوين، خاصة إذا كنت تستخدم WatchTower أو أي آلية تتولى تحديث مثيل Curator Photos الخاص بك تلقائيًا.",
+        "مرحبًا! يتوفر إصدار جديد من Immich. يُرجى تخصيص بعض الوقت لقراءة <link>ملاحظات الإصدار</link> للتأكد من تحديث إعداداتك لمنع أي أخطاء في التكوين، خاصة إذا كنت تستخدم WatchTower أو أي آلية تتولى تحديث مثيل Personal Cloud Photos الخاص بك تلقائيًا.",
     "version_history": "تاريخ الإصدار",
     "version_history_item": "تم تثبيت {version} في {date}",
     "video": "فيديو",
@@ -89306,7 +89400,7 @@ class CodegenLoader extends AssetLoader {
     "warning": "تحذير",
     "week": "أسبوع",
     "welcome": "مرحباً",
-    "welcome_to_immich": "مرحباً بك في Curator Photos",
+    "welcome_to_immich": "مرحباً بك في Personal Cloud Photos",
     "wifi_name": "WiFi Name",
     "year": "سنة",
     "years_ago": "منذ {years, plural, one {# سنة} other {# سنوات}}",

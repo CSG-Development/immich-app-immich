@@ -252,7 +252,7 @@ class NativeClipboardApiSetup {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
     /// Copy photos to the system clipboard
     /// Returns success status and any error message
-    let copyPhotosToClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.copyPhotosToClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let copyPhotosToClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.copyPhotosToClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       copyPhotosToClipboardChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -269,7 +269,7 @@ class NativeClipboardApiSetup {
     }
     /// Get photos from the system clipboard
     /// Returns list of photo file paths if available
-    let getPhotosFromClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.getPhotosFromClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getPhotosFromClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.getPhotosFromClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPhotosFromClipboardChannel.setMessageHandler { _, reply in
         do {
@@ -284,7 +284,7 @@ class NativeClipboardApiSetup {
     }
     /// Check if there are photos in the clipboard
     /// Returns true if photos are available
-    let hasPhotosInClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.hasPhotosInClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let hasPhotosInClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.hasPhotosInClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       hasPhotosInClipboardChannel.setMessageHandler { _, reply in
         do {
@@ -299,7 +299,7 @@ class NativeClipboardApiSetup {
     }
     /// Get clipboard photo metadata
     /// Returns list of photo information if available
-    let getClipboardPhotoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.getClipboardPhotoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getClipboardPhotoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.getClipboardPhotoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getClipboardPhotoMetadataChannel.setMessageHandler { _, reply in
         do {
@@ -314,7 +314,7 @@ class NativeClipboardApiSetup {
     }
     /// Clear the system clipboard
     /// Returns true if clipboard was cleared successfully
-    let clearClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeClipboardApi.clearClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearClipboardChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.clearClipboard\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearClipboardChannel.setMessageHandler { _, reply in
         do {

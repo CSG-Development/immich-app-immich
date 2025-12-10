@@ -7,7 +7,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
-import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
@@ -211,7 +210,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                   context.isDarkTheme
                       ? 'assets/curator-photos-logo-dark.svg'
                       : 'assets/curator-photos-logo-light.svg',
-                  height: 32,
+                  height: 14,
                 ),
                 const SizedBox(height: 12),
                 const DrawerProfileInfoBox(),

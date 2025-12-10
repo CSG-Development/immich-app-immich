@@ -48,7 +48,7 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
   /// This is a separate instance from the main Flutter engine that handles the UI.
   /// It operates in its own isolate and doesn't share memory with the main engine.
   /// Must be properly started, registered, and torn down during background execution.
-  private let engine = FlutterEngine(name: "BackgroundImmich")
+  private let engine = FlutterEngine(name: "BackgroundPersonalCloudPhotos")
   
   /// Used to call methods on the flutter side
   private var flutterApi: BackgroundWorkerFlutterApi?

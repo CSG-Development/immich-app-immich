@@ -267,7 +267,7 @@ class EndpointRecoveryService {
       _log.warning('Failed to get client friendly name for remote login', error, stackTrace);
     }
 
-    return 'Curator Photos';
+    return 'Personal Cloud Photos client';
   }
 
   void dispose() {

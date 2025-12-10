@@ -8,7 +8,7 @@ import 'package:pigeon/pigeon.dart';
     kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/clipboard/Clipboard.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.clipboard'),
     dartOptions: DartOptions(),
-    dartPackageName: 'curator_photos',
+    dartPackageName: 'personal_cloud_photos',
   ),
 )
 

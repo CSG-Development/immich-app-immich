@@ -99,7 +99,7 @@ Future<void> initApp() async {
 
   await DynamicTheme.fetchSystemPalette();
 
-  final log = Logger("ImmichErrorLogger");
+  final log = Logger("PersonalCloudPhotosErrorLogger");
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
@@ -261,7 +261,7 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     return ProviderScope(
       overrides: [localeProvider.overrideWithValue(context.locale)],
       child: MaterialApp.router(
-        title: 'Curator Photos',
+        title: 'Personal Cloud Photos',
         debugShowCheckedModeBanner: true,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
