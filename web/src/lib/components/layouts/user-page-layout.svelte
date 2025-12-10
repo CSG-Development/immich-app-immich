@@ -73,12 +73,12 @@
       >
         <div class="flex items-center">
           {#if title}
-            <div class="font-medium outline-none text-black/[.60] dark:text-white/[.70]" tabindex="-1" id={headerId}>
+            <div class="font-medium outline-none text-black dark:text-white/[.87]" tabindex="-1" id={headerId}>
               {title}
             </div>
           {/if}
           {#if description}
-            <p class="pl-1.5 font-medium outline-none text-black/[.60] dark:text-white/[.70]">({description})</p>
+            <p class="pl-1.5 font-medium outline-none text-black dark:text-white/[.87]">({description})</p>
           {/if}
         </div>
         {@render buttons?.()}
