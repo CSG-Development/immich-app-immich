@@ -11,9 +11,9 @@
 
 <Modal title={$t('deduplication_info')} size="small" {onClose}>
   <ModalBody>
-    <div class="text-sm dark:text-white">
+    <div class="text-black dark:text-white">
       <p>{$t('deduplication_info_description')}</p>
-      <ol class="ms-8 mt-2" style="list-style: decimal">
+      <ol class="ms-8 mt-4 flex flex-col gap-4" style="list-style: decimal">
         <li>{$t('deduplication_criteria_1')}</li>
         <li>{$t('deduplication_criteria_2')}</li>
       </ol>

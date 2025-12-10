@@ -5,7 +5,7 @@
   import { getAltText } from '$lib/utils/thumbnail-util';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { type AssetResponseDto, getAllAlbums } from '@immich/sdk';
-  import { mdiHeart, mdiImageMultipleOutline, mdiMagnifyPlus } from '@mdi/js';
+  import { mdiHeart, mdiImageMultipleOutline, mdiMagnifyPlusOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   interface Props {
@@ -81,7 +81,7 @@
       class="absolute rounded-full top-1 start-1 text-gray-200 p-2 hover:text-white bg-black/35 hover:bg-black/50"
       title={$t('view')}
     >
-      <Icon ariaLabel={$t('view')} path={mdiMagnifyPlus} flipped size="18" />
+      <Icon ariaLabel={$t('view')} path={mdiMagnifyPlusOutline} size="24" />
     </button>
   </div>
 
@@ -91,7 +91,7 @@
       : 'dark:text-white'}"
   >
     <span class="break-all text-center">{asset.originalFileName}</span>
-    <span>{getAssetResolution(asset)} - {getFileSize(asset)}</span>
+    <span>{getAssetResolution(asset)} • {getFileSize(asset)}</span>
     <span>
       {#await getAllAlbums({ assetId: asset.id })}
         {$t('scanning_for_album')}

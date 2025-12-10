@@ -237,7 +237,7 @@
         variant="ghost"
         color="secondary"
       >
-        <Text class="hidden md:block">{$t('deduplicate_all')}</Text>
+        <Text class="hidden md:block font-medium">{$t('deduplicate_all')}</Text>
       </Button>
       <Button
         leadingIcon={mdiCheckOutline}
@@ -247,7 +247,7 @@
         variant="ghost"
         color="secondary"
       >
-        <Text class="hidden md:block">{$t('keep_all')}</Text>
+        <Text class="hidden md:block font-medium">{$t('keep_all')}</Text>
       </Button>
       <IconButton
         shape="round"
@@ -264,7 +264,7 @@
   <div class="">
     {#if duplicates && duplicates.length > 0}
       <div class="flex items-center mb-2">
-        <div class="text-sm dark:text-white">
+        <div class="text-sm dark:text-white font-medium">
           <p>{$t('duplicates_description')}</p>
         </div>
         <IconButton
@@ -273,7 +273,7 @@
           color="secondary"
           icon={mdiInformationOutline}
           aria-label={$t('deduplication_info')}
-          size="small"
+          size="medium"
           onclick={() => modalManager.show(DuplicatesInformationModal)}
         />
       </div>
