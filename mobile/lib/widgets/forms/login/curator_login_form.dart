@@ -16,7 +16,6 @@ import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
@@ -29,11 +28,9 @@ import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 
 import 'package:homecloud_frontend/homecloud_frontend.dart';
-import 'package:homecloud_frontend/api/api.swagger.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
-import 'package:homecloud_frontend/nsd_wrapper.dart' as nsd;
 
 class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');
@@ -63,266 +60,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     final serverInfo = ref.watch(serverInfoProvider);
     final localAuthState = ref.watch(localAuthProvider);
 
-    final favoriteLoggingIn = useState<bool>(false);
-    final loggingIn = useState<bool>(false);
-    String favoriteDevice = '';
-
-    int remoteInitiateAttempts = 0;
-    final selectedDevice = useState<DeviceItem?>(null);
-    nsd.Discovery? discovery;
-    final devices = useState<Map<String, DeviceItem>>({});
-    final counterDetection = useState<int>(0);
-
-    bool isDetecting = counterDetection.value > 0;
-
-    /// Handle API errors by printing them in debug mode
-    void handleError(ApiErrorMessage message, dynamic error) {
-      dPrint(() => "[SignInScreen] $message: ${extractErrorMessage(error)}");
-      log.severe(extractErrorMessage(error));
-    }
-    late final VoidCallback startLocalAndRemoteDetection;
-
-    void noDeviceFound() {
-      dPrint(() => "[SignInScreen] No device found.");
-
-      // Show the Unable To Connect screen in fullscreen dialog
-      context.pushRoute(
-        UnableToConnectRoute(
-          onRetry: () {
-            context.pop();
-            Future.delayed(const Duration(milliseconds: 300), () {
-               startLocalAndRemoteDetection();
-            });
-          },
-        ),
-      );
-    }
-
-    void updateDetectionCounter(int delta) {
-      if (context.mounted) {
-        counterDetection.value += delta;
-        if (counterDetection.value == 0 && !ref.read(deviceProvider).deviceFound) {
-          favoriteLoggingIn.value = false;
-          dPrint(() => "[SignInScreen] Detection finished, found devices: ${devices.value.length}");
-          // No device found after detection
-          if (devices.value.isEmpty) {
-            noDeviceFound();
-          }
-          // Auto-select favorite device if found
-          else if (selectedDevice.value == null) {
-            selectedDevice.value = devices.value.values.firstWhere(
-              (device) => device.about?.certificateCommonName == favoriteDevice,
-              orElse: () => devices.value.values.first,
-            );
-            dPrint(() => "[SignInScreen] Auto-selecting device: ${selectedDevice.value!.about?.certificateCommonName}");
-          }
-        }
-      }
-    }
-
-    /// Stop mDNS detection
-    Future<void> _stopDiscovery() async {
-      if (discovery != null) {
-        stopDiscovery(discovery!);
-        discovery = null;
-        updateDetectionCounter(-1);
-      }
-    }
-
-    /// Get the about information of the device and add it to the list of devices.
-    ///
-    /// If the device is the favorite device and already authenticated, set it in the provider and go to dashboard
-    Future<bool> getDeviceAbout(Api api, Uri baseUrl, Status status) async {
-      try {
-        final response = await api.aboutGet();
-        if (response.isSuccessful) {
-          final device = DeviceItem(baseUrl: baseUrl, about: response.body!, status: status);
-          // Auto-login if is the favorite device and already authenticated
-          if (device.about?.certificateCommonName == favoriteDevice &&
-              context.mounted &&
-              ref.read(deviceProvider).isAuthenticated) {
-            // Set device then go to dashboard
-            ref.read(deviceProvider.notifier).setHost(baseUrl: device.baseUrl, status: device.status, save: false);
-            _stopDiscovery();
-            // TODO Implement passwordless login
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Not implemented'),
-                content: const Text('Device found, but the authentication flow is not implemented.'),
-                actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
-              ),
-            );
-          }
-          // Else add to the list of devices
-          else {
-            // Avoid duplicates between mDNS and remote detection
-            // Don't worry about overwriting, the remote device contains also the local paths ;)
-            if (context.mounted) {
-              dPrint(() => "[SignInScreen] Adding device: ${device.name} at ${device.baseUrl}");
-            }
-
-            devices.value = {...devices.value, device.about!.certificateCommonName: device};
-          }
-          // Device added
-          return true;
-        } else {
-          handleError(ApiErrorMessage.aboutGet, response);
-        }
-      } catch (error) {
-        handleError(ApiErrorMessage.aboutGet, error);
-      }
-      // Device not added
-      return false;
-    }
-
-    /// Check the status of a device at the given baseUrl.
-    ///
-    /// Then if the device is set up, get its about information.
-    ///
-    /// If everything is ok, add the device to the list of devices.
-    Future<bool> checkDeviceStatus({required Uri baseUrl, int timeoutDelay = 1000}) async {
-      dPrint(() => "[SignInScreen] checkDeviceStatus: $baseUrl");
-      try {
-        final api = DeviceProvider.createApi(baseUrl: baseUrl);
-        final response = await api.statusGet().timeout(Duration(milliseconds: timeoutDelay));
-
-        if (response.isSuccessful) {
-          final status = response.body!;
-          dPrint(() => "[SignInScreen] Device status response for ${baseUrl.host}: ${status.toString()}");
-          // Add only if the device is set up
-          if (status.oobe.done) {
-            return getDeviceAbout(api, baseUrl, status);
-          }
-        } else {
-          handleError(ApiErrorMessage.statusGet, response);
-        }
-      } catch (error) {
-        handleError(ApiErrorMessage.statusGet, error);
-      }
-      // Device not added
-      return false;
-    }
-
-    /// Try to add a remote device using its paths
-    /// Paths are ordered by priority (local first, Public then relay) by the server
-    Future<void> addRemoteDevice(Device device, DevicePaths devicePaths) async {
-      updateDetectionCounter(1);
-      int i = 0;
-      bool deviceAdded = false;
-      while (i < devicePaths.paths.length && !deviceAdded) {
-        var path = devicePaths.paths[i];
-        final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
-        dPrint(() => "[SignInScreen] Checking remote device with ${path.type.value} path: $baseUrl");
-
-        deviceAdded = await checkDeviceStatus(
-          baseUrl: baseUrl,
-          timeoutDelay: path.type == DevicePathType.local ? 60 * 1000 : 20 * 3000,
-        );
-        i++;
-      }
-      updateDetectionCounter(-1);
-    }
-
-    /// Get remote devices from the remote refresh token
-    Future<void> getRemoteDevices() async {
-      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
-      if (!isAuthenticated) {
-        return;
-      }
-      try {
-        updateDetectionCounter(1);
-        final remoteApi = ref.read(remoteProvider).api;
-        final responseList = await remoteApi.clientV1DevicesGet();
-        dPrint(
-          () => "[SignInScreen] Remote devices GET response: ${responseList.isSuccessful}, body: ${responseList.body}",
-        );
-        if (responseList.isSuccessful) {
-          final List<Device>? remoteDevices = responseList.body;
-          if (remoteDevices != null && remoteDevices.isNotEmpty) {
-            dPrint(() => "[SignInScreen] Found ${remoteDevices.length} remote devices.");
-            // Get paths of each remote device
-            for (Device remoteDevice in remoteDevices) {
-              dPrint(() => "[SignInScreen] Processing remote device: ${remoteDevice.friendlyName}");
-              // Already added from mDNS detection
-              // if (devices.value.containsKey(remoteDevice.certificateCommonName)) {
-              //   dPrint(() => "[SignInScreen] Remote device already added: ${remoteDevice.friendlyName}");
-              //   if (isDevEnvironment) {
-              //     dPrint(() => "[SignInScreen] Skip for dev environment");
-              //   } else {
-              //     continue;
-              //   }
-              // }
-              dPrint(() => "[SignInScreen] ${remoteDevice.seagateDeviceID}");
-              // Get paths of the remote device
-              final responseInfo = await remoteApi.clientV1DevicesDeviceIDGet(deviceID: remoteDevice.seagateDeviceID);
-              dPrint(
-                () =>
-                    "[SignInScreen] Device paths GET for ${remoteDevice.friendlyName}: ${responseInfo.isSuccessful}, body: ${responseInfo.body}",
-              );
-              // Try to add device using the priority list
-              if (responseInfo.isSuccessful) {
-                addRemoteDevice(remoteDevice, responseInfo.body!);
-              } else {
-                handleError(ApiErrorMessage.remoteApi, responseInfo);
-              }
-            }
-          }
-        } else {
-          // If unauthorized or forbidden, try to re-initiate the authentication
-          if (responseList.statusCode == 401 || responseList.statusCode == 403) {
-            if (remoteInitiateAttempts < 2) {
-              remoteInitiateAttempts++;
-              dPrint(
-                () =>
-                    "[SignInScreen] Unauthorized or forbidden when fetching remote devices. Attempt: $remoteInitiateAttempts",
-              );
-              Future.delayed(const Duration(seconds: 1), () {
-                switchToRemoteAccessForm();
-              });
-            }
-          }
-          handleError(ApiErrorMessage.remoteApi, responseList);
-        }
-      } catch (error) {
-        handleError(ApiErrorMessage.remoteApi, error);
-      }
-      updateDetectionCounter(-1);
-    }
-
-    /// Start mDNS detection of local devices
-    Future<void> startNsdDetection() async {
-      if (discovery != null) {
-        return; // Already detecting, avoid duplicate calls
-      }
-      updateDetectionCounter(1);
-      discovery = await startDiscovery();
-      if (discovery != null && context.mounted) {
-        // Add a listener to find device
-        discovery?.addServiceListener((service, status) {
-          if (status == nsd.ServiceStatus.found && service.name!.contains(serviceNameDiscover) && context.mounted) {
-            dPrint(() => "[SignInScreen] mDNS Device Found: ${service.toString()}");
-            checkDeviceStatus(
-              baseUrl: DeviceProvider.createBaseUrl(service.host!, service.port),
-              timeoutDelay: 12 * 5000,
-            );
-          }
-        });
-        // Stop discovery after x seconds if no device found
-        Future.delayed(durationDetection, () {
-          _stopDiscovery();
-        });
-      } else {
-        updateDetectionCounter(-1);
-      }
-    }
-
-    startLocalAndRemoteDetection = () {
-      devices.value = {};
-      selectedDevice.value = null;
-      startNsdDetection();
-      getRemoteDevices();
-    };
+    final discovery = ref.watch(deviceDiscoveryProvider);
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -346,18 +84,14 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     bool areRequiredFieldsFilled() =>
-        email.value.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value != null;
+        email.value.isNotEmpty && passwordController.text.isNotEmpty && discovery.selectedDevice != null;
 
     useEffect(() {
       email.value = ref.read(deviceProvider).login;
-      // Authenticated but need to find the device
-      favoriteDevice = ref.read(deviceProvider).deviceID ?? '';
-      favoriteLoggingIn.value = favoriteDevice.isNotEmpty && ref.read(deviceProvider).isAuthenticated;
-      // Start detection of local and remote devices
-      startLocalAndRemoteDetection();
-      return () {
-        _stopDiscovery();
-      };
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        discovery.startDeviceDiscovery();
+      });
+      return null;
     }, []);
 
     useEffect(() {
@@ -401,8 +135,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       email.value = emailValue ?? '';
       passwordController.text = password ?? '';
 
-      devices.value = {...devices.value, 'noveo device': DeviceItem(baseUrl: Uri.parse(serverUrl ?? ''))};
-      selectedDevice.value = devices.value.entries.firstWhere((item) => item.key == 'noveo device').value;
+      if (serverUrl != null && serverUrl.isNotEmpty) {
+        discovery.selectDevice(
+          DeviceItem(baseUrl: Uri.parse(serverUrl), about: null, status: null, isTemporary: true),
+        );
+      }
     }
 
     Future<void> updateVersionCompatibilityWarning() async {
@@ -437,7 +174,11 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Future<bool> fetchServerAuthSettings() async {
-      final device = selectedDevice.value!;
+      final device = discovery.selectedDevice;
+      if (device == null) {
+        warningMessage.value = "login_form_no_device_selected".tr();
+        return false;
+      }
       final baseUrl =
           '${device.baseUrl!.scheme}://${device.baseUrl!.host}${device.baseUrl!.port != 80 && device.baseUrl!.port != 443 ? ':${device.baseUrl!.port}' : ''}/photos';
 
@@ -481,6 +222,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -507,6 +249,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         invalidateAllApiRepositoryProviders(ref);
 
         final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
+
+        // Refresh device paths after successful login
+        discovery.connectToDevice();
+        final device = discovery.selectedDevice;
+        final paths = device?.paths;
+        if (paths != null && paths.isNotEmpty) {
+          await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
+        }
 
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
@@ -536,22 +286,19 @@ class CuratorLoginForm extends HookConsumerWidget {
 
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
-            // context.replaceRoute(const TabControllerRoute());
-
-          if (onboardingWasShown) {
-            final isBeta = Store.isBetaTimelineEnabled;
-            if (isBeta) {
-              await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-              handleSyncFlow();
-              ref.read(websocketProvider.notifier).connect();
-              context.replaceRoute(const TabShellRoute());
-              return;
+            if (onboardingWasShown) {
+              final isBeta = Store.isBetaTimelineEnabled;
+              if (isBeta) {
+                await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+                handleSyncFlow();
+                ref.read(websocketProvider.notifier).connect();
+                context.replaceRoute(const TabShellRoute());
+                return;
+              }
+              context.replaceRoute(const TabControllerRoute());
+            } else {
+              context.replaceRoute(const CuratorOnboardingRoute());
             }
-            context.replaceRoute(const TabControllerRoute());
-          } else {
-            context.replaceRoute(const CuratorOnboardingRoute());
-          }
-
           } else {
             context.replaceRoute(const CuratorOnboardingRoute());
           }
@@ -566,6 +313,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
         hasPreviousLoginFailed.value = true;
       } catch (error) {
+        debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
       } finally {
@@ -602,27 +350,24 @@ class CuratorLoginForm extends HookConsumerWidget {
                           Text(
                             email.value,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 24.0),
                           LayoutBuilder(
                             builder: (context, constraints) {
                               return DeviceSelector(
                                 controller: deviceController,
-                                devices: devices.value.entries.map((entry) => entry.value).toList(),
+                                devices: discovery.devices.values.toList(),
                                 maxWidth: constraints.maxWidth,
-                                selectedDevice: selectedDevice.value,
-                                isDetecting: isDetecting,
+                                selectedDevice: discovery.selectedDevice,
+                                isDetecting: discovery.isDetecting,
                                 focusNode: deviceFocusNode,
-                                enabled: !loggingIn.value,
+                                enabled: !isLoading.value,
                                 onDeviceSelected: (device) {
-                                  selectedDevice.value = device;
+                                  discovery.selectDevice(device);
                                   fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
                                 },
-                                onRefresh: startLocalAndRemoteDetection,
+                                onRefresh: discovery.startDeviceDiscovery,
                               );
                             },
                           ),
@@ -676,10 +421,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                                   ],
                                 ),
                           AnimatedBuilder(
-                            animation: Listenable.merge([
-                              passwordController,
-                              hasPreviousLoginFailed,
-                            ]),
+                            animation: Listenable.merge([passwordController, hasPreviousLoginFailed]),
                             builder: (_, __) {
                               final canSubmit = areRequiredFieldsFilled() && !hasPreviousLoginFailed.value;
                               return LoginButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);

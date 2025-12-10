@@ -43,7 +43,7 @@ class AuthRepository extends DatabaseRepository {
   }
 
   bool getEndpointSwitchingFeature() {
-    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? false;
+    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? true;
   }
 
   String? getPreferredWifiName() {

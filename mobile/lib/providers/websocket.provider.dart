@@ -7,6 +7,8 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/server_info/server_version.model.dart';
+import 'package:immich_mobile/models/connection_state.model.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
@@ -15,10 +17,10 @@ import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/sync.service.dart';
 import 'package:immich_mobile/utils/debounce.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:socket_io_client/socket_io_client.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 
 enum PendingAction { assetDelete, assetUploaded, assetHidden, assetTrash }
 
@@ -73,7 +75,8 @@ class WebsocketState {
 }
 
 class WebsocketNotifier extends StateNotifier<WebsocketState> {
-  WebsocketNotifier(this._ref) : super(const WebsocketState(socket: null, isConnected: false, pendingChanges: []));
+  WebsocketNotifier(this._ref)
+      : super(const WebsocketState(socket: null, isConnected: false, pendingChanges: []));
 
   final _log = Logger('WebsocketNotifier');
   final Ref _ref;
@@ -84,37 +87,133 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
     maxWaitTime: const Duration(seconds: 10),
   );
   final List<dynamic> _batchedAssetUploadReady = [];
+  bool _isDisposing = false;
+
+  /// Notifies the endpoint recovery service about websocket connection errors
+  void _notifyEndpointRecovery() {
+    try {
+      final serverEndpoint = Store.get(StoreKey.serverEndpoint);
+      final apiService = _ref.read(apiServiceProvider);
+      
+      apiService.notifyConnectionState(ConnectionState(
+        status: ConnectionStatus.reconnecting,
+        lastErrorUrl: serverEndpoint.isNotEmpty ? serverEndpoint : null,
+        lastErrorTime: DateTime.now(),
+        connectionType: ConnectionType.websocket,
+      ));
+    } catch (error, stackTrace) {
+      _log.warning("Failed to notify endpoint recovery service (non-critical)", error, stackTrace);
+    }
+  }
 
   @override
   void dispose() {
+    // Note: disposeSocket is async but we can't await in dispose()
+    // Fire and forget - cleanup doesn't need to complete synchronously
+    disposeSocket();
     _batchDebouncer.dispose();
     super.dispose();
   }
 
-  /// Connects websocket to server unless already connected
-  void connect() {
-    if (state.isConnected) return;
+  Future<void> disposeSocket() async {
+    if (_isDisposing) return; // Prevent concurrent disposal
+    _isDisposing = true;
+    
+    try {
+      final socket = state.socket;
+      if (socket != null) {
+        // Remove all listeners for known events before disposing.
+        socket
+          ..off('on_upload_success')
+          ..off('on_asset_delete')
+          ..off('on_asset_trash')
+          ..off('on_asset_restore')
+          ..off('on_asset_update')
+          ..off('on_asset_stack_update')
+          ..off('on_asset_hidden')
+          ..off('AssetUploadReadyV1')
+          ..off('on_config_update')
+          ..off('on_new_release')
+          ..off('error')
+          ..off('connect_error')
+          ..off('connect_timeout')
+          ..off('reconnect_error')
+          ..off('reconnect_failed')
+          ..off('disconnect')
+          ..off('connect');
+        
+        // Disconnect and dispose
+        socket.disconnect();
+        
+        // Wait a bit to ensure disconnect completes and reconnection attempts stop
+        await Future.delayed(const Duration(milliseconds: 150));
+        
+        try {
+          socket.dispose();
+        } catch (_) {
+          // Ignore disposal errors
+        }
+      }
+    } catch (_) {
+      // Best-effort cleanup; ignore any errors from socket disposal.
+    }
+    
+    state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
+    _isDisposing = false;
+  }
+
+  /// Connects websocket to server unless already connected, or if [force] is true.
+  Future<void> connect({bool force = false}) async {
+    if (state.isConnected && !force) return;
+    
+    // If forcing a reconnection, dispose any existing socket first to prevent
+    // old socket reconnection attempts from interfering with the new connection.
+    if (force && state.socket != null) {
+      dPrint(() => 'Force reconnect: disposing existing socket first');
+      await disposeSocket();
+    }
+    
+    _doConnect();
+  }
+
+  void _doConnect() {
     final authenticationState = _ref.read(authProvider);
 
     if (authenticationState.isAuthenticated) {
       try {
-        final endpoint = Uri.parse(Store.get(StoreKey.serverEndpoint));
+        // Use the full server endpoint URL from Store (updated by ApiService.setEndpoint)
+        // instead of apiClient.basePath which is just the relative path component.
+        final serverEndpoint = Store.get(StoreKey.serverEndpoint);
+        if (serverEndpoint.isEmpty) {
+          _log.warning('Cannot connect websocket: Server endpoint is empty');
+          return;
+        }
+
+        // Double-check we don't have an old socket still active
+        if (state.socket != null && !_isDisposing) {
+          _log.warning('Socket already exists, will be disposed by force reconnect');
+          return;
+        }
+
+        final endpoint = Uri.parse(serverEndpoint);
+        dPrint(() => 'Creating websocket connection to: ${endpoint.origin}${endpoint.path}');
         final headers = ApiService.getRequestHeaders();
         if (endpoint.userInfo.isNotEmpty) {
           headers["Authorization"] = "Basic ${base64.encode(utf8.encode(endpoint.userInfo))}";
         }
 
-        dPrint(() => "Attempting to connect to websocket");
+        dPrint(() => "Attempting to connect to websocket at ${endpoint.origin}${endpoint.path}/socket.io");
         // Configure socket transports must be specified
+        // Disable auto-connect to prevent duplicate event handlers and have manual control
         Socket socket = io(
           endpoint.origin,
           OptionBuilder()
               .setPath("${endpoint.path}/socket.io")
               .setTransports(['websocket'])
-              .enableReconnection()
+              .disableReconnection()
               .enableForceNew()
               .enableForceNewConnection()
-              .enableAutoConnect()
+              .disableAutoConnect()
               .setExtraHeaders(headers)
               .build(),
         );
@@ -131,7 +230,32 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
         socket.on('error', (errorMessage) {
           _log.severe("Websocket Error - $errorMessage");
+          // Update state immediately to reflect connection failure
           state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
+          // Notify endpoint recovery service to attempt recovery
+          _notifyEndpointRecovery();
+          // Dispose socket to clean up resources and stop any reconnection attempts
+          disposeSocket();
+        });
+
+        socket.on('connect_error', (data) {
+          _log.severe("Websocket connect_error - $data");
+          // Update state immediately to reflect connection failure
+          state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
+          // Notify endpoint recovery service to attempt recovery
+          _notifyEndpointRecovery();
+          // Dispose socket to stop automatic reconnection attempts
+          disposeSocket();
+        });
+
+        socket.on('connect_timeout', (data) {
+          _log.severe("Websocket connect_timeout - $data");
+          // Update state immediately to reflect connection failure
+          state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
+          // Notify endpoint recovery service to attempt recovery
+          _notifyEndpointRecovery();
+          // Dispose socket to stop automatic reconnection attempts
+          disposeSocket();
         });
 
         if (!Store.isBetaTimelineEnabled) {
@@ -148,6 +272,12 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
         socket.on('on_config_update', _handleOnConfigUpdate);
         socket.on('on_new_release', _handleReleaseUpdates);
+        
+        // Update state with the new socket before connecting
+        state = WebsocketState(isConnected: false, socket: socket, pendingChanges: state.pendingChanges);
+        
+        // Manually connect after all event handlers are registered
+        socket.connect();
       } catch (e) {
         dPrint(() => "[WEBSOCKET] Catch Websocket Error - ${e.toString()}");
       }
