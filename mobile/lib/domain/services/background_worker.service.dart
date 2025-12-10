@@ -17,6 +17,7 @@ import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/logger_db.repository.dart';
 import 'package:immich_mobile/platform/background_worker_api.g.dart';
 import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
@@ -94,7 +95,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         [
           loadTranslations(),
           workerManager.init(dynamicSpawning: true),
-          _ref?.read(authServiceProvider).setOpenApiServiceEndpoint(),
+          _ref?.read(apiServiceProvider).setOpenApiServiceEndpoint(),
           // Initialize the file downloader
           FileDownloader().configure(
             globalConfig: [

@@ -69,7 +69,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> validateAuxilaryServerUrl(String url) async {
     try {
       final validEndpoint = await _apiService.resolveEndpoint(url);
-      return await _authService.validateAuxilaryServerUrl(validEndpoint);
+      return await _apiService.validateAuxilaryServerUrl(validEndpoint);
     } catch (_) {
       return false;
     }
@@ -190,10 +190,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Returns the current server endpoint (with /api) URL from the store
   String? getServerEndpoint() {
     return Store.tryGet(StoreKey.serverEndpoint);
-  }
-
-  Future<String?> setOpenApiServiceEndpoint() {
-    return _authService.setOpenApiServiceEndpoint();
   }
 
   Future<bool> unlockPinCode(String pinCode) {

@@ -44,7 +44,7 @@ enum AppSettingsEnum<T> {
   selectedAlbumSortReverse<bool>(StoreKey.selectedAlbumSortReverse, null, false),
   enableHapticFeedback<bool>(StoreKey.enableHapticFeedback, null, true),
   syncAlbums<bool>(StoreKey.syncAlbums, null, false),
-  autoEndpointSwitching<bool>(StoreKey.autoEndpointSwitching, null, false),
+  autoEndpointSwitching<bool>(StoreKey.autoEndpointSwitching, null, true),
   photoManagerCustomFilter<bool>(StoreKey.photoManagerCustomFilter, null, false),
   betaTimeline<bool>(StoreKey.betaTimeline, null, false),
   enableBackup<bool>(StoreKey.enableBackup, null, false),

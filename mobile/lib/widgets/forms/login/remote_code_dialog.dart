@@ -1,10 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
-import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
-import 'package:homecloud_frontend/utils.dart';
+import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/pin_input.dart';
@@ -12,13 +9,11 @@ import 'package:pinput/pinput.dart';
 
 class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function() onSuccess;
-  final void Function(ApiErrorMessage, Object) handleError;
   final Future<void> Function() initiateRemoteAccess;
 
   const RemoteCodeModal({
     super.key,
     required this.onSuccess,
-    required this.handleError,
     required this.initiateRemoteAccess,
   });
 
@@ -58,52 +53,41 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeLoading.value = true;
       remoteCodeErrorText.value = null;
 
-      try {
-        final response = await ref
-            .read(remoteProvider)
-            .api
-            .clientV1AuthTokenPost(
-              type: ClientV1AuthTokenPostType.email,
-              body: Validate$RequestBody(code: code, reference: ref.read(remoteProvider).reference!),
-            );
-        if (kDebugMode) {
-          debugPrint(
-            "[SignInScreen] Remote code validation response: ${response.isSuccessful}, body: ${response.body}",
-          );
+      final controller = ref.read(remoteAuthProvider);
+      final success = await controller.validateCode(code);
+      final state = controller.state;
+
+      if (success) {
+        await onSuccess();
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close the modal
         }
-        // 	Success: JWT access and refresh tokens are returned.
-        if (response.isSuccessful) {
-          ref.read(remoteProvider.notifier).setAuthToken(auth: response.body!);
-          if (kDebugMode) {
-            debugPrint("[SignInScreen] Remote access authenticated, fetching remote devices...");
-          }
-          // Authenticated with the Remote Access server, we can now get remote devices
-          onSuccess();
-          if (context.mounted) {
-            Navigator.of(context).pop(); // Close the modal
-          }
-        } else {
-          // Generic error message
-          remoteCodeErrorText.value = extractErrorMessage(response);
-          // Invalid code
-          if (remoteCodeErrorText.value!.contains('invalid')) {
-            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
-          }
-          // Expired code
-          else if (remoteCodeErrorText.value!.contains('expired')) {
+      } else {
+        switch (state.error) {
+          case RemoteAuthError.invalidCode:
+            remoteCodeErrorText.value =
+                'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
+            break;
+          case RemoteAuthError.expiredCode:
             remoteCodeExpired.value = true;
-            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_expired'.tr();
-          }
+            remoteCodeErrorText.value =
+                'curator.sign_in_screen_field_remote_code_error_expired'.tr();
+            break;
+          case RemoteAuthError.network:
+            remoteCodeErrorText.value =
+                'curator.remote_access_server_unreachable'.tr();
+            break;
+          case RemoteAuthError.server:
+          case RemoteAuthError.unknown:
+          case null:
+            remoteCodeErrorText.value = state.errorMessage ??
+                'curator.remote_access_server_unreachable'.tr();
+            break;
         }
       }
-      // Network error => Remote Access server unreachable?
-      catch (error) {
-        remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
-        handleError(ApiErrorMessage.remoteApi, error);
-      } finally {
-        remoteCodeLoading.value = false;
-        isValidating.value = false;
-      }
+
+      remoteCodeLoading.value = false;
+      isValidating.value = false;
     }
 
     final actions = [
@@ -303,13 +287,12 @@ class RemoteCodeModal extends HookConsumerWidget {
 Future<void> showRemoteCodeModal(
   BuildContext context,
   Future<void> Function() onSuccess,
-  void Function(ApiErrorMessage, Object) handleError,
   Future<void> Function() initiateRemoteAccess,
 ) {
   return showDialog(
     context: context,
     barrierDismissible: true,
     builder: (BuildContext context) =>
-        RemoteCodeModal(onSuccess: onSuccess, handleError: handleError, initiateRemoteAccess: initiateRemoteAccess),
+        RemoteCodeModal(onSuccess: onSuccess, initiateRemoteAccess: initiateRemoteAccess),
   );
 }

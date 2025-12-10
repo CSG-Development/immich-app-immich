@@ -12,5 +12,7 @@
 export 'package:homecloud_frontend/providers/device.provider.dart';
 export 'package:homecloud_frontend/providers/remote.provider.dart';
 export 'package:homecloud_frontend/providers/hcdevice.provider.dart';
+export 'package:homecloud_frontend/device_discovery.provider.dart';
+export 'package:homecloud_frontend/remote_auth.provider.dart';
 export 'package:homecloud_frontend/utils.dart';
 export 'package:basic_utils/basic_utils.dart' show EmailUtils;
