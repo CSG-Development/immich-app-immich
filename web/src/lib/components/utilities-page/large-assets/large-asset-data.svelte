@@ -27,7 +27,7 @@
     {/if}
   </div>
   <Tooltip text={asset.originalFileName}>
-    <div class="text-center mt-4 px-4 text-sm font-normal truncate">
+    <div class="text-center mt-4 px-4 text-sm font-medium truncate">
       {asset.originalFileName}
     </div>
   </Tooltip>
