@@ -43,6 +43,12 @@ class ConnectionRecoveryInterceptor extends BaseClient {
       rethrow;
     }
   }
+
+  @override
+  void close() {
+    _inner.close();
+    super.close();
+  }
 }
 
 class PerformanceHttpClient extends BaseClient {
@@ -96,8 +102,10 @@ class PerformanceHttpClient extends BaseClient {
 
 class ApiService implements Authentication {
   late ApiClient _apiClient;
-  late final PerformanceHttpClient _httpClient;
-  late final ConnectionRecoveryInterceptor _connectionRecoveryInterceptor;
+  late PerformanceHttpClient _httpClient;
+  late ConnectionRecoveryInterceptor _connectionRecoveryInterceptor;
+  late Client _baseClient;
+  bool _httpClientInitialized = false;
 
   late UsersApi usersApi;
   late AuthenticationApi authenticationApi;
@@ -129,8 +137,7 @@ class ApiService implements Authentication {
   bool _isSetEndpoint = false;
 
   ApiService() {
-    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(Client(), _handleConnectionError);
-    _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
+    _initHttpClient();
     // Initialize with empty endpoint first, then restore the last known endpoint (if any).
     setEndpoint('');
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
@@ -138,7 +145,20 @@ class ApiService implements Authentication {
       setEndpoint(endpoint);
     }
   }
-  
+
+  void _initHttpClient() {
+    // Recreate clients to avoid reusing keep-alive connections when switching endpoints
+    if (_httpClientInitialized) {
+      _connectionRecoveryInterceptor.close();
+      _baseClient.close();
+    }
+
+    _baseClient = Client();
+    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(_baseClient, _handleConnectionError);
+    _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
+    _httpClientInitialized = true;
+  }
+
   String? _accessToken;
 
   Future<void> _handleConnectionError(String failedUrl) async {
@@ -147,6 +167,15 @@ class ApiService implements Authentication {
     // Do not notify connection state while endpoint switching is in progress
     if (_isSetEndpoint) {
       dPrint(() => '_handleConnectionError: Skipping notification - endpoint switching in progress');
+      return;
+    }
+
+    // Ignore errors from requests that targeted an endpoint that is no longer active
+    final activeEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (activeEndpoint != null &&
+        activeEndpoint.isNotEmpty &&
+        !failedUrl.startsWith(activeEndpoint)) {
+      dPrint(() => '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint');
       return;
     }
     
@@ -229,6 +258,8 @@ class ApiService implements Authentication {
     } catch (error) {
       rethrow;
     } finally {
+      // Give the new endpoint a brief settle time before clearing errors
+      await Future.delayed(const Duration(milliseconds: 1500));
       // Allow connection state notifications again
       _isSetEndpoint = false;
     }
@@ -309,6 +340,9 @@ class ApiService implements Authentication {
   }
 
   void setEndpoint(String endpoint) {
+    // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
+    _initHttpClient();
+
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
     _setUserAgentHeader();
     _apiClient.client = _httpClient;

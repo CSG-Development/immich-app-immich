@@ -68,6 +68,7 @@ class NetworkChangeListenerService {
 
     // Detect WiFi context changes (SSID / IP) to trigger local discovery
     final isWifi = currentConnectivity == ConnectivityResult.wifi;
+    final isMobile = currentConnectivity == ConnectivityResult.mobile;
     final wifiContextChanged = isWifi &&
         (_previousWifiName != null || _previousWifiIp != null) &&
         (currentWifiName != _previousWifiName || currentWifiIp != _previousWifiIp);
@@ -81,17 +82,23 @@ class NetworkChangeListenerService {
 
     // Check if we switched from mobile to WiFi
     final wasMobile = _previousConnectivity == ConnectivityResult.mobile;
+    final wasWifi = _previousConnectivity == ConnectivityResult.wifi;
 
     _previousConnectivity = currentConnectivity;
     _previousWifiName = currentWifiName;
     _previousWifiIp = currentWifiIp;
 
+    final mobileToWifi = wasMobile && isWifi;
+    final wifiToMobile = wasWifi && isMobile;
+
     // Process when switching from mobile to WiFi or when WiFi / IP context changed
-    if ((wasMobile && isWifi) || wifiContextChanged) {
+    if (mobileToWifi || wifiToMobile || wifiContextChanged) {
       if (wifiContextChanged) {
         _log.info('WiFi context changed (SSID/IP), triggering local endpoint discovery');
-      } else {
+      } else if (mobileToWifi) {
         _log.info('Device switched from mobile to WiFi, triggering seamless local endpoint discovery');
+      } else if (wifiToMobile) {
+        _log.info('Device switched from WiFi to mobile, triggering seamless local endpoint discovery');
       }
       // Process asynchronously without blocking
       unawaited(_ref.read(apiServiceProvider).setOpenApiServiceEndpoint());
