@@ -43,7 +43,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         return clientFriendlyName;
       }
       final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      String name = "Curator Photos";
+      String name = "Personal Cloud Photos";
       Map<String, dynamic>? data;
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -146,7 +146,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
         SvgPicture.asset(
           context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-          height: 40.0,
+          height: 20.0,
         ),
         const SizedBox(height: 24.0),
         Form(

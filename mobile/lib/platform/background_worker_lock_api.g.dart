@@ -51,7 +51,7 @@ class BackgroundWorkerLockApi {
 
   Future<void> lock() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerLockApi.lock$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerLockApi.lock$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -74,7 +74,7 @@ class BackgroundWorkerLockApi {
 
   Future<void> unlock() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerLockApi.unlock$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerLockApi.unlock$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,

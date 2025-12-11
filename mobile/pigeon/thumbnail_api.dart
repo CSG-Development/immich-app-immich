@@ -9,7 +9,7 @@ import 'package:pigeon/pigeon.dart';
         'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/images/Thumbnails.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.images'),
     dartOptions: DartOptions(),
-    dartPackageName: 'curator_photos',
+    dartPackageName: 'personal_cloud_photos',
   ),
 )
 @HostApi()

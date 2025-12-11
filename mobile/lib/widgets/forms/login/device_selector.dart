@@ -215,7 +215,7 @@ class DeviceSelector extends HookWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       index > 0 ? const Divider(height: 1) : const SizedBox.shrink(),
-                                      const ListTile(title: Text('I don’t see my Curator')),
+                                      const ListTile(title: Text('I don’t see my Personal Cloud Photos')),
                                     ],
                                   );
                           },

@@ -11,5 +11,5 @@ Future<String> getUserAgentString() async {
   } else {
     platform = 'Unknown';
   }
-  return 'Immich_${platform}_${packageInfo.version}';
+  return 'Personal_Cloud_Photos_${platform}_${packageInfo.version}';
 }

@@ -331,7 +331,7 @@ class CuratorLoginForm extends HookConsumerWidget {
               const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
               SvgPicture.asset(
                 context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-                height: 40,
+                height: 20,
               ),
             ],
           ),

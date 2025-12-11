@@ -129,12 +129,12 @@ android {
         dev {
             dimension "environment"
             applicationIdSuffix ".dev"
-            resValue "string", "app_name", "Curator Photos(Dev)"
+            resValue "string", "app_name", "Personal Cloud Photos(Dev)"
             signingConfig signingConfigs.release_dev
         }
         prod {
             dimension "environment"
-            resValue "string", "app_name", "Curator Photos"
+            resValue "string", "app_name", "Personal Cloud Photos"
             signingConfig signingConfigs.release_prod
         }
         // Distribution dimension flavors - keep existing values unchanged

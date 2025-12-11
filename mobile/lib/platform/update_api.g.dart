@@ -221,7 +221,7 @@ class UpdateApi {
 
   Future<NativeUpdateInfo?> fetchLatestUpdate(String url) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.UpdateApi.fetchLatestUpdate$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateApi.fetchLatestUpdate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -244,7 +244,7 @@ class UpdateApi {
 
   Future<void> startDownload(String version, String url, String? sha256) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.UpdateApi.startDownload$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateApi.startDownload$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -267,7 +267,7 @@ class UpdateApi {
 
   Future<InstallResult> installDownloadedUpdate() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.UpdateApi.installDownloadedUpdate$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateApi.installDownloadedUpdate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -307,7 +307,7 @@ abstract class UpdateCallbacks {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadProgress$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadProgress$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );
@@ -317,13 +317,13 @@ abstract class UpdateCallbacks {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           assert(
             message != null,
-            'Argument for dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadProgress was null.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadProgress was null.',
           );
           final List<Object?> args = (message as List<Object?>?)!;
           final DownloadProgress? arg_progress = (args[0] as DownloadProgress?);
           assert(
             arg_progress != null,
-            'Argument for dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadProgress was null, expected non-null DownloadProgress.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadProgress was null, expected non-null DownloadProgress.',
           );
           try {
             api.onDownloadProgress(arg_progress!);
@@ -340,7 +340,7 @@ abstract class UpdateCallbacks {
     }
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadError$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadError$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );
@@ -350,13 +350,13 @@ abstract class UpdateCallbacks {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           assert(
             message != null,
-            'Argument for dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadError was null.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadError was null.',
           );
           final List<Object?> args = (message as List<Object?>?)!;
           final String? arg_message = (args[0] as String?);
           assert(
             arg_message != null,
-            'Argument for dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadError was null, expected non-null String.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadError was null, expected non-null String.',
           );
           try {
             api.onDownloadError(arg_message!);
@@ -373,7 +373,7 @@ abstract class UpdateCallbacks {
     }
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadCompleted$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadCompleted$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );

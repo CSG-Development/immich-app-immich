@@ -103,14 +103,11 @@ class _CuratorLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 3.0),
-      child: SvgPicture.asset(
-        context.isDarkTheme
-            ? 'assets/curator-photos-logo-dark.svg'
-            : 'assets/curator-photos-logo-light.svg',
-        height: 28,
-      ),
+    return SvgPicture.asset(
+      context.isDarkTheme
+          ? 'assets/curator-photos-logo-dark.svg'
+          : 'assets/curator-photos-logo-light.svg',
+      height: 14,
     );
   }
 }
