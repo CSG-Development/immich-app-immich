@@ -835,6 +835,16 @@ abstract class IntlKeys {
   static const curator_unable_to_connect_screen_message_list_title =
       'curator.unable.to.connect.screen.message.list.title';
   static const curator_unable_to_connect_screen_title = 'curator.unable.to.connect.screen.title';
+  static const curator_unable_to_detect_screen_message_list_1 = 'curator.unable.to.detect.screen.message.list.1';
+  static const curator_unable_to_detect_screen_message_list_2 = 'curator.unable.to.detect.screen.message.list.2';
+  static const curator_unable_to_detect_screen_message_list_3 = 'curator.unable.to.detect.screen.message.list.3';
+  static const curator_unable_to_detect_screen_message_list_4 = 'curator.unable.to.detect.screen.message.list.4';
+  static const curator_unable_to_detect_screen_message_list_5 = 'curator.unable.to.detect.screen.message.list.5';
+  static const curator_unable_to_detect_screen_message_list_footer =
+      'curator.unable.to.detect.screen.message.list.footer';
+  static const curator_unable_to_detect_screen_message_list_title =
+      'curator.unable.to.detect.screen.message.list.title';
+  static const curator_unable_to_detect_screen_title = 'curator.unable.to.detect.screen.title';
   static const current_device = 'current_device';
   static const current_pin_code = 'current_pin_code';
   static const current_server_address = 'current_server_address';

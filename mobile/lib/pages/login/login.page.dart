@@ -38,9 +38,6 @@ class LoginPage extends HookConsumerWidget {
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  if (isAuthenticated) {
-                    ref.read(remoteProvider.notifier).logout();
-                  }
                   isRemoteAccessForm.value = true;
                 },
               ),

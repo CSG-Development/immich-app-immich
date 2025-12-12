@@ -2784,3 +2784,42 @@ class UnableToConnectRouteArgs {
     return 'UnableToConnectRouteArgs{key: $key, onRetry: $onRetry}';
   }
 }
+
+/// generated route for
+/// [UnableToDetectPage]
+class UnableToDetectRoute extends PageRouteInfo<UnableToDetectRouteArgs> {
+  UnableToDetectRoute({
+    Key? key,
+    VoidCallback? onRetry,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UnableToDetectRoute.name,
+         args: UnableToDetectRouteArgs(key: key, onRetry: onRetry),
+         initialChildren: children,
+       );
+
+  static const String name = 'UnableToDetectRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<UnableToDetectRouteArgs>(
+        orElse: () => const UnableToDetectRouteArgs(),
+      );
+      return UnableToDetectPage(key: args.key, onRetry: args.onRetry);
+    },
+  );
+}
+
+class UnableToDetectRouteArgs {
+  const UnableToDetectRouteArgs({this.key, this.onRetry});
+
+  final Key? key;
+
+  final VoidCallback? onRetry;
+
+  @override
+  String toString() {
+    return 'UnableToDetectRouteArgs{key: $key, onRetry: $onRetry}';
+  }
+}
