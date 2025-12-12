@@ -20,8 +20,8 @@
     text,
     subtitle = '',
     icon = '',
-    activeColor = 'bg-slate-300',
-    textColor = 'text-immich-fg dark:text-immich-dark-bg',
+    activeColor = 'bg-slate-300 dark:bg-slate-700',
+    textColor = 'text-immich-fg dark:text-white/[.87]',
     onClick,
     shortcut = null,
     shortcutLabel = '',
@@ -53,9 +53,9 @@
   onclick={handleClick}
   onmouseover={() => ($selectedIdStore = id)}
   onmouseleave={() => ($selectedIdStore = undefined)}
-  class="w-full p-4 text-start text-sm font-medium {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-gray-200 flex gap-2 items-center {isActive
+  class="w-full p-4 text-start text-sm font-medium {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-2 items-center {isActive
     ? activeColor
-    : 'bg-slate-100'}"
+    : 'bg-slate-100 dark:bg-immich-dark-gray-card'}"
   role="menuitem"
 >
   {#if icon}

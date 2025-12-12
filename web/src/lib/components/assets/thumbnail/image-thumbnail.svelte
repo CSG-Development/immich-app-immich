@@ -64,7 +64,7 @@
 
   let optionalClasses = $derived(
     [
-      curve && 'rounded-xl',
+      curve && 'rounded-[14.1px]',
       circle && 'rounded-full',
       shadow && 'shadow-lg',
       (circle || !heightStyle) && 'aspect-square',

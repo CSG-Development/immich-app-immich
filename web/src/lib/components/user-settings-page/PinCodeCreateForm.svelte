@@ -6,7 +6,7 @@
   import PinCodeInput from '$lib/components/user-settings-page/PinCodeInput.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { setupPinCode } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, Heading } from '@immich/ui';
   import { t } from 'svelte-i18n';
 
   interface Props {

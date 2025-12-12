@@ -44,7 +44,10 @@
   const assetInteraction = new AssetInteraction();
 
   const handleEmptyTrash = async () => {
-    const isConfirmed = await modalManager.showDialog({ prompt: $t('empty_trash_confirmation') });
+    const isConfirmed = await modalManager.showDialog({
+      prompt: $t('empty_trash_confirmation'),
+      confirmColor: 'primary',
+    });
 
     if (!isConfirmed) {
       return;
@@ -63,7 +66,10 @@
   };
 
   const handleRestoreTrash = async () => {
-    const isConfirmed = await modalManager.showDialog({ prompt: $t('assets_restore_confirmation') });
+    const isConfirmed = await modalManager.showDialog({
+      prompt: $t('assets_restore_confirmation'),
+      confirmColor: 'primary',
+    });
     if (!isConfirmed) {
       return;
     }
@@ -109,7 +115,7 @@
           color="secondary"
           size="small"
         >
-          <Text class="hidden md:block">{$t('restore_all')}</Text>
+          <Text class="hidden md:block font-medium">{$t('restore_all')}</Text>
         </Button>
         <Button
           leadingIcon={mdiDeleteForeverOutline}
@@ -119,7 +125,7 @@
           color="secondary"
           size="small"
         >
-          <Text class="hidden md:block">{$t('empty_trash')}</Text>
+          <Text class="hidden md:block font-medium">{$t('empty_trash')}</Text>
         </Button>
       </HStack>
     {/snippet}

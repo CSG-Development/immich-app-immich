@@ -64,7 +64,7 @@
 }
 
 @theme {
-  --font-immich-mono: Overpass Mono, monospace;
+  --font-immich-mono: Roboto, monospace;
 
   --spacing-18: 4.5rem;
 
