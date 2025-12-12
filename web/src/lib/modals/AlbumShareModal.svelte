@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import AlbumSharedLink from '$lib/components/album-page/album-shared-link.svelte';
   import { AppRoute } from '$lib/constants';
   import Dropdown from '$lib/elements/Dropdown.svelte';
@@ -73,7 +74,7 @@
   };
 </script>
 
-<Modal size="small" title={$t('share')} {onClose} bodyClass="!overflow-visible" class="!overflow-visible">
+<Modal size="small" title={$t('share')} {onClose} class="overflow-visible">
   <ModalBody>
     {#if Object.keys(selectedUsers).length > 0}
       <div class="mb-2 py-2 sticky">
@@ -103,6 +104,8 @@
                   options={roleOptions}
                   render={({ title, icon }) => ({ title, icon })}
                   onSelect={({ value }) => handleChangeRole(user, value)}
+                  position="bottom-right"
+                  class="!min-w-[180px]"
                 />
               </div>
             {/key}
@@ -169,7 +172,7 @@
       {#if sharedLinks.length > 0}
         <div class="flex justify-between items-center">
           <Text>{$t('shared_links')}</Text>
-          <Link href={AppRoute.SHARED_LINKS} onclick={() => onClose()} class="text-sm">{$t('view_all')}</Link>
+          <Link href={resolve(AppRoute.SHARED_LINKS)} onclick={() => onClose()} class="text-sm">{$t('view_all')}</Link>
         </div>
 
         <Stack gap={4}>

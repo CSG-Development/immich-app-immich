@@ -1,7 +1,7 @@
 <script lang="ts">
   import QRCode from '$lib/components/shared-components/qrcode.svelte';
   import { copyToClipboard } from '$lib/utils';
-  import { HStack, IconButton, Input, Modal, ModalBody } from '@immich/ui';
+  import { IconButton, Input, Modal, ModalBody } from '@immich/ui';
   import { mdiContentCopy, mdiLink } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -24,7 +24,7 @@
       </div>
     </div>
     <HStack class="w-full pt-3" gap={1}>
-      <Input bind:value disabled class="flex flex-row" />
+      <Input bind:value disabled class="flex flex-row w-full" />
       <div>
         <IconButton
           variant="ghost"
