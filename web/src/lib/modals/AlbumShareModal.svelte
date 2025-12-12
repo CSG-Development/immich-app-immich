@@ -73,7 +73,7 @@
   };
 </script>
 
-<Modal size="small" title={$t('share')} {onClose}>
+<Modal size="small" title={$t('share')} {onClose} bodyClass="!overflow-visible" class="!overflow-visible">
   <ModalBody>
     {#if Object.keys(selectedUsers).length > 0}
       <div class="mb-2 py-2 sticky">
