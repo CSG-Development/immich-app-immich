@@ -1,10 +1,10 @@
 <script lang="ts">
+  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import {
     notificationController,
     NotificationType,
   } from '$lib/components/shared-components/notification/notification';
   import SettingAccordion from '$lib/components/shared-components/settings/setting-accordion.svelte';
-  import SettingSelect from '$lib/components/shared-components/settings/setting-select.svelte';
   import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
   import { preferences } from '$lib/stores/user.store';
   import { AssetOrder, updateMyPreferences } from '@immich/sdk';
@@ -67,6 +67,19 @@
   const onsubmit = (event: Event) => {
     event.preventDefault();
   };
+
+  const options: ComboBoxOption[] = [
+    { value: AssetOrder.Asc, label: $t('oldest_first') },
+    { value: AssetOrder.Desc, label: $t('newest_first') },
+  ];
+
+  const handleSelect = (option?: ComboBoxOption) => {
+    if (!option) {
+      return;
+    }
+
+    defaultAssetOrder = option.value as AssetOrder;
+  };
 </script>
 
 <section class="my-4">
@@ -75,14 +88,20 @@
       <div class="ms-4 mt-4 flex flex-col">
         <SettingAccordion key="albums" title={$t('albums')} subtitle={$t('albums_feature_description')}>
           <div class="ms-4 mt-6">
-            <SettingSelect
-              label={$t('albums_default_sort_order')}
+            <!-- <SettingSelect
+               
               desc={$t('albums_default_sort_order_description')}
               options={[
                 { value: AssetOrder.Asc, text: $t('oldest_first') },
                 { value: AssetOrder.Desc, text: $t('newest_first') },
               ]}
               bind:value={defaultAssetOrder}
+            /> -->
+            <Combobox
+              label={$t('albums_default_sort_order')}
+              selectedOption={options.find((option) => option.value === defaultAssetOrder)}
+              {options}
+              onSelect={handleSelect}
             />
           </div>
         </SettingAccordion>
