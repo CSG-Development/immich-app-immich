@@ -88,8 +88,7 @@
       <div class="ms-4 mt-4 flex flex-col">
         <SettingAccordion key="albums" title={$t('albums')} subtitle={$t('albums_feature_description')}>
           <div class="ms-4 mt-6">
-            <!-- <SettingSelect
-               
+            <!-- <SettingSelect               
               desc={$t('albums_default_sort_order_description')}
               options={[
                 { value: AssetOrder.Asc, text: $t('oldest_first') },

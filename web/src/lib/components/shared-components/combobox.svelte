@@ -4,7 +4,7 @@
   export type ComboBoxOption = {
     id?: string;
     label: string;
-    value: string;
+    value: string | number;
   };
 
   export const asComboboxOptions = (values: string[]) =>
