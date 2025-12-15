@@ -102,7 +102,7 @@
 			<string>Deep Link</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>personal_cloud_photos</string>
+				<string>personal-cloud-photos</string>
 			</array>
 		</dict>
 	</array>
