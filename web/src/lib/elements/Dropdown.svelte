@@ -12,7 +12,7 @@
 
 <script lang="ts" generics="T">
   import { clickOutside } from '$lib/actions/click-outside';
-  import { Button, Text, Tooltip } from '@immich/ui';
+  import { Button, Text } from '@immich/ui';
   import { mdiCheck } from '@mdi/js';
   import { isEqual } from 'lodash-es';
   import { fly } from 'svelte/transition';
@@ -97,14 +97,12 @@
 
 <div use:clickOutside={{ onOutclick: handleClickOutside, onEscape: handleClickOutside }} class="relative">
   <!-- BUTTON TITLE -->
-  <Tooltip text={title}>
-    <Button onclick={() => (showMenu = true)} fullWidth variant="ghost" color="secondary" size="small">
-      {#if renderedSelectedOption?.icon}
-        <Icon path={renderedSelectedOption.icon} />
-      {/if}
-      <Text class={hideTextOnSmallScreen ? 'hidden sm:block' : ''}>{renderedSelectedOption.title}</Text>
-    </Button>
-  </Tooltip>
+  <Button onclick={() => (showMenu = !showMenu)} fullWidth variant="ghost" color="secondary" size="small" {title}>
+    {#if renderedSelectedOption?.icon}
+      <Icon path={renderedSelectedOption.icon} />
+    {/if}
+    <Text class={hideTextOnSmallScreen ? 'hidden sm:block' : ''}>{renderedSelectedOption.title}</Text>
+  </Button>
 
   <!-- DROP DOWN MENU -->
   {#if showMenu}

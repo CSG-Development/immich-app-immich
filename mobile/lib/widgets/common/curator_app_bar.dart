@@ -113,7 +113,7 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
         context.isDarkTheme
             ? 'assets/curator-photos-logo-dark.svg'
             : 'assets/curator-photos-logo-light.svg',
-        height: 28,
+        height: 14,
       ),
       actions: [
         if (actions != null)

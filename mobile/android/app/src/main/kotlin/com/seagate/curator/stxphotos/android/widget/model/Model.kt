@@ -3,7 +3,7 @@ package com.seagate.curator.stxphotos.android.widget.model
 import android.graphics.Bitmap
 import androidx.datastore.preferences.core.*
 
-// MARK: Immich Entities
+// MARK: Personal Cloud Photos Entities
 
 enum class AssetType {
   IMAGE, VIDEO, AUDIO, OTHER

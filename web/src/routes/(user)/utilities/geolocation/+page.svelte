@@ -15,7 +15,7 @@
   import { setQueryValue } from '$lib/utils/navigation';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, updateAssets } from '@immich/sdk';
-  import { Button, LoadingSpinner, modalManager, Text, Tooltip } from '@immich/ui';
+  import { Button, LoadingSpinner, modalManager, Text } from '@immich/ui';
   import { mdiMapMarkerMultipleOutline, mdiPencilOutline, mdiSelectRemove } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -143,23 +143,29 @@
   {#snippet buttons()}
     <div class="flex gap-2 justify-end place-items-center">
       {#if !isEmpty}
-        <Text class="hidden md:block text-xs mr-4 text-dark/50">{$t('geolocation_instruction_location')}</Text>
+        <Text class="hidden md:block text-xs mr-4 text-dark/50 max-h-10 overflow-auto"
+          >{$t('geolocation_instruction_location')}</Text
+        >
       {/if}
       <div class="flex place-items-center place-content-center px-2 py-1 bg-primary/10 rounded-2xl">
-        <Text class="hidden md:inline-block text-xs text-immich-dark-gray-text mr-5 ml-2 uppercase">
+        <Text
+          class="hidden md:inline-block text-xs text-immich-gray-text dark:text-immich-dark-gray-text mr-5 ml-2 uppercase"
+        >
           {$t('selected_gps_coordinates')}
         </Text>
-        <Tooltip text="latitude, longitude">
-          <Text
-            class="rounded-3xl text-xs text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
-              ? 'bg-primary/90 text-light font-semibold scale-105'
-              : ''}">{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}</Text
-          >
-        </Tooltip>
+
+        <Text
+          class="rounded-3xl text-xs text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
+            ? 'bg-primary/90 text-light font-semibold scale-105'
+            : ''}"
+          title={`${$t('latitude')}, ${$t('longitude')}`}
+        >
+          {location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}
+        </Text>
       </div>
 
       <Button size="small" color="secondary" variant="ghost" leadingIcon={mdiPencilOutline} onclick={handlePickOnMap}>
-        <Text class="hidden sm:inline-block">{$t('location_picker_choose_on_map')}</Text>
+        <Text class="hidden sm:inline-block font-medium">{$t('location_picker_choose_on_map')}</Text>
       </Button>
       {#if !isEmpty}
         <Button
@@ -213,7 +219,7 @@
         </div>
       {:else}
         <div
-          class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-immich-dark-danger text-light"
+          class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-immich-dark-danger text-black"
         >
           {$t('gps_missing')}
         </div>

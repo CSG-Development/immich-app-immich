@@ -23,7 +23,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import type { AssetResponseDto } from '@immich/sdk';
   import { deleteAssets, deleteDuplicates, updateAssets } from '@immich/sdk';
-  import { Button, HStack, IconButton, Text } from '@immich/ui';
+  import { Button, HStack, IconButton, Text, type Color } from '@immich/ui';
   import {
     mdiCheckOutline,
     mdiChevronLeft,
@@ -80,9 +80,14 @@
   );
 
   let hasDuplicates = $derived(duplicates.length > 0);
-  const withConfirmation = async (callback: () => Promise<void>, prompt?: string, confirmText?: string) => {
-    if (prompt && confirmText) {
-      const isConfirmed = await modalManager.showDialog({ prompt, confirmText });
+  const withConfirmation = async (
+    callback: () => Promise<void>,
+    prompt?: string,
+    confirmText?: string,
+    confirmColor?: Color,
+  ) => {
+    if (prompt && confirmText && confirmColor) {
+      const isConfirmed = await modalManager.showDialog({ prompt, confirmText, confirmColor });
       if (!isConfirmed) {
         return;
       }
@@ -138,13 +143,15 @@
       group.assets.map((asset) => asset.id).filter((asset) => asset !== idsToKeep[i]),
     );
 
-    let prompt, confirmText;
+    let prompt, confirmText, confirmColor;
     if ($featureFlags.trash) {
       prompt = $t('bulk_trash_duplicates_confirmation', { values: { count: idsToDelete.length } });
       confirmText = $t('confirm');
+      confirmColor = 'primary' as Color;
     } else {
       prompt = $t('bulk_delete_duplicates_confirmation', { values: { count: idsToDelete.length } });
       confirmText = $t('permanently_delete');
+      confirmColor = 'danger' as Color;
     }
 
     return withConfirmation(
@@ -166,6 +173,7 @@
       },
       prompt,
       confirmText,
+      confirmColor,
     );
   };
 
@@ -186,6 +194,7 @@
       },
       $t('bulk_keep_duplicates_confirmation', { values: { count: ids.length } }),
       $t('confirm'),
+      'primary',
     );
   };
 
@@ -231,23 +240,23 @@
     <HStack gap={0}>
       <Button
         leadingIcon={mdiTrashCanOutline}
-        onclick={() => handleDeduplicateAll()}
+        onclick={handleDeduplicateAll}
         disabled={!hasDuplicates}
         size="small"
         variant="ghost"
         color="secondary"
       >
-        <Text class="hidden md:block">{$t('deduplicate_all')}</Text>
+        <Text class="hidden md:block font-medium">{$t('deduplicate_all')}</Text>
       </Button>
       <Button
         leadingIcon={mdiCheckOutline}
-        onclick={() => handleKeepAll()}
+        onclick={handleKeepAll}
         disabled={!hasDuplicates}
         size="small"
         variant="ghost"
         color="secondary"
       >
-        <Text class="hidden md:block">{$t('keep_all')}</Text>
+        <Text class="hidden md:block font-medium">{$t('keep_all')}</Text>
       </Button>
       <IconButton
         shape="round"
@@ -264,7 +273,7 @@
   <div class="">
     {#if duplicates && duplicates.length > 0}
       <div class="flex items-center mb-2">
-        <div class="text-sm dark:text-white">
+        <div class="text-sm dark:text-white font-medium">
           <p>{$t('duplicates_description')}</p>
         </div>
         <IconButton
@@ -273,7 +282,7 @@
           color="secondary"
           icon={mdiInformationOutline}
           aria-label={$t('deduplication_info')}
-          size="small"
+          size="medium"
           onclick={() => modalManager.show(DuplicatesInformationModal)}
         />
       </div>

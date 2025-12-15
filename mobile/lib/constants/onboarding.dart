@@ -25,12 +25,12 @@ const List<OnboardingSlide> kCuratorOnboardingSlidesData = [
     image: 'assets/onboarding-1.png',
     title: 'Keep your media in sync',
     description:
-        'Upload from your phone, access from your desktop. Curator Photos keeps everything connected.',
+        'Upload from your phone, access from your desktop. Personal Cloud Photos keeps everything connected.',
   ),
   OnboardingSlide(
     image: 'assets/onboarding-1.png',
     title: 'Relive the highlights',
-    description: 'Let Curator Photos bring your memories back to life',
+    description: 'Let Personal Cloud Photos bring your memories back to life',
   ),
 ];
 

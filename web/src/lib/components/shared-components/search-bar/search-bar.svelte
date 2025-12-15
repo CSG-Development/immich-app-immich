@@ -11,7 +11,7 @@
   import { generateId } from '$lib/utils/generate-id';
   import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
   import type { MetadataSearchDto, SmartSearchDto } from '@immich/sdk';
-  import { IconButton, Tooltip } from '@immich/ui';
+  import { IconButton } from '@immich/ui';
   import { mdiClose, mdiMagnify, mdiTune } from '@mdi/js';
   import { onDestroy, tick } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -228,41 +228,40 @@
   >
     <div use:focusOutside={{ onFocusOut: closeDropdown }} tabindex="-1">
       <label for="main-search-bar" class="sr-only">{$t('search_your_photos')}</label>
-      <Tooltip text={value ? '' : 'Please fill out this field.'}>
-        <input
-          title=""
-          type="text"
-          name="q"
-          id="main-search-bar"
-          class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg
+
+      <input
+        title={value ? '' : 'Please fill out this field.'}
+        type="text"
+        name="q"
+        id="main-search-bar"
+        class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg
           {showClearIcon ? 'pe-[90px]' : 'pe-14'}
           {grayTheme ? 'dark:bg-immich-dark-gray-search-bar/12' : 'dark:bg-immich-dark-bg'}
           {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-immich-gray-search-bar/24'}
           {searchStore.isSearchEnabled
-            ? 'border-gray-200 dark:border-gray-700 bg-white'
-            : 'border-immich-gray-border dark:border-immich-dark-gray-border'}"
-          placeholder={$t('search_your_photos')}
-          required
-          pattern="^(?!m:$).*$"
-          bind:value
-          bind:this={input}
-          onfocus={openDropdown}
-          oninput={onInput}
-          role="combobox"
-          aria-controls={listboxId}
-          aria-activedescendant={selectedId ?? ''}
-          aria-expanded={showSuggestions && isSearchSuggestions}
-          aria-autocomplete="list"
-          use:shortcuts={[
-            { shortcut: { key: 'Escape' }, onShortcut: onEscape },
-            { shortcut: { ctrl: true, shift: true, key: 'k' }, onShortcut: onFilterClick },
-            { shortcut: { key: 'ArrowUp' }, onShortcut: () => onArrow(-1) },
-            { shortcut: { key: 'ArrowDown' }, onShortcut: () => onArrow(1) },
-            { shortcut: { key: 'Enter' }, onShortcut: onEnter, preventDefault: false },
-            { shortcut: { key: 'ArrowDown', alt: true }, onShortcut: openDropdown },
-          ]}
-        />
-      </Tooltip>
+          ? 'border-gray-200 dark:border-gray-700 bg-white'
+          : 'border-immich-gray-border dark:border-immich-dark-gray-border'}"
+        placeholder={$t('search_your_photos')}
+        required
+        pattern="^(?!m:$).*$"
+        bind:value
+        bind:this={input}
+        onfocus={openDropdown}
+        oninput={onInput}
+        role="combobox"
+        aria-controls={listboxId}
+        aria-activedescendant={selectedId ?? ''}
+        aria-expanded={showSuggestions && isSearchSuggestions}
+        aria-autocomplete="list"
+        use:shortcuts={[
+          { shortcut: { key: 'Escape' }, onShortcut: onEscape },
+          { shortcut: { ctrl: true, shift: true, key: 'k' }, onShortcut: onFilterClick },
+          { shortcut: { key: 'ArrowUp' }, onShortcut: () => onArrow(-1) },
+          { shortcut: { key: 'ArrowDown' }, onShortcut: () => onArrow(1) },
+          { shortcut: { key: 'Enter' }, onShortcut: onEnter, preventDefault: false },
+          { shortcut: { key: 'ArrowDown', alt: true }, onShortcut: openDropdown },
+        ]}
+      />
 
       <!-- SEARCH HISTORY BOX -->
       <SearchHistoryBox

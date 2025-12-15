@@ -3,7 +3,7 @@
   import BottomInfo from '$lib/components/shared-components/side-bar/bottom-info.svelte';
   import RecentAlbums from '$lib/components/shared-components/side-bar/recent-albums.svelte';
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
-  import { recentAlbumsDropdown } from '$lib/stores/preferences.store';
+  import { recentAlbumsDropdown, utilitiesDropdown } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { preferences } from '$lib/stores/user.store';
   import {
@@ -13,12 +13,15 @@
     mdiAccountOutline,
     mdiArchiveArrowDown,
     mdiArchiveArrowDownOutline,
+    mdiContentDuplicate,
+    mdiCrosshairsGps,
     mdiFolderOutline,
     mdiHeart,
     mdiHeartOutline,
     mdiImageAlbum,
     mdiImageMultiple,
     mdiImageMultipleOutline,
+    mdiImageSizeSelectLarge,
     mdiLink,
     mdiLock,
     mdiLockOutline,
@@ -44,6 +47,9 @@
   let isTrashSelected: boolean = $state(false);
   let isUtilitiesSelected: boolean = $state(false);
   let isLockedFolderSelected: boolean = $state(false);
+  let isDuplicatesSelected: boolean = $state(false);
+  let isLargeFilesSelected: boolean = $state(false);
+  let isGeolocationSelected: boolean = $state(false);
 </script>
 
 <Sidebar ariaLabel={$t('primary')}>
@@ -123,7 +129,35 @@
     href={resolve('/(user)/utilities')}
     bind:isSelected={isUtilitiesSelected}
     icon={isUtilitiesSelected ? mdiToolbox : mdiToolboxOutline}
-  ></SideBarLink>
+    flippedLogo
+    bind:dropdownOpen={$utilitiesDropdown}
+  >
+    {#snippet dropDownContent()}
+      <SideBarLink
+        title={$t('review_duplicates')}
+        href={resolve('/(user)/utilities/duplicates')}
+        bind:isSelected={isDuplicatesSelected}
+        icon={mdiContentDuplicate}
+        isDropdownItem
+      />
+
+      <SideBarLink
+        title={$t('review_large_files')}
+        href={resolve('/(user)/utilities/large-files')}
+        bind:isSelected={isLargeFilesSelected}
+        icon={mdiImageSizeSelectLarge}
+        isDropdownItem
+      />
+
+      <SideBarLink
+        title={$t('manage_geolocation')}
+        href={resolve('/(user)/utilities/geolocation')}
+        bind:isSelected={isGeolocationSelected}
+        icon={mdiCrosshairsGps}
+        isDropdownItem
+      />
+    {/snippet}
+  </SideBarLink>
 
   <SideBarLink
     title={$t('archive')}

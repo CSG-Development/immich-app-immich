@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SettingSelect from '$lib/components/shared-components/settings/setting-select.svelte';
+  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import DateInput from '$lib/elements/DateInput.svelte';
   import type { MapSettings } from '$lib/stores/preferences.store';
   import { Button, Field, HStack, Modal, ModalBody, ModalFooter, Stack, Switch } from '@immich/ui';
@@ -20,6 +20,43 @@
   const onsubmit = (event: Event) => {
     event.preventDefault();
     onClose(settings);
+  };
+
+  let selectedOption: ComboBoxOption | undefined = $state(undefined);
+
+  const options = [
+    {
+      value: '',
+      label: $t('all'),
+    },
+    {
+      value: Duration.fromObject({ hours: 24 }).toISO() || '',
+      label: $t('past_durations.hours', { values: { hours: 24 } }),
+    },
+    {
+      value: Duration.fromObject({ days: 7 }).toISO() || '',
+      label: $t('past_durations.days', { values: { days: 7 } }),
+    },
+    {
+      value: Duration.fromObject({ days: 30 }).toISO() || '',
+      label: $t('past_durations.days', { values: { days: 30 } }),
+    },
+    {
+      value: Duration.fromObject({ years: 1 }).toISO() || '',
+      label: $t('past_durations.years', { values: { years: 1 } }),
+    },
+    {
+      value: Duration.fromObject({ years: 3 }).toISO() || '',
+      label: $t('past_durations.years', { values: { years: 3 } }),
+    },
+  ];
+
+  const handleSelect = (option?: ComboBoxOption) => {
+    if (!option) {
+      return;
+    }
+
+    settings.relativeDate = option.value;
   };
 </script>
 
@@ -76,38 +113,8 @@
           </div>
         {:else}
           <div in:fly={{ y: -10, duration: 200 }} class="flex flex-col gap-1">
-            <SettingSelect
-              label={$t('date_range')}
-              name="date-range"
-              bind:value={settings.relativeDate}
-              options={[
-                {
-                  value: '',
-                  text: $t('all'),
-                },
-                {
-                  value: Duration.fromObject({ hours: 24 }).toISO() || '',
-                  text: $t('past_durations.hours', { values: { hours: 24 } }),
-                },
-                {
-                  value: Duration.fromObject({ days: 7 }).toISO() || '',
-                  text: $t('past_durations.days', { values: { days: 7 } }),
-                },
-                {
-                  value: Duration.fromObject({ days: 30 }).toISO() || '',
-                  text: $t('past_durations.days', { values: { days: 30 } }),
-                },
-                {
-                  value: Duration.fromObject({ years: 1 }).toISO() || '',
-                  text: $t('past_durations.years', { values: { years: 1 } }),
-                },
-                {
-                  value: Duration.fromObject({ years: 3 }).toISO() || '',
-                  text: $t('past_durations.years', { values: { years: 3 } }),
-                },
-              ]}
-            />
-            <div class="text-xs">
+            <Combobox label={$t('date_range')} {options} bind:selectedOption onSelect={handleSelect} />
+            <div class="text-xs pt-4">
               <Button
                 color="primary"
                 size="small"

@@ -13,7 +13,6 @@ import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.da
 import 'package:immich_mobile/providers/infrastructure/setting.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
-import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/asset_viewer/cast_dialog.dart';
@@ -104,14 +103,11 @@ class _CuratorLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 3.0),
-      child: SvgPicture.asset(
-        context.isDarkTheme
-            ? 'assets/curator-photos-logo-dark.svg'
-            : 'assets/curator-photos-logo-light.svg',
-        height: 28,
-      ),
+    return SvgPicture.asset(
+      context.isDarkTheme
+          ? 'assets/curator-photos-logo-dark.svg'
+          : 'assets/curator-photos-logo-light.svg',
+      height: 14,
     );
   }
 }

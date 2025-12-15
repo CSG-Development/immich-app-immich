@@ -20,7 +20,9 @@ import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
+import 'package:immich_mobile/providers/endpoint_recovery.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
+import 'package:immich_mobile/providers/network_change_listener.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
@@ -44,7 +46,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
@@ -98,7 +99,7 @@ Future<void> initApp() async {
 
   await DynamicTheme.fetchSystemPalette();
 
-  final log = Logger("ImmichErrorLogger");
+  final log = Logger("PersonalCloudPhotosErrorLogger");
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
@@ -238,6 +239,12 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     });
 
     ref.read(shareIntentUploadProvider.notifier).init();
+
+    // Initialize endpoint recovery service to start listening to connection state changes
+    ref.read(endpointRecoveryServiceProvider);
+    
+    // Initialize network change listener to handle WiFi connectivity changes
+    ref.read(networkChangeListenerServiceProvider).startListening();
   }
 
   @override
@@ -254,7 +261,7 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     return ProviderScope(
       overrides: [localeProvider.overrideWithValue(context.locale)],
       child: MaterialApp.router(
-        title: 'Curator Photos',
+        title: 'Personal Cloud Photos',
         debugShowCheckedModeBanner: true,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,

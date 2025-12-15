@@ -14,6 +14,7 @@
     preloadData?: boolean;
     dropDownContent?: Snippet;
     dropdownOpen?: boolean;
+    isDropdownItem?: boolean;
   }
 
   let {
@@ -25,6 +26,7 @@
     preloadData = true,
     dropDownContent: hasDropdown,
     dropdownOpen = $bindable(false),
+    isDropdownItem = false,
   }: Props = $props();
 
   $effect(() => {
@@ -59,7 +61,7 @@
     class="flex w-full place-items-center gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary
     {isSelected
       ? 'bg-immich-primary/10 text-immich-primary hover:bg-immich-primary/10 dark:bg-immich-dark-primary/24 dark:text-immich-dark-primary'
-      : ''}"
+      : ''} {isDropdownItem ? 'pl-4' : ''}"
   >
     <div class="flex w-full place-items-center gap-4 ps-5 overflow-hidden truncate">
       <Icon path={icon} size="1.5em" class="shrink-0" flipped={flippedLogo} ariaHidden />

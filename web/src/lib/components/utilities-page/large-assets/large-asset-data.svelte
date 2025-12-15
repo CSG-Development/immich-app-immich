@@ -3,7 +3,6 @@
   import { getFileSize } from '$lib/utils/asset-utils';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { type AssetResponseDto } from '@immich/sdk';
-  import { Tooltip } from '@immich/ui';
 
   interface Props {
     asset: AssetResponseDto;
@@ -26,11 +25,11 @@
       <div class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-red-500">External</div>
     {/if}
   </div>
-  <Tooltip text={asset.originalFileName}>
-    <div class="text-center mt-4 px-4 text-sm font-normal truncate">
-      {asset.originalFileName}
-    </div>
-  </Tooltip>
+
+  <div class="text-center mt-4 px-4 text-sm font-medium truncate" title={asset.originalFileName}>
+    {asset.originalFileName}
+  </div>
+
   <div class="text-center">
     <p class="text-primary text-xl font-semibold py-3">{getFileSize(asset, 1)}</p>
   </div>

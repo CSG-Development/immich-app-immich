@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
@@ -35,7 +36,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   void initState() {
     super.initState();
     ref
-        .read(authProvider.notifier)
+        .read(apiServiceProvider)
         .setOpenApiServiceEndpoint()
         .then(logConnectionInfo)
         .whenComplete(() => resumeSession());
@@ -51,12 +52,14 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
   void resumeSession() async {
     if (!mounted) return;
-    final serverUrl = Store.tryGet(StoreKey.serverUrl);
+    // final serverUrl = Store.tryGet(StoreKey.serverUrl);
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     final accessToken = Store.tryGet(StoreKey.accessToken);
     final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
 
-    if (accessToken != null && serverUrl != null && endpoint != null) {
+    if (accessToken != null &&
+        // serverUrl != null &&
+        endpoint != null) {
       final infoProvider = ref.read(serverInfoProvider.notifier);
       final wsProvider = ref.read(websocketProvider.notifier);
       final backgroundManager = ref.read(backgroundSyncProvider);

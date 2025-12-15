@@ -66,7 +66,7 @@
             selectedTags = checked ? null : new SvelteSet();
           }}
         />
-        <Label label={$t('untagged')} for="untagged-checkbox" />
+        <Label class="cursor-pointer" label={$t('untagged')} for="untagged-checkbox" />
       </div>
     </form>
 

@@ -4,7 +4,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
-import 'package:immich_mobile/providers/network.provider.dart';
 
 class LocalNetworkPreference extends HookConsumerWidget {
   const LocalNetworkPreference({super.key, required this.enabled});
@@ -36,16 +35,10 @@ class LocalNetworkPreference extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wifiNameText = useState("");
     final localEndpointText = useState("");
 
     useEffect(() {
-      final wifiName = ref.read(authProvider.notifier).getSavedWifiName();
       final localEndpoint = ref.read(authProvider.notifier).getSavedLocalEndpoint();
-
-      if (wifiName != null) {
-        wifiNameText.value = wifiName;
-      }
 
       if (localEndpoint != null) {
         localEndpointText.value = localEndpoint;
@@ -54,23 +47,11 @@ class LocalNetworkPreference extends HookConsumerWidget {
       return null;
     }, []);
 
-    saveWifiName(String wifiName) {
-      wifiNameText.value = wifiName;
-      return ref.read(authProvider.notifier).saveWifiName(wifiName);
-    }
-
     saveLocalEndpoint(String url) {
       localEndpointText.value = url;
       return ref.read(authProvider.notifier).saveLocalEndpoint(url);
     }
 
-    handleEditWifiName() async {
-      final wifiName = await _showEditDialog(context, "wifi_name".tr(), "your_wifi_name".tr(), wifiNameText.value);
-
-      if (wifiName != null) {
-        await saveWifiName(wifiName);
-      }
-    }
 
     handleEditServerEndpoint() async {
       final localEndpoint = await _showEditDialog(
@@ -86,25 +67,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
     }
 
     autofillCurrentNetwork() async {
-      final wifiName = await ref.read(networkProvider.notifier).getWifiName();
-
-      if (wifiName == null) {
-        context.showSnackBar(
-          SnackBar(
-            content: Text(
-              "get_wifiname_error".tr(),
-              style: context.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: context.colorScheme.onSecondary,
-              ),
-            ),
-            backgroundColor: context.colorScheme.secondary,
-          ),
-        );
-      } else {
-        saveWifiName(wifiName);
-      }
-
       final serverEndpoint = ref.read(authProvider.notifier).getServerEndpoint();
 
       if (serverEndpoint != null) {
@@ -144,28 +106,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
                     ListTile(
                       enabled: enabled,
                       contentPadding: const EdgeInsets.only(left: 24, right: 8),
-                      leading: const Icon(Icons.wifi_rounded),
-                      title: Text("wifi_name".tr()),
-                      subtitle: wifiNameText.value.isEmpty
-                          ? Text("enter_wifi_name".tr())
-                          : Text(
-                              wifiNameText.value,
-                              style: context.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: enabled
-                                    ? context.primaryColor
-                                    : context.colorScheme.onSurface
-                                        .withAlpha(100),
-                              ),
-                            ),
-                      trailing: IconButton(
-                        onPressed: enabled ? handleEditWifiName : null,
-                        icon: const Icon(Icons.edit_rounded),
-                      ),
-                    ),
-                    ListTile(
-                      enabled: enabled,
-                      contentPadding: const EdgeInsets.only(left: 24, right: 8),
                       leading: const Icon(Icons.lan_rounded),
                       title: Text("server_endpoint".tr()),
                       subtitle: localEndpointText.value.isEmpty
@@ -185,18 +125,18 @@ class LocalNetworkPreference extends HookConsumerWidget {
                         icon: const Icon(Icons.edit_rounded),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.wifi_find_rounded),
-                          label: Text('use_current_connection'.tr().toUpperCase()),
-                          onPressed: enabled ? autofillCurrentNetwork : null,
-                        ),
-                      ),
-                    ),
+                    // const SizedBox(height: 16),
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    //   child: SizedBox(
+                    //     height: 48,
+                    //     child: OutlinedButton.icon(
+                    //       icon: const Icon(Icons.wifi_find_rounded),
+                    //       label: Text('use_current_connection'.tr().toUpperCase()),
+                    //       onPressed: enabled ? autofillCurrentNetwork : null,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],

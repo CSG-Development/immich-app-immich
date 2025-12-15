@@ -59,7 +59,7 @@ class ConnectivityApi {
 
   Future<List<NetworkCapability>> getCapabilities() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.ConnectivityApi.getCapabilities$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.ConnectivityApi.getCapabilities$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,

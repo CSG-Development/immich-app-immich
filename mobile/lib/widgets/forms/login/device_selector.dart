@@ -1,30 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:homecloud_frontend/api/api.swagger.dart';
+import 'package:homecloud_frontend/homecloud_frontend.dart' show DeviceItem;
 import 'package:immich_mobile/widgets/forms/login/server_endpoint_input.dart';
-
-class DeviceItem {
-  final Uri? baseUrl;
-  final About? about;
-  final Status? status;
-  final bool isTemporary;
-
-  DeviceItem({this.baseUrl, this.about, this.status, this.isTemporary = false});
-
-  String get name => isTemporary
-      ? baseUrl.toString()
-      : about?.hostname.isNotEmpty == true
-      ? about!.hostname
-      : baseUrl?.host ?? 'Unknown Device';
-
-  bool get isReady => status == null || status!.state == StatusState.ready;
-
-  String warnStatus(BuildContext context) {
-    if (isReady) return "";
-    return " (dashboard_device_card_device_status(status!.state.name))";
-  }
-}
 
 class DeviceSelector extends HookWidget {
   final List devices;
@@ -228,9 +206,7 @@ class DeviceSelector extends HookWidget {
                             final option = options.elementAt(index);
                             return option.baseUrl != null
                                 ? ListTile(
-                                    title: Text(
-                                      option.isTemporary ? option.name : option.name + option.warnStatus(context),
-                                    ),
+                                    title: Text(option.name),
                                     onTap: () {
                                       onSelected(option);
                                     },
@@ -239,7 +215,7 @@ class DeviceSelector extends HookWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       index > 0 ? const Divider(height: 1) : const SizedBox.shrink(),
-                                      const ListTile(title: Text('I don’t see my Curator')),
+                                      const ListTile(title: Text('I don’t see my Personal Cloud Photos')),
                                     ],
                                   );
                           },

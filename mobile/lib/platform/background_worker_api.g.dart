@@ -117,7 +117,7 @@ class BackgroundWorkerFgHostApi {
 
   Future<void> enable() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.enable$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFgHostApi.enable$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -140,7 +140,7 @@ class BackgroundWorkerFgHostApi {
 
   Future<void> configure(BackgroundWorkerSettings settings) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.configure$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFgHostApi.configure$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -163,7 +163,7 @@ class BackgroundWorkerFgHostApi {
 
   Future<void> disable() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFgHostApi.disable$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFgHostApi.disable$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -200,7 +200,7 @@ class BackgroundWorkerBgHostApi {
 
   Future<void> onInitialized() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.onInitialized$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerBgHostApi.onInitialized$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -223,7 +223,7 @@ class BackgroundWorkerBgHostApi {
 
   Future<void> showNotification(String title, String content) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.showNotification$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerBgHostApi.showNotification$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -246,7 +246,7 @@ class BackgroundWorkerBgHostApi {
 
   Future<void> close() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerBgHostApi.close$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerBgHostApi.close$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -285,7 +285,7 @@ abstract class BackgroundWorkerFlutterApi {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onIosUpload$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFlutterApi.onIosUpload$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );
@@ -295,13 +295,13 @@ abstract class BackgroundWorkerFlutterApi {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           assert(
             message != null,
-            'Argument for dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onIosUpload was null.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFlutterApi.onIosUpload was null.',
           );
           final List<Object?> args = (message as List<Object?>?)!;
           final bool? arg_isRefresh = (args[0] as bool?);
           assert(
             arg_isRefresh != null,
-            'Argument for dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onIosUpload was null, expected non-null bool.',
+            'Argument for dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFlutterApi.onIosUpload was null, expected non-null bool.',
           );
           final int? arg_maxSeconds = (args[1] as int?);
           try {
@@ -319,7 +319,7 @@ abstract class BackgroundWorkerFlutterApi {
     }
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.onAndroidUpload$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFlutterApi.onAndroidUpload$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );
@@ -342,7 +342,7 @@ abstract class BackgroundWorkerFlutterApi {
     }
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.curator_photos.BackgroundWorkerFlutterApi.cancel$messageChannelSuffix',
+        'dev.flutter.pigeon.personal_cloud_photos.BackgroundWorkerFlutterApi.cancel$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );

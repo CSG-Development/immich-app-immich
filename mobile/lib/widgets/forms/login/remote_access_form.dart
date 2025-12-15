@@ -4,15 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
+import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
+import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
-
-import 'package:homecloud_frontend/homecloud_frontend.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
   final log = Logger('RemoteAccessForm');
@@ -39,17 +38,12 @@ class RemoteAccessForm extends HookConsumerWidget {
       return null;
     }
 
-    /// Handle API errors by printing them in debug mode
-    void handleError(ApiErrorMessage message, dynamic error) {
-      log.severe("[SignInScreen] $message: ${extractErrorMessage(error)}");
-    }
-
     Future<String> getClientFriendlyName() async {
       if (clientFriendlyName.isNotEmpty) {
         return clientFriendlyName;
       }
       final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      String name = "Curator Photos";
+      String name = "Personal Cloud Photos";
       Map<String, dynamic>? data;
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
@@ -87,38 +81,19 @@ class RemoteAccessForm extends HookConsumerWidget {
 
     /// Initiate remote access authentication by sending a code to the given email
     Future<void> initiateRemoteAccess(String email) async {
-      try {
-        clientFriendlyName = await getClientFriendlyName();
-        final response = await ref
-            .read(remoteProvider)
-            .api
-            .clientV1AuthInitiatePost(
-              type: ClientV1AuthInitiatePostType.email,
-              body: Code$RequestBody(
-                email: email,
-                clientId: ref.read(remoteProvider).clientId,
-                clientFriendlyName: clientFriendlyName,
-              ),
-            );
-        // 	Success: A reference is returned and the user will receive a code to continue authenticating.
-        if (response.isSuccessful && context.mounted) {
-          // Save email in device provider to pre-fill next time
-          ref.read(deviceProvider.notifier).setHost(login: email);
-          // Clear any previous authentication of remote access server
-          ref.read(remoteProvider.notifier).logout();
-          if (kDebugMode) {
-            debugPrint("[SignInScreen] Remote access initiated for email: $email, response: ${response.body}");
-          }
-          ref.read(remoteProvider.notifier).reference = response.body?.reference;
+      clientFriendlyName = await getClientFriendlyName();
+      final controller = ref.read(remoteAuthProvider);
+      await controller.initiate(
+        email: email,
+        clientFriendlyName: clientFriendlyName,
+      );
 
-          return;
-        } else {
-          handleError(ApiErrorMessage.remoteApi, response);
-          return;
-        }
-      } catch (error) {
-        handleError(ApiErrorMessage.remoteApi, error);
-        return;
+      final state = controller.state;
+      if (state.error != null) {
+        // For now, just log the error; UI can be extended to show a message.
+        log.severe(
+          "[RemoteAccessForm] Initiate error: ${state.error} - ${state.errorMessage}",
+        );
       }
     }
 
@@ -134,7 +109,6 @@ class RemoteAccessForm extends HookConsumerWidget {
         () async {
           switchToCuratorLogin();
         },
-        handleError,
         () => initiateRemoteAccess(email),
       );
     }
@@ -172,7 +146,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
         SvgPicture.asset(
           context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-          height: 40.0,
+          height: 20.0,
         ),
         const SizedBox(height: 24.0),
         Form(

@@ -345,7 +345,7 @@ class BackgroundService {
 
     HttpSSLOptions.apply();
     ref.read(apiServiceProvider).setAccessToken(Store.get(StoreKey.accessToken));
-    await ref.read(authServiceProvider).setOpenApiServiceEndpoint();
+    await ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
     dPrint(() => "[BG UPLOAD] Using endpoint: ${ref.read(apiServiceProvider).apiClient.basePath}");
 
     final selectedAlbums = await ref.read(backupAlbumRepositoryProvider).getAllBySelection(BackupSelection.select);

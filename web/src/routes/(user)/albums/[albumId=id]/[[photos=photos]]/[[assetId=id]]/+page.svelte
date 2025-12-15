@@ -72,7 +72,7 @@
     updateAlbumInfo,
     type AlbumUserAddDto,
   } from '@immich/sdk';
-  import { Button, IconButton, Tooltip } from '@immich/ui';
+  import { Button, IconButton } from '@immich/ui';
   import {
     mdiArrowLeft,
     mdiCogOutline,
@@ -500,14 +500,13 @@
                 tooltipY = e.clientY - rect.top + 12;
               }}
             >
-              <Tooltip text={$t('edit_title')} class="!z-50 !absolute tooltip">
-                <AlbumTitle
-                  id={album.id}
-                  albumName={album.albumName}
-                  {isOwned}
-                  onUpdate={(albumName) => (album.albumName = albumName)}
-                />
-              </Tooltip>
+              <AlbumTitle
+                id={album.id}
+                albumName={album.albumName}
+                {isOwned}
+                onUpdate={(albumName) => (album.albumName = albumName)}
+              />
+
               {#if album.assetCount > 0}
                 <AlbumSummary {album} />
               {/if}

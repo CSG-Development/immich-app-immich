@@ -9,7 +9,7 @@
 //   All other rights are expressly reserved by Seagate Technology LLC.
 //
 
-import 'dart:convert' show base64Encode;
+import 'dart:convert' show base64Encode, jsonEncode, jsonDecode;
 import 'dart:io'
     show SecurityContext, HttpClient, X509Certificate;
 import 'package:basic_utils/basic_utils.dart'
@@ -27,6 +27,8 @@ import 'package:homecloud_frontend/api/api.swagger.dart'
         AuthResponse,
         Status,
         AuthLogoutPost$RequestBody;
+import 'package:homecloud_frontend/api/remote_access.swagger.dart'
+    show DevicePath;
 import 'package:homecloud_frontend/providers/auth.api.dart';
 import 'package:http/io_client.dart' show IOClient;
 import 'package:shared_preferences/shared_preferences.dart'
@@ -36,6 +38,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   static const String basePath = '/api/v1';
   static const String loginKey = "curator_login";
   static const String favoriteDeviceKey = "curator_favorite";
+  static const String favoriteDevicePathsKey = "curator_favorite_paths";
   static const String refreshTokenKey = "curator_refresh_token";
 
   final Map<String, dynamic> storageData;
@@ -51,6 +54,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   /// The device ID, corresponds to the certificate common name
   String? _deviceID;
   Status? _deviceStatus;
+  List<DevicePath>? _devicePaths;
 
   DeviceProvider(
     this.storageData,
@@ -62,6 +66,23 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     _login = storageData[loginKey];
     _deviceID = storageData[favoriteDeviceKey];
     _refreshToken = secureData[refreshTokenKey];
+    
+    // Load device paths from storage
+    final pathsJson = storageData[favoriteDevicePathsKey];
+    if (pathsJson != null && pathsJson is String) {
+      try {
+        final List<dynamic> pathsList = jsonDecode(pathsJson);
+        _devicePaths = pathsList
+            .map((e) => DevicePath.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        if (kDebugMode) {
+          print("[DeviceProvider] Error loading device paths: ${e.toString()}");
+        }
+        _devicePaths = null;
+      }
+    }
+    
     defaultCertificate ??= deviceCertificate;
   }
 
@@ -76,6 +97,10 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   /// The device ID, corresponds to the certificate common name
   String? get deviceID => _deviceID;
   Status? get deviceStatus => _deviceStatus;
+  
+  /// The device paths (local, public, relay) for connecting to the device.
+  /// Available for remote devices.
+  List<DevicePath>? get devicePaths => _devicePaths;
 
   /// Sets the host configuration for the device provider.
   ///
@@ -91,6 +116,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   /// - [login]: The login identifier for the user. Used to save the login in shared preferences.
   /// - [status]: The status of the device to manage routing.
   /// - [deviceID]: The device ID, corresponds to the certificate common name.
+  /// - [devicePaths]: Optional list of device paths (local, public, relay) for remote devices.
   /// - [save]: If true (default), authentication details are saved in persistent storage.
   void setHost({
     String? host,
@@ -101,6 +127,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     String? login,
     Status? status,
     String? deviceID,
+    List<DevicePath>? devicePaths,
     bool save = true,
   }) {
     if (baseUrl != null || host != null) {
@@ -125,8 +152,16 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     if (deviceID != null) {
       _deviceID = deviceID;
     }
+    if (devicePaths != null) {
+      _devicePaths = devicePaths;
+    }
     if (save) {
-      _saveAuthentication(deviceID: deviceID, auth: auth, login: login);
+      _saveAuthentication(
+        deviceID: deviceID,
+        auth: auth,
+        login: login,
+        devicePaths: devicePaths,
+      );
     }
     notifyListeners();
   }
@@ -136,12 +171,32 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     String? deviceID,
     AuthResponse? auth,
     String? login,
+    List<DevicePath>? devicePaths,
   }) {
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     // Save/Clear favorite device in shared preferences
     if (deviceID != null) {
       asyncPrefs.setString(favoriteDeviceKey, deviceID);
     }
+    // Save/Clear device paths in shared preferences
+    if (devicePaths != null) {
+      if (devicePaths.isNotEmpty) {
+        try {
+          final pathsJson = jsonEncode(
+            devicePaths.map((path) => path.toJson()).toList(),
+          );
+          asyncPrefs.setString(favoriteDevicePathsKey, pathsJson);
+        } catch (e) {
+          if (kDebugMode) {
+            print("[DeviceProvider] Error saving device paths: ${e.toString()}");
+          }
+        }
+      } else {
+        // Clear paths if explicitly set to empty list
+        asyncPrefs.remove(favoriteDevicePathsKey);
+      }
+    }
+    // Note: If devicePaths is null, we don't modify stored paths (preserve existing)
     // Save/Clear refresh token in secure storage
     try {
       if (auth?.refreshToken != null) {

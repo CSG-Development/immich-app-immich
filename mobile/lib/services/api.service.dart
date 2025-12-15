@@ -3,16 +3,53 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+import 'package:immich_mobile/models/connection_state.model.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
+import 'package:immich_mobile/utils/user_agent.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
-import 'package:immich_mobile/utils/user_agent.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:firebase_performance/firebase_performance.dart';
-import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+
+class ConnectionRecoveryInterceptor extends BaseClient {
+  final Client _inner;
+  final Function(String) _onConnectionError;
+
+  ConnectionRecoveryInterceptor(this._inner, this._onConnectionError);
+
+  bool _isConnectionError(dynamic error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is TlsException ||
+        error is HandshakeException ||
+        error is HttpException ||
+        (error is ClientException &&
+            error.message.contains('Connection') == true);
+  }
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) async {
+    try {
+      return await _inner.send(request);
+    } catch (e) {
+      if (_isConnectionError(e)) {
+        _onConnectionError(request.url.toString());
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  void close() {
+    _inner.close();
+    super.close();
+  }
+}
 
 class PerformanceHttpClient extends BaseClient {
   final Client _inner;
@@ -65,7 +102,10 @@ class PerformanceHttpClient extends BaseClient {
 
 class ApiService implements Authentication {
   late ApiClient _apiClient;
-  late final PerformanceHttpClient _httpClient;
+  late PerformanceHttpClient _httpClient;
+  late ConnectionRecoveryInterceptor _connectionRecoveryInterceptor;
+  late Client _baseClient;
+  bool _httpClientInitialized = false;
 
   late UsersApi usersApi;
   late AuthenticationApi authenticationApi;
@@ -89,24 +129,225 @@ class ApiService implements Authentication {
   late SessionsApi sessionsApi;
   late TagsApi tagsApi;
 
+  final _log = Logger("ApiService");
+
+  final StreamController<ConnectionState> _connectionStateController = StreamController<ConnectionState>.broadcast();
+  Stream<ConnectionState> get connectionStateChanges => _connectionStateController.stream;
+
+  bool _isSetEndpoint = false;
+
   ApiService() {
-    _httpClient = PerformanceHttpClient(Client());
-    // The below line ensures that the api clients are initialized when the service is instantiated
-    // This is required to avoid late initialization errors when the clients are access before the endpoint is resolved
+    _initHttpClient();
+    // Initialize with empty endpoint first, then restore the last known endpoint (if any).
     setEndpoint('');
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     if (endpoint != null && endpoint.isNotEmpty) {
       setEndpoint(endpoint);
     }
   }
-  String? _accessToken;
-  final _log = Logger("ApiService");
 
-  setEndpoint(String endpoint) {
+  void _initHttpClient() {
+    // Recreate clients to avoid reusing keep-alive connections when switching endpoints
+    if (_httpClientInitialized) {
+      _connectionRecoveryInterceptor.close();
+      _baseClient.close();
+    }
+
+    _baseClient = Client();
+    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(_baseClient, _handleConnectionError);
+    _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
+    _httpClientInitialized = true;
+  }
+
+  String? _accessToken;
+
+  Future<void> _handleConnectionError(String failedUrl) async {
+    dPrint(() => '_handleConnectionError: Connection error detected for $failedUrl');
+    
+    // Do not notify connection state while endpoint switching is in progress
+    if (_isSetEndpoint) {
+      dPrint(() => '_handleConnectionError: Skipping notification - endpoint switching in progress');
+      return;
+    }
+
+    // Ignore errors from requests that targeted an endpoint that is no longer active
+    final activeEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (activeEndpoint != null &&
+        activeEndpoint.isNotEmpty &&
+        !failedUrl.startsWith(activeEndpoint)) {
+      dPrint(() => '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint');
+      return;
+    }
+    
+    notifyConnectionState(ConnectionState(
+      status: ConnectionStatus.reconnecting,
+      lastErrorUrl: failedUrl,
+      lastErrorTime: DateTime.now(),
+      connectionType: ConnectionType.api,
+    ));
+  }
+
+  void notifyConnectionState(ConnectionState state) {
+    try {
+      if (!_connectionStateController.isClosed) {
+        _connectionStateController.add(state);
+      }
+    } catch (error, stackTrace) {
+      _log.warning("Failed to notify connection state (non-critical)", error, stackTrace);
+    }
+  }
+
+  Future<bool> validateAuxilaryServerUrl(String url) async {
+    final httpclient = HttpClient();
+    bool isValid = false;
+
+    try {
+      final uri = Uri.parse('$url/users/me');
+      final request = await httpclient.getUrl(uri);
+
+      // add auth token + any configured custom headers
+      final customHeaders = ApiService.getRequestHeaders();
+      customHeaders.forEach((key, value) {
+        request.headers.add(key, value);
+      });
+
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        isValid = true;
+      }
+    } catch (error) {
+      _log.severe("Error validating auxiliary endpoint", error);
+    } finally {
+      httpclient.close();
+    }
+
+    return isValid;
+  }
+
+  Future<String?> setOpenApiServiceEndpoint() async {
+    // Prevent connection state notifications during endpoint switching
+    _isSetEndpoint = true;
+
+    try {
+      // Keep the currently configured endpoint as a fallback
+      final previousEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+      String? endpoint;
+
+      // Try local connection first
+      endpoint = await _setLocalConnection();
+      if (endpoint != null) {
+        return endpoint;
+      }
+
+      try {
+        endpoint ??= await _setRemoteConnection();
+        dPrint(() => endpoint ?? 'failed to set endpoint');
+        return endpoint;
+      } catch (error, stackTrace) {
+        _log.severe("Cannot set remote endpoint", error, stackTrace);
+      }
+
+      // If everything failed, fall back to the previously used endpoint (if any)
+      if (endpoint == null && previousEndpoint != null && previousEndpoint.isNotEmpty) {
+        dPrint(() => 'Falling back to previous endpoint: $previousEndpoint');
+        await resolveAndSetEndpoint(previousEndpoint);
+        endpoint = previousEndpoint;
+      }
+
+      return endpoint;  
+    } catch (error) {
+      rethrow;
+    } finally {
+      // Give the new endpoint a brief settle time before clearing errors
+      await Future.delayed(const Duration(milliseconds: 1500));
+      // Allow connection state notifications again
+      _isSetEndpoint = false;
+    }
+  }
+
+  /// Attempts to connect to the local endpoint.
+  /// Returns the endpoint URL if successful, null otherwise.
+  Future<String?> tryLocalEndpoint() async {
+    try {
+      final localEndpoint = _getLocalEndpoint();
+      if (localEndpoint == null || localEndpoint.isEmpty) {
+        _log.fine("Local endpoint is not set");
+        return null;
+      }
+
+      await resolveAndSetEndpoint(localEndpoint);
+      return localEndpoint;
+    } catch (error, stackTrace) {
+      _log.severe("Cannot set local endpoint", error, stackTrace);
+    }
+
+    return null;
+  }
+
+  /// Attempts to connect to remote endpoints from the external endpoint list.
+  /// Returns the first successful endpoint URL, or null if all fail.
+  Future<String?> tryRemoteEndpoints() async {
+    List<AuxilaryEndpoint> endpointList;
+
+    try {
+      endpointList = getExternalEndpointList();
+    } catch (error, stackTrace) {
+      _log.severe("Cannot get external endpoint", error, stackTrace);
+      return null;
+    }
+
+    for (final endpoint in endpointList) {
+      try {
+        final resolvedEndpoint = await resolveAndSetEndpoint(endpoint.url);
+        return resolvedEndpoint;
+      } on ApiException catch (error) {
+        _log.severe("Cannot resolve endpoint ${endpoint.url}", error);
+        continue;
+      } catch (error, stackTrace) {
+        _log.severe("Auxiliary server ${endpoint.url} is not valid", error, stackTrace);
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  Future<String?> _setLocalConnection() async {
+    return await tryLocalEndpoint();
+  }
+
+  Future<String?> _setRemoteConnection() async {
+    return await tryRemoteEndpoints();
+  }
+
+  String? _getLocalEndpoint() {
+    return Store.tryGet(StoreKey.localEndpoint);
+  }
+
+  /// Gets the list of external endpoints from storage.
+  /// Returns an empty list if none are configured.
+  List<AuxilaryEndpoint> getExternalEndpointList() {
+    final jsonString = Store.tryGet(StoreKey.externalEndpointList);
+
+    if (jsonString == null) {
+      return [];
+    }
+
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+    final endpointList = jsonList.map((e) => AuxilaryEndpoint.fromJson(e)).toList();
+
+    return endpointList;
+  }
+
+  void setEndpoint(String endpoint) {
+    // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
+    _initHttpClient();
+
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
     _setUserAgentHeader();
     _apiClient.client = _httpClient;
     if (_accessToken != null) {
+      // ignore: discarded_futures
       setAccessToken(_accessToken!);
     }
     usersApi = UsersApi(_apiClient);
@@ -179,8 +420,11 @@ class ApiService implements Authentication {
     }
 
     try {
-      await setEndpoint(serverUrl);
-      await serverInfoApi.pingServer().timeout(const Duration(seconds: 5));
+      // Use a temporary ApiClient to avoid mutating the global client while probing availability.
+      final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = _httpClient;
+      final tempServerApi = ServerApi(tempClient);
+
+      await tempServerApi.pingServer().timeout(const Duration(seconds: 5));
       await trace.stop();
     } on TimeoutException catch (_) {
       await trace.stop();
@@ -198,32 +442,7 @@ class ApiService implements Authentication {
 
   // Temporary
   Future<String> _getWellKnownEndpoint(String baseUrl) async {
-    try {
-      // var headers = {"Accept": "application/json"};
-      // headers.addAll(getRequestHeaders());
-
-      // final res = await client
-      //     .get(
-      //       Uri.parse("$baseUrl/.well-known/immich"),
-      //       headers: headers,
-      //     )
-      //     .timeout(const Duration(seconds: 5));
-
-      // if (res.statusCode == 200) {
-      //   final data = jsonDecode(res.body);
-      //   final endpoint = data['api']['endpoint'].toString();
-
-      //   if (endpoint.startsWith('/')) {
-      //     // Full URL is relative to base
-      //     return "$baseUrl$endpoint";
-      //   }
-      // }
-        return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
-    } catch (e) {
-      dPrint(() => "Could not locate /.well-known/immich at $baseUrl");
-    }
-
-    return "";
+    return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
   }
 
   Future<void> setAccessToken(String accessToken) async {

@@ -1475,6 +1475,7 @@ abstract class IntlKeys {
   static const no_explore_results_message = 'no_explore_results_message';
   static const no_favorites_message = 'no_favorites_message';
   static const no_libraries_message = 'no_libraries_message';
+  static const no_location_assets = 'no_location_assets';
   static const no_locked_photos_message = 'no_locked_photos_message';
   static const no_name = 'no_name';
   static const no_notifications = 'no_notifications';
@@ -1508,6 +1509,18 @@ abstract class IntlKeys {
   static const onboarding_locale_description = 'onboarding_locale_description';
   static const onboarding_privacy_description = 'onboarding_privacy_description';
   static const onboarding_server_welcome_description = 'onboarding_server_welcome_description';
+  static const onboarding_step_1_text = 'onboarding_step_1_text';
+  static const onboarding_step_1_title = 'onboarding_step_1_title';
+  static const onboarding_step_2_text = 'onboarding_step_2_text';
+  static const onboarding_step_2_title = 'onboarding_step_2_title';
+  static const onboarding_step_3_text = 'onboarding_step_3_text';
+  static const onboarding_step_3_title = 'onboarding_step_3_title';
+  static const onboarding_step_4_text = 'onboarding_step_4_text';
+  static const onboarding_step_4_text_bottom = 'onboarding_step_4_text_bottom';
+  static const onboarding_step_4_title = 'onboarding_step_4_title';
+  static const onboarding_step_5_text = 'onboarding_step_5_text';
+  static const onboarding_step_5_text_bottom = 'onboarding_step_5_text_bottom';
+  static const onboarding_step_5_title = 'onboarding_step_5_title';
   static const onboarding_theme_description = 'onboarding_theme_description';
   static const onboarding_user_welcome_description = 'onboarding_user_welcome_description';
   static const onboarding_welcome_user = 'onboarding_welcome_user';
@@ -1978,6 +1991,7 @@ abstract class IntlKeys {
   static const sign_out = 'sign_out';
   static const sign_up = 'sign_up';
   static const size = 'size';
+  static const skip = 'skip';
   static const skip_to_content = 'skip_to_content';
   static const skip_to_folders = 'skip_to_folders';
   static const skip_to_tags = 'skip_to_tags';
@@ -2183,6 +2197,7 @@ abstract class IntlKeys {
   static const view_next_asset = 'view_next_asset';
   static const view_previous_asset = 'view_previous_asset';
   static const view_qr_code = 'view_qr_code';
+  static const view_similar_photos = 'view_similar_photos';
   static const view_stack = 'view_stack';
   static const view_user = 'view_user';
   static const viewer_remove_from_stack = 'viewer_remove_from_stack';
