@@ -1,9 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import Icon from '$lib/components/elements/icon.svelte';
   import BottomInfo from '$lib/components/shared-components/side-bar/bottom-info.svelte';
   import RecentAlbums from '$lib/components/shared-components/side-bar/recent-albums.svelte';
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
-  import { recentAlbumsDropdown } from '$lib/stores/preferences.store';
+  import { AppRoute } from '$lib/constants';
+  import { recentAlbumsDropdown, utilitiesDropdown } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { preferences } from '$lib/stores/user.store';
   import {
@@ -13,12 +15,15 @@
     mdiAccountOutline,
     mdiArchiveArrowDown,
     mdiArchiveArrowDownOutline,
+    mdiContentDuplicate,
+    mdiCrosshairsGps,
     mdiFolderOutline,
     mdiHeart,
     mdiHeartOutline,
     mdiImageAlbum,
     mdiImageMultiple,
     mdiImageMultipleOutline,
+    mdiImageSizeSelectLarge,
     mdiLink,
     mdiLock,
     mdiLockOutline,
@@ -123,7 +128,54 @@
     href={resolve('/(user)/utilities')}
     bind:isSelected={isUtilitiesSelected}
     icon={isUtilitiesSelected ? mdiToolbox : mdiToolboxOutline}
-  ></SideBarLink>
+    flippedLogo
+    bind:dropdownOpen={$utilitiesDropdown}
+  >
+    {#snippet dropDownContent()}
+      <span in:fly={{ y: -20 }} class="hidden md:block">
+        <a
+          href={resolve(AppRoute.DUPLICATES)}
+          title={$t('review_duplicates')}
+          class="flex w-full place-items-center justify-between gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary ps-10 group-hover:sm:px-10 md:px-10"
+        >
+          <div>
+            <span><Icon path={mdiContentDuplicate} size="24" /></span>
+          </div>
+          <div class="grow text-sm font-medium whitespace-nowrap">
+            {$t('review_duplicates')}
+          </div>
+        </a>
+      </span>
+      <span in:fly={{ y: -20 }} class="hidden md:block">
+        <a
+          href={resolve(AppRoute.LARGE_FILES)}
+          title={$t('review_large_files')}
+          class="flex w-full place-items-center justify-between gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary ps-10 group-hover:sm:px-10 md:px-10"
+        >
+          <div>
+            <span><Icon path={mdiImageSizeSelectLarge} size="24" /></span>
+          </div>
+          <div class="grow text-sm font-medium whitespace-nowrap">
+            {$t('review_large_files')}
+          </div>
+        </a>
+      </span>
+      <span in:fly={{ y: -20 }} class="hidden md:block">
+        <a
+          href={resolve(AppRoute.GEOLOCATION)}
+          title={$t('manage_geolocation')}
+          class="flex w-full place-items-center justify-between gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary ps-10 group-hover:sm:px-10 md:px-10"
+        >
+          <div>
+            <span><Icon path={mdiCrosshairsGps} size="24" /></span>
+          </div>
+          <div class="grow text-sm font-medium whitespace-nowrap">
+            {$t('manage_geolocation')}
+          </div>
+        </a>
+      </span>
+    {/snippet}
+  </SideBarLink>
 
   <SideBarLink
     title={$t('archive')}

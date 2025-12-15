@@ -67,7 +67,7 @@ function createNotificationList() {
         action: {
           type: options.button ? 'noop' : 'discard',
         },
-        timeout: 3000,
+        timeout: 30000,
         ...options,
       });
 

@@ -195,7 +195,7 @@
       {/if}
 
       <span
-        class="w-full truncate first-letter:capitalize text-black/[.60] dark:text-white/[.70]"
+        class="w-full truncate first-letter:capitalize text-black dark:text-white/[.87] font-bold text-base"
         title={getDayGroupFullDate(dayGroup)}
       >
         {dayGroup.groupTitle}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { SettingInputFieldType } from '$lib/constants';
-  import { PasswordInput, Tooltip } from '@immich/ui';
+  import { PasswordInput } from '@immich/ui';
   import { onMount, tick, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
@@ -107,39 +107,16 @@
   {/if}
 
   {#if inputType !== SettingInputFieldType.PASSWORD}
-    <div class="flex place-items-center place-content-center gap-2">
+    <div class="flex place-items-center gap-2 w-full">
       {#if inputType === SettingInputFieldType.COLOR}
-        <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
-          <input
-            bind:this={input}
-            class="immich-form-input w-full pb-2 rounded-none me-1"
-            aria-describedby={description ? `${label}-desc` : undefined}
-            aria-labelledby="{label}-label"
-            id={label}
-            name={label}
-            type="text"
-            min={min.toString()}
-            max={max.toString()}
-            {step}
-            {required}
-            bind:value
-            onchange={handleChange}
-            {disabled}
-            title=""
-          />
-        </Tooltip>
-      {/if}
-
-      <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
         <input
           bind:this={input}
-          class="immich-form-input w-full mb-2"
-          class:color-picker={inputType === SettingInputFieldType.COLOR}
+          class="immich-form-input w-full pb-2 rounded-none me-1"
           aria-describedby={description ? `${label}-desc` : undefined}
           aria-labelledby="{label}-label"
           id={label}
           name={label}
-          type={inputType}
+          type="text"
           min={min.toString()}
           max={max.toString()}
           {step}
@@ -147,27 +124,44 @@
           bind:value
           onchange={handleChange}
           {disabled}
-          title=""
+          title={title ?? (required && !value ? 'Please fill out this field.' : '')}
         />
-      </Tooltip>
+      {/if}
+
+      <input
+        bind:this={input}
+        class="immich-form-input w-full mb-2"
+        class:color-picker={inputType === SettingInputFieldType.COLOR}
+        aria-describedby={description ? `${label}-desc` : undefined}
+        aria-labelledby="{label}-label"
+        id={label}
+        name={label}
+        type={inputType}
+        min={min.toString()}
+        max={max.toString()}
+        {step}
+        {required}
+        bind:value
+        onchange={handleChange}
+        {disabled}
+        title={title ?? (required && !value ? 'Please fill out this field.' : '')}
+      />
 
       {@render trailingSnippet?.()}
     </div>
   {:else}
-    <Tooltip text={title ?? (required && !value ? 'Please fill out this field.' : '')}>
-      <PasswordInput
-        aria-describedby={description ? `${label}-desc` : undefined}
-        aria-labelledby="{label}-label"
-        size="small"
-        id={label}
-        name={label}
-        autocomplete={passwordAutocomplete}
-        {required}
-        bind:value={value as string}
-        {disabled}
-        title=""
-      />
-    </Tooltip>
+    <PasswordInput
+      aria-describedby={description ? `${label}-desc` : undefined}
+      aria-labelledby="{label}-label"
+      size="small"
+      id={label}
+      name={label}
+      autocomplete={passwordAutocomplete}
+      {required}
+      bind:value={value as string}
+      {disabled}
+      title={title ?? (required && !value ? 'Please fill out this field.' : '')}
+    />
   {/if}
 </div>
 

@@ -315,7 +315,9 @@
 
 <UserPageLayout
   title={$t('people')}
-  description={countVisiblePeople === 0 && !searchName ? undefined : `(${countVisiblePeople.toLocaleString($locale)})`}
+  description={countVisiblePeople === 0 && !searchName
+    ? undefined
+    : $t('items_count', { values: { count: countVisiblePeople.toLocaleString($locale) } })}
   use={[
     [
       scrollMemory,

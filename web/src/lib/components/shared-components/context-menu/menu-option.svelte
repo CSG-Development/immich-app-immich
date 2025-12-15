@@ -2,8 +2,10 @@
   import type { Shortcut } from '$lib/actions/shortcut';
   import { shortcut as bindShortcut, shortcutLabel as computeShortcutLabel } from '$lib/actions/shortcut';
   import Icon from '$lib/components/elements/icon.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { optionClickCallbackStore, selectedIdStore } from '$lib/stores/context-menu.store';
   import { generateId } from '$lib/utils/generate-id';
+  import { Theme } from '@immich/ui';
 
   interface Props {
     text: string;
@@ -20,12 +22,14 @@
     text,
     subtitle = '',
     icon = '',
-    activeColor = 'bg-slate-300',
-    textColor = 'text-immich-fg dark:text-immich-dark-bg',
+    activeColor = 'bg-slate-300 dark:bg-slate-700',
+    textColor = 'text-immich-fg dark:text-white/[.87]',
     onClick,
     shortcut = null,
     shortcutLabel = '',
   }: Props = $props();
+
+  const theme = $derived(themeManager.value);
 
   let id: string = generateId();
 
@@ -53,9 +57,9 @@
   onclick={handleClick}
   onmouseover={() => ($selectedIdStore = id)}
   onmouseleave={() => ($selectedIdStore = undefined)}
-  class="w-full p-4 text-start text-sm font-medium {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-gray-200 flex gap-2 items-center {isActive
+  class="w-full p-4 text-start text-sm font-medium {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-2 items-center {isActive
     ? activeColor
-    : 'bg-slate-100'}"
+    : 'bg-slate-100 dark:bg-immich-dark-gray-card'} {theme === Theme.Light ? 'light' : 'dark'}"
   role="menuitem"
 >
   {#if icon}

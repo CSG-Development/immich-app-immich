@@ -5,7 +5,6 @@
 <script lang="ts">
   import { getProfileImageUrl } from '$lib/utils';
   import { type UserAvatarColor } from '@immich/sdk';
-  import { Tooltip } from '@immich/ui';
   import { t } from 'svelte-i18n';
 
   interface User {
@@ -74,29 +73,28 @@
   let interactiveClass = $derived(interactive ? 'transition-colors' : '');
 </script>
 
-<Tooltip text={noTitle ? undefined : title}>
-  <figure class="{sizeClass} {colorClass} {interactiveClass} overflow-hidden shadow-md rounded-full">
-    {#if user.profileImagePath}
-      <img
-        bind:this={img}
-        src={getProfileImageUrl(user)}
-        alt={$t('profile_image_of_user', { values: { user: title } })}
-        class="h-full w-full object-cover"
-        class:hidden={showFallback}
-        draggable="false"
-      />
-    {/if}
-    {#if showFallback}
-      <span
-        class="uppercase flex h-full w-full select-none items-center justify-center font-medium"
-        class:text-xs={size === 'sm'}
-        class:text-lg={size === 'lg'}
-        class:text-xl={size === 'xl'}
-        class:text-2xl={size === 'xxl'}
-        class:text-3xl={size === 'xxxl'}
-      >
-        {user.name[0] || ''}
-      </span>
-    {/if}
-  </figure>
-</Tooltip>
+<figure class="{sizeClass} {colorClass} {interactiveClass} overflow-hidden shadow-md rounded-full">
+  {#if user.profileImagePath}
+    <img
+      bind:this={img}
+      src={getProfileImageUrl(user)}
+      alt={$t('profile_image_of_user', { values: { user: title } })}
+      class="h-full w-full object-cover"
+      class:hidden={showFallback}
+      draggable="false"
+      title={noTitle ? undefined : title}
+    />
+  {/if}
+  {#if showFallback}
+    <span
+      class="uppercase flex h-full w-full select-none items-center justify-center font-medium"
+      class:text-xs={size === 'sm'}
+      class:text-lg={size === 'lg'}
+      class:text-xl={size === 'xl'}
+      class:text-2xl={size === 'xxl'}
+      class:text-3xl={size === 'xxxl'}
+    >
+      {user.name[0] || ''}
+    </span>
+  {/if}
+</figure>

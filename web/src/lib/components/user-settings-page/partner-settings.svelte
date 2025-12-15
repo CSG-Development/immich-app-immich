@@ -82,6 +82,7 @@
     const isConfirmed = await modalManager.showDialog({
       title: $t('stop_photo_sharing'),
       prompt: $t('stop_photo_sharing_description', { values: { partner: partner.name } }),
+      confirmColor: 'primary',
     });
 
     if (!isConfirmed) {
