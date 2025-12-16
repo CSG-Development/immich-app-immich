@@ -32261,6 +32261,30 @@ class CodegenLoader extends AssetLoader {
       "login_form_loading_text": "Logging in to your account",
       "login_form_password_hint": "Enter password",
       "login_form_version_check_error": "Error checking version compatibility",
+      "onboarding": {
+        "done": "Done",
+        "skip": "Skip",
+        "slide1": {
+          "description":
+              "Automatically back up photos and videos to Personal Cloud. No manual steps, just peace of mind knowing your media is secure.",
+          "title": "Welcome to Personal Cloud Photos",
+        },
+        "slide2": {
+          "description":
+              "Explore your photo library in a clean, intuitive interface. Personal Cloud Photos makes it easy to view, sort, and manage all your media in one place.",
+          "title": "Browse and organize",
+        },
+        "slide3": {
+          "description":
+              "       'Share photos with anyone via secure links. You can set expiration dates for links to keep your memories private over time.\n\nInvite members of your Personal Cloud family to collaborate on albums knowing your content is encrypted and protected.",
+          "title": "Secure sharing made simple",
+        },
+        "slide4": {
+          "description":
+              "Personal Cloud’s AI-powered search helps you instantly locate images by content, location, or date.\n\nFacial recognition identifies your family and friends to guarantee you always find that special moment.",
+          "title": "Find your photos smarter",
+        },
+      },
       "oobe_welcome_dropdown_detecting": "Detecting device...",
       "remote_access_server_unreachable": "Remote access server unreachable",
       "search_no_result": "No results found. Try different search terms or filters.",
