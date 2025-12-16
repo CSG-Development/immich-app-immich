@@ -805,6 +805,16 @@ abstract class IntlKeys {
   static const curator_login_form_loading_text = 'curator.login.form.loading.text';
   static const curator_login_form_password_hint = 'curator.login.form.password.hint';
   static const curator_login_form_version_check_error = 'curator.login.form.version.check.error';
+  static const curator_onboarding_done = 'curator.onboarding.done';
+  static const curator_onboarding_skip = 'curator.onboarding.skip';
+  static const curator_onboarding_slide1_description = 'curator.onboarding.slide1.description';
+  static const curator_onboarding_slide1_title = 'curator.onboarding.slide1.title';
+  static const curator_onboarding_slide2_description = 'curator.onboarding.slide2.description';
+  static const curator_onboarding_slide2_title = 'curator.onboarding.slide2.title';
+  static const curator_onboarding_slide3_description = 'curator.onboarding.slide3.description';
+  static const curator_onboarding_slide3_title = 'curator.onboarding.slide3.title';
+  static const curator_onboarding_slide4_description = 'curator.onboarding.slide4.description';
+  static const curator_onboarding_slide4_title = 'curator.onboarding.slide4.title';
   static const curator_oobe_welcome_dropdown_detecting = 'curator.oobe.welcome.dropdown.detecting';
   static const curator_remote_access_server_unreachable = 'curator.remote.access.server.unreachable';
   static const curator_search_no_result = 'curator.search.no.result';

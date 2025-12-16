@@ -1,9 +1,12 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:flutter/services.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
@@ -29,12 +32,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
   void initState() {
     super.initState();
 
-    _scrollControllers.addAll(
-      List.generate(
-        _onboardingSteps.length,
-        (index) => ScrollController(),
-      ),
-    );
+    _scrollControllers.addAll(List.generate(_onboardingSteps.length, (index) => ScrollController()));
 
     final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
     final startIndex = viewedCount.clamp(0, _onboardingSteps.length - 1);
@@ -65,10 +63,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
 
   void _nextPage() {
     if (_currentPage < _onboardingSteps.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
       _finishOnboarding();
     }
@@ -101,104 +96,70 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
     context.replaceRoute(const TabControllerRoute());
   }
 
-  Widget _buildFixedStep(OnboardingSlide step, bool isTablet) {
-    final imageHeight = isTablet ? 312.0 : 250.0;
+  Widget _buildFixedStep(OnboardingSlide step, bool isTablet, bool isLandscape) {
+    final imageWidth = isLandscape && !isTablet ? 120.0 : 312.0;
 
     Widget content = Column(
-      mainAxisAlignment:
-          isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
+      mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Center(
-          child:
-              Image.asset(step.image, height: imageHeight, width: imageHeight),
+          child: Image.asset(step.image, width: imageWidth),
         ),
         const SizedBox(height: 40),
         Text(
-          step.title,
+          step.title.tr(),
           textAlign: TextAlign.left,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+          style: const TextStyle(fontSize: 34.0, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 12),
-        Text(
-          step.description,
-          textAlign: TextAlign.left,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.white,
-          ),
-        ),
+        const SizedBox(height: 24),
+        Text(step.description.tr(), textAlign: TextAlign.left, style: const TextStyle(fontSize: 16.0)),
       ],
     );
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: isTablet
-          ? Center(child: SizedBox(width: 312, child: content))
-          : content,
+      child: isTablet ? Center(child: SizedBox(width: 312, child: content)) : content,
     );
   }
 
-  Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, int index) {
-    final imageHeight = isTablet ? 312.0 : 120.0;
+  Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, bool isLandscape, int index) {
+    final imageWidth = isLandscape && !isTablet ? 120.0 : 312.0;
     final scrollController = _scrollControllers[index];
 
     Widget content = Column(
-      mainAxisAlignment:
-          isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
+      mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child:
-              Image.asset(step.image, height: imageHeight, width: imageHeight),
-        ),
+        Center(child: Image.asset(step.image, width: imageWidth)),
         const SizedBox(height: 40),
         Text(
-          step.title,
+          step.title.tr(),
           textAlign: TextAlign.left,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: const TextStyle(fontSize: 34.0, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 12),
-        Text(
-          step.description,
-          textAlign: TextAlign.left,
-          style: const TextStyle(fontSize: 16, color: Colors.white),
-        ),
+        const SizedBox(height: 24),
+        Text(step.description.tr(), textAlign: TextAlign.left, style: const TextStyle(fontSize: 16.0)),
       ],
     );
 
-    if (isTablet) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 312),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: content,
-          ),
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
+    final scrollView = SingleChildScrollView(
       controller: scrollController,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 312),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: content,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 68.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 312),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: content,
+            ),
           ),
         ),
       ),
     );
+
+    return isTablet ? Center(child: scrollView) : scrollView;
   }
 
   @override
@@ -207,47 +168,55 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
     final isLandscape = media.orientation == Orientation.landscape;
     final isTablet = media.size.shortestSide >= 600;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/background.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _onboardingSteps.length,
-                    onPageChanged: (index) {
-                      setState(() => _currentPage = index);
-                      final prev = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
-                      final next = index + 1;
-                      if (next > prev) {
-                        Store.put(StoreKey.onboardingViewedCount, next);
-                      }
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (isLandscape &&
-                            !isTablet &&
-                            _scrollControllers[index].hasClients) {
-                          _scrollControllers[index].jumpTo(0);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: _onboardingSteps.length,
+                      onPageChanged: (index) {
+                        setState(() => _currentPage = index);
+                        final prev = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
+                        final next = index + 1;
+                        if (next > prev) {
+                          Store.put(StoreKey.onboardingViewedCount, next);
                         }
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final step = _onboardingSteps[index];
-                      return isLandscape
-                          ? _buildScrollableStep(step, isTablet, index)
-                          : _buildFixedStep(step, isTablet);
-                    },
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (isLandscape && _scrollControllers[index].hasClients) {
+                            _scrollControllers[index].jumpTo(0);
+                          }
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final step = _onboardingSteps[index];
+                        return isLandscape
+                            ? _buildScrollableStep(step, isTablet, isLandscape, index)
+                            : _buildFixedStep(step, isTablet, isLandscape);
+                      },
+                    ),
                   ),
-                ),
-                SizedBox(
+                ],
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
                   height: 68.0,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [context.colorScheme.surface.withValues(alpha: 0.0), context.colorScheme.surface],
+                      stops: const [0.0, 0.25],
+                    ),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -256,12 +225,9 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                         child: _currentPage < _onboardingSteps.length - 1
                             ? TextButton(
                                 onPressed: _skip,
-                                child: const Text(
-                                  "Skip",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
+                                child: Text(
+                                  "curator.onboarding.skip".tr(),
+                                  style: TextStyle(fontSize: 14.0, color: context.colorScheme.onSurface),
                                 ),
                               )
                             : const SizedBox(),
@@ -277,8 +243,8 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white54,
+                                  ? context.colorScheme.onSurface
+                                  : context.colorScheme.onSurface.withAlpha(50),
                             ),
                           ),
                         ),
@@ -291,23 +257,18 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                           child: _currentPage < _onboardingSteps.length - 1
                               ? SvgPicture.asset(
                                   'assets/arrow-forward.svg',
+                                  colorFilter: ColorFilter.mode(context.colorScheme.onSurface, BlendMode.srcIn),
                                 )
-                              : const Text(
-                                  "Done",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                              : Text("curator.onboarding.done".tr(), style: TextStyle(fontSize: 14, color: context.colorScheme.onSurface)),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
