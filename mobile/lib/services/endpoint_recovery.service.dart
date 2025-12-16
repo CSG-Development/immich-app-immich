@@ -34,6 +34,7 @@ class EndpointRecoveryService {
   }
 
   void _initializeConnectionStateListener() {
+    _log.info('Initializing connection state listener for endpoint recovery');
     _connectionStateSubscription = _apiService.connectionStateChanges.listen(
       _handleConnectionStateChange,
       onError: (error, stackTrace) {
@@ -43,8 +44,23 @@ class EndpointRecoveryService {
   }
 
   Future<void> _handleConnectionStateChange(ConnectionState state) async {
+    _log.fine(
+      'Connection state update received in EndpointRecoveryService: '
+      'status=${state.status}, '
+      'type=${state.connectionType}, '
+      'lastErrorUrl=${state.lastErrorUrl}, '
+      'lastErrorTime=${state.lastErrorTime}',
+    );
+
     // Only react to reconnecting state and avoid concurrent recovery attempts
     if (state.status != ConnectionStatus.reconnecting || _isRecovering || _isPromptingUser) {
+      if (state.status != ConnectionStatus.reconnecting) {
+        _log.finer('Ignoring connection state change: status is not reconnecting');
+      } else if (_isRecovering) {
+        _log.finer('Ignoring connection state change: recovery already in progress');
+      } else if (_isPromptingUser) {
+        _log.finer('Ignoring connection state change: user prompt already active');
+      }
       return;
     }
 
@@ -65,31 +81,41 @@ class EndpointRecoveryService {
         return;
       }
 
+      _log.info('User accepted endpoint recovery, starting recovery workflow');
       _isRecovering = true;
 
       final mdnsEndpoint = await _tryRecoverUsingCurrentDeviceOnWifi(state);
       if (mdnsEndpoint != null) {
+        _log.info('Fast WiFi/device-based recovery succeeded, endpoint=$mdnsEndpoint');
         await _handleRecoveredEndpoint(mdnsEndpoint, state);
         return;
       }
 
+      _log.fine('Fast WiFi/device-based recovery did not resolve endpoint, continuing with full recovery flow');
+
       final currentEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+      _log.fine('Starting full recovery from current endpoint: $currentEndpoint');
       _ref.read(recoveryStatusProvider.notifier).startRecovery(currentEndpoint);
 
       // Check authentication state and handle accordingly
       final isAuthenticated = _ref.read(remoteProvider).isAuthenticated;
       if (!isAuthenticated) {
+        _log.fine('Remote provider not authenticated, starting unauthenticated recovery flow');
         await _recoverUnauthenticatedUser(dialogContext, state);
         await _ref.read(devicePathRefreshServiceProvider).refreshPaths();
+      } else {
+        _log.finer('Remote provider already authenticated, skipping unauthenticated recovery flow');
       }
       final endpoint = await _resolveEndpoint();
       if (endpoint != null) {
+        _log.info('Endpoint resolved after initial recovery flow: $endpoint');
         await _handleRecoveredEndpoint(endpoint, state);
         return;
       }
 
       final refreshedEndpoint = await _refreshAndResolveEndpoint();
       if (refreshedEndpoint != null) {
+        _log.info('Endpoint resolved after refreshing device paths: $refreshedEndpoint');
         await _handleRecoveredEndpoint(refreshedEndpoint, state);
         return;
       }
@@ -100,6 +126,7 @@ class EndpointRecoveryService {
       _log.severe('Error during endpoint recovery', error, stackTrace);
       _notifyDisconnected(state);
     } finally {
+      _log.fine('Endpoint recovery workflow finished, resetting flags');
       _isRecovering = false;
       _isPromptingUser = false;
       _ref.read(recoveryStatusProvider.notifier).stopRecovery();
@@ -120,6 +147,7 @@ class EndpointRecoveryService {
     try {
       final connectivityResults = await Connectivity().checkConnectivity();
       if (!connectivityResults.contains(ConnectivityResult.wifi)) {
+        _log.finer('Fast recovery skipped: current connectivity is not WiFi: $connectivityResults');
         return null;
       }
 
@@ -128,6 +156,11 @@ class EndpointRecoveryService {
       final connectedDeviceID = discovery.connectedDeviceID;
 
       if (connectedDeviceID == null || devices == null || devices.isEmpty) {
+        _log.fine(
+          'Fast recovery aborted: '
+          'connectedDeviceID=$connectedDeviceID, '
+          'devicesCount=${devices?.length ?? 0}',
+        );
         return null;
       }
 
@@ -141,16 +174,23 @@ class EndpointRecoveryService {
 
       final paths = currentDevice?.paths;
       if (currentDevice == null || paths == null || paths.isEmpty) {
+        _log.fine(
+          'Fast recovery aborted: currentDevice or paths are null/empty '
+          '(deviceFound=${currentDevice != null}, pathsCount=${paths?.length ?? 0})',
+        );
         return null;
       }
 
       final auxiliaryEndpoints = paths.map(DeviceEndpointUtils.buildDevicePathUrl).toList(growable: false);
+      _log.fine('Attempting fast recovery with auxiliary endpoints from current device: '
+          'count=${auxiliaryEndpoints.length}');
 
       final endpoint = await _ref
           .read(apiServiceProvider)
           .setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints);
 
       if (endpoint == null) {
+        _log.fine('Fast recovery: no endpoint resolved from auxiliary endpoints');
         return null;
       }
 
@@ -164,12 +204,15 @@ class EndpointRecoveryService {
   Future<String?> _resolveEndpoint() => _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
 
   Future<String?> _refreshAndResolveEndpoint() async {
+    _log.fine('Refreshing device paths before attempting endpoint resolution');
     await _ref.read(devicePathRefreshServiceProvider).refreshPaths();
     final endpoint = await _resolveEndpoint();
+    _log.fine('Endpoint resolution after path refresh: $endpoint');
     return endpoint;
   }
 
   Future<void> _handleRecoveredEndpoint(String endpoint, ConnectionState state) async {
+    _log.info('Handling recovered endpoint: $endpoint');
     _ref.read(recoveryStatusProvider.notifier).updateEndpoint(endpoint);
 
     _log.info('Endpoint recovery successful: $endpoint');
@@ -188,6 +231,7 @@ class EndpointRecoveryService {
     await _ref.read(websocketProvider.notifier).connect(force: true);
 
     // Notify successful recovery
+    _log.fine('Notifying ApiService of successful reconnection');
     _apiService.notifyConnectionState(
       ConnectionState(status: ConnectionStatus.connected, connectionType: state.connectionType),
     );
@@ -209,6 +253,7 @@ class EndpointRecoveryService {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    _log.fine('Showing endpoint recovery alert dialog to user');
     final shouldRecover =
         await showDialog<bool>(
           context: context,
@@ -235,6 +280,7 @@ class EndpointRecoveryService {
         ) ??
         false;
 
+    _log.fine('Endpoint recovery alert dialog closed, userChoice=$shouldRecover');
     return shouldRecover;
   }
 
@@ -248,6 +294,7 @@ class EndpointRecoveryService {
       return;
     }
 
+    _log.fine('Starting remote OTP login flow for email=$email');
     final loginSucceeded = await _startRemoteOtpFlow(context, email);
     if (!loginSucceeded) {
       _log.warning('Remote OTP login failed or was cancelled');
@@ -257,6 +304,7 @@ class EndpointRecoveryService {
 
   Future<bool> _startRemoteOtpFlow(BuildContext context, String email) async {
     try {
+      _log.finer('Initiating remote access for OTP login');
       await _initiateRemoteAccess(email);
     } catch (error, stackTrace) {
       _log.severe('Failed to initiate remote access', error, stackTrace);
@@ -265,11 +313,13 @@ class EndpointRecoveryService {
 
     var loginSucceeded = false;
 
+    _log.fine('Showing remote code modal for OTP verification');
     await showRemoteCodeModal(context, () async {
       loginSucceeded = true;
     }, () => _initiateRemoteAccess(email));
 
     if (!loginSucceeded) {
+      _log.fine('Remote code modal closed without successful login');
       return false;
     }
 
@@ -279,6 +329,7 @@ class EndpointRecoveryService {
       return false;
     }
 
+    _log.info('Remote OTP flow completed successfully and remote provider is authenticated');
     return true;
   }
 
@@ -286,6 +337,7 @@ class EndpointRecoveryService {
     final controller = _ref.read(remoteAuthProvider);
     final clientFriendlyName = await _getClientFriendlyName();
 
+    _log.fine('Initiating remote access for email=$email with clientName=$clientFriendlyName');
     await controller.initiate(email: email, clientFriendlyName: clientFriendlyName);
   }
 
@@ -295,29 +347,37 @@ class EndpointRecoveryService {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         if (androidInfo.name.isNotEmpty) {
+          _log.finer('Resolved client friendly name from Android name: ${androidInfo.name}');
           return androidInfo.name;
         }
         if (androidInfo.brand.isNotEmpty) {
+          final name = '${androidInfo.brand} ${androidInfo.model}';
+          _log.finer('Resolved client friendly name from Android brand/model: $name');
           return '${androidInfo.brand} ${androidInfo.model}';
         }
+        _log.finer('Resolved client friendly name from Android model: ${androidInfo.model}');
         return androidInfo.model;
       }
 
       if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         if (iosInfo.modelName.isNotEmpty) {
+          _log.finer('Resolved client friendly name from iOS modelName: ${iosInfo.modelName}');
           return iosInfo.modelName;
         }
+        _log.finer('Resolved client friendly name from iOS name: ${iosInfo.name}');
         return iosInfo.name;
       }
     } catch (error, stackTrace) {
       _log.warning('Failed to get client friendly name for remote login', error, stackTrace);
     }
 
+    _log.finer('Using fallback client friendly name for remote login');
     return 'Personal Cloud Photos client';
   }
 
   void dispose() {
+    _log.info('Disposing EndpointRecoveryService and cancelling connection state subscription');
     _connectionStateSubscription?.cancel();
   }
 }

@@ -50,6 +50,8 @@ class NetworkChangeListenerService {
 
   /// Handles connectivity changes, particularly when switching from mobile to WiFi.
   Future<void> _handleConnectivityChange(List<ConnectivityResult> results) async {
+    _log.fine('Raw connectivity change received: $results');
+
     // Get the primary connectivity result (prefer WiFi over mobile)
     final currentConnectivity = _getPrimaryConnectivity(results);
 
@@ -60,10 +62,20 @@ class NetworkChangeListenerService {
 
     // Skip if connectivity and WiFi context haven't actually changed
     if (currentConnectivity == _previousConnectivity && !wifiContextChanged) {
+      _log.finer(
+        'Skipping connectivity change handling: '
+        'connectivity=$currentConnectivity unchanged and wifiContextChanged=$wifiContextChanged',
+      );
       return;
     }
 
-    _log.fine('Network connectivity changed: $_previousConnectivity -> $currentConnectivity');
+    _log.fine(
+      'Network connectivity changed: '
+      '$_previousConnectivity -> $currentConnectivity, '
+      'wifiSsid=${wifiContext?.ssid}, '
+      'wifiIp=${wifiContext?.ip}, '
+      'wifiContextChanged=$wifiContextChanged',
+    );
 
     // Check if we switched from mobile to WiFi
     final wasMobile = _previousConnectivity == ConnectivityResult.mobile;
@@ -104,7 +116,9 @@ class NetworkChangeListenerService {
       _log.fine('Unable to read current WiFi IP', error, stackTrace);
     }
 
-    return _WifiContext(ssid: currentWifiName, ip: currentWifiIp);
+    final context = _WifiContext(ssid: currentWifiName, ip: currentWifiIp);
+    _log.finer('Current WiFi context read: ssid=${context.ssid}, ip=${context.ip}');
+    return context;
   }
 
   bool _hasWifiContextChanged(bool isWifi, _WifiContext? wifiContext) {
@@ -117,7 +131,15 @@ class NetworkChangeListenerService {
       return false;
     }
 
-    return wifiContext.ssid != _previousWifiName || wifiContext.ip != _previousWifiIp;
+    final changed = wifiContext.ssid != _previousWifiName || wifiContext.ip != _previousWifiIp;
+    if (changed) {
+      _log.fine(
+        'WiFi context changed detected: '
+        'ssid: ${_previousWifiName} -> ${wifiContext.ssid}, '
+        'ip: ${_previousWifiIp} -> ${wifiContext.ip}',
+      );
+    }
+    return changed;
   }
 
   Future<void> _onWifiAvailableOrChanged({required bool mobileToWifi, required bool wifiContextChanged}) async {
@@ -132,12 +154,21 @@ class NetworkChangeListenerService {
     final connectedDeviceID = discovery.connectedDeviceID;
 
     if (connectedDeviceID == null || devices == null || devices.isEmpty) {
+      _log.fine(
+        'Local endpoint discovery aborted: '
+        'connectedDeviceID=$connectedDeviceID, '
+        'devicesCount=${devices?.length ?? 0}',
+      );
       return;
     }
 
     final device = devices.firstWhereOrNull((d) => d.about?.certificateCommonName == connectedDeviceID);
 
     if (device == null || device.paths == null || device.paths!.isEmpty) {
+      _log.fine(
+        'Local endpoint discovery: no matching device or paths found for connectedDeviceID=$connectedDeviceID '
+        '(deviceFound=${device != null}, pathsCount=${device?.paths?.length ?? 0})',
+      );
       return;
     }
 
@@ -145,6 +176,8 @@ class NetworkChangeListenerService {
         .map((dynamic p) => DeviceEndpointUtils.buildDevicePathUrl(p as DevicePath))
         .toList(growable: false);
 
+    _log.fine('Attempting to set local OpenAPI endpoint from WiFi-connected device: '
+        'deviceId=$connectedDeviceID, endpointsCount=${endpoints.length}');
     unawaited(_ref.read(apiServiceProvider).setOpenApiServiceEndpoint(auxiliaryEndpoints: endpoints));
   }
 
@@ -162,6 +195,7 @@ class NetworkChangeListenerService {
   }
 
   void dispose() {
+    _log.info('Disposing NetworkChangeListenerService and stopping listener');
     stopListening();
   }
 }
