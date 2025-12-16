@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:homecloud_frontend/homecloud_frontend.dart';
 import 'package:homecloud_frontend/api/remote_access.enums.swagger.dart';
+import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
 
 /// Service that handles refreshing device paths from homecloud_frontend.
@@ -15,10 +17,6 @@ class DevicePathRefreshService {
   final Ref _ref;
   final Logger _log = Logger('DevicePathRefreshService');
   bool _isRefreshing = false;
-
-  // Timeout constants for device discovery and connection
-  static const Duration _deviceDiscoveryTimeout = Duration(minutes: 5);
-  static const Duration _deviceDiscoveryPollInterval = Duration(milliseconds: 100);
 
   DevicePathRefreshService(this._ref);
 
@@ -53,7 +51,7 @@ class DevicePathRefreshService {
     }
 
     try {
-      final device = await _discoverAndConnectToDevice();
+      final device = await _discoverDevice();
       if (device == null) {
         return;
       }
@@ -89,47 +87,49 @@ class DevicePathRefreshService {
     return isAuthenticated;
   }
 
-  /// Waits for device discovery to complete by polling isDetecting flag.
-  /// Returns when isDetecting becomes false or timeout is reached.
-  Future<void> _waitForDiscoveryToComplete(dynamic discovery) async {
-    final startTime = DateTime.now();
-    
-    while (discovery.isDetecting) {
-      if (DateTime.now().difference(startTime) > _deviceDiscoveryTimeout) {
-        _log.warning('Device discovery timeout reached');
-        break;
-      }
-      await Future.delayed(_deviceDiscoveryPollInterval);
-    }
-  }
-
   /// Discovers devices (via mDNS and remote access) and connects to one.
   /// Returns the connected device or null if discovery/connection fails.
-  Future<dynamic> _discoverAndConnectToDevice() async {
-    final discovery = _ref.read(deviceDiscoveryProvider);
+  /// Safely accesses deviceDiscoveryProvider to avoid initialization conflicts.
+  Future<DeviceItem?> _discoverDevice() async {
+    // Safely access deviceDiscoveryProvider by deferring to next event loop tick
+    // This ensures it's not accessed during provider initialization phase
+    DeviceDiscoveryController discovery;
+    try {
+      // Use Future.microtask to defer provider access until after current build phase
+      // This prevents initialization conflicts when deviceDiscoveryProvider modifies DeviceProvider
+      discovery = await Future.microtask(() => _ref.read(deviceDiscoveryProvider));
+    } catch (e, stackTrace) {
+      // If provider access fails due to initialization conflict, log and return null
+      _log.warning('Failed to access deviceDiscoveryProvider, may be initialization conflict', e, stackTrace);
+      return null;
+    }
 
     // Check if we already have a connected device
-    final connectedDevice = discovery.connectedDevice;
-    if (connectedDevice == null) {
+    final connectedDeviceID = discovery.connectedDeviceID;
+    if (connectedDeviceID == null) {
       _log.fine('Skipping path refresh: no device discovered via mDNS or remote access');
       return null;
     }
 
     try {
       // Start device discovery (mDNS for local devices and remote device fetching)
-      discovery.startDeviceDiscovery();
-      await _waitForDiscoveryToComplete(discovery);
+      final result = await discovery.startRemoteDiscovery();
 
-      // Find the candidate device that matches the connected device's certificateCommonName
-      final selectedDevice = discovery.selectedDevice;
+      DeviceItem? refreshedDevice;
+      for (final device in result ?? <DeviceItem>[]) {
+        if (device.about?.certificateCommonName == connectedDeviceID) {
+          refreshedDevice = device;
+          break;
+        }
+      }
 
-      if (selectedDevice?.about?.certificateCommonName == connectedDevice.about?.certificateCommonName) {
+      if (refreshedDevice == null) {
         _log.fine('Skipping path refresh: no matching device found in discovered devices');
         return null;
       }
 
-      discovery.connectToDevice();
-      return selectedDevice;
+      discovery.connectToDevice(refreshedDevice);
+      return refreshedDevice;
     } catch (e, stackTrace) {
       _log.warning('Failed to discover and connect to device', e, stackTrace);
       return null;
@@ -139,14 +139,13 @@ class DevicePathRefreshService {
   /// Processes device paths and saves them to appropriate stores.
   /// Can be called directly when paths are already available (e.g., after login).
   Future<void> processAndSavePaths(List<dynamic> paths) async {
-    for (final devicePath in paths) {
-      final path = devicePath.port != null
-          ? 'https://${devicePath.address}:${devicePath.port}/photos'
-          : 'https://${devicePath.address}/photos';
+    for (final dynamic item in paths) {
+      final devicePath = item as DevicePath;
+      final path = DeviceEndpointUtils.buildDevicePathUrl(devicePath);
 
       if (devicePath.type == DevicePathType.local) {
         await _ref.read(authProvider.notifier).saveLocalEndpoint(path);
-      } else {
+      } else if (devicePath.type != DevicePathType.swaggerGeneratedUnknown) {
         await _saveToExternalEndpointList(path);
       }
     }

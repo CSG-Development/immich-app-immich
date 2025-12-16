@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
+import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
@@ -60,7 +61,10 @@ class CuratorLoginForm extends HookConsumerWidget {
     final serverInfo = ref.watch(serverInfoProvider);
     final localAuthState = ref.watch(localAuthProvider);
 
-    final discovery = ref.watch(deviceDiscoveryProvider);
+    final discovery = ref.read(deviceDiscoveryProvider);
+    final devices = useState<List<DeviceItem>>([]);
+    final selectedDevice = useState<DeviceItem?>(null);
+    final isDiscovering = useState<bool>(false);
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -84,12 +88,112 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     bool areRequiredFieldsFilled() =>
-        email.value.isNotEmpty && passwordController.text.isNotEmpty && discovery.selectedDevice != null;
+        email.value.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value?.baseUrl != null;
+
+    List<DeviceItem> mergeDevices(List<DeviceItem> existing, List<DeviceItem> incoming) {
+      final merged = <String, DeviceItem>{};
+
+      void addDevice(DeviceItem device) {
+        final key = device.about?.certificateCommonName ?? device.baseUrl?.toString() ?? device.name;
+        final existing = merged[key];
+        if (existing == null) {
+          merged[key] = device;
+        } else {
+          // Merge paths: prefer non-null/non-empty paths, combine if both have values
+          final List<DevicePath>? mergedPaths;
+          final existingPaths = existing.paths;
+          final devicePaths = device.paths;
+
+          if (existingPaths != null && existingPaths.isNotEmpty) {
+            if (devicePaths != null && devicePaths.isNotEmpty) {
+              // Both have paths - merge them
+              mergedPaths = [...existingPaths, ...devicePaths];
+            } else {
+              // Only existing has paths
+              mergedPaths = existingPaths;
+            }
+          } else if (devicePaths != null && devicePaths.isNotEmpty) {
+            // Only device has paths
+            mergedPaths = devicePaths;
+          } else {
+            // Both are null or empty - preserve null
+            mergedPaths = null;
+          }
+
+          merged[key] = DeviceItem(
+            baseUrl: existing.baseUrl,
+            about: existing.about,
+            status: existing.status,
+            paths: mergedPaths,
+          );
+        }
+      }
+
+      for (final device in existing) {
+        addDevice(device);
+      }
+      for (final device in incoming) {
+        addDevice(device);
+      }
+
+      return merged.values.toList();
+    }
+
+    Future<void> startDiscovery() async {
+      if (isDiscovering.value) {
+        return;
+      }
+
+      isDiscovering.value = true;
+      devices.value = [];
+
+      try {
+        final result = await discovery.startDeviceDiscovery();
+        final mdnsDevices = result['mdnsDevices'] ?? <DeviceItem>[];
+        final remoteDevices = result['remoteDevices'] ?? <DeviceItem>[];
+
+        devices.value = mergeDevices(devices.value, [...mdnsDevices, ...remoteDevices]);
+
+        if (devices.value.isNotEmpty) {
+          final favoriteDeviceId = discovery.connectedDeviceID;
+          if (favoriteDeviceId != null && favoriteDeviceId.isNotEmpty) {
+            selectedDevice.value = devices.value.firstWhere((d) => d.about?.certificateCommonName == favoriteDeviceId);
+          } else {
+            selectedDevice.value = devices.value.first;
+          }
+        } else {
+          context.pushRoute(
+            UnableToDetectRoute(
+              onRetry: () {
+                context.pop();
+                startDiscovery();
+              },
+            ),
+          );
+          return;
+        }
+      } catch (error, stackTrace) {
+        log.warning('Failed to discover devices', error, stackTrace);
+      } finally {
+        isDiscovering.value = false;
+      }
+    }
 
     useEffect(() {
-      email.value = ref.read(deviceProvider).login;
+      // Defer provider access until after build phase to avoid initialization conflicts
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        discovery.startDeviceDiscovery();
+        email.value = ref.read(deviceProvider).login;
+
+        if (devices.value.isNotEmpty) {
+          final favoriteDeviceId = discovery.connectedDeviceID;
+          if (favoriteDeviceId != null && favoriteDeviceId.isNotEmpty) {
+            selectedDevice.value = devices.value.firstWhere((d) => d.about?.certificateCommonName == favoriteDeviceId);
+          } else {
+            selectedDevice.value = devices.value.first;
+          }
+        }
+
+        startDiscovery();
       });
       return null;
     }, []);
@@ -120,10 +224,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       };
     }, []);
 
-    useEffect(() {
-      return null;
-    }, []);
-
     void populateDevCredentials() async {
       const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
       await dotenv.load(fileName: '.env.$env');
@@ -136,9 +236,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       passwordController.text = password ?? '';
 
       if (serverUrl != null && serverUrl.isNotEmpty) {
-        discovery.selectDevice(
-          DeviceItem(baseUrl: Uri.parse(serverUrl), about: null, status: null, isTemporary: true),
-        );
+        final device = DeviceItem(baseUrl: Uri.parse(serverUrl), about: null, status: null);
+        selectedDevice.value = device;
+        devices.value = mergeDevices(devices.value, [device]);
       }
     }
 
@@ -174,16 +274,21 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Future<bool> fetchServerAuthSettings() async {
-      final device = discovery.selectedDevice;
+      final device = selectedDevice.value;
       if (device == null) {
         warningMessage.value = "login_form_no_device_selected".tr();
         return false;
       }
-      final baseUrl =
-          '${device.baseUrl!.scheme}://${device.baseUrl!.host}${device.baseUrl!.port != 80 && device.baseUrl!.port != 443 ? ':${device.baseUrl!.port}' : ''}/photos';
+      final baseUrl = device.baseUrl;
+      if (baseUrl == null) {
+        warningMessage.value = "login_form_server_empty".tr();
+        return false;
+      }
+      final normalizedBaseUrl =
+          '${baseUrl.scheme}://${baseUrl.host}${baseUrl.port != 80 && baseUrl.port != 443 ? ':${baseUrl.port}' : ''}/photos';
 
       clearAllErrors();
-      final sanitizedServerUrl = sanitizeUrl(baseUrl.toString());
+      final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
       final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
 
       if (normalizedServerUrl.isEmpty) {
@@ -222,7 +327,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -250,12 +354,14 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
-        // Refresh device paths after successful login
-        discovery.connectToDevice();
-        final device = discovery.selectedDevice;
-        final paths = device?.paths;
-        if (paths != null && paths.isNotEmpty) {
-          await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
+        final device = selectedDevice.value;
+        if (device != null) {
+          discovery.connectToDevice(device);
+
+          final paths = device.paths;
+          if (paths != null && paths.isNotEmpty) {
+            await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
+          }
         }
 
         if (result.shouldChangePassword && !result.isAdmin) {
@@ -316,6 +422,10 @@ class CuratorLoginForm extends HookConsumerWidget {
         debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
+        context.pushRoute(UnableToConnectRoute(onRetry: () {
+          context.pop();
+          login();
+        }));
       } finally {
         isLoading.value = false;
       }
@@ -357,17 +467,22 @@ class CuratorLoginForm extends HookConsumerWidget {
                             builder: (context, constraints) {
                               return DeviceSelector(
                                 controller: deviceController,
-                                devices: discovery.devices.values.toList(),
+                                devices: devices.value,
                                 maxWidth: constraints.maxWidth,
-                                selectedDevice: discovery.selectedDevice,
-                                isDetecting: discovery.isDetecting,
+                                selectedDevice: selectedDevice.value,
+                                isDetecting: isDiscovering.value,
                                 focusNode: deviceFocusNode,
                                 enabled: !isLoading.value,
                                 onDeviceSelected: (device) {
-                                  discovery.selectDevice(device);
+                                  if (device is DeviceItem) {
+                                    selectedDevice.value = device;
+                                    devices.value = mergeDevices(devices.value, [device]);
+                                  } else {
+                                    selectedDevice.value = null;
+                                  }
                                   fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
                                 },
-                                onRefresh: discovery.startDeviceDiscovery,
+                                onRefresh: startDiscovery,
                               );
                             },
                           ),

@@ -95,7 +95,7 @@ class DeviceSelector extends HookWidget {
         final exists = items.any((device) => device.name.toLowerCase() == input.toLowerCase());
         if (!exists) {
           // Create temporary device for manual input
-          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input), isTemporary: true);
+          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input));
           // Defer state update to avoid setState during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             manualInputDevice.value = manualDevice;
@@ -118,10 +118,6 @@ class DeviceSelector extends HookWidget {
     void onOptionSelected(DeviceItem value) {
       controller.text = value.name;
       onDeviceSelected(value);
-      // Clear temporary device after selection
-      if (value.isTemporary) {
-        manualInputDevice.value = null;
-      }
     }
 
     return Row(
