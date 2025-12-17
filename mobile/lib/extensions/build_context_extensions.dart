@@ -19,6 +19,9 @@ extension ContextHelper on BuildContext {
   // Returns true if the app is running on a mobile device (!tablets)
   bool get isMobile => width < 550;
 
+  // Returns true if the device is considered a tablet (orientation independent)
+  bool get isTablet => sizeData.shortestSide >= 600;
+
   // Returns the current device pixel ratio from MediaQuery
   double get devicePixelRatio => MediaQuery.devicePixelRatioOf(this);
 

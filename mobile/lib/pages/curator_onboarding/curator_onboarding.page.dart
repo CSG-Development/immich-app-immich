@@ -139,7 +139,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final isLandscape = media.orientation == Orientation.landscape;
-    final isTablet = media.size.shortestSide >= 600;
+    final isTablet = context.isTablet;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
