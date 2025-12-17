@@ -133,6 +133,7 @@
         onkeydown={handleKeydown}
         oninput={(event) => handleInput(event, index)}
         aria-label={`PIN digit ${index + 1} of ${pinLength}${label ? ` for ${label}` : ''}`}
+        autocomplete="new-password"
       />
     {/each}
   </div>
