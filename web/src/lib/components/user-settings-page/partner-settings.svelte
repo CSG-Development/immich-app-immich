@@ -106,7 +106,7 @@
 
     try {
       for (const user of users) {
-        await createPartner({ id: user.id });
+        await createPartner({ partnerCreateDto: { sharedWithId: user.id } });
       }
 
       await refreshPartners();
@@ -117,7 +117,7 @@
 
   const handleShowOnTimelineChanged = async (partner: PartnerSharing, inTimeline: boolean) => {
     try {
-      await updatePartner({ id: partner.user.id, updatePartnerDto: { inTimeline } });
+      await updatePartner({ id: partner.user.id, partnerUpdateDto: { inTimeline } });
 
       partner.inTimeline = inTimeline;
     } catch (error) {
