@@ -32277,7 +32277,7 @@ class CodegenLoader extends AssetLoader {
         },
         "slide3": {
           "description":
-              "       'Share photos with anyone via secure links. You can set expiration dates for links to keep your memories private over time.\n\nInvite members of your Personal Cloud family to collaborate on albums knowing your content is encrypted and protected.",
+              "Share photos with anyone via secure links. You can set expiration dates for links to keep your memories private over time.\n\nInvite members of your Personal Cloud family to collaborate on albums knowing your content is encrypted and protected.",
           "title": "Secure sharing made simple",
         },
         "slide4": {
