@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -60,35 +59,11 @@ class SettingsPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     context.locale;
-    final showAdvancedSettings = useState(false);
-    final tapCount = useState(0);
-    Timer? resetTimer;
-
-    void handleTitleTap() {
-      tapCount.value++;
-      
-      // Cancel previous timer
-      resetTimer?.cancel();
-      
-      if (tapCount.value >= 5) {
-        showAdvancedSettings.value = true;
-        tapCount.value = 0;
-        return;
-      }
-      
-      // Reset tap count after 2 seconds
-      resetTimer = Timer(const Duration(seconds: 2), () {
-        tapCount.value = 0;
-      });
-    }
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,
-        title: GestureDetector(
-          onTap: handleTitleTap,
-          child: const Text('settings').tr(),
-        ),
+        centerTitle: false,  
+        title: const Text('settings').tr(),
         actions: [
           IconButton(
             icon: Icon(
@@ -101,21 +76,18 @@ class SettingsPage extends HookWidget {
         ],
       ),
       body: context.isMobile 
-        ? SafeArea(child: _MobileLayout(showAdvancedSettings: showAdvancedSettings.value))
-        : SafeArea(child: _TabletLayout(showAdvancedSettings: showAdvancedSettings.value)),
+        ? const SafeArea(child: _MobileLayout())
+        : const SafeArea(child: _TabletLayout()),
     );
   }
 }
 
 class _MobileLayout extends StatelessWidget {
-  const _MobileLayout({required this.showAdvancedSettings});
-  
-  final bool showAdvancedSettings;
+  const _MobileLayout();
   
   @override
   Widget build(BuildContext context) {
     final List<Widget> settings = SettingSection.values
-        .where((setting) => setting != SettingSection.advanced || showAdvancedSettings)
         .expand(
           (setting) => setting == SettingSection.beta
               ? [
@@ -146,14 +118,11 @@ class _MobileLayout extends StatelessWidget {
 }
 
 class _TabletLayout extends HookWidget {
-  const _TabletLayout({required this.showAdvancedSettings});
-  
-  final bool showAdvancedSettings;
+  const _TabletLayout();
   
   @override
   Widget build(BuildContext context) {
     final availableSections = SettingSection.values
-        .where((setting) => setting != SettingSection.advanced || showAdvancedSettings)
         .toList();
     final selectedSection = useState<SettingSection>(availableSections.first);
 
