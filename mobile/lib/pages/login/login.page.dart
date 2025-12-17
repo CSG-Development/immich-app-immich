@@ -56,15 +56,20 @@ class LoginPage extends HookConsumerWidget {
         onTap: () => FocusScope.of(context).unfocus(),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isWide = context.isTablet || context.orientation == Orientation.landscape;
+
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
-                    child: isRemoteAccessForm.value
-                        ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
-                        : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: isWide ? 400 : double.infinity),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
+                      child: isRemoteAccessForm.value
+                          ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
+                          : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+                    ),
                   ),
                 ),
               ),
