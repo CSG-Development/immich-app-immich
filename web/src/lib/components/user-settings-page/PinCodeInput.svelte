@@ -120,7 +120,7 @@
   {/if}
   <div class="flex gap-2">
     {#each { length: pinLength } as _, index (index)}
-      <input type="password" name="fakepass-{index}" style="display:none" />
+      <input type="password" name="fake-password-input-{index}" style="display:none" />
       <input
         tabindex={tabindexStart + index}
         {type}
