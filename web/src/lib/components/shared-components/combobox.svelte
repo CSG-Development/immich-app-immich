@@ -240,7 +240,30 @@
   const getInputPosition = () => input?.getBoundingClientRect();
 
   let filteredOptions = $derived.by(() => {
-    const _options = options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase()));
+    /* const _options = options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase())); */
+
+    const query = searchQuery.toLowerCase();
+
+    const _options = options
+      .map((option) => {
+        const label = option.label.toLowerCase();
+        return {
+          option,
+          label,
+          starts: label.startsWith(query),
+        };
+      })
+      .filter(({ label }) => label.includes(query))
+      .sort((a, b) => {
+        // startsWith first
+        if (a.starts !== b.starts) {
+          return a.starts ? -1 : 1;
+        }
+
+        // alphabetical within groups
+        return a.label.localeCompare(b.label);
+      })
+      .map(({ option }) => option);
 
     if (allowCreate && searchQuery !== '' && _options.filter((option) => option.label === searchQuery).length === 0) {
       _options.unshift({ label: searchQuery, value: searchQuery });
