@@ -757,6 +757,7 @@
   "curated_object_page_title": "Things",
   "curator": {
     "button_action_retry": "Retry",
+    "login_form_cant_find_device": "Can’t find your device?",
     "login_form_email_hint": "Enter email address",
     "login_form_endpoint_hint": "No device detected",
     "login_form_endpoint_url": "Connecting to",

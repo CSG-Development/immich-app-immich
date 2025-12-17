@@ -178,6 +178,12 @@ class ApiService implements Authentication {
       dPrint(() => '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint');
       return;
     }
+
+    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    if (!isAuthenticated) {
+      dPrint(() => '_handleConnectionError: Skipping notification - not authenticated');
+      return;
+    }
     
     notifyConnectionState(ConnectionState(
       status: ConnectionStatus.reconnecting,

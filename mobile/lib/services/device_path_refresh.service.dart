@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:homecloud_frontend/homecloud_frontend.dart';
-import 'package:homecloud_frontend/api/remote_access.enums.swagger.dart';
 import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
@@ -62,9 +62,11 @@ class DevicePathRefreshService {
         return;
       }
 
-      _log.fine('Discovered device for path refresh: '
-          'id=${device.about?.certificateCommonName}, '
-          'pathsCount=${device.paths?.length ?? 0}');
+      _log.fine(
+        'Discovered device for path refresh: '
+        'id=${device.about?.certificateCommonName}, '
+        'pathsCount=${device.paths?.length ?? 0}',
+      );
 
       final paths = device.paths;
       if (paths == null || paths.isEmpty) {
@@ -129,16 +131,15 @@ class DevicePathRefreshService {
     try {
       // Start device discovery (mDNS for local devices and remote device fetching)
       final result = await discovery.startRemoteDiscovery();
-      _log.fine('Remote discovery completed: devicesFound=${result?.length ?? 0}, '
-          'connectedDeviceID=$connectedDeviceID');
+      _log.fine(
+        'Remote discovery completed: devicesFound=${result?.length ?? 0}, '
+        'devices=${result?.map((e) => e.about?.certificateCommonName).join(', ')}, '
+        'connectedDeviceID=$connectedDeviceID',
+      );
 
-      DeviceItem? refreshedDevice;
-      for (final device in result ?? <DeviceItem>[]) {
-        if (device.about?.certificateCommonName == connectedDeviceID) {
-          refreshedDevice = device;
-          break;
-        }
-      }
+      DeviceItem? refreshedDevice = result?.firstWhereOrNull(
+        (device) => device.about?.certificateCommonName == connectedDeviceID,
+      );
 
       if (refreshedDevice == null) {
         _log.fine('Skipping path refresh: no matching device found in discovered devices');
@@ -146,8 +147,10 @@ class DevicePathRefreshService {
       }
 
       discovery.connectToDevice(refreshedDevice);
-      _log.fine('Connected to device ${refreshedDevice.about?.certificateCommonName} '
-          'for path refresh, pathsCount=${refreshedDevice.paths?.length ?? 0}');
+      _log.fine(
+        'Connected to device ${refreshedDevice.about?.certificateCommonName} '
+        'for path refresh, pathsCount=${refreshedDevice.paths?.length ?? 0}',
+      );
       return refreshedDevice;
     } catch (e, stackTrace) {
       _log.warning('Failed to discover and connect to device', e, stackTrace);
@@ -168,8 +171,10 @@ class DevicePathRefreshService {
         _log.finer('Saving local endpoint from device path: $path');
         await _ref.read(authProvider.notifier).saveLocalEndpoint(path);
       } else if (devicePath.type != DevicePathType.swaggerGeneratedUnknown) {
-        _log.finer('Saving external endpoint from device path: $path '
-            '(type=${devicePath.type?.value})');
+        _log.finer(
+          'Saving external endpoint from device path: $path '
+          '(type=${devicePath.type?.value})',
+        );
         await _saveToExternalEndpointList(path);
       }
     }
@@ -202,8 +207,10 @@ class DevicePathRefreshService {
 
         // Save back to store
         await Store.put(StoreKey.externalEndpointList, updatedJsonString);
-        _log.info('Added new external endpoint and updated list, '
-            'totalValidEndpoints=${validEndpoints.length}');
+        _log.info(
+          'Added new external endpoint and updated list, '
+          'totalValidEndpoints=${validEndpoints.length}',
+        );
       } else {
         _log.fine('External endpoint already present in list, skipping save: $path');
       }

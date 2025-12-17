@@ -139,7 +139,7 @@ class DeviceSelector extends HookWidget {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
                   });
-                  return [...options, DeviceItem()];
+                  return options;
                 },
                 displayStringForOption: (value) => value.name,
                 onSelected: (option) {
@@ -200,20 +200,7 @@ class DeviceSelector extends HookWidget {
                           itemCount: options.length,
                           itemBuilder: (_, index) {
                             final option = options.elementAt(index);
-                            return option.baseUrl != null
-                                ? ListTile(
-                                    title: Text(option.name),
-                                    onTap: () {
-                                      onSelected(option);
-                                    },
-                                  )
-                                : Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      index > 0 ? const Divider(height: 1) : const SizedBox.shrink(),
-                                      const ListTile(title: Text('I don’t see my Personal Cloud Photos')),
-                                    ],
-                                  );
+                            return ListTile(title: Text(option.name), onTap: () => onSelected(option));
                           },
                         ),
                       ),

@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:homecloud_frontend/homecloud_frontend.dart';
@@ -17,6 +15,7 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/providers/recovery_status.provider.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
+import 'package:immich_mobile/providers/remote_access.provider.dart';
 import 'package:logging/logging.dart';
 
 /// Service that handles network connection recovery when connection is lost.
@@ -305,7 +304,7 @@ class EndpointRecoveryService {
   Future<bool> _startRemoteOtpFlow(BuildContext context, String email) async {
     try {
       _log.finer('Initiating remote access for OTP login');
-      await _initiateRemoteAccess(email);
+      await _ref.read(remoteAccessServiceProvider).initiate(email);
     } catch (error, stackTrace) {
       _log.severe('Failed to initiate remote access', error, stackTrace);
       return false;
@@ -316,7 +315,7 @@ class EndpointRecoveryService {
     _log.fine('Showing remote code modal for OTP verification');
     await showRemoteCodeModal(context, () async {
       loginSucceeded = true;
-    }, () => _initiateRemoteAccess(email));
+    }, () => _ref.read(remoteAccessServiceProvider).initiate(email));
 
     if (!loginSucceeded) {
       _log.fine('Remote code modal closed without successful login');
@@ -331,49 +330,6 @@ class EndpointRecoveryService {
 
     _log.info('Remote OTP flow completed successfully and remote provider is authenticated');
     return true;
-  }
-
-  Future<void> _initiateRemoteAccess(String email) async {
-    final controller = _ref.read(remoteAuthProvider);
-    final clientFriendlyName = await _getClientFriendlyName();
-
-    _log.fine('Initiating remote access for email=$email with clientName=$clientFriendlyName');
-    await controller.initiate(email: email, clientFriendlyName: clientFriendlyName);
-  }
-
-  Future<String> _getClientFriendlyName() async {
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        if (androidInfo.name.isNotEmpty) {
-          _log.finer('Resolved client friendly name from Android name: ${androidInfo.name}');
-          return androidInfo.name;
-        }
-        if (androidInfo.brand.isNotEmpty) {
-          final name = '${androidInfo.brand} ${androidInfo.model}';
-          _log.finer('Resolved client friendly name from Android brand/model: $name');
-          return '${androidInfo.brand} ${androidInfo.model}';
-        }
-        _log.finer('Resolved client friendly name from Android model: ${androidInfo.model}');
-        return androidInfo.model;
-      }
-
-      if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        if (iosInfo.modelName.isNotEmpty) {
-          _log.finer('Resolved client friendly name from iOS modelName: ${iosInfo.modelName}');
-          return iosInfo.modelName;
-        }
-        _log.finer('Resolved client friendly name from iOS name: ${iosInfo.name}');
-        return iosInfo.name;
-      }
-    } catch (error, stackTrace) {
-      _log.warning('Failed to get client friendly name for remote login', error, stackTrace);
-    }
-
-    _log.finer('Using fallback client friendly name for remote login');
-    return 'Personal Cloud Photos client';
   }
 
   void dispose() {

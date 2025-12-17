@@ -1,20 +1,16 @@
-import 'package:device_info_plus/device_info_plus.dart' show DeviceInfoPlugin;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
-import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:logging/logging.dart';
+import 'package:immich_mobile/providers/remote_access.provider.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
-  final log = Logger('RemoteAccessForm');
   final VoidCallback switchToCuratorLogin;
 
   RemoteAccessForm({super.key, required this.switchToCuratorLogin});
@@ -28,73 +24,12 @@ class RemoteAccessForm extends HookConsumerWidget {
     final hasEmailError = useState<bool>(false);
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
-    String clientFriendlyName = '';
-
     String? validateEmail(String email) {
       final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
       if (!simpleEmailPattern.hasMatch(email)) {
         return 'login_form_err_invalid_email'.tr();
       }
       return null;
-    }
-
-    Future<String> getClientFriendlyName() async {
-      if (clientFriendlyName.isNotEmpty) {
-        return clientFriendlyName;
-      }
-      final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      String name = "Personal Cloud Photos";
-      Map<String, dynamic>? data;
-      try {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          final androidInfo = await deviceInfoPlugin.androidInfo;
-          data = androidInfo.data;
-          // The name of the device (Customizable by the user)
-          name = androidInfo.name;
-          if (name.isEmpty) {
-            // The consumer-visible brand with which the product/hardware will be associated, if any.
-            name = androidInfo.brand;
-            if (name.isEmpty) {
-              // The manufacturer of the product/hardware.
-              name = androidInfo.manufacturer;
-            }
-            // + The end-user-visible name for the end product.
-            name = "$name ${androidInfo.model}";
-          }
-        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-          final iosInfo = await deviceInfoPlugin.iosInfo;
-          data = iosInfo.data;
-          // Commercial or user-known model name Examples: iPhone 16 Pro, iPad Pro 11-Inch 3
-          name = iosInfo.modelName;
-        }
-      } catch (_) {}
-      if (kDebugMode) {
-        debugPrint("ClientFriendlyName : $name");
-        if (data != null) {
-          data.forEach((key, value) {
-            debugPrint("[DeviceInfoPlugin] $key: $value");
-          });
-        }
-      }
-      return name;
-    }
-
-    /// Initiate remote access authentication by sending a code to the given email
-    Future<void> initiateRemoteAccess(String email) async {
-      clientFriendlyName = await getClientFriendlyName();
-      final controller = ref.read(remoteAuthProvider);
-      await controller.initiate(
-        email: email,
-        clientFriendlyName: clientFriendlyName,
-      );
-
-      final state = controller.state;
-      if (state.error != null) {
-        // For now, just log the error; UI can be extended to show a message.
-        log.severe(
-          "[RemoteAccessForm] Initiate error: ${state.error} - ${state.errorMessage}",
-        );
-      }
     }
 
     Future<void> handleNextPress() async {
@@ -112,13 +47,14 @@ class RemoteAccessForm extends HookConsumerWidget {
       if (isDisabled) return;
       emailFocusNode.unfocus();
 
-      initiateRemoteAccess(email);
+      final remoteAccessService = ref.read(remoteAccessServiceProvider);
+      remoteAccessService.initiate(email);
       showRemoteCodeModal(
         context,
         () async {
           switchToCuratorLogin();
         },
-        () => initiateRemoteAccess(email),
+        () => ref.read(remoteAccessServiceProvider).initiate(email),
       );
     }
 

@@ -32255,6 +32255,7 @@ class CodegenLoader extends AssetLoader {
     "curated_object_page_title": "Things",
     "curator": {
       "button_action_retry": "Retry",
+      "login_form_cant_find_device": "Can’t find your device?",
       "login_form_email_hint": "Enter email address",
       "login_form_endpoint_hint": "No device detected",
       "login_form_endpoint_url": "Connecting to",
@@ -32610,6 +32611,8 @@ class CodegenLoader extends AssetLoader {
       "unable_to_update_timeline_display_status": "Unable to update timeline display status",
       "unable_to_update_user": "Unable to update user",
       "unable_to_upload_file": "Unable to upload file",
+      "unable_to_upload_file_shared_album":
+          "Unable to upload file: you don’t have permission to upload files to this album.",
       "unable_to_upload_file_type": "Upload failed. This file type is not supported.",
       "unsupported_file_type_notification":
           "Unable to upload file <b>{filename}</b>. The selected file type is not supported.",

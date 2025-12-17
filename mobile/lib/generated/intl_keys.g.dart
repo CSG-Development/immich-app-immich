@@ -799,6 +799,7 @@ abstract class IntlKeys {
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
   static const curator_button_action_retry = 'curator.button.action.retry';
+  static const curator_login_form_cant_find_device = 'curator.login.form.cant.find.device';
   static const curator_login_form_email_hint = 'curator.login.form.email.hint';
   static const curator_login_form_endpoint_hint = 'curator.login.form.endpoint.hint';
   static const curator_login_form_endpoint_url = 'curator.login.form.endpoint.url';
@@ -1128,6 +1129,7 @@ abstract class IntlKeys {
   static const errors_unable_to_update_timeline_display_status = 'errors.unable.to.update.timeline.display.status';
   static const errors_unable_to_update_user = 'errors.unable.to.update.user';
   static const errors_unable_to_upload_file = 'errors.unable.to.upload.file';
+  static const errors_unable_to_upload_file_shared_album = 'errors.unable.to.upload.file.shared.album';
   static const errors_unable_to_upload_file_type = 'errors.unable.to.upload.file.type';
   static const errors_unsupported_file_type_notification = 'errors.unsupported.file.type.notification';
   static const exif = 'exif';
