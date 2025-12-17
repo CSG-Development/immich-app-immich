@@ -96,33 +96,6 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
     context.replaceRoute(const TabControllerRoute());
   }
 
-  Widget _buildFixedStep(OnboardingSlide step, bool isTablet, bool isLandscape) {
-    final imageWidth = isLandscape && !isTablet ? 120.0 : 312.0;
-
-    Widget content = Column(
-      mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: Image.asset(step.image, width: imageWidth),
-        ),
-        const SizedBox(height: 40),
-        Text(
-          step.title.tr(),
-          textAlign: TextAlign.left,
-          style: const TextStyle(fontSize: 34.0, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 24),
-        Text(step.description.tr(), textAlign: TextAlign.left, style: const TextStyle(fontSize: 16.0)),
-      ],
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: isTablet ? Center(child: SizedBox(width: 312, child: content)) : content,
-    );
-  }
-
   Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, bool isLandscape, int index) {
     final imageWidth = isLandscape && !isTablet ? 120.0 : 312.0;
     final scrollController = _scrollControllers[index];
@@ -149,7 +122,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
         padding: const EdgeInsets.only(bottom: 68.0),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 312),
+            constraints: BoxConstraints(maxWidth: isLandscape || isTablet ? 312.0 : double.infinity),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: content,
@@ -195,9 +168,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                       },
                       itemBuilder: (context, index) {
                         final step = _onboardingSteps[index];
-                        return isLandscape
-                            ? _buildScrollableStep(step, isTablet, isLandscape, index)
-                            : _buildFixedStep(step, isTablet, isLandscape);
+                        return _buildScrollableStep(step, isTablet, isLandscape, index);
                       },
                     ),
                   ),
