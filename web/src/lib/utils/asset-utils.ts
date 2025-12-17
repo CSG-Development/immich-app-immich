@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
 import { AppRoute, OS } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -44,36 +45,48 @@ import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
 
-export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
-  const result = await addAssets({
-    ...authManager.params,
-    id: albumId,
-    bulkIdsDto: {
-      ids: assetIds,
-    },
-  });
-  const count = result.filter(({ success }) => success).length;
-  const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
-  const $t = get(t);
+const $t = get(t);
 
-  if (showNotification) {
-    let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
-    if (count > 0) {
-      message = $t('assets_added_to_album_count', { values: { count } });
-    } else if (duplicateErrorCount > 0) {
-      message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
-    }
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message,
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(`${AppRoute.ALBUMS}/${albumId}`);
-        },
+export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
+  try {
+    const result = await addAssets({
+      ...authManager.params,
+      id: albumId,
+      bulkIdsDto: {
+        ids: assetIds,
       },
     });
+    const count = result.filter(({ success }) => success).length;
+    const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
+
+    if (showNotification) {
+      let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
+      if (count > 0) {
+        message = $t('assets_added_to_album_count', { values: { count } });
+      } else if (duplicateErrorCount > 0) {
+        message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
+      }
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message,
+        button: {
+          text: $t('view_album'),
+          onClick() {
+            return goto(resolve(`${AppRoute.ALBUMS}/${albumId}`));
+          },
+        },
+      });
+    }
+  } catch (error) {
+    // temporary
+    if ((error as Error)?.message === 'Error: 400') {
+      notificationController.show({
+        type: NotificationType.Error,
+        timeout: 5000,
+        message: $t('errors.unable_to_upload_file_shared_album'),
+      });
+    }
   }
 };
 
