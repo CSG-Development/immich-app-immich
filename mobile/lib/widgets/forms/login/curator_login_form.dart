@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,9 +10,12 @@ import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
@@ -24,12 +28,11 @@ import 'package:immich_mobile/widgets/forms/login/device_selector.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
+import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
+import 'package:immich_mobile/providers/remote_access.provider.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 
 import 'package:homecloud_frontend/homecloud_frontend.dart';
 
@@ -347,6 +350,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         final isServerValid = await fetchServerAuthSettings();
 
         if (!isServerValid) {
+          context.pushRoute(
+            UnableToConnectRoute(
+              onRetry: () {
+                context.pop();
+                login();
+              },
+            ),
+          );
           return;
         }
 
@@ -422,12 +433,28 @@ class CuratorLoginForm extends HookConsumerWidget {
         debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
-        context.pushRoute(UnableToConnectRoute(onRetry: () {
-          context.pop();
-          login();
-        }));
       } finally {
         isLoading.value = false;
+      }
+    }
+
+    void handleCantFindDevice() {
+      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+      if (isAuthenticated) {
+        context.pushRoute(UnableToDetectRoute());
+      } else {
+        final emailAddress = email.value;
+        if (emailAddress.isEmpty) {
+          warningMessage.value = 'login_form_err_invalid_email'.tr();
+          return;
+        }
+
+        final remoteAccessService = ref.read(remoteAccessServiceProvider);
+        remoteAccessService.initiate(emailAddress);
+        showRemoteCodeModal(context, () async {
+          // After successful OTP authentication, try discovery again.
+          await startDiscovery();
+        }, () => ref.read(remoteAccessServiceProvider).initiate(emailAddress));
       }
     }
 
@@ -486,6 +513,21 @@ class CuratorLoginForm extends HookConsumerWidget {
                               );
                             },
                           ),
+                          const SizedBox(height: 4.0),
+                          GestureDetector(
+                            onTap: () => handleCantFindDevice(),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                "curator.login_form_cant_find_device".tr(),
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 24.0),
                           PasswordInput(
                             controller: passwordController,
@@ -493,10 +535,10 @@ class CuratorLoginForm extends HookConsumerWidget {
                             onSubmit: login,
                             hasExternalError: hasPasswordError.value,
                           ),
-                          const SizedBox(height: 24.0),
+                          const SizedBox(height: 4.0),
                           GestureDetector(
                             child: Padding(
-                              padding: const EdgeInsets.all(12.0),
+                              padding: const EdgeInsets.all(10.0),
                               child: Text(
                                 'reset_password'.tr(),
                                 style: TextStyle(
