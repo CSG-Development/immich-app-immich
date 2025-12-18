@@ -26,6 +26,9 @@ class RemoteCodeModal extends HookConsumerWidget {
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
 
+
+    final remoteAuth = ref.watch(remoteAuthProvider);
+
     useEffect(() {
       void listener() {
         codeLength.value = remoteCodeController.text.length;
@@ -53,9 +56,8 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeLoading.value = true;
       remoteCodeErrorText.value = null;
 
-      final controller = ref.read(remoteAuthProvider);
-      final success = await controller.validateCode(code);
-      final state = controller.state;
+      final success = await remoteAuth.validateCode(code);
+      final state = remoteAuth.state;
 
       if (success) {
         await onSuccess();

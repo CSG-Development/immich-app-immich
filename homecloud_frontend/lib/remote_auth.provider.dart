@@ -64,8 +64,8 @@ class RemoteAuthState {
 /// (initiate by email and validate code) for host apps.
 final remoteAuthProvider =
     ChangeNotifierProvider<RemoteAuthController>((ref) {
-  final remote = ref.watch(remoteProvider);
-  final device = ref.watch(deviceProvider);
+  final remote = ref.read(remoteProvider);
+  final device = ref.read(deviceProvider);
   return RemoteAuthController(remote, device);
 });
 
