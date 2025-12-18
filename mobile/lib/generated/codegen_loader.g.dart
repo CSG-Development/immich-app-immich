@@ -32292,6 +32292,7 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_button_request_new_code": "Request new code",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
+      "sign_in_screen_enable_biometric": "Enable biometric sign-in",
       "sign_in_screen_field_remote_code_error_expired": "Your code has expired",
       "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
@@ -32612,7 +32613,7 @@ class CodegenLoader extends AssetLoader {
       "unable_to_update_user": "Unable to update user",
       "unable_to_upload_file": "Unable to upload file",
       "unable_to_upload_file_shared_album":
-          "Unable to upload file: you don’t have permission to upload files to this album.",
+          "You can only view this album. Contact the album owner for permission to add photos.",
       "unable_to_upload_file_type": "Upload failed. This file type is not supported.",
       "unsupported_file_type_notification":
           "Unable to upload file <b>{filename}</b>. The selected file type is not supported.",

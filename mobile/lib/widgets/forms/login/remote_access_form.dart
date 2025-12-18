@@ -180,8 +180,8 @@ class RemoteAccessForm extends HookConsumerWidget {
           onChanged: onEnableBiometricChange,
           activeThumbColor: context.primaryColor,
           title: Text(
-            'Enable biometric sign-in',
-            style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500, height: 1.5),
+            "curator.sign_in_screen_enable_biometric".tr(),
+            style: context.textTheme.bodyLarge,
           ),
         ),
         const SizedBox(height: 32.0),
