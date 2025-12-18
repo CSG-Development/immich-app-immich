@@ -62,6 +62,7 @@
           tabindexStart={1}
           pinLength={6}
           onFilled={handleUnlockSession}
+          isMasked
         />
 
         <Button type="button" color="secondary" onclick={() => goto(AppRoute.PHOTOS)}>{$t('cancel')}</Button>

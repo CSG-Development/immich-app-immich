@@ -9,9 +9,18 @@
     tabindexStart?: number;
     autofocus?: boolean;
     onFilled?: (value: string) => void;
+    isMasked?: boolean;
   }
 
-  let { label, value = $bindable(''), pinLength = 6, tabindexStart = 0, autofocus = false, onFilled }: Props = $props();
+  let {
+    label,
+    value = $bindable(''),
+    pinLength = 6,
+    tabindexStart = 0,
+    autofocus = false,
+    onFilled,
+    isMasked = false,
+  }: Props = $props();
 
   let pinValues = $state(Array.from({ length: pinLength }).fill(''));
   let pinCodeInputElements: HTMLInputElement[] = $state([]);
@@ -117,7 +126,7 @@
         bind:this={pinCodeInputElements[index]}
         id="pin-code-{index}"
         class="h-12 w-10 rounded-xl border-2 border-suble dark:border-gray-700 text-center text-lg font-medium focus:border-immich-primary focus:ring-primary dark:focus:border-primary font-mono bg-white dark:bg-light"
-        value={pinValues[index] ? '•' : ''}
+        value={isMasked ? (pinValues[index] ? '•' : '') : pinValues[index]}
         onkeydown={handleKeydown}
         oninput={(event) => handleInput(event, index)}
         aria-label={`PIN digit ${index + 1} of ${pinLength}${label ? ` for ${label}` : ''}`}
