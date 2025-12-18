@@ -123,10 +123,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isLandscape || isTablet ? 312.0 : double.infinity),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: content,
-            ),
+            child: Padding(padding: const EdgeInsets.all(24.0), child: content),
           ),
         ),
       ),
@@ -198,7 +195,7 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                                 onPressed: _skip,
                                 child: Text(
                                   "curator.onboarding.skip".tr(),
-                                  style: TextStyle(fontSize: 14.0, color: context.colorScheme.onSurface),
+                                  style: TextStyle(color: context.colorScheme.onSurface, fontWeight: FontWeight.w500),
                                 ),
                               )
                             : const SizedBox(),
@@ -230,7 +227,10 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                                   'assets/arrow-forward.svg',
                                   colorFilter: ColorFilter.mode(context.colorScheme.onSurface, BlendMode.srcIn),
                                 )
-                              : Text("curator.onboarding.done".tr(), style: TextStyle(fontSize: 14, color: context.colorScheme.onSurface)),
+                              : Text(
+                                  "curator.onboarding.done".tr(),
+                                  style: TextStyle(color: context.colorScheme.onSurface, fontWeight: FontWeight.w500),
+                                ),
                         ),
                       ),
                     ],

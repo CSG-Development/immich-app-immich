@@ -404,6 +404,10 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
         hasPreviousLoginFailed.value = true;
       } catch (error) {
+        context.pushRoute(UnableToConnectRoute(onRetry: () {
+          context.pop();
+          login();
+        }));
         debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
