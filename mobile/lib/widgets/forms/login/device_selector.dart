@@ -126,87 +126,82 @@ class DeviceSelector extends HookWidget {
       spacing: 12,
       children: [
         Expanded(
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final double maxWidth = constraints.maxWidth;
-              return RawAutocomplete<DeviceItem>(
-                textEditingController: controller,
+          child: RawAutocomplete<DeviceItem>(
+            textEditingController: controller,
+            focusNode: focusNode,
+            optionsBuilder: (value) {
+              final input = value.text.trim();
+              final options = getFilteredOptions(input);
+              // Update dropdown state based on whether options are available and field has focus
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
+              });
+              return options;
+            },
+            displayStringForOption: (value) => value.name,
+            onSelected: (option) {
+              isDropdownOpen.value = false;
+              onOptionSelected(option);
+            },
+            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+              return ServerEndpointInput(
+                label: 'curator.sign_in_screen_dropdown_device_label'.tr(),
+                controller: controller,
                 focusNode: focusNode,
-                optionsBuilder: (value) {
-                  final input = value.text.trim();
-                  final options = getFilteredOptions(input);
-                  // Update dropdown state based on whether options are available and field has focus
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
-                  });
-                  return options;
+                leadingIcon: buildIconDevice(selectedDevice),
+                isDetecting: isDetecting,
+                isEmpty: getFilteredOptions(controller.text).isEmpty,
+                suffixIcon: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  icon: Icon(
+                    isDropdownOpen.value ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    if (focusNode.hasFocus && isDropdownOpen.value) {
+                      focusNode.unfocus();
+                      isDropdownOpen.value = false;
+                    } else {
+                      focusNode.requestFocus();
+                      // Trigger optionsBuilder by notifying listeners
+                      controller.value = controller.value.copyWith(
+                        text: controller.text,
+                        selection: TextSelection.collapsed(offset: controller.text.length),
+                        composing: TextRange.empty,
+                      );
+                    }
+                  },
+                ),
+                onSubmit: () {
+                  if (controller.text.isEmpty) {
+                    onDeviceSelected(null);
+                  } else {
+                    onFieldSubmitted();
+                  }
                 },
-                displayStringForOption: (value) => value.name,
-                onSelected: (option) {
-                  isDropdownOpen.value = false;
-                  onOptionSelected(option);
-                },
-                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                  return ServerEndpointInput(
-                    label: 'curator.sign_in_screen_dropdown_device_label'.tr(),
-                    controller: controller,
-                    focusNode: focusNode,
-                    leadingIcon: buildIconDevice(selectedDevice),
-                    isDetecting: isDetecting,
-                    isEmpty: getFilteredOptions(controller.text).isEmpty,
-                    suffixIcon: IconButton(
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.builder(
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                      icon: Icon(
-                        isDropdownOpen.value ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        if (focusNode.hasFocus && isDropdownOpen.value) {
-                          focusNode.unfocus();
-                          isDropdownOpen.value = false;
-                        } else {
-                          focusNode.requestFocus();
-                          // Trigger optionsBuilder by notifying listeners
-                          controller.value = controller.value.copyWith(
-                            text: controller.text,
-                            selection: TextSelection.collapsed(offset: controller.text.length),
-                            composing: TextRange.empty,
-                          );
-                        }
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (_, index) {
+                        final option = options.elementAt(index);
+                        return ListTile(title: Text(option.name), onTap: () => onSelected(option));
                       },
                     ),
-                    onSubmit: () {
-                      if (controller.text.isEmpty) {
-                        onDeviceSelected(null);
-                      } else {
-                        onFieldSubmitted();
-                      }
-                    },
-                  );
-                },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(12),
-                      clipBehavior: Clip.antiAlias,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: 300, minWidth: maxWidth, maxWidth: maxWidth),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (_, index) {
-                            final option = options.elementAt(index);
-                            return ListTile(title: Text(option.name), onTap: () => onSelected(option));
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ),
               );
             },
           ),

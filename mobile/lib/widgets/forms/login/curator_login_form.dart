@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -17,7 +16,6 @@ import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
-import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -62,7 +60,6 @@ class CuratorLoginForm extends HookConsumerWidget {
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
     final serverInfo = ref.watch(serverInfoProvider);
-    final localAuthState = ref.watch(localAuthProvider);
 
     final discovery = ref.read(deviceDiscoveryProvider);
     final devices = useState<List<DeviceItem>>([]);
@@ -378,29 +375,6 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
         } else {
-          if (localAuthState.canAuthenticate) {
-            final shouldAddBiometric = await showDialog<bool>(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('login_form_add_security_title').tr(),
-                  content: const Text('login_form_add_security_content').tr(),
-                  actions: <Widget>[
-                    TextButton(
-                      child: const Text('login_form_not_now').tr(),
-                      onPressed: () => Navigator.of(context).pop(false),
-                    ),
-                    TextButton(child: const Text('common_yes').tr(), onPressed: () => Navigator.of(context).pop(true)),
-                  ],
-                );
-              },
-            );
-
-            if (shouldAddBiometric == true) {
-              await Store.put(StoreKey.enableBiometric, true);
-            }
-          }
-
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
             if (onboardingWasShown) {
@@ -466,136 +440,138 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GestureDetector(
-          onDoubleTap: () => populateDevCredentials(),
+        Expanded(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
-              SvgPicture.asset(
-                context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-                height: 20,
+              GestureDetector(
+                onDoubleTap: () => populateDevCredentials(),
+                child: Column(
+                  children: [
+                    const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
+                    SvgPicture.asset(
+                      context.isDarkTheme
+                          ? 'assets/curator-photos-logo-dark.svg'
+                          : 'assets/curator-photos-logo-light.svg',
+                      height: 20,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 24.0),
+              isLoading.value
+                  ? LoadingIcon(key: const ValueKey("loading"), text: 'curator.login_form_loading_text'.tr())
+                  : Form(
+                      key: formKey,
+                      child: AutofillGroup(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              email.value,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 24.0),
+                            DeviceSelector(
+                              controller: deviceController,
+                              devices: devices.value,
+                              selectedDevice: selectedDevice.value,
+                              isDetecting: isDiscovering.value,
+                              focusNode: deviceFocusNode,
+                              enabled: !isLoading.value,
+                              onDeviceSelected: (device) {
+                                if (device is DeviceItem) {
+                                  selectedDevice.value = device;
+                                  devices.value = mergeDevices(devices.value, [device]);
+                                } else {
+                                  selectedDevice.value = null;
+                                }
+                                fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
+                              },
+                              onRefresh: startDiscovery,
+                            ),
+                            const SizedBox(height: 4.0),
+                            GestureDetector(
+                              onTap: () => handleCantFindDevice(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Text(
+                                  "curator.login_form_cant_find_device".tr(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24.0),
+                            PasswordInput(
+                              controller: passwordController,
+                              focusNode: passwordFocusNode,
+                              onSubmit: login,
+                              hasExternalError: hasPasswordError.value,
+                            ),
+                            const SizedBox(height: 4.0),
+                            GestureDetector(
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Text(
+                                  'reset_password'.tr(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24.0),
+                            warningMessage.value == null
+                                ? const SizedBox.shrink()
+                                : Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x1FF44336),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(
+                                              Icons.error,
+                                              color: context.isDarkTheme
+                                                  ? const Color(0xFFF28F8C)
+                                                  : const Color(0xFFF44336),
+                                            ),
+                                            const SizedBox(width: 16.0),
+                                            Expanded(child: Text(warningMessage.value!)),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24.0),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
-        const SizedBox(height: 24.0),
         isLoading.value
-            ? LoadingIcon(key: const ValueKey("loading"), text: 'curator.login_form_loading_text'.tr())
-            : Column(
-                children: [
-                  Form(
-                    key: formKey,
-                    child: AutofillGroup(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            email.value,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 24.0),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              return DeviceSelector(
-                                controller: deviceController,
-                                devices: devices.value,
-                                maxWidth: constraints.maxWidth,
-                                selectedDevice: selectedDevice.value,
-                                isDetecting: isDiscovering.value,
-                                focusNode: deviceFocusNode,
-                                enabled: !isLoading.value,
-                                onDeviceSelected: (device) {
-                                  if (device is DeviceItem) {
-                                    selectedDevice.value = device;
-                                    devices.value = mergeDevices(devices.value, [device]);
-                                  } else {
-                                    selectedDevice.value = null;
-                                  }
-                                  fieldFocusChange(context, deviceFocusNode, passwordFocusNode);
-                                },
-                                onRefresh: startDiscovery,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 4.0),
-                          GestureDetector(
-                            onTap: () => handleCantFindDevice(),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                "curator.login_form_cant_find_device".tr(),
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24.0),
-                          PasswordInput(
-                            controller: passwordController,
-                            focusNode: passwordFocusNode,
-                            onSubmit: login,
-                            hasExternalError: hasPasswordError.value,
-                          ),
-                          const SizedBox(height: 4.0),
-                          GestureDetector(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                'reset_password'.tr(),
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24.0),
-                          warningMessage.value == null
-                              ? const SizedBox.shrink()
-                              : Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0x1FF44336),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.error,
-                                            color: context.isDarkTheme
-                                                ? const Color(0xFFF28F8C)
-                                                : const Color(0xFFF44336),
-                                          ),
-                                          const SizedBox(width: 16.0),
-                                          Expanded(child: Text(warningMessage.value!)),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24.0),
-                                  ],
-                                ),
-                          AnimatedBuilder(
-                            animation: Listenable.merge([passwordController, hasPreviousLoginFailed]),
-                            builder: (_, __) {
-                              final canSubmit = areRequiredFieldsFilled() && !hasPreviousLoginFailed.value;
-                              return LoginButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+            ? const SizedBox.shrink()
+            : AnimatedBuilder(
+                animation: Listenable.merge([passwordController, hasPreviousLoginFailed]),
+                builder: (_, __) {
+                  final canSubmit = areRequiredFieldsFilled() && !hasPreviousLoginFailed.value;
+                  return LoginButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);
+                },
               ),
       ],
     );
