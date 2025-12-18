@@ -59,13 +59,12 @@ class LoginPage extends HookConsumerWidget {
             final isWide = context.isTablet || context.orientation == Orientation.landscape;
 
             return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isWide ? 400 : double.infinity),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isWide ? 400 : double.infinity, minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
+                      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
                       child: isRemoteAccessForm.value
                           ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
                           : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
