@@ -56,7 +56,6 @@
         <p class="text-center text-sm" style="text-wrap: pretty;">{$t('enter_your_pin_code_subtitle')}</p>
 
         <PincodeInput
-          type="password"
           autofocus
           label=""
           bind:value={pinCode}
