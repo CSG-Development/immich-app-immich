@@ -790,6 +790,7 @@
     "sign_in_screen_button_request_new_code": "Request new code",
     "sign_in_screen_dropdown_device_error_no_device": "No device detected",
     "sign_in_screen_dropdown_device_label": "Connecting to",
+    "sign_in_screen_enable_biometric": "Enable biometric sign-in",
     "sign_in_screen_field_remote_code_error_expired": "Your code has expired",
     "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
     "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",

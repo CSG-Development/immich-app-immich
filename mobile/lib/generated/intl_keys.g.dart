@@ -823,6 +823,7 @@ abstract class IntlKeys {
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';
   static const curator_sign_in_screen_dropdown_device_label = 'curator.sign.in.screen.dropdown.device.label';
+  static const curator_sign_in_screen_enable_biometric = 'curator.sign.in.screen.enable.biometric';
   static const curator_sign_in_screen_field_remote_code_error_expired =
       'curator.sign.in.screen.field.remote.code.error.expired';
   static const curator_sign_in_screen_field_remote_code_error_invalid =
