@@ -441,7 +441,14 @@ class CuratorLoginForm extends HookConsumerWidget {
     void handleCantFindDevice() {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
       if (isAuthenticated) {
-        context.pushRoute(UnableToDetectRoute());
+        context.pushRoute(
+          UnableToDetectRoute(
+            onRetry: () {
+              context.pop();
+              startDiscovery();
+            },
+          ),
+        );
       } else {
         final emailAddress = email.value;
         if (emailAddress.isEmpty) {
