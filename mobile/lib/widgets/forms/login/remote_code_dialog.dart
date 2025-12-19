@@ -11,11 +11,7 @@ class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function() onSuccess;
   final Future<void> Function() initiateRemoteAccess;
 
-  const RemoteCodeModal({
-    super.key,
-    required this.onSuccess,
-    required this.initiateRemoteAccess,
-  });
+  const RemoteCodeModal({super.key, required this.onSuccess, required this.initiateRemoteAccess});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +21,6 @@ class RemoteCodeModal extends HookConsumerWidget {
     final remoteCodeErrorText = useState<String?>(null);
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
-
 
     final remoteAuth = ref.watch(remoteAuthProvider);
 
@@ -67,23 +62,19 @@ class RemoteCodeModal extends HookConsumerWidget {
       } else {
         switch (state.error) {
           case RemoteAuthError.invalidCode:
-            remoteCodeErrorText.value =
-                'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
+            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
             break;
           case RemoteAuthError.expiredCode:
             remoteCodeExpired.value = true;
-            remoteCodeErrorText.value =
-                'curator.sign_in_screen_field_remote_code_error_expired'.tr();
+            remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_expired'.tr();
             break;
           case RemoteAuthError.network:
-            remoteCodeErrorText.value =
-                'curator.remote_access_server_unreachable'.tr();
+            remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
             break;
           case RemoteAuthError.server:
           case RemoteAuthError.unknown:
           case null:
-            remoteCodeErrorText.value = state.errorMessage ??
-                'curator.remote_access_server_unreachable'.tr();
+            remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_server_unreachable'.tr();
             break;
         }
       }
@@ -130,14 +121,7 @@ class RemoteCodeModal extends HookConsumerWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: isLoading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(context.colorScheme.primary),
-                    ),
-                  )
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator())
                 : Text(
                     'curator.sign_in_screen_remote_code_resend'.tr(),
                     style: TextStyle(color: context.colorScheme.primary),
@@ -148,7 +132,8 @@ class RemoteCodeModal extends HookConsumerWidget {
       if (!remoteCodeExpired.value)
         () {
           final isLoading = remoteCodeLoading.value;
-          final isDisabled = codeLength.value != 6 || isValidating.value;
+          final isDisabled =
+              codeLength.value != 6 || isValidating.value || remoteCodeErrorText.value != null;
           return TextButton(
             onPressed: (isLoading || isDisabled) ? null : checkRemoteAccessCode,
             style: TextButton.styleFrom(
@@ -157,21 +142,10 @@ class RemoteCodeModal extends HookConsumerWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: isLoading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(context.colorScheme.primary),
-                    ),
-                  )
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator())
                 : Text(
                     'curator.sign_in_screen_remote_code_allow_access'.tr(),
-                    style: TextStyle(
-                      color: isDisabled
-                          ? const Color(0xFF9E9E9E)
-                          : context.colorScheme.primary,
-                    ),
+                    style: TextStyle(color: isDisabled ? const Color(0xFF9E9E9E) : context.colorScheme.primary),
                   ),
           );
         },
@@ -211,9 +185,7 @@ class RemoteCodeModal extends HookConsumerWidget {
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.all(Radius.circular(19)),
                         border: Border.all(
-                          color: context.isDarkTheme
-                              ? const Color(0xFF616161)
-                              : const Color(0xFFCBCDD3),
+                          color: context.isDarkTheme ? const Color(0xFF616161) : const Color(0xFFCBCDD3),
                         ),
                         color: Colors.transparent,
                       ),
@@ -224,9 +196,7 @@ class RemoteCodeModal extends HookConsumerWidget {
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.all(Radius.circular(19)),
                         border: Border.all(
-                          color: context.isDarkTheme
-                              ? const Color(0xFF64B5F6)
-                              : const Color(0xFF1976D2),
+                          color: context.isDarkTheme ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
                           width: 2,
                         ),
                         color: Colors.transparent,
