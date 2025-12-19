@@ -10,9 +10,10 @@
     getLink: (path: string) => string;
     title: string;
     icon: string;
+    handleClick?: () => void;
   }
 
-  const { node, getLink, title, icon }: Props = $props();
+  const { node, getLink, title, icon, handleClick }: Props = $props();
 
   const rootLink = getLink('');
   const isRoot = $derived(node.parent === null);
@@ -31,6 +32,7 @@
         aria-label={$t('to_parent')}
         href={parentLink}
         class="me-2"
+        onclick={handleClick}
       />
     </div>
   {/if}
@@ -49,6 +51,7 @@
           aria-label={title}
           size="medium"
           aria-current={isRoot ? 'page' : undefined}
+          onclick={handleClick}
         />
       </li>
       {#each parents as parent (parent)}

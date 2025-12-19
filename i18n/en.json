@@ -982,6 +982,7 @@
     "cant_get_number_of_comments": "Can't get number of comments",
     "cant_search_people": "Can't search people",
     "cant_search_places": "Can't search places",
+    "enter_valid_hex_color": "Please enter a valid hex color",
     "error_adding_assets_to_album": "Error adding assets to album",
     "error_adding_users_to_album": "Error adding users to album",
     "error_deleting_shared_user": "Error deleting shared user",
