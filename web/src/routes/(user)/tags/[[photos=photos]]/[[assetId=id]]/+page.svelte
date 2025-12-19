@@ -10,7 +10,6 @@
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
   import AddToAlbum from '$lib/components/timeline/actions/AddToAlbumAction.svelte';
   import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import AssetJobActions from '$lib/components/timeline/actions/AssetJobActions.svelte';
   import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
   import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
   import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
@@ -248,8 +247,6 @@
         onUndoDelete={(assets) => timelineManager.addAssets(assets)}
       />
       <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-      <hr />
-      <AssetJobActions />
     </ButtonContextMenu>
   </AssetSelectControlBar>
 {/if}
