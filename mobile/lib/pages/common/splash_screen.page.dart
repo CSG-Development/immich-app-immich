@@ -196,7 +196,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   Widget build(BuildContext context) {
     final isAndroid = Platform.isAndroid;
     final backgroundColor = isAndroid
-        ? const Color(0xFF05070E)
+        ? const Color(0xFF19181E)
         : Theme.of(context).colorScheme.surface;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -207,7 +207,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
           child: Image(
             image: AssetImage('assets/immich-splash.png'),
             filterQuality: FilterQuality.medium,
-            fit: BoxFit.contain,
+            fit: BoxFit.fitHeight,
           ),
         ),
       ),
