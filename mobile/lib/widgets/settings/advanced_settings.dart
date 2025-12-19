@@ -13,6 +13,7 @@ import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.da
 import 'package:immich_mobile/repositories/local_files_manager.repository.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
+import 'package:immich_mobile/providers/protected_feature_visibility.provider.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/widgets/settings/beta_timeline_list_tile.dart';
 import 'package:immich_mobile/widgets/settings/custom_proxy_headers_settings/custome_proxy_headers_settings.dart';
@@ -36,6 +37,7 @@ class AdvancedSettings extends HookConsumerWidget {
     final allowSelfSignedSSLCert = useAppSettingsState(AppSettingsEnum.allowSelfSignedSSLCert);
     final useAlternatePMFilter = useAppSettingsState(AppSettingsEnum.photoManagerCustomFilter);
     final readonlyModeEnabled = useAppSettingsState(AppSettingsEnum.readonlyModeEnabled);
+    final logLevelVisibility = ref.watch(protectedFeatureVisibilityProvider);
 
     final logLevel = Level.LEVELS[levelId.value].name;
 
@@ -79,14 +81,15 @@ class AdvancedSettings extends HookConsumerWidget {
           }
         },
       ),
-      SettingsSliderListTile(
-        text: "advanced_settings_log_level_title".tr(namedArgs: {'level': logLevel}),
-        valueNotifier: levelId,
-        maxValue: 8,
-        minValue: 1,
-        noDivisons: 7,
-        label: logLevel,
-      ),
+      if (logLevelVisibility.isVisible)
+        SettingsSliderListTile(
+          text: "advanced_settings_log_level_title".tr(namedArgs: {'level': logLevel}),
+          valueNotifier: levelId,
+          maxValue: 8,
+          minValue: 1,
+          noDivisons: 7,
+          label: logLevel,
+        ),
       SettingsSwitchListTile(
         valueNotifier: preferRemote,
         title: "advanced_settings_prefer_remote_title".tr(),
