@@ -2,9 +2,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/protected_feature_visibility.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/settings/advanced_settings.dart';
 import 'package:immich_mobile/widgets/settings/asset_list_settings/asset_list_settings.dart';
@@ -53,38 +55,41 @@ enum SettingSection {
 }
 
 @RoutePage()
-class SettingsPage extends HookWidget {
+class SettingsPage extends HookConsumerWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     context.locale;
+    final logsVisibility = ref.watch(protectedFeatureVisibilityProvider);
+    final logsVisibilityNotifier = ref.read(protectedFeatureVisibilityProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,  
-        title: const Text('settings').tr(),
+        centerTitle: false,
+        title: GestureDetector(
+          onTap: logsVisibilityNotifier.handleTap,
+          child: const Text('settings').tr(),
+        ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.article_outlined,
-              color: context.primaryColor,
+          if (logsVisibility.isVisible)
+            IconButton(
+              icon: Icon(Icons.article_outlined, color: context.primaryColor),
+              tooltip: 'check_logs'.tr(),
+              onPressed: () => context.pushRoute(const AppLogRoute()),
             ),
-            tooltip: 'check_logs'.tr(),
-            onPressed: () => context.pushRoute(const AppLogRoute()),
-          ),
         ],
       ),
-      body: context.isMobile 
-        ? const SafeArea(child: _MobileLayout())
-        : const SafeArea(child: _TabletLayout()),
+      body: context.isMobile
+          ? const SafeArea(child: _MobileLayout())
+          : const SafeArea(child: _TabletLayout()),
     );
   }
 }
 
 class _MobileLayout extends StatelessWidget {
   const _MobileLayout();
-  
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> settings = SettingSection.values
