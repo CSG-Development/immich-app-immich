@@ -15,7 +15,6 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/providers/recovery_status.provider.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:immich_mobile/providers/remote_access.provider.dart';
 import 'package:logging/logging.dart';
 
 /// Service that handles network connection recovery when connection is lost.
@@ -181,8 +180,10 @@ class EndpointRecoveryService {
       }
 
       final auxiliaryEndpoints = paths.map(DeviceEndpointUtils.buildDevicePathUrl).toList(growable: false);
-      _log.fine('Attempting fast recovery with auxiliary endpoints from current device: '
-          'count=${auxiliaryEndpoints.length}');
+      _log.fine(
+        'Attempting fast recovery with auxiliary endpoints from current device: '
+        'count=${auxiliaryEndpoints.length}',
+      );
 
       final endpoint = await _ref
           .read(apiServiceProvider)
@@ -302,20 +303,12 @@ class EndpointRecoveryService {
   }
 
   Future<bool> _startRemoteOtpFlow(BuildContext context, String email) async {
-    try {
-      _log.finer('Initiating remote access for OTP login');
-      await _ref.read(remoteAccessServiceProvider).initiate(email);
-    } catch (error, stackTrace) {
-      _log.severe('Failed to initiate remote access', error, stackTrace);
-      return false;
-    }
-
     var loginSucceeded = false;
 
     _log.fine('Showing remote code modal for OTP verification');
-    await showRemoteCodeModal(context, () async {
+    await showRemoteCodeModal(context, email, () async {
       loginSucceeded = true;
-    }, () => _ref.read(remoteAccessServiceProvider).initiate(email));
+    });
 
     if (!loginSucceeded) {
       _log.fine('Remote code modal closed without successful login');

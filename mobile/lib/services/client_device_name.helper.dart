@@ -2,26 +2,16 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:logging/logging.dart';
 
-/// Centralized helper for remote access (OTP) flows.
+/// Helper for resolving a human‑readable name for the current device.
 ///
-/// This service is injected with a [RemoteAuthController] and is exposed
-/// via a Riverpod provider so widgets and services don't have to deal with
-/// the controller directly.
-class RemoteAccessService {
-  final RemoteAuthController _controller;
-
-  RemoteAccessService(this._controller);
-
-  static final Logger _log = Logger('RemoteAccessService');
+/// The value is cached for the process lifetime to avoid repeated calls
+/// to `DeviceInfoPlugin`.
+class ClientDeviceNameHelper {
+  static final Logger _log = Logger('ClientDeviceNameHelper');
   static String? _cachedClientFriendlyName;
 
-  /// Returns a human‑readable name for the current client device.
-  ///
-  /// The value is cached for the process lifetime to avoid repeated calls
-  /// to `DeviceInfoPlugin`.
   static Future<String> getClientFriendlyName() async {
     if (_cachedClientFriendlyName != null && _cachedClientFriendlyName!.isNotEmpty) {
       return _cachedClientFriendlyName!;
@@ -54,29 +44,11 @@ class RemoteAccessService {
     }
 
     if (kDebugMode) {
-      debugPrint('RemoteAccessService.getClientFriendlyName => $name');
+      debugPrint('ClientDeviceNameHelper.getClientFriendlyName => $name');
     }
 
     _cachedClientFriendlyName = name;
     return name;
-  }
-
-  /// Initiates remote access (OTP) for the given [email].
-  Future<void> initiate(String email) async {
-    final clientFriendlyName = await getClientFriendlyName();
-
-    _log.fine('Initiating remote access for email=$email with clientName=$clientFriendlyName');
-    await _controller.initiate(
-      email: email,
-      clientFriendlyName: clientFriendlyName,
-    );
-
-    final state = _controller.state;
-    if (state.error != null) {
-      _log.severe(
-        '[RemoteAccessService] initiate error: ${state.error} - ${state.errorMessage}',
-      );
-    }
   }
 }
 

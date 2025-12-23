@@ -12,7 +12,6 @@ import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:immich_mobile/providers/remote_access.provider.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 
@@ -49,10 +48,7 @@ class RemoteAccessForm extends HookConsumerWidget {
                 child: const Text('login_form_not_now').tr(),
                 onPressed: () => Navigator.of(dialogContext).pop(false),
               ),
-              TextButton(
-                child: const Text('common_yes').tr(),
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-              ),
+              TextButton(child: const Text('common_yes').tr(), onPressed: () => Navigator.of(dialogContext).pop(true)),
             ],
           );
         },
@@ -62,8 +58,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         return false;
       }
 
-      final isAuthenticated =
-          await ref.read(localAuthProvider.notifier).authenticate(context, null);
+      final isAuthenticated = await ref.read(localAuthProvider.notifier).authenticate(context, null);
 
       return isAuthenticated;
     }
@@ -107,11 +102,7 @@ class RemoteAccessForm extends HookConsumerWidget {
       if (isDisabled) return;
       emailFocusNode.unfocus();
 
-      final remoteAccessService = ref.read(remoteAccessServiceProvider);
-      remoteAccessService.initiate(email);
-      showRemoteCodeModal(context, () async {
-        switchToCuratorLogin();
-      }, () => ref.read(remoteAccessServiceProvider).initiate(email));
+      showRemoteCodeModal(context, email, () async => switchToCuratorLogin());
     }
 
     useEffect(() {
@@ -178,10 +169,7 @@ class RemoteAccessForm extends HookConsumerWidget {
           contentPadding: const EdgeInsets.all(0),
           value: enableBiometric.value,
           onChanged: onEnableBiometricChange,
-          title: Text(
-            "curator.sign_in_screen_enable_biometric".tr(),
-            style: context.textTheme.bodyLarge,
-          ),
+          title: Text("curator.sign_in_screen_enable_biometric".tr(), style: context.textTheme.bodyLarge),
         ),
         const SizedBox(height: 32.0),
         ValueListenableBuilder(

@@ -4,25 +4,65 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/services/client_device_name.helper.dart';
 import 'package:immich_mobile/widgets/forms/pin_input.dart';
 import 'package:pinput/pinput.dart';
 
 class RemoteCodeModal extends HookConsumerWidget {
-  final Future<void> Function() onSuccess;
-  final Future<void> Function() initiateRemoteAccess;
+  final Future<void> Function()? onSuccess;
+  final String email;
 
-  const RemoteCodeModal({super.key, required this.onSuccess, required this.initiateRemoteAccess});
+  const RemoteCodeModal({super.key, required this.email, this.onSuccess});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final remoteCodeController = useTextEditingController.fromValue(TextEditingValue.empty);
     final remoteCodeLoading = useState<bool>(false);
     final remoteCodeExpired = useState<bool>(false);
+    final remoteCodeInitiateError = useState<bool>(false);
     final remoteCodeErrorText = useState<String?>(null);
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
 
     final remoteAuth = ref.watch(remoteAuthProvider);
+
+    Future<void> sendRemoteCode() async {
+      // Avoid overlapping send operations
+      if (remoteCodeLoading.value && !remoteCodeExpired.value) {
+        return;
+      }
+      remoteCodeInitiateError.value = false;
+      remoteCodeLoading.value = true;
+      remoteCodeErrorText.value = null;
+
+      try {
+        final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
+        await remoteAuth.initiate(email: email, clientFriendlyName: clientFriendlyName);
+
+        final state = remoteAuth.state;
+        if (state.error != null) {
+          remoteCodeInitiateError.value = true;
+          switch (state.error) {
+            case RemoteAuthError.network:
+              remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
+              break;
+            case RemoteAuthError.server:
+            case RemoteAuthError.unknown:
+            case RemoteAuthError.invalidCode:
+            case RemoteAuthError.expiredCode:
+            case null:
+              remoteCodeErrorText.value =
+                  state.errorMessage ?? 'curator.remote_access_server_unreachable'.tr();
+              break;
+          }
+        }
+      } catch (_) {
+        remoteCodeInitiateError.value = true;
+        remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
+      } finally {
+        remoteCodeLoading.value = false;
+      }
+    }
 
     useEffect(() {
       void listener() {
@@ -32,6 +72,12 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeController.addListener(listener);
       return () => remoteCodeController.removeListener(listener);
     }, [remoteCodeController]);
+
+    // Initiate remote access (send code) when the dialog opens
+    useEffect(() {
+      sendRemoteCode();
+      return null;
+    }, []);
 
     /// Validate the remote access code and get access and refresh tokens
     ///
@@ -55,7 +101,7 @@ class RemoteCodeModal extends HookConsumerWidget {
       final state = remoteAuth.state;
 
       if (success) {
-        await onSuccess();
+        await onSuccess?.call();
         if (context.mounted) {
           Navigator.of(context).pop(); // Close the modal
         }
@@ -91,7 +137,7 @@ class RemoteCodeModal extends HookConsumerWidget {
               ? null
               : () {
                   Navigator.of(context).pop();
-                  onSuccess();
+                  onSuccess?.call();
                 },
           style: TextButton.styleFrom(
             minimumSize: Size.zero,
@@ -102,7 +148,7 @@ class RemoteCodeModal extends HookConsumerWidget {
         );
       },
       // Allow access button - visible when expired
-      if (remoteCodeExpired.value)
+      if (remoteCodeExpired.value || remoteCodeInitiateError.value)
         () {
           final isLoading = remoteCodeLoading.value;
           return TextButton(
@@ -113,7 +159,7 @@ class RemoteCodeModal extends HookConsumerWidget {
                     remoteCodeErrorText.value = null;
                     remoteCodeController.clear();
                     remoteCodeExpired.value = false;
-                    initiateRemoteAccess();
+                    sendRemoteCode();
                   },
             style: TextButton.styleFrom(
               minimumSize: Size.zero,
@@ -129,7 +175,7 @@ class RemoteCodeModal extends HookConsumerWidget {
           );
         },
       // Submit code button - visible when not expired
-      if (!remoteCodeExpired.value)
+      if (!remoteCodeExpired.value && !remoteCodeInitiateError.value)
         () {
           final isLoading = remoteCodeLoading.value;
           final isDisabled =
@@ -263,13 +309,12 @@ class RemoteCodeModal extends HookConsumerWidget {
 /// Show modal dialog for remote code input
 Future<void> showRemoteCodeModal(
   BuildContext context,
-  Future<void> Function() onSuccess,
-  Future<void> Function() initiateRemoteAccess,
+  String email,
+  Future<void> Function()? onSuccess,
 ) {
   return showDialog(
     context: context,
     barrierDismissible: true,
-    builder: (BuildContext context) =>
-        RemoteCodeModal(onSuccess: onSuccess, initiateRemoteAccess: initiateRemoteAccess),
+    builder: (BuildContext context) => RemoteCodeModal(onSuccess: onSuccess, email: email),
   );
 }
