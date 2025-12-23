@@ -27,7 +27,6 @@ import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:immich_mobile/providers/remote_access.provider.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -404,10 +403,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
         hasPreviousLoginFailed.value = true;
       } catch (error) {
-        context.pushRoute(UnableToConnectRoute(onRetry: () {
-          context.pop();
-          login();
-        }));
+        context.pushRoute(
+          UnableToConnectRoute(
+            onRetry: () {
+              context.pop();
+              login();
+            },
+          ),
+        );
         debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
@@ -434,12 +437,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           return;
         }
 
-        final remoteAccessService = ref.read(remoteAccessServiceProvider);
-        remoteAccessService.initiate(emailAddress);
-        showRemoteCodeModal(context, () async {
-          // After successful OTP authentication, try discovery again.
-          await startDiscovery();
-        }, () => ref.read(remoteAccessServiceProvider).initiate(emailAddress));
+        showRemoteCodeModal(context, emailAddress, () async => startDiscovery());
       }
     }
 
