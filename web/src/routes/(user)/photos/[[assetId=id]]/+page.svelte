@@ -202,7 +202,6 @@
     clearSelect={() => assetInteraction.clearMultiselect()}
   >
     <IconButton
-      id="test"
       color="secondary"
       variant="ghost"
       shape="round"
