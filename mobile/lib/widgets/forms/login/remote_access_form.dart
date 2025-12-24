@@ -90,6 +90,9 @@ class RemoteAccessForm extends HookConsumerWidget {
     Future<void> handleNextPress() async {
       final email = emailController.text;
 
+      final isDisabled = email.isEmpty || validateEmail(email) != null;
+      if (isDisabled) return;
+
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
       final authenticatedEmail = ref.read(deviceProvider).login;
 
@@ -98,8 +101,6 @@ class RemoteAccessForm extends HookConsumerWidget {
         return;
       }
 
-      final isDisabled = email.isEmpty || validateEmail(email) != null;
-      if (isDisabled) return;
       emailFocusNode.unfocus();
 
       showRemoteCodeModal(context, email, () async => switchToCuratorLogin());
