@@ -100,6 +100,9 @@ class RemoteAuthController extends ChangeNotifier {
   }) async {
     if (_state.isInitiating) return;
 
+    // Clear any previous authentication of remote access server.
+    _remoteProvider.logout();
+
     // Save email in device provider to pre-fill next time.
     _deviceProvider.setHost(login: email);
 
@@ -125,8 +128,6 @@ class RemoteAuthController extends ChangeNotifier {
       );
 
       if (response.isSuccessful) {
-        // Clear any previous authentication of remote access server.
-        _remoteProvider.logout();
 
         if (kDebugMode) {
           debugPrint(
