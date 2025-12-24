@@ -33,14 +33,21 @@
     type OnLink,
     type OnUnlink,
   } from '$lib/utils/actions';
-  import { openFileUploadDialog } from '$lib/utils/file-uploader';
-  import { AssetVisibility } from '@immich/sdk';
+  import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { AssetVisibility, getAssetInfo } from '@immich/sdk';
 
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import {
+    notificationController,
+    NotificationType,
+  } from '$lib/components/shared-components/notification/notification';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
-  import { mdiDotsVertical, mdiPlus, mdiPresentationPlay } from '@mdi/js';
+  import { getAssetOriginalUrl, getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { canvasToBlob, getFileExtension, isWebCompatibleAsset, makeImageUnique } from '$lib/utils/asset-utils';
+  import { handleError } from '$lib/utils/handle-error';
+  import { IconButton } from '@immich/ui';
+  import { mdiContentDuplicate, mdiDotsVertical, mdiPlus, mdiPresentationPlay } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
@@ -114,6 +121,52 @@
   beforeNavigate(() => {
     isFaceEditMode.value = false;
   });
+
+  const onDuplicate = async (selectedAssets: TimelineAsset[]) => {
+    try {
+      for (const asset of selectedAssets) {
+        try {
+          const assetInfo = await getAssetInfo({ id: asset.id });
+          const assetType = getFileExtension(assetInfo.originalFileName);
+
+          let blob: Blob | undefined;
+
+          if (asset.isImage) {
+            if (isWebCompatibleAsset(assetInfo)) {
+              const src = getAssetOriginalUrl({ id: asset.id, cacheKey: asset.thumbhash });
+              const img = new Image();
+              img.src = src;
+              await img.decode();
+
+              const uniqueCanvas = makeImageUnique(img);
+
+              blob = await canvasToBlob(uniqueCanvas);
+            } else {
+              notificationController.show({
+                type: NotificationType.Error,
+                message: $t('duplicate_error_unsupported_type', { values: { type: assetType } }),
+                timeout: 3000,
+              });
+            }
+          } else {
+            notificationController.show({
+              type: NotificationType.Error,
+              message: $t('duplicate_error_video'),
+              timeout: 3000,
+            });
+          }
+          if (blob) {
+            const resultFile = new File([blob], assetInfo.originalFileName, { type: assetInfo.originalMimeType });
+            await fileUploadHandler({ files: [resultFile] });
+          }
+        } catch (error) {
+          handleError(error, $t('duplicate_error'));
+        }
+      }
+    } catch (error) {
+      handleError(error, $t('duplicate_error'));
+    }
+  };
 </script>
 
 <UserPageLayout
@@ -148,6 +201,14 @@
     assets={assetInteraction.selectedAssets}
     clearSelect={() => assetInteraction.clearMultiselect()}
   >
+    <IconButton
+      color="secondary"
+      variant="ghost"
+      shape="round"
+      icon={mdiContentDuplicate}
+      aria-label={$t('duplicate')}
+      onclick={() => onDuplicate(assetInteraction.selectedAssets)}
+    />
     <CreateSharedLink />
     <SelectAllAssets {timelineManager} {assetInteraction} />
     <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
