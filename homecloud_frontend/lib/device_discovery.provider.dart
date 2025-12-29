@@ -9,11 +9,12 @@
 //   All other rights are expressly reserved by Seagate Technology LLC.
 //
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'api/api.swagger.dart';
-import 'api/remote_access.enums.swagger.dart';
 import 'api/remote_access.swagger.dart';
 import 'providers/device.provider.dart';
 import 'providers/hcdevice.provider.dart';
@@ -26,21 +27,16 @@ class DeviceItem {
   final Uri? baseUrl;
   final About? about;
   final Status? status;
-  final bool isTemporary;
   final List<DevicePath>? paths;
 
   const DeviceItem({
     this.baseUrl,
     this.about,
     this.status,
-    this.isTemporary = false,
     this.paths,
   });
 
   String get name {
-    if (isTemporary) {
-      return baseUrl.toString();
-    }
     if (about?.hostname.isNotEmpty == true) {
       return about!.hostname;
     }
@@ -52,15 +48,14 @@ class DeviceItem {
 
 /// Controller that encapsulates HomeCloud device discovery (mDNS + remote).
 ///
-/// Host apps can simply watch this provider and use:
-/// - [devices] to populate a selector
-/// - [selectedDevice] for the current selection
-/// - [isDetecting] to show a loading indicator
-/// - [noDeviceFound] to trigger a "no devices" UI flow
+/// Discovery can be started in three ways:
+/// - [startDeviceDiscovery] - starts both mDNS and remote discovery (clears existing devices)
+/// - [startMdnsDiscovery] - starts only mDNS discovery (adds to existing devices)
+/// - [startRemoteDiscovery] - starts only remote discovery (adds to existing devices)
+///
+/// All methods return results directly, so there's no need to watch the provider reactively.
 final deviceDiscoveryProvider =
-    ChangeNotifierProvider<DeviceDiscoveryController>((ref) {
-  // Use ref.read() instead of ref.watch() to prevent recreation when dependencies change
-  // The controller should manage its own lifecycle, not be recreated when dependencies change
+    Provider<DeviceDiscoveryController>((ref) {
   final device = ref.read(deviceProvider);
   final remote = ref.read(remoteProvider);
   final controller = DeviceDiscoveryController(device, remote);
@@ -74,367 +69,146 @@ final deviceDiscoveryProvider =
   return controller;
 });
 
-class DeviceDiscoveryController extends ChangeNotifier {
+class DeviceDiscoveryController {
   final DeviceProvider _deviceProvider;
   final RemoteProvider _remoteProvider;
 
   nsd.Discovery? _discovery;
+  // All devices discovered during the current lifecycle
   final Map<String, DeviceItem> _devices = {};
-  DeviceItem? _selectedDevice;
-
-  int _pendingTasks = 0;
-  bool _noDeviceFound = false;
-  bool _hasAttemptedRestore = false;
-
-  DeviceDiscoveryController(this._deviceProvider, this._remoteProvider) {
-    // Attempt to restore connection on initialization if deviceID is stored
-    _restoreConnectionIfNeeded();
-  }
-
-  Map<String, DeviceItem> get devices => Map.unmodifiable(_devices);
-  DeviceItem? get selectedDevice => _selectedDevice;
-  bool get isDetecting => _pendingTasks > 0;
-  bool get noDeviceFound => _noDeviceFound;
   
-  /// Get the currently connected device with all available paths.
-  /// Returns null if no device is connected.
-  /// 
-  /// This is useful for host apps to access the connected device information
-  /// including all connection paths (local, public, relay) for remote devices.
-  DeviceItem? get connectedDevice {
-    if (!_deviceProvider.deviceFound) {
-      return null;
-    }
-    
-    final deviceID = _deviceProvider.deviceID;
-    if (deviceID == null || deviceID.isEmpty) {
-      return null;
-    }
-    
-    // Try to find device in discovered devices first
-    final discoveredDevice = _devices[deviceID];
-    if (discoveredDevice != null) {
-      return discoveredDevice;
-    }
-    
-    // If not found in discovered devices, create a DeviceItem from DeviceProvider
-    // This handles the case where device was connected but not in current discovery
-    return DeviceItem(
-      baseUrl: _deviceProvider.baseUrl,
-      about: null, // About info not available if not discovered
-      status: _deviceProvider.deviceStatus,
-      paths: _deviceProvider.devicePaths,
-      isTemporary: true,
-    );
-  }
+  // Track ongoing mDNS discovery to share results across concurrent calls
+  Completer<List<DeviceItem>?>? _mdnsDiscoveryCompleter;
+  // Track devices discovered during current mDNS discovery session
+  final Set<String> _currentMdnsDevices = {};
+
+  DeviceDiscoveryController(this._deviceProvider, this._remoteProvider);
+
+  String? get connectedDeviceID => _deviceProvider.deviceID;
+  List<DevicePath>? get connectedDevicePaths => _deviceProvider.devicePaths;
 
   /// Start a full discovery round (local mDNS + remote devices).
-  void startDeviceDiscovery() {
+  ///
+  /// This is a convenience method that starts both mDNS and remote discovery.
+  /// For more control, use [startMdnsDiscovery] and [startRemoteDiscovery] separately.
+  ///
+  /// Returns a map with device lists discovered by each method:
+  /// - `mdnsDevices`: List of devices discovered via mDNS, or `null` if not started
+  /// - `remoteDevices`: List of devices discovered via remote API, or `null` if not started
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ref.read(deviceDiscoveryProvider);
+  /// final result = await controller.startDeviceDiscovery();
+  /// final mdnsDevices = result['mdnsDevices'] ?? [];
+  /// final remoteDevices = result['remoteDevices'] ?? [];
+  /// print('Found ${mdnsDevices.length} devices via mDNS');
+  /// print('Found ${remoteDevices.length} devices via remote API');
+  /// ```
+  Future<Map<String, List<DeviceItem>?>> startDeviceDiscovery() async {
     _devices.clear();
-    _selectedDevice = null;
-    _noDeviceFound = false;
-    _pendingTasks = 0;
-    notifyListeners();
+    final mdnsDevices = await _startNsdDetection();
+    final remoteDevices = await _getRemoteDevices();
+    
+    return {
+      'mdnsDevices': mdnsDevices,
+      'remoteDevices': remoteDevices,
+    };
+  }
 
-    _startNsdDetection();
-    _getRemoteDevices();
+  /// Start mDNS discovery of local devices on the network.
+  ///
+  /// This method discovers devices using mDNS/Bonjour on the local network.
+  /// It does not clear existing devices, so discovered devices will be added
+  /// to the current device list.
+  ///
+  /// Returns a list of devices discovered during this discovery session,
+  /// or `null` if discovery was already running or failed to start.
+  /// The discovery runs for a fixed duration, then automatically stops.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ref.read(deviceDiscoveryProvider);
+  /// final devices = await controller.startMdnsDiscovery();
+  /// if (devices != null) {
+  ///   print('Found ${devices.length} devices via mDNS');
+  /// } else {
+  ///   print('mDNS discovery was already running or failed');
+  /// }
+  /// ```
+  Future<List<DeviceItem>?> startMdnsDiscovery() async {
+    return await _startNsdDetection();
+  }
+
+  /// Start remote device discovery using the remote API.
+  ///
+  /// This method fetches devices from the remote API if authenticated.
+  /// It does not clear existing devices, so discovered devices will be added
+  /// to the current device list.
+  ///
+  /// Returns a list of devices discovered via remote API,
+  /// or `null` if remote provider is not authenticated or discovery was already running.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ref.read(deviceDiscoveryProvider);
+  /// final devices = await controller.startRemoteDiscovery();
+  /// if (devices != null) {
+  ///   print('Found ${devices.length} devices via remote API');
+  /// } else {
+  ///   print('Remote discovery not started (not authenticated or already running)');
+  /// }
+  /// ```
+  Future<List<DeviceItem>?> startRemoteDiscovery() async {
+    return await _getRemoteDevices();
   }
 
   /// Explicitly stop mDNS discovery, if running.
-  Future<void> stopDiscovery() async {
-    await _stopDiscovery();
+  ///
+  /// This only stops mDNS discovery. Remote discovery cannot be stopped
+  /// once started (it completes automatically).
+  ///
+  /// Returns list of devices discovered during the discovery session,
+  /// or `null` if discovery wasn't running.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ref.read(deviceDiscoveryProvider);
+  /// final devices = await controller.stopDiscovery();
+  /// if (devices != null) {
+  ///   print('mDNS discovery stopped, found ${devices.length} devices');
+  /// } else {
+  ///   print('mDNS discovery was not running');
+  /// }
+  /// ```
+  Future<List<DeviceItem>?> stopDiscovery() async {
+    return await _stopDiscovery();
   }
 
-  /// Update the currently selected device.
-  void selectDevice(DeviceItem device) {
-    _selectedDevice = device;
-    notifyListeners();
-  }
-
-  /// Refresh device paths and status for the stored favorite device.
-  ///
-  /// This method:
-  /// 1. Uses the remote refresh token to authenticate
-  /// 2. Fetches updated device paths from the remote API
-  /// 3. Connects to the device to get current status and about info
-  /// 4. Updates the device provider with new paths and status
-  ///
-  /// Returns true if successful, false otherwise.
-  /// 
-  /// This is useful when:
-  /// - Device paths may have changed (e.g., IP address changed)
-  /// - Network conditions have changed
-  /// - App needs to reconnect to a previously connected device
-  Future<bool> refreshDevicePaths() async {
-    // Check if remote provider is authenticated
-    if (!_remoteProvider.isAuthenticated) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Cannot refresh paths: remote provider not authenticated",
-        );
-      }
-      return false;
-    }
-
-    // Check if we have a stored deviceID
-    final storedDeviceID = _deviceProvider.deviceID;
-    if (storedDeviceID == null || storedDeviceID.isEmpty) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Cannot refresh paths: no stored deviceID",
-        );
-      }
-      return false;
-    }
-
-    try {
-      final remoteApi = _remoteProvider.api;
-      
-      // Get list of devices
-      final responseList = await remoteApi.clientV1DevicesGet();
-      if (!responseList.isSuccessful) {
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Failed to get devices list: "
-            "${hc_utils.extractErrorMessage(responseList)}",
-          );
-        }
-        return false;
-      }
-
-      final List<Device>? remoteDevices = responseList.body;
-      if (remoteDevices == null || remoteDevices.isEmpty) {
-        if (kDebugMode) {
-          debugPrint("[DeviceDiscovery] No remote devices found");
-        }
-        return false;
-      }
-
-      // Find device with matching certificateCommonName
-      final device = remoteDevices.firstWhere(
-        (d) => d.certificateCommonName == storedDeviceID,
-        orElse: () => throw StateError('Device not found'),
-      );
-
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Found device to refresh: ${device.friendlyName} "
-          "(${device.seagateDeviceID})",
-        );
-      }
-
-      // Get device paths
-      final responsePaths = await remoteApi.clientV1DevicesDeviceIDGet(
-        deviceID: device.seagateDeviceID,
-      );
-
-      if (!responsePaths.isSuccessful || responsePaths.body == null) {
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Failed to get device paths: "
-            "${hc_utils.extractErrorMessage(responsePaths)}",
-          );
-        }
-        return false;
-      }
-
-      final devicePaths = responsePaths.body!;
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Got ${devicePaths.paths.length} paths for device",
-        );
-      }
-
-      // Try to connect to device using paths to get status and about
-      Uri? successfulBaseUrl;
-      Status? successfulStatus;
-      About? aboutInfo;
-
-      for (final path in devicePaths.paths) {
-        final baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Trying path ${path.type.value}: $baseUrl",
-          );
-        }
-
-        try {
-          final api = DeviceProvider.createApi(baseUrl: baseUrl);
-          final statusResponse = await api.statusGet().timeout(
-            Duration(
-              milliseconds: path.type == DevicePathType.local
-                  ? 60 * 1000
-                  : 20 * 3000,
-            ),
-          );
-
-          if (statusResponse.isSuccessful &&
-              statusResponse.body != null &&
-              statusResponse.body!.oobe.done) {
-            successfulBaseUrl = baseUrl;
-            successfulStatus = statusResponse.body;
-
-            // Get about info
-            final aboutResponse = await api.aboutGet();
-            if (aboutResponse.isSuccessful && aboutResponse.body != null) {
-              aboutInfo = aboutResponse.body;
-              break; // Successfully connected
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint(
-              "[DeviceDiscovery] Error connecting to path ${path.type.value}: $e",
-            );
-          }
-          continue; // Try next path
-        }
-      }
-
-      if (successfulBaseUrl == null ||
-          successfulStatus == null ||
-          aboutInfo == null) {
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Could not connect to device using any path",
-          );
-        }
-        return false;
-      }
-
-      // Update device provider with new paths and status
-      _deviceProvider.setHost(
-        baseUrl: successfulBaseUrl,
-        status: successfulStatus,
-        deviceID: storedDeviceID,
-        devicePaths: devicePaths.paths,
-      );
-
-      // Update discovered devices if needed
-      final deviceItem = DeviceItem(
-        baseUrl: successfulBaseUrl,
-        about: aboutInfo,
-        status: successfulStatus,
-        paths: devicePaths.paths,
-      );
-      _devices[storedDeviceID] = deviceItem;
-
-      // Update selected device if it matches
-      if (_selectedDevice?.about?.certificateCommonName == storedDeviceID) {
-        selectDevice(deviceItem);
-      }
-
-      notifyListeners();
-
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Successfully refreshed device paths and status",
-        );
-      }
-
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Error refreshing device paths: ${e.toString()}",
-        );
-      }
-      return false;
-    }
-  }
-
-  /// Connect to the selected device and save it as the favorite device.
-  ///
-  /// This method sets the host in the device provider and saves the deviceID
-  /// (certificateCommonName) to persistent storage so it can be auto-selected
-  /// in future sessions. Also stores device paths if available.
-  ///
-  /// Parameters:
-  /// - [device]: The device to connect to. If null, uses [selectedDevice].
-  /// - [auth]: Optional authentication response containing access/refresh tokens.
-  /// - [status]: Optional device status.
-  /// - [login]: Optional login identifier.
-  void connectToDevice({
-    DeviceItem? device,
-    AuthResponse? auth,
-    Status? status,
-    String? login,
-  }) {
-    final targetDevice = device ?? _selectedDevice;
-    if (targetDevice == null || targetDevice.baseUrl == null) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Cannot connect: no device selected or baseUrl missing",
-        );
-      }
-      return;
-    }
-
-    final deviceID = targetDevice.about?.certificateCommonName;
-    if (deviceID == null || deviceID.isEmpty) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Cannot connect: deviceID (certificateCommonName) missing",
-        );
-      }
-      return;
-    }
-
+  void connectToDevice(DeviceItem deviceItem) {
     _deviceProvider.setHost(
-      baseUrl: targetDevice.baseUrl,
-      auth: auth,
-      status: status ?? targetDevice.status,
-      deviceID: deviceID,
-      devicePaths: targetDevice.paths,
-      login: login,
+      baseUrl: deviceItem.baseUrl,
+      deviceID: deviceItem.about!.certificateCommonName,
+      devicePaths: deviceItem.paths,
     );
-
-    // Update selected device if different
-    if (device != null && device != _selectedDevice) {
-      selectDevice(device);
-    }
-
-    notifyListeners();
-  }
-
-  void _updateDetectionCounter(int delta) {
-    _pendingTasks += delta;
-    if (_pendingTasks < 0) {
-      _pendingTasks = 0;
-    }
-
-    if (_pendingTasks == 0) {
-      // When detection finishes, decide what to do based on discovered devices.
-      if (_devices.isEmpty && !_deviceProvider.deviceFound) {
-        _noDeviceFound = true;
-      } else if (_selectedDevice == null && _devices.isNotEmpty) {
-        // Auto-select favorite device when possible, fallback to first device.
-        final favorite = _deviceProvider.deviceID;
-        if (favorite != null && favorite.isNotEmpty) {
-          selectDevice(_devices.values.firstWhere(
-            (device) =>
-                device.about?.certificateCommonName == favorite,
-            orElse: () => _devices.values.first,
-          ));
-        } else {
-          selectDevice(_devices.values.first);
-        }
-      }
-      notifyListeners();
-    } else {
-      // Just notify that detection is ongoing.
-      notifyListeners();
-    }
   }
 
   /// Start mDNS detection of local devices.
-  Future<void> _startNsdDetection() async {
-    if (_discovery != null) {
-      return; // Already detecting, avoid duplicate calls
+  /// Returns list of devices discovered, or `null` if failed to start.
+  /// If discovery is already running, returns the same future that other concurrent calls are waiting on.
+  Future<List<DeviceItem>?> _startNsdDetection() async {
+    // If discovery is already running, return the existing completer's future
+    if (_mdnsDiscoveryCompleter != null) {
+      return _mdnsDiscoveryCompleter!.future;
     }
-    _updateDetectionCounter(1);
+    
+    // Create a new completer for this discovery session
+    _mdnsDiscoveryCompleter = Completer<List<DeviceItem>?>();
+    _currentMdnsDevices.clear();
+    
     _discovery = await hc_utils.startDiscovery();
     if (_discovery != null) {
+      // Add service listener only once, even if multiple calls are waiting
       _discovery!.addServiceListener((service, status) {
         if (status == nsd.ServiceStatus.found &&
             service.name != null &&
@@ -449,32 +223,77 @@ class DeviceDiscoveryController extends ChangeNotifier {
               service.port,
             ),
             timeoutDelay: 12 * 5000,
-          );
+            devicePaths: DevicePaths(
+              paths: [
+                DevicePath(
+                  type: DevicePathType.local,
+                  address: service.host!,
+                  port: service.port,
+                ),
+              ],
+              seagateDeviceID: service.name!,
+            ),
+          ).then((value) {
+            if (value != null && value.about != null) {
+              final deviceID = value.about!.certificateCommonName;
+              _devices[deviceID] = value;
+              _currentMdnsDevices.add(deviceID);
+            }
+          });
         }
       });
-      // Stop discovery after detection window
-      Future.delayed(hc_utils.durationDetection, () {
-        _stopDiscovery();
+      
+      // Wait for discovery period to complete, then stop and return devices
+      Future.delayed(hc_utils.durationDetection, () async {
+        await _stopDiscovery();
       });
+      
+      // Return the completer's future - it will be completed when discovery finishes
+      return _mdnsDiscoveryCompleter!.future;
     } else {
-      _updateDetectionCounter(-1);
+      // Failed to start discovery
+      final completer = _mdnsDiscoveryCompleter!;
+      _mdnsDiscoveryCompleter = null;
+      completer.complete(null);
+      return completer.future;
     }
   }
 
-  Future<void> _stopDiscovery() async {
+  /// Stop mDNS discovery.
+  /// Completes the completer with discovered devices and returns the result.
+  Future<List<DeviceItem>?> _stopDiscovery() async {
     if (_discovery != null) {
       await hc_utils.stopDiscovery(_discovery!);
       _discovery = null;
-      _updateDetectionCounter(-1);
     }
+    
+    // Complete the completer with discovered devices
+    if (_mdnsDiscoveryCompleter != null) {
+      final completer = _mdnsDiscoveryCompleter!;
+      _mdnsDiscoveryCompleter = null;
+      
+      // Get list of devices discovered during this session
+      final devices = _currentMdnsDevices
+          .map((id) => _devices[id])
+          .whereType<DeviceItem>()
+          .toList();
+      
+      _currentMdnsDevices.clear();
+      completer.complete(devices.isEmpty ? [] : devices);
+      // Return the devices directly since completer is already completed
+      return devices.isEmpty ? [] : devices;
+    }
+    
+    return null;
   }
 
   /// Get remote devices from the remote refresh token.
-  Future<void> _getRemoteDevices() async {
+  /// Returns list of devices discovered, or `null` if not authenticated or already running.
+  Future<List<DeviceItem>?> _getRemoteDevices() async {
     if (!_remoteProvider.isAuthenticated) {
-      return;
+      return null;
     }
-    _updateDetectionCounter(1);
+    List<DeviceItem> newDevices = [];
     try {
       final remoteApi = _remoteProvider.api;
       final responseList = await remoteApi.clientV1DevicesGet();
@@ -509,7 +328,12 @@ class DeviceDiscoveryController extends ChangeNotifier {
               );
             }
             if (responseInfo.isSuccessful && responseInfo.body != null) {
-              await _addRemoteDevice(remoteDevice, responseInfo.body!);
+              final deviceItem = await _addRemoteDevice(remoteDevice, responseInfo.body!);
+              if (deviceItem != null && deviceItem.about != null) {
+                final deviceID = deviceItem.about!.certificateCommonName;
+                _devices[deviceID] = deviceItem;
+                newDevices.add(deviceItem);
+              }
             } else {
               if (kDebugMode) {
                 debugPrint(
@@ -529,59 +353,69 @@ class DeviceDiscoveryController extends ChangeNotifier {
           );
         }
       }
+      return newDevices.isEmpty ? [] : newDevices;
     } catch (error) {
       if (kDebugMode) {
         debugPrint(
           "[DeviceDiscovery] Remote API error: ${hc_utils.extractErrorMessage(error)}",
         );
       }
+      return null;
     }
-    _updateDetectionCounter(-1);
   }
 
   /// Try to add a remote device using its paths.
   ///
   /// Paths are ordered by priority (local first, public then relay) by the server.
-  Future<void> _addRemoteDevice(
+  Future<DeviceItem?> _addRemoteDevice(
     Device device,
     DevicePaths devicePaths,
   ) async {
-    _updateDetectionCounter(1);
-    var i = 0;
-    var deviceAdded = false;
-    while (i < devicePaths.paths.length && !deviceAdded) {
-      final path = devicePaths.paths[i];
-      final Uri baseUrl =
-          DeviceProvider.createBaseUrl(path.address, path.port);
+    try {
+      var i = 0;
+      DeviceItem? deviceItem;
+      var deviceAdded = false;
+      while (i < devicePaths.paths.length && !deviceAdded) {
+        final path = devicePaths.paths[i];
+        final Uri baseUrl =
+            DeviceProvider.createBaseUrl(path.address, path.port);
+        if (kDebugMode) {
+          debugPrint(
+            "[DeviceDiscovery] Checking remote device with "
+            "${path.type.value} path: $baseUrl",
+          );
+        }
+        final result = await _checkDeviceStatus(
+          baseUrl: baseUrl,
+          timeoutDelay:
+              path.type == DevicePathType.local ? 5 * 1000 : 20 * 3000,
+          devicePaths: devicePaths, // Pass all paths to store with device
+        );
+        if (result != null) {
+          deviceAdded = true; 
+          deviceItem = result;
+        }
+        i++;
+      }
+      return deviceItem;
+    } catch (error) {
       if (kDebugMode) {
         debugPrint(
-          "[DeviceDiscovery] Checking remote device with "
-          "${path.type.value} path: $baseUrl",
+          "[DeviceDiscovery] Error adding remote device: ${hc_utils.extractErrorMessage(error)}",
         );
       }
-      final result = await _checkDeviceStatus(
-        baseUrl: baseUrl,
-        timeoutDelay:
-            path.type == DevicePathType.local ? 5 * 1000 : 20 * 3000,
-        paths: devicePaths.paths, // Pass all paths to store with device
-      );
-      if (result != null) {
-        deviceAdded = true;
-        // Device is already added by _checkDeviceStatus -> _getDeviceAbout with paths
-      }
-      i++;
+      return null;
     }
-    
-    _updateDetectionCounter(-1);
   }
 
   /// Check the status of a device at the given baseUrl and, if ready,
   /// fetch its "about" information and add it to the device list.
   /// Returns the Status if successful, null otherwise.
-  Future<Status?> _checkDeviceStatus({
+  Future<DeviceItem?> _checkDeviceStatus({
     required Uri baseUrl,
     int timeoutDelay = 1000,
-    List<DevicePath>? paths,
+    required DevicePaths devicePaths,
+    String? operationId,
   }) async {
     if (kDebugMode) {
       debugPrint("[DeviceDiscovery] checkDeviceStatus: $baseUrl");
@@ -600,8 +434,14 @@ class DeviceDiscoveryController extends ChangeNotifier {
           );
         }
         if (status.oobe.done) {
-          final aboutResult = await _getDeviceAbout(api, baseUrl, status, paths: paths);
-          return aboutResult ? status : null;
+          final aboutResult = await _getDeviceAbout(
+            api,
+            baseUrl,
+            status,
+            devicePaths: devicePaths,
+            operationId: operationId,
+          );
+          return aboutResult;
         }
       } else {
         if (kDebugMode) {
@@ -622,11 +462,12 @@ class DeviceDiscoveryController extends ChangeNotifier {
   }
 
   /// Get the about information of the device and add it to the list of devices.
-  Future<bool> _getDeviceAbout(
+  Future<DeviceItem?> _getDeviceAbout(
     Api api,
     Uri baseUrl,
     Status status, {
-    List<DevicePath>? paths,
+    required DevicePaths devicePaths,
+    String? operationId,
   }) async {
     try {
       final response = await api.aboutGet();
@@ -635,20 +476,16 @@ class DeviceDiscoveryController extends ChangeNotifier {
           baseUrl: baseUrl,
           about: response.body!,
           status: status,
-          paths: paths,
+          paths: devicePaths.paths,
         );
 
         if (kDebugMode) {
           debugPrint(
             "[DeviceDiscovery] Adding device: ${device.name} at $baseUrl"
-            "${paths != null ? ' with ${paths.length} paths' : ''}",
           );
         }
 
-        // Avoid duplicates between mDNS and remote detection
-        _devices[device.about!.certificateCommonName] = device;
-        notifyListeners();
-        return true;
+        return device;
       } else {
         if (kDebugMode) {
           debugPrint(
@@ -664,92 +501,14 @@ class DeviceDiscoveryController extends ChangeNotifier {
         );
       }
     }
-    return false;
+    return null;
   }
 
-  /// Attempts to restore the device connection from stored data.
-  ///
-  /// This method is called automatically on initialization if a deviceID is stored.
-  /// It restores the connection using stored device paths without making network calls.
-  void _restoreConnectionIfNeeded() {
-    // Only attempt once per controller instance
-    if (_hasAttemptedRestore) {
-      return;
-    }
-    _hasAttemptedRestore = true;
-
-    // Check if we have a stored deviceID
-    final storedDeviceID = _deviceProvider.deviceID;
-    if (storedDeviceID == null || storedDeviceID.isEmpty) {
-      return;
-    }
-
-    // If device is already found (baseUrl is set), no need to restore
-    if (_deviceProvider.deviceFound) {
-      return;
-    }
-
-    // Restore using stored device paths - prefer local path first
-    final storedPaths = _deviceProvider.devicePaths;
-    if (storedPaths != null && storedPaths.isNotEmpty) {
-      // Find local path first, then public, then relay
-      DevicePath? preferredPath;
-      for (final path in storedPaths) {
-        if (path.type == DevicePathType.local) {
-          preferredPath = path;
-          break;
-        } else if (preferredPath == null || path.type == DevicePathType.public) {
-          preferredPath = path;
-        }
-      }
-
-      if (preferredPath != null) {
-        final baseUrl = DeviceProvider.createBaseUrl(
-          preferredPath.address,
-          preferredPath.port,
-        );
-
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Restoring connection from store: $baseUrl",
-          );
-        }
-
-        // Restore connection directly from stored data without network calls
-        _deviceProvider.setHost(
-          baseUrl: baseUrl,
-          deviceID: storedDeviceID,
-          devicePaths: storedPaths,
-          save: false, // Don't save again, already stored
-        );
-
-        // Create a temporary device item for the restored connection
-        final deviceItem = DeviceItem(
-          baseUrl: baseUrl,
-          about: null, // About info not available without network call
-          status: null, // Status not available without network call
-          paths: storedPaths,
-          isTemporary: true,
-        );
-
-        _devices[storedDeviceID] = deviceItem;
-        selectDevice(deviceItem);
-        notifyListeners();
-
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Successfully restored connection from store",
-          );
-        }
-      }
-    }
-  }
-
-  @override
+  /// Clean up discovery resources when controller is disposed.
+  /// This is called automatically by the provider's onDispose callback.
   void dispose() {
     // Clean up discovery resource when controller is disposed
     _stopDiscovery();
-    super.dispose();
   }
 }
 

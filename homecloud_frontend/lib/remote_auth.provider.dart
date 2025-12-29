@@ -64,8 +64,8 @@ class RemoteAuthState {
 /// (initiate by email and validate code) for host apps.
 final remoteAuthProvider =
     ChangeNotifierProvider<RemoteAuthController>((ref) {
-  final remote = ref.watch(remoteProvider);
-  final device = ref.watch(deviceProvider);
+  final remote = ref.read(remoteProvider);
+  final device = ref.read(deviceProvider);
   return RemoteAuthController(remote, device);
 });
 
@@ -100,6 +100,9 @@ class RemoteAuthController extends ChangeNotifier {
   }) async {
     if (_state.isInitiating) return;
 
+    // Clear any previous authentication of remote access server.
+    _remoteProvider.logout();
+
     // Save email in device provider to pre-fill next time.
     _deviceProvider.setHost(login: email);
 
@@ -125,8 +128,6 @@ class RemoteAuthController extends ChangeNotifier {
       );
 
       if (response.isSuccessful) {
-        // Clear any previous authentication of remote access server.
-        _remoteProvider.logout();
 
         if (kDebugMode) {
           debugPrint(

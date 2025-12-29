@@ -20,19 +20,28 @@
 
   let tagColor = $state(tag.color ?? '');
 
-  const handleEdit = async () => {
+  const handleEdit = async (event: SubmitEvent) => {
+    event.preventDefault();
+
     if (!tag.id) {
       return;
     }
 
-    const updatedTag = await updateTag({ id: tag.id, tagUpdateDto: { color: tagColor } });
+    try {
+      const updatedTag = await updateTag({ id: tag.id, tagUpdateDto: { color: tagColor } });
 
-    notificationController.show({
-      message: $t('tag_updated', { values: { tag: tag.value } }),
-      type: NotificationType.Info,
-    });
+      notificationController.show({
+        message: $t('tag_updated', { values: { tag: tag.value } }),
+        type: NotificationType.Info,
+      });
 
-    onClose(updatedTag);
+      onClose(updatedTag);
+    } catch {
+      notificationController.show({
+        message: $t('errors.enter_valid_hex_color'),
+        type: NotificationType.Error,
+      });
+    }
   };
 </script>
 

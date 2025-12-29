@@ -656,25 +656,23 @@ class _SearchEmptyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          const SizedBox(height: 40),
-          Center(
-            child: Image.asset(
-              context.isDarkTheme ? 'assets/polaroid-dark.png' : 'assets/polaroid-light.png',
-              height: 125,
-            ),
+    return SliverList(
+      delegate: SliverChildListDelegate([
+        const SizedBox(height: 40),
+        Center(
+          child: Image.asset(
+            context.isDarkTheme ? 'assets/polaroid-dark.png' : 'assets/polaroid-light.png',
+            height: 125,
           ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text('search_page_search_photos_videos'.t(context: context), style: context.textTheme.labelLarge),
-          ),
-          const SizedBox(height: 32),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: _QuickLinkList()),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: Text('search_page_search_photos_videos'.t(context: context), style: context.textTheme.labelLarge),
+        ),
+        const SizedBox(height: 32),
+        const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: _QuickLinkList()),
+        const SizedBox(height: 16),
+      ]),
     );
   }
 }

@@ -799,12 +799,23 @@ abstract class IntlKeys {
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
   static const curator_button_action_retry = 'curator.button.action.retry';
+  static const curator_login_form_cant_find_device = 'curator.login.form.cant.find.device';
   static const curator_login_form_email_hint = 'curator.login.form.email.hint';
   static const curator_login_form_endpoint_hint = 'curator.login.form.endpoint.hint';
   static const curator_login_form_endpoint_url = 'curator.login.form.endpoint.url';
   static const curator_login_form_loading_text = 'curator.login.form.loading.text';
   static const curator_login_form_password_hint = 'curator.login.form.password.hint';
   static const curator_login_form_version_check_error = 'curator.login.form.version.check.error';
+  static const curator_onboarding_done = 'curator.onboarding.done';
+  static const curator_onboarding_skip = 'curator.onboarding.skip';
+  static const curator_onboarding_slide1_description = 'curator.onboarding.slide1.description';
+  static const curator_onboarding_slide1_title = 'curator.onboarding.slide1.title';
+  static const curator_onboarding_slide2_description = 'curator.onboarding.slide2.description';
+  static const curator_onboarding_slide2_title = 'curator.onboarding.slide2.title';
+  static const curator_onboarding_slide3_description = 'curator.onboarding.slide3.description';
+  static const curator_onboarding_slide3_title = 'curator.onboarding.slide3.title';
+  static const curator_onboarding_slide4_description = 'curator.onboarding.slide4.description';
+  static const curator_onboarding_slide4_title = 'curator.onboarding.slide4.title';
   static const curator_oobe_welcome_dropdown_detecting = 'curator.oobe.welcome.dropdown.detecting';
   static const curator_remote_access_server_unreachable = 'curator.remote.access.server.unreachable';
   static const curator_search_no_result = 'curator.search.no.result';
@@ -812,6 +823,7 @@ abstract class IntlKeys {
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';
   static const curator_sign_in_screen_dropdown_device_label = 'curator.sign.in.screen.dropdown.device.label';
+  static const curator_sign_in_screen_enable_biometric = 'curator.sign.in.screen.enable.biometric';
   static const curator_sign_in_screen_field_remote_code_error_expired =
       'curator.sign.in.screen.field.remote.code.error.expired';
   static const curator_sign_in_screen_field_remote_code_error_invalid =
@@ -835,6 +847,16 @@ abstract class IntlKeys {
   static const curator_unable_to_connect_screen_message_list_title =
       'curator.unable.to.connect.screen.message.list.title';
   static const curator_unable_to_connect_screen_title = 'curator.unable.to.connect.screen.title';
+  static const curator_unable_to_detect_screen_message_list_1 = 'curator.unable.to.detect.screen.message.list.1';
+  static const curator_unable_to_detect_screen_message_list_2 = 'curator.unable.to.detect.screen.message.list.2';
+  static const curator_unable_to_detect_screen_message_list_3 = 'curator.unable.to.detect.screen.message.list.3';
+  static const curator_unable_to_detect_screen_message_list_4 = 'curator.unable.to.detect.screen.message.list.4';
+  static const curator_unable_to_detect_screen_message_list_5 = 'curator.unable.to.detect.screen.message.list.5';
+  static const curator_unable_to_detect_screen_message_list_footer =
+      'curator.unable.to.detect.screen.message.list.footer';
+  static const curator_unable_to_detect_screen_message_list_title =
+      'curator.unable.to.detect.screen.message.list.title';
+  static const curator_unable_to_detect_screen_title = 'curator.unable.to.detect.screen.title';
   static const current_device = 'current_device';
   static const current_pin_code = 'current_pin_code';
   static const current_server_address = 'current_server_address';
@@ -1108,6 +1130,7 @@ abstract class IntlKeys {
   static const errors_unable_to_update_timeline_display_status = 'errors.unable.to.update.timeline.display.status';
   static const errors_unable_to_update_user = 'errors.unable.to.update.user';
   static const errors_unable_to_upload_file = 'errors.unable.to.upload.file';
+  static const errors_unable_to_upload_file_shared_album = 'errors.unable.to.upload.file.shared.album';
   static const errors_unable_to_upload_file_type = 'errors.unable.to.upload.file.type';
   static const errors_unsupported_file_type_notification = 'errors.unsupported.file.type.notification';
   static const exif = 'exif';

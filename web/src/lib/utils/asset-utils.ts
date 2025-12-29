@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
 import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
 import { AppRoute, OS } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -44,36 +45,48 @@ import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
 
-export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
-  const result = await addAssets({
-    ...authManager.params,
-    id: albumId,
-    bulkIdsDto: {
-      ids: assetIds,
-    },
-  });
-  const count = result.filter(({ success }) => success).length;
-  const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
-  const $t = get(t);
+const $t = get(t);
 
-  if (showNotification) {
-    let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
-    if (count > 0) {
-      message = $t('assets_added_to_album_count', { values: { count } });
-    } else if (duplicateErrorCount > 0) {
-      message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
-    }
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message,
-      button: {
-        text: $t('view_album'),
-        onClick() {
-          return goto(`${AppRoute.ALBUMS}/${albumId}`);
-        },
+export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
+  try {
+    const result = await addAssets({
+      ...authManager.params,
+      id: albumId,
+      bulkIdsDto: {
+        ids: assetIds,
       },
     });
+    const count = result.filter(({ success }) => success).length;
+    const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
+
+    if (showNotification) {
+      let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
+      if (count > 0) {
+        message = $t('assets_added_to_album_count', { values: { count } });
+      } else if (duplicateErrorCount > 0) {
+        message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
+      }
+      notificationController.show({
+        type: NotificationType.Info,
+        timeout: 5000,
+        message,
+        button: {
+          text: $t('view_album'),
+          onClick() {
+            return goto(resolve(`${AppRoute.ALBUMS}/${albumId}`));
+          },
+        },
+      });
+    }
+  } catch (error) {
+    // temporary
+    if ((error as Error)?.message === 'Error: 400') {
+      notificationController.show({
+        type: NotificationType.Error,
+        timeout: 5000,
+        message: $t('errors.unable_to_upload_file_shared_album'),
+      });
+    }
   }
 };
 
@@ -628,7 +641,67 @@ export const canCopyImageToClipboard = (): boolean => {
   return !!(navigator.clipboard && globalThis.ClipboardItem);
 };
 
-const imgToBlob = async (imageElement: HTMLImageElement) => {
+export const getFileExtension = (fileName: string) => {
+  const dotIndex = fileName.lastIndexOf('.');
+  return dotIndex !== -1 ? fileName.slice(dotIndex) : '';
+};
+
+export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasElement => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+
+  canvas.width = imageElement.naturalWidth;
+  canvas.height = imageElement.naturalHeight;
+
+  ctx.drawImage(imageElement, 0, 0);
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  if (width < 2 || height < 2) return canvas;
+
+  const ts = Date.now(); // timestamp for some variability
+
+  const points = [
+    [width - 1, 0],
+    [0, height - 1],
+    [ts % width, ts % height],
+  ];
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  for (const [xRaw, yRaw] of points) {
+    const x = Math.min(Math.max(xRaw, 0), width - 1);
+    const y = Math.min(Math.max(yRaw, 0), height - 1);
+
+    const r = ts % 256;
+    const g = (ts * 3) % 256;
+    const b = (ts * 7) % 256;
+    const a = 255;
+
+    const index = (y * width + x) * 4;
+    data[index] = r;
+    data[index + 1] = g;
+    data[index + 2] = b;
+    data[index + 3] = a;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  return canvas;
+};
+
+export const canvasToBlob = async (canvas: HTMLCanvasElement) => {
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('Canvas conversion to Blob failed'));
+    });
+  });
+};
+
+export const imgToBlob = async (imageElement: HTMLImageElement) => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 

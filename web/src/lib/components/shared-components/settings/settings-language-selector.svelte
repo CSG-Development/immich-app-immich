@@ -52,7 +52,7 @@
     hideLabel={true}
     selectedOption={langOptions.find(({ value }) => value === closestLanguage) || defaultLangOption}
     placeholder={$t('language')}
-    onSelect={(event) => handleLanguageChange(event?.value)}
+    onSelect={(event) => handleLanguageChange(event?.value as string | undefined)}
     options={langOptions}
   />
 </div>

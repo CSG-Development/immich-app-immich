@@ -114,11 +114,6 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     // clean install - change the default of the flag
     // current install not using beta timeline
     if (mounted && context.router.current.name == SplashScreenRoute.name) {
-      final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
-      if (viewedCount >= kCuratorOnboardingSlidesData.length) {
-        await Store.put(StoreKey.onboardingWasShown, true);
-        await Store.delete(StoreKey.onboardingViewedCount);
-      }
       final needBetaMigration = Store.get(StoreKey.needBetaMigration, false);
       if (needBetaMigration) {
         await Store.put(StoreKey.needBetaMigration, false);
@@ -126,38 +121,29 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
         context.router.replaceAll([ChangeExperienceRoute(switchingToBeta: true)]);
         return;
       }
-
-      if (!mounted) return;
-      final accessToken = Store.tryGet(StoreKey.accessToken);
-      final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
-      if (accessToken != null && !onboardingCompleted) {
-        context.replaceRoute(const CuratorOnboardingRoute());
-      } else {
-        context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
-      }
     }
 
+    final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
+    if (viewedCount >= kCuratorOnboardingSlidesData.length) {
+      await Store.put(StoreKey.onboardingWasShown, true);
+      await Store.delete(StoreKey.onboardingViewedCount);
+    }
+    final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+
     void proceedToMainScreen() async {
-      if (!mounted) return;
       if (context.router.current.name != ShareIntentRoute.name) {
-        final hasToken = Store.tryGet(StoreKey.accessToken) != null;
-        if (hasToken) {
-          final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+        final accessToken = Store.tryGet(StoreKey.accessToken);
+        if (accessToken != null) {
           if (!onboardingCompleted) {
             context.replaceRoute(const CuratorOnboardingRoute());
             return;
           }
         }
-        context.replaceRoute(const TabControllerRoute());
+        context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
       }
     }
 
-    if (Store.isBetaTimelineEnabled) {
-      return;
-    }
-
     final canAuthenticate = (await ref.read(localAuthServiceProvider).getStatus()).canAuthenticate;
-
     if (enableBiometric && canAuthenticate) {
       // Try biometric authentication up to 3 times
       int attempts = 0;
@@ -180,6 +166,10 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       }
     } else {
       proceedToMainScreen();
+    }
+
+    if (Store.isBetaTimelineEnabled) {
+      return;
     }
 
     if (!mounted) return;
@@ -206,7 +196,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   Widget build(BuildContext context) {
     final isAndroid = Platform.isAndroid;
     final backgroundColor = isAndroid
-        ? const Color(0xFF05070E)
+        ? const Color(0xFF19181E)
         : Theme.of(context).colorScheme.surface;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -217,7 +207,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
           child: Image(
             image: AssetImage('assets/immich-splash.png'),
             filterQuality: FilterQuality.medium,
-            fit: BoxFit.contain,
+            fit: BoxFit.fitHeight,
           ),
         ),
       ),

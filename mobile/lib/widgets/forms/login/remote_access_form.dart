@@ -1,23 +1,24 @@
-import 'package:device_info_plus/device_info_plus.dart' show DeviceInfoPlugin;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
+
 import 'package:flutter_svg/svg.dart';
 import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
-import 'package:homecloud_frontend/remote_auth.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/local_auth.provider.dart';
+import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:logging/logging.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
-  final log = Logger('RemoteAccessForm');
   final VoidCallback switchToCuratorLogin;
 
-  RemoteAccessForm({super.key, required this.switchToCuratorLogin});
+  const RemoteAccessForm({super.key, required this.switchToCuratorLogin});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +29,55 @@ class RemoteAccessForm extends HookConsumerWidget {
     final hasEmailError = useState<bool>(false);
     final formKey = useMemoized<GlobalKey<FormState>>(() => GlobalKey<FormState>());
 
-    String clientFriendlyName = '';
+    final localAuthState = ref.watch(localAuthProvider);
+    final enableBiometric = useAppSettingsState(AppSettingsEnum.enableBiometric);
+
+    Future<bool> handleAddBiometric() async {
+      if (!localAuthState.canAuthenticate) {
+        return false;
+      }
+
+      final shouldEnableBiometric = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text('login_form_add_security_title').tr(),
+            content: const Text('login_form_add_security_content').tr(),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('login_form_not_now').tr(),
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+              ),
+              TextButton(child: const Text('common_yes').tr(), onPressed: () => Navigator.of(dialogContext).pop(true)),
+            ],
+          );
+        },
+      );
+
+      if (shouldEnableBiometric != true) {
+        return false;
+      }
+
+      final isAuthenticated = await ref.read(localAuthProvider.notifier).authenticate(context, null);
+
+      return isAuthenticated;
+    }
+
+    onEnableBiometricChange(value) async {
+      if (!localAuthState.canAuthenticate) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: const Text('security_settings_biometric_not_available').tr()));
+        return;
+      }
+      var shouldEnableBiometric = false;
+      if (value == true) {
+        shouldEnableBiometric = await handleAddBiometric();
+      }
+      await Store.put(StoreKey.enableBiometric, shouldEnableBiometric);
+      enableBiometric.value = shouldEnableBiometric;
+    }
 
     String? validateEmail(String email) {
       final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
@@ -38,79 +87,23 @@ class RemoteAccessForm extends HookConsumerWidget {
       return null;
     }
 
-    Future<String> getClientFriendlyName() async {
-      if (clientFriendlyName.isNotEmpty) {
-        return clientFriendlyName;
-      }
-      final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      String name = "Personal Cloud Photos";
-      Map<String, dynamic>? data;
-      try {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          final androidInfo = await deviceInfoPlugin.androidInfo;
-          data = androidInfo.data;
-          // The name of the device (Customizable by the user)
-          name = androidInfo.name;
-          if (name.isEmpty) {
-            // The consumer-visible brand with which the product/hardware will be associated, if any.
-            name = androidInfo.brand;
-            if (name.isEmpty) {
-              // The manufacturer of the product/hardware.
-              name = androidInfo.manufacturer;
-            }
-            // + The end-user-visible name for the end product.
-            name = "$name ${androidInfo.model}";
-          }
-        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-          final iosInfo = await deviceInfoPlugin.iosInfo;
-          data = iosInfo.data;
-          // Commercial or user-known model name Examples: iPhone 16 Pro, iPad Pro 11-Inch 3
-          name = iosInfo.modelName;
-        }
-      } catch (_) {}
-      if (kDebugMode) {
-        debugPrint("ClientFriendlyName : $name");
-        if (data != null) {
-          data.forEach((key, value) {
-            debugPrint("[DeviceInfoPlugin] $key: $value");
-          });
-        }
-      }
-      return name;
-    }
-
-    /// Initiate remote access authentication by sending a code to the given email
-    Future<void> initiateRemoteAccess(String email) async {
-      clientFriendlyName = await getClientFriendlyName();
-      final controller = ref.read(remoteAuthProvider);
-      await controller.initiate(
-        email: email,
-        clientFriendlyName: clientFriendlyName,
-      );
-
-      final state = controller.state;
-      if (state.error != null) {
-        // For now, just log the error; UI can be extended to show a message.
-        log.severe(
-          "[RemoteAccessForm] Initiate error: ${state.error} - ${state.errorMessage}",
-        );
-      }
-    }
-
     Future<void> handleNextPress() async {
       final email = emailController.text;
+
       final isDisabled = email.isEmpty || validateEmail(email) != null;
       if (isDisabled) return;
+
+      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+      final authenticatedEmail = ref.read(deviceProvider).login;
+
+      if (isAuthenticated && authenticatedEmail == email) {
+        switchToCuratorLogin();
+        return;
+      }
+
       emailFocusNode.unfocus();
 
-      initiateRemoteAccess(email);
-      showRemoteCodeModal(
-        context,
-        () async {
-          switchToCuratorLogin();
-        },
-        () => initiateRemoteAccess(email),
-      );
+      showRemoteCodeModal(context, email, () async => switchToCuratorLogin());
     }
 
     useEffect(() {
@@ -140,33 +133,46 @@ class RemoteAccessForm extends HookConsumerWidget {
     }, []);
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
-        SvgPicture.asset(
-          context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-          height: 20.0,
-        ),
-        const SizedBox(height: 24.0),
-        Form(
-          key: formKey,
-          child: AutofillGroup(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                EmailInput(
-                  controller: emailController,
-                  focusNode: emailFocusNode,
-                  onSubmit: handleNextPress,
-                  hasExternalError: hasEmailError.value,
-                  validator: (_) => warningMessage.value,
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
+              SvgPicture.asset(
+                context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
+                height: 20.0,
+              ),
+              const SizedBox(height: 24.0),
+              Form(
+                key: formKey,
+                child: AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      EmailInput(
+                        controller: emailController,
+                        focusNode: emailFocusNode,
+                        onSubmit: handleNextPress,
+                        hasExternalError: hasEmailError.value,
+                        validator: (_) => warningMessage.value,
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24.0),
+            ],
           ),
         ),
-        const SizedBox(height: 24.0),
+        SwitchListTile.adaptive(
+          contentPadding: const EdgeInsets.all(0),
+          value: enableBiometric.value,
+          onChanged: onEnableBiometricChange,
+          title: Text("curator.sign_in_screen_enable_biometric".tr(), style: context.textTheme.bodyLarge),
+        ),
+        const SizedBox(height: 32.0),
         ValueListenableBuilder(
           valueListenable: emailController,
           builder: (_, value, _) {

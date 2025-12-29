@@ -21,7 +21,7 @@
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetMediaSize, type AssetResponseDto, type SharedLinkResponseDto } from '@immich/sdk';
   import { onDestroy, onMount } from 'svelte';
-  import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
+  import { type SwipeCustomEvent } from 'svelte-gestures';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
   import LoadingSpinner from '../shared-components/loading-spinner.svelte';
@@ -97,7 +97,7 @@
     }
 
     try {
-      await copyImageToClipboard($photoViewerImgElement ?? assetFileUrl);
+      await copyImageToClipboard(($photoViewerImgElement ?? assetFileUrl) as HTMLImageElement);
       notificationController.show({
         type: NotificationType.Info,
         message: $t('copied_image_to_clipboard'),

@@ -54,7 +54,21 @@
 
   $effect(() => {
     if (places) {
-      suggestedPlaces = places.slice(0, 5);
+      suggestedPlaces = places
+        .sort((a, b) => {
+          const aLower = a.name.toLowerCase();
+          const bLower = b.name.toLowerCase();
+
+          const aStarts = aLower.startsWith(searchWord);
+          const bStarts = bLower.startsWith(searchWord);
+
+          if (aStarts !== bStarts) {
+            return aStarts ? -1 : 1;
+          }
+
+          return aLower.localeCompare(bLower);
+        })
+        .slice(0, 5);
     }
     if (searchWord === '') {
       suggestedPlaces = [];

@@ -13,24 +13,24 @@ class OnboardingSlide {
 const List<OnboardingSlide> kCuratorOnboardingSlidesData = [
   OnboardingSlide(
     image: 'assets/onboarding-1.png',
-    title: 'Manage your photo library',
-    description: 'You can copy, move, delete',
+    title: "curator.onboarding.slide1.title",
+    description: "curator.onboarding.slide1.description",
   ),
   OnboardingSlide(
-    image: 'assets/onboarding-1.png',
-    title: 'Share moments securely',
-    description: 'You can share privately or publicly',
+    image: 'assets/onboarding-2.png',
+    title: "curator.onboarding.slide2.title",
+    description: "curator.onboarding.slide2.description",
   ),
   OnboardingSlide(
-    image: 'assets/onboarding-1.png',
-    title: 'Keep your media in sync',
+    image: 'assets/onboarding-3.png',
+    title: "curator.onboarding.slide3.title",
     description:
-        'Upload from your phone, access from your desktop. Personal Cloud Photos keeps everything connected.',
+"curator.onboarding.slide3.description",
   ),
   OnboardingSlide(
-    image: 'assets/onboarding-1.png',
-    title: 'Relive the highlights',
-    description: 'Let Personal Cloud Photos bring your memories back to life',
+    image: 'assets/onboarding-4.png',
+    title: "curator.onboarding.slide4.title",
+    description: "curator.onboarding.slide4.description",
   ),
 ];
 

@@ -44,7 +44,7 @@
 </script>
 
 <main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
-  <AssetGrid enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape} />
+  <Timeline enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape} />
 </main>
 
 {#if assetInteraction.selectionActive}

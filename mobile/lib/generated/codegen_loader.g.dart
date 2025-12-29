@@ -32255,18 +32255,44 @@ class CodegenLoader extends AssetLoader {
     "curated_object_page_title": "Things",
     "curator": {
       "button_action_retry": "Retry",
+      "login_form_cant_find_device": "Can’t find your device?",
       "login_form_email_hint": "Enter email address",
       "login_form_endpoint_hint": "No device detected",
       "login_form_endpoint_url": "Connecting to",
       "login_form_loading_text": "Logging in to your account",
       "login_form_password_hint": "Enter password",
       "login_form_version_check_error": "Error checking version compatibility",
+      "onboarding": {
+        "done": "Done",
+        "skip": "Skip",
+        "slide1": {
+          "description":
+              "Automatically back up photos and videos to Personal Cloud. No manual steps, just peace of mind knowing your media is secure.",
+          "title": "Welcome to Personal Cloud Photos",
+        },
+        "slide2": {
+          "description":
+              "Explore your photo library in a clean, intuitive interface. Personal Cloud Photos makes it easy to view, sort, and manage all your media in one place.",
+          "title": "Browse and organize",
+        },
+        "slide3": {
+          "description":
+              "Share photos with anyone via secure links. You can set expiration dates for links to keep your memories private over time.\n\nInvite members of your Personal Cloud family to collaborate on albums knowing your content is encrypted and protected.",
+          "title": "Secure sharing made simple",
+        },
+        "slide4": {
+          "description":
+              "Personal Cloud’s AI-powered search helps you instantly locate images by content, location, or date.\n\nFacial recognition identifies your family and friends to guarantee you always find that special moment.",
+          "title": "Find your photos smarter",
+        },
+      },
       "oobe_welcome_dropdown_detecting": "Detecting device...",
       "remote_access_server_unreachable": "Remote access server unreachable",
       "search_no_result": "No results found. Try different search terms or filters.",
       "sign_in_screen_button_request_new_code": "Request new code",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
+      "sign_in_screen_enable_biometric": "Enable biometric sign-in",
       "sign_in_screen_field_remote_code_error_expired": "Your code has expired",
       "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
@@ -32279,20 +32305,28 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_remote_code_skip": "Skip",
       "sign_in_screen_remote_code_title": "Allow remote access",
       "sign_in_screen_remote_code_verify": "Verify",
-      "unable_to_connect_screen_message_list_1":
-          "Verify that the device is properly connected to the network and that the internet connection is stable",
-      "unable_to_connect_screen_message_list_2": "Make sure the device is powered on and functioning correctly",
-      "unable_to_connect_screen_message_list_3":
-          "Check firewall settings to confirm they are not blocking the connection",
-      "unable_to_connect_screen_message_list_4":
-          "If using a wireless connection, confirm the device is within range of the router",
-      "unable_to_connect_screen_message_list_5":
-          "Your device and mobile phone must be on the same network for initial setup",
-      "unable_to_connect_screen_message_list_footer":
-          "If you continue to experience issues, please contact our <link>Support team</link> for further assistance.",
-      "unable_to_connect_screen_message_list_title":
-          "We are unable to detect the Home Cloud device. Please ensure the following:",
+      "unable_to_connect_screen_message_list_1": "",
+      "unable_to_connect_screen_message_list_2": "",
+      "unable_to_connect_screen_message_list_3": "",
+      "unable_to_connect_screen_message_list_4": "",
+      "unable_to_connect_screen_message_list_5": "",
+      "unable_to_connect_screen_message_list_footer": "",
+      "unable_to_connect_screen_message_list_title": "",
       "unable_to_connect_screen_title": "Unable to connect",
+      "unable_to_detect_screen_message_list_1":
+          "Verify that the device is properly connected to the network and that the internet connection is stable",
+      "unable_to_detect_screen_message_list_2": "Make sure the device is powered on and functioning correctly",
+      "unable_to_detect_screen_message_list_3":
+          "Check firewall settings to confirm they are not blocking the connection",
+      "unable_to_detect_screen_message_list_4":
+          "If using a wireless connection, confirm the device is within range of the router",
+      "unable_to_detect_screen_message_list_5":
+          "Your device and mobile phone must be on the same network for initial setup",
+      "unable_to_detect_screen_message_list_footer":
+          "If you continue to experience issues, please contact our <link>Support team</link> for further assistance.",
+      "unable_to_detect_screen_message_list_title":
+          "We are unable to detect the Home Cloud device. Please ensure the following:",
+      "unable_to_detect_screen_title": "Unable to detect",
     },
     "current_device": "Current device",
     "current_pin_code": "Current PIN code",
@@ -32578,6 +32612,8 @@ class CodegenLoader extends AssetLoader {
       "unable_to_update_timeline_display_status": "Unable to update timeline display status",
       "unable_to_update_user": "Unable to update user",
       "unable_to_upload_file": "Unable to upload file",
+      "unable_to_upload_file_shared_album":
+          "You can only view this album. Contact the album owner for permission to add photos.",
       "unable_to_upload_file_type": "Upload failed. This file type is not supported.",
       "unsupported_file_type_notification":
           "Unable to upload file <b>{filename}</b>. The selected file type is not supported.",

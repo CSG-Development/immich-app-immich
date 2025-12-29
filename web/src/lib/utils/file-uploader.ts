@@ -85,7 +85,6 @@ export const openFileUploadDialog = async (options: FileUploadParam = {}) => {
 
 type FileUploadHandlerParams = Omit<FileUploaderParams, 'deviceAssetId' | 'assetFile'> & {
   files: File[];
-  signal?: AbortSignal;
 };
 
 export const fileUploadHandler = async ({

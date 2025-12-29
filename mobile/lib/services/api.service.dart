@@ -178,6 +178,12 @@ class ApiService implements Authentication {
       dPrint(() => '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint');
       return;
     }
+
+    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    if (!isAuthenticated) {
+      dPrint(() => '_handleConnectionError: Skipping notification - not authenticated');
+      return;
+    }
     
     notifyConnectionState(ConnectionState(
       status: ConnectionStatus.reconnecting,
@@ -224,7 +230,7 @@ class ApiService implements Authentication {
     return isValid;
   }
 
-  Future<String?> setOpenApiServiceEndpoint() async {
+  Future<String?> setOpenApiServiceEndpoint({List<String>? auxiliaryEndpoints}) async {
     // Prevent connection state notifications during endpoint switching
     _isSetEndpoint = true;
 
@@ -232,6 +238,15 @@ class ApiService implements Authentication {
       // Keep the currently configured endpoint as a fallback
       final previousEndpoint = Store.tryGet(StoreKey.serverEndpoint);
       String? endpoint;
+
+      if (auxiliaryEndpoints != null && auxiliaryEndpoints.isNotEmpty) {
+        for (final auxiliaryEndpoint in auxiliaryEndpoints) {
+          endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint);
+          if (endpoint != null) {
+            return endpoint;
+          }
+        }
+      }
 
       // Try local connection first
       endpoint = await _setLocalConnection();
@@ -267,9 +282,9 @@ class ApiService implements Authentication {
 
   /// Attempts to connect to the local endpoint.
   /// Returns the endpoint URL if successful, null otherwise.
-  Future<String?> tryLocalEndpoint() async {
+  Future<String?> tryLocalEndpoint(String? endpoints) async {
     try {
-      final localEndpoint = _getLocalEndpoint();
+      final localEndpoint = endpoints ?? _getLocalEndpoint();
       if (localEndpoint == null || localEndpoint.isEmpty) {
         _log.fine("Local endpoint is not set");
         return null;
@@ -312,8 +327,8 @@ class ApiService implements Authentication {
     return null;
   }
 
-  Future<String?> _setLocalConnection() async {
-    return await tryLocalEndpoint();
+  Future<String?> _setLocalConnection({String? endpoint}) async {
+    return await tryLocalEndpoint(endpoint);
   }
 
   Future<String?> _setRemoteConnection() async {

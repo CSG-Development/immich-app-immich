@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:homecloud_frontend/homecloud_frontend.dart';
@@ -10,11 +9,11 @@ import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/providers/recovery_status.provider.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
@@ -33,6 +32,7 @@ class EndpointRecoveryService {
   }
 
   void _initializeConnectionStateListener() {
+    _log.info('Initializing connection state listener for endpoint recovery');
     _connectionStateSubscription = _apiService.connectionStateChanges.listen(
       _handleConnectionStateChange,
       onError: (error, stackTrace) {
@@ -42,12 +42,25 @@ class EndpointRecoveryService {
   }
 
   Future<void> _handleConnectionStateChange(ConnectionState state) async {
+    _log.fine(
+      'Connection state update received in EndpointRecoveryService: '
+      'status=${state.status}, '
+      'type=${state.connectionType}, '
+      'lastErrorUrl=${state.lastErrorUrl}, '
+      'lastErrorTime=${state.lastErrorTime}',
+    );
+
     // Only react to reconnecting state and avoid concurrent recovery attempts
     if (state.status != ConnectionStatus.reconnecting || _isRecovering || _isPromptingUser) {
+      if (state.status != ConnectionStatus.reconnecting) {
+        _log.finer('Ignoring connection state change: status is not reconnecting');
+      } else if (_isRecovering) {
+        _log.finer('Ignoring connection state change: recovery already in progress');
+      } else if (_isPromptingUser) {
+        _log.finer('Ignoring connection state change: user prompt already active');
+      }
       return;
     }
-    final connectedDevice = _ref.read(deviceDiscoveryProvider).connectedDevice;
-    dPrint(() => 'Connected device: $connectedDevice');
 
     final dialogContext = _ref.read(appRouterProvider).navigatorKey.currentContext;
     if (dialogContext == null) {
@@ -66,24 +79,41 @@ class EndpointRecoveryService {
         return;
       }
 
+      _log.info('User accepted endpoint recovery, starting recovery workflow');
       _isRecovering = true;
+
+      final mdnsEndpoint = await _tryRecoverUsingCurrentDeviceOnWifi(state);
+      if (mdnsEndpoint != null) {
+        _log.info('Fast WiFi/device-based recovery succeeded, endpoint=$mdnsEndpoint');
+        await _handleRecoveredEndpoint(mdnsEndpoint, state);
+        return;
+      }
+
+      _log.fine('Fast WiFi/device-based recovery did not resolve endpoint, continuing with full recovery flow');
+
       final currentEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+      _log.fine('Starting full recovery from current endpoint: $currentEndpoint');
       _ref.read(recoveryStatusProvider.notifier).startRecovery(currentEndpoint);
 
       // Check authentication state and handle accordingly
       final isAuthenticated = _ref.read(remoteProvider).isAuthenticated;
       if (!isAuthenticated) {
+        _log.fine('Remote provider not authenticated, starting unauthenticated recovery flow');
         await _recoverUnauthenticatedUser(dialogContext, state);
         await _ref.read(devicePathRefreshServiceProvider).refreshPaths();
+      } else {
+        _log.finer('Remote provider already authenticated, skipping unauthenticated recovery flow');
       }
       final endpoint = await _resolveEndpoint();
       if (endpoint != null) {
+        _log.info('Endpoint resolved after initial recovery flow: $endpoint');
         await _handleRecoveredEndpoint(endpoint, state);
         return;
       }
 
       final refreshedEndpoint = await _refreshAndResolveEndpoint();
       if (refreshedEndpoint != null) {
+        _log.info('Endpoint resolved after refreshing device paths: $refreshedEndpoint');
         await _handleRecoveredEndpoint(refreshedEndpoint, state);
         return;
       }
@@ -94,22 +124,95 @@ class EndpointRecoveryService {
       _log.severe('Error during endpoint recovery', error, stackTrace);
       _notifyDisconnected(state);
     } finally {
+      _log.fine('Endpoint recovery workflow finished, resetting flags');
       _isRecovering = false;
       _isPromptingUser = false;
       _ref.read(recoveryStatusProvider.notifier).stopRecovery();
     }
   }
 
-  Future<String?> _resolveEndpoint() =>
-      _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+  /// Attempts a fast recovery using the currently connected device when
+  /// the connection error happens while on WiFi.
+  ///
+  /// Steps:
+  /// 1. Check that connectivity includes WiFi.
+  /// 2. Run mDNS discovery to refresh devices.
+  /// 3. If the discovered device matches the currently connected device and
+  ///    has paths, try those paths as auxiliary endpoints.
+  /// 4. If an endpoint is successfully resolved, handle it and short‑circuit
+  ///    the rest of the recovery flow.
+  Future<String?> _tryRecoverUsingCurrentDeviceOnWifi(ConnectionState state) async {
+    try {
+      final connectivityResults = await Connectivity().checkConnectivity();
+      if (!connectivityResults.contains(ConnectivityResult.wifi)) {
+        _log.finer('Fast recovery skipped: current connectivity is not WiFi: $connectivityResults');
+        return null;
+      }
+
+      final discovery = _ref.read(deviceDiscoveryProvider);
+      final devices = await discovery.startMdnsDiscovery();
+      final connectedDeviceID = discovery.connectedDeviceID;
+
+      if (connectedDeviceID == null || devices == null || devices.isEmpty) {
+        _log.fine(
+          'Fast recovery aborted: '
+          'connectedDeviceID=$connectedDeviceID, '
+          'devicesCount=${devices?.length ?? 0}',
+        );
+        return null;
+      }
+
+      DeviceItem? currentDevice;
+      for (final device in devices) {
+        if (device.about?.certificateCommonName == connectedDeviceID) {
+          currentDevice = device;
+          break;
+        }
+      }
+
+      final paths = currentDevice?.paths;
+      if (currentDevice == null || paths == null || paths.isEmpty) {
+        _log.fine(
+          'Fast recovery aborted: currentDevice or paths are null/empty '
+          '(deviceFound=${currentDevice != null}, pathsCount=${paths?.length ?? 0})',
+        );
+        return null;
+      }
+
+      final auxiliaryEndpoints = paths.map(DeviceEndpointUtils.buildDevicePathUrl).toList(growable: false);
+      _log.fine(
+        'Attempting fast recovery with auxiliary endpoints from current device: '
+        'count=${auxiliaryEndpoints.length}',
+      );
+
+      final endpoint = await _ref
+          .read(apiServiceProvider)
+          .setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints);
+
+      if (endpoint == null) {
+        _log.fine('Fast recovery: no endpoint resolved from auxiliary endpoints');
+        return null;
+      }
+
+      return endpoint;
+    } catch (error, stackTrace) {
+      _log.fine('Fast WiFi/device-based recovery failed, falling back to full flow', error, stackTrace);
+      return null;
+    }
+  }
+
+  Future<String?> _resolveEndpoint() => _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
 
   Future<String?> _refreshAndResolveEndpoint() async {
+    _log.fine('Refreshing device paths before attempting endpoint resolution');
     await _ref.read(devicePathRefreshServiceProvider).refreshPaths();
     final endpoint = await _resolveEndpoint();
+    _log.fine('Endpoint resolution after path refresh: $endpoint');
     return endpoint;
   }
 
   Future<void> _handleRecoveredEndpoint(String endpoint, ConnectionState state) async {
+    _log.info('Handling recovered endpoint: $endpoint');
     _ref.read(recoveryStatusProvider.notifier).updateEndpoint(endpoint);
 
     _log.info('Endpoint recovery successful: $endpoint');
@@ -128,19 +231,21 @@ class EndpointRecoveryService {
     await _ref.read(websocketProvider.notifier).connect(force: true);
 
     // Notify successful recovery
-    _apiService.notifyConnectionState(ConnectionState(
-      status: ConnectionStatus.connected,
-      connectionType: state.connectionType,
-    ));
+    _log.fine('Notifying ApiService of successful reconnection');
+    _apiService.notifyConnectionState(
+      ConnectionState(status: ConnectionStatus.connected, connectionType: state.connectionType),
+    );
   }
 
   void _notifyDisconnected(ConnectionState state) {
-    _apiService.notifyConnectionState(ConnectionState(
-      status: ConnectionStatus.disconnected,
-      lastErrorUrl: state.lastErrorUrl,
-      lastErrorTime: state.lastErrorTime,
-      connectionType: state.connectionType,
-    ));
+    _apiService.notifyConnectionState(
+      ConnectionState(
+        status: ConnectionStatus.disconnected,
+        lastErrorUrl: state.lastErrorUrl,
+        lastErrorTime: state.lastErrorTime,
+        connectionType: state.connectionType,
+      ),
+    );
   }
 
   /// Shows recovery alert dialog asking user if they want to attempt recovery.
@@ -148,21 +253,18 @@ class EndpointRecoveryService {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final shouldRecover = await showDialog<bool>(
+    _log.fine('Showing endpoint recovery alert dialog to user');
+    final shouldRecover =
+        await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
             title: Text('Connection lost', style: textTheme.titleMedium),
-            content: Text(
-              'Connection lost. Attempt to recover?',
-              style: textTheme.bodyMedium,
-            ),
+            content: Text('Connection lost. Attempt to recover?', style: textTheme.bodyMedium),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.onSurfaceVariant,
-                ),
+                style: TextButton.styleFrom(foregroundColor: colorScheme.onSurfaceVariant),
                 child: const Text('No'),
               ),
               FilledButton(
@@ -178,14 +280,12 @@ class EndpointRecoveryService {
         ) ??
         false;
 
+    _log.fine('Endpoint recovery alert dialog closed, userChoice=$shouldRecover');
     return shouldRecover;
   }
 
   /// Show remote access connection dialog (OTP login)
-  Future<void> _recoverUnauthenticatedUser(
-    BuildContext context,
-    ConnectionState state,
-  ) async {
+  Future<void> _recoverUnauthenticatedUser(BuildContext context, ConnectionState state) async {
     _log.info('Recovering connection for unauthenticated user');
 
     final email = _ref.read(deviceProvider).login;
@@ -194,6 +294,7 @@ class EndpointRecoveryService {
       return;
     }
 
+    _log.fine('Starting remote OTP login flow for email=$email');
     final loginSucceeded = await _startRemoteOtpFlow(context, email);
     if (!loginSucceeded) {
       _log.warning('Remote OTP login failed or was cancelled');
@@ -202,24 +303,15 @@ class EndpointRecoveryService {
   }
 
   Future<bool> _startRemoteOtpFlow(BuildContext context, String email) async {
-    try {
-      await _initiateRemoteAccess(email);
-    } catch (error, stackTrace) {
-      _log.severe('Failed to initiate remote access', error, stackTrace);
-      return false;
-    }
-
     var loginSucceeded = false;
 
-    await showRemoteCodeModal(
-      context,
-      () async {
-        loginSucceeded = true;
-      },
-      () => _initiateRemoteAccess(email),
-    );
+    _log.fine('Showing remote code modal for OTP verification');
+    await showRemoteCodeModal(context, email, () async {
+      loginSucceeded = true;
+    });
 
     if (!loginSucceeded) {
+      _log.fine('Remote code modal closed without successful login');
       return false;
     }
 
@@ -229,49 +321,12 @@ class EndpointRecoveryService {
       return false;
     }
 
+    _log.info('Remote OTP flow completed successfully and remote provider is authenticated');
     return true;
   }
 
-  Future<void> _initiateRemoteAccess(String email) async {
-    final controller = _ref.read(remoteAuthProvider);
-    final clientFriendlyName = await _getClientFriendlyName();
-
-    await controller.initiate(
-      email: email,
-      clientFriendlyName: clientFriendlyName,
-    );
-  }
-
-  Future<String> _getClientFriendlyName() async {
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        if (androidInfo.name.isNotEmpty) {
-          return androidInfo.name;
-        }
-        if (androidInfo.brand.isNotEmpty) {
-          return '${androidInfo.brand} ${androidInfo.model}';
-        }
-        return androidInfo.model;
-      }
-
-      if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        if (iosInfo.modelName.isNotEmpty) {
-          return iosInfo.modelName;
-        }
-        return iosInfo.name;
-      }
-    } catch (error, stackTrace) {
-      _log.warning('Failed to get client friendly name for remote login', error, stackTrace);
-    }
-
-    return 'Personal Cloud Photos client';
-  }
-
   void dispose() {
+    _log.info('Disposing EndpointRecoveryService and cancelling connection state subscription');
     _connectionStateSubscription?.cancel();
   }
 }
-
