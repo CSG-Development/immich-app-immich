@@ -14,8 +14,10 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
     
     companion object {
         private const val TAG = "ClipboardMessagesImpl"
-        private const val AUTHORITY = "com.seagate.curator.stxphotos.android.fileprovider"
     }
+    
+    private val AUTHORITY: String
+        get() = "${context.packageName}.fileprovider"
 
     override fun copyPhotosToClipboard(filePaths: List<String>): ClipboardResult {
         return try {
@@ -45,17 +47,18 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
                     val item = ClipData.Item(additionalUri)
                     clipData.addItem(item)
                     accessibleFileCount++
+                } else {
+                    Log.w(TAG, "copyPhotosToClipboard: Cannot access file ${i + 1}: ${filePaths[i]}")
                 }
             }
             
             clipboardManager.setPrimaryClip(clipData)
-            
 
             ClipboardResult(success = true, error = null, photoCount = accessibleFileCount.toLong())
             
         } catch (e: Exception) {
-
-            ClipboardResult(success = false, error = e.message, photoCount = 0)
+            Log.e(TAG, "copyPhotosToClipboard: Exception occurred", e)
+            ClipboardResult(success = false, error = e.message ?: "Unknown error: ${e.javaClass.simpleName}", photoCount = 0)
         }
     }
 
@@ -293,13 +296,63 @@ class ClipboardMessagesImpl(private val context: Context) : NativeClipboardApi {
     private fun createUriFromPath(filePath: String): Uri? {
         return try {
             val file = File(filePath)
-            if (file.exists() && file.canRead()) {
-                FileProvider.getUriForFile(context, AUTHORITY, file)
-            } else {
-
-                null
+            
+            // Check if file exists
+            if (!file.exists()) {
+                Log.w(TAG, "createUriFromPath: File does not exist: $filePath")
+                return null
             }
+            
+            // Check file size
+            val fileSize = file.length()
+            if (fileSize == 0L) {
+                Log.w(TAG, "createUriFromPath: File is empty (0 bytes): $filePath")
+                return null
+            }
+
+            // Try to ensure file is readable
+            if (!file.canRead()) {
+                Log.w(TAG, "createUriFromPath: File is not readable, attempting to fix permissions: $filePath")
+                // Try to make the file readable
+                val readable = file.setReadable(true, false) // false = not recursive
+                if (!readable) {
+                    Log.w(TAG, "createUriFromPath: Failed to make file readable: $filePath")
+                    // Try with world-readable as fallback
+                    file.setReadable(true, true)
+                }
+                
+                // Re-check readability
+                if (!file.canRead()) {
+                    Log.e(TAG, "createUriFromPath: File still not readable after permission fix: $filePath")
+                    return null
+                }
+            }
+            
+            // Verify we can actually read from the file
+            try {
+                FileInputStream(file).use { inputStream ->
+                    val firstByte = inputStream.read()
+                    if (firstByte == -1) {
+                        Log.w(TAG, "createUriFromPath: File appears to be empty when reading: $filePath")
+                        return null
+                    }
+                }
+            } catch (e: IOException) {
+                Log.e(TAG, "createUriFromPath: Cannot read from file: $filePath", e)
+                return null
+            }
+            
+            // Create URI using FileProvider
+            val uri = try {
+                FileProvider.getUriForFile(context, AUTHORITY, file)
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "createUriFromPath: FileProvider cannot create URI. File: ${file.absolutePath}, Authority: $AUTHORITY, Cache dir: ${context.cacheDir.absolutePath}, In cache: ${file.absolutePath.startsWith(context.cacheDir.absolutePath)}", e)
+                return null
+            }
+            
+            uri
         } catch (e: Exception) {
+            Log.e(TAG, "createUriFromPath: Unexpected exception creating URI for file: $filePath", e)
             null
         }
     }

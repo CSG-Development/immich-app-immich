@@ -5,11 +5,10 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/action_button_helpers.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
-import 'package:immich_mobile/repositories/asset.repository.dart' as repo;
-import 'package:immich_mobile/entities/asset.entity.dart' as entity;
 
 class DuplicateActionButton extends ConsumerWidget {
   final ActionSource source;
@@ -23,10 +22,11 @@ class DuplicateActionButton extends ConsumerWidget {
       return;
     }
 
-    final resolved = await _resolveRemoteEntities(ref, selection);
+    final resolved = await ActionButtonHelpers.resolveEntities(ref, selection);
     if (resolved.isEmpty) {
       return;
     }
+
     final result = await ClipboardService.duplicateAssets(context, ref, resolved);
 
     if (!context.mounted) return;
@@ -64,26 +64,16 @@ class DuplicateActionButton extends ConsumerWidget {
 
   bool _isDuplicateSupportedForSelection(Set<BaseAsset> assets) {
     if (assets.isEmpty) return false;
+    // Duplicate supports a more limited set of formats (no HEIC/HEIF/DNG)
     final supportedImageExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp)", caseSensitive: false);
     for (final a in assets) {
       if (!a.isImage) return false;
       final name = a.name.toLowerCase();
       if (!supportedImageExtensions.hasMatch(name)) return false;
-      if (!a.hasRemote) return false;
+      // Allow both remote and local-only assets for duplication
+      // Local assets are supported by the clipboard service
     }
     return true;
-  }
-
-  Future<Set<entity.Asset>> _resolveRemoteEntities(WidgetRef ref, Set<BaseAsset> selection) async {
-    final repository = ref.read(repo.assetRepositoryProvider);
-    final Set<entity.Asset> result = {};
-    for (final a in selection.whereType<RemoteAsset>()) {
-      final e = await repository.getByRemoteId(a.id);
-      if (e != null) {
-        result.add(e);
-      }
-    }
-    return result;
   }
 }
 
