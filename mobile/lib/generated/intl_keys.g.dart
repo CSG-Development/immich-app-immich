@@ -799,6 +799,9 @@ abstract class IntlKeys {
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
   static const curator_button_action_retry = 'curator.button.action.retry';
+  static const curator_email_not_registered_description = 'curator.email.not.registered.description';
+  static const curator_email_not_registered_error = 'curator.email.not.registered.error';
+  static const curator_email_not_registered_title = 'curator.email.not.registered.title';
   static const curator_login_form_cant_find_device = 'curator.login.form.cant.find.device';
   static const curator_login_form_email_hint = 'curator.login.form.email.hint';
   static const curator_login_form_endpoint_hint = 'curator.login.form.endpoint.hint';
@@ -817,6 +820,7 @@ abstract class IntlKeys {
   static const curator_onboarding_slide4_description = 'curator.onboarding.slide4.description';
   static const curator_onboarding_slide4_title = 'curator.onboarding.slide4.title';
   static const curator_oobe_welcome_dropdown_detecting = 'curator.oobe.welcome.dropdown.detecting';
+  static const curator_remote_access_connection_error = 'curator.remote.access.connection.error';
   static const curator_remote_access_server_unreachable = 'curator.remote.access.server.unreachable';
   static const curator_search_no_result = 'curator.search.no.result';
   static const curator_sign_in_screen_button_request_new_code = 'curator.sign.in.screen.button.request.new.code';
@@ -955,6 +959,9 @@ abstract class IntlKeys {
   static const downloading_media = 'downloading_media';
   static const drop_files_to_upload = 'drop_files_to_upload';
   static const duplicate = 'duplicate';
+  static const duplicate_error = 'duplicate_error';
+  static const duplicate_error_unsupported_type = 'duplicate_error_unsupported_type';
+  static const duplicate_error_video = 'duplicate_error_video';
   static const duplicates = 'duplicates';
   static const duplicates_description = 'duplicates_description';
   static const duration = 'duration';
@@ -1020,6 +1027,7 @@ abstract class IntlKeys {
   static const errors_cant_get_number_of_comments = 'errors.cant.get.number.of.comments';
   static const errors_cant_search_people = 'errors.cant.search.people';
   static const errors_cant_search_places = 'errors.cant.search.places';
+  static const errors_enter_valid_hex_color = 'errors.enter.valid.hex.color';
   static const errors_error_adding_assets_to_album = 'errors.error.adding.assets.to.album';
   static const errors_error_adding_users_to_album = 'errors.error.adding.users.to.album';
   static const errors_error_deleting_shared_user = 'errors.error.deleting.shared.user';

@@ -62,6 +62,7 @@ paths:
         - Client
   /client/v1/auth/refresh:
     get:
+      deprecated: true
       description: |
         This request allows a client application to renew a JWT access
         token if it has expired (after 10 minutes).
@@ -81,9 +82,37 @@ paths:
           description: OK
         '400':
           description: invalid request parameters
+        '401':
+          description: Invalid refresh token
         '403':
           $ref: '#/components/responses/ForbiddenError'
-          description: not allow to perform this action
+          description: not allowed to perform this action
+        '500':
+          $ref: '#/components/responses/Error'
+      security: []
+      summary: Renew a JWT access token using a refresh token
+      tags:
+        - Client
+    post:
+      description: |
+        This request allows a client application to renew a JWT access
+        token if it has expired (after 10 minutes).
+
+        The client application must send the refresh token it received
+        in the `token` response and its client ID.
+      requestBody:
+        $ref: '#/components/requestBodies/Refresh'
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenResponse'
+          description: OK
+        '400':
+          description: invalid request parameters
+        '401':
+          description: Invalid refresh token or client ID
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+          description: not allowed to perform this action
         '500':
           $ref: '#/components/responses/Error'
       security: []
@@ -97,7 +126,8 @@ paths:
         token to query authenticated APIs.
 
         The client application must send the opaque reference from the
-        `initiate` response and the user code received by email.
+        `initiate` response, its client ID, and the user code received by
+        email.
       parameters:
         - description: Type of user identifier. Only email for now.
           in: query
@@ -114,7 +144,9 @@ paths:
           $ref: '#/components/responses/TokenResponse'
           description: OK
         '400':
-          description: bad request parameters
+          description: Bad request parameters
+        '401':
+          description: Invalid credentials or verification code expired
         '500':
           $ref: '#/components/responses/Error'
       security: []
@@ -191,6 +223,25 @@ components:
         - hostname
         - certificateCommonName
       type: object
+    DevicePath:
+      properties:
+        address:
+          description: The IP address or hostname of the device.
+          type: string
+        port:
+          description: The HTTP(S) port to connect to the device.
+          type: integer
+        type:
+          description: The type of path.
+          enum:
+            - local
+            - public
+            - remote
+          type: string
+      required:
+        - type
+        - address
+      type: object
     DevicePaths:
       properties:
         paths:
@@ -220,25 +271,6 @@ components:
         reason:
           type: string
           description: the error name can be raised for multiple reasons
-    DevicePath:
-      properties:
-        address:
-          description: The IP address or hostname of the device.
-          type: string
-        port:
-          description: The HTTP(S) port to connect to the device.
-          type: integer
-        type:
-          description: The type of path.
-          enum:
-            - local
-            - public
-            - remote
-          type: string
-      required:
-        - type
-        - address
-      type: object
   parameters: {}
   responses:
     DeviceIDResponse:
@@ -316,24 +348,39 @@ components:
               - clientId
               - clientFriendlyName
             type: object
+    Refresh:
+      content:
+        application/json:
+          schema:
+            properties:
+              clientId:
+                description: unique identifier of the client application installation
+                type: string
+              refreshToken:
+                description: refresh token
+                type: string
+            required:
+              - refreshToken
+              - clientId
+            type: object
     Validate:
       content:
         application/json:
           schema:
             properties:
-              code:
-                description: validation code
-                type: string
               clientId:
                 description: unique identifier of the client application installation
+                type: string
+              code:
+                description: validation code
                 type: string
               reference:
                 description: opaque reference to the user
                 type: string
             required:
               - reference
-              - clientId
               - code
+              - clientId
             type: object
   securitySchemes:
     BearerAuth:

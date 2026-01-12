@@ -1,132 +1,79 @@
-# HomeCloud Device Discovery & Authentication - Integration Guide
+# homecloud_frontend
 
-This document explains how to implement local and remote device discovery and authentication for HomeCloud-compatible devices. It is intended for teams integrating these features into their own applications.
+Home Cloud UI ^_^
 
----
+One project to rule them all:
+- Android Manager App
+- iOS Manager App
+- Webapp for Reset Password & Invite
 
-## Overview
+## Set up
 
-The HomeCloud frontend supports two main device connection flows:
+Offical guide: https://docs.flutter.dev/get-started/install
 
-- **Local Discovery:** Find and connect to devices on the same local network using mDNS.
-- **Remote Access:** Connect to devices remotely via a cloud relay, using secure authentication and device selection.
+### iOS
 
-Both flows share a unified device model and authentication logic, allowing seamless switching between local and remote devices.
+Tips:
+- Software requirements: macOS Sonoma (version 14) or later, Xcode 16
+- You must have a Apple Developper account to download and use [Xcode](https://developer.apple.com/xcode)
+- To avoid issues, use a tool to manage your Ruby environment, like [rbenv](https://github.com/rbenv/rbenv)
+- Do not install CocoaPods with **sudo** to avoid issues with [fastlane](https://docs.fastlane.tools)
 
----
+Major steps:
+1. Download and install [Xcode](https://developer.apple.com/xcode)
+    1. To configure the command-line tools to use the installed version of Xcode, use the following commands.
+        > sudo sh -c 'xcode-select -s /Applications/Xcode.app/Contents/Developer && xcodebuild -runFirstLaunch'
+    2. Sign the Xcode license agreement.
+        > sudo xcodebuild -license
+2. Use [rbenv](https://github.com/rbenv/rbenv) to install Ruby 3.x
+3. Download and install [CocoaPods](https://guides.cocoapods.org/using/getting-started.html#getting-started)
+    > gem install cocoapods
+4. Download and install [Flutter SDK](https://docs.flutter.dev/get-started/install/macos/mobile-ios#install-the-flutter-sdk)
+5. Add Flutter to your PATH
+    > export PATH=$HOME/development/flutter/bin:$PATH
 
-## 1. Local Device Discovery (mDNS)
 
-### Principle
-- Devices advertise themselves on the local network using mDNS with a specific service type (e.g. `_https._tcp` and name `HomeCloud`).
-- The app scans for these services, retrieves their IP/hostname, and queries their `/about` and `/status` endpoints to validate and display them.
+## CI
 
-### Key Steps
-1. **Start Discovery**
-   - Use an mDNS library (e.g. `nsd` for Flutter) to scan for services of type `_https._tcp` and name containing `HomeCloud`.
-   - Example (Flutter):
-     ```dart
-     final discovery = await nsd.startDiscovery('_https._tcp');
-     discovery.addServiceListener((service, status) {
-       if (status == ServiceStatus.found && service.name.contains('HomeCloud')) {
-         // Handle found device
-       }
-     });
-     ```
-2. **Query Device Info**
-   - For each found service, build the device base URL (e.g. `https://<host>:<port>/api/v1`).
-   - Call `/about` and `/status` endpoints to get device metadata and readiness.
-   - Only display devices that are ready (status = `ready`).
-3. **Select and Connect**
-   - When a user selects a device, store its base URL and use it for subsequent API calls.
-   - Authenticate as needed (see Authentication section).
+Official guide: https://docs.flutter.dev/deployment/cd
 
----
+### iOS
 
-## 2. Remote Device Discovery & Access
+Tips:
+- You must have a Apple Developper account with the **App Manager** role to create, sign and deploy Apps on TestFlight
+- Fastlane need and **app-specific password** to work 
+    - Create one on your [Apple Account](http://appleid.apple.com), then go to the security section and use the Generate Password
+    - Set the FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD env variable in your bash or in GitLab > *my_project* > Settings > CI/CD > Variables
+- Create a GitLab Runner **Shell** executor on the machine host
+- Copy all content of your .zshrc and .zshenv files to .bash_profile to have the same environment in the Runner and locally
 
-### Principle
-- Users can access their devices remotely via a cloud relay.
-- Remote authentication is email-based: the user enters their email, receives a code, and enters it to obtain access tokens.
-- The app then fetches the list of remote devices available for that user.
+Major steps:
+1. Set up you host locally, and make sure that your project builds via:
+    > flutter build ipa
+3. Create an environment variable named **FLUTTER_ROOT**, and set it to the root directory of your Flutter SDK. (This is required for the scripts that deploy for iOS.)
+4. Ensure Bundler is available using:
+    > gem install bundler
+5. To test CI, in [project]/ios run :
+    > bundle install
+    > 
+    > bundle exec fastlane beta
 
-### Key Steps
-1. **Initiate Remote Access**
-   - User enters their email.
-   - Call the remote API to send a code to the user's email.
-2. **Validate Code**
-   - User enters the received code.
-   - Call the remote API to validate the code and obtain access/refresh tokens.
-   - **Important:** Store the refresh token securely for future sessions. This allows the app to obtain new access tokens without requiring the user to validate code again.
-3. **Fetch Remote Devices**
-   - Use the access token to call the remote API and retrieve the list of devices associated with the user.
-   - Each device includes a prioritized list of connection paths (local, public, relay), already sorted by the server. Attempt to connect using the paths in the provided order.
-4. **Select and Connect**
-   - When a user selects a remote device, store its connection info and use it for subsequent API calls.
+## API
 
----
+All yaml files must be saved in folder **\swaggers**
 
-## 3. Authentication & Token Refresh
+Then the SwaggerGenerator will generate the API files for you by running:
+```shell
+dart run build_runner build
+```
 
-- Add the Authorization header to each HTTP request as follows:  
-    `'Bearer <accessToken>'`, without overriding an existing header (useful in case of a retry).
-- If a call returns 401/403, the app should attempt to refresh the access token using the refresh token.
-- If refresh fails, prompt the user to re-authenticate.
-- The authentication logic is abstracted via the `CuratorAuthProvider` interface and used by both local and remote providers.
+## Next
 
----
+A few resources to get you started if this is your first Flutter project:
 
-## 4. Error Handling
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-- Always handle network errors, timeouts, and invalid responses gracefully.
-- Show user-friendly error messages and allow retrying discovery or authentication.
-- Log errors for debugging (see `_handleError` in the code).
-
----
-
-## 5. Key Classes & Interfaces
-
-- `DeviceProvider` (Homecloud device): Handles Homecloud authentication and API calls.
-- `RemoteProvider` (remote access server): Handles remote authentication and API calls.
-- `CuratorAuthProvider`: Interface for authentication logic (access token, refresh, logout).
-- `CuratorInterceptor`/`CuratorAuthenticator`: Chopper interceptors for adding auth headers and handling token refresh.
-
----
-
-## 6. Security Notes
-
-- All connections use HTTPS (TLS). For Homecloud device, the app may need to trust a custom root CA (see `CuratorHttpClient`).
-- Never store access tokens.
-- Never store refresh tokens in plain text. Use secure storage.
-- Always validate device certificates when connecting.
-
----
-
-## 7. Useful Endpoints
-
-- Homecloud device:
-  - `GET /api/v1/about` — Device info
-  - `GET /api/v1/status` — Device status
-- Remote API:
-  - `POST /client/v1/auth/initiate` — Send code to email
-  - `POST /client/v1/auth/token` — Validate code, get tokens
-  - `GET /client/v1/devices` — List remote devices
-  - `GET /client/v1/auth/refresh` — Refresh remote token
-
----
-
-## 8. Integration Tips
-
-- Always clean up discovery sessions to avoid leaks.
-- Allow the user to switch between local and remote devices easily.
-- Provide clear UI feedback during discovery, authentication, and errors.
-
----
-
-## 9. References
-- See `sign_in_screen.dart`, `device.provider.dart`, `remote.provider.dart`, and `auth.api.dart` for implementation details.
-- For Flutter, see the `nsd` package for mDNS, and `chopper` for API calls.
-
----
-
-For any questions or clarifications, contact the HomeCloud frontend team.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

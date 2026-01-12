@@ -55,7 +55,7 @@ abstract class RemoteAccess extends ChopperService {
   ///Initiate client authentication
   ///@param type Type of user identifier. Only email for now.
   Future<chopper.Response<InitiateResponse$Response>> clientV1AuthInitiatePost({
-    required enums.ClientV1AuthInitiatePostType? type,
+    required enums.ClientV1AuthInitiatePostType type,
     required Code$RequestBody? body,
   }) {
     generatedMapping.putIfAbsent(
@@ -99,8 +99,9 @@ service.
 
   ///Renew a JWT access token using a refresh token
   ///@param refresh_token Refresh token
+  @deprecated
   Future<chopper.Response<TokenResponse$Response>> clientV1AuthRefreshGet({
-    required String? refreshToken,
+    required String refreshToken,
   }) {
     generatedMapping.putIfAbsent(
       TokenResponse$Response,
@@ -112,9 +113,10 @@ service.
 
   ///Renew a JWT access token using a refresh token
   ///@param refresh_token Refresh token
+  @deprecated
   @GET(path: '/client/v1/auth/refresh')
   Future<chopper.Response<TokenResponse$Response>> _clientV1AuthRefreshGet({
-    @Query('refresh_token') required String? refreshToken,
+    @Query('refresh_token') required String refreshToken,
     @chopper.Tag()
     SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
       description:
@@ -130,6 +132,41 @@ in the `token` response.
       produces: [],
       security: [],
       tags: ["Client"],
+      deprecated: true,
+    ),
+  });
+
+  ///Renew a JWT access token using a refresh token
+  Future<chopper.Response<TokenResponse$Response>> clientV1AuthRefreshPost({
+    required Refresh$RequestBody? body,
+  }) {
+    generatedMapping.putIfAbsent(
+      TokenResponse$Response,
+      () => TokenResponse$Response.fromJsonFactory,
+    );
+
+    return _clientV1AuthRefreshPost(body: body);
+  }
+
+  ///Renew a JWT access token using a refresh token
+  @POST(path: '/client/v1/auth/refresh', optionalBody: true)
+  Future<chopper.Response<TokenResponse$Response>> _clientV1AuthRefreshPost({
+    @Body() required Refresh$RequestBody? body,
+    @chopper.Tag()
+    SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
+      description:
+          '''This request allows a client application to renew a JWT access
+token if it has expired (after 10 minutes).
+
+The client application must send the refresh token it received
+in the `token` response and its client ID.
+''',
+      summary: 'Renew a JWT access token using a refresh token',
+      operationId: '',
+      consumes: [],
+      produces: [],
+      security: [],
+      tags: ["Client"],
       deprecated: false,
     ),
   });
@@ -137,7 +174,7 @@ in the `token` response.
   ///Obtain a JWT access token
   ///@param type Type of user identifier. Only email for now.
   Future<chopper.Response<TokenResponse$Response>> clientV1AuthTokenPost({
-    required enums.ClientV1AuthTokenPostType? type,
+    required enums.ClientV1AuthTokenPostType type,
     required Validate$RequestBody? body,
   }) {
     generatedMapping.putIfAbsent(
@@ -161,7 +198,8 @@ in the `token` response.
 token to query authenticated APIs.
 
 The client application must send the opaque reference from the
-`initiate` response and the user code received by email.
+`initiate` response, its client ID, and the user code received by
+email.
 ''',
       summary: 'Obtain a JWT access token',
       operationId: '',
@@ -202,7 +240,7 @@ devices a user has access to.
   ///Get information about a device
   ///@param deviceID Device identifier
   Future<chopper.Response<DevicePaths>> clientV1DevicesDeviceIDGet({
-    required String? deviceID,
+    required String deviceID,
   }) {
     generatedMapping.putIfAbsent(
       DevicePaths,
@@ -216,7 +254,7 @@ devices a user has access to.
   ///@param deviceID Device identifier
   @GET(path: '/client/v1/devices/{deviceID}')
   Future<chopper.Response<DevicePaths>> _clientV1DevicesDeviceIDGet({
-    @Path('deviceID') required String? deviceID,
+    @Path('deviceID') required String deviceID,
     @chopper.Tag()
     SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
       description:
@@ -329,6 +367,80 @@ extension $DeviceExtension on Device {
       seagateDeviceID: (seagateDeviceID != null
           ? seagateDeviceID.value
           : this.seagateDeviceID),
+    );
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class DevicePath {
+  const DevicePath({required this.address, this.port, required this.type});
+
+  factory DevicePath.fromJson(Map<String, dynamic> json) =>
+      _$DevicePathFromJson(json);
+
+  static const toJsonFactory = _$DevicePathToJson;
+  Map<String, dynamic> toJson() => _$DevicePathToJson(this);
+
+  @JsonKey(name: 'address')
+  final String address;
+  @JsonKey(name: 'port')
+  final int? port;
+  @JsonKey(
+    name: 'type',
+    toJson: devicePathTypeToJson,
+    fromJson: devicePathTypeFromJson,
+  )
+  final enums.DevicePathType type;
+  static const fromJsonFactory = _$DevicePathFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is DevicePath &&
+            (identical(other.address, address) ||
+                const DeepCollectionEquality().equals(
+                  other.address,
+                  address,
+                )) &&
+            (identical(other.port, port) ||
+                const DeepCollectionEquality().equals(other.port, port)) &&
+            (identical(other.type, type) ||
+                const DeepCollectionEquality().equals(other.type, type)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(address) ^
+      const DeepCollectionEquality().hash(port) ^
+      const DeepCollectionEquality().hash(type) ^
+      runtimeType.hashCode;
+}
+
+extension $DevicePathExtension on DevicePath {
+  DevicePath copyWith({
+    String? address,
+    int? port,
+    enums.DevicePathType? type,
+  }) {
+    return DevicePath(
+      address: address ?? this.address,
+      port: port ?? this.port,
+      type: type ?? this.type,
+    );
+  }
+
+  DevicePath copyWithWrapped({
+    Wrapped<String>? address,
+    Wrapped<int?>? port,
+    Wrapped<enums.DevicePathType>? type,
+  }) {
+    return DevicePath(
+      address: (address != null ? address.value : this.address),
+      port: (port != null ? port.value : this.port),
+      type: (type != null ? type.value : this.type),
     );
   }
 }
@@ -454,80 +566,6 @@ extension $ErrorExtension on Error {
       name: (name != null ? name.value : this.name),
       stacktrace: (stacktrace != null ? stacktrace.value : this.stacktrace),
       reason: (reason != null ? reason.value : this.reason),
-    );
-  }
-}
-
-@JsonSerializable(explicitToJson: true)
-class DevicePath {
-  const DevicePath({required this.address, this.port, required this.type});
-
-  factory DevicePath.fromJson(Map<String, dynamic> json) =>
-      _$DevicePathFromJson(json);
-
-  static const toJsonFactory = _$DevicePathToJson;
-  Map<String, dynamic> toJson() => _$DevicePathToJson(this);
-
-  @JsonKey(name: 'address')
-  final String address;
-  @JsonKey(name: 'port')
-  final int? port;
-  @JsonKey(
-    name: 'type',
-    toJson: devicePathTypeToJson,
-    fromJson: devicePathTypeFromJson,
-  )
-  final enums.DevicePathType type;
-  static const fromJsonFactory = _$DevicePathFromJson;
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other is DevicePath &&
-            (identical(other.address, address) ||
-                const DeepCollectionEquality().equals(
-                  other.address,
-                  address,
-                )) &&
-            (identical(other.port, port) ||
-                const DeepCollectionEquality().equals(other.port, port)) &&
-            (identical(other.type, type) ||
-                const DeepCollectionEquality().equals(other.type, type)));
-  }
-
-  @override
-  String toString() => jsonEncode(this);
-
-  @override
-  int get hashCode =>
-      const DeepCollectionEquality().hash(address) ^
-      const DeepCollectionEquality().hash(port) ^
-      const DeepCollectionEquality().hash(type) ^
-      runtimeType.hashCode;
-}
-
-extension $DevicePathExtension on DevicePath {
-  DevicePath copyWith({
-    String? address,
-    int? port,
-    enums.DevicePathType? type,
-  }) {
-    return DevicePath(
-      address: address ?? this.address,
-      port: port ?? this.port,
-      type: type ?? this.type,
-    );
-  }
-
-  DevicePath copyWithWrapped({
-    Wrapped<String>? address,
-    Wrapped<int?>? port,
-    Wrapped<enums.DevicePathType>? type,
-  }) {
-    return DevicePath(
-      address: (address != null ? address.value : this.address),
-      port: (port != null ? port.value : this.port),
-      type: (type != null ? type.value : this.type),
     );
   }
 }
@@ -752,10 +790,76 @@ extension $Code$RequestBodyExtension on Code$RequestBody {
 }
 
 @JsonSerializable(explicitToJson: true)
+class Refresh$RequestBody {
+  const Refresh$RequestBody({
+    required this.clientId,
+    required this.refreshToken,
+  });
+
+  factory Refresh$RequestBody.fromJson(Map<String, dynamic> json) =>
+      _$Refresh$RequestBodyFromJson(json);
+
+  static const toJsonFactory = _$Refresh$RequestBodyToJson;
+  Map<String, dynamic> toJson() => _$Refresh$RequestBodyToJson(this);
+
+  @JsonKey(name: 'clientId')
+  final String clientId;
+  @JsonKey(name: 'refreshToken')
+  final String refreshToken;
+  static const fromJsonFactory = _$Refresh$RequestBodyFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is Refresh$RequestBody &&
+            (identical(other.clientId, clientId) ||
+                const DeepCollectionEquality().equals(
+                  other.clientId,
+                  clientId,
+                )) &&
+            (identical(other.refreshToken, refreshToken) ||
+                const DeepCollectionEquality().equals(
+                  other.refreshToken,
+                  refreshToken,
+                )));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(clientId) ^
+      const DeepCollectionEquality().hash(refreshToken) ^
+      runtimeType.hashCode;
+}
+
+extension $Refresh$RequestBodyExtension on Refresh$RequestBody {
+  Refresh$RequestBody copyWith({String? clientId, String? refreshToken}) {
+    return Refresh$RequestBody(
+      clientId: clientId ?? this.clientId,
+      refreshToken: refreshToken ?? this.refreshToken,
+    );
+  }
+
+  Refresh$RequestBody copyWithWrapped({
+    Wrapped<String>? clientId,
+    Wrapped<String>? refreshToken,
+  }) {
+    return Refresh$RequestBody(
+      clientId: (clientId != null ? clientId.value : this.clientId),
+      refreshToken: (refreshToken != null
+          ? refreshToken.value
+          : this.refreshToken),
+    );
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
 class Validate$RequestBody {
   const Validate$RequestBody({
-    required this.code,
     required this.clientId,
+    required this.code,
     required this.reference,
   });
 
@@ -765,10 +869,10 @@ class Validate$RequestBody {
   static const toJsonFactory = _$Validate$RequestBodyToJson;
   Map<String, dynamic> toJson() => _$Validate$RequestBodyToJson(this);
 
-  @JsonKey(name: 'code')
-  final String code;
   @JsonKey(name: 'clientId')
   final String clientId;
+  @JsonKey(name: 'code')
+  final String code;
   @JsonKey(name: 'reference')
   final String reference;
   static const fromJsonFactory = _$Validate$RequestBodyFromJson;
@@ -777,13 +881,13 @@ class Validate$RequestBody {
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other is Validate$RequestBody &&
-            (identical(other.code, code) ||
-                const DeepCollectionEquality().equals(other.code, code)) &&
             (identical(other.clientId, clientId) ||
                 const DeepCollectionEquality().equals(
                   other.clientId,
                   clientId,
                 )) &&
+            (identical(other.code, code) ||
+                const DeepCollectionEquality().equals(other.code, code)) &&
             (identical(other.reference, reference) ||
                 const DeepCollectionEquality().equals(
                   other.reference,
@@ -796,33 +900,33 @@ class Validate$RequestBody {
 
   @override
   int get hashCode =>
-      const DeepCollectionEquality().hash(code) ^
       const DeepCollectionEquality().hash(clientId) ^
+      const DeepCollectionEquality().hash(code) ^
       const DeepCollectionEquality().hash(reference) ^
       runtimeType.hashCode;
 }
 
 extension $Validate$RequestBodyExtension on Validate$RequestBody {
   Validate$RequestBody copyWith({
-    String? code,
     String? clientId,
+    String? code,
     String? reference,
   }) {
     return Validate$RequestBody(
-      code: code ?? this.code,
       clientId: clientId ?? this.clientId,
+      code: code ?? this.code,
       reference: reference ?? this.reference,
     );
   }
 
   Validate$RequestBody copyWithWrapped({
-    Wrapped<String>? code,
     Wrapped<String>? clientId,
+    Wrapped<String>? code,
     Wrapped<String>? reference,
   }) {
     return Validate$RequestBody(
-      code: (code != null ? code.value : this.code),
       clientId: (clientId != null ? clientId.value : this.clientId),
+      code: (code != null ? code.value : this.code),
       reference: (reference != null ? reference.value : this.reference),
     );
   }
