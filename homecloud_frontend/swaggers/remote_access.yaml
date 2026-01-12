@@ -324,11 +324,15 @@ components:
               code:
                 description: validation code
                 type: string
+              clientId:
+                description: unique identifier of the client application installation
+                type: string
               reference:
                 description: opaque reference to the user
                 type: string
             required:
               - reference
+              - clientId
               - code
             type: object
   securitySchemes:

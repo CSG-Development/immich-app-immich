@@ -104,9 +104,14 @@ Validate$RequestBody _$Validate$RequestBodyFromJson(
   Map<String, dynamic> json,
 ) => Validate$RequestBody(
   code: json['code'] as String,
+  clientId: json['clientId'] as String,
   reference: json['reference'] as String,
 );
 
 Map<String, dynamic> _$Validate$RequestBodyToJson(
   Validate$RequestBody instance,
-) => <String, dynamic>{'code': instance.code, 'reference': instance.reference};
+) => <String, dynamic>{
+  'code': instance.code,
+  'clientId': instance.clientId,
+  'reference': instance.reference,
+};

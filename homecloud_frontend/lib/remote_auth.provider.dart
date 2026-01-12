@@ -207,6 +207,7 @@ class RemoteAuthController extends ChangeNotifier {
       final response = await _remoteProvider.api.clientV1AuthTokenPost(
         type: ClientV1AuthTokenPostType.email,
         body: Validate$RequestBody(
+          clientId: _remoteProvider.clientId,
           code: code,
           reference: _remoteProvider.reference!,
         ),

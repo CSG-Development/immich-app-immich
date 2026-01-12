@@ -753,7 +753,11 @@ extension $Code$RequestBodyExtension on Code$RequestBody {
 
 @JsonSerializable(explicitToJson: true)
 class Validate$RequestBody {
-  const Validate$RequestBody({required this.code, required this.reference});
+  const Validate$RequestBody({
+    required this.code,
+    required this.clientId,
+    required this.reference,
+  });
 
   factory Validate$RequestBody.fromJson(Map<String, dynamic> json) =>
       _$Validate$RequestBodyFromJson(json);
@@ -763,6 +767,8 @@ class Validate$RequestBody {
 
   @JsonKey(name: 'code')
   final String code;
+  @JsonKey(name: 'clientId')
+  final String clientId;
   @JsonKey(name: 'reference')
   final String reference;
   static const fromJsonFactory = _$Validate$RequestBodyFromJson;
@@ -773,6 +779,11 @@ class Validate$RequestBody {
         (other is Validate$RequestBody &&
             (identical(other.code, code) ||
                 const DeepCollectionEquality().equals(other.code, code)) &&
+            (identical(other.clientId, clientId) ||
+                const DeepCollectionEquality().equals(
+                  other.clientId,
+                  clientId,
+                )) &&
             (identical(other.reference, reference) ||
                 const DeepCollectionEquality().equals(
                   other.reference,
@@ -786,24 +797,32 @@ class Validate$RequestBody {
   @override
   int get hashCode =>
       const DeepCollectionEquality().hash(code) ^
+      const DeepCollectionEquality().hash(clientId) ^
       const DeepCollectionEquality().hash(reference) ^
       runtimeType.hashCode;
 }
 
 extension $Validate$RequestBodyExtension on Validate$RequestBody {
-  Validate$RequestBody copyWith({String? code, String? reference}) {
+  Validate$RequestBody copyWith({
+    String? code,
+    String? clientId,
+    String? reference,
+  }) {
     return Validate$RequestBody(
       code: code ?? this.code,
+      clientId: clientId ?? this.clientId,
       reference: reference ?? this.reference,
     );
   }
 
   Validate$RequestBody copyWithWrapped({
     Wrapped<String>? code,
+    Wrapped<String>? clientId,
     Wrapped<String>? reference,
   }) {
     return Validate$RequestBody(
       code: (code != null ? code.value : this.code),
+      clientId: (clientId != null ? clientId.value : this.clientId),
       reference: (reference != null ? reference.value : this.reference),
     );
   }
