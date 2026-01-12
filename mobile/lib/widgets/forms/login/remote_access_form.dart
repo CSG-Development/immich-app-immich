@@ -48,7 +48,16 @@ class RemoteAccessForm extends HookConsumerWidget {
 
       emailFocusNode.unfocus();
 
-      showRemoteCodeModal(context, email, () async => switchToCuratorLogin());
+      showRemoteCodeModal(
+        context: context,
+        email: email,
+        onSuccess: () async => switchToCuratorLogin(),
+        onEmailNotAllowed: () {
+          emailFocusNode.unfocus();
+          warningMessage.value = 'curator.email_not_registered_error'.tr();
+          hasEmailError.value = true;
+        }
+      );
     }
 
     useEffect(() {
@@ -117,7 +126,7 @@ class RemoteAccessForm extends HookConsumerWidget {
             return LoginSubmitButton(
               onPressed: handleNextPress,
               withIcon: false,
-              isDisabled: value.text.isEmpty || validateEmail(value.text) != null,
+              isDisabled: value.text.isEmpty || validateEmail(value.text) != null || hasEmailError.value,
               label: 'next'.tr(),
             );
           },

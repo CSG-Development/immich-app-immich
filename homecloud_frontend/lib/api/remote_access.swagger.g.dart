@@ -20,6 +20,19 @@ Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
   'seagateDeviceID': instance.seagateDeviceID,
 };
 
+DevicePath _$DevicePathFromJson(Map<String, dynamic> json) => DevicePath(
+  address: json['address'] as String,
+  port: (json['port'] as num?)?.toInt(),
+  type: devicePathTypeFromJson(json['type']),
+);
+
+Map<String, dynamic> _$DevicePathToJson(DevicePath instance) =>
+    <String, dynamic>{
+      'address': instance.address,
+      'port': instance.port,
+      'type': devicePathTypeToJson(instance.type),
+    };
+
 DevicePaths _$DevicePathsFromJson(Map<String, dynamic> json) => DevicePaths(
   paths:
       (json['paths'] as List<dynamic>?)
@@ -46,19 +59,6 @@ Map<String, dynamic> _$ErrorToJson(Error instance) => <String, dynamic>{
   'stacktrace': instance.stacktrace,
   'reason': instance.reason,
 };
-
-DevicePath _$DevicePathFromJson(Map<String, dynamic> json) => DevicePath(
-  address: json['address'] as String,
-  port: (json['port'] as num?)?.toInt(),
-  type: devicePathTypeFromJson(json['type']),
-);
-
-Map<String, dynamic> _$DevicePathToJson(DevicePath instance) =>
-    <String, dynamic>{
-      'address': instance.address,
-      'port': instance.port,
-      'type': devicePathTypeToJson(instance.type),
-    };
 
 InitiateResponse$Response _$InitiateResponse$ResponseFromJson(
   Map<String, dynamic> json,
@@ -100,18 +100,31 @@ Map<String, dynamic> _$Code$RequestBodyToJson(Code$RequestBody instance) =>
       'email': instance.email,
     };
 
+Refresh$RequestBody _$Refresh$RequestBodyFromJson(Map<String, dynamic> json) =>
+    Refresh$RequestBody(
+      clientId: json['clientId'] as String,
+      refreshToken: json['refreshToken'] as String,
+    );
+
+Map<String, dynamic> _$Refresh$RequestBodyToJson(
+  Refresh$RequestBody instance,
+) => <String, dynamic>{
+  'clientId': instance.clientId,
+  'refreshToken': instance.refreshToken,
+};
+
 Validate$RequestBody _$Validate$RequestBodyFromJson(
   Map<String, dynamic> json,
 ) => Validate$RequestBody(
-  code: json['code'] as String,
   clientId: json['clientId'] as String,
+  code: json['code'] as String,
   reference: json['reference'] as String,
 );
 
 Map<String, dynamic> _$Validate$RequestBodyToJson(
   Validate$RequestBody instance,
 ) => <String, dynamic>{
-  'code': instance.code,
   'clientId': instance.clientId,
+  'code': instance.code,
   'reference': instance.reference,
 };

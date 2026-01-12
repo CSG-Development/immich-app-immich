@@ -12,7 +12,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'api/remote_access.enums.swagger.dart';
 import 'api/remote_access.swagger.dart';
 import 'providers/device.provider.dart';
 import 'providers/hcdevice.provider.dart';
@@ -26,6 +25,7 @@ enum RemoteAuthError {
   network,
   server,
   unknown,
+  notAllowed
 }
 
 class RemoteAuthState {
@@ -151,14 +151,28 @@ class RemoteAuthController extends ChangeNotifier {
           debugPrint(
             "[RemoteAuth] Initiate error: $message",
           );
+          debugPrint(
+            "[RemoteAuth] Initiate status code: ${response.statusCode}",
+          );
         }
-        _setState(
-          _state.copyWith(
-            isInitiating: false,
-            error: RemoteAuthError.server,
-            errorMessage: message,
-          ),
-        );
+        switch (response.statusCode) {
+          case 401:
+          case 403:
+            _setState(
+              _state.copyWith(isInitiating: false, error: RemoteAuthError.notAllowed),
+            );
+            break;
+          case 500:
+            _setState(
+              _state.copyWith(isInitiating: false, error: RemoteAuthError.server),
+            );
+            break;
+          default:
+            _setState(
+              _state.copyWith(isInitiating: false, error: RemoteAuthError.unknown, errorMessage: message),
+            );
+            break;
+        }
       }
     } catch (error) {
       final message = hc_utils.extractErrorMessage(error);
