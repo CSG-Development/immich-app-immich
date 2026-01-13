@@ -88,11 +88,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         await Future.wait([
           _secureStorageService.delete(kSecuredPinCode),
+          _secureStorageService.delete(kSecuredPasscode),
+          _secureStorageService.delete(kSecuredPattern),
           _widgetService.clearCredentials(),
         ]).timeout(const Duration(seconds: 5));
       } on TimeoutException {
         _log.warning("Timeout during secure storage/widget cleanup");
       }
+
+      Store.put(StoreKey.enableBiometric, false);
 
       try {
         await _authService.logout().timeout(const Duration(seconds: 8));
