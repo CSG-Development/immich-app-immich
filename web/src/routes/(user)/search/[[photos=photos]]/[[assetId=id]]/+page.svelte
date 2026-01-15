@@ -3,11 +3,12 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { shortcut } from '$lib/actions/shortcut';
+  import emptySearch from '$lib/assets/empty-search.svg';
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
@@ -49,14 +50,7 @@
     type SmartSearchDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import {
-    mdiArrowLeft,
-    mdiDotsVertical,
-    mdiImageOffOutline,
-    mdiPlus,
-    mdiPresentationPlay,
-    mdiSelectAll,
-  } from '@mdi/js';
+  import { mdiArrowLeft, mdiDotsVertical, mdiPlus, mdiPresentationPlay, mdiSelectAll } from '@mdi/js';
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
@@ -395,7 +389,7 @@
 {/if}
 
 <section
-  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4 max-h-screen"
+  class="mb-12 m-4 max-h-screen"
   bind:clientHeight={viewport.height}
   bind:clientWidth={viewport.width}
   bind:this={searchResultsElement}
@@ -424,13 +418,11 @@
         {shuffledSelectedAssets}
       />
     {:else if !isLoading}
-      <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
-        <div class="flex flex-col content-center items-center text-center">
-          <Icon path={mdiImageOffOutline} size="3.5em" />
-          <p class="mt-5 text-3xl font-medium">{$t('no_results')}</p>
-          <p class="text-base font-normal">{$t('no_results_description')}</p>
-        </div>
-      </div>
+      <EmptyPlaceholder
+        text={$t('search_no_result_text')}
+        descriptionText={$t('search_no_result_description')}
+        src={emptySearch}
+      />
     {/if}
 
     {#if isLoading}
