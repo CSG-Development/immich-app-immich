@@ -205,11 +205,18 @@ class PasscodeLockPage extends HookConsumerWidget {
                 ),
               ),
               if (flow == LockFlow.validate && hasError.value)
-                GestureDetector(
-                  onTap: handleLogout,
-                  child: Text(
-                    "log_out".tr(),
-                    style: TextStyle(color: context.themeData.primaryColor, fontWeight: FontWeight.w500),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: GestureDetector(
+                    onTap: handleLogout,
+                    child: Text(
+                      "log_out".tr(),
+                      style: TextStyle(
+                        color: context.themeData.primaryColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
             ],
