@@ -53,7 +53,8 @@ enum AppSettingsEnum<T> {
   backupRequireCharging<bool>(StoreKey.backupRequireCharging, null, false),
   backupTriggerDelay<int>(StoreKey.backupTriggerDelay, null, 30),
   readonlyModeEnabled<bool>(StoreKey.readonlyModeEnabled, "readonlyModeEnabled", false),
-  enableBiometric<bool>(StoreKey.enableBiometric, null, false);
+  enableBiometric<bool>(StoreKey.enableBiometric, null, false),
+  appLockTimeoutIndex<int>(StoreKey.appLockTimeoutIndex, null, 0);
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);
 

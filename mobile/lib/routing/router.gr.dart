@@ -1908,6 +1908,22 @@ class LocalTimelineRouteArgs {
 }
 
 /// generated route for
+/// [LockScreenPage]
+class LockScreenRoute extends PageRouteInfo<void> {
+  const LockScreenRoute({List<PageRouteInfo>? children})
+    : super(LockScreenRoute.name, initialChildren: children);
+
+  static const String name = 'LockScreenRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const LockScreenPage();
+    },
+  );
+}
+
+/// generated route for
 /// [LockedPage]
 class LockedRoute extends PageRouteInfo<void> {
   const LockedRoute({List<PageRouteInfo>? children})
@@ -2206,6 +2222,110 @@ class PartnerRoute extends PageRouteInfo<void> {
       return const PartnerPage();
     },
   );
+}
+
+/// generated route for
+/// [PasscodeLockPage]
+class PasscodeLockRoute extends PageRouteInfo<PasscodeLockRouteArgs> {
+  PasscodeLockRoute({
+    Key? key,
+    LockFlow flow = LockFlow.validate,
+    VoidCallback? onSuccess,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PasscodeLockRoute.name,
+         args: PasscodeLockRouteArgs(
+           key: key,
+           flow: flow,
+           onSuccess: onSuccess,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'PasscodeLockRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PasscodeLockRouteArgs>(
+        orElse: () => const PasscodeLockRouteArgs(),
+      );
+      return PasscodeLockPage(
+        key: args.key,
+        flow: args.flow,
+        onSuccess: args.onSuccess,
+      );
+    },
+  );
+}
+
+class PasscodeLockRouteArgs {
+  const PasscodeLockRouteArgs({
+    this.key,
+    this.flow = LockFlow.validate,
+    this.onSuccess,
+  });
+
+  final Key? key;
+
+  final LockFlow flow;
+
+  final VoidCallback? onSuccess;
+
+  @override
+  String toString() {
+    return 'PasscodeLockRouteArgs{key: $key, flow: $flow, onSuccess: $onSuccess}';
+  }
+}
+
+/// generated route for
+/// [PatternLockPage]
+class PatternLockRoute extends PageRouteInfo<PatternLockRouteArgs> {
+  PatternLockRoute({
+    Key? key,
+    LockFlow flow = LockFlow.validate,
+    VoidCallback? onSuccess,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PatternLockRoute.name,
+         args: PatternLockRouteArgs(key: key, flow: flow, onSuccess: onSuccess),
+         initialChildren: children,
+       );
+
+  static const String name = 'PatternLockRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PatternLockRouteArgs>(
+        orElse: () => const PatternLockRouteArgs(),
+      );
+      return PatternLockPage(
+        key: args.key,
+        flow: args.flow,
+        onSuccess: args.onSuccess,
+      );
+    },
+  );
+}
+
+class PatternLockRouteArgs {
+  const PatternLockRouteArgs({
+    this.key,
+    this.flow = LockFlow.validate,
+    this.onSuccess,
+  });
+
+  final Key? key;
+
+  final LockFlow flow;
+
+  final VoidCallback? onSuccess;
+
+  @override
+  String toString() {
+    return 'PatternLockRouteArgs{key: $key, flow: $flow, onSuccess: $onSuccess}';
+  }
 }
 
 /// generated route for

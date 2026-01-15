@@ -1,6 +1,11 @@
 import 'dart:async';
 
+import 'package:auto_route/auto_route.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
+import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -22,9 +27,11 @@ import 'package:immich_mobile/providers/notification_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
+import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/services/background.service.dart';
+import 'package:immich_mobile/services/secure_storage.service.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,6 +41,8 @@ enum AppLifeCycleEnum { active, inactive, paused, resumed, detached, hidden }
 class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   final Ref _ref;
   bool _wasPaused = false;
+  DateTime _wasPausedDateTime = DateTime.now();
+  bool _hasLocalAuth = false;
 
   // Add operation coordination
   Completer<void>? _resumeOperation;
@@ -75,10 +84,59 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     }
   }
 
+  Duration getAppLockTimeout() {
+    final appLockTimeoutIndex = Store.tryGet(StoreKey.appLockTimeoutIndex) ?? 0;
+    final validIndex = appLockTimeoutIndex.clamp(0, AppLockTimeout.values.length - 1);
+    return AppLockTimeout.values[validIndex].during;
+  }
+
+  Future<bool> getHasLocalAuth() async {
+    final passcode = await _ref.read(secureStorageServiceProvider).read(kSecuredPasscode);
+    final pattern = await _ref.read(secureStorageServiceProvider).read(kSecuredPattern);
+
+    final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
+    final enablePasscodeLock = passcode != null;
+    final enablePatternLock = pattern != null;
+    return enableBiometric || enablePasscodeLock || enablePatternLock;
+  }
+
+  bool shouldLockApp(DateTime wasPausedTimestamp) {
+    final lockDuration = getAppLockTimeout();
+    if (!_hasLocalAuth) {
+      return false;
+    }
+    if (lockDuration == Duration.zero) {
+      return true;
+    }
+    final timeElapsed = DateTime.now().difference(wasPausedTimestamp);
+    return timeElapsed > lockDuration;
+  }
+
   Future<void> _performResume() async {
     // no need to resume because app was never really paused
     if (!_wasPaused) return;
     _wasPaused = false;
+
+    final routerStack = _ref.read(appRouterProvider).navigatorKey.currentContext?.router.stack;
+
+    final hasSplashScreenRoute = routerStack?.firstWhereOrNull((r) {
+          return r.name == SplashScreenRoute.name;
+        }) != null;
+    final hasLockScreenRoute = routerStack?.firstWhereOrNull((r) {
+          return r.name == LockScreenRoute.name;
+        }) != null;
+
+    final canShowLockScreen = !hasSplashScreenRoute && !hasLockScreenRoute;
+
+    if (canShowLockScreen) {
+      if (shouldLockApp(_wasPausedDateTime)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctx = _ref.read(appRouterProvider).navigatorKey.currentContext;
+          if (ctx == null) return;
+          ctx.router.push(const LockScreenRoute());
+        });
+      }
+    }
 
     final isAuthenticated = _ref.read(authProvider).isAuthenticated;
 
@@ -203,6 +261,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   Future<void> handleAppPause() async {
     state = AppLifeCycleEnum.paused;
     _wasPaused = true;
+    _wasPausedDateTime = DateTime.now();
 
     // Prevent overlapping pause operations
     if (_pauseOperation != null && !_pauseOperation!.isCompleted) {
@@ -218,6 +277,8 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     _pauseOperation = Completer<void>();
 
     try {
+      _hasLocalAuth = await getHasLocalAuth();
+
       if (Store.isBetaTimelineEnabled) {
         unawaited(_ref.read(backgroundWorkerLockServiceProvider).unlock());
       }
@@ -277,7 +338,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     try {
       _ref.read(manualUploadProvider.notifier).cancelBackup();
     } catch (_) {}
-    
+
     // Clean up AirPlay temporary files
     await AirplayService.cleanupTempFiles();
   }
