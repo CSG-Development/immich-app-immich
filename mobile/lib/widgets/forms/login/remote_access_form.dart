@@ -8,7 +8,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
-import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
   final VoidCallback switchToCuratorLogin;
@@ -48,16 +47,8 @@ class RemoteAccessForm extends HookConsumerWidget {
 
       emailFocusNode.unfocus();
 
-      showRemoteCodeModal(
-        context: context,
-        email: email,
-        onSuccess: () async => switchToCuratorLogin(),
-        onEmailNotAllowed: () {
-          emailFocusNode.unfocus();
-          warningMessage.value = 'curator.email_not_registered_error'.tr();
-          hasEmailError.value = true;
-        }
-      );
+      ref.read(deviceProvider).setHost(login: email);
+      switchToCuratorLogin();
     }
 
     useEffect(() {

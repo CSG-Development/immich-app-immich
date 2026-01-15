@@ -55,6 +55,8 @@ class RemoteCodeModal extends HookConsumerWidget {
               remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
               break;
           }
+        } else {
+          onSuccess?.call();
         }
       } catch (_) {
         remoteCodeInitiateError.value = true;
@@ -133,10 +135,7 @@ class RemoteCodeModal extends HookConsumerWidget {
         return TextButton(
           onPressed: isLoading
               ? null
-              : () {
-                  Navigator.of(context).pop();
-                  onSuccess?.call();
-                },
+              : () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             minimumSize: Size.zero,
             padding: const EdgeInsets.all(12.0),

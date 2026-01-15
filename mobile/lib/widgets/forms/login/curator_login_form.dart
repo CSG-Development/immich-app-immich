@@ -65,6 +65,8 @@ class CuratorLoginForm extends HookConsumerWidget {
     final selectedDevice = useState<DeviceItem?>(null);
     final isDiscovering = useState<bool>(false);
 
+    final isRemoteCodeModalActive = useRef(false);
+
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
       currentFocus.unfocus();
@@ -138,6 +140,32 @@ class CuratorLoginForm extends HookConsumerWidget {
       return merged.values.toList();
     }
 
+    void handleCantFindDevice({required Future<void> Function() onStartDiscovery}) async {
+      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+      if (isAuthenticated) {
+        context.pushRoute(
+          UnableToDetectRoute(
+            onRetry: () {
+              context.pop();
+              onStartDiscovery();
+            },
+          ),
+        );
+      } else {
+        final emailAddress = email.value;
+        if (emailAddress.isEmpty) {
+          warningMessage.value = 'login_form_err_invalid_email'.tr();
+          return;
+        }
+
+        if (isRemoteCodeModalActive.value == true) return;
+
+        isRemoteCodeModalActive.value = true;
+        await showRemoteCodeModal(context: context, email: emailAddress, onSuccess: () async => onStartDiscovery());
+        isRemoteCodeModalActive.value = false;
+      }
+    }
+
     Future<void> startDiscovery() async {
       if (isDiscovering.value) {
         return;
@@ -147,9 +175,19 @@ class CuratorLoginForm extends HookConsumerWidget {
       devices.value = [];
 
       try {
-        final result = await discovery.startDeviceDiscovery();
-        final mdnsDevices = result['mdnsDevices'] ?? <DeviceItem>[];
-        final remoteDevices = result['remoteDevices'] ?? <DeviceItem>[];
+        final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+
+        List<DeviceItem> mdnsDevices = [];
+        List<DeviceItem> remoteDevices = [];
+
+        if (isAuthenticated) {
+          final result = await discovery.startDeviceDiscovery();
+          mdnsDevices = result['mdnsDevices'] ?? <DeviceItem>[];
+          remoteDevices = result['remoteDevices'] ?? <DeviceItem>[];
+        } else {
+          final result = await discovery.startMdnsDiscovery();
+          mdnsDevices = result ?? [];
+        }
 
         devices.value = mergeDevices(devices.value, [...mdnsDevices, ...remoteDevices]);
 
@@ -161,14 +199,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             selectedDevice.value = devices.value.first;
           }
         } else {
-          context.pushRoute(
-            UnableToDetectRoute(
-              onRetry: () {
-                context.pop();
-                startDiscovery();
-              },
-            ),
-          );
+          handleCantFindDevice(onStartDiscovery: startDiscovery);
           return;
         }
       } catch (error, stackTrace) {
@@ -419,28 +450,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    void handleCantFindDevice() {
-      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
-      if (isAuthenticated) {
-        context.pushRoute(
-          UnableToDetectRoute(
-            onRetry: () {
-              context.pop();
-              startDiscovery();
-            },
-          ),
-        );
-      } else {
-        final emailAddress = email.value;
-        if (emailAddress.isEmpty) {
-          warningMessage.value = 'login_form_err_invalid_email'.tr();
-          return;
-        }
-
-        showRemoteCodeModal(context: context, email: emailAddress, onSuccess: () async => startDiscovery());
-      }
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -497,7 +506,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                             ),
                             const SizedBox(height: 4.0),
                             GestureDetector(
-                              onTap: () => handleCantFindDevice(),
+                              onTap: () => handleCantFindDevice(onStartDiscovery: startDiscovery),
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Text(
