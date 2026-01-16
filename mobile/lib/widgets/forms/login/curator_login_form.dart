@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -166,6 +167,16 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+    preselectFavoriteDevice() {
+      if (devices.value.isEmpty) return;
+
+      final favoriteDeviceId = discovery.connectedDeviceID;
+
+      selectedDevice.value = favoriteDeviceId?.isNotEmpty == true
+          ? devices.value.firstWhereOrNull((d) => d.about?.certificateCommonName == favoriteDeviceId)
+          : devices.value.firstOrNull;
+    }
+
     Future<void> startDiscovery() async {
       if (isDiscovering.value) {
         return;
@@ -192,12 +203,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         devices.value = mergeDevices(devices.value, [...mdnsDevices, ...remoteDevices]);
 
         if (devices.value.isNotEmpty) {
-          final favoriteDeviceId = discovery.connectedDeviceID;
-          if (favoriteDeviceId != null && favoriteDeviceId.isNotEmpty) {
-            selectedDevice.value = devices.value.firstWhere((d) => d.about?.certificateCommonName == favoriteDeviceId);
-          } else {
-            selectedDevice.value = devices.value.first;
-          }
+          preselectFavoriteDevice();
         } else {
           handleCantFindDevice(onStartDiscovery: startDiscovery);
           return;
@@ -214,14 +220,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         email.value = ref.read(deviceProvider).login;
 
-        if (devices.value.isNotEmpty) {
-          final favoriteDeviceId = discovery.connectedDeviceID;
-          if (favoriteDeviceId != null && favoriteDeviceId.isNotEmpty) {
-            selectedDevice.value = devices.value.firstWhere((d) => d.about?.certificateCommonName == favoriteDeviceId);
-          } else {
-            selectedDevice.value = devices.value.first;
-          }
-        }
+        preselectFavoriteDevice();
 
         startDiscovery();
       });
