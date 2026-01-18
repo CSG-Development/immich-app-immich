@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -143,11 +144,12 @@ class SecuritySettings extends HookConsumerWidget {
         title: 'curator.settings_passcode_lock'.tr(),
         onChanged: onEnablePasscodeLockChange,
       ),
-      SettingsSwitchListTile(
-        valueNotifier: enablePatternLock,
-        title: 'curator.settings_pattern_lock'.tr(),
-        onChanged: onEnablePatternLockChange,
-      ),
+      if (Platform.isAndroid)
+        SettingsSwitchListTile(
+          valueNotifier: enablePatternLock,
+          title: 'curator.settings_pattern_lock'.tr(),
+          onChanged: onEnablePatternLockChange,
+        ),
       SettingsSwitchListTile(
         valueNotifier: enableBiometric,
         title: 'curator.settings_biometric_lock'.tr(),

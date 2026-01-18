@@ -19,6 +19,9 @@ class BiometricRepository {
   }
 
   Future<bool> authenticate(String? message) async {
-    return _localAuth.authenticate(localizedReason: message ?? 'please_auth_to_access'.tr());
+    return _localAuth.authenticate(
+      localizedReason: message ?? 'please_auth_to_access'.tr(),
+      options: const AuthenticationOptions(biometricOnly: true),
+    );
   }
 }
