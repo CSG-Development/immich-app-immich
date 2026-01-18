@@ -307,6 +307,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     _baseUrl = null;
     _api = null;
     _deviceStatus = null;
+    _deviceID = null;
   }
 
   void forceToRedetectDevice() {
