@@ -103,10 +103,8 @@ class RemoteCodeModal extends HookConsumerWidget {
       final state = remoteAuth.state;
 
       if (success) {
-        await onSuccess?.call();
-        if (context.mounted) {
-          Navigator.of(context).pop(); // Close the modal
-        }
+        onSuccess?.call();
+        if (context.mounted) Navigator.of(context).pop();
       } else {
         switch (state.error) {
           case RemoteAuthError.invalidCode:
