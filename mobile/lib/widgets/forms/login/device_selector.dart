@@ -154,7 +154,7 @@ class DeviceSelector extends HookWidget {
                 focusNode: focusNode,
                 leadingIcon: buildIconDevice(selectedDevice),
                 isDetecting: isDetecting,
-                isEmpty: getFilteredOptions(controller.text).isEmpty,
+                isEmpty: devices.isEmpty,
                 suffixIcon: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 24, minHeight: 24),

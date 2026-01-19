@@ -172,9 +172,12 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       final favoriteDeviceId = discovery.connectedDeviceID;
 
-      selectedDevice.value = favoriteDeviceId?.isNotEmpty == true
-          ? devices.value.firstWhereOrNull((d) => d.about?.certificateCommonName == favoriteDeviceId)
-          : devices.value.firstOrNull;
+      DeviceItem? candidateDevice;
+      if (favoriteDeviceId?.isNotEmpty == true) {
+        candidateDevice = devices.value.firstWhereOrNull((d) => d.about?.certificateCommonName == favoriteDeviceId);
+      }
+
+      selectedDevice.value = candidateDevice ?? devices.value.firstOrNull;
     }
 
     Future<void> startDiscovery() async {
@@ -211,7 +214,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       } catch (error, stackTrace) {
         log.warning('Failed to discover devices', error, stackTrace);
       } finally {
-        isDiscovering.value = false;
+        if (context.mounted) {
+          isDiscovering.value = false;
+        }
       }
     }
 
