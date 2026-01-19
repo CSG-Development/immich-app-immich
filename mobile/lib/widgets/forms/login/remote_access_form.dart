@@ -6,6 +6,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/widgets/common/multi_finger_tap_detector.dart';
+import 'package:immich_mobile/widgets/forms/login/developer_options_dialog.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 
@@ -87,10 +89,21 @@ class RemoteAccessForm extends HookConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
-              SvgPicture.asset(
-                context.isDarkTheme ? 'assets/curator-photos-logo-dark.svg' : 'assets/curator-photos-logo-light.svg',
-                height: 20.0,
+              MultiFingerTapDetector(
+                onFiveTwoFingerTaps: () {
+                  showDeveloperOptionsModal(context: context, onSuccess: () async {});
+                },
+                child: Column(
+                  children: [
+                    const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
+                    SvgPicture.asset(
+                      context.isDarkTheme
+                          ? 'assets/curator-photos-logo-dark.svg'
+                          : 'assets/curator-photos-logo-light.svg',
+                      height: 20.0,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24.0),
               Form(

@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:homecloud_frontend/homecloud_frontend.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_access_form.dart';
@@ -17,6 +18,7 @@ class LoginPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authenticatedEmail = ref.read(deviceProvider).login;
+    final devEnableSettingsOnLogin = ref.watch(developerOptionsProvider).devEnableSettingsOnLogin;
 
     final appVersion = useState('0.0.0');
     final isRemoteAccessForm = useState<bool>(authenticatedEmail.isEmpty);
@@ -44,12 +46,12 @@ class LoginPage extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         systemOverlayStyle: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-        actions: [
+        actions: devEnableSettingsOnLogin ? [
           IconButton(
             icon: const Icon(Icons.settings, size: 24.0),
             onPressed: () => context.pushRoute(const SettingsRoute()),
           ),
-        ],
+        ] : null,
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
