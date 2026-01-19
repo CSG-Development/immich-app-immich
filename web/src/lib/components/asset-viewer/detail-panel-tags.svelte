@@ -39,9 +39,9 @@
 <svelte:document use:shortcut={{ shortcut: { key: 't' }, onShortcut: handleAddTag }} />
 
 {#if isOwner && !authManager.isSharedLink}
-  <section class="px-4 mt-4">
-    <div class="flex h-10 w-full items-center justify-between text-sm">
-      <h2 class="uppercase">{$t('tags')}</h2>
+  <section class=" mt-3">
+    <div class="flex h-10 w-full items-center justify-between text-xs">
+      <h2 class="uppercase font-medium">{$t('tags')}</h2>
     </div>
     <section class="flex flex-wrap pt-2 gap-1" data-testid="detail-panel-tags">
       {#each tags as tag (tag.id)}
@@ -67,7 +67,7 @@
       {/each}
       <button
         type="button"
-        class="rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 flex place-items-center place-content-center gap-1 px-2 py-1"
+        class="rounded-full bg-gray-100 dark:bg-primary/20 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 flex place-items-center place-content-center gap-1 px-2 py-1"
         title={$t('add_tag')}
         onclick={handleAddTag}
       >
