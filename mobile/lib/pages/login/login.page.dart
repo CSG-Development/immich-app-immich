@@ -16,10 +16,10 @@ class LoginPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAuthenticated = ref.watch(remoteProvider).isAuthenticated;
+    final authenticatedEmail = ref.read(deviceProvider).login;
 
     final appVersion = useState('0.0.0');
-    final isRemoteAccessForm = useState<bool>(!isAuthenticated);
+    final isRemoteAccessForm = useState<bool>(authenticatedEmail.isEmpty);
 
     getAppInfo() async {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
