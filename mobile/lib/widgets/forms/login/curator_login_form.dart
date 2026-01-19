@@ -15,6 +15,7 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
@@ -63,6 +64,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     final discovery = ref.read(deviceDiscoveryProvider);
     final devices = useState<List<DeviceItem>>([]);
+    final staticDevice = useState<DeviceItem?>(null);
     final selectedDevice = useState<DeviceItem?>(null);
     final isDiscovering = useState<bool>(false);
 
@@ -221,6 +223,26 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     useEffect(() {
+      final devStaticDeviceUrl = ref.read(developerOptionsProvider).devStaticDeviceUrl;
+      if (devStaticDeviceUrl != null) {
+        final baseUrl = Uri.tryParse(devStaticDeviceUrl);
+        staticDevice.value = DeviceItem(
+          baseUrl: baseUrl,
+          paths: [
+            DevicePath(
+              address: baseUrl?.host ?? devStaticDeviceUrl,
+              port: baseUrl?.port,
+              type: DevicePathType.local,
+            ),
+          ],
+        );
+        selectedDevice.value = staticDevice.value;
+      }
+      return null;
+    });
+
+    useEffect(() {
+      if (staticDevice.value != null) return;
       // Defer provider access until after build phase to avoid initialization conflicts
       WidgetsBinding.instance.addPostFrameCallback((_) {
         email.value = ref.read(deviceProvider).login;
@@ -261,19 +283,12 @@ class CuratorLoginForm extends HookConsumerWidget {
     void populateDevCredentials() async {
       const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
       await dotenv.load(fileName: '.env.$env');
-      final serverUrl = dotenv.env['DEV_SERVER_URL'];
       final emailValue = dotenv.env['DEV_EMAIL'];
       final password = dotenv.env['DEV_PASSWORD'];
 
       clearAllErrors();
       email.value = emailValue ?? '';
       passwordController.text = password ?? '';
-
-      if (serverUrl != null && serverUrl.isNotEmpty) {
-        final device = DeviceItem(baseUrl: Uri.parse(serverUrl), about: null, status: null);
-        selectedDevice.value = device;
-        devices.value = mergeDevices(devices.value, [device]);
-      }
     }
 
     Future<void> updateVersionCompatibilityWarning() async {
@@ -398,7 +413,9 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         final device = selectedDevice.value;
         if (device != null) {
-          discovery.connectToDevice(device);
+          if (device.about != null) {
+            discovery.connectToDevice(device);
+          }
 
           final paths = device.paths;
           if (paths != null && paths.isNotEmpty) {
@@ -492,7 +509,9 @@ class CuratorLoginForm extends HookConsumerWidget {
                             const SizedBox(height: 24.0),
                             DeviceSelector(
                               controller: deviceController,
-                              devices: devices.value,
+                              devices: staticDevice.value != null
+                                  ? [...devices.value, staticDevice.value]
+                                  : devices.value,
                               selectedDevice: selectedDevice.value,
                               isDetecting: isDiscovering.value,
                               focusNode: deviceFocusNode,

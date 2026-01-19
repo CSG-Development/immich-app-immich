@@ -757,6 +757,11 @@
   "curated_object_page_title": "Things",
   "curator": {
     "button_action_retry": "Retry",
+    "developer_options": {
+      "developer_options_title": "Developer options",
+      "show_settings": "Show Settings",
+      "static_device": "Static Device"
+    },
     "email_not_registered_description": "This email isn’t authorized to access this device. Please contact the owner.",
     "email_not_registered_error": "Not allowed. Contact the device owner.",
     "email_not_registered_title": "Email not registered",
@@ -1837,8 +1842,8 @@
   "search_no_people": "No people to show",
   "search_no_people_named": "No people named \"{name}\" to show",
   "search_no_result": "No results found, try a different search term or combination",
-  "search_no_result_text": "No results found",
   "search_no_result_description": "Try a different search term or combination",
+  "search_no_result_text": "No results found",
   "search_options": "Search options",
   "search_page_categories": "Categories",
   "search_page_motion_photos": "Motion Photos",
