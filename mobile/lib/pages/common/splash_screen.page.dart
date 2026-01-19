@@ -1,23 +1,25 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/pages/security/lock_flow.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
-import 'package:immich_mobile/providers/local_auth.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/secure_storage.service.dart';
+import 'package:immich_mobile/widgets/common/splash_screen.dart';
+import 'package:immich_mobile/widgets/security/local_auth_bottom_sheet.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
 
@@ -56,6 +58,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     final accessToken = Store.tryGet(StoreKey.accessToken);
     final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
+
+    final enablePasscodeLock = (await ref.read(secureStorageServiceProvider).read(kSecuredPasscode)) != null;
+    final enablePatternLock = (await ref.read(secureStorageServiceProvider).read(kSecuredPattern)) != null;
 
     if (accessToken != null &&
         // serverUrl != null &&
@@ -141,43 +146,27 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
         }
         context.replaceRoute(Store.isBetaTimelineEnabled ? const TabShellRoute() : const TabControllerRoute());
       }
+
+      if (Store.isBetaTimelineEnabled) {
+        return;
+      }
+
+      final hasPermission = await ref.read(galleryPermissionNotifier.notifier).hasPermission;
+      if (hasPermission) {
+        // Resume backup (if enable) then navigate
+        ref.read(backupProvider.notifier).resumeBackup();
+      }
     }
 
     final canAuthenticate = (await ref.read(localAuthServiceProvider).getStatus()).canAuthenticate;
     if (enableBiometric && canAuthenticate) {
-      // Try biometric authentication up to 3 times
-      int attempts = 0;
-      bool authSuccess = false;
-      
-      while (attempts < 3 && !authSuccess) {
-        authSuccess = await ref.read(localAuthProvider.notifier).authenticate(context, null);
-        if (authSuccess) {
-          proceedToMainScreen();
-          return;
-        }
-        attempts++;
-      }
-      
-      // If all attempts failed, logout user
-      if (!authSuccess) {
-        ref.read(authProvider.notifier).logout();
-        if (mounted) context.replaceRoute(const LoginRoute());
-        return;
-      }
+      await showLocalAuthBottomSheet(context: context, onSuccess: proceedToMainScreen);
+    } else if (enablePasscodeLock) {
+      await context.pushRoute(PasscodeLockRoute(flow: LockFlow.validate, onSuccess: proceedToMainScreen));
+    } else if (enablePatternLock) {
+      await context.pushRoute(PatternLockRoute(flow: LockFlow.validate, onSuccess: proceedToMainScreen));
     } else {
       proceedToMainScreen();
-    }
-
-    if (Store.isBetaTimelineEnabled) {
-      return;
-    }
-
-    if (!mounted) return;
-    final hasPermission = await ref.read(galleryPermissionNotifier.notifier).hasPermission;
-    if (hasPermission) {
-      // Resume backup (if enable) then navigate
-      if (!mounted) return;
-      ref.read(backupProvider.notifier).resumeBackup();
     }
   }
 
@@ -194,39 +183,6 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isAndroid = Platform.isAndroid;
-    final backgroundColor = isAndroid
-        ? const Color(0xFF19181E)
-        : Theme.of(context).colorScheme.surface;
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: _splashOverlayStyle(context),
-      child: Scaffold(
-        backgroundColor: backgroundColor,
-        body: const SizedBox.expand(
-          child: Image(
-            image: AssetImage('assets/immich-splash.png'),
-            filterQuality: FilterQuality.medium,
-            fit: BoxFit.fitHeight,
-          ),
-        ),
-      ),
-    );
+    return const SplashScreen();
   }
-}
-
-SystemUiOverlayStyle _splashOverlayStyle(BuildContext context) {
-  // Splash is dark; prefer light icons. Keep gesture nav edge-to-edge.
-  Color navColor = Colors.transparent;
-  Brightness iconBrightness = Brightness.light;
-
-  if (Platform.isAndroid) {
-    // Force dark nav bar on splash for all Android modes
-    navColor = const Color(0xFF000000);
-  }
-
-  return SystemUiOverlayStyle(
-    systemNavigationBarColor: navColor,
-    systemNavigationBarIconBrightness: iconBrightness,
-  );
 }

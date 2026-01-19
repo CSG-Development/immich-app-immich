@@ -52,78 +52,6 @@ enum AuthResponseType {
   const AuthResponseType(this.value);
 }
 
-enum DuplexType {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('full')
-  full('full'),
-  @JsonValue('half')
-  half('half');
-
-  final String? value;
-
-  const DuplexType(this.value);
-}
-
-enum LinkStatus {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('up')
-  up('up'),
-  @JsonValue('down')
-  down('down');
-
-  final String? value;
-
-  const LinkStatus(this.value);
-}
-
-enum NetworkInterfaceType {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('wired')
-  wired('wired'),
-  @JsonValue('wireless')
-  wireless('wireless');
-
-  final String? value;
-
-  const NetworkInterfaceType(this.value);
-}
-
-enum PowerOffType {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('shutdown')
-  shutdown('shutdown'),
-  @JsonValue('reboot')
-  reboot('reboot');
-
-  final String? value;
-
-  const PowerOffType(this.value);
-}
-
-enum ResetType {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('reset_settings')
-  resetSettings('reset_settings'),
-  @JsonValue('reset_device')
-  resetDevice('reset_device'),
-  @JsonValue('reset_provisioning')
-  resetProvisioning('reset_provisioning');
-
-  final String? value;
-
-  const ResetType(this.value);
-}
-
 enum StatusState {
   @JsonValue(null)
   swaggerGeneratedUnknown(null),
@@ -140,24 +68,6 @@ enum StatusState {
   final String? value;
 
   const StatusState(this.value);
-}
-
-enum UpdateType {
-  @JsonValue(null)
-  swaggerGeneratedUnknown(null),
-
-  @JsonValue('online')
-  online('online'),
-  @JsonValue('offline')
-  offline('offline'),
-  @JsonValue('all')
-  all('all'),
-  @JsonValue('unknown')
-  unknown('unknown');
-
-  final String? value;
-
-  const UpdateType(this.value);
 }
 
 enum AuthRefreshPost$RequestBodyGrantType {

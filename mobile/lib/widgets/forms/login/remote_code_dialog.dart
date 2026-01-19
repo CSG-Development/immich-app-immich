@@ -11,8 +11,9 @@ import 'package:pinput/pinput.dart';
 class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function()? onSuccess;
   final String email;
+  final VoidCallback? onEmailNotAllowed;
 
-  const RemoteCodeModal({super.key, required this.email, this.onSuccess});
+  const RemoteCodeModal({super.key, required this.email, this.onSuccess, this.onEmailNotAllowed});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +22,7 @@ class RemoteCodeModal extends HookConsumerWidget {
     final remoteCodeExpired = useState<bool>(false);
     final remoteCodeInitiateError = useState<bool>(false);
     final remoteCodeErrorText = useState<String?>(null);
+    final emailNotAllowed = useState<bool?>(false);
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
 
@@ -34,6 +36,7 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeInitiateError.value = false;
       remoteCodeLoading.value = true;
       remoteCodeErrorText.value = null;
+      emailNotAllowed.value = false;
 
       try {
         final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
@@ -43,22 +46,21 @@ class RemoteCodeModal extends HookConsumerWidget {
         if (state.error != null) {
           remoteCodeInitiateError.value = true;
           switch (state.error) {
-            case RemoteAuthError.network:
-              remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
-              break;
             case RemoteAuthError.server:
-            case RemoteAuthError.unknown:
-            case RemoteAuthError.invalidCode:
-            case RemoteAuthError.expiredCode:
-            case null:
-              remoteCodeErrorText.value =
-                  state.errorMessage ?? 'curator.remote_access_server_unreachable'.tr();
+              remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
+            case RemoteAuthError.notAllowed:
+              remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+              emailNotAllowed.value = true;
+            default:
+              remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
               break;
           }
+        } else {
+          onSuccess?.call();
         }
       } catch (_) {
         remoteCodeInitiateError.value = true;
-        remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
+        remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
       } finally {
         remoteCodeLoading.value = false;
       }
@@ -117,9 +119,7 @@ class RemoteCodeModal extends HookConsumerWidget {
           case RemoteAuthError.network:
             remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
             break;
-          case RemoteAuthError.server:
-          case RemoteAuthError.unknown:
-          case null:
+          default:
             remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_server_unreachable'.tr();
             break;
         }
@@ -135,10 +135,7 @@ class RemoteCodeModal extends HookConsumerWidget {
         return TextButton(
           onPressed: isLoading
               ? null
-              : () {
-                  Navigator.of(context).pop();
-                  onSuccess?.call();
-                },
+              : () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             minimumSize: Size.zero,
             padding: const EdgeInsets.all(12.0),
@@ -178,8 +175,7 @@ class RemoteCodeModal extends HookConsumerWidget {
       if (!remoteCodeExpired.value && !remoteCodeInitiateError.value)
         () {
           final isLoading = remoteCodeLoading.value;
-          final isDisabled =
-              codeLength.value != 6 || isValidating.value || remoteCodeErrorText.value != null;
+          final isDisabled = codeLength.value != 6 || isValidating.value || remoteCodeErrorText.value != null;
           return TextButton(
             onPressed: (isLoading || isDisabled) ? null : checkRemoteAccessCode,
             style: TextButton.styleFrom(
@@ -198,6 +194,22 @@ class RemoteCodeModal extends HookConsumerWidget {
     ];
 
     final isWide = context.isTablet || context.orientation == Orientation.landscape;
+
+    if (emailNotAllowed.value == true) {
+      return AlertDialog(
+        title: Text('curator.email_not_registered_title'.tr()),
+        content: Text('curator.email_not_registered_description'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onEmailNotAllowed?.call();
+            },
+            child: Text('OK'.tr()),
+          ),
+        ],
+      );
+    }
 
     return AlertDialog(
       title: Text('curator.sign_in_screen_remote_code_title'.tr()),
@@ -307,14 +319,16 @@ class RemoteCodeModal extends HookConsumerWidget {
 }
 
 /// Show modal dialog for remote code input
-Future<void> showRemoteCodeModal(
-  BuildContext context,
-  String email,
+Future<void> showRemoteCodeModal({
+  required BuildContext context,
+  required String email,
   Future<void> Function()? onSuccess,
-) {
+  VoidCallback? onEmailNotAllowed,
+}) {
   return showDialog(
     context: context,
-    barrierDismissible: true,
-    builder: (BuildContext context) => RemoteCodeModal(onSuccess: onSuccess, email: email),
+    barrierDismissible: false,
+    builder: (BuildContext context) =>
+        RemoteCodeModal(onSuccess: onSuccess, onEmailNotAllowed: onEmailNotAllowed, email: email),
   );
 }

@@ -62,7 +62,7 @@ service.
 
   @override
   Future<Response<TokenResponse$Response>> _clientV1AuthRefreshGet({
-    required String? refreshToken,
+    required String refreshToken,
     SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
       description:
           '''This request allows a client application to renew a JWT access
@@ -77,7 +77,7 @@ in the `token` response.
       produces: [],
       security: [],
       tags: ["Client"],
-      deprecated: false,
+      deprecated: true,
     ),
   }) {
     final Uri $url = Uri.parse('/client/v1/auth/refresh');
@@ -97,6 +97,40 @@ in the `token` response.
   }
 
   @override
+  Future<Response<TokenResponse$Response>> _clientV1AuthRefreshPost({
+    required Refresh$RequestBody? body,
+    SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
+      description:
+          '''This request allows a client application to renew a JWT access
+token if it has expired (after 10 minutes).
+
+The client application must send the refresh token it received
+in the `token` response and its client ID.
+''',
+      summary: 'Renew a JWT access token using a refresh token',
+      operationId: '',
+      consumes: [],
+      produces: [],
+      security: [],
+      tags: ["Client"],
+      deprecated: false,
+    ),
+  }) {
+    final Uri $url = Uri.parse('/client/v1/auth/refresh');
+    final $body = body;
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+      body: $body,
+      tag: swaggerMetaData,
+    );
+    return client.send<TokenResponse$Response, TokenResponse$Response>(
+      $request,
+    );
+  }
+
+  @override
   Future<Response<TokenResponse$Response>> _clientV1AuthTokenPost({
     required String? type,
     required Validate$RequestBody? body,
@@ -106,7 +140,8 @@ in the `token` response.
 token to query authenticated APIs.
 
 The client application must send the opaque reference from the
-`initiate` response and the user code received by email.
+`initiate` response, its client ID, and the user code received by
+email.
 ''',
       summary: 'Obtain a JWT access token',
       operationId: '',
@@ -161,7 +196,7 @@ devices a user has access to.
 
   @override
   Future<Response<DevicePaths>> _clientV1DevicesDeviceIDGet({
-    required String? deviceID,
+    required String deviceID,
     SwaggerMetaData swaggerMetaData = const SwaggerMetaData(
       description:
           '''This request allows an authenticated client application to get

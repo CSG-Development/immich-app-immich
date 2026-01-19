@@ -5,12 +5,13 @@
   import { focusTrap } from '$lib/actions/focus-trap';
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import { shortcut } from '$lib/actions/shortcut';
-  import Icon from '$lib/components/elements/icon.svelte';
+  import emptyPeople from '$lib/assets/empty-people.svg';
   import ManagePeopleVisibility from '$lib/components/faces-page/manage-people-visibility.svelte';
   import PeopleCard from '$lib/components/faces-page/people-card.svelte';
   import PeopleInfiniteScroll from '$lib/components/faces-page/people-infinite-scroll.svelte';
   import SearchPeople from '$lib/components/faces-page/people-search.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import {
     notificationController,
     NotificationType,
@@ -26,7 +27,7 @@
   import { clearQueryParam } from '$lib/utils/navigation';
   import { getAllPeople, getPerson, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
   import { Button } from '@immich/ui';
-  import { mdiAccountOff, mdiEyeOutline } from '@mdi/js';
+  import { mdiEyeOutline } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
@@ -391,14 +392,10 @@
       {/snippet}
     </PeopleInfiniteScroll>
   {:else}
-    <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
-      <div class="flex flex-col content-center items-center text-center">
-        <Icon path={mdiAccountOff} size="3.5em" />
-        <p class="mt-5 text-3xl font-medium max-w-lg line-clamp-2 overflow-hidden">
-          {$t(searchName ? 'search_no_people_named' : 'search_no_people', { values: { name: searchName } })}
-        </p>
-      </div>
-    </div>
+    <EmptyPlaceholder
+      text={$t(searchName ? 'search_no_people_named' : 'search_no_people', { values: { name: searchName } })}
+      src={emptyPeople}
+    />
   {/if}
 </UserPageLayout>
 

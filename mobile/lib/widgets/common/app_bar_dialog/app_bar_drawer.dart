@@ -15,6 +15,7 @@ import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/bytes_units.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/drawer_profile_info.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/drawer_server_info.dart';
 import 'package:immich_mobile/widgets/common/confirm_dialog.dart';
@@ -92,17 +93,46 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                 content: "app_bar_signout_dialog_content",
                 ok: "yes",
                 onOk: () async {
-                  isLoggingOut.value = true;
-                  await ref
-                      .read(authProvider.notifier)
-                      .logout()
-                      .whenComplete(() => isLoggingOut.value = false);
+                  if (isLoggingOut.value) {
+                    return;
+                  }
 
-                  ref.read(manualUploadProvider.notifier).cancelBackup();
-                  ref.read(backupProvider.notifier).cancelBackup();
-                  ref.read(assetProvider.notifier).clearAllAssets();
-                  ref.read(websocketProvider.notifier).disconnect();
-                  context.replaceRoute(const LoginRoute());
+                  isLoggingOut.value = true;
+
+                  try {
+                    await ref
+                        .read(authProvider.notifier)
+                        .logout()
+                        .timeout(
+                          const Duration(seconds: 10),
+                          onTimeout: () {
+                            dPrint(() => "Logout timeout, continuing with cleanup");
+                          },
+                        );
+
+                    ref.read(manualUploadProvider.notifier).cancelBackup();
+                    ref.read(backupProvider.notifier).cancelBackup();
+
+                    ref.read(websocketProvider.notifier).disconnect();
+
+                    await ref
+                        .read(assetProvider.notifier)
+                        .clearAllAssets()
+                        .timeout(
+                          const Duration(seconds: 5),
+                          onTimeout: () {
+                            dPrint(() => "clearAllAssets timeout, continuing");
+                          },
+                        );
+                  } catch (error) {
+                    dPrint(() => "Error during logout: $error");
+                  } finally {
+                    isLoggingOut.value = false;
+
+                    if (context.mounted) {
+                      context.replaceRoute(const LoginRoute());
+                    }
+                  }
                 },
               );
             },

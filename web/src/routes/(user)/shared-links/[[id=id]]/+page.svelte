@@ -2,7 +2,9 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
+  import emptySharedLinks from '$lib/assets/empty-shared-links.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import {
     notificationController,
     NotificationType,
@@ -100,11 +102,12 @@
 
   <div class="w-full max-w-3xl m-auto">
     {#if sharedLinks.length === 0}
-      <div
+      <!-- <div
         class="flex place-content-center place-items-center rounded-lg bg-gray-100 dark:bg-immich-dark-gray dark:text-immich-gray p-12"
       >
         <p>{$t('you_dont_have_any_shared_links')}</p>
-      </div>
+      </div> -->
+      <EmptyPlaceholder text={$t('you_dont_have_any_shared_links')} src={emptySharedLinks} />
     {:else}
       <div class="flex flex-col gap-2">
         {#each filteredSharedLinks as link (link.id)}

@@ -130,13 +130,17 @@ class DeviceSelector extends HookWidget {
             textEditingController: controller,
             focusNode: focusNode,
             optionsBuilder: (value) {
-              final input = value.text.trim();
-              final options = getFilteredOptions(input);
+              // final input = value.text.trim();
+              // final options = getFilteredOptions(input);
               // Update dropdown state based on whether options are available and field has focus
+              // WidgetsBinding.instance.addPostFrameCallback((_) {
+              //   isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
+              // });
+              final List<DeviceItem> items = devices.cast<DeviceItem>();
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
+                isDropdownOpen.value = items.isNotEmpty && (focusNode?.hasFocus ?? false);
               });
-              return options;
+              return items;
             },
             displayStringForOption: (value) => value.name,
             onSelected: (option) {
@@ -150,7 +154,7 @@ class DeviceSelector extends HookWidget {
                 focusNode: focusNode,
                 leadingIcon: buildIconDevice(selectedDevice),
                 isDetecting: isDetecting,
-                isEmpty: getFilteredOptions(controller.text).isEmpty,
+                isEmpty: devices.isEmpty,
                 suffixIcon: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 24, minHeight: 24),

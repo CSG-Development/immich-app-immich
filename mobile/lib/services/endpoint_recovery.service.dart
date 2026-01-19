@@ -306,7 +306,7 @@ class EndpointRecoveryService {
     var loginSucceeded = false;
 
     _log.fine('Showing remote code modal for OTP verification');
-    await showRemoteCodeModal(context, email, () async {
+    await showRemoteCodeModal(context: context, email: email, onSuccess: () async {
       loginSucceeded = true;
     });
 

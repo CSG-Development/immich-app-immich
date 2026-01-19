@@ -41,20 +41,41 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   static const String favoriteDevicePathsKey = "curator_favorite_paths";
   static const String refreshTokenKey = "curator_refresh_token";
 
+  static String productName = const String.fromEnvironment(
+    'PRODUCT_NAME',
+    defaultValue: 'Curator',
+  );
+
+  /// To store non-critical info (like login, favorite device id, etc)
   final Map<String, dynamic> storageData;
+
+  /// To store sensitive info about the device (like refresh token)
   final FlutterSecureStorage secureStorage;
+
   static X509CertificateData? defaultCertificate;
   final X509CertificateData deviceCertificate;
 
+  /// The base URL for the device API
   Uri? _baseUrl;
   Api? _api;
+
+  /// The tokens for authentication
   String? _accessToken, _refreshToken;
+
+  /// The email identifier for the user
   String? _login;
 
   /// The device ID, corresponds to the certificate common name
   String? _deviceID;
+
+  /// The status of the device to manage routing
   Status? _deviceStatus;
+
+  /// The paths of the device to connect to
   List<DevicePath>? _devicePaths;
+
+  /// Flag to force re-detection of the device (with the Sign In screen)
+  bool forceDetectFavoriteDevice = false;
 
   DeviceProvider(
     this.storageData,
@@ -109,28 +130,27 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   ///
   /// Parameters:
   /// - [host]: The host address as a string. Used to create the base URL if [baseUrl] is not provided.
-  /// - [port]: The port number as an integer. Used in conjunction with [host] to create the base URL.
   /// - [baseUrl]: The base URL as a [Uri]. If null, it is created from [host].
   /// - [auth]: The authentication response containing access and refresh tokens.
-  /// - [refreshToken]: The refresh token for authentication. Used if [auth] is not provided.
   /// - [login]: The login identifier for the user. Used to save the login in shared preferences.
   /// - [status]: The status of the device to manage routing.
   /// - [deviceID]: The device ID, corresponds to the certificate common name.
-  /// - [devicePaths]: Optional list of device paths (local, public, relay) for remote devices.
+  /// - [productName]: The model name of the device.
   /// - [save]: If true (default), authentication details are saved in persistent storage.
   void setHost({
     String? host,
     int? port,
     Uri? baseUrl,
     AuthResponse? auth,
-    String? refreshToken,
     String? login,
     Status? status,
     String? deviceID,
     List<DevicePath>? devicePaths,
+    String? productName,
     bool save = true,
   }) {
     if (baseUrl != null || host != null) {
+      forceDetectFavoriteDevice = false;
       _baseUrl = baseUrl ?? createBaseUrl(host!, port);
       _api = createApi(
         baseUrl: _baseUrl!,
@@ -143,8 +163,9 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     }
     if (auth?.refreshToken != null) {
       _refreshToken = auth?.refreshToken;
-    } else if (refreshToken != null) {
-      _refreshToken = refreshToken;
+    }
+    if (login != null) {
+      _login = login;
     }
     if (status != null) {
       _deviceStatus = status;
@@ -152,21 +173,18 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     if (deviceID != null) {
       _deviceID = deviceID;
     }
+    if (productName != null) {
+      DeviceProvider.productName = productName;
+    }
     if (devicePaths != null) {
       _devicePaths = devicePaths;
     }
     if (save) {
-      _saveAuthentication(
-        deviceID: deviceID,
-        auth: auth,
-        login: login,
-        devicePaths: devicePaths,
-      );
+      _saveAuthentication(deviceID: deviceID, auth: auth, login: login, devicePaths: devicePaths);
     }
-    notifyListeners();
+    // Warning: Do not notify listeners here to avoid multiple redirects with GoRouter
   }
 
-  /// Save authentication details in persistent storage.
   void _saveAuthentication({
     String? deviceID,
     AuthResponse? auth,
@@ -174,7 +192,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     List<DevicePath>? devicePaths,
   }) {
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
-    // Save/Clear favorite device in shared preferences
+    // Save favorite device in shared preferences
     if (deviceID != null) {
       asyncPrefs.setString(favoriteDeviceKey, deviceID);
     }
@@ -196,22 +214,18 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
         asyncPrefs.remove(favoriteDevicePathsKey);
       }
     }
-    // Note: If devicePaths is null, we don't modify stored paths (preserve existing)
-    // Save/Clear refresh token in secure storage
-    try {
-      if (auth?.refreshToken != null) {
+    // Save refresh token in secure storage
+    if (auth?.refreshToken != null) {
+      try {
         secureStorage.write(key: refreshTokenKey, value: auth?.refreshToken);
-      } else {
-        secureStorage.delete(key: refreshTokenKey);
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("[DeviceProvider] Error saving bearer token: ${e.toString()}");
+      } catch (e) {
+        if (kDebugMode) {
+          print("[DeviceProvider] Error saving refresh token: ${e.toString()}");
+        }
       }
     }
     // Save login in shared preferences
     if (login != null) {
-      _login = login;
       asyncPrefs.setString(loginKey, login);
     }
   }
@@ -285,8 +299,20 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     }
     _accessToken = null;
     _refreshToken = null;
+    clearDevice();
+    notifyListeners();
+  }
+
+  void clearDevice() {
     _baseUrl = null;
     _api = null;
+    _deviceStatus = null;
+    _deviceID = null;
+  }
+
+  void forceToRedetectDevice() {
+    clearDevice();
+    forceDetectFavoriteDevice = true;
     notifyListeners();
   }
 

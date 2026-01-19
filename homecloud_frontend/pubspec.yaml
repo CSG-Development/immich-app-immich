@@ -11,8 +11,9 @@
 
 name: homecloud_frontend
 description: "Home Cloud device access"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.9.2
 
 dependencies:
   flutter:
@@ -26,20 +27,17 @@ dependencies:
   json_annotation: ^4.9.0
   # State management
   provider: ^6.1.5
-  # Routing
-  # go_router: ^16.0.0
   # Save and retrieve data
-  shared_preferences: ^2.5.3
-  # Manage svg assets
-  # flutter_svg: ^2.2.0
+  shared_preferences: ^2.5.3  
   flutter_secure_storage: ^9.2.4
-  device_info_plus: ^12.1.0
   hooks_riverpod: ^2.6.1
+  http: ^1.6.0
 
 dev_dependencies:
+  # To generate API code
   swagger_dart_code_generator: ^4.0.2
   # dependencies for code generation https://pub.dev/packages/swagger_dart_code_generator
-  build_runner: ^2.4.9
+  build_runner: ^2.10.0
   chopper_generator: ^8.4.0
   json_serializable: ^6.11.1
   flutter_test:
