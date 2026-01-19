@@ -8,6 +8,7 @@
   import AssetTagModal from '$lib/modals/AssetTagModal.svelte';
   import { removeTag } from '$lib/utils/asset-utils';
   import { getAssetInfo, type AssetResponseDto } from '@immich/sdk';
+  import { IconButton } from '@immich/ui';
   import { mdiClose, mdiPlus } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -39,9 +40,18 @@
 <svelte:document use:shortcut={{ shortcut: { key: 't' }, onShortcut: handleAddTag }} />
 
 {#if isOwner && !authManager.isSharedLink}
-  <section class=" mt-3">
+  <section>
     <div class="flex h-10 w-full items-center justify-between text-xs">
       <h2 class="uppercase font-medium">{$t('tags')}</h2>
+      <IconButton
+        aria-label={$t('add_tag')}
+        icon={mdiPlus}
+        size="medium"
+        shape="round"
+        color="secondary"
+        variant="ghost"
+        onclick={handleAddTag}
+      />
     </div>
     <section class="flex flex-wrap pt-2 gap-1" data-testid="detail-panel-tags">
       {#each tags as tag (tag.id)}
@@ -65,16 +75,6 @@
           </button>
         </div>
       {/each}
-      <button
-        type="button"
-        class="rounded-full bg-gray-100 dark:bg-primary/20 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 flex place-items-center place-content-center gap-1 px-2 py-1"
-        title={$t('add_tag')}
-        onclick={handleAddTag}
-      >
-        <span class="text-sm px-1 flex place-items-center place-content-center gap-1"
-          ><Icon path={mdiPlus} />{$t('add')}</span
-        >
-      </button>
     </section>
   </section>
 {/if}

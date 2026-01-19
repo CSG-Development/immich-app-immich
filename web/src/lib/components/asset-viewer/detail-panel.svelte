@@ -524,7 +524,7 @@
   {/if}
 
   {#if currentAlbum && currentAlbum.albumUsers.length > 0 && asset.owner}
-    <section class="px-3 dark:text-immich-dark-fg mt-4">
+    <section class="px-3 py-3 dark:text-immich-dark-fg">
       <p class="text-sm">{$t('shared_by').toUpperCase()}</p>
       <div class="flex gap-4 pt-4">
         <div>
@@ -541,7 +541,7 @@
   {/if}
 
   {#if albums.length > 0}
-    <section class="px-3 pt-3 dark:text-immich-dark-fg">
+    <section class="px-3 py-3 dark:text-immich-dark-fg">
       <p class="pb-4 text-xs font-medium">{$t('appears_in').toUpperCase()}</p>
       {#each albums as album (album.id)}
         <a href={resolve(`${AppRoute.ALBUMS}/${album.id}`)}>
@@ -571,7 +571,7 @@
   {/if}
 
   {#if $preferences?.tags?.enabled}
-    <section class="relative px-2 pb-12 dark:bg-immich-dark-gray-card dark:text-immich-dark-fg">
+    <section class="relative px-3 py-3 dark:bg-immich-dark-gray-card dark:text-immich-dark-fg">
       <DetailPanelTags {asset} {isOwner} />
     </section>
   {/if}
