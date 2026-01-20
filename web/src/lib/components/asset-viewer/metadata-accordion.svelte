@@ -1,32 +1,30 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
+  import { getAccordionState } from '$lib/components/shared-components/settings/setting-accordion-state.svelte';
   import { onDestroy, onMount, type Snippet } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { getAccordionState } from './setting-accordion-state.svelte';
 
   const accordionState = getAccordionState();
 
   interface Props {
     title: string;
-    subtitle?: string;
     key: string;
     isOpen?: boolean;
     autoScrollTo?: boolean;
     icon?: string;
     src?: string;
-    subtitleSnippet?: Snippet;
+    length?: number;
     children?: Snippet;
   }
 
   let {
     title,
-    subtitle = '',
     key,
     isOpen = $bindable($accordionState.has(key)),
     autoScrollTo = false,
     icon = '',
     src = '',
-    subtitleSnippet,
+    length = 0,
     children,
   }: Props = $props();
 
@@ -63,11 +61,13 @@
   onMount(() => {
     setIsOpen(isOpen);
   });
+
+  console.log(isOpen);
 </script>
 
 <div
-  class="border-2 rounded-2xl border-primary/20 my-4 px-6 py-4 transition-all {isOpen
-    ? 'border-primary/60 shadow-md'
+  class="border-2 rounded-lg border-immich-gray-border dark:border-immich-dark-gray-border mb-4 px-4 py-6 transition-all {isOpen
+    ? 'border-primary/60 dark:border-primary/60 shadow-md'
     : ''}"
   bind:this={accordionElement}
 >
@@ -85,18 +85,15 @@
         {#if src}
           <img class="text-primary" {src} alt="" />
         {/if}
-        <h2 class="font-medium text-primary">
+        <h2 class="font-medium text-primary pl-2">
           {title}
         </h2>
+        <div class="bg-immich-bg-gray-mt dark:bg-immich-dark-bg-gray-mt rounded-lg text-xs px-2 py-1">{length}</div>
       </div>
-
-      {#if subtitleSnippet}{@render subtitleSnippet()}{:else}
-        <p class="text-sm dark:text-immich-dark-fg mt-1">{subtitle}</p>
-      {/if}
     </div>
 
     <div
-      class="immich-circle-icon-button flex place-content-center place-items-center rounded-full p-3 transition-all hover:bg-immich-primary/10 dark:text-immich-dark-fg hover:dark:bg-immich-dark-primary/20"
+      class="immich-circle-icon-button flex place-content-center place-items-center rounded-full transition-all hover:bg-immich-primary/10 dark:text-immich-dark-fg hover:dark:bg-immich-dark-primary/20"
     >
       <svg
         style="tran"

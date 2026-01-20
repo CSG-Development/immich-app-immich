@@ -5,6 +5,7 @@
   import DetailPanelLocation from '$lib/components/asset-viewer/detail-panel-location.svelte';
   import DetailPanelRating from '$lib/components/asset-viewer/detail-panel-star-rating.svelte';
   import DetailPanelTags from '$lib/components/asset-viewer/detail-panel-tags.svelte';
+  import MetadataList from '$lib/components/asset-viewer/metadata-list.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import ChangeDate, {
     type AbsoluteResult,
@@ -472,6 +473,10 @@
 
       <DetailPanelLocation {isOwner} {asset} />
     </div>
+  {:else}
+    <section class="px-3 py-3">
+      <MetadataList />
+    </section>
   {/if}
 </section>
 
