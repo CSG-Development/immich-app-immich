@@ -193,6 +193,10 @@ class DeviceDiscoveryController {
     );
   }
 
+  void disconnectDevice() {
+    _deviceProvider.clearDevice(save: true);
+  }
+
   /// Start mDNS detection of local devices.
   /// Returns list of devices discovered, or `null` if failed to start.
   /// If discovery is already running, returns the same future that other concurrent calls are waiting on.

@@ -229,26 +229,21 @@ class CuratorLoginForm extends HookConsumerWidget {
         staticDevice.value = DeviceItem(
           baseUrl: baseUrl,
           paths: [
-            DevicePath(
-              address: baseUrl?.host ?? devStaticDeviceUrl,
-              port: baseUrl?.port,
-              type: DevicePathType.local,
-            ),
+            DevicePath(address: baseUrl?.host ?? devStaticDeviceUrl, port: baseUrl?.port, type: DevicePathType.local),
           ],
         );
         selectedDevice.value = staticDevice.value;
       }
       return null;
-    });
+    }, []);
 
     useEffect(() {
-      if (staticDevice.value != null) return;
       // Defer provider access until after build phase to avoid initialization conflicts
       WidgetsBinding.instance.addPostFrameCallback((_) {
         email.value = ref.read(deviceProvider).login;
 
+        if (staticDevice.value != null) return;
         preselectFavoriteDevice();
-
         startDiscovery();
       });
       return null;
@@ -415,6 +410,8 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (device != null) {
           if (device.about != null) {
             discovery.connectToDevice(device);
+          } else {
+            discovery.disconnectDevice();
           }
 
           final paths = device.paths;
@@ -463,7 +460,6 @@ class CuratorLoginForm extends HookConsumerWidget {
             },
           ),
         );
-        debugPrint("login_form_failed_login: $error");
         warningMessage.value = "login_form_failed_login".tr();
         hasPreviousLoginFailed.value = true;
       } finally {
@@ -519,7 +515,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                               onDeviceSelected: (device) {
                                 if (device is DeviceItem) {
                                   selectedDevice.value = device;
-                                  devices.value = mergeDevices(devices.value, [device]);
+                                  // devices.value = mergeDevices(devices.value, [device]);
                                 } else {
                                   selectedDevice.value = null;
                                 }
