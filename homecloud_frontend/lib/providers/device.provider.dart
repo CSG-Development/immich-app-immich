@@ -303,11 +303,16 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     notifyListeners();
   }
 
-  void clearDevice() {
+  void clearDevice({save = false}) {
     _baseUrl = null;
     _api = null;
     _deviceStatus = null;
     _deviceID = null;
+    _devicePaths = null;
+    if (save == true) {
+      _saveAuthentication(deviceID: _deviceID, devicePaths: _devicePaths);
+      notifyListeners();
+    }
   }
 
   void forceToRedetectDevice() {
