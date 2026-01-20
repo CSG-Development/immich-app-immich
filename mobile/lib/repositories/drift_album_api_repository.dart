@@ -85,6 +85,11 @@ class DriftAlbumApiRepository extends ApiRepository {
     return _api.deleteAlbum(albumId);
   }
 
+  Future<RemoteAlbum> refreshAlbum(String albumId) async {
+    final response = await checkNull(_api.getAlbumInfo(albumId, withoutAssets: true));
+    return response.toRemoteAlbum();
+  }
+
   Future<RemoteAlbum> addUsers(String albumId, Iterable<String> userIds) async {
     final albumUsers = userIds.map((userId) => AlbumUserAddDto(userId: userId)).toList();
     final response = await checkNull(_api.addUsersToAlbum(albumId, AddUsersDto(albumUsers: albumUsers)));
