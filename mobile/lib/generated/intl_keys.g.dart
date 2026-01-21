@@ -861,6 +861,7 @@ abstract class IntlKeys {
   static const curator_settings_lock_application = 'curator.settings.lock.application';
   static const curator_settings_passcode_lock = 'curator.settings.passcode.lock';
   static const curator_settings_pattern_lock = 'curator.settings.pattern.lock';
+  static const curator_shared_link_create_public_error = 'curator.shared.link.create.public.error';
   static const curator_sign_in_screen_button_request_new_code = 'curator.sign.in.screen.button.request.new.code';
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';

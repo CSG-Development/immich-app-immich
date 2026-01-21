@@ -831,6 +831,7 @@
     "settings_lock_application": "Lock application",
     "settings_passcode_lock": "Passcode lock",
     "settings_pattern_lock": "Pattern lock",
+    "shared_link_create_public_error": "Sharing is not possible because the public link is unavailable",
     "sign_in_screen_button_request_new_code": "Request new code",
     "sign_in_screen_dropdown_device_error_no_device": "No device detected",
     "sign_in_screen_dropdown_device_label": "Connecting to",

@@ -36,6 +36,28 @@ class SharedLinkEditPage extends HookConsumerWidget {
     final editExpiry = useState(false);
     final expiryAfter = useState(0);
     final newShareLink = useState("");
+    final serverUrl = useState<String?>(null);
+
+    useEffect(() {
+      final connectedDevicePaths = ref.read(deviceDiscoveryProvider).connectedDevicePaths;
+      final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
+
+      serverUrl.value = remoteUrl != null
+          ? Uri(scheme: 'https', host: remoteUrl.address, port: remoteUrl.port, path: 'photos').toString()
+          : null;
+      if (serverUrl.value == null) {
+        Future.microtask(() {
+          ImmichToast.show(
+            context: context,
+            gravity: ToastGravity.BOTTOM,
+            toastType: ToastType.error,
+            msg: 'curator.shared_link_create_public_error'.tr(),
+          );
+        });
+        context.maybePop();
+      }
+      return null;
+    }, []);
 
     Widget buildLinkTitle() {
       if (existingLink != null) {
@@ -266,20 +288,8 @@ class SharedLinkEditPage extends HookConsumerWidget {
           );
       ref.invalidate(sharedLinksStateProvider);
 
-      final connectedDevicePaths = ref.read(deviceDiscoveryProvider).connectedDevicePaths;
-      final publicUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.public);
-
-
-      var serverUrl = publicUrl != null
-          ? Uri(scheme: 'https', host: publicUrl.address, port: publicUrl.port, path: 'photos').toString()
-          : null;
-
-      if (serverUrl != null && !serverUrl.endsWith('/')) {
-        serverUrl += '/';
-      }
-
-      if (newLink != null && serverUrl != null) {
-        newShareLink.value = "${serverUrl}share/${newLink.key}";
+      if (newLink != null && serverUrl.value != null) {
+        newShareLink.value = "${serverUrl.value}share/${newLink.key}";
         copyLinkToClipboard();
       } else {
         ImmichToast.show(
