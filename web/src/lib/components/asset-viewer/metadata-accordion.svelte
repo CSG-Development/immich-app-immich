@@ -88,7 +88,9 @@
         <h2 class="font-medium text-primary pl-2">
           {title}
         </h2>
-        <div class="bg-immich-bg-gray-mt dark:bg-immich-dark-bg-gray-mt rounded-lg text-xs px-2 py-1">{length}</div>
+        <div class="bg-immich-bg-gray-mt dark:bg-immich-dark-bg-gray-mt rounded-lg text-xs font-bold px-2 py-1">
+          {length}
+        </div>
       </div>
     </div>
 
@@ -112,7 +114,7 @@
   </button>
 
   {#if isOpen}
-    <ul transition:slide={{ duration: 150 }} class="mb-2 ms-4">
+    <ul transition:slide={{ duration: 150 }} class="pb-2 pt-4 ps-4">
       {@render children?.()}
     </ul>
   {/if}

@@ -475,7 +475,7 @@
     </div>
   {:else}
     <section class="px-3 py-3">
-      <MetadataList />
+      <MetadataList exifInfo={asset.exifInfo} />
     </section>
   {/if}
 </section>

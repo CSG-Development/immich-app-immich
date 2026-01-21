@@ -1555,6 +1555,16 @@
     "thumbnail_offset": "Thumbnail offset",
     "thumbnail_length": "Thumbnail length"
   },
+  "metadata_orientaton": {
+    "horizontal": "Horizontal (normal)",
+    "flipped_horizontally": "Flipped horizontally",
+    "rotated_180": "Rotated 180°",
+    "flipped_vertically": "Flipped vertically",
+    "90_cw_flipped": "Rotated 90° clockwise, flipped horizontally",
+    "90_cw": "Rotated 90° clockwise",
+    "270_cw_flipped": "Rotated 270° clockwise, flipped horizontally",
+    "270_cw": "Rotated 270° clockwise"
+  },
   "minimize": "Minimize",
   "minute": "Minute",
   "minutes": "Minutes",
