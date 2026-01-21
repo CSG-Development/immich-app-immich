@@ -199,9 +199,27 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (isAuthenticated) {
           final result = await discovery.startDeviceDiscovery();
           mdnsDevices = result['mdnsDevices'] ?? <DeviceItem>[];
+          log.info('[MDNS discovery]: devices found ${mdnsDevices.length}');
+          if (mdnsDevices.isNotEmpty) {
+            for (var d in mdnsDevices) {
+              log.info('[MDNS discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
+            }
+          }
           remoteDevices = result['remoteDevices'] ?? <DeviceItem>[];
+          log.info('[Remote discovery]: devices found ${remoteDevices.length}');
+          if (remoteDevices.isNotEmpty) {
+            for (var d in remoteDevices) {
+              log.info('[Remote discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
+            }
+          }
         } else {
           final result = await discovery.startMdnsDiscovery();
+          log.info('[MDNS discovery]: devices found ${result?.length}');
+          if (result != null) {
+            for (var d in result) {
+              log.info('[MDNS discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
+            }
+          }
           mdnsDevices = result ?? [];
         }
 

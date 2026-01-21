@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 
 import 'api/api.swagger.dart';
 import 'api/remote_access.swagger.dart';
@@ -29,12 +30,7 @@ class DeviceItem {
   final Status? status;
   final List<DevicePath>? paths;
 
-  const DeviceItem({
-    this.baseUrl,
-    this.about,
-    this.status,
-    this.paths,
-  });
+  const DeviceItem({this.baseUrl, this.about, this.status, this.paths});
 
   String get name {
     if (about?.hostname.isNotEmpty == true) {
@@ -54,29 +50,29 @@ class DeviceItem {
 /// - [startRemoteDiscovery] - starts only remote discovery (adds to existing devices)
 ///
 /// All methods return results directly, so there's no need to watch the provider reactively.
-final deviceDiscoveryProvider =
-    Provider<DeviceDiscoveryController>((ref) {
+final deviceDiscoveryProvider = Provider<DeviceDiscoveryController>((ref) {
   final device = ref.read(deviceProvider);
   final remote = ref.read(remoteProvider);
   final controller = DeviceDiscoveryController(device, remote);
-  
+
   // Ensure proper cleanup when provider is disposed
   ref.onDispose(() {
     // Stop any ongoing discovery and clean up resources
     controller.stopDiscovery();
   });
-  
+
   return controller;
 });
 
 class DeviceDiscoveryController {
+  final _log = Logger("DeviceDiscovery");
   final DeviceProvider _deviceProvider;
   final RemoteProvider _remoteProvider;
 
   nsd.Discovery? _discovery;
   // All devices discovered during the current lifecycle
   final Map<String, DeviceItem> _devices = {};
-  
+
   // Track ongoing mDNS discovery to share results across concurrent calls
   Completer<List<DeviceItem>?>? _mdnsDiscoveryCompleter;
   // Track devices discovered during current mDNS discovery session
@@ -109,11 +105,8 @@ class DeviceDiscoveryController {
     _devices.clear();
     final mdnsDevices = await _startNsdDetection();
     final remoteDevices = await _getRemoteDevices();
-    
-    return {
-      'mdnsDevices': mdnsDevices,
-      'remoteDevices': remoteDevices,
-    };
+
+    return {'mdnsDevices': mdnsDevices, 'remoteDevices': remoteDevices};
   }
 
   /// Start mDNS discovery of local devices on the network.
@@ -205,11 +198,11 @@ class DeviceDiscoveryController {
     if (_mdnsDiscoveryCompleter != null) {
       return _mdnsDiscoveryCompleter!.future;
     }
-    
+
     // Create a new completer for this discovery session
     _mdnsDiscoveryCompleter = Completer<List<DeviceItem>?>();
     _currentMdnsDevices.clear();
-    
+
     _discovery = await hc_utils.startDiscovery();
     if (_discovery != null) {
       // Add service listener only once, even if multiple calls are waiting
@@ -217,15 +210,11 @@ class DeviceDiscoveryController {
         if (status == nsd.ServiceStatus.found &&
             service.name != null &&
             service.name!.contains(hc_utils.serviceNameDiscover)) {
-          if (kDebugMode) {
-            debugPrint(
-                "[DeviceDiscovery] mDNS Device Found: ${service.toString()}");
-          }
+          _log.info(
+            "[DeviceDiscovery] mDNS Device Found: ${service.toString()}",
+          );
           _checkDeviceStatus(
-            baseUrl: DeviceProvider.createBaseUrl(
-              service.host!,
-              service.port,
-            ),
+            baseUrl: DeviceProvider.createBaseUrl(service.host!, service.port),
             timeoutDelay: 12 * 5000,
             devicePaths: DevicePaths(
               paths: [
@@ -246,12 +235,12 @@ class DeviceDiscoveryController {
           });
         }
       });
-      
+
       // Wait for discovery period to complete, then stop and return devices
       Future.delayed(hc_utils.durationDetection, () async {
         await _stopDiscovery();
       });
-      
+
       // Return the completer's future - it will be completed when discovery finishes
       return _mdnsDiscoveryCompleter!.future;
     } else {
@@ -270,24 +259,24 @@ class DeviceDiscoveryController {
       await hc_utils.stopDiscovery(_discovery!);
       _discovery = null;
     }
-    
+
     // Complete the completer with discovered devices
     if (_mdnsDiscoveryCompleter != null) {
       final completer = _mdnsDiscoveryCompleter!;
       _mdnsDiscoveryCompleter = null;
-      
+
       // Get list of devices discovered during this session
       final devices = _currentMdnsDevices
           .map((id) => _devices[id])
           .whereType<DeviceItem>()
           .toList();
-      
+
       _currentMdnsDevices.clear();
       completer.complete(devices.isEmpty ? [] : devices);
       // Return the devices directly since completer is already completed
       return devices.isEmpty ? [] : devices;
     }
-    
+
     return null;
   }
 
@@ -301,69 +290,59 @@ class DeviceDiscoveryController {
     try {
       final remoteApi = _remoteProvider.api;
       final responseList = await remoteApi.clientV1DevicesGet();
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Remote devices GET response: "
-          "${responseList.isSuccessful}, body: ${responseList.body}",
-        );
-      }
+      _log.info(
+        "[DeviceDiscovery] Remote devices GET response: "
+        "${responseList.isSuccessful}, body: ${responseList.body}",
+      );
       if (responseList.isSuccessful) {
         final List<Device>? remoteDevices = responseList.body;
         if (remoteDevices != null && remoteDevices.isNotEmpty) {
-          if (kDebugMode) {
-            debugPrint(
-                "[DeviceDiscovery] Found ${remoteDevices.length} remote devices.");
-          }
+          _log.info(
+            "[DeviceDiscovery] Found ${remoteDevices.length} remote devices.",
+          );
           for (final remoteDevice in remoteDevices) {
-            if (kDebugMode) {
-              debugPrint(
-                  "[DeviceDiscovery] Processing remote device: ${remoteDevice.friendlyName}");
-              debugPrint(
-                  "[DeviceDiscovery] ${remoteDevice.seagateDeviceID}");
-            }
+            _log.info(
+              "[DeviceDiscovery] Processing remote device: ${remoteDevice.friendlyName}",
+            );
+            _log.info("[DeviceDiscovery] ${remoteDevice.seagateDeviceID}");
             final responseInfo = await remoteApi.clientV1DevicesDeviceIDGet(
               deviceID: remoteDevice.seagateDeviceID,
             );
-            if (kDebugMode) {
-              debugPrint(
-            "[DeviceDiscovery] Device paths GET for "
-            "${remoteDevice.friendlyName}: "
-            "${responseInfo.isSuccessful}, body: ${responseInfo.body}",
-              );
-            }
+            _log.info(
+              "[DeviceDiscovery] Device paths GET for "
+              "${remoteDevice.friendlyName}: "
+              "${responseInfo.isSuccessful}, body: ${responseInfo.body}",
+            );
             if (responseInfo.isSuccessful && responseInfo.body != null) {
-              final deviceItem = await _addRemoteDevice(remoteDevice, responseInfo.body!);
+              final deviceItem = await _addRemoteDevice(
+                remoteDevice,
+                responseInfo.body!,
+              );
               if (deviceItem != null && deviceItem.about != null) {
                 final deviceID = deviceItem.about!.certificateCommonName;
                 _devices[deviceID] = deviceItem;
                 newDevices.add(deviceItem);
               }
             } else {
-              if (kDebugMode) {
-                debugPrint(
-                  "[DeviceDiscovery] Error fetching device paths: "
-                  "${hc_utils.extractErrorMessage(responseInfo)}",
-                );
-              }
+              _log.info(
+                "[DeviceDiscovery] Error fetching device paths: "
+                "${hc_utils.extractErrorMessage(responseInfo)}",
+              );
             }
           }
         }
       } else {
         // If unauthorized or forbidden, host app may choose to re-initiate authentication.
-        if (kDebugMode) {
-          debugPrint(
+        _log.info(
           "[DeviceDiscovery] Remote API error: "
           "${hc_utils.extractErrorMessage(responseList)}",
-          );
-        }
+        );
       }
       return newDevices.isEmpty ? [] : newDevices;
     } catch (error) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Remote API error: ${hc_utils.extractErrorMessage(error)}",
-        );
-      }
+      _log.warning(
+        "[DeviceDiscovery] Remote API error: ${hc_utils.extractErrorMessage(error)}",
+      );
       return null;
     }
   }
@@ -381,33 +360,32 @@ class DeviceDiscoveryController {
       var deviceAdded = false;
       while (i < devicePaths.paths.length && !deviceAdded) {
         final path = devicePaths.paths[i];
-        final Uri baseUrl =
-            DeviceProvider.createBaseUrl(path.address, path.port);
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Checking remote device with "
-            "${path.type.value} path: $baseUrl",
-          );
-        }
+        final Uri baseUrl = DeviceProvider.createBaseUrl(
+          path.address,
+          path.port,
+        );
+        _log.info(
+          "[DeviceDiscovery] Checking remote device with "
+          "${path.type.value} path: $baseUrl",
+        );
         final result = await _checkDeviceStatus(
           baseUrl: baseUrl,
-          timeoutDelay:
-              path.type == DevicePathType.local ? 5 * 1000 : 20 * 3000,
+          timeoutDelay: path.type == DevicePathType.local
+              ? 5 * 1000
+              : 20 * 3000,
           devicePaths: devicePaths, // Pass all paths to store with device
         );
         if (result != null) {
-          deviceAdded = true; 
+          deviceAdded = true;
           deviceItem = result;
         }
         i++;
       }
       return deviceItem;
     } catch (error) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] Error adding remote device: ${hc_utils.extractErrorMessage(error)}",
-        );
-      }
+      _log.warning(
+        "[DeviceDiscovery] Error adding remote device: ${hc_utils.extractErrorMessage(error)}",
+      );
       return null;
     }
   }
@@ -421,22 +399,19 @@ class DeviceDiscoveryController {
     required DevicePaths devicePaths,
     String? operationId,
   }) async {
-    if (kDebugMode) {
-      debugPrint("[DeviceDiscovery] checkDeviceStatus: $baseUrl");
-    }
+    _log.info("[DeviceDiscovery] checkDeviceStatus: $baseUrl");
     try {
       final api = DeviceProvider.createApi(baseUrl: baseUrl);
-      final response =
-          await api.statusGet().timeout(Duration(milliseconds: timeoutDelay));
+      final response = await api.statusGet().timeout(
+        Duration(milliseconds: timeoutDelay),
+      );
 
       if (response.isSuccessful && response.body != null) {
         final status = response.body!;
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Device status response for "
-            "${baseUrl.host}: ${status.toString()}",
-          );
-        }
+        _log.info(
+          "[DeviceDiscovery] Device status response for "
+          "${baseUrl.host}: ${status.toString()}",
+        );
         if (status.oobe.done) {
           final aboutResult = await _getDeviceAbout(
             api,
@@ -448,19 +423,15 @@ class DeviceDiscoveryController {
           return aboutResult;
         }
       } else {
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] statusGet error: "
-            "${hc_utils.extractErrorMessage(response)}",
-          );
-        }
-      }
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] statusGet error: ${hc_utils.extractErrorMessage(error)}",
+        _log.info(
+          "[DeviceDiscovery] statusGet error: "
+          "${hc_utils.extractErrorMessage(response)}",
         );
       }
+    } catch (error) {
+      _log.warning(
+        "[DeviceDiscovery] statusGet error: ${hc_utils.extractErrorMessage(error)}",
+      );
     }
     return null;
   }
@@ -483,27 +454,21 @@ class DeviceDiscoveryController {
           paths: devicePaths.paths,
         );
 
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] Adding device: ${device.name} at $baseUrl"
-          );
-        }
+        _log.info(
+          "[DeviceDiscovery] Adding device: ${device.name} at $baseUrl",
+        );
 
         return device;
       } else {
-        if (kDebugMode) {
-          debugPrint(
-            "[DeviceDiscovery] aboutGet error: "
-            "${hc_utils.extractErrorMessage(response)}",
-          );
-        }
-      }
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint(
-          "[DeviceDiscovery] aboutGet error: ${hc_utils.extractErrorMessage(error)}",
+        _log.info(
+          "[DeviceDiscovery] aboutGet error: "
+          "${hc_utils.extractErrorMessage(response)}",
         );
       }
+    } catch (error) {
+      _log.warning(
+        "[DeviceDiscovery] aboutGet error: ${hc_utils.extractErrorMessage(error)}",
+      );
     }
     return null;
   }
@@ -515,5 +480,3 @@ class DeviceDiscoveryController {
     _stopDiscovery();
   }
 }
-
-
