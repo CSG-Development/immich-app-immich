@@ -55,6 +55,10 @@ class DeviceSelector extends HookWidget {
       if (focusNode == null) return null;
 
       void onFocusChange() {
+        controller.text = '${controller.text} ';
+        Future.microtask(() {
+          controller.text = controller.text.trim();
+        });
         if (!focusNode!.hasFocus) {
           isDropdownOpen.value = false;
         }
