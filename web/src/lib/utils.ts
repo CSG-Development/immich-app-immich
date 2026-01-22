@@ -414,3 +414,26 @@ export const getFirstSlideshowAsset = (
       ? assets.at(-1)
       : assets[0];
 };
+
+export const convertOrientationValue = (value: string) => {
+  const $t = get(t);
+
+  switch (value) {
+    case '1':
+      return $t('metadata_orientaton.horizontal');
+    case '2':
+      return $t('metadata_orientaton.flipped_horizontally');
+    case '3':
+      return $t('metadata_orientaton.rotated_180');
+    case '4':
+      return $t('metadata_orientaton.flipped_vertically');
+    case '5':
+      return $t('metadata_orientaton.90_cw_flipped');
+    case '6':
+      return $t('metadata_orientaton.90_cw');
+    case '7':
+      return $t('metadata_orientaton.270_cw_flipped');
+    default:
+      return $t('metadata_orientaton.270_cw');
+  }
+};

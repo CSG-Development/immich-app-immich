@@ -4,7 +4,7 @@
   import Portal from '$lib/elements/Portal.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
-  import { mdiMapMarkerOutline, mdiPencil } from '@mdi/js';
+  import { mdiMapMarkerOutline, mdiPencilOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   interface Props {
@@ -64,7 +64,7 @@
 
     {#if isOwner}
       <div>
-        <Icon path={mdiPencil} size="20" />
+        <Icon path={mdiPencilOutline} size="24" />
       </div>
     {/if}
   </button>
@@ -81,7 +81,7 @@
       <p>{$t('add_a_location')}</p>
     </div>
     <div class="focus:outline-none p-1">
-      <Icon path={mdiPencil} size="20" />
+      <Icon path={mdiPencilOutline} size="24" />
     </div>
   </button>
 {/if}
