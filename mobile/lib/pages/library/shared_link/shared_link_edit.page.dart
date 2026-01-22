@@ -289,7 +289,7 @@ class SharedLinkEditPage extends HookConsumerWidget {
       ref.invalidate(sharedLinksStateProvider);
 
       if (newLink != null && serverUrl.value != null) {
-        newShareLink.value = "${serverUrl.value}share/${newLink.key}";
+        newShareLink.value = serverUrl.value!.endsWith('/') ?  "${serverUrl.value}share/${newLink.key}" : "${serverUrl.value}/share/${newLink.key}";
         copyLinkToClipboard();
       } else {
         ImmichToast.show(
