@@ -1,18 +1,20 @@
 import 'dart:math' as math;
 
 import 'package:auto_route/auto_route.dart';
+import 'package:collection/collection.dart';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:homecloud_frontend/api/remote_access.enums.swagger.dart';
+import 'package:homecloud_frontend/device_discovery.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/shared_link/shared_link.model.dart';
-import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/shared_link.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
-import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/common/confirm_dialog.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/search/thumbnail_with_info.dart';
@@ -63,8 +65,15 @@ class SharedLinkItem extends ConsumerWidget {
     final imageSize = math.min(context.width / 4, 100.0);
 
     void copyShareLinkToClipboard() {
-      final externalDomain = ref.read(serverInfoProvider.select((s) => s.serverConfig.externalDomain));
-      var serverUrl = externalDomain.isNotEmpty ? externalDomain : getServerUrl();
+      final connectedDevicePaths = ref.read(deviceDiscoveryProvider).connectedDevicePaths;
+      final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
+
+      var serverUrl = remoteUrl != null
+          ? Uri(scheme: 'https', host: remoteUrl.address, port: remoteUrl.port, path: 'photos').toString()
+          : null;
+
+      // final externalDomain = ref.read(serverInfoProvider.select((s) => s.serverConfig.externalDomain));
+      // var serverUrl = externalDomain.isNotEmpty ? externalDomain : getServerUrl();
       if (serverUrl != null && !serverUrl.endsWith('/')) {
         serverUrl += '/';
       }
