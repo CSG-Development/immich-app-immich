@@ -378,14 +378,11 @@
     role="listbox"
     id={listboxId}
     in:fly={{ duration: 250 }}
-    class="fixed z-1 text-start text-sm w-full overflow-hidden bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-900"
+    class="absolute z-[9999] text-start text-sm w-full overflow-hidden bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-900"
     class:rounded-b-xl={dropdownDirection === 'bottom'}
     class:rounded-t-xl={dropdownDirection === 'top'}
     class:shadow={dropdownDirection === 'bottom'}
     class:border={isOpen}
-    style:top={position?.top}
-    style:bottom={position?.bottom}
-    style:left={position?.left}
     style:width={position?.width}
     style:max-height={position?.maxHeight}
     tabindex="-1"

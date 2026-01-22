@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
   import { getAccordionState } from '$lib/components/shared-components/settings/setting-accordion-state.svelte';
-  import { onDestroy, onMount, type Snippet } from 'svelte';
+  import { onDestroy, onMount, type Component, type Snippet } from 'svelte';
   import { slide } from 'svelte/transition';
 
   const accordionState = getAccordionState();
@@ -11,8 +11,7 @@
     key: string;
     isOpen?: boolean;
     autoScrollTo?: boolean;
-    icon?: string;
-    src?: string;
+    icon?: string | Component;
     length?: number;
     children?: Snippet;
   }
@@ -23,7 +22,6 @@
     isOpen = $bindable($accordionState.has(key)),
     autoScrollTo = false,
     icon = '',
-    src = '',
     length = 0,
     children,
   }: Props = $props();
@@ -61,8 +59,6 @@
   onMount(() => {
     setIsOpen(isOpen);
   });
-
-  console.log(isOpen);
 </script>
 
 <div
@@ -81,9 +77,6 @@
       <div class="flex gap-2 place-items-center">
         {#if icon}
           <Icon path={icon} class="text-immich-primary dark:text-immich-dark-primary" size="24" ariaHidden />
-        {/if}
-        {#if src}
-          <img class="text-primary" {src} alt="" />
         {/if}
         <h2 class="font-medium text-primary pl-2">
           {title}
