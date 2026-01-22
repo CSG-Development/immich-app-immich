@@ -13,7 +13,6 @@
     isOpen?: boolean;
     autoScrollTo?: boolean;
     icon?: string;
-    src?: string;
     subtitleSnippet?: Snippet;
     children?: Snippet;
   }
@@ -25,7 +24,6 @@
     isOpen = $bindable($accordionState.has(key)),
     autoScrollTo = false,
     icon = '',
-    src = '',
     subtitleSnippet,
     children,
   }: Props = $props();
@@ -81,9 +79,6 @@
       <div class="flex gap-2 place-items-center">
         {#if icon}
           <Icon path={icon} class="text-immich-primary dark:text-immich-dark-primary" size="24" ariaHidden />
-        {/if}
-        {#if src}
-          <img class="text-primary" {src} alt="" />
         {/if}
         <h2 class="font-medium text-primary">
           {title}
