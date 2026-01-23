@@ -1,11 +1,11 @@
 <script lang="ts">
   import { type DownloadProgress, downloadManager } from '$lib/managers/download-manager.svelte';
   import { locale } from '$lib/stores/preferences.store';
+  import { Heading, IconButton } from '@immich/ui';
   import { mdiClose } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fly, slide } from 'svelte/transition';
   import { getByteUnitString } from '../../utils/byte-units';
-  import { IconButton } from '@immich/ui';
 
   const abort = (downloadKey: string, download: DownloadProgress) => {
     download.abort?.abort();
