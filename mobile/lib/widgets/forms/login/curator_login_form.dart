@@ -461,7 +461,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           }
         }
       } on ApiException catch (e) {
-        if (e.code == 400 || e.code == 401) {
+        if (e.code == 400 || e.code == 401 || e.code == 403) {
           hasEmailError.value = true;
           hasPasswordError.value = true;
           warningMessage.value = 'errors.incorrect_email_or_password'.tr();
