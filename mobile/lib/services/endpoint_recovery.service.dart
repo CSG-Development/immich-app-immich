@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:homecloud_frontend/homecloud_frontend.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';

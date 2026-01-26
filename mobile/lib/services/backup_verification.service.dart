@@ -118,7 +118,7 @@ class BackupVerificationService {
     final (isar, drift, logDb) = await Bootstrap.initDB();
     await Bootstrap.initDomain(isar, drift, logDb);
     await tuple.fileMediaRepository.enableBackgroundAccess();
-    final ApiService apiService = ApiService();
+    final ApiService apiService = await ApiService.instantiate();
     apiService.setEndpoint(tuple.endpoint);
     apiService.setAccessToken(tuple.auth);
     for (int i = 0; i < tuple.deleteCandidates.length; i++) {

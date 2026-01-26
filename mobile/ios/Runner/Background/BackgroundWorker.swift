@@ -98,6 +98,7 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     AppDelegate.registerPlugins(binaryMessenger: engine.binaryMessenger)
     flutterApi = BackgroundWorkerFlutterApi(binaryMessenger: engine.binaryMessenger)
     BackgroundWorkerBgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: self)
+    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: CertificateFetcherApiImplSimple())
     
     // Set up a timeout timer if maxSeconds was specified to prevent runaway background tasks
     if maxSeconds != nil {
