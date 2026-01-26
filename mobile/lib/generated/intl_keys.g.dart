@@ -799,6 +799,9 @@ abstract class IntlKeys {
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
   static const curator_button_action_retry = 'curator.button.action.retry';
+  static const curator_developer_options_developer_options_title = 'curator.developer.options.developer.options.title';
+  static const curator_developer_options_show_settings = 'curator.developer.options.show.settings';
+  static const curator_developer_options_static_device = 'curator.developer.options.static.device';
   static const curator_email_not_registered_description = 'curator.email.not.registered.description';
   static const curator_email_not_registered_error = 'curator.email.not.registered.error';
   static const curator_email_not_registered_title = 'curator.email.not.registered.title';
@@ -858,6 +861,7 @@ abstract class IntlKeys {
   static const curator_settings_lock_application = 'curator.settings.lock.application';
   static const curator_settings_passcode_lock = 'curator.settings.passcode.lock';
   static const curator_settings_pattern_lock = 'curator.settings.pattern.lock';
+  static const curator_shared_link_create_public_error = 'curator.shared.link.create.public.error';
   static const curator_sign_in_screen_button_request_new_code = 'curator.sign.in.screen.button.request.new.code';
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';
@@ -1871,6 +1875,8 @@ abstract class IntlKeys {
   static const search_no_people = 'search_no_people';
   static const search_no_people_named = 'search_no_people_named';
   static const search_no_result = 'search_no_result';
+  static const search_no_result_description = 'search_no_result_description';
+  static const search_no_result_text = 'search_no_result_text';
   static const search_options = 'search_options';
   static const search_page_categories = 'search_page_categories';
   static const search_page_motion_photos = 'search_page_motion_photos';

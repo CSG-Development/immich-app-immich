@@ -148,3 +148,8 @@ export const loopVideo = persisted<boolean>('loop-video', true, {});
 export const recentAlbumsDropdown = persisted<boolean>('recent-albums-open', true, {});
 
 export const utilitiesDropdown = persisted<boolean>('utilities-open', true, {});
+
+export enum PhotoTabs {
+  Basic = 'basic_details',
+  Metadata = 'metadata',
+}

@@ -124,6 +124,23 @@ class RemoteAlbumNotifier extends Notifier<RemoteAlbumState> {
     }
   }
 
+  Future<RemoteAlbum?> refreshAlbum(String albumId) async {
+    try {
+      final updatedAlbum = await _remoteAlbumService.refreshAlbum(albumId);
+
+      final updatedAlbums = state.albums.map((album) {
+        return album.id == albumId ? updatedAlbum : album;
+      }).toList();
+
+      state = state.copyWith(albums: updatedAlbums);
+
+      return updatedAlbum;
+    } catch (error, stack) {
+      _logger.severe('Failed to refresh album', error, stack);
+      rethrow;
+    }
+  }
+
   Future<RemoteAlbum?> toggleAlbumOrder(String albumId) async {
     final currentAlbum = state.albums.firstWhere((album) => album.id == albumId);
 

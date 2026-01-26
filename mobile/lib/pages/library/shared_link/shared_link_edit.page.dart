@@ -1,16 +1,17 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:homecloud_frontend/api/remote_access.swagger.dart';
+import 'package:homecloud_frontend/device_discovery.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/shared_link/shared_link.model.dart';
-import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/shared_link.provider.dart';
 import 'package:immich_mobile/services/shared_link.service.dart';
-import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 @RoutePage()
@@ -35,6 +36,28 @@ class SharedLinkEditPage extends HookConsumerWidget {
     final editExpiry = useState(false);
     final expiryAfter = useState(0);
     final newShareLink = useState("");
+    final serverUrl = useState<String?>(null);
+
+    useEffect(() {
+      final connectedDevicePaths = ref.read(deviceDiscoveryProvider).connectedDevicePaths;
+      final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
+
+      serverUrl.value = remoteUrl != null
+          ? Uri(scheme: 'https', host: remoteUrl.address, port: remoteUrl.port, path: 'photos').toString()
+          : null;
+      if (serverUrl.value == null) {
+        Future.microtask(() {
+          ImmichToast.show(
+            context: context,
+            gravity: ToastGravity.BOTTOM,
+            toastType: ToastType.error,
+            msg: 'curator.shared_link_create_public_error'.tr(),
+          );
+        });
+        context.maybePop();
+      }
+      return null;
+    }, []);
 
     Widget buildLinkTitle() {
       if (existingLink != null) {
@@ -265,18 +288,10 @@ class SharedLinkEditPage extends HookConsumerWidget {
           );
       ref.invalidate(sharedLinksStateProvider);
 
-      await ref.read(serverInfoProvider.notifier).getServerConfig();
-      final externalDomain = ref.read(serverInfoProvider.select((s) => s.serverConfig.externalDomain));
-
-      var serverUrl = externalDomain.isNotEmpty ? externalDomain : getServerUrl();
-      if (serverUrl != null && !serverUrl.endsWith('/')) {
-        serverUrl += '/';
-      }
-
-      if (newLink != null && serverUrl != null) {
-        newShareLink.value = "${serverUrl}share/${newLink.key}";
+      if (newLink != null && serverUrl.value != null) {
+        newShareLink.value = serverUrl.value!.endsWith('/') ?  "${serverUrl.value}share/${newLink.key}" : "${serverUrl.value}/share/${newLink.key}";
         copyLinkToClipboard();
-      } else if (newLink == null) {
+      } else {
         ImmichToast.show(
           context: context,
           gravity: ToastGravity.BOTTOM,

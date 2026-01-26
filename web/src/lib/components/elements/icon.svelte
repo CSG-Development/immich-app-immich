@@ -1,11 +1,12 @@
 <script lang="ts">
   import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import type { Component } from 'svelte';
   import type { AriaRole } from 'svelte/elements';
 
   interface Props {
     size?: string | number;
     color?: string;
-    path: string;
+    path: string | Component;
     title?: string | null;
     desc?: string;
     flipped?: boolean;
@@ -52,6 +53,8 @@
   $effect(() => {
     theme = themeManager.theme;
   });
+
+  console.log(typeof path);
 </script>
 
 <svg
@@ -73,7 +76,12 @@
     <desc>{desc}</desc>
   {/if}
   {#if progress === undefined}
-    <path d={path} fill={color} />
+    {#if typeof path === 'string'}
+      <path d={path} fill={color} />
+    {:else}
+      {@const Path = path}
+      <Path />
+    {/if}
   {:else}
     <circle
       cx="12"

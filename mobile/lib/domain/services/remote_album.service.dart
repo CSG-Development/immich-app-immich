@@ -112,6 +112,15 @@ class RemoteAlbumService {
     return updatedAlbum;
   }
 
+  Future<RemoteAlbum> refreshAlbum(String albumId) async {
+    final updatedAlbum = await _albumApiRepository.refreshAlbum(albumId);
+
+    // Update the local database
+    await _repository.update(updatedAlbum);
+
+    return updatedAlbum;
+  }
+
   FutureOr<(DateTime, DateTime)> getDateRange(String albumId) {
     return _repository.getDateRange(albumId);
   }

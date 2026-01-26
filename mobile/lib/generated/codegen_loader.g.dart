@@ -32255,6 +32255,11 @@ class CodegenLoader extends AssetLoader {
     "curated_object_page_title": "Things",
     "curator": {
       "button_action_retry": "Retry",
+      "developer_options": {
+        "developer_options_title": "Developer options",
+        "show_settings": "Show Settings",
+        "static_device": "Static Device",
+      },
       "email_not_registered_description":
           "This email isn’t authorized to access this device. Please contact the owner.",
       "email_not_registered_error": "Not allowed. Contact the device owner.",
@@ -32329,6 +32334,7 @@ class CodegenLoader extends AssetLoader {
       "settings_lock_application": "Lock application",
       "settings_passcode_lock": "Passcode lock",
       "settings_pattern_lock": "Pattern lock",
+      "shared_link_create_public_error": "Sharing is not possible because the public link is unavailable",
       "sign_in_screen_button_request_new_code": "Request new code",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
@@ -33402,9 +33408,11 @@ class CodegenLoader extends AssetLoader {
     "search_for": "Search for",
     "search_for_existing_person": "Search for existing person",
     "search_no_more_result": "No more results",
-    "search_no_people": "No people",
-    "search_no_people_named": "No people named \"{name}\"",
+    "search_no_people": "No people to show",
+    "search_no_people_named": "No people named \"{name}\" to show",
     "search_no_result": "No results found, try a different search term or combination",
+    "search_no_result_description": "Try a different search term or combination",
+    "search_no_result_text": "No results found",
     "search_options": "Search options",
     "search_page_categories": "Categories",
     "search_page_motion_photos": "Motion Photos",
