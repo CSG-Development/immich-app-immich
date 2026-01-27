@@ -38,6 +38,7 @@ from .schemas import (
     PipelineRequest,
     T,
 )
+from .search.server import declare_endpoints
 
 MultiPartParser.max_file_size = 2**26  # spools to disk if payload is 64 MiB or larger
 
@@ -154,6 +155,7 @@ def get_entries(entries: str = Form()) -> InferenceEntries:
 
 app = FastAPI(lifespan=lifespan)
 
+declare_endpoints(app) # Search Query Analyzer Endpoints
 
 @app.get("/")
 async def root() -> ORJSONResponse:
