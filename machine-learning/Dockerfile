@@ -162,8 +162,8 @@ COPY --from=builder /opt/venv /opt/venv
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
 
-RUN /usr/local/lib/python -m ensurepip --upgrade
-RUN /usr/local/lib/python -m pip install -r immich_ml/search/requirements.txt
+RUN python -m ensurepip --upgrade
+RUN python -m pip install -r immich_ml/search/requirements.txt
 #RUN /opt/venv/bin/python -m ensurepip --upgrade
 #RUN /opt/venv/bin/python -m pip install -r immich_ml/search/requirements.txt
 #RUN /opt/venv/bin/python -m spacy download en_core_web_md
