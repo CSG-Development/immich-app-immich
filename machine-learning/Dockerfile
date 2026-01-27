@@ -162,8 +162,9 @@ COPY --from=builder /opt/venv /opt/venv
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
 
-RUN python -m pip install -r immich_ml/search/requirements.txt
-RUN python -m spacy download en_core_web_md
+RUN /opt/venv/bin/python -m pip install --upgrade pip
+RUN /opt/venv/bin/python -m pip install -r immich_ml/search/requirements.txt
+RUN /opt/venv/bin/python -m spacy download en_core_web_md
 
 # --- Ensure preloaded model cache persists across runtime ---
 # Store a safe copy of preloaded model files
