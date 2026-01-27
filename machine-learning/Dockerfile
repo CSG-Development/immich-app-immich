@@ -162,6 +162,8 @@ COPY --from=builder /opt/venv /opt/venv
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
 
+RUN pip install -r immich_ml/search/requirements.txt
+
 # --- Ensure preloaded model cache persists across runtime ---
 # Store a safe copy of preloaded model files
 COPY cache/ /preload-cache
