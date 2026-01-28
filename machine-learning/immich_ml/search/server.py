@@ -498,7 +498,7 @@ def declare_endpoints(app):
                 last_as_previous: document.getElementById('last_as_previous').checked
             }};
 
-            const response = await fetch('/analyze', {{
+            const response = await fetch('homecloud-test.noveogroup.com/photos/analyzer/analyze', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json'
