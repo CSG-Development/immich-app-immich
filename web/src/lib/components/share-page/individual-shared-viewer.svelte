@@ -10,8 +10,6 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { Viewport } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
-  import { handlePromiseError } from '$lib/utils';
   import { cancelMultiselect, downloadArchive } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
@@ -37,12 +35,12 @@
 
   let assets = $derived(sharedLink.assets.map((a) => toTimelineAsset(a)));
 
-  dragAndDropFilesStore.subscribe((value) => {
+  /* dragAndDropFilesStore.subscribe((value) => {
     if (value.isDragging && value.files.length > 0) {
       handlePromiseError(handleUploadAssets(value.files));
       dragAndDropFilesStore.set({ isDragging: false, files: [] });
     }
-  });
+  }); */
 
   const downloadAssets = async () => {
     await downloadArchive(`immich-shared.zip`, { assetIds: assets.map((asset) => asset.id) });

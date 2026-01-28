@@ -21,7 +21,7 @@
     <div class="flex flex-col sm:grid sm:grid-cols-2 gap-1 text-immich-primary dark:text-immich-dark-primary">
       <div>
         <label class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm" for="version-desc"
-          >Curator Photos</label
+          >Personal Cloud Photos</label
         >
         <div>
           <a
