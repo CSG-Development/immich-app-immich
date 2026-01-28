@@ -10,6 +10,8 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
+import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/user_agent.dart';
@@ -136,7 +138,9 @@ class ApiService implements Authentication {
 
   bool _isSetEndpoint = false;
 
-  ApiService() {
+  final HttpCertPinningManager certPinning;
+
+  ApiService({required this.certPinning}) {
     _initHttpClient();
     // Initialize with empty endpoint first, then restore the last known endpoint (if any).
     setEndpoint('');
@@ -144,6 +148,19 @@ class ApiService implements Authentication {
     if (endpoint != null && endpoint.isNotEmpty) {
       setEndpoint(endpoint);
     }
+  }
+
+  static instantiate() async {
+    final certPinning = HttpCertPinningManager(
+      config: const CertPinningConfig(
+        allowFallback: false,
+        installRootsInSecurityContext: true
+      ),
+    );
+
+    await certPinning.initialize();
+
+    return ApiService(certPinning: certPinning);
   }
 
   void _initHttpClient() {
@@ -394,6 +411,8 @@ class ApiService implements Authentication {
   }
 
   Future<String> resolveAndSetEndpoint(String serverUrl) async {
+    final uri = Uri.parse(serverUrl);
+    await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
     final endpoint = await resolveEndpoint(serverUrl);
     setEndpoint(endpoint);
 

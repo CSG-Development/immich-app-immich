@@ -160,9 +160,12 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B2CF7F8C2DDE4EBB00744BF6 /* Sync */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Sync;
+			sourceTree = "<group>";
+		};
+		BD05E0022F23714900730F41 /* CertificateFetcher */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CertificateFetcher;
 			sourceTree = "<group>";
 		};
 		F0B57D3D2DF764BD00DC5BCC /* WidgetExtension */ = {
@@ -290,6 +293,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				BD05E0022F23714900730F41 /* CertificateFetcher */,
 				B25D37792E72CA15008B6CA7 /* Connectivity */,
 				B21E34A62E5AF9760031FDB9 /* Background */,
 				CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */,
@@ -387,6 +391,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				B2CF7F8C2DDE4EBB00744BF6 /* Sync */,
+				BD05E0022F23714900730F41 /* CertificateFetcher */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -577,9 +582,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -609,9 +618,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

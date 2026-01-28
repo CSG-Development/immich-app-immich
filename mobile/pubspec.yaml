@@ -80,8 +80,8 @@ dependencies:
   image_editor:
     path: ../image_editor
 
-  homecloud_frontend:
-    path: ../homecloud_frontend
+  hc_device:
+    path: hc_device
 
   native_video_player:
     git:
@@ -99,6 +99,7 @@ dependencies:
   # DB
   drift: ^2.23.1
   drift_flutter: ^0.2.4
+  basic_utils: ^5.8.2
 
 dependency_overrides:
   intl: ^0.20.2

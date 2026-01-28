@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -33,7 +32,8 @@ import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'package:homecloud_frontend/homecloud_frontend.dart';
+import 'package:hc_device/api/remote_access.swagger.dart';
+import 'package:hc_device/hc_device.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');

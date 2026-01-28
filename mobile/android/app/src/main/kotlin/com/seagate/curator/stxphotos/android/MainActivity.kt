@@ -3,7 +3,6 @@ package com.seagate.curator.stxphotos.android
 import android.content.Context
 import android.os.Build
 import android.os.ext.SdkExtensions
-import androidx.annotation.NonNull
 import com.seagate.curator.stxphotos.android.background.BackgroundEngineLock
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerApiImpl
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostApi
@@ -17,7 +16,8 @@ import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl26
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl30
 import com.seagate.curator.stxphotos.android.clipboard.NativeClipboardApi
 import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
-import com.seagate.curator.stxphotos.android.TelemetryWrapperPlugin
+import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApi
+import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApiImpl
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import com.seagate.curator.stxphotos.android.update.UpdateApi
@@ -46,8 +46,9 @@ class MainActivity : FlutterFragmentActivity() {
       ThumbnailApi.setUp(messenger, ThumbnailsImpl(ctx))
       BackgroundWorkerFgHostApi.setUp(messenger, BackgroundWorkerApiImpl(ctx))
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
-      NativeClipboardApi.setUp(flutterEngine.dartExecutor.binaryMessenger, ClipboardMessagesImpl(ctx))
+      NativeClipboardApi.setUp(messenger, ClipboardMessagesImpl(ctx))
       UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
+      CertificateFetcherApi.setUp(messenger, CertificateFetcherApiImpl())
 
       flutterEngine.plugins.add(BackgroundServicePlugin())
       flutterEngine.plugins.add(HttpSSLOptionsPlugin())

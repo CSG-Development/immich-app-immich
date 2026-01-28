@@ -7,6 +7,7 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -27,7 +28,13 @@ class SyncApiRepository {
   }) async {
     final stopwatch = Stopwatch()..start();
     final client = httpClient ?? http.Client();
-    final endpoint = "${_api.apiClient.basePath}/sync/stream";
+    final basePath = await _api.setOpenApiServiceEndpoint() ?? _api.apiClient.basePath;
+    final hasApi = basePath.endsWith('/api') || basePath.endsWith('/api/');
+    final cleanPath = basePath.endsWith('/') 
+        ? basePath.substring(0, basePath.length - 1) 
+        : basePath;
+
+    final endpoint = hasApi ? '$cleanPath/sync/stream' : '$cleanPath/api/sync/stream';
 
     final headers = {'Content-Type': 'application/json', 'Accept': 'application/jsonlines+json'};
 
