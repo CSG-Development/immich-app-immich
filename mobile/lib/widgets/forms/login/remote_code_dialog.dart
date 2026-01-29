@@ -23,6 +23,8 @@ class RemoteCodeModal extends HookConsumerWidget {
     final remoteCodeInitiateError = useState<bool>(false);
     final remoteCodeErrorText = useState<String?>(null);
     final emailNotAllowed = useState<bool?>(false);
+    final tooManyRequests = useState<bool?>(false);
+    final unableToConnect = useState<bool?>(false);
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
 
@@ -37,6 +39,8 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeLoading.value = true;
       remoteCodeErrorText.value = null;
       emailNotAllowed.value = false;
+      tooManyRequests.value = false;
+      unableToConnect.value = false;
 
       try {
         final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
@@ -48,9 +52,13 @@ class RemoteCodeModal extends HookConsumerWidget {
           switch (state.error) {
             case RemoteAuthError.server:
               remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
+              unableToConnect.value = true;
             case RemoteAuthError.notAllowed:
               remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
               emailNotAllowed.value = true;
+            case RemoteAuthError.tooManyRequests:
+              remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+              tooManyRequests.value = true;
             default:
               remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
               break;
@@ -131,9 +139,7 @@ class RemoteCodeModal extends HookConsumerWidget {
       () {
         final isLoading = remoteCodeLoading.value;
         return TextButton(
-          onPressed: isLoading
-              ? null
-              : () => Navigator.of(context).pop(),
+          onPressed: isLoading ? null : () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             minimumSize: Size.zero,
             padding: const EdgeInsets.all(12.0),
@@ -205,6 +211,23 @@ class RemoteCodeModal extends HookConsumerWidget {
             },
             child: Text('OK'.tr()),
           ),
+        ],
+      );
+    }
+    if (tooManyRequests.value == true) {
+      return AlertDialog(
+        title: Text('curator.email_too_many_requests_title'.tr()),
+        content: Text('curator.email_too_many_requests_description'.tr()),
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('OK'.tr()))],
+      );
+    }
+    if (unableToConnect.value == true) {
+      return AlertDialog(
+        title: Text('curator.email_unable_to_connect_title'.tr()),
+        content: Text('curator.email_unable_to_connect_description'.tr()),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('cancel'.tr())),
+          TextButton(onPressed: () => sendRemoteCode(), child: Text('retry'.tr())),
         ],
       );
     }

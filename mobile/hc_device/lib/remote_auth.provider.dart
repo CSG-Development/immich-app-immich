@@ -25,7 +25,8 @@ enum RemoteAuthError {
   network,
   server,
   unknown,
-  notAllowed
+  notAllowed,
+  tooManyRequests
 }
 
 class RemoteAuthState {
@@ -160,6 +161,11 @@ class RemoteAuthController extends ChangeNotifier {
           case 403:
             _setState(
               _state.copyWith(isInitiating: false, error: RemoteAuthError.notAllowed),
+            );
+            break;
+          case 429:
+            _setState(
+              _state.copyWith(isInitiating: false, error: RemoteAuthError.tooManyRequests),
             );
             break;
           case 500:
