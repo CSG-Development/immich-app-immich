@@ -905,6 +905,17 @@ abstract class IntlKeys {
   static const curator_unable_to_detect_screen_message_list_title =
       'curator.unable.to.detect.screen.message.list.title';
   static const curator_unable_to_detect_screen_title = 'curator.unable.to.detect.screen.title';
+  static const curator_update_dialog_download = 'curator.update.dialog.download';
+  static const curator_update_dialog_download_error = 'curator.update.dialog.download.error';
+  static const curator_update_dialog_downloading = 'curator.update.dialog.downloading';
+  static const curator_update_dialog_installation_cancel = 'curator.update.dialog.installation.cancel';
+  static const curator_update_dialog_installation_canceled = 'curator.update.dialog.installation.canceled';
+  static const curator_update_dialog_installation_error = 'curator.update.dialog.installation.error';
+  static const curator_update_dialog_installation_failed = 'curator.update.dialog.installation.failed';
+  static const curator_update_dialog_installation_update = 'curator.update.dialog.installation.update';
+  static const curator_update_dialog_later = 'curator.update.dialog.later';
+  static const curator_update_dialog_title = 'curator.update.dialog.title';
+  static const curator_update_dialog_version = 'curator.update.dialog.version';
   static const current_device = 'current_device';
   static const current_pin_code = 'current_pin_code';
   static const current_server_address = 'current_server_address';

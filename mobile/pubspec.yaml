@@ -100,6 +100,7 @@ dependencies:
   drift: ^2.23.1
   drift_flutter: ^0.2.4
   basic_utils: ^5.8.2
+  pub_semver: ^2.2.0
 
 dependency_overrides:
   intl: ^0.20.2
