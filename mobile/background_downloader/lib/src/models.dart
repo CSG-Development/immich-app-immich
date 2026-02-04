@@ -567,6 +567,8 @@ final class Config {
   static const proxy = 'proxy';
   static const bypassTLSCertificateValidation =
       'bypassTLSCertificateValidation';
+  static const configCertificatePinning =
+      'configCertificatePinning';
   static const runInForeground = 'runInForeground';
   static const runInForegroundIfFileLargerThan =
       'runInForegroundIfFileLargerThan';

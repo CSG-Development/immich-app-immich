@@ -24,6 +24,7 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
     public static var keyConfigCheckAvailableSpace = "com.bbflight.background_downloader.config.checkAvailableSpace"
     public static var keyConfigExcludeFromCloudBackup = "com.bbflight.background_downloader.config.excludeFromCloudBackup"
     public static var keyRequireWiFi = "com.bbflight.background_downloader.requireWiFi"
+    public static var keyConfigCertificatePinning = "com.bbflight.background_downloader.config.certificatePinning"
     public static var forceFailPostOnBackgroundChannel = false
     
     static var progressInfo = [String: (lastProgressUpdateTime: TimeInterval,
@@ -49,6 +50,8 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
     static var mimeTypes = [String : String]() // [taskId : mimeType]
     static var charSets = [String : String]() // [taskId : charSet]
     static var holdingQueue: HoldingQueue? = nil
+    static var pinnedCertificates: [Data] = []
+    static var isSSLPinningEnabled = false
     
     static var propertyLock: NSLock = NSLock() // used to synchronize access to static properties
     
@@ -152,6 +155,8 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
                 methodForceFailPostOnBackgroundChannel(call: call, result: result)
             case "testSuggestedFilename":
                 methodTestSuggestedFilename(call: call, result: result)
+            case "configCertificatePinning":
+                methodConfigCertificatePinning(call: call, result: result)
             default:
                 os_log("Invalid method: %@", log: log, type: .error, call.method)
                 result(FlutterMethodNotImplemented)
@@ -855,6 +860,66 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
         result(nil)
     }
     
+    private func methodConfigCertificatePinning(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        configureSSLPinning(certificates: call.arguments as! [String])
+        result(nil)
+    }
+
+  
+  
+  private func configureSSLPinning(certificates: [String]) {
+      BDPlugin.pinnedCertificates.removeAll()
+      
+      os_log("Configuring SSL pinning...", log: log, type: .info)
+      
+      for base64String in certificates {
+          if let derData = Data(base64Encoded: base64String),
+             SecCertificateCreateWithData(nil, derData as CFData) != nil {
+              BDPlugin.pinnedCertificates.append(derData)
+              os_log("Added as DER", log: log, type: .info)
+              continue
+          }
+
+          if let firstDecode = Data(base64Encoded: base64String),
+             let pemString = String(data: firstDecode, encoding: .utf8),
+             pemString.contains("-----BEGIN") {
+
+              let lines = pemString.components(separatedBy: .newlines)
+              var base64Lines: [String] = []
+              var inCertificate = false
+              
+              for line in lines {
+                  let trimmed = line.trimmingCharacters(in: .whitespaces)
+                  
+                  if trimmed.hasPrefix("-----BEGIN") {
+                      inCertificate = true
+                      continue
+                  }
+                  
+                  if trimmed.hasPrefix("-----END") {
+                      inCertificate = false
+                      continue
+                  }
+                  
+                  if inCertificate && !trimmed.isEmpty {
+                      base64Lines.append(trimmed)
+                  }
+              }
+              
+              let cleanBase64 = base64Lines.joined()
+              
+              if let certData = Data(base64Encoded: cleanBase64),
+                 SecCertificateCreateWithData(nil, certData as CFData) != nil {
+                  BDPlugin.pinnedCertificates.append(certData)
+                  os_log("Added as PEM (extracted)", log: log, type: .info)
+              }
+          }
+      }
+      
+      BDPlugin.isSSLPinningEnabled = !BDPlugin.pinnedCertificates.isEmpty
+      os_log("Result: %@ certificates", log: log, type: .info, String(BDPlugin.pinnedCertificates.count))
+  }
+
     /// Sets or resets flag to force failing posting on background channel
     ///
     /// For testing only

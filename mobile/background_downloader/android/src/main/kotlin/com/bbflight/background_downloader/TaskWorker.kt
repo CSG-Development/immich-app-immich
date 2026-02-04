@@ -34,7 +34,73 @@ import kotlin.concurrent.read
 import kotlin.concurrent.write
 import java.lang.Double.min as doubleMin
 import androidx.core.content.edit
+import java.security.KeyStore
+import javax.net.ssl.TrustManagerFactory
+import java.security.cert.*
+import javax.net.ssl.*
 
+object SSLPinningManager {
+    private var sslSocketFactory: SSLSocketFactory? = null
+    private var isInitialized = false
+    private var pinnedTrustManager: PinnedTrustManager? = null
+    
+    fun initialize(pinnedCertsBytes: List<ByteArray>) {
+        try {
+            if (isInitialized) return
+            
+            val cf = CertificateFactory.getInstance("X.509")
+            val keyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+                load(null, null)
+            }
+            
+            pinnedCertsBytes.forEachIndexed { index, certBytes ->
+                try {
+                    val cert = cf.generateCertificate(certBytes.inputStream()) as X509Certificate
+                    keyStore.setCertificateEntry("pinned_ca_$index", cert)
+                    Log.w(BDPlugin.TAG, "Loaded pinned certificate [$index]: ${cert.subjectDN}")
+                } catch (e: Exception) {
+                    Log.e(BDPlugin.TAG, "Failed to load certificate [$index]: ${e.message}")
+                }
+            }
+            
+            pinnedTrustManager = PinnedTrustManager(keyStore)
+
+            val sslContext = SSLContext.getInstance("TLS")
+            sslContext.init(null, arrayOf(pinnedTrustManager), null)
+            
+            sslSocketFactory = sslContext.socketFactory
+            isInitialized = true
+            
+            Log.w(BDPlugin.TAG, "SSL Pinning Manager initialized with ${pinnedCertsBytes.size} certificates")
+            
+        } catch (e: Exception) {
+            Log.e(BDPlugin.TAG, "Failed to initialize SSL Pinning Manager: ${e.message}")
+        }
+    }
+    
+    fun applyToConnection(connection: HttpURLConnection, hostname: String? = null) {
+        if (!isInitialized || sslSocketFactory == null) return
+        
+        if (connection is HttpsURLConnection) {
+            try {
+                connection.sslSocketFactory = sslSocketFactory
+
+                connection.hostnameVerifier = HostnameVerifier { hostnameToVerify, session ->
+                    pinnedTrustManager?.setCurrentHost(hostnameToVerify)
+
+                    HttpsURLConnection.getDefaultHostnameVerifier().verify(hostnameToVerify, session)
+                }
+
+                hostname?.let { pinnedTrustManager?.setCurrentHost(it) }
+                
+                Log.d(BDPlugin.TAG, "Applied SSL pinning to connection")
+                
+            } catch (e: Exception) {
+                Log.e(BDPlugin.TAG, "Failed to apply SSL pinning: ${e.message}")
+            }
+        }
+    }
+}
 
 /***
  * The worker to execute one task
@@ -515,23 +581,25 @@ open class TaskWorker(
                 )
                 BDPlugin.haveLoggedProxyMessage = true
             }
-            with(withContext(Dispatchers.IO) {
+            val connection = withContext(Dispatchers.IO) {
                 url.openConnection(proxy ?: Proxy.NO_PROXY)
-            } as HttpURLConnection) {
-                requestMethod = task.httpRequestMethod
-                connectTimeout = requestTimeoutSeconds * 1000
-                for (header in task.headers) {
-                    // For UploadTask, copy headers unless it's "Range" or "Content-Disposition".
-                    // For other task types, copy all headers.
-                    if (!task.isUploadTask() ||
-                        (!header.key.equals("Range", ignoreCase = true) &&
-                                !header.key.equals("Content-Disposition", ignoreCase = true))
-                    ) {
-                        setRequestProperty(header.key, header.value)
-                    }
+            } as HttpURLConnection
+            
+            SSLPinningManager.applyToConnection(connection, url.host)
+            
+            connection.requestMethod = task.httpRequestMethod
+            connection.connectTimeout = requestTimeoutSeconds * 1000
+            for (header in task.headers) {
+                // For UploadTask, copy headers unless it's "Range" or "Content-Disposition".
+                // For other task types, copy all headers.                
+                if (!task.isUploadTask() ||
+                    (!header.key.equals("Range", ignoreCase = true) &&
+                            !header.key.equals("Content-Disposition", ignoreCase = true))
+                ) {
+                    connection.setRequestProperty(header.key, header.value)
                 }
-                return connectAndProcess(this)
             }
+            return connectAndProcess(connection)
         } catch (e: Exception) {
             Log.w(
                 TAG, "Error for taskId ${task.taskId}: $e\n${e.stackTraceToString()}"

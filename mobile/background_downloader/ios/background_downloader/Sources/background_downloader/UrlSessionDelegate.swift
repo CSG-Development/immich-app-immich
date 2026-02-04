@@ -7,7 +7,8 @@
 
 import Foundation
 import os.log
-
+import Security
+import CommonCrypto
 
 public class UrlSessionDelegate : NSObject, URLSessionDelegate, URLSessionDownloadDelegate, URLSessionDataDelegate {
     
@@ -15,6 +16,9 @@ public class UrlSessionDelegate : NSObject, URLSessionDelegate, URLSessionDownlo
     static var urlSession: URLSession?
     public static var sessionIdentifier = "com.bbflight.background_downloader.Downloader"
     public static var backgroundCompletionHandler: (() -> Void)?
+    private var hostValidationCache: [String: (Date, Bool)] = [:]
+    private let cacheTTL: TimeInterval = 300
+    private let cacheQueue = DispatchQueue(label: "ssl.pinning.cache.queue")
     
     //MARK: URLSessionTaskDelegate
     
@@ -437,6 +441,236 @@ public class UrlSessionDelegate : NSObject, URLSessionDelegate, URLSessionDownlo
         }
     }
     
+    public func urlSession(_ session: URLSession,
+                           didReceive challenge: URLAuthenticationChallenge,
+                           completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+      
+      guard let serverTrust = challenge.protectionSpace.serverTrust else {
+        completionHandler(.performDefaultHandling, nil)
+        return
+      }
+      
+      let host = challenge.protectionSpace.host
+      
+      if let (expiryDate, isValid) = getCachedValidation(for: host) {
+        os_log("SSL for %@ - from cache (%@)", log: log, type: .info, host, isValid ? "VALID" : "INVALID")
+        
+        if isValid {
+          completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+          completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+        return
+      }
+      
+      os_log("SSL validation for host: %@", log: log, type: .info, host)
+      
+      if BDPlugin.isSSLPinningEnabled && !BDPlugin.pinnedCertificates.isEmpty {
+        if verifyCertificateChainIgnoringStandards(serverTrust: serverTrust) {
+          os_log("SSL pinning successful", log: log, type: .info)
+          cacheValidation(for: host, isValid: true)
+          completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+          os_log("SSL pinning failed", log: log, type: .info)
+          cacheValidation(for: host, isValid: false)
+          completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+      } else {
+        completionHandler(.performDefaultHandling, nil)
+      }
+    }
+    
+    private func getCachedValidation(for host: String) -> (Date, Bool)? {
+      return cacheQueue.sync {
+        guard let (expiryDate, isValid) = hostValidationCache[host] else {
+          return nil
+        }
+        
+        if Date() < expiryDate {
+          return (expiryDate, isValid)
+        } else {
+          hostValidationCache.removeValue(forKey: host)
+          return nil
+        }
+      }
+    }
+    
+    private func cacheValidation(for host: String, isValid: Bool) {
+      cacheQueue.async {
+        let expiryDate = Date().addingTimeInterval(self.cacheTTL)
+        self.hostValidationCache[host] = (expiryDate, isValid)
+        
+        os_log(
+          "Cached validation for %@: %@",
+          log: log,
+          type: .info,
+          host,
+          isValid ? "VALID" : "INVALID",
+        )
+        
+        if self.hostValidationCache.count > 100 {
+          self.cleanupCache()
+        }
+      }
+    }
+    
+    private func cleanupCache() {
+      let currentDate = Date()
+      
+      for (host, (expiryDate, _)) in hostValidationCache {
+        if currentDate >= expiryDate {
+          hostValidationCache.removeValue(forKey: host)
+        }
+      }
+      
+      if hostValidationCache.count > 100 {
+        let sorted = hostValidationCache.sorted { $0.value.0 < $1.value.0 }
+        
+        var newCache: [String: (Date, Bool)] = [:]
+        for (host, value) in sorted.prefix(50) {
+          newCache[host] = value
+        }
+        
+        hostValidationCache = newCache
+      }
+    }
+    
+    public func clearValidationCache() {
+      cacheQueue.async {
+        self.hostValidationCache.removeAll()
+        os_log("SSL validation cache cleared", log: log, type: .info)
+      }
+    }
+    
+    private func verifyCertificateChainIgnoringStandards(serverTrust: SecTrust) -> Bool {
+      os_log("Building certificate chain...", log: log, type: .info)
+      
+      let serverCerts = getCertificates(from: serverTrust)
+      
+      guard !serverCerts.isEmpty else {
+        return false
+      }
+      
+      os_log("Server provided %@ certificate(s)", log: log, type: .info, String(serverCerts.count))
+      
+      for (index, pinnedData) in BDPlugin.pinnedCertificates.enumerated() {
+        guard let rootCertificate = SecCertificateCreateWithData(nil, pinnedData as CFData) else {
+          continue
+        }
+        
+        if let rootSubject = SecCertificateCopySubjectSummary(rootCertificate) as String? {
+          os_log("Testing with root [%@]: %@", log: log, type: .info, index, rootSubject)
+        }
+        
+        let fullChain = serverCerts + [rootCertificate]
+        
+        if validateChainWithCustomPolicy(fullChain) {
+          os_log("Chain is valid!", log: log, type: .info)
+          return true
+        }
+      }
+      
+      return false
+    }
+    
+    private func validateChainWithCustomPolicy(_ certificates: [SecCertificate]) -> Bool {
+      guard !certificates.isEmpty else {
+        return false
+      }
+      
+      let policy = SecPolicyCreateBasicX509()
+      var optionalTrust: SecTrust?
+      
+      guard SecTrustCreateWithCertificates(
+        certificates as CFArray,
+        policy,
+        &optionalTrust
+      ) == errSecSuccess,
+            let trust = optionalTrust else {
+        return false
+      }
+      
+      return evaluateTrustIgnoringUntrustedErrors(trust)
+    }
+    
+    private func evaluateTrustIgnoringUntrustedErrors(_ trust: SecTrust) -> Bool {
+      var error: CFError?
+      
+      if #available(iOS 12.0, *) {
+        let isValid = SecTrustEvaluateWithError(trust, &error)
+        
+        if isValid {
+          return true
+        }
+        
+        if let error = error {
+          let errorString = error.localizedDescription
+          
+          if errorString.contains("not trusted") ||
+              errorString.contains("not standards compliant") ||
+              errorString.contains("root certificate is not trusted") {
+            return true
+          }
+        }
+      }
+      
+      return evaluateTrustLegacy(trust)
+    }
+    
+    private func evaluateTrustLegacy(_ trust: SecTrust) -> Bool {
+      var result: SecTrustResultType = .invalid
+      let status = SecTrustEvaluate(trust, &result)
+      
+      if status == errSecSuccess {
+        switch result {
+        case .proceed, .unspecified, .recoverableTrustFailure:
+          return true
+        default:
+          return false
+        }
+      }
+      
+      return false
+    }
+    
+    private func validateWithSystemPolicy(serverTrust: SecTrust,
+                                          host: String,
+                                          completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+      let policy = SecPolicyCreateSSL(true, host as CFString)
+      SecTrustSetPolicies(serverTrust, policy)
+      
+      if #available(iOS 12.0, *) {
+        var error: CFError?
+        if SecTrustEvaluateWithError(serverTrust, &error) {
+          completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+          completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+      } else {
+        var result: SecTrustResultType = .invalid
+        SecTrustEvaluate(serverTrust, &result)
+        
+        if result == .proceed || result == .unspecified {
+          completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+          completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+      }
+    }
+    
+    private func getCertificates(from trust: SecTrust) -> [SecCertificate] {
+      let count = SecTrustGetCertificateCount(trust)
+      var certificates: [SecCertificate] = []
+      
+      for i in 0..<count {
+        if let certificate = SecTrustGetCertificateAtIndex(trust, i) {
+          certificates.append(certificate)
+        }
+      }
+      
+      return certificates
+    }
+
     //MARK: URLSessionDataDelegate
     
     /// Collects incoming data following a file upload, by appending the data block to a static dictionary keyed by taskId

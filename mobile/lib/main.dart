@@ -136,12 +136,19 @@ Future<void> initApp() async {
 
   initializeTimeZones();
 
+  final certs = await HttpCertPinningManager.loadRootCertsBytes([
+    'assets/tdci.pem',
+    'assets/fake-device-noveo.cer'
+  ]);
+
   // Initialize the file downloader
   await FileDownloader().configure(
     // maxConcurrent: 6, maxConcurrentByHost(server):6, maxConcurrentByGroup: 3
 
     // On Android, if files are larger than 256MB, run in foreground service
     globalConfig: [(Config.holdingQueue, (6, 6, 3)), (Config.runInForegroundIfFileLargerThan, 256)],
+    iOSConfig: [(Config.configCertificatePinning, certs)],
+    androidConfig: [(Config.configCertificatePinning, certs)]
   );
 
   await FileDownloader().trackTasksInGroup(kDownloadGroupLivePhoto, markDownloadedComplete: false);

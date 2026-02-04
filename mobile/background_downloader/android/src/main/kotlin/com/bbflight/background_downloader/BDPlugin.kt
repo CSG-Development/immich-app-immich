@@ -51,6 +51,7 @@ import kotlin.concurrent.read
 import kotlin.concurrent.write
 import androidx.core.content.edit
 import androidx.work.OneTimeWorkRequest
+import android.util.Base64;
 
 
 /**
@@ -504,6 +505,7 @@ class BDPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 "configBypassTLSCertificateValidation" -> methodConfigBypassTLSCertificateValidation(
                     result
                 )
+                "configCertificatePinning" -> methodConfigCertificatePinning(call, result)
 
                 "configCheckAvailableSpace" -> methodConfigCheckAvailableSpace(call, result)
                 "configUseCacheDir" -> methodConfigUseCacheDir(call, result)
@@ -1199,6 +1201,27 @@ class BDPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
      */
     private fun methodConfigBypassTLSCertificateValidation(result: Result) {
         acceptUntrustedCertificates()
+        result.success(null)
+    }
+
+    /**
+     * Certificate pinning
+     */
+    private fun methodConfigCertificatePinning(call: MethodCall, result: Result) {
+        val pinnedCertsBytes = mutableListOf<ByteArray>()
+        val certsBase64 = call.arguments as List<String>
+        if (certsBase64 != null) {
+            pinnedCertsBytes.clear()
+            certsBase64.forEach { base64Str ->
+                pinnedCertsBytes.add(Base64.decode(base64Str, Base64.DEFAULT))
+            }
+            if (pinnedCertsBytes.isNotEmpty()) {
+                SSLPinningManager.initialize(pinnedCertsBytes)
+                Log.w(TAG, "SSL pinning configured with ${pinnedCertsBytes.size} certificates")
+            } else {
+                Log.w(TAG, "No valid certificates provided for SSL pinning")
+            }
+        }
         result.success(null)
     }
 

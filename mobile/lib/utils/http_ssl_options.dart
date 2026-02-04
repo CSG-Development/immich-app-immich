@@ -13,11 +13,11 @@ class HttpSSLOptions {
   static void apply({bool applyNative = true}) {
     AppSettingsEnum setting = AppSettingsEnum.allowSelfSignedSSLCert;
     bool allowSelfSignedSSLCert = Store.get(setting.storeKey as StoreKey<bool>, setting.defaultValue);
-    _apply(allowSelfSignedSSLCert, applyNative: applyNative);
+    // _apply(allowSelfSignedSSLCert, applyNative: applyNative);
   }
 
   static void applyFromSettings(bool newValue) {
-    _apply(newValue);
+    // _apply(newValue);
   }
 
   static void _apply(bool allowSelfSignedSSLCert, {bool applyNative = true}) {
