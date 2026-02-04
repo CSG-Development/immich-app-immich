@@ -9,11 +9,9 @@
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
   import { featureFlags } from '$lib/stores/server-config.store';
-  import { handlePromiseError } from '$lib/utils';
   import { cancelMultiselect, downloadAlbum } from '$lib/utils/asset-utils';
-  import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { openFileUploadDialog } from '$lib/utils/file-uploader';
   import type { AlbumResponseDto, SharedLinkResponseDto, UserResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
   import { mdiDownload, mdiFileImagePlusOutline } from '@mdi/js';
@@ -41,12 +39,12 @@
 
   const assetInteraction = new AssetInteraction();
 
-  dragAndDropFilesStore.subscribe((value) => {
+  /* dragAndDropFilesStore.subscribe((value) => {
     if (value.isDragging && value.files.length > 0) {
       handlePromiseError(fileUploadHandler({ files: value.files, albumId: album.id }));
       dragAndDropFilesStore.set({ isDragging: false, files: [] });
     }
-  });
+  }); */
 </script>
 
 <svelte:document

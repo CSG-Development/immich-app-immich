@@ -2,7 +2,6 @@
   import { run } from 'svelte/legacy';
 
   import { page } from '$app/state';
-  import UploadCover from '$lib/components/shared-components/drag-and-drop-upload-overlay.svelte';
 
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import type { Snippet } from 'svelte';
@@ -29,7 +28,6 @@
 <div class:display-none={$showAssetViewer}>
   {@render children?.()}
 </div>
-<UploadCover />
 
 <style>
   :root {
