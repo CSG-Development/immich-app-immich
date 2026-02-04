@@ -88,7 +88,10 @@ object SSLPinningManager {
                 connection.hostnameVerifier = HostnameVerifier { hostnameToVerify, session ->
                     pinnedTrustManager?.setCurrentHost(hostnameToVerify)
 
-                    HttpsURLConnection.getDefaultHostnameVerifier().verify(hostnameToVerify, session)
+                    // HttpsURLConnection.getDefaultHostnameVerifier().verify(hostnameToVerify, session)
+
+                    Log.w(BDPlugin.TAG, "Hostname verification skipped for: $hostnameToVerify")
+                    return@HostnameVerifier true
                 }
 
                 hostname?.let { pinnedTrustManager?.setCurrentHost(it) }
