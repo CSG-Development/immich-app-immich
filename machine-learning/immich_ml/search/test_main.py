@@ -916,165 +916,165 @@ TEST_DATA = [
 #----------------------------------------
 # Previous week/month/year
 #----------------------------------------
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing previous week",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing previous week",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "previous week",
-#                                "range": True,
-#                                "start_date": "2026-01-05",
-#                                "end_date": "2026-01-11",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing previous month",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing previous month",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "previous month",
-#                                "range": True,
-#                                "start_date": "2025-12-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing previous year",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing previous year",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "previous year",
-#                                "range": True,
-#                                "start_date": "2025-01-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing previous week",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing previous week",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "previous week",
+                                "range": True,
+                                "start_date": "2026-01-05",
+                                "end_date": "2026-01-11",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing previous month",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing previous month",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "previous month",
+                                "range": True,
+                                "start_date": "2025-12-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing previous year",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing previous year",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "previous year",
+                                "range": True,
+                                "start_date": "2025-01-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
 #----------------------------------------
 # Past week/month/year
 #----------------------------------------
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing past week",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing past week",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "past week",
-#                                "range": True,
-#                                "start_date": "2026-01-05",
-#                                "end_date": "2026-01-11",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing past month",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing past month",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "past month",
-#                                "range": True,
-#                                "start_date": "2025-12-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing past year",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing past year",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "past year",
-#                                "range": True,
-#                                "start_date": "2025-01-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing past week",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing past week",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "past week",
+                                "range": True,
+                                "start_date": "2026-01-05",
+                                "end_date": "2026-01-11",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing past month",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing past month",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "past month",
+                                "range": True,
+                                "start_date": "2025-12-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing past year",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing past year",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "past year",
+                                "range": True,
+                                "start_date": "2025-01-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
 #----------------------------------------
 # Months
 #----------------------------------------

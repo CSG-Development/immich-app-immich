@@ -374,6 +374,9 @@ class SearchQueryAnalyzer:
         for sent in doc.sents:
             result = defaultdict(list)
 
+            #result["token_text"] = []
+            #result["token_pos"] = []
+
             for ent in sent.ents:
                 if ent.label_ == "PERSON":
                     result[self.SECTION_PERSONS].append(ent.text)
@@ -421,12 +424,46 @@ class SearchQueryAnalyzer:
                         "end_date": end_date
                     })
 
+            # --- FALLBACK for missed DATE entities ---
+            if self.SECTION_DATES not in result:
+                sent_text_lower = sent.text.lower()
+                for rule in self.date_rules:
+                    match = rule.pattern.search(sent_text_lower)
+                    if match:
+                        text = match.group(0)
+                        range_flag, date, start_date, end_date = rule.processor(text)
+                        if not range_flag and date:
+                            start_date = end_date = date
+                        elif range_flag:
+                            date = None
+                        result[self.SECTION_DATES].append({
+                            "text": text,
+                            "range": range_flag,
+                            **({"date": date} if date else {}),
+                            "start_date": start_date,
+                            "end_date": end_date
+                        })
+                        break
+
+            # --- tokens (minimal change: exclude tokens in DATE text) ---
+            date_token_idxs = set()
+            for date_entity in result.get(self.SECTION_DATES, []):
+                date_words = date_entity["text"].split()
+                for i, token in enumerate(sent):
+                    if token.text in date_words:
+                        date_token_idxs.add(token.i)
+
             entity_token_idxs = {i for ent in sent.ents for i in range(ent.start, ent.end)}
+            skip_idxs = entity_token_idxs | date_token_idxs  # exclude spaCy ents + date words
+
             for token in sent:
-                if token.i not in entity_token_idxs and token.pos_ in ("NOUN", "VERB", "PROPN"):
+                #result["token_text"].append(token.text)
+                #result["token_pos"].append(token.pos_)
+                if token.i not in skip_idxs and token.pos_ in ("NOUN", "VERB", "PROPN"):
                     if token.text.lower() not in self.FILE_TYPE_KEYWORDS_FLAT:
                         result[self.SECTION_CONTEXT].append(token.text)
 
+            # --- types ---
             types_set = set()
             for token in sent:
                 t = token.text.lower()
@@ -446,15 +483,12 @@ class SearchQueryAnalyzer:
         return SearchQueryAnalyzerResponse(result=result_per_sentence)
 
 # --- FastAPI setup ---
-#app = FastAPI(title="NER Sentence Analyzer")
-
 def declare_endpoints(app):
     @app.post("/analyze", response_model=SearchQueryAnalyzerResponse)
     def analyze_endpoint(request: SearchQueryAnalyzerRequest):
         analyzer = SearchQueryAnalyzer()
         return analyzer.analyze(request)
 
-    # --- /test endpoint ---
     @app.get("/test", response_class=HTMLResponse)
     def test_form():
         default_text = "Photos of riding horses near the Eiffel Tower and Taj Mahal with John Smith and Ann in May 2025."
