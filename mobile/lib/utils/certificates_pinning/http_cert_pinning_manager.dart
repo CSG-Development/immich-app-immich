@@ -48,6 +48,17 @@ class HttpCertPinningManager {
     return rootCertificatesPems.cast<String>().toList();
   }
 
+  static Future<List<String>> loadRootCertsBytes(List<String> paths) async {
+    final List<String> certsBase64 = [];
+
+    for (final path in paths) {
+      final bytes = (await rootBundle.load(path)).buffer.asUint8List();
+      final base64Str = base64Encode(bytes);
+      certsBase64.add(base64Str);
+    }
+    return certsBase64;
+  }
+
   /// Initializes manager: loads root certificate and installs [HttpOverrides].
   Future<void> initialize() async {
     if (_isInitialized) {
