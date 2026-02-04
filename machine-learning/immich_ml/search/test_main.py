@@ -1185,58 +1185,58 @@ TEST_DATA = [
 #----------------------------------------
 # Years
 #----------------------------------------
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing in 2025",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing in 2025",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "2025",
-#                                "range": True,
-#                                "start_date": "2025-01-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
-#    (
-#        SearchQueryAnalyzerRequest(
-#            text="Testing in 2025 year",
-#            week_start_sunday=False,
-#            period_end_mode_current=False,
-#            last_as_previous=False,
-#        ),
-#        SearchQueryAnalyzerResponse(
-#            result=[
-#                {
-#                    "text": "Testing in 2025 year",
-#                    "entities": {
-#                        "dates": [
-#                            {
-#                                "text": "2025 year",
-#                                "range": True,
-#                                "start_date": "2025-01-01",
-#                                "end_date": "2025-12-31",
-#                            }
-#                        ],
-#                        "context": ["Testing"],
-#                    },
-#                }
-#            ]
-#        ),
-#    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing in 2025",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing in 2025",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "2025",
+                                "range": True,
+                                "start_date": "2025-01-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        SearchQueryAnalyzerRequest(
+            text="Testing in 2025 year",
+            week_start_sunday=False,
+            period_end_mode_current=False,
+            last_as_previous=False,
+        ),
+        SearchQueryAnalyzerResponse(
+            result=[
+                {
+                    "text": "Testing in 2025 year",
+                    "entities": {
+                        "dates": [
+                            {
+                                "text": "2025 year",
+                                "range": True,
+                                "start_date": "2025-01-01",
+                                "end_date": "2025-12-31",
+                            }
+                        ],
+                        "context": ["Testing"],
+                    },
+                }
+            ]
+        ),
+    ),
 #----------------------------------------
 # Month + Year
 #----------------------------------------

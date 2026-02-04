@@ -335,6 +335,13 @@ class SearchQueryAnalyzer:
 
     # ---------- parse date using registry ----------
     def parse_relative_date_registry(self, text: str):
+        # --- minimal fix: handle "YYYY year" explicitly ---
+        year_match = re.match(r'^\s*(19\d{2}|20\d{2})\s*year\s*$', text, re.IGNORECASE)
+        if year_match:
+            year = year_match.group(1)
+            return True, None, f"{year}-01-01", f"{year}-12-31"
+
+        # --- existing rule-based processing ---
         for rule in self.date_rules:
             if rule.pattern.search(text):
                 return rule.processor(text)
@@ -373,9 +380,6 @@ class SearchQueryAnalyzer:
 
         for sent in doc.sents:
             result = defaultdict(list)
-
-            #result["token_text"] = []
-            #result["token_pos"] = []
 
             for ent in sent.ents:
                 if ent.label_ == "PERSON":
@@ -457,8 +461,6 @@ class SearchQueryAnalyzer:
             skip_idxs = entity_token_idxs | date_token_idxs  # exclude spaCy ents + date words
 
             for token in sent:
-                #result["token_text"].append(token.text)
-                #result["token_pos"].append(token.pos_)
                 if token.i not in skip_idxs and token.pos_ in ("NOUN", "VERB", "PROPN"):
                     if token.text.lower() not in self.FILE_TYPE_KEYWORDS_FLAT:
                         result[self.SECTION_CONTEXT].append(token.text)
@@ -472,6 +474,20 @@ class SearchQueryAnalyzer:
                         types_set.add(type_name)
             if types_set:
                 result[self.SECTION_TYPES] = list(types_set)
+
+            # --- NEW: standalone year fallback ONLY if year is not part of another DATE text ---
+            existing_date_texts = {d["text"] for d in result.get(self.SECTION_DATES, [])}
+            for year_match in re.findall(r'\b(19\d{2}|20\d{2})\b', sent.text):
+                already_in_date = any(year_match in d_text for d_text in existing_date_texts)
+                if not already_in_date:
+                    start_date = f"{year_match}-01-01"
+                    end_date = f"{year_match}-12-31"
+                    result[self.SECTION_DATES].append({
+                        "text": year_match,
+                        "range": True,
+                        "start_date": start_date,
+                        "end_date": end_date
+                    })
 
             sentence_dict = {"text": sent.text.strip()}
             cleaned = {k: v for k, v in result.items() if v}
