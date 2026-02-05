@@ -1,28 +1,40 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:hc_device/api/remote_access.swagger.dart';
+import 'package:hc_device/device_discovery.provider.dart';
+import 'package:hc_device/providers/device.provider.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/providers/remote.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/pages/security/lock_flow.dart';
+import 'package:immich_mobile/providers/account_manager.provider.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
+import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/app_update.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/device_path_refresh.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
+import 'package:immich_mobile/utils/provider_utils.dart';
+import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/common/splash_screen.dart';
 import 'package:immich_mobile/widgets/security/local_auth_bottom_sheet.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
+import 'package:openapi/api.dart';
 
 @RoutePage()
 class SplashScreenPage extends StatefulHookConsumerWidget {
@@ -51,6 +63,121 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     }
 
     log.info("Resuming session at $endpoint");
+  }
+
+  Future<void> handleSyncFlow() async {
+    final backgroundManager = ref.read(backgroundSyncProvider);
+
+    await backgroundManager.syncLocal(full: true);
+    await backgroundManager.syncRemote();
+    await backgroundManager.hashAssets();
+
+    if (Store.get(StoreKey.syncAlbums, false)) {
+      await backgroundManager.syncLinkedAlbum();
+    }
+  }
+
+  Future<bool> validateUrl(String? url) async {
+    var isServerValid = false;
+
+    if (url?.isNotEmpty != true) {
+      return isServerValid;
+    }
+
+    final baseUrl = Uri.parse(url!);
+    final normalizedBaseUrl =
+        '${baseUrl.scheme}://${baseUrl.host}${baseUrl.port != 80 && baseUrl.port != 443 ? ':${baseUrl.port}' : ''}/photos';
+
+    final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
+    final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
+
+    try {
+      await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
+
+      await ref.read(serverInfoProvider.notifier).getServerInfo();
+
+      ref.read(devicePathRefreshServiceProvider).processAndSavePaths([
+        DevicePath(port: baseUrl.port, address: baseUrl.host, type: DevicePathType.public),
+      ]);
+      isServerValid = true;
+    } on ApiException {
+      isServerValid = false;
+    } on HandshakeException {
+      isServerValid = false;
+    } catch (_) {
+      isServerValid = false;
+    }
+    return isServerValid;
+  }
+
+  Future<bool> login(String email, String password) async {
+    invalidateAllApiRepositoryProviders(ref);
+
+    try {
+      final result = await ref.read(authProvider.notifier).login(email, password);
+      if (result.shouldChangePassword && !result.isAdmin) {
+        context.pushRoute(const ChangePasswordRoute());
+        return true;
+      }
+    } catch (_) {
+      return false;
+    }
+
+    final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
+
+    if (!onboardingWasShown) {
+      context.replaceRoute(const CuratorOnboardingRoute());
+      return true;
+    }
+
+    final isBeta = Store.isBetaTimelineEnabled;
+    if (isBeta) {
+      await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+      handleSyncFlow();
+      ref.read(websocketProvider.notifier).connect();
+      context.replaceRoute(const TabShellRoute());
+      return true;
+    }
+    context.replaceRoute(const TabControllerRoute());
+    return true;
+  }
+
+  Future<void> handleRA({
+    required RemoteProvider remoteProvider,
+    required DeviceProvider deviceProvider,
+    required DeviceDiscoveryController deviceDiscoveryProvider,
+    required DevicePathRefreshService devicePathRefreshServiceProvider,
+    UserData? userData,
+  }) async {
+    try {
+      final raRefreshToken = userData?.raRefreshToken ?? '';
+      final raFavoriteDeviceCertCommonName = userData?.raFavoriteDeviceCertCommonName ?? '';
+      final raClientId = userData?.raClientId ?? '';
+      final email = userData?.email ?? '';
+
+      deviceProvider.setHost(login: email, deviceID: raFavoriteDeviceCertCommonName);
+
+      if (raRefreshToken.isEmpty || raClientId.isEmpty) {
+        return;
+      }
+
+      await remoteProvider.setAuthTokenAndRefresh(refreshToken: raRefreshToken, clientId: raClientId);
+
+      if (raFavoriteDeviceCertCommonName.isEmpty) {
+        return;
+      }
+
+      final devices = await deviceDiscoveryProvider.startRemoteDiscovery();
+      final paths = devices
+          ?.firstWhere((device) => device.about?.certificateCommonName == raFavoriteDeviceCertCommonName)
+          .paths;
+
+      if (paths != null && paths.isNotEmpty) {
+        await devicePathRefreshServiceProvider.processAndSavePaths(paths);
+      }
+    } catch (e) {
+      //
+    }
   }
 
   void resumeSession() async {
@@ -114,6 +241,34 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
         },
       );
     } else {
+      final systemAccount = await ref.read(accountManagerProvider).getSystemAccount();
+      if (systemAccount != null) {
+        var password = await ref.read(accountManagerProvider).getSystemAccountPassword(systemAccount);
+        final userData = await ref.read(accountManagerProvider).getSystemAccountUserData(systemAccount);
+
+        final email = userData?.email ?? '';
+        password = password ?? '';
+        final baseUrl = userData?.baseUrl ?? '';
+
+        if (email.isNotEmpty && password.isNotEmpty && baseUrl.isNotEmpty) {
+          final isServerValid = await validateUrl(baseUrl);
+
+          if (isServerValid) {
+            final isLoginSuccess = await login(email, password);
+            if (isLoginSuccess) {
+              handleRA(
+                userData: userData,
+                deviceDiscoveryProvider: ref.read(deviceDiscoveryProvider),
+                remoteProvider: ref.read(remoteProvider),
+                deviceProvider: ref.read(deviceProvider),
+                devicePathRefreshServiceProvider: ref.read(devicePathRefreshServiceProvider),
+              );
+              return;
+            }
+          }
+        }
+      }
+
       log.severe('Missing crucial offline login info - Logging out completely');
       ref.read(authProvider.notifier).logout();
       if (mounted) context.replaceRoute(const LoginRoute());

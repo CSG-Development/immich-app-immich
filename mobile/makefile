@@ -14,6 +14,7 @@ pigeon:
 	dart run pigeon --input pigeon/native_clipboard_api.dart
 	dart run pigeon --input pigeon/update_api.dart
 	dart run pigeon --input pigeon/certificate_fetcher_api.dart
+	dart run pigeon --input pigeon/account_manager_api.dart
 	dart format lib/platform/native_sync_api.g.dart
 	dart format lib/platform/thumbnail_api.g.dart
 	dart format lib/platform/background_worker_api.g.dart
@@ -22,6 +23,7 @@ pigeon:
 	dart format lib/platform/native_clipboard_api.g.dart
 	dart format lib/platform/update_api.g.dart
 	dart format lib/platform/certificate_fetcher_api.g.dart
+	dart format lib/platform/account_manager_api.g.dart
 
 watch:
 	dart run build_runner watch --delete-conflicting-outputs

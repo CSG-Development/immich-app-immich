@@ -52,3 +52,5 @@ const double kUploadStatusFailed = -1.0;
 const double kUploadStatusCanceled = -2.0;
 
 const int kMinMonthsToEnableScrubberSnap = 12;
+
+const String accountType = "com.seagate.curator";

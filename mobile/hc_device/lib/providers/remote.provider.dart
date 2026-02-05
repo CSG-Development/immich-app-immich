@@ -106,6 +106,17 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
     }
   }
 
+  Future<void> setAuthTokenAndRefresh({
+    required String refreshToken,
+    required String clientId,
+  }) async {
+    _refreshToken = refreshToken;
+    _clientId = clientId;
+    _saveRefreshToken(refreshToken: refreshToken);
+    await refreshAccessToken();
+    notifyListeners();
+  }
+
   @override
   bool isRefreshRequest(Request? request) {
     return request?.url.path.contains('/auth/refresh') ?? false;

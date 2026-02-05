@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/account_manager.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
@@ -445,6 +446,8 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (result.shouldChangePassword && !result.isAdmin) {
           context.pushRoute(const ChangePasswordRoute());
         } else {
+          await ref.read(accountManagerProvider).createSystemAccount(email.value, passwordController.text);
+
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
             if (onboardingWasShown) {
