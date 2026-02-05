@@ -81,7 +81,10 @@ void main() async {
     ),
   );
 
-  await HttpCertPinningManager.storeRootCerts(['assets/tdci.pem', 'assets/fake-device-noveo.cer']);
+  await HttpCertPinningManager.storeRootCerts([
+    'assets/tdci.pem',
+    'assets/fake-device-noveo.cer',
+  ]);
 
   await certPinning.initialize();
 
