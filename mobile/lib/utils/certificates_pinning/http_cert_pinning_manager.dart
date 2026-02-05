@@ -128,8 +128,12 @@ class HttpCertPinningManager {
       }).toList();
 
       // Validate chain against configured root certificates.
-      final validator = CertificateChainValidator(_rootCertificates);
-      validator.validateChain(certificates);
+      try {
+        final validator = CertificateChainValidator(_rootCertificates);
+        validator.validateChain(certificates);
+      } catch (_) {
+        return;
+      }
 
       _log.fine('Certificate chain is valid for $host:$targetPort');
       _log.fine('Chain length: ${certificates.length}');
