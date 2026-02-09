@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:cancellation_token_http/http.dart';
 import 'package:flutter/material.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
@@ -26,11 +28,13 @@ import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
-import 'package:immich_mobile/services/auth.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
+import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:isar/isar.dart';
@@ -68,18 +72,30 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   final CancellationToken _cancellationToken = CancellationToken();
   final Logger _logger = Logger('BackgroundWorkerBgService');
 
+  final RemoteAccessDependencies _remoteAccessDependencies;
+  final ApiService _apiService;
+
   bool _isCleanedUp = false;
 
-  BackgroundWorkerBgService({required Isar isar, required Drift drift, required DriftLogger driftLogger})
-    : _isar = isar,
-      _drift = drift,
-      _driftLogger = driftLogger,
-      _backgroundHostApi = BackgroundWorkerBgHostApi() {
+  BackgroundWorkerBgService({
+    required Isar isar,
+    required Drift drift,
+    required DriftLogger driftLogger,
+    required RemoteAccessDependencies remoteAccessDependencies,
+    required ApiService apiService,
+  }) : _isar = isar,
+       _drift = drift,
+       _driftLogger = driftLogger,
+       _remoteAccessDependencies = remoteAccessDependencies,
+       _apiService = apiService,
+       _backgroundHostApi = BackgroundWorkerBgHostApi() {
     _ref = ProviderContainer(
       overrides: [
         dbProvider.overrideWithValue(isar),
         isarProvider.overrideWithValue(isar),
         driftProvider.overrideWith(driftOverride(drift)),
+        remoteAccessDependenciesProvider.overrideWithValue(_remoteAccessDependencies),
+        apiServiceProvider.overrideWithValue(_apiService),
       ],
     );
     BackgroundWorkerFlutterApi.setUp(this);
@@ -306,5 +322,24 @@ Future<void> backgroundSyncNativeEntrypoint() async {
 
   final (isar, drift, logDB) = await Bootstrap.initDB();
   await Bootstrap.initDomain(isar, drift, logDB, shouldBufferLogs: false, listenStoreUpdates: false);
-  await BackgroundWorkerBgService(isar: isar, drift: drift, driftLogger: logDB).init();
+
+  final certPinning = HttpCertPinningManager(
+    config: const CertPinningConfig(
+      allowFallback: false,
+      installRootsInSecurityContext: true,
+    ),
+  );
+  await certPinning.initialize();
+
+  final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
+
+  final apiservice = ApiService(certPinning: certPinning);
+
+  await BackgroundWorkerBgService(
+    isar: isar,
+    drift: drift,
+    driftLogger: logDB,
+    remoteAccessDependencies: remoteAccessDependencies,
+    apiService: apiservice,
+  ).init();
 }

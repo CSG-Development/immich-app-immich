@@ -43,7 +43,7 @@
       sharedLink = await getMySharedLink({ password: value, key, slug });
       setSharedLink(sharedLink);
       passwordRequired = false;
-      title = (sharedLink.album ? sharedLink.album.albumName : $t('public_share')) + ' - Curator Photos';
+      title = (sharedLink.album ? sharedLink.album.albumName : $t('public_share')) + ' - Personal Cloud Photos';
       description =
         sharedLink.description ||
         $t('shared_photos_and_videos_count', { values: { assetCount: sharedLink.assets.length } });

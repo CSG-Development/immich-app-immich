@@ -2,7 +2,7 @@ name: immich_mobile
 description: Immich - selfhosted backup media file on mobile phone
 
 publish_to: 'none'
-version: 1.0.17+1
+version: 1.0.18+1
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -14,7 +14,6 @@ dependencies:
 
   async: ^2.11.0
   auto_route: ^9.2.0
-  background_downloader: ^9.2.5
   cached_network_image: ^3.4.1
   cancellation_token_http: ^2.1.0
   cast: ^2.1.0
@@ -77,11 +76,14 @@ dependencies:
   firebase_performance: ^0.10.1+6
   ffmpeg_kit_flutter_new: ^3.2.0
 
+  background_downloader:
+    path: background_downloader
+
   image_editor:
     path: ../image_editor
 
-  homecloud_frontend:
-    path: ../homecloud_frontend
+  hc_device:
+    path: hc_device
 
   native_video_player:
     git:
@@ -99,6 +101,8 @@ dependencies:
   # DB
   drift: ^2.23.1
   drift_flutter: ^0.2.4
+  basic_utils: ^5.8.2
+  pub_semver: ^2.2.0
 
 dependency_overrides:
   intl: ^0.20.2

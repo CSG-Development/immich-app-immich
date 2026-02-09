@@ -87,7 +87,8 @@ enum StoreKey<T> {
   onboardingViewedCount<int>._(2002),
   appLockTimeoutIndex<int>._(2003),
   devEnableSettingsOnLogin<bool>._(2004),
-  devStaticDeviceUrl<String>._(2005);
+  devStaticDeviceUrl<String>._(2005),
+  rootCerts<String>._(2006);
 
   const StoreKey._(this.id);
   final int id;

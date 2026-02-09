@@ -50,7 +50,7 @@ import AVFoundation
 
     TelemetryWrapperPlugin.register(with: self.registrar(forPlugin: "TelemetryWrapperPlugin")!)
     startAirPlayManager(flutterViewController: controller)
-    
+
     BackgroundServicePlugin.setPluginRegistrantCallback { registry in
       if !registry.hasPlugin("org.cocoapods.path-provider-foundation") {
         PathProviderPlugin.register(with: registry.registrar(forPlugin: "org.cocoapods.path-provider-foundation")!)
@@ -85,6 +85,7 @@ import AVFoundation
     ThumbnailApiSetup.setUp(binaryMessenger: binaryMessenger, api: ThumbnailApiImpl())
     BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: BackgroundWorkerApiImpl())
     NativeClipboardApiSetup.setUp(binaryMessenger: binaryMessenger, api: ClipboardApiImpl())
+    CertificateFetcherApiSetup.setUp(binaryMessenger: binaryMessenger, api: CertificateFetcherApiImplSimple())
   }
 }
 

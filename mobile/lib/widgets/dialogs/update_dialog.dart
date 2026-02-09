@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:immich_mobile/platform/update_api.g.dart';
@@ -8,7 +9,6 @@ import 'package:immich_mobile/providers/infrastructure/app_update_progress.provi
 import 'package:flutter/services.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:flutter/widgets.dart' show WidgetsBinding;
 
 Future<bool> showUpdateAvailableDialog({
   required BuildContext context,
@@ -29,18 +29,18 @@ Future<bool> showUpdateAvailableDialog({
             final int progress = progressState.percent;
             final bool isDownloading = progressState.isDownloading;
             return AlertDialog(
-              title: const Text('Update available'),
+              title: const Text('curator.update_dialog_title').tr(),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Version $version'),
+                  Text('${'curator.update_dialog_version'.tr()} $version'),
                   if (changelog != null && changelog.isNotEmpty) ...[const SizedBox(height: 8), Text(changelog)],
                   if (isDownloading || (progress > 0 && progress < 100)) ...[
                     const SizedBox(height: 16),
                     LinearProgressIndicator(value: progress == 0 ? null : progress / 100.0),
                     const SizedBox(height: 8),
-                    Text('Downloading... $progress%'),
+                    Text('${'curator.update_dialog_downloading'.tr()}... $progress%'),
                   ],
                 ],
               ),
@@ -50,9 +50,9 @@ Future<bool> showUpdateAvailableDialog({
                     onPressed: () {
                       // Clear dialog-specific callbacks in case they were set earlier
                       UpdateCallbacks.setUp(null);
-                      context.maybePop(false);
+                      ctx.maybePop(false);
                     },
-                    child: const Text('Later'),
+                    child: const Text('curator.update_dialog_later').tr(),
                   ),
                 if (progress >= 100) ...[
                   FilledButton(
@@ -61,11 +61,14 @@ Future<bool> showUpdateAvailableDialog({
                         final res = await UpdateApi().installDownloadedUpdate();
                         log.info('install_result success=${res.success} code=${res.errorCode} message=${res.message}');
                         if (!res.success) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(res.message ?? 'Installation failed (${res.errorCode ?? 'unknown'})'),
-                              ),
+                          if (ctx.mounted) {
+                            ImmichToast.show(
+                              context: ctx,
+                              msg:
+                                  res.message ??
+                                  '${'curator.update_dialog_installation_failed'.tr()} (${res.errorCode ?? 'unknown'})',
+                              toastType: ToastType.error,
+                              gravity: ToastGravity.BOTTOM,
                             );
                           }
                           // Clear dialog-specific callbacks to avoid leaks
@@ -74,8 +77,13 @@ Future<bool> showUpdateAvailableDialog({
                         }
                       } catch (e) {
                         log.severe('install_error $e');
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Installation error: $e')));
+                        if (ctx.mounted) {
+                          ImmichToast.show(
+                            context: ctx,
+                            msg: '${'curator.update_dialog_installation_error'.tr()} $e',
+                            toastType: ToastType.error,
+                            gravity: ToastGravity.BOTTOM,
+                          );
                         }
                         // Clear dialog-specific callbacks to avoid leaks
                         UpdateCallbacks.setUp(null);
@@ -83,9 +91,9 @@ Future<bool> showUpdateAvailableDialog({
                       }
                       // Clear dialog-specific callbacks when done
                       UpdateCallbacks.setUp(null);
-                      if (context.mounted) context.maybePop(true);
+                      if (ctx.mounted) ctx.maybePop(true);
                     },
-                    child: const Text('Update'),
+                    child: const Text('curator.update_dialog_installation_update').tr(),
                   ),
                 ] else if (isDownloading && progress < 100) ...[
                   TextButton(
@@ -94,13 +102,18 @@ Future<bool> showUpdateAvailableDialog({
                       UpdateCallbacks.setUp(null);
                       const MethodChannel('immich/update_control').invokeMethod('cancelDownload');
                       ref.read(updateDownloadProvider.notifier).reset();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Canceled')));
+                      if (ctx.mounted) {
+                        ImmichToast.show(
+                          context: ctx,
+                          msg: 'curator.update_dialog_installation_canceled'.tr(),
+                          toastType: ToastType.error,
+                          gravity: ToastGravity.BOTTOM,
+                        );
                       }
                     },
-                    child: const Text('Cancel'),
+                    child: const Text('curator.update_dialog_installation_cancel').tr(),
                   ),
-                  const FilledButton(onPressed: null, child: Text('Downloading')),
+                  FilledButton(onPressed: null, child: const Text('curator.update_dialog_downloading').tr()),
                 ] else ...[
                   FilledButton(
                     onPressed: () async {
@@ -118,32 +131,35 @@ Future<bool> showUpdateAvailableDialog({
                             ref.read(updateDownloadProvider.notifier).error(m);
                             // Clear dialog-specific callbacks
                             UpdateCallbacks.setUp(null);
-                           // Close the update modal and show a toast using root navigator context
-                           if (context.mounted) {
-                             context.maybePop(false);
-                           }
-                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                             Future<void>.delayed(const Duration(milliseconds: 50), () {
-                               final navState = ref.read(appRouterProvider).navigatorKey.currentState;
-                               final overlayCtx = navState?.overlay?.context ?? navState?.context ?? context;
-                               try {
-                                 if (overlayCtx.mounted) {
-                                   ImmichToast.show(
-                                     context: overlayCtx,
-                                     msg: m.isEmpty ? 'Download error' : m,
-                                     toastType: ToastType.error,
-                                     gravity: ToastGravity.BOTTOM,
-                                   );
-                                   return;
-                                 }
-                               } catch (_) {}
-                               if (context.mounted) {
-                                 ScaffoldMessenger.of(context).showSnackBar(
-                                   SnackBar(content: Text(m.isEmpty ? 'Download error' : m)),
-                                 );
-                               }
-                             });
-                           });
+                            // Close the update modal and show a toast using root navigator context
+                            if (ctx.mounted) {
+                              ctx.maybePop(false);
+                            }
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Future<void>.delayed(const Duration(milliseconds: 50), () {
+                                final navState = ref.read(appRouterProvider).navigatorKey.currentState;
+                                final overlayCtx = navState?.overlay?.context ?? navState?.context ?? ctx;
+                                try {
+                                  if (overlayCtx.mounted) {
+                                    ImmichToast.show(
+                                      context: overlayCtx,
+                                      msg: m.isEmpty ? 'curator.update_dialog_download_error'.tr() : m,
+                                      toastType: ToastType.error,
+                                      gravity: ToastGravity.BOTTOM,
+                                    );
+                                    return;
+                                  }
+                                } catch (_) {}
+                                if (ctx.mounted) {
+                                  ImmichToast.show(
+                                    context: ctx,
+                                    msg: m.isEmpty ? 'curator.update_dialog_download_error'.tr() : m,
+                                    toastType: ToastType.error,
+                                    gravity: ToastGravity.BOTTOM,
+                                  );
+                                }
+                              });
+                            });
                           },
                           onCompleted: () {
                             log.info('download_completed');
@@ -157,7 +173,7 @@ Future<bool> showUpdateAvailableDialog({
                         await UpdateApi().startDownload(version, downloadUrl, sha256);
                       } catch (_) {}
                     },
-                    child: const Text('Download'),
+                    child: const Text('curator.update_dialog_download').tr(),
                   ),
                 ],
               ],

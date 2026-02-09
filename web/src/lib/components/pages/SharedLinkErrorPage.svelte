@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-  <title>Oops! Error - Curator Photos</title>
+  <title>Oops! Error - Personal Cloud Photos</title>
 </svelte:head>
 
 <section class="flex flex-col px-4 h-dvh w-dvw place-content-center place-items-center">

@@ -15,7 +15,7 @@ export const load = (async ({ fetch }) => {
   return {
     error,
     meta: {
-      title: 'Curator Photos',
+      title: 'Personal Cloud Photos',
     },
   };
 }) satisfies LayoutLoad;

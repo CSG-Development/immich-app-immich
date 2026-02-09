@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:homecloud_frontend/device_discovery.provider.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
+import 'package:hc_device/device_discovery.provider.dart';
+import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/network.service.dart';

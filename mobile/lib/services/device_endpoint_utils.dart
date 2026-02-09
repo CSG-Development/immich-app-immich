@@ -1,4 +1,4 @@
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
+import 'package:hc_device/api/remote_access.swagger.dart';
 
 class DeviceEndpointUtils {
   const DeviceEndpointUtils._();

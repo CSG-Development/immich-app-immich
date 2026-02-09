@@ -37,6 +37,7 @@
   import { AssetVisibility, getAssetInfo } from '@immich/sdk';
 
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import UploadCover from '$lib/components/shared-components/drag-and-drop-upload-overlay.svelte';
   import {
     notificationController,
     NotificationType,
@@ -261,3 +262,4 @@
     </ButtonContextMenu>
   </AssetSelectControlBar>
 {/if}
+<UploadCover />

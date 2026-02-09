@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
-import 'package:homecloud_frontend/homecloud_frontend.dart';
-import 'package:homecloud_frontend/api/remote_access.swagger.dart';
+import 'package:hc_device/hc_device.dart';
+import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -11,8 +11,8 @@ import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
 
-/// Service that handles refreshing device paths from homecloud_frontend.
-/// Checks authorization in both host app and homecloud_frontend before refreshing.
+/// Service that handles refreshing device paths from hc_device.
+/// Checks authorization in both host app and hc_device before refreshing.
 class DevicePathRefreshService {
   final Ref _ref;
   final Logger _log = Logger('DevicePathRefreshService');
@@ -50,7 +50,7 @@ class DevicePathRefreshService {
     }
 
     if (!_isRemoteAuthenticated()) {
-      _log.fine('Aborting path refresh: remote (homecloud_frontend) is not authenticated');
+      _log.fine('Aborting path refresh: remote (hc_device) is not authenticated');
       return;
     }
 
@@ -92,13 +92,13 @@ class DevicePathRefreshService {
     return isAuthenticated;
   }
 
-  /// Checks if user is authenticated in homecloud_frontend.
+  /// Checks if user is authenticated in hc_device.
   bool _isRemoteAuthenticated() {
     final isAuthenticated = _ref.read(remoteProvider).isAuthenticated;
     if (!isAuthenticated) {
-      _log.fine('Skipping path refresh: user not authenticated in homecloud_frontend');
+      _log.fine('Skipping path refresh: user not authenticated in hc_device');
     } else {
-      _log.finer('Remote (homecloud_frontend) authentication check passed');
+      _log.finer('Remote (hc_device) authentication check passed');
     }
     return isAuthenticated;
   }

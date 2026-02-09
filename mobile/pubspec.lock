@@ -84,13 +84,12 @@ packages:
   background_downloader:
     dependency: "direct main"
     description:
-      name: background_downloader
-      sha256: "9ed74c55750932178f6989ba8a659687c2a102e05b70f561a1b3f047a5dda790"
-      url: "https://pub.dev"
-    source: hosted
+      path: background_downloader
+      relative: true
+    source: path
     version: "9.2.5"
   basic_utils:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: basic_utils
       sha256: "548047bef0b3b697be19fa62f46de54d99c9019a69fb7db92c69e19d87f633c7"
@@ -983,6 +982,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  hc_device:
+    dependency: "direct main"
+    description:
+      path: hc_device
+      relative: true
+    source: path
+    version: "0.0.0"
   home_widget:
     dependency: "direct main"
     description:
@@ -991,13 +997,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.8.0"
-  homecloud_frontend:
-    dependency: "direct main"
-    description:
-      path: "../homecloud_frontend"
-      relative: true
-    source: path
-    version: "0.0.0"
   hooks_riverpod:
     dependency: "direct main"
     description:
@@ -1700,7 +1699,7 @@ packages:
     source: hosted
     version: "6.1.5+1"
   pub_semver:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: pub_semver
       sha256: "5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585"

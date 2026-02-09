@@ -83,7 +83,7 @@
 </script>
 
 <svelte:head>
-  <title>{page.data.meta?.title || 'Web'} - Curator Photos</title>
+  <title>{page.data.meta?.title || 'Web'} - Personal Cloud Photos</title>
   <link rel="manifest" href="/photos/static/manifest.json" crossorigin="use-credentials" />
   <meta name="theme-color" content="currentColor" />
   <AppleHeader />

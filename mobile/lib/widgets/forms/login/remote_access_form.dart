@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 
 import 'package:flutter_svg/svg.dart';
-import 'package:homecloud_frontend/providers/hcdevice.provider.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/common/multi_finger_tap_detector.dart';
