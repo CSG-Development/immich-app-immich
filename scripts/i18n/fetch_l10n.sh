@@ -17,8 +17,8 @@ else
 fi
 
 if ! [ -x "$(command -v localization_tool)" ]; then
-	#pip install git+https://gitlabfr.noveogroup.com/internal/localization-tool.git
-    pip install -e ../../localization-tool
+	pip install git+https://gitlabfr.noveogroup.com/internal/localization-tool.git
+    #pip install -e ../../localization-tool
 fi
 
 localization_tool -c scripts/i18n/config.yaml
