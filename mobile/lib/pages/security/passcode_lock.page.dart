@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
@@ -10,6 +13,7 @@ import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/hooks/add_biometric_auth_hook.dart';
 import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
 
@@ -24,6 +28,20 @@ class PasscodeLockPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(() {
+      if (context.isTablet) return () {};
+
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      return () {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      };
+    }, []);
+
     final secureStorage = ref.watch(secureStorageServiceProvider);
 
     final stage = useState<_PasscodeStage>(
@@ -199,7 +217,15 @@ class PasscodeLockPage extends HookConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: 40),
-                    _PasscodeKeypad(onDigitTap: onDigitTap, onBackspace: onBackspace, isLoading: isLoading.value),
+                    Align(
+                      alignment: AlignmentGeometry.center,
+                      child: _PasscodeKeypad(
+                        onDigitTap: onDigitTap,
+                        onBackspace: onBackspace,
+                        isLoading: isLoading.value,
+                      ),
+                    ),
+
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -275,35 +301,49 @@ class _PasscodeKeypad extends StatelessWidget {
       [null, '0', 'back'],
     ];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final row in keys) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: row.map((value) {
-                if (value == null) {
-                  return const Expanded(child: SizedBox(height: 72));
-                }
-                if (value == 'back') {
-                  return Expanded(
-                    child: _KeypadButton(
-                      onTap: isLoading ? null : onBackspace,
-                      child: Icon(Icons.backspace_outlined, size: 24.0, color: context.themeData.colorScheme.onSurface),
-                    ),
-                  );
-                }
-                return Expanded(
-                  child: _KeypadButton(label: value, onTap: isLoading ? null : () => onDigitTap(value)),
-                );
-              }).toList(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = math.min(constraints.maxWidth, constraints.maxHeight);
+        final boardSize = math.min(size, 360.0);
+        dPrint(() => 'boardSize $boardSize');
+        return SizedBox(
+          width: boardSize,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final row in keys) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: row.map((value) {
+                      if (value == null) {
+                        return const Expanded(child: SizedBox(height: 72));
+                      }
+                      if (value == 'back') {
+                        return Expanded(
+                          child: _KeypadButton(
+                            onTap: isLoading ? null : onBackspace,
+                            child: Icon(
+                              Icons.backspace_outlined,
+                              size: 24.0,
+                              color: context.themeData.colorScheme.onSurface,
+                            ),
+                          ),
+                        );
+                      }
+                      return Expanded(
+                        child: _KeypadButton(label: value, onTap: isLoading ? null : () => onDigitTap(value)),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-          ],
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 }
