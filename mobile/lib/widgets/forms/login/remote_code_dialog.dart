@@ -12,8 +12,15 @@ class RemoteCodeModal extends HookConsumerWidget {
   final Future<void> Function()? onSuccess;
   final String email;
   final VoidCallback? onEmailNotAllowed;
+  final Future<void> Function() sendCode;
 
-  const RemoteCodeModal({super.key, required this.email, this.onSuccess, this.onEmailNotAllowed});
+  const RemoteCodeModal({
+    super.key,
+    required this.email,
+    required this.sendCode,
+    this.onSuccess,
+    this.onEmailNotAllowed,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,6 +37,32 @@ class RemoteCodeModal extends HookConsumerWidget {
 
     final remoteAuth = ref.watch(remoteAuthProvider);
 
+    handleInitiateState() {
+      final state = remoteAuth.state;
+      if (state.error != null) {
+        remoteCodeInitiateError.value = true;
+        switch (state.error) {
+          case RemoteAuthError.server:
+            remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
+            unableToConnect.value = true;
+          case RemoteAuthError.notAllowed:
+            remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+            emailNotAllowed.value = true;
+          case RemoteAuthError.tooManyRequests:
+            remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+            tooManyRequests.value = true;
+          default:
+            remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
+            break;
+        }
+      }
+    }
+
+    useEffect(() {
+      handleInitiateState();
+      return null;
+    }, []);
+
     Future<void> sendRemoteCode() async {
       // Avoid overlapping send operations
       if (remoteCodeLoading.value && !remoteCodeExpired.value) {
@@ -42,36 +75,10 @@ class RemoteCodeModal extends HookConsumerWidget {
       tooManyRequests.value = false;
       unableToConnect.value = false;
 
-      try {
-        final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
-        await remoteAuth.initiate(email: email, clientFriendlyName: clientFriendlyName);
+      await sendCode();
 
-        final state = remoteAuth.state;
-        if (state.error != null) {
-          remoteCodeInitiateError.value = true;
-          switch (state.error) {
-            case RemoteAuthError.server:
-              remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
-              unableToConnect.value = true;
-            case RemoteAuthError.notAllowed:
-              remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
-              emailNotAllowed.value = true;
-            case RemoteAuthError.tooManyRequests:
-              remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
-              tooManyRequests.value = true;
-            default:
-              remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
-              break;
-          }
-        } else {
-          onSuccess?.call();
-        }
-      } catch (_) {
-        remoteCodeInitiateError.value = true;
-        remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
-      } finally {
-        remoteCodeLoading.value = false;
-      }
+      handleInitiateState();
+      remoteCodeLoading.value = false;
     }
 
     useEffect(() {
@@ -82,12 +89,6 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeController.addListener(listener);
       return () => remoteCodeController.removeListener(listener);
     }, [remoteCodeController]);
-
-    // Initiate remote access (send code) when the dialog opens
-    useEffect(() {
-      sendRemoteCode();
-      return null;
-    }, []);
 
     /// Validate the remote access code and get access and refresh tokens
     ///
@@ -342,14 +343,22 @@ class RemoteCodeModal extends HookConsumerWidget {
 /// Show modal dialog for remote code input
 Future<void> showRemoteCodeModal({
   required BuildContext context,
+  required Future<void> Function({required String clientFriendlyName, required String email}) initiate,
   required String email,
   Future<void> Function()? onSuccess,
   VoidCallback? onEmailNotAllowed,
-}) {
+}) async {
+  sendCode() async {
+    final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
+    await initiate(email: email, clientFriendlyName: clientFriendlyName);
+  }
+
+  await sendCode();
+
   return showDialog(
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) =>
-        RemoteCodeModal(onSuccess: onSuccess, onEmailNotAllowed: onEmailNotAllowed, email: email),
+        RemoteCodeModal(onSuccess: onSuccess, sendCode: sendCode, onEmailNotAllowed: onEmailNotAllowed, email: email),
   );
 }
