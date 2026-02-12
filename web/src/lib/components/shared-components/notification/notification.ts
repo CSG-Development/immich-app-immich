@@ -5,6 +5,7 @@ export enum NotificationType {
   Info = 'Info',
   Error = 'Error',
   Warning = 'Warning',
+  Success = 'Success',
 }
 
 export type NotificationButton = {

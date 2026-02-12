@@ -29,7 +29,7 @@
 
     notificationController.show({
       message: $t('tag_created', { values: { tag: tag.value } }),
-      type: NotificationType.Info,
+      type: NotificationType.Success,
     });
 
     onClose(tag);

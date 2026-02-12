@@ -56,7 +56,7 @@
       <SingleGridRow class="grid grid-flow-col md:grid-auto-fill-28 grid-auto-fill-20 gap-x-4">
         {#snippet children({ itemCount })}
           {#each people.slice(0, itemCount) as person (person.id)}
-            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative">
+            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative max-w-29">
               <ImageThumbnail
                 circle
                 shadow
@@ -69,7 +69,7 @@
                   <Icon path={mdiHeart} size="24" class="text-white" />
                 </div>
               {/if}
-              <p class="mt-2 text-ellipsis text-sm font-medium dark:text-white">{person.name}</p>
+              <p class="mt-2 text-ellipsis text-sm dark:text-white">{person.name}</p>
             </a>
           {/each}
         {/snippet}
@@ -91,7 +91,7 @@
         {#snippet children({ itemCount })}
           {#each places.slice(0, itemCount) as item (item.data.id)}
             <a
-              class="relative"
+              class="relative w-40"
               href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`)}
               draggable="false"
             >
