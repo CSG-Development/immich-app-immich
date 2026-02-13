@@ -62,14 +62,14 @@
 
   <main class="relative">
     <div
-      class={`${scrollbarClass} absolute ${hasTitleClass} w-full overflow-y-auto ${mobileDevice.maxMd ? 'px-2' : 'px-6'}`}
+      class={`${scrollbarClass} absolute ${hasTitleClass} w-full overflow-y-auto ${mobileDevice.maxMd ? 'px-3' : 'px-4'}`}
       use:useActions={use}
     >
       {@render children?.()}
     </div>
     {#if title || buttons}
       <div
-        class={`relative flex h-16 place-items-center justify-between border-b border-immich-gray-border dark:border-immich-dark-gray-border ${mobileDevice.maxMd ? 'mx-2' : 'mx-6'} text-dark`}
+        class={`relative flex h-16 place-items-center justify-between border-b border-immich-gray-border dark:border-immich-dark-gray-border ${mobileDevice.maxMd ? 'px-3' : 'px-4'} text-dark`}
       >
         <div class="flex items-center">
           {#if title}

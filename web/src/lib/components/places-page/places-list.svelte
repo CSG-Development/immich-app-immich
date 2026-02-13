@@ -1,12 +1,12 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
   import { PlacesGroupBy, type PlacesViewSettings } from '$lib/stores/preferences.store';
   import { normalizeSearchString } from '$lib/utils/string-utils';
   import { type AssetResponseDto } from '@immich/sdk';
-  import { mdiMapMarkerOff } from '@mdi/js';
   import { groupBy } from 'lodash-es';
   import PlacesCardGroup from './places-card-group.svelte';
 
+  import emptyPlaces from '$lib/assets/empty-places.svg';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import { type PlacesGroup, getSelectedPlacesGroupOption } from '$lib/utils/places-utils';
   import { t } from 'svelte-i18n';
   import { run } from 'svelte/legacy';
@@ -112,10 +112,5 @@
     {/each}
   {/if}
 {:else}
-  <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
-    <div class="flex flex-col content-center items-center text-center">
-      <Icon path={mdiMapMarkerOff} size="3.5em" />
-      <p class="mt-5 text-3xl font-medium">{$t('no_places')}</p>
-    </div>
-  </div>
+  <EmptyPlaceholder text={$t('search_no_places')} src={emptyPlaces} />
 {/if}
