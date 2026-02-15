@@ -89,7 +89,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
     },
     clip: {
       enabled: true,
-      modelName: 'ViT-B-32__openai',
+      modelName: 'ViT-SO400M-16-SigLIP2-512__webli',
     },
     duplicateDetection: {
       enabled: true,
