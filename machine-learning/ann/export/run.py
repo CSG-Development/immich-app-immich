@@ -144,7 +144,7 @@ def main() -> None:
             "No CUDA available, cannot create fp16 model! proceeding to create a fp32 model (use only for testing)"
         )
     models = [
-        ClipVision("ViT-B-32", "openai", device),
+        ClipVision("ViT-SO400M-16-SigLIP2-512", "webli", device),
         ArcFace("arcfaceresnet8-100_rec.onnx", device),
         SCRFD("scrfd_10g_gnkps.onnx.onnx", device),
     ]
