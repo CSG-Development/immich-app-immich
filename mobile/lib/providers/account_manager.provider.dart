@@ -84,10 +84,18 @@ class AccountManager {
     this._apiService,
   ): super();
 
-
   Future<Account?> getSystemAccount() async {
     try {
-      return (await _accountManagerApi.getAccounts()).firstOrNull;
+      final accounts = await _accountManagerApi.getAccounts();
+
+      // Only consider accounts created by this app (matched by accountType).
+      // This prevents attempting to access credentials of Google/Samsung/other accounts,
+      // which can throw SecurityException on some Android versions/ROMs.
+      final filtered = accounts.where((account) => account.type == accountType);
+      if (filtered.isEmpty) {
+        return null;
+      }
+      return filtered.first;
     } catch (error, stackTrace) {
       _log.severe('Error getSystemAccount', error, stackTrace);
       return null;
@@ -138,7 +146,9 @@ class AccountManager {
 
   Future<String?> getSystemAccountPassword(Account account) async {
     try {
-      return _accountManagerApi.getPassword(account);
+      // Await so that PlatformException / SecurityException thrown by the
+      // platform side is caught here instead of bubbling up to the caller.
+      return await _accountManagerApi.getPassword(account);
     } catch (error, stackTrace) {
       _log.severe('Error getSystemAccountPassword', error, stackTrace);
       return null;

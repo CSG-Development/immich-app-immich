@@ -12,6 +12,7 @@ class AccountManagerApiImpl(private val context: Context) : AccountManagerApi {
 
     companion object {
         private const val TAG = "AccountManagerApiImpl"
+        private const val APP_ACCOUNT_TYPE = "com.seagate.curator"
         const val KEY_OC_ACCOUNT_VERSION = "oc_account_version";
         const val KEY_OC_BASE_URL = "oc_base_url";
         const val KEY_OC_DISPLAY_NAME = "oc_display_name";
@@ -47,7 +48,10 @@ class AccountManagerApiImpl(private val context: Context) : AccountManagerApi {
     override fun getAccounts(callback: (Result<List<Account>>) -> Unit) {
         coroutineScope.launch {
             try {
-                val androidAccounts = accountManager.accounts
+                // Only expose this app's accounts to the Dart side to avoid
+                // accidentally operating on Google/Samsung/other provider accounts,
+                // which can trigger SecurityException on newer Android versions.
+                val androidAccounts = accountManager.getAccountsByType(APP_ACCOUNT_TYPE)
                 val accounts = androidAccounts.map { androidAccount ->
                     Account(
                         name = androidAccount.name,

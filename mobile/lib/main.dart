@@ -65,6 +65,17 @@ void main() async {
 
   final (isar, drift, logDb) = await Bootstrap.initDB();
   await Bootstrap.initDomain(isar, drift, logDb);
+
+
+  final certPinning = HttpCertPinningManager(
+    config: const CertPinningConfig(allowFallback: false, installRootsInSecurityContext: true)
+  );
+
+  await HttpCertPinningManager.storeRootCerts(['assets/tdci.pem', 'assets/fake-device-noveo.cer']);
+  await certPinning.initialize();
+  final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
+  final apiservice = ApiService(certPinning: certPinning);
+
   await initApp();
   // Warm-up isolate pool for worker manager
   await workerManager.init(dynamicSpawning: true);
@@ -73,24 +84,6 @@ void main() async {
 
   // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
   // await telemetryChannel.invokeMethod('init', ['test']);
-
-  final certPinning = HttpCertPinningManager(
-    config: const CertPinningConfig(
-      allowFallback: false,
-      installRootsInSecurityContext: true
-    ),
-  );
-
-  await HttpCertPinningManager.storeRootCerts([
-    'assets/tdci.pem',
-    'assets/fake-device-noveo.cer',
-  ]);
-
-  await certPinning.initialize();
-
-  final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
-
-  final apiservice = ApiService(certPinning: certPinning);
 
   runApp(
     ProviderScope(
@@ -144,10 +137,7 @@ Future<void> initApp() async {
 
   initializeTimeZones();
 
-  final certs = await HttpCertPinningManager.loadRootCertsBytes([
-    'assets/tdci.pem',
-    'assets/fake-device-noveo.cer'
-  ]);
+  final certs = await HttpCertPinningManager.loadRootCertsBytes(['assets/tdci.pem', 'assets/fake-device-noveo.cer']);
 
   // Initialize the file downloader
   await FileDownloader().configure(

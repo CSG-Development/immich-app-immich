@@ -241,32 +241,64 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
         },
       );
     } else {
-      final systemAccount = await ref.read(accountManagerProvider).getSystemAccount();
+      dynamic systemAccount;
+      try {
+        systemAccount = await ref.read(accountManagerProvider).getSystemAccount().timeout(const Duration(seconds: 3));
+      } on TimeoutException {
+        log.warning('getSystemAccount timed out - skipping account auto-login');
+        systemAccount = null;
+      } catch (error, stackTrace) {
+        log.severe('getSystemAccount failed', error, stackTrace);
+        systemAccount = null;
+      }
+
       if (systemAccount != null) {
-        var password = await ref.read(accountManagerProvider).getSystemAccountPassword(systemAccount);
-        final userData = await ref.read(accountManagerProvider).getSystemAccountUserData(systemAccount);
+        try {
+          var password = await ref
+              .read(accountManagerProvider)
+              .getSystemAccountPassword(systemAccount)
+              .timeout(const Duration(seconds: 3));
+          final userData = await ref
+              .read(accountManagerProvider)
+              .getSystemAccountUserData(systemAccount)
+              .timeout(const Duration(seconds: 3));
 
-        final email = userData?.email ?? '';
-        password = password ?? '';
-        final baseUrl = userData?.baseUrl ?? '';
+          final email = userData?.email ?? '';
+          password = password ?? '';
+          final baseUrl = userData?.baseUrl ?? '';
 
-        if (email.isNotEmpty && password.isNotEmpty && baseUrl.isNotEmpty) {
-          final isServerValid = await validateUrl(baseUrl);
+          if (email.isNotEmpty && password.isNotEmpty && baseUrl.isNotEmpty) {
+            final isServerValid = await validateUrl(baseUrl);
 
-          if (isServerValid) {
-            final isLoginSuccess = await login(email, password);
-            if (isLoginSuccess) {
-              handleRA(
-                userData: userData,
-                deviceDiscoveryProvider: ref.read(deviceDiscoveryProvider),
-                remoteProvider: ref.read(remoteProvider),
-                deviceProvider: ref.read(deviceProvider),
-                devicePathRefreshServiceProvider: ref.read(devicePathRefreshServiceProvider),
-              );
-              return;
+            if (isServerValid) {
+              final isLoginSuccess = await login(email, password);
+              if (isLoginSuccess) {
+                handleRA(
+                  userData: userData,
+                  deviceDiscoveryProvider: ref.read(deviceDiscoveryProvider),
+                  remoteProvider: ref.read(remoteProvider),
+                  deviceProvider: ref.read(deviceProvider),
+                  devicePathRefreshServiceProvider: ref.read(devicePathRefreshServiceProvider),
+                );
+                return;
+              }
             }
+          } else {
+            log.warning(
+              'system account data incomplete - '
+              'email/password/baseUrl must be non-empty',
+            );
           }
+        } on TimeoutException {
+          log.warning(
+            'timeout while reading password/user data from AccountManager '
+            '- skipping account auto-login',
+          );
+        } catch (error, stackTrace) {
+          log.severe('error during system account auto-login', error, stackTrace);
         }
+      } else {
+        log.info('no system account found - falling back to login route');
       }
 
       log.severe('Missing crucial offline login info - Logging out completely');
