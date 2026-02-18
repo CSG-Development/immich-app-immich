@@ -18,6 +18,15 @@ Future<List<PersonDto>> getAllPeople(Ref ref) async {
 }
 
 @riverpod
+Future<List<PersonDto>> getAllPeopleWithParams(Ref ref, String? closestPersonId) async {
+  final PersonService personService = ref.read(personServiceProvider);
+
+  final people = await personService.getAllPeople(closestPersonId: closestPersonId);
+
+  return people;
+}
+
+@riverpod
 Future<RenderList> personAssets(Ref ref, String personId) async {
   final PersonService personService = ref.read(personServiceProvider);
   final assets = await personService.getPersonAssets(personId);
@@ -33,6 +42,18 @@ Future<bool> updatePersonName(Ref ref, String personId, String updatedName) asyn
   final person = await personService.updateName(personId, updatedName);
 
   if (person != null && person.name == updatedName) {
+    ref.invalidate(getAllPeopleProvider);
+    return true;
+  }
+  return false;
+}
+
+@riverpod
+Future<bool> mergePerson(Ref ref, String personId, List<String> ids) async {
+  final PersonService personService = ref.read(personServiceProvider);
+  final result = await personService.mergePerson(personId, ids);
+
+  if (result != null) {
     ref.invalidate(getAllPeopleProvider);
     return true;
   }
