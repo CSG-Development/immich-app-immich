@@ -68,17 +68,21 @@
   <nav
     id="asset-selection-app-bar"
     class={[
-      'grid',
+      'grid h-17.5 md:h-19.5',
       multiRow && 'grid-cols-[100%] md:grid-cols-[25%_50%_25%]',
       !multiRow && 'grid-cols-[10%_80%_10%] sm:grid-cols-[25%_50%_25%]',
       'justify-between lg:grid-cols-[25%_50%_25%]',
       appBarBorder,
-      'mx-2 my-2 place-items-center rounded-lg p-2 max-md:p-0 transition-all',
+      'md:mx-2 md:my-2 place-items-center md:rounded-lg p-2 max-md:p-0 transition-all',
       tailwindClasses,
-      forceDark ? 'bg-immich-dark-gray! text-white' : 'bg-subtle dark:bg-immich-dark-gray',
+      forceDark ? 'bg-black! text-white' : 'bg-white dark:bg-black',
     ]}
   >
-    <div class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg {forceDark ? 'dark' : ''}">
+    <div
+      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {forceDark
+        ? 'dark'
+        : ''}"
+    >
       {#if showBackButton}
         <IconButton
           aria-label={$t('close')}

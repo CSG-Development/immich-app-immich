@@ -57,15 +57,15 @@
   onclick={handleClick}
   onmouseover={() => ($selectedIdStore = id)}
   onmouseleave={() => ($selectedIdStore = undefined)}
-  class="w-full p-4 text-start text-sm font-medium {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-2 items-center {isActive
+  class="p-4 text-start {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-4 items-center {isActive
     ? activeColor
-    : 'bg-slate-100 dark:bg-immich-dark-gray-card'} {theme === Theme.Light ? 'light' : 'dark'}"
+    : 'bg-light dark:bg-immich-dark-gray-card'} {theme === Theme.Light ? 'light' : 'dark'}"
   role="menuitem"
 >
   {#if icon}
-    <Icon path={icon} ariaHidden={true} size="18" />
+    <Icon path={icon} ariaHidden={true} size="24" />
   {/if}
-  <div class="w-full">
+  <div>
     <div class="flex justify-between">
       {text}
       {#if shortcutLabel}
