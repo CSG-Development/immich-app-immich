@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:auto_route/auto_route.dart';
@@ -12,7 +11,6 @@ import 'package:image_editor/image_editor.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/upload.service.dart';
@@ -35,52 +33,53 @@ class EditImagePage extends ConsumerWidget {
   final bool isEdited;
 
   const EditImagePage({super.key, required this.asset, required this.image, required this.isEdited});
+
   Future<Uint8List> _imageToUint8List(Image image) async {
-    final Completer<Uint8List> completer = Completer();
-    image.image
-        .resolve(const ImageConfiguration())
-        .addListener(
-          ImageStreamListener((ImageInfo info, bool _) {
-            info.image.toByteData(format: ImageByteFormat.png).then((byteData) {
-              if (byteData != null) {
-                completer.complete(byteData.buffer.asUint8List());
-              } else {
-                completer.completeError('Failed to convert image to bytes');
-              }
-            });
-          }, onError: (exception, stackTrace) => completer.completeError(exception)),
-        );
+    final Completer<Uint8List> completer = Completer<Uint8List>();
+    final ImageStream stream = image.image.resolve(const ImageConfiguration());
+
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (ImageInfo info, bool _) async {
+        try {
+          final byteData = await info.image.toByteData(format: ImageByteFormat.png);
+          if (byteData != null) {
+            if (!completer.isCompleted) {
+              completer.complete(byteData.buffer.asUint8List());
+            }
+          } else {
+            if (!completer.isCompleted) {
+              completer.completeError('Failed to convert image to bytes');
+            }
+          }
+        } catch (e, stack) {
+          if (!completer.isCompleted) {
+            completer.completeError(e, stack);
+          }
+        } finally {
+          stream.removeListener(listener);
+        }
+      },
+      onError: (Object exception, StackTrace? stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(exception, stackTrace);
+        }
+        stream.removeListener(listener);
+      },
+    );
+
+    stream.addListener(listener);
     return completer.future;
   }
 
-  Future<void> _saveEditedImageDeprecated(BuildContext context, BaseAsset asset, Image image, WidgetRef ref) async {
+  Future<void> _saveEditedImage(BuildContext context, BaseAsset asset, Uint8List imageData, WidgetRef ref) async {
     try {
-      final Uint8List imageData = await _imageToUint8List(image);
-      await ref
-          .read(fileMediaRepositoryProvider)
-          .saveImage(imageData, title: "${p.withoutExtension(asset.name)}_edited.jpg");
-      await ref.read(albumProvider.notifier).refreshDeviceAlbums();
-      context.navigator.popUntil((route) => route.isFirst);
-      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
-    } catch (e) {
-      ImmichToast.show(
-        durationInSecond: 6,
-        context: context,
-        msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
-        gravity: ToastGravity.BOTTOM,
-      );
-    }
-  }
-
-  Future<void> _saveEditedImage(BuildContext context, BaseAsset asset, Image image, WidgetRef ref) async {
-    try {
-      final Uint8List imageData = await _imageToUint8List(image);
       LocalAsset? localAsset;
 
       try {
         localAsset = await ref
             .read(fileMediaRepositoryProvider)
-            .saveLocalAsset(imageData, title: "${p.withoutExtension(asset.name)}_edited.jpg");
+            .saveLocalAsset(imageData, title: "${p.withoutExtension(asset.name)}_edited.png");
       } on PlatformException catch (e) {
         // OS might not return the saved image back, so we handle that gracefully
         // This can happen if app does not have full library access
@@ -118,7 +117,7 @@ class EditImagePage extends ConsumerWidget {
               config: ImageEditorConfig(
                 imageBytes: snapshot.data!,
                 onImageEditingComplete: (bytes) {
-                  _saveEditedImage(context, asset, Image.memory(bytes), ref);
+                  _saveEditedImage(context, asset, bytes, ref);
                 },
                 onCloseEditor: () {},
               ),

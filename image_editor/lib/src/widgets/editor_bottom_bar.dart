@@ -1,13 +1,24 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
+import 'package:image_editor/src/features/vignette_editor/vignette_editor.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
+
+class _EditorToolItem {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _EditorToolItem({required this.label, required this.icon, required this.onPressed});
+}
 
 /// Custom bottom bar for the image editor
 class EditorBottomBar extends StatelessWidget {
   final ProImageEditorState editor;
   final Stream<void> rebuildStream;
-  final VoidCallback? onCustomEffect;
 
-  const EditorBottomBar({super.key, required this.editor, required this.rebuildStream, this.onCustomEffect});
+  const EditorBottomBar({super.key, required this.editor, required this.rebuildStream});
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +28,72 @@ class EditorBottomBar extends StatelessWidget {
     );
   }
 
+  /// Opens the vignette editor on top of the main editor.
+  void openVignetteEditor({required BuildContext context}) async {
+    if (!context.mounted) return;
+    final currentBytes = await editor.captureEditorImage();
+    if (currentBytes.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No image to edit. Load an image first.')));
+      }
+      return;
+    }
+
+    final theme = editor.configs.theme ?? ThemeData.dark();
+    final sizesManager = editor.sizesManager;
+    final stateManager = editor.stateManager;
+
+    final callbacks = editor.callbacks.copyWith(
+      onImageEditingComplete: (Uint8List bytes) async {
+        await editor.updateBackgroundImage(EditorImage(byteArray: bytes));
+        editor.setState(() {});
+        editor.mainEditorCallbacks?.handleUpdateUI();
+      },
+    );
+    await editor.openPage(
+      HeroMode(
+        child: VignetteEditor.memory(
+          currentBytes,
+          initConfigs: VignetteEditorInitConfigs(
+            theme: theme,
+            configs: editor.configs,
+            callbacks: callbacks,
+            transformConfigs: stateManager.transformConfigs,
+            mainImageSize: sizesManager.decodedImageSize,
+            mainBodySize: sizesManager.bodySize,
+            appliedBlurFactor: 0,
+            appliedFilters: const [],
+            appliedTuneAdjustments: const [],
+            convertToUint8List: true,
+            showLayers: false,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
+    final tools = <_EditorToolItem>[
+      _EditorToolItem(label: 'Paint', icon: Icons.edit_rounded, onPressed: editor.openPaintEditor),
+      _EditorToolItem(label: 'Text', icon: Icons.text_fields, onPressed: editor.openTextEditor),
+      _EditorToolItem(
+        label: 'Vignette',
+        icon: Icons.vignette_rounded,
+        onPressed: () => openVignetteEditor(context: context),
+      ),
+      _EditorToolItem(label: 'Crop/Rotate', icon: Icons.crop_rotate_rounded, onPressed: editor.openCropRotateEditor),
+      _EditorToolItem(label: 'Tune', icon: Icons.tune, onPressed: editor.openTuneEditor),
+      _EditorToolItem(label: 'Filter', icon: Icons.filter, onPressed: editor.openFilterEditor),
+      _EditorToolItem(label: 'Blur', icon: Icons.blur_on, onPressed: editor.openBlurEditor),
+      _EditorToolItem(label: 'Emoji', icon: Icons.sentiment_satisfied_alt_rounded, onPressed: editor.openEmojiEditor),
+    ];
+
     return Scrollbar(
-      scrollbarOrientation: ScrollbarOrientation.top,
+      thumbVisibility: false,
+      trackVisibility: false,
+      thickness: 0.0,
       child: BottomAppBar(
         height: kBottomNavigationBarHeight,
         color: Colors.black,
@@ -27,36 +101,14 @@ class EditorBottomBar extends StatelessWidget {
         child: Center(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 500, maxWidth: 500),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildEditorButton(label: 'Paint', icon: Icons.edit_rounded, onPressed: editor.openPaintEditor),
-                    _buildEditorButton(label: 'Text', icon: Icons.text_fields, onPressed: editor.openTextEditor),
-                    if (onCustomEffect != null)
-                      _buildEditorButton(
-                        label: 'Monochrome',
-                        icon: Icons.filter_b_and_w,
-                        onPressed: onCustomEffect!,
-                        labelColor: Colors.amber,
-                      ),
-                    _buildEditorButton(
-                      label: 'Crop/Rotate',
-                      icon: Icons.crop_rotate_rounded,
-                      onPressed: editor.openCropRotateEditor,
-                    ),
-                    _buildEditorButton(label: 'Tune', icon: Icons.tune, onPressed: editor.openTuneEditor),
-                    _buildEditorButton(label: 'Filter', icon: Icons.filter, onPressed: editor.openFilterEditor),
-                    _buildEditorButton(
-                      label: 'Emoji',
-                      icon: Icons.sentiment_satisfied_alt_rounded,
-                      onPressed: editor.openEmojiEditor,
-                    ),
-                  ],
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final tool in tools)
+                    _buildEditorButton(label: tool.label, icon: tool.icon, onPressed: tool.onPressed),
+                ],
               ),
             ),
           ),
