@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 # --- Server URL ---
 SERVER_URL = "http://127.0.0.1:8000/analyze"

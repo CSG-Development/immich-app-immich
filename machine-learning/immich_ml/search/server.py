@@ -1,16 +1,18 @@
-from fastapi import FastAPI, Form
+import calendar
+import math
+import re
+from collections import defaultdict
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional, Pattern
+
+import requests
+import spacy
+from dateparser import parse
+from dateutil.relativedelta import relativedelta
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any, Callable, Pattern
-import spacy
-from collections import defaultdict
-from dateparser import parse
-from datetime import datetime, timedelta
-import re
-import calendar
-from dateutil.relativedelta import relativedelta
-import requests
-import math
+
 
 # --- helper: haversine distance in meters ---
 def haversine(lat1, lon1, lat2, lon2):
@@ -148,7 +150,8 @@ class SearchQueryAnalyzer:
 
     FILE_TYPE_KEYWORDS = {
         "image": ["image", "images", "picture", "pictures", "photo", "photos"],
-        "video": ["video", "videos", "film", "films", "movie", "movies", "cartoon", "cartoons", "animation", "animations"]
+        "video": ["video", "videos", "film", "films", "movie", "movies",
+                     "cartoon", "cartoons", "animation", "animations"]
     }
 
     FILE_TYPE_KEYWORDS_FLAT = set(k for keywords in FILE_TYPE_KEYWORDS.values() for k in keywords)
@@ -507,7 +510,10 @@ def declare_endpoints(app):
 
     @app.get("/test", response_class=HTMLResponse)
     def test_form():
-        default_text = "Photos of riding horses near the Eiffel Tower and Taj Mahal with John Smith and Ann in May 2025."
+        default_text = (
+            "Photos of riding horses near the Eiffel Tower and Taj Mahal "
+            "with John Smith and Ann in May 2025."
+        )
         return f"""
         <!DOCTYPE html>
         <html>

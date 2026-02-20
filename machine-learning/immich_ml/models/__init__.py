@@ -9,6 +9,7 @@ from .constants import get_model_source
 from .facial_recognition.detection import FaceDetector
 from .facial_recognition.recognition import FaceRecognizer
 
+
 def get_model_class(model_name: str, model_type: ModelType, model_task: ModelTask) -> type[InferenceModel]:
     source = get_model_source(model_name)
     match source, model_type, model_task:

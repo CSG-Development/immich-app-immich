@@ -1,5 +1,6 @@
-import pytest
 from datetime import datetime
+
+import pytest
 from server import (
     SearchQueryAnalyzer,
     SearchQueryAnalyzerRequest,
@@ -40,7 +41,10 @@ TEST_DATA = [
         SearchQueryAnalyzerResponse(
             result=[
                 {
-                    "text": "Photos of riding horses near the Eiffel Tower and Taj Mahal with John Smith and Ann in May 2025.",
+                    "text": (
+                                "Photos of riding horses near the Eiffel Tower and Taj Mahal "
+                                "with John Smith and Ann in May 2025."
+                            ),
                     "entities": {
                         "context": [
                             "Eiffel Tower",

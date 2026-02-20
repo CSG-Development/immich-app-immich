@@ -1,6 +1,5 @@
 from immich_ml.config import clean_name
 from immich_ml.schemas import ModelSource
-from ..config import log
 
 _OPENCLIP_MODELS = {
     "RN101__openai",

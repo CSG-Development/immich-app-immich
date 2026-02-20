@@ -1,1 +1,1 @@
-pytest -vv test.py
+pytest -vv test_main.py
