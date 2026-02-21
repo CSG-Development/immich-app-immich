@@ -140,7 +140,11 @@
         {/snippet}
       </ControlAppBar>
     {/if}
-    <section class="my-[160px] mx-4" bind:clientHeight={viewport.height} bind:clientWidth={viewport.width}>
+    <section
+      class="mt-[82px] md:mt-[114px] mx-3 md:mx-6"
+      bind:clientHeight={viewport.height}
+      bind:clientWidth={viewport.width}
+    >
       <GalleryViewer {assets} {assetInteraction} {viewport} />
     </section>
   {:else if assets.length === 1}

@@ -5,7 +5,7 @@
   import { AppRoute } from '$lib/constants';
   import type { SharedLinkResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiCircleEditOutline } from '@mdi/js';
+  import { mdiPencilOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   interface Props {
     menuItem?: boolean;
@@ -20,14 +20,14 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={$t('edit_link')} icon={mdiCircleEditOutline} onClick={onEdit} />
+  <MenuOption text={$t('edit_link')} icon={mdiPencilOutline} onClick={onEdit} />
 {:else}
   <IconButton
     shape="round"
     color="secondary"
     variant="ghost"
     aria-label={$t('edit_link')}
-    icon={mdiCircleEditOutline}
+    icon={mdiPencilOutline}
     onclick={onEdit}
   />
 {/if}

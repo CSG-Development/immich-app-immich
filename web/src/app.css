@@ -38,6 +38,7 @@
 
 @theme inline {
   --color-immich-primary: rgb(var(--immich-primary));
+  --color-immich-primary-12: rgb(var(--immich-primary-12));
   --color-immich-bg: rgb(var(--immich-bg));
   --color-immich-fg: rgb(var(--immich-fg));
   --color-immich-gray: rgb(var(--immich-gray));
@@ -45,11 +46,14 @@
   --color-immich-gray-dark: rgb(var(--immich-gray-dark));
   --color-immich-gray-border: rgb(var(--immich-gray-border));
   --color-immich-gray-text: rgb(var(--immich-gray-text));
+  --color-immich-gray-file-loader: rgb(var(--immich-gray-file-loader));
   --color-immich-danger: rgb(var(--immich-danger));
   --color-immich-bg-gray: rgb(var(--immich-bg-gray));
   --color-immich-bg-gray-mt: rgb(var(--immich-bg-gray-mt));
 
   --color-immich-dark-primary: rgb(var(--immich-dark-primary));
+  --color-immich-dark-primary-12: rgb(var(--immich-dark-primary-12));
+  --color-immich-dark-primary-24: rgb(var(--immich-dark-primary-24));
   --color-immich-dark-bg: rgb(var(--immich-dark-bg));
   --color-immich-dark-fg: rgb(var(--immich-dark-fg));
   --color-immich-dark-gray: rgb(var(--immich-dark-gray));
@@ -83,18 +87,22 @@
   :root {
     /* light */
     --immich-primary: 25 118 210;
+    --immich-primary-12: 215 228 242;
     --immich-bg: 255 255 255;
     --immich-fg: 0 0 0;
     --immich-gray-search-bar: 144 202 249;
     --immich-gray-dark: 78 78 78;
     --immich-gray-border: 224 224 224;
     --immich-gray-text: 122 122 122;
-    --immich-danger: 160 42 33;
+    --immich-gray-file-loader: 203 205 211;
+    --immich-danger: 244 67 54;
     --immich-bg-gray: 66 66 66 / 0.12;
     --immich-bg-gray-mt: 240 241 245;
 
     /* dark */
     --immich-dark-primary: 100 181 246;
+    --immich-dark-primary-12: 71 78 87;
+    --immich-dark-primary-24: 70 90 108;
     --immich-dark-bg: 10 10 10;
     --immich-dark-fg: 229 231 235;
     --immich-dark-gray: 33 33 33;
@@ -104,7 +112,7 @@
     --immich-dark-gray-light: 184 184 184;
     --immich-dark-gray-border: 97 97 97;
     --immich-dark-gray-text: 178 178 178;
-    --immich-dark-danger: 242 145 138;
+    --immich-dark-danger: 242 143 140;
     --immich-dark-success: 110 189 73;
     --immich-dark-bg-gray: 238 238 238 / 0.12;
     --immich-dark-bg-gray-mt: 61 62 65;

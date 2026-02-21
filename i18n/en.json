@@ -932,7 +932,7 @@
   "delete_tag": "Delete tag",
   "delete_tag_confirmation_prompt": "Are you sure you want to delete {tagName} tag?",
   "delete_user": "Delete user",
-  "deleted_shared_link": "Deleted shared link",
+  "deleted_shared_link": "Link deleted",
   "deletes_missing_assets": "Deletes assets missing from disk",
   "description": "Description",
   "description_input_hint_text": "Add description...",

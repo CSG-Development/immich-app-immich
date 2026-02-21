@@ -14,6 +14,7 @@
   import GroupTab from '$lib/elements/GroupTab.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { getAllSharedLinks, removeSharedLink, SharedLinkType, type SharedLinkResponseDto } from '@immich/sdk';
   import { onMount } from 'svelte';
@@ -50,7 +51,7 @@
 
     try {
       await removeSharedLink({ id });
-      notificationController.show({ message: $t('deleted_shared_link'), type: NotificationType.Info });
+      notificationController.show({ message: $t('deleted_shared_link'), type: NotificationType.Success });
       await refresh();
     } catch (error) {
       handleError(error, $t('errors.unable_to_delete_shared_link'));
@@ -101,15 +102,21 @@
   {/snippet}
 
   <div class="w-full max-w-3xl m-auto">
+    {#if mobileDevice.maxMd}
+      <div class="w-full my-3 h-10 flex items-center">
+        <GroupTab
+          label={$t('show_shared_links')}
+          {filters}
+          {labels}
+          selected={selectedTab}
+          onSelect={handleSelectTab}
+        />
+      </div>
+    {/if}
     {#if sharedLinks.length === 0}
-      <!-- <div
-        class="flex place-content-center place-items-center rounded-lg bg-gray-100 dark:bg-immich-dark-gray dark:text-immich-gray p-12"
-      >
-        <p>{$t('you_dont_have_any_shared_links')}</p>
-      </div> -->
       <EmptyPlaceholder text={$t('you_dont_have_any_shared_links')} src={emptySharedLinks} />
     {:else}
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-4 md:gap-2 pt-6">
         {#each filteredSharedLinks as link (link.id)}
           <SharedLinkCard {link} onDelete={() => handleDeleteLink(link.id)} />
         {/each}

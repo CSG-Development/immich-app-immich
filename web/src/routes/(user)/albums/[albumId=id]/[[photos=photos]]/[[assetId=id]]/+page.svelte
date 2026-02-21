@@ -491,7 +491,7 @@
           {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
             <!-- ALBUM TITLE -->
             <section
-              class="pt-8 md:pt-24"
+              class="pt-4"
               aria-hidden="true"
               style={`--tooltip-x:${tooltipX}px; --tooltip-y:${tooltipY}px`}
               onmousemove={(e) => {
@@ -568,18 +568,18 @@
           {/if}
 
           {#if album.assetCount === 0}
-            <section id="empty-album" class=" mt-[200px] flex place-content-center place-items-center">
-              <div class="w-[300px]">
-                <p class="uppercase text-xs dark:text-immich-dark-fg">{$t('add_photos')}</p>
+            <section id="empty-album" class="flex place-content-center place-items-center">
+              <div class="w-full max-w-100 md:w-auto">
+                <p class="p-4 uppercase text-xs font-medium">{$t('add_photos')}</p>
                 <button
                   type="button"
                   onclick={() => (viewMode = AlbumPageViewMode.SELECT_ASSETS)}
-                  class="mt-5 bg-subtle flex w-full place-items-center gap-6 rounded-2xl border px-8 py-8 text-immich-fg transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-immich-primary dark:border-none dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
                 >
                   <span class="text-primary">
                     <Icon path={mdiPlus} size="24" />
                   </span>
-                  <span class="text-lg">{$t('select_photos')}</span>
+                  <span>{$t('select_photos')}</span>
                 </button>
               </div>
             </section>

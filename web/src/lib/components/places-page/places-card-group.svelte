@@ -26,12 +26,12 @@
     <button
       type="button"
       onclick={() => togglePlacesGroupCollapsing(group.id)}
-      class="w-fit mt-2 pt-2 pe-2 mb-2 dark:text-immich-dark-fg"
+      class="w-fit mt-2 pt-2 pe-2 mb-2 dark:text-immich-dark-fg flex items-center gap-1"
       aria-expanded={!isCollapsed}
     >
-      <Icon path={mdiChevronRight} size="24" class="inline-block -mt-2.5 transition-all duration-250 {iconRotation}" />
+      <Icon path={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
       <span class="font-bold text-3xl text-black dark:text-white">{group.name}</span>
-      <span class="ms-1.5">({$t('places_count', { values: { count: places.length } })})</span>
+      <span>({$t('places_count', { values: { count: places.length } })})</span>
     </button>
     <hr class="dark:border-immich-dark-gray" />
   </div>

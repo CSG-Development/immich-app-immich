@@ -16,17 +16,19 @@
     onClick: () => void;
     shortcut?: Shortcut | null;
     shortcutLabel?: string;
+    isCopy?: boolean;
   }
 
   let {
     text,
     subtitle = '',
     icon = '',
-    activeColor = 'bg-slate-300 dark:bg-slate-700',
+    activeColor = 'bg-immich-primary-12 dark:bg-immich-dark-primary-24',
     textColor = 'text-immich-fg dark:text-white/[.87]',
     onClick,
     shortcut = null,
     shortcutLabel = '',
+    isCopy = false,
   }: Props = $props();
 
   const theme = $derived(themeManager.value);
@@ -57,9 +59,11 @@
   onclick={handleClick}
   onmouseover={() => ($selectedIdStore = id)}
   onmouseleave={() => ($selectedIdStore = undefined)}
-  class="p-4 text-start {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-4 items-center {isActive
-    ? activeColor
-    : 'bg-light dark:bg-immich-dark-gray-card'} {theme === Theme.Light ? 'light' : 'dark'}"
+  class="p-4 text-start {textColor} focus:outline-none focus:ring-2 focus:ring-inset cursor-pointer border-immich-gray-border dark:border-immich-dark-gray-border flex gap-4 items-center {isCopy
+    ? '[&_svg]:rotate-180 [&_svg]:scale-x-[-1]'
+    : ''} {isActive ? activeColor : 'bg-light dark:bg-immich-dark-gray-card'} {theme === Theme.Light
+    ? 'light'
+    : 'dark'}"
   role="menuitem"
 >
   {#if icon}

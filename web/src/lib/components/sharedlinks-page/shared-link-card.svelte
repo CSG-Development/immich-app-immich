@@ -43,15 +43,15 @@
   <svelte:element
     this={isExpired ? 'div' : 'a'}
     href={isExpired ? undefined : resolve(`${AppRoute.SHARE}/${link.key}`)}
-    class="flex gap-4 w-full py-4"
+    class="flex gap-4 w-full py-3"
   >
     <ShareCover class="transition-all duration-300 hover:shadow-lg" {link} />
 
     <div class="flex flex-col justify-between">
       <div class="info-top">
-        <div class="font-mono text-xs font-semibold text-gray-500 dark:text-gray-400">
+        <div class="text-xs">
           {#if isExpired}
-            <p class="font-bold text-red-600 dark:text-red-400">{$t('expired')}</p>
+            <p class="text-immich-danger dark:text-immich-dark-danger">{$t('expired')}</p>
           {:else if expiresAt}
             <p>
               {$t('expires_date', { values: { date: getCountDownExpirationDate(expiresAt, now) } })}
@@ -61,10 +61,8 @@
           {/if}
         </div>
 
-        <div class="text-sm pb-2">
-          <p
-            class="flex place-items-center gap-2 text-immich-primary dark:text-immich-dark-primary break-all uppercase"
-          >
+        <div class="pb-2">
+          <p class="flex place-items-center gap-2 text-primary font-bold break-all uppercase">
             {#if link.type === SharedLinkType.Album}
               {link.album?.albumName}
             {:else if link.type === SharedLinkType.Individual}
@@ -72,11 +70,11 @@
             {/if}
           </p>
 
-          <p class="text-sm">{link.description ?? ''}</p>
+          <p class="text-xs">{link.description ?? ''}</p>
         </div>
       </div>
 
-      <div class="flex flex-wrap gap-2 text-xl">
+      <div class="flex flex-wrap gap-1 text-xl">
         {#if link.allowUpload}
           <Badge rounded="full"><span class="text-xs px-1">{$t('upload')}</span></Badge>
         {/if}
@@ -106,13 +104,7 @@
     </div>
 
     <div class="sm:hidden">
-      <ButtonContextMenu
-        color="primary"
-        title={$t('shared_link_options')}
-        icon={mdiDotsVertical}
-        size="large"
-        hideContent
-      >
+      <ButtonContextMenu title={$t('shared_link_options')} icon={mdiDotsVertical} size="large" hideContent>
         <SharedLinkEdit menuItem sharedLink={link} />
         <SharedLinkCopy menuItem {link} />
         <SharedLinkDelete menuItem {onDelete} />

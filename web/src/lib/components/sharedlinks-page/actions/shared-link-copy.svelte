@@ -19,7 +19,7 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={$t('copy_link')} icon={mdiContentCopy} onClick={handleCopy} />
+  <MenuOption text={$t('copy_link')} icon={mdiContentCopy} onClick={handleCopy} isCopy />
 {:else}
   <IconButton
     color="secondary"
@@ -28,5 +28,6 @@
     aria-label={$t('copy_link')}
     icon={mdiContentCopy}
     onclick={handleCopy}
+    class="[&_svg]:rotate-180 [&_svg]:scale-x-[-1]"
   />
 {/if}

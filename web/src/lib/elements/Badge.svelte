@@ -10,9 +10,9 @@
 </script>
 
 <span
-  class="bg-primary text-subtle inline-block h-min whitespace-nowrap px-3 py-1 text-center align-baseline text-xs leading-none"
+  class="bg-primary text-subtle inline-block h-min whitespace-nowrap px-3 py-0.5 text-center align-baseline text-xs leading-none"
   class:rounded-md={rounded === true}
-  class:rounded-full={rounded === 'full'}
+  class:rounded-3xl={rounded === 'full'}
 >
   {@render children?.()}
 </span>
