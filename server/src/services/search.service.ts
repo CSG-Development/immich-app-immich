@@ -104,6 +104,7 @@ export class SearchService extends BaseService {
   }
 
   async searchSmart(auth: AuthDto, dto: SmartSearchDto): Promise<SearchResponseDto> {
+    const config = await this.getConfig({ withCache: false });
     if (dto.visibility === AssetVisibility.Locked) {
       requireElevatedPermission(auth);
     }
@@ -154,6 +155,7 @@ export class SearchService extends BaseService {
     const { hasNextPage, items } = await this.searchRepository.searchSmart(
       { page, size },
       { ...dto, userIds: await userIds, embedding, counterEmbedding },
+      config.machineLearning.clip.probabilityThreshold
     );
 
     return this.mapResponse(items, hasNextPage ? (page + 1).toString() : null, { auth });

@@ -167,8 +167,6 @@ export interface GetCameraMakesOptions {
   model?: string;
 }
 
-const PROBABILITY_THRESHOLD = 0.99
-
 @Injectable()
 export class SearchRepository {
   constructor(@InjectKysely() private db: Kysely<DB>) {}
@@ -277,7 +275,7 @@ export class SearchRepository {
       },
     ],
   })
-  searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions) {
+  searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions, probabilityThreshold: number) {
     if (!isValidInteger(pagination.size, { min: 1, max: 1000 })) {
       throw new Error(`Invalid value for 'size': ${pagination.size}`);
     }
@@ -302,7 +300,7 @@ export class SearchRepository {
       const items = await trx
         .selectFrom(baseQuery.as('scored'))
         .selectAll()
-        .where('prob', '>=', PROBABILITY_THRESHOLD)
+        .where('prob', '>=', probabilityThreshold)
         .orderBy('prob', 'desc')
         .limit(pagination.size + 1)
         .offset((pagination.page - 1) * pagination.size)

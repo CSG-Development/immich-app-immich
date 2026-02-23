@@ -62,6 +62,7 @@ export interface SystemConfig {
     clip: {
       enabled: boolean;
       modelName: string;
+      probabilityThreshold: number;
     };
     duplicateDetection: {
       enabled: boolean;
@@ -243,6 +244,7 @@ export const defaults = Object.freeze<SystemConfig>({
     clip: {
       enabled: true,
       modelName: 'ViT-SO400M-16-SigLIP2-512__webli',
+      probabilityThreshold: 0.99,
     },
     duplicateDetection: {
       enabled: true,
