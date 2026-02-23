@@ -51,7 +51,7 @@
             <p class="uppercase">{$t('photos')}</p>
           </div>
 
-          <div class="relative text-center font-mono text-2xl font-semibold">
+          <div class="relative text-center text-2xl font-semibold">
             <span class="text-[#DCDADA] dark:text-[#525252]">{zeros(stats.photos)}</span><span class="text-primary"
               >{stats.photos}</span
             >
@@ -63,7 +63,7 @@
             <p class="uppercase">{$t('videos')}</p>
           </div>
 
-          <div class="relative text-center font-mono text-2xl font-semibold">
+          <div class="relative text-center text-2xl font-semibold">
             <span class="text-[#DCDADA] dark:text-[#525252]">{zeros(stats.videos)}</span><span class="text-primary"
               >{stats.videos}</span
             >
@@ -75,7 +75,7 @@
             <p class="uppercase">{$t('storage')}</p>
           </div>
 
-          <div class="relative flex text-center font-mono text-2xl font-semibold">
+          <div class="relative flex text-center text-2xl font-semibold">
             <span class="text-[#DCDADA] dark:text-[#525252]">{zeros(statsUsage)}</span><span class="text-primary"
               >{statsUsage}</span
             >

@@ -31,8 +31,8 @@
 
 <div
   class="flex w-60 h-20 place-items-center {suggestedPeople.length > 0
-    ? 'rounded-t-xl border-immich-gray-border dark:border-immich-dark-gray-border'
-    : 'rounded-xl'} p-2 bg-light dark:bg-immich-dark-gray-card border border-immich-gray-border dark:border-immich-dark-gray-border"
+    ? 'rounded-t-xl'
+    : 'rounded-xl'} p-2 bg-light dark:bg-immich-dark-gray-card border immich-border"
 >
   <ImageThumbnail circle shadow url={thumbnailData} altText={person.name} widthStyle="2.5rem" heightStyle="2.5rem" />
   <form class="ms-3 flex w-full justify-between gap-3" autocomplete="off" {onsubmit}>

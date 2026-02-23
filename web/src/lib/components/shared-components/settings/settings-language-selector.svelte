@@ -34,7 +34,7 @@
   let closestLanguage = $derived(getClosestAvailableLocale([$lang], langCodes));
 </script>
 
-<div class={showSettingDescription ? 'grid grid-cols-2' : ''}>
+<div class="md:max-w-80">
   {#if showSettingDescription}
     <div>
       <div class="flex h-[26px] place-items-center gap-1">

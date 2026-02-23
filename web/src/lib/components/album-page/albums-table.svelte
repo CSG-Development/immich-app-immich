@@ -26,7 +26,7 @@
 
 <table class="mt-2 w-full text-start">
   <thead
-    class="mb-4 flex h-12 w-full rounded-md border bg-white text-immich-primary border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-gray dark:text-immich-dark-primary"
+    class="mb-4 flex h-12 w-full rounded-md bg-white text-immich-primary border immich-border dark:bg-immich-dark-gray dark:text-immich-dark-primary"
   >
     <tr class="flex w-full place-items-center p-2 md:p-5">
       {#each sortOptionsMetadata as option, index (index)}
@@ -35,9 +35,7 @@
     </tr>
   </thead>
   {#if albumGroupOption === AlbumGroupBy.None}
-    <tbody
-      class="block w-full overflow-y-auto rounded-md border-immich-gray-border dark:border-immich-dark-gray-border"
-    >
+    <tbody class="block w-full overflow-y-auto rounded-md border immich-border">
       {#each groupedAlbums[0].albums as album (album.id)}
         <AlbumTableRow {album} {onShowContextMenu} />
       {/each}
@@ -46,9 +44,7 @@
     {#each groupedAlbums as albumGroup (albumGroup.id)}
       {@const isCollapsed = isAlbumGroupCollapsed($albumViewSettings, albumGroup.id)}
       {@const iconRotation = isCollapsed ? 'rotate-0' : 'rotate-90'}
-      <tbody
-        class="block w-full overflow-y-auto rounded-md border border-immich-gray-border dark:border-immich-dark-gray-border mt-4"
-      >
+      <tbody class="block w-full overflow-y-auto rounded-md border immich-border mt-4">
         <tr
           class="flex h-[48px] w-full place-items-center p-2 md:ps-5 md:pe-5 md:pt-3 md:pb-3 bg-white"
           onclick={() => toggleAlbumGroupCollapsing(albumGroup.id)}
@@ -65,7 +61,7 @@
       </tbody>
       {#if !isCollapsed}
         <tbody
-          class="block w-full overflow-y-auto rounded-md border border-immich-gray-border dark:border-immich-dark-gray-border mt-4"
+          class="block w-full overflow-y-auto rounded-md border immich-border mt-4"
           transition:slide={{ duration: 300 }}
         >
           {#each albumGroup.albums as album (album.id)}

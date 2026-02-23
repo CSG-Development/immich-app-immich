@@ -1,9 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import emptyTags from '$lib/assets/empty-tags.svg';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import Breadcrumbs from '$lib/components/shared-components/tree/breadcrumbs.svelte';
   import TreeItemThumbnails from '$lib/components/shared-components/tree/tree-item-thumbnails.svelte';
   import TreeItems from '$lib/components/shared-components/tree/tree-items.svelte';
@@ -39,15 +41,7 @@
   import { joinPaths, TreeNode } from '$lib/utils/tree-utils';
   import { deleteTag, getAllTags, type TagResponseDto } from '@immich/sdk';
   import { Button, HStack, Text } from '@immich/ui';
-  import {
-    mdiDotsVertical,
-    mdiPencil,
-    mdiPlus,
-    mdiPresentationPlay,
-    mdiTag,
-    mdiTagMultiple,
-    mdiTrashCanOutline,
-  } from '@mdi/js';
+  import { mdiDotsVertical, mdiPencil, mdiPlus, mdiPresentationPlay, mdiTag, mdiTrashCanOutline } from '@mdi/js';
   import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
@@ -155,7 +149,7 @@
     <Sidebar>
       <SkipLink target={`#${headerId}`} text={$t('skip_to_tags')} breakpoint="md" />
       <section>
-        <div class="text-xs ps-4 mb-2 dark:text-white">{$t('explorer').toUpperCase()}</div>
+        <div class="ps-4 pb-3 text-black/60 dark:text-white/70">{$t('explorer').toUpperCase()}</div>
         <div class="h-full">
           <TreeItems icons={{ default: mdiTag, active: mdiTag }} {tree} active={tag.path} {getLink} {handleClick} />
         </div>
@@ -165,41 +159,70 @@
 
   {#snippet buttons()}
     <HStack>
-      <Button leadingIcon={mdiPlus} onclick={handleCreate} size="small" variant="ghost" color="secondary">
+      <Button
+        class="[&_svg]:w-4.5 [&_svg]:h-4.5"
+        leadingIcon={mdiPlus}
+        onclick={handleCreate}
+        size="small"
+        variant="ghost"
+        color="secondary"
+      >
         <Text class="hidden md:block font-medium">{$t('create_tag')}</Text>
       </Button>
 
       {#if tag.path.length > 0}
-        <Button leadingIcon={mdiPencil} onclick={handleEdit} size="small" variant="ghost" color="secondary">
+        <Button
+          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
+          leadingIcon={mdiPencil}
+          onclick={handleEdit}
+          size="small"
+          variant="ghost"
+          color="secondary"
+        >
           <Text class="hidden md:block font-medium">{$t('edit_tag')}</Text>
         </Button>
-        <Button leadingIcon={mdiTrashCanOutline} onclick={handleDelete} size="small" variant="ghost" color="secondary">
+        <Button
+          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
+          leadingIcon={mdiTrashCanOutline}
+          onclick={handleDelete}
+          size="small"
+          variant="ghost"
+          color="secondary"
+        >
           <Text class="hidden md:block font-medium">{$t('delete_tag')}</Text>
         </Button>
       {/if}
     </HStack>
   {/snippet}
 
-  <Breadcrumbs node={tag} icon={mdiTagMultiple} title={$t('tags')} {getLink} {handleClick} />
+  <Breadcrumbs node={tag} icon={mdiTag} title={$t('tags')} {getLink} {handleClick} />
 
-  <section class="mt-2 h-[calc(100%-(--spacing(20)))] overflow-auto immich-scrollbar">
-    {#if tag.hasAssets}
-      <Timeline
-        enableRouting={true}
-        {timelineManager}
-        {assetInteraction}
-        removeAction={AssetAction.UNARCHIVE}
-        selectedAssets={assetInteraction.selectedAssets}
-        {shuffledSelectedAssets}
-      >
-        {#snippet empty()}
-          <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
-        {/snippet}
-      </Timeline>
-    {:else}
-      <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
-    {/if}
-  </section>
+  {#if tags.length > 0}
+    <section
+      class="my-3 overflow-auto immich-scrollbar {tag.hasAssets
+        ? 'h-[calc(100%-(--spacing(20)))]'
+        : 'bg-white dark:bg-immich-dark-gray-card rounded-3xl border immich-border'}"
+    >
+      {#if tag.hasAssets}
+        <Timeline
+          enableRouting={true}
+          {timelineManager}
+          {assetInteraction}
+          removeAction={AssetAction.UNARCHIVE}
+          selectedAssets={assetInteraction.selectedAssets}
+          {shuffledSelectedAssets}
+        >
+          {#snippet empty()}
+            <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
+          {/snippet}
+        </Timeline>
+      {:else}
+        <TreeItemThumbnails items={tag.children} icon={mdiTag} onClick={handleNavigation} />
+      {/if}
+    </section>
+  {:else}
+    <EmptyPlaceholder text={$t('no_tags')} src={emptyTags} />
+  {/if}
 </UserPageLayout>
 
 {#if assetInteraction.selectionActive}

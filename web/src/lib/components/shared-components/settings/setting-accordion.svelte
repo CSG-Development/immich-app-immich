@@ -15,6 +15,7 @@
     icon?: string;
     subtitleSnippet?: Snippet;
     children?: Snippet;
+    child?: boolean;
   }
 
   let {
@@ -26,6 +27,7 @@
     icon = '',
     subtitleSnippet,
     children,
+    child = true,
   }: Props = $props();
 
   let accordionElement: HTMLDivElement | undefined = $state();
@@ -64,8 +66,10 @@
 </script>
 
 <div
-  class="border-2 rounded-2xl border-primary/20 my-4 px-6 py-4 transition-all {isOpen
-    ? 'border-primary/60 shadow-md'
+  class="border immich-border rounded-lg bg-white dark:bg-immich-dark-gray-card {child
+    ? 'mb-4'
+    : 'my-3'} px-4 py-3 transition-all w-full max-w-200 {isOpen ? '' : 'max-h-18'} mx-auto {isOpen
+    ? 'border-primary shadow-md'
     : ''}"
   bind:this={accordionElement}
 >
@@ -86,7 +90,7 @@
       </div>
 
       {#if subtitleSnippet}{@render subtitleSnippet()}{:else}
-        <p class="text-sm dark:text-immich-dark-fg mt-1">{subtitle}</p>
+        <p class="text-sm dark:text-immich-dark-fg">{subtitle}</p>
       {/if}
     </div>
 
@@ -110,7 +114,7 @@
   </button>
 
   {#if isOpen}
-    <ul transition:slide={{ duration: 150 }} class="mb-2 ms-4">
+    <ul transition:slide={{ duration: 150 }}>
       {@render children?.()}
     </ul>
   {/if}

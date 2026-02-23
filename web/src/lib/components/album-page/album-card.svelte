@@ -59,7 +59,7 @@
 
   <div class="mt-5">
     <p
-      class="w-full leading-6 text-xl line-clamp-2 font-bold text-black dark:text-white group-hover:text-immich-primary dark:group-hover:text-immich-dark-primary"
+      class="w-full leading-6 text-xl font-bold text-black dark:text-white group-hover:text-immich-primary dark:group-hover:text-immich-dark-primary"
       data-testid="album-name"
       title={album.albumName}
     >

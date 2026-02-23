@@ -49,7 +49,7 @@
 </header>
 <div
   tabindex="-1"
-  class="relative z-0 grid grid-cols-[--spacing(0)_auto] overflow-hidden sidebar:grid-cols-[--spacing(64)_auto]
+  class="relative z-0 grid grid-cols-[--spacing(0)_auto] overflow-hidden sidebar:grid-cols-[--spacing(75)_auto]
     {hideNavbar ? 'h-dvh' : 'h-[calc(100dvh-var(--navbar-height))]'}
     {hideNavbar ? 'pt-(--navbar-height)' : ''}
     {hideNavbar ? 'max-md:pt-(--navbar-height-md)' : ''}"
@@ -69,7 +69,7 @@
     </div>
     {#if title || buttons}
       <div
-        class={`relative flex h-16 place-items-center justify-between border-b border-immich-gray-border dark:border-immich-dark-gray-border ${mobileDevice.maxMd ? 'px-3' : 'px-4'} text-dark`}
+        class={`relative flex h-16 place-items-center justify-between border-b immich-border ${mobileDevice.maxMd ? 'px-3' : 'px-4'} text-dark`}
       >
         <div class="flex items-center">
           {#if title}

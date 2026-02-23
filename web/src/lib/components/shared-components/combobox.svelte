@@ -305,7 +305,7 @@
       class:!rounded-b-none={isOpen && dropdownDirection === 'bottom'}
       class:!rounded-t-none={isOpen && dropdownDirection === 'top'}
       class:cursor-pointer={!isActive}
-      class="immich-form-input bg-immich-primary-12 dark:bg-immich-dark-primary-24 w-full pe-12! transition-all rounded-3xl"
+      class="immich-form-input w-full pe-12! transition-all rounded-3xl"
       id={inputId}
       onfocus={activate}
       oninput={onInput}

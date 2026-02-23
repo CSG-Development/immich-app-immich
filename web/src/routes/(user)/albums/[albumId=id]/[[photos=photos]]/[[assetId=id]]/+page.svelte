@@ -76,7 +76,6 @@
   import {
     mdiArrowLeft,
     mdiCogOutline,
-    mdiDeleteOutline,
     mdiDotsVertical,
     mdiDownload,
     mdiImageOutline,
@@ -85,6 +84,7 @@
     mdiPlus,
     mdiPresentationPlay,
     mdiShareVariantOutline,
+    mdiTrashCanOutline,
     mdiUpload,
   } from '@mdi/js';
   import { onDestroy } from 'svelte';
@@ -729,7 +729,7 @@
                   <MenuOption icon={mdiCogOutline} text={$t('options')} onClick={handleOptions} />
                 {/if}
 
-                <MenuOption icon={mdiDeleteOutline} text={$t('delete_album')} onClick={() => handleRemoveAlbum()} />
+                <MenuOption icon={mdiTrashCanOutline} text={$t('delete_album')} onClick={() => handleRemoveAlbum()} />
               </ButtonContextMenu>
             {/if}
 

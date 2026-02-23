@@ -3,12 +3,16 @@
 @source "../node_modules/@immich/ui";
 /* @import '/usr/ui/dist/theme/default.css'; */
 
+@utility immich-border {
+  @apply border-immich-gray-border dark:border-immich-dark-gray-border;
+}
+
 @utility immich-form-input {
-  @apply rounded-lg bg-primary/[.20] px-3 py-3 text-sm focus:border-immich-primary disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-100 dark:text-immich-dark-fg dark:disabled:bg-gray-800 dark:disabled:text-gray-200;
+  @apply border immich-border rounded-3xl bg-immich-primary/12 px-3 py-3 text-sm focus:border-immich-primary disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-100 dark:disabled:bg-gray-800 dark:disabled:text-gray-200;
 }
 
 @utility immich-form-label {
-  @apply font-bold text-xs text-primary;
+  @apply text-base;
 }
 
 @utility immich-scrollbar {
@@ -32,6 +36,10 @@
 
 @utility grid-auto-fill-* {
   grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--spacing) * --value(number)), 100%), 1fr));
+}
+
+@utility settings-button {
+  @apply rounded-3xl! px-6! py-[13px]! font-normal!;
 }
 
 @custom-variant dark (&:where(.dark, .dark *):not(.light));

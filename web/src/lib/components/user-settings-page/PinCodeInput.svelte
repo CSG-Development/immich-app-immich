@@ -113,7 +113,7 @@
 
 <div class="flex flex-col gap-1">
   {#if label}
-    <Label for={pinCodeInputElements[0]?.id}>{label}</Label>
+    <Label class="text-primary font-medium" for={pinCodeInputElements[0]?.id}>{label}</Label>
   {/if}
   <div class="flex gap-2">
     {#each { length: pinLength } as _, index (index)}
@@ -125,7 +125,7 @@
         maxlength="1"
         bind:this={pinCodeInputElements[index]}
         id="pin-code-{index}"
-        class="h-12 w-10 rounded-xl border-2 border-suble dark:border-gray-700 text-center text-lg font-medium focus:border-immich-primary focus:ring-primary dark:focus:border-primary font-mono bg-white dark:bg-light"
+        class="h-14 w-9 md:w-13 rounded-[20px] border immich-border text-center text-lg font-medium focus:border-immich-primary focus:ring-primary dark:focus:border-primary"
         value={isMasked ? (pinValues[index] ? '•' : '') : pinValues[index]}
         onkeydown={handleKeydown}
         oninput={(event) => handleInput(event, index)}

@@ -56,7 +56,7 @@
       <span class="font-bold text-3xl text-black dark:text-white">{group.name}</span>
       <span>({$t('albums_count', { values: { count: albums.length } })})</span>
     </button>
-    <hr class="border-immich-gray-border dark:border-immich-dark-gray-border" />
+    <hr class="immich-border" />
   </div>
 {/if}
 

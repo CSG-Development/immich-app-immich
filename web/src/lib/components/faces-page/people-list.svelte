@@ -49,9 +49,7 @@
 </div>
 
 {#if showPeople.length > 0}
-  <div
-    class="overflow-y-hidden rounded-3xl bg-light dark:bg-immich-dark-gray-card mt-6 border border-immich-gray-border dark:border-immich-dark-gray-border"
-  >
+  <div class="overflow-y-hidden rounded-3xl bg-light dark:bg-immich-dark-gray-card mt-6 border immich-border">
     <div class="overflow-y-auto p-8">
       <div
         class="grid gap-[33px] justify-between"

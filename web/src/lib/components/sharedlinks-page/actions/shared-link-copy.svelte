@@ -19,7 +19,7 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={$t('copy_link')} icon={mdiContentCopy} onClick={handleCopy} isCopy />
+  <MenuOption text={$t('copy_link')} icon={mdiContentCopy} onClick={handleCopy} scaledIcon rotatedIcon />
 {:else}
   <IconButton
     color="secondary"
