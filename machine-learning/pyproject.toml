@@ -7,6 +7,8 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 dependencies = [
     "aiocache>=0.12.1,<1.0",
+    "dateparser>=1.2.2",
+    "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl#sha256=5e6329fe3fecedb1d1a02c3ea2172ee0fede6cea6e4aefb6a02d832dba78a310",
     "fastapi>=0.95.2,<1.0",
     "ftfy>=6.1.1",
     "gunicorn>=21.1.0",
@@ -20,6 +22,7 @@ dependencies = [
     "pydantic-settings>=2.5.2,<3",
     "python-multipart>=0.0.6,<1.0",
     "rich>=13.4.2",
+    "spacy>=3.8.11",
     "tokenizers>=0.15.0,<1.0",
     "uvicorn[standard]>=0.22.0,<1.0",
 ]
