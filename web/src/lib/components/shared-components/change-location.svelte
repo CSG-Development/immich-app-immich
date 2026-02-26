@@ -186,7 +186,7 @@
         </div>
       </div>
 
-      <span>{$t('pick_a_location')}</span>
+      <span class="text-xl">{$t('pick_a_location')}</span>
       <div class="h-[500px] min-h-[300px] w-full z-0">
         {#await import('../shared-components/map/map.svelte')}
           {#await delay(timeToLoadTheMap) then}
@@ -221,7 +221,7 @@
         {/await}
       </div>
 
-      <div class="grid sm:grid-cols-2 gap-4 text-sm text-start mt-4">
+      <div class="grid sm:grid-cols-2 gap-4 text-sm text-start mt-2">
         <CoordinatesInput lat={point ? point.lat : assetLat} lng={point ? point.lng : assetLng} {onUpdate} />
       </div>
     </div>

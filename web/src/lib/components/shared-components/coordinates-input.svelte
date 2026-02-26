@@ -44,7 +44,7 @@
   };
 </script>
 
-<div>
+<div class="h-full">
   <label class="immich-form-label" for="latitude-input-{id}">{$t('latitude')}</label>
   <NumberRangeInput id="latitude-input-{id}" min={-90} max={90} {onKeyDown} {onInput} {onPaste} bind:value={lat} />
 </div>
