@@ -54,6 +54,7 @@ class InstallResult {
 abstract class UpdateApi {
   NativeUpdateInfo? fetchLatestUpdate(String url);
   void startDownload(String version, String url, String? sha256);
+  void cancelDownload();
   InstallResult installDownloadedUpdate();
 }
 

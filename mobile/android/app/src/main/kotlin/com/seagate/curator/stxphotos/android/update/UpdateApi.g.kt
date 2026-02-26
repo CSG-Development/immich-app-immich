@@ -232,6 +232,7 @@ private open class UpdateApiPigeonCodec : StandardMessageCodec() {
 interface UpdateApi {
   fun fetchLatestUpdate(url: String): NativeUpdateInfo?
   fun startDownload(version: String, url: String, sha256: String?)
+  fun cancelDownload()
   fun installDownloadedUpdate(): InstallResult
 
   companion object {
@@ -270,6 +271,22 @@ interface UpdateApi {
             val sha256Arg = args[2] as String?
             val wrapped: List<Any?> = try {
               api.startDownload(versionArg, urlArg, sha256Arg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              UpdateApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.UpdateApi.cancelDownload$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.cancelDownload()
               listOf(null)
             } catch (exception: Throwable) {
               UpdateApiPigeonUtils.wrapError(exception)
