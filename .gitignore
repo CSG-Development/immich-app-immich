@@ -30,3 +30,4 @@ vite.config.js.timestamp-*
 .devcontainer/.env*
 
 homecloud-l10n-5f2611435b25.json
+.venv
