@@ -185,7 +185,7 @@
 
       const count = results.filter(({ success }) => success).length;
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('assets_added_count', { values: { count } }),
       });
 
@@ -300,7 +300,7 @@
         },
       });
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('album_cover_updated'),
       });
     } catch (error) {

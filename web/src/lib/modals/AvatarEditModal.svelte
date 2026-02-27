@@ -24,7 +24,7 @@
         await deleteProfileImage();
       }
 
-      notificationController.show({ message: $t('saved_profile'), type: NotificationType.Info });
+      notificationController.show({ message: $t('saved_profile'), type: NotificationType.Success });
 
       $user = await updateMyUser({ userUpdateMeDto: { avatarColor: color } });
       onClose();

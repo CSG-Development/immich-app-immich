@@ -173,7 +173,7 @@
 
       notificationController.show({
         message: $t('changed_visibility_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       await goto(previousRoute);
@@ -194,7 +194,7 @@
 
       notificationController.show({
         message: updatedPerson.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_remove_favorites', { values: { favorite: person.isFavorite } }));
@@ -214,7 +214,7 @@
     }
     try {
       person = await updatePerson({ id: person.id, personUpdateDto: { featureFaceAssetId: asset.id } });
-      notificationController.show({ message: $t('feature_photo_updated'), type: NotificationType.Info });
+      notificationController.show({ message: $t('feature_photo_updated'), type: NotificationType.Success });
     } catch (error) {
       handleError(error, $t('errors.unable_to_set_feature_photo'));
     }
@@ -279,7 +279,7 @@
 
       notificationController.show({
         message: $t('change_name_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_name'));

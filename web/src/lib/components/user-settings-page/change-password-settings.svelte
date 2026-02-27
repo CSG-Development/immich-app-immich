@@ -21,7 +21,7 @@
 
       notificationController.show({
         message: $t('updated_password'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       password = '';

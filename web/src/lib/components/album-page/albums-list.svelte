@@ -312,7 +312,7 @@
   const successEditAlbumInfo = (album: AlbumResponseDto) => {
     notificationController.show({
       message: $t('album_info_updated'),
-      type: NotificationType.Info,
+      type: NotificationType.Success,
       button: {
         text: $t('view_album'),
         onClick() {

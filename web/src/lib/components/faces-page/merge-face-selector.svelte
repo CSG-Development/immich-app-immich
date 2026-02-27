@@ -56,7 +56,7 @@
     if (selectedPeople.length >= 5) {
       notificationController.show({
         message: $t('merge_people_limit'),
-        type: NotificationType.Info,
+        type: NotificationType.Warning,
       });
       return;
     }

@@ -24,7 +24,7 @@
       asset.exifInfo = { ...asset.exifInfo, description: newDescription };
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('asset_description_updated'),
       });
     } catch (error) {

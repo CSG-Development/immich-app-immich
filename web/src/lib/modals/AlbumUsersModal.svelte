@@ -16,7 +16,7 @@
     type AlbumResponseDto,
     type UserResponseDto,
   } from '@immich/sdk';
-  import { Button, Modal, ModalBody, Text } from '@immich/ui';
+  import { Button, Modal, ModalBody } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';

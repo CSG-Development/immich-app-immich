@@ -33,7 +33,7 @@
   const handleReset = async () => {
     try {
       await resetPinCode({ pinCodeResetDto: { password } });
-      notificationController.show({ message: $t('pin_code_reset_successfully'), type: NotificationType.Info });
+      notificationController.show({ message: $t('pin_code_reset_successfully'), type: NotificationType.Success });
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.failed_to_reset_pin_code'));

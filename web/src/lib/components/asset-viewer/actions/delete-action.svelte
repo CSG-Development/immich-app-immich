@@ -49,7 +49,7 @@
 
       notificationController.show({
         message: $t('moved_to_trash'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_trash_asset'));
@@ -64,7 +64,7 @@
 
       notificationController.show({
         message: $t('permanently_deleted_asset'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_delete_asset'));

@@ -109,7 +109,7 @@
         values: { user: user.name, role: role == AlbumUserRole.Viewer ? $t('role_viewer') : $t('role_editor') },
       });
       onClose({ action: 'refreshAlbum' });
-      notificationController.show({ type: NotificationType.Info, message });
+      notificationController.show({ type: NotificationType.Success, message });
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_album_user_role'));
     }

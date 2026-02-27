@@ -46,7 +46,7 @@
 
       notificationController.show({
         message: $t('merge_people_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
       onClose([personToMerge, personToBeMergedInto]);
     } catch (error) {

@@ -8,10 +8,10 @@
   import { handleError } from '$lib/utils/handle-error';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
+  import { IconButton } from '@immich/ui';
   import { mdiHeart, mdiHeartOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { OnAction } from './action';
-  import { IconButton } from '@immich/ui';
 
   interface Props {
     asset: AssetResponseDto;
@@ -37,7 +37,7 @@
       });
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: asset.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'),
       });
     } catch (error) {

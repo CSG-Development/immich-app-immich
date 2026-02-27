@@ -32,7 +32,7 @@
 
       notificationController.show({
         message: $t('tag_updated', { values: { tag: tag.value } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       onClose(updatedTag);

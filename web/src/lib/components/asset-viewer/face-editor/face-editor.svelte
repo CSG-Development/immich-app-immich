@@ -1,6 +1,9 @@
 <script lang="ts">
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
-  import { notificationController } from '$lib/components/shared-components/notification/notification';
+  import {
+    notificationController,
+    NotificationType,
+  } from '$lib/components/shared-components/notification/notification';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
@@ -285,6 +288,7 @@
       if (!data) {
         notificationController.show({
           message: $t('error_tag_face_bounding_box'),
+          type: NotificationType.Error,
         });
         return;
       }
