@@ -186,7 +186,7 @@ class VignetteEditorState extends State<VignetteEditor> {
     final color = vignetteColor;
     final colorHex = (color.red << 16) | (color.green << 8) | color.blue;
 
-    final baked = await bakeVignette(
+    final baked = await bakeVignetteAsync(
       bytes,
       intensity: _getAdjustmentValue('intensity'),
       radius: _getAdjustmentValue('radius'),
