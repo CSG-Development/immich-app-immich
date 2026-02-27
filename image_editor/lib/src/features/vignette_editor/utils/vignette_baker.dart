@@ -1,13 +1,15 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 /// Bakes a radial vignette effect into image bytes.
 ///
 /// Uses the same formula as [VignetteOverlayPainter]: darkening factor from
 /// center (0) to edges (intensity), with [radius] controlling the bright center
-/// size and [feather] the softness. Returns PNG bytes so the main editor
+/// size and [feather] the softness. Returns PNG/JPEG bytes so the main editor
 /// receives an image with the effect applied.
 Future<Uint8List?> bakeVignette(
   Uint8List imageBytes, {
@@ -97,4 +99,40 @@ Future<Uint8List?> bakeVignette(
 
   final isJpeg = decoder is img.JpegDecoder;
   return Uint8List.fromList(isJpeg ? img.encodeJpg(decoded) : img.encodePng(decoded));
+}
+
+/// Runs [bakeVignette] in a background isolate when supported.
+///
+/// This keeps the expensive pixel loop off the UI thread on mobile/desktop,
+/// while falling back to a direct call on platforms where isolates are not
+/// available or are single-threaded (e.g. web).
+Future<Uint8List?> bakeVignetteAsync(
+  Uint8List imageBytes, {
+  required double intensity,
+  required double radius,
+  required double feather,
+  int? colorHex,
+}) async {
+  if (kIsWeb) {
+    // Web uses a single JavaScript thread; spawning isolates there does not
+    // provide real parallelism and adds overhead, so we run inline instead.
+    return bakeVignette(
+      imageBytes,
+      intensity: intensity,
+      radius: radius,
+      feather: feather,
+      colorHex: colorHex,
+    );
+  }
+
+  // On native platforms, offload the CPU-heavy work to an isolate.
+  return Isolate.run(() {
+    return bakeVignette(
+      imageBytes,
+      intensity: intensity,
+      radius: radius,
+      feather: feather,
+      colorHex: colorHex,
+    );
+  });
 }

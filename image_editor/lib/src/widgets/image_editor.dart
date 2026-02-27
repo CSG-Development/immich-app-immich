@@ -56,6 +56,15 @@ class _ImageEditorState extends State<ImageEditor> {
       ),
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
+        imageGeneration: const ImageGenerationConfigs(
+          // Always generate from the composed scene instead of returning the
+          // original input bytes, and disable background generation so that
+          // the final capture always reflects the latest background image
+          // (including programmatic updates like baked vignette), even on
+          // web release builds.
+          enableUseOriginalBytes: false,
+          enableBackgroundGeneration: false,
+        ),
         mainEditor: MainEditorConfigs(
           widgets: MainEditorWidgets(
             bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
@@ -63,6 +72,7 @@ class _ImageEditorState extends State<ImageEditor> {
               builder: (_) => EditorBottomBar(editor: editor, rebuildStream: rebuildStream, key: key),
             ),
           ),
+          enableZoom: true,
         ),
         tuneEditor: widget.config.enableTuneAdjustments
             ? TuneEditorConfigs(
