@@ -1293,6 +1293,43 @@ class DriftPeopleCollectionRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DriftPeopleMergePage]
+class DriftPeopleMergeRoute extends PageRouteInfo<DriftPeopleMergeRouteArgs> {
+  DriftPeopleMergeRoute({
+    Key? key,
+    required DriftPerson person,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPeopleMergeRoute.name,
+         args: DriftPeopleMergeRouteArgs(key: key, person: person),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPeopleMergeRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPeopleMergeRouteArgs>();
+      return DriftPeopleMergePage(key: args.key, person: args.person);
+    },
+  );
+}
+
+class DriftPeopleMergeRouteArgs {
+  const DriftPeopleMergeRouteArgs({this.key, required this.person});
+
+  final Key? key;
+
+  final DriftPerson person;
+
+  @override
+  String toString() {
+    return 'DriftPeopleMergeRouteArgs{key: $key, person: $person}';
+  }
+}
+
+/// generated route for
 /// [DriftPersonPage]
 class DriftPersonRoute extends PageRouteInfo<DriftPersonRouteArgs> {
   DriftPersonRoute({

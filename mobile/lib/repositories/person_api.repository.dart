@@ -11,14 +11,19 @@ class PersonApiRepository extends ApiRepository {
 
   PersonApiRepository(this._api);
 
-  Future<List<PersonDto>> getAll() async {
-    final dto = await checkNull(_api.getAllPeople());
+  Future<List<PersonDto>> getAll({String? closestPersonId}) async {
+    final dto = await checkNull(_api.getAllPeople(closestPersonId: closestPersonId));
     return dto.people.map(_toPerson).toList();
   }
 
   Future<PersonDto> update(String id, {String? name, DateTime? birthday}) async {
     final dto = await checkNull(_api.updatePerson(id, PersonUpdateDto(name: name, birthDate: birthday)));
     return _toPerson(dto);
+  }
+
+  Future<List<BulkIdResponseDto>> mergePerson(String id, {required List<String> ids}) async {
+    final dto = await checkNull(_api.mergePerson(id, MergePersonDto(ids: ids)));
+    return dto;
   }
 
   static PersonDto _toPerson(PersonResponseDto dto) => PersonDto(
