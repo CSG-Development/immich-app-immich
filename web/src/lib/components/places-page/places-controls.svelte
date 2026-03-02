@@ -44,7 +44,7 @@
 </script>
 
 <!-- Search Places -->
-<div class="hidden md:block h-10 xl:w-60 2xl:w-80">
+<div class="hidden md:block h-10 w-full md:w-55">
   <SearchBar placeholder={$t('search_places')} bind:name={searchQuery} showLoadingSpinner={false} />
 </div>
 

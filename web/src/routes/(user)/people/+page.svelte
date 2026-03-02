@@ -20,6 +20,7 @@
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import PersonEditBirthDateModal from '$lib/modals/PersonEditBirthDateModal.svelte';
   import PersonMergeSuggestionModal from '$lib/modals/PersonMergeSuggestionModal.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { websocketEvents } from '$lib/stores/websocket';
   import { handlePromiseError } from '$lib/utils';
@@ -341,7 +342,7 @@
     {#if people.length > 0}
       <div class="flex gap-2 items-center justify-center">
         <div class="hidden sm:block">
-          <div class="w-40 lg:w-80 h-10">
+          <div class="w-full md:w-55 h-10">
             <SearchPeople
               bind:this={searchPeopleElement}
               type="searchBar"
@@ -358,18 +359,34 @@
           onclick={() => (selectHidden = !selectHidden)}
           size="small"
           variant="ghost"
-          color="secondary">{$t('show_and_hide_people')}</Button
+          color="secondary"
+          shape="round"
+          class="px-0 md:px-4"
         >
+          {$t('show_and_hide_people')}
+        </Button>
       </div>
     {/if}
   {/snippet}
 
+  {#if mobileDevice.maxMd}
+    <div class="h-10 my-2">
+      <SearchPeople
+        bind:this={searchPeopleElement}
+        type="searchBar"
+        placeholder={$t('search_people')}
+        onReset={onResetSearchBar}
+        onSearch={handleSearch}
+        bind:searchName
+        bind:searchedPeopleLocal
+      />
+    </div>
+  {/if}
+
   {#if countVisiblePeople > 0 && (!searchName || searchedPeopleLocal.length > 0)}
     <PeopleInfiniteScroll people={showPeople} hasNextPage={!!nextPage && !searchName} {loadNextPage}>
       {#snippet children({ person })}
-        <div
-          class="p-2 rounded-xl hover:bg-gray-200 border-2 hover:border-immich-primary/50 hover:shadow-sm dark:hover:bg-immich-dark-primary/20 hover:dark:border-immich-dark-primary/25 border-transparent transition-all"
-        >
+        <div class="p-1 rounded-xl hover:p-[3px] hover:border-1 hover:border-primary hover:bg-immich-bg-gray">
           <PeopleCard
             {person}
             onSetBirthDate={() => handleChangeBirthDate(person)}
@@ -380,7 +397,7 @@
 
           <input
             type="text"
-            class=" bg-white dark:bg-immich-dark-gray border-gray-100 placeholder-gray-400 text-center dark:border-gray-900 w-full rounded-2xl mt-2 py-2 text-sm text-immich-primary dark:text-immich-dark-primary"
+            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white focus:bg-white"
             value={person.name}
             placeholder={$t('add_a_name')}
             use:shortcut={{ shortcut: { key: 'Enter' }, onShortcut: (e) => e.currentTarget.blur() }}
@@ -403,7 +420,7 @@
   <dialog
     open
     transition:fly={{ y: innerHeight, duration: 150, easing: quintOut, opacity: 0 }}
-    class="absolute start-0 top-0 h-full w-full bg-light"
+    class="absolute start-0 top-0 h-full w-full bg-bg"
     aria-modal="true"
     aria-labelledby="manage-visibility-title"
     use:focusTrap

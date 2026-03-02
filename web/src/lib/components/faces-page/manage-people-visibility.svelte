@@ -110,9 +110,9 @@
 <svelte:document use:shortcut={{ shortcut: { key: 'Escape' }, onShortcut: onClose }} />
 
 <div
-  class="fixed top-0 flex h-16 w-full items-center justify-between border-b bg-white p-1 dark:border-immich-dark-gray dark:bg-black dark:text-immich-dark-fg md:p-8"
+  class="fixed top-0 flex h-18 md:h-20 w-full items-center justify-between border-b bg-white p-1 dark:border-immich-dark-gray dark:bg-black dark:text-immich-dark-fg md:p-8"
 >
-  <div class="flex items-center">
+  <div class="flex items-center w-full">
     <IconButton
       shape="round"
       color="secondary"
@@ -121,13 +121,12 @@
       icon={mdiClose}
       onclick={onClose}
     />
-    <div class="flex gap-2 items-center">
-      <p id={titleId} class="ms-2">{$t('show_and_hide_people')}</p>
-      <p class="text-sm text-gray-400 dark:text-gray-600">({totalPeopleCount.toLocaleString($locale)})</p>
-    </div>
+    <p id={titleId} class="ms-2 w-25 md:w-full font-medium">
+      {$t('show_and_hide_people')} ({totalPeopleCount.toLocaleString($locale)})
+    </p>
   </div>
-  <div class="flex items-center justify-end">
-    <div class="flex items-center md:me-4">
+  <div class="flex items-center justify-end gap-x-3">
+    <div class="flex items-center w-24 h-12">
       <IconButton
         shape="round"
         color="secondary"
@@ -145,17 +144,19 @@
         onclick={handleToggleVisibility}
       />
     </div>
-    <Button loading={showLoadingSpinner} onclick={handleSaveVisibility} size="small">{$t('done')}</Button>
+    <Button loading={showLoadingSpinner} onclick={handleSaveVisibility} size="small" class="rounded-3xl w-20 h-11.5">
+      {$t('done')}
+    </Button>
   </div>
 </div>
 
-<div class="flex flex-wrap gap-1 p-2 pb-8 md:px-8 mt-16">
-  <PeopleInfiniteScroll {people} hasNextPage={true} {loadNextPage}>
+<div class="flex flex-wrap gap-1 py-4 px-3.5 md:px-24 md:pt-7 mt-16">
+  <PeopleInfiniteScroll {people} hasNextPage={true} {loadNextPage} isVisibilityPage>
     {#snippet children({ person })}
       {@const hidden = personIsHidden[person.id]}
       <button
         type="button"
-        class="group relative w-full h-full"
+        class="group relative w-full h-full md:w-60 md:h-60"
         onclick={() => (personIsHidden[person.id] = !hidden)}
         aria-pressed={hidden}
         aria-label={person.name ? $t('hide_named_person', { values: { name: person.name } }) : $t('hide_person')}
