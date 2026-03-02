@@ -39,21 +39,22 @@
 </script>
 
 <div
-  class="flex items-center text-sm {roundedBottom
+  class="px-1 flex items-center text-sm {roundedBottom
     ? 'rounded-2xl'
-    : 'rounded-t-lg'} bg-gray-200 p-2 dark:bg-immich-dark-gray gap-2 place-items-center h-full"
+    : 'rounded-t-lg'} place-items-center h-full bg-immich-gray-search-bar dark:bg-immich-dark-gray-search-bar border-1 border-immich-gray-border dark:border-immich-dark-gray-border"
 >
-  <IconButton
-    shape="round"
-    color="secondary"
-    variant="ghost"
-    icon={mdiMagnify}
-    aria-label={$t('search')}
-    size="small"
-    onclick={() => onSearch({ force: true })}
-  />
+  <div class="w-14">
+    <IconButton
+      color="secondary"
+      variant="ghost"
+      icon={mdiMagnify}
+      aria-label={$t('search')}
+      onclick={() => onSearch({ force: true })}
+      class="w-full"
+    />
+  </div>
   <input
-    class="w-full gap-2 bg-gray-200 dark:bg-immich-dark-gray dark:text-white"
+    class="w-full gap-2 dark:text-white placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text"
     type="text"
     {placeholder}
     bind:value={name}
@@ -66,15 +67,16 @@
       <LoadingSpinner />
     </div>
   {/if}
-  {#if name}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
-      icon={mdiClose}
-      aria-label={$t('clear_value')}
-      size="small"
-      onclick={resetSearch}
-    />
-  {/if}
+  <div class="w-14">
+    {#if name}
+      <IconButton
+        color="secondary"
+        variant="ghost"
+        icon={mdiClose}
+        aria-label={$t('clear_value')}
+        class="w-full"
+        onclick={resetSearch}
+      />
+    {/if}
+  </div>
 </div>

@@ -79,10 +79,10 @@
     updateSlidingWindow();
 
     const rowWidth = Math.floor(viewport.width);
-    const rowHeight = rowWidth < 850 ? 100 : 235;
+    const rowHeight = rowWidth < 850 ? 190 : 235;
 
     geometry = getJustifiedLayoutFromAssets(_assets, {
-      spacing: 2,
+      spacing: 4,
       heightTolerance: 0.15,
       rowHeight,
       rowWidth,
@@ -537,7 +537,6 @@
       {#if layout.display}
         <div
           class="absolute"
-          style:overflow="clip"
           style="width: {layout.width}px; height: {layout.height}px; top: {layout.top}px; left: {layout.left}px"
         >
           <Thumbnail
