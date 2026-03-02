@@ -25,7 +25,7 @@ def get_model_class(model_name: str, model_type: ModelType, model_task: ModelTas
         case ModelSource.INSIGHTFACE, ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION:
             return FaceDetector
 
-        case ModelSource.INSIGHTFACE, ModelType.RECOGNITION, ModelTask.FACIAL_RECOGNITION:
+        case ModelSource.ARCFACE, ModelType.RECOGNITION, ModelTask.FACIAL_RECOGNITION:
             return FaceRecognizer
 
         case _:

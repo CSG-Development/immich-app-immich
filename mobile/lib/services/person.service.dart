@@ -5,6 +5,7 @@ import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/repositories/asset_api.repository.dart';
 import 'package:immich_mobile/repositories/person_api.repository.dart';
 import 'package:logging/logging.dart';
+import 'package:openapi/api.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'person.service.g.dart';
@@ -24,9 +25,9 @@ class PersonService {
 
   PersonService(this._personApiRepository, this._assetApiRepository, this._assetRepository);
 
-  Future<List<PersonDto>> getAllPeople() async {
+  Future<List<PersonDto>> getAllPeople({String? closestPersonId}) async {
     try {
-      return await _personApiRepository.getAll();
+      return await _personApiRepository.getAll(closestPersonId: closestPersonId);
     } catch (error, stack) {
       _log.severe("Error while fetching curated people", error, stack);
       return [];
@@ -46,6 +47,15 @@ class PersonService {
   Future<PersonDto?> updateName(String id, String name) async {
     try {
       return await _personApiRepository.update(id, name: name);
+    } catch (error, stack) {
+      _log.severe("Error while updating person name", error, stack);
+    }
+    return null;
+  }
+
+  Future<List<BulkIdResponseDto>?> mergePerson(String id, List<String> ids) async {
+    try {
+      return await _personApiRepository.mergePerson(id, ids: ids);
     } catch (error, stack) {
       _log.severe("Error while updating person name", error, stack);
     }

@@ -1,0 +1,18 @@
+input:
+  frontend: "spreadsheet"
+  spreadsheet_key: "19hst4kSiZtin54cHnIc925wquhXXWMR6_E3Wih1sTGk"
+  credentials_json: "scripts/i18n/homecloud-l10n-5f2611435b25.json"
+  worksheet_names: ["Immich(Flutter+Web)"]
+  key_column_name: "KEY"
+  value_column_names: ["af", "ar", "az", "be", "bg", "bi", "bn", "ca", "cs", "cv", "da", "de", "el", "en", "es", "et", "eu", "fa", "fi", "fil", "fr", "gl", "he", "hi", "hr", "hu", "hy", "id", "it", "ja", "ka", "kk", "kmr", "kn", "ko", "lb", "lt", "lv", "mfa", "mk", "ml", "mn", "mr", "ms", "nb_NO", "nl", "nn", "pa", "pl", "pt", "pt_BR", "ro", "ru", "sk", "sl", "sq", "sr_Cyrl", "sr_Latn", "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "zh_Hant", "zh_SIMPLIFIED"]
+  namespace_column_name: "NAMESPACE"
+
+output:
+  - backend: "easy_localization"
+    namespace_paths: 
+      - ["Immich(Flutter+Web)", "main"]  
+    output_dir: "i18n/"
+    output_filename: "{locale}.json"
+    source_language: "en"
+    ignore_empty_strings: true
+    key_separator: "."

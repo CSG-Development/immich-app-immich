@@ -45,7 +45,11 @@
     const uint8Array = flutterState.getImage();
 
     const asset = await getAssetInfo({ id: assetId, key: authManager.key });
-    const resultFile = new File([uint8Array], asset.originalFileName, { type: 'image/jpeg' });
+    const lastDotIndex = asset.originalFileName.lastIndexOf('.');
+    const fileNameWithoutExt =
+      // eslint-disable-next-line unicorn/prefer-string-slice
+      lastDotIndex === -1 ? asset.originalFileName : asset.originalFileName.substring(0, lastDotIndex);
+    const resultFile = new File([uint8Array], `${fileNameWithoutExt}_${Date.now()}_edited.png`, { type: 'image/png' });
     await fileUploadHandler({ files: [resultFile] }).then(async () => {
       await goto(resolve(AppRoute.PHOTOS), { replaceState: true });
     });

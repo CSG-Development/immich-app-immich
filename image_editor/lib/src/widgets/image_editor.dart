@@ -3,7 +3,7 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/features/tune_editor/utils/tune_presets.dart';
 
 import 'package:image_editor/src/models/image_editor_config.dart';
-import 'package:image_editor/src/effects/monochrome_effect.dart';
+// import 'package:image_editor/src/effects/monochrome_effect.dart';
 import 'package:image_editor/src/utils/tune_adjustment_matrices.dart';
 import 'package:image_editor/src/widgets/editor_bottom_bar.dart';
 
@@ -34,15 +34,14 @@ class _ImageEditorState extends State<ImageEditor> {
     super.dispose();
   }
 
-  Future<void> _handleCustomEffectButton(ProImageEditorState editor) async {
-    final currentBytes = await editor.editorImage?.safeByteArray();
-    if (currentBytes == null) return;
+  // Future<void> _handleCustomEffectButton(ProImageEditorState editor) async {
+  //   final currentBytes = await editor.editorImage?.safeByteArray();
+  //   if (currentBytes == null) return;
 
-    final monochromeEffect = MonochromeEffect();
-    final transformedBytes = await monochromeEffect.apply(currentBytes);
-    await editor.updateBackgroundImage(EditorImage(byteArray: transformedBytes));
-  }
-
+  //   final monochromeEffect = MonochromeEffect();
+  //   final transformedBytes = await monochromeEffect.apply(currentBytes);
+  //   await editor.updateBackgroundImage(EditorImage(byteArray: transformedBytes));
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -53,25 +52,28 @@ class _ImageEditorState extends State<ImageEditor> {
         onImageEditingComplete: (bytes) async {
           widget.config.onImageEditingComplete(bytes);
         },
-        mainEditorCallbacks: MainEditorCallbacks(
-          onPopInvoked: (didPop, result) => widget.config.onCloseEditor(),
-        ),
+        mainEditorCallbacks: MainEditorCallbacks(onPopInvoked: (didPop, result) => widget.config.onCloseEditor()),
       ),
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
-        // mainEditor: MainEditorConfigs(
-        //   widgets: MainEditorWidgets(
-        //     bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
-        //       stream: rebuildStream,
-        //       builder: (_) => EditorBottomBar(
-        //         editor: editor,
-        //         rebuildStream: rebuildStream,
-        //         key: key,
-        //         onCustomEffect: widget.config.enableCustomEffects ? () => _handleCustomEffectButton(editor) : null,
-        //       ),
-        //     ),
-        //   ),
-        // ),
+        imageGeneration: const ImageGenerationConfigs(
+          // Always generate from the composed scene instead of returning the
+          // original input bytes, and disable background generation so that
+          // the final capture always reflects the latest background image
+          // (including programmatic updates like baked vignette), even on
+          // web release builds.
+          enableUseOriginalBytes: false,
+          enableBackgroundGeneration: false,
+        ),
+        mainEditor: MainEditorConfigs(
+          widgets: MainEditorWidgets(
+            bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
+              stream: rebuildStream,
+              builder: (_) => EditorBottomBar(editor: editor, rebuildStream: rebuildStream, key: key),
+            ),
+          ),
+          enableZoom: true,
+        ),
         tuneEditor: widget.config.enableTuneAdjustments
             ? TuneEditorConfigs(
                 tuneAdjustmentOptions: [

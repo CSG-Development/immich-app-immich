@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
+import 'package:immich_mobile/infrastructure/entities/asset_face.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/person.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 
@@ -46,6 +47,44 @@ class DriftPeopleRepository extends DriftDatabaseRepository {
     final query = _db.update(_db.personEntity)..where((row) => row.id.equals(personId));
 
     return query.write(PersonEntityCompanion(birthDate: Value(birthday), updatedAt: Value(DateTime.now())));
+  }
+
+  Future<DriftPerson> merge(String targetPersonId, List<String> sourcePersonIds) async {
+    if (sourcePersonIds.isEmpty) {
+      throw ArgumentError('Source person IDs list cannot be empty');
+    }
+
+    // Ensure target person exists
+    final targetPerson = await (_db.select(_db.personEntity)
+      ..where((row) => row.id.equals(targetPersonId)))
+      .getSingleOrNull();
+      
+    if (targetPerson == null) {
+      throw Exception('Target person not found');
+    }
+
+    await _db.transaction(() async {
+      // Update all faces from source people to target person
+      for (final sourceId in sourcePersonIds) {
+        await (_db.update(_db.assetFaceEntity)
+          ..where((row) => row.personId.equals(sourceId)))
+          .write(AssetFaceEntityCompanion(
+            personId: Value(targetPersonId),
+          ));
+      }
+
+      // Delete source people
+      await (_db.delete(_db.personEntity)
+        ..where((row) => row.id.isIn(sourcePersonIds)))
+        .go();
+    });
+
+    // Fetch and return updated target person
+    final updatedPerson = await (_db.select(_db.personEntity)
+      ..where((row) => row.id.equals(targetPersonId)))
+      .getSingle();
+      
+    return updatedPerson.toDto();
   }
 }
 
