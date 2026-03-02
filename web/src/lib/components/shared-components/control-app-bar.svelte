@@ -75,7 +75,7 @@
         : 'grid-cols-[10%_90%] md:grid-cols-[25%_50%_25%]',
       'justify-between content-center lg:grid-cols-[25%_50%_25%]',
       appBarBorder,
-      'place-items-center p-2 max-md:p-0 transition-all',
+      'md:mx-2 md:my-2 place-items-center md:rounded-lg p-2 max-md:p-0 transition-all',
       tailwindClasses,
       forceDark ? 'bg-black! text-white' : 'bg-white dark:bg-black',
     ]}
