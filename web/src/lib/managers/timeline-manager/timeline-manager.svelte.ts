@@ -380,7 +380,7 @@ export class TimelineManager {
     const viewportWidth = this.viewportWidth;
 
     return {
-      spacing: 2,
+      spacing: 12,
       heightTolerance: 0.15,
       rowHeight: this.#rowHeight,
       rowWidth: Math.floor(viewportWidth),
