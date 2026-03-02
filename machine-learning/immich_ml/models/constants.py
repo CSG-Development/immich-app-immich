@@ -72,6 +72,11 @@ _INSIGHTFACE_MODELS = {
     "buffalo_s",
     "buffalo_m",
     "buffalo_l",
+    "scrfd_10g_gnkps"
+}
+
+_ARCFACE_MODELS = {
+    "arcfaceresnet8-100",
 }
 
 
@@ -148,9 +153,11 @@ WEBLATE_TO_FLORES200 = {
 
 def get_model_source(model_name: str) -> ModelSource | None:
     cleaned_name = clean_name(model_name)
-
     if cleaned_name in _INSIGHTFACE_MODELS:
         return ModelSource.INSIGHTFACE
+
+    if cleaned_name in _ARCFACE_MODELS:
+        return ModelSource.ARCFACE
 
     if cleaned_name in _MCLIP_MODELS:
         return ModelSource.MCLIP

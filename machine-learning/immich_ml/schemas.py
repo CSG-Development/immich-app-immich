@@ -40,6 +40,7 @@ class ModelFormat(StrEnum):
 
 class ModelSource(StrEnum):
     INSIGHTFACE = "insightface"
+    ARCFACE = "arcfaceresnet8-100"
     MCLIP = "mclip"
     OPENCLIP = "openclip"
 
