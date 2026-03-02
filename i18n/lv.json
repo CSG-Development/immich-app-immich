@@ -102,7 +102,6 @@
     "note_cannot_be_changed_later": "PIEZĪME: Vēlāk to vairs nevar mainīt!",
     "notification_email_from_address": "No adreses",
     "notification_email_from_address_description": "Sūtītāja e-pasta adrese, piemēram: “Personal Cloud Photos foto serveris <noreply@example.com>”",
-    "notification_email_host_description": "",
     "notification_email_ignore_certificate_errors": "Ignorēt sertifikātu kļūdas",
     "notification_email_ignore_certificate_errors_description": "Ignorēt TLS sertifikāta apstiprināšanas kļūdas (nav ieteicams)",
     "notification_email_port_description": "e-pasta servera ports (piemēram, 25, 465 vai 587)",

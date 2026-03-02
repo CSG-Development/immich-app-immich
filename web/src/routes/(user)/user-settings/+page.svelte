@@ -42,7 +42,7 @@
       onclick={() => modalManager.show(ShortcutsModal, {})}
     />
   {/snippet}
-  <Container size="medium" center>
+  <Container size="large" center>
     <UserSettingsList {config} keys={data.keys} sessions={data.sessions} />
   </Container>
 </UserPageLayout>

@@ -39,7 +39,6 @@
   import PersonMergeSuggestionModal from '$lib/modals/PersonMergeSuggestionModal.svelte';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { locale } from '$lib/stores/preferences.store';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
   import { websocketEvents } from '$lib/stores/websocket';
@@ -397,7 +396,7 @@
 </script>
 
 <main
-  class="relative z-0 h-dvh overflow-hidden px-2 md:px-6 md:pt-(--navbar-height-md) pt-(--navbar-height)"
+  class="relative z-0 h-dvh overflow-hidden px-3 md:px-6 md:pt-(--navbar-height-md) pt-(--navbar-height)"
   use:scrollMemoryClearer={{
     routeStartsWith: AppRoute.PEOPLE,
     beforeClear: () => {
@@ -419,14 +418,14 @@
       {#if viewMode === PersonPageViewMode.VIEW_ASSETS}
         <!-- Person information block -->
         <div
-          class="relative w-fit p-4 sm:px-6 pt-12"
+          class="relative w-fit py-4 pt-12"
           use:clickOutside={{
             onOutclick: handleCancelEditName,
             onEscape: handleCancelEditName,
           }}
           use:listNavigation={suggestionContainer}
         >
-          <section class="flex w-64 sm:w-96 place-items-center border-black">
+          <section class="flex place-items-center border-black">
             {#if isEditingName}
               <EditNameInput
                 {person}
@@ -449,18 +448,18 @@
                     shadow
                     url={thumbnailData}
                     altText={person.name}
-                    widthStyle="3.375rem"
-                    heightStyle="3.375rem"
+                    widthStyle="5rem"
+                    heightStyle="5rem"
                   />
-                  <div
-                    class="flex flex-col justify-center text-start px-4 text-immich-primary dark:text-immich-dark-primary"
-                  >
-                    <p class="w-40 sm:w-72 font-medium truncate">{person.name || $t('add_a_name')}</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <div class="flex flex-col justify-center text-start px-4">
+                    <p class="w-40 sm:w-72 font-bold truncate text-immich-primary dark:text-immich-dark-primary">
+                      {person.name || $t('add_a_name')}
+                    </p>
+                    <p>
                       {$t('assets_count', { values: { count: numberOfAssets } })}
                     </p>
                     {#if person.birthDate}
-                      <p class="text-sm text-gray-500 dark:text-gray-400">
+                      <p>
                         {$t('person_birthdate', {
                           values: {
                             date: DateTime.fromISO(person.birthDate).toLocaleString(
@@ -469,7 +468,7 @@
                                 day: 'numeric',
                                 year: 'numeric',
                               },
-                              { locale: $locale },
+                              { locale: 'en-gb' },
                             ),
                           },
                         })}
@@ -481,10 +480,10 @@
             {/if}
           </section>
           {#if isEditingName}
-            <div class="absolute w-64 sm:w-96 z-1">
+            <div class="absolute w-60 z-1">
               {#if isSearchingPeople}
                 <div
-                  class="flex border h-14 rounded-b-lg border-gray-400 dark:border-immich-dark-gray place-items-center bg-gray-200 p-2 dark:bg-gray-700"
+                  class="flex border h-20 rounded-b-lg border-gray-400 dark:border-immich-dark-gray place-items-center bg-gray-200 p-2 dark:bg-gray-700"
                 >
                   <div class="flex w-full place-items-center">
                     <LoadingSpinner />
@@ -495,9 +494,9 @@
                   {#each suggestedPeople as person, index (person.id)}
                     <button
                       type="button"
-                      class="flex w-full border border-gray-200 dark:border-immich-dark-gray h-14 place-items-center bg-gray-100 p-2 dark:bg-gray-700 hover:bg-gray-300 hover:dark:bg-[#232932] focus:bg-gray-300 focus:dark:bg-[#232932] {index ===
+                      class="flex w-full border bg-light dark:bg-immich-dark-gray-card border-immich-gray-border dark:border-immich-dark-gray-border h-20 place-items-center p-2 hover:bg-gray-300 hover:dark:bg-[#232932] focus:bg-gray-300 focus:dark:bg-[#232932] {index ===
                       suggestedPeople.length - 1
-                        ? 'rounded-b-lg border-b'
+                        ? 'rounded-b-xl border-b'
                         : ''}"
                       onclick={() => handleSuggestPeople(person)}
                     >
@@ -506,10 +505,10 @@
                         shadow
                         url={getPeopleThumbnailUrl(person)}
                         altText={person.name}
-                        widthStyle="2rem"
-                        heightStyle="2rem"
+                        widthStyle="2.5rem"
+                        heightStyle="2.5rem"
                       />
-                      <p class="ms-4 text-gray-700 dark:text-gray-100">{person.name}</p>
+                      <p class="ms-4 text-primary font-bold">{person.name}</p>
                     </button>
                   {/each}
                 </div>

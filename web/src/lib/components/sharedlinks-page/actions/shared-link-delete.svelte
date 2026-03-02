@@ -1,7 +1,7 @@
 <script lang="ts">
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { IconButton } from '@immich/ui';
-  import { mdiDelete } from '@mdi/js';
+  import { mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   interface Props {
@@ -13,14 +13,14 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={$t('delete_link')} icon={mdiDelete} onClick={onDelete} />
+  <MenuOption text={$t('delete_link')} icon={mdiTrashCanOutline} onClick={onDelete} />
 {:else}
   <IconButton
-    color="secondary"
+    color="danger"
     shape="round"
     variant="ghost"
     aria-label={$t('delete_link')}
-    icon={mdiDelete}
+    icon={mdiTrashCanOutline}
     onclick={onDelete}
   />
 {/if}

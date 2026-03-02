@@ -6,7 +6,15 @@
   import { UploadState } from '$lib/models/upload-asset';
   import { uploadAssetsStore } from '$lib/stores/upload';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
-  import { mdiAlertCircle, mdiCheckCircle, mdiClose, mdiLoading, mdiOpenInNew, mdiRestart, mdiTrashCan } from '@mdi/js';
+  import {
+    mdiAlertCircle,
+    mdiCheckCircle,
+    mdiClose,
+    mdiLoading,
+    mdiOpenInNew,
+    mdiRestart,
+    mdiTrashCanOutline,
+  } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
 
@@ -58,7 +66,7 @@
         <Icon path={mdiAlertCircle} size="24" class="text-danger" title={String(uploadAsset.error)} />
       {:else if uploadAsset.state === UploadState.DUPLICATED}
         {#if uploadAsset.isTrashed}
-          <Icon path={mdiTrashCan} size="24" class="text-gray-500" title={$t('asset_skipped_in_trash')} />
+          <Icon path={mdiTrashCanOutline} size="24" class="text-gray-500" title={$t('asset_skipped_in_trash')} />
         {:else}
           <Icon path={mdiAlertCircle} size="24" class="text-warning" title={$t('asset_skipped')} />
         {/if}

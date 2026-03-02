@@ -164,7 +164,12 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (isRemoteCodeModalActive.value == true) return;
 
         isRemoteCodeModalActive.value = true;
-        await showRemoteCodeModal(context: context, email: emailAddress, onSuccess: () async => onStartDiscovery());
+        await showRemoteCodeModal(
+          context: context,
+          initiate: ref.read(remoteAuthProvider).initiate,
+          email: emailAddress,
+          onSuccess: () async => onStartDiscovery(),
+        );
         isRemoteCodeModalActive.value = false;
       }
     }

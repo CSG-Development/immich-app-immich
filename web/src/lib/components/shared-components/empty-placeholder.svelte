@@ -38,10 +38,10 @@
   <img class="md:h-[200px] h-32" {src} alt="" draggable="false" />
 
   {#if title}
-    <h2 class="text-xl font-medium my-4">{title}</h2>
+    <h2 class="text-xl my-4">{title}</h2>
   {/if}
   <span class="max-w-50 md:max-w-full pb-8 md:pb-0">
-    <p class="text-immich-gray-text dark:text-immich-dark-gray-text text-center uppercase md:text-xl">
+    <p class="text-immich-gray-text dark:text-immich-dark-gray-text text-center md:text-xl">
       {text}
     </p>
     {#if descriptionText}

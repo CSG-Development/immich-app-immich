@@ -57,8 +57,8 @@
 
 <section class="my-4">
   <div in:fade={{ duration: 500 }}>
-    <div class="ms-4 mt-4 flex flex-col gap-4">
-      <div class="ms-4">
+    <div class="mt-4 flex flex-col gap-4">
+      <div class="ms-6">
         <SettingSwitch
           title={$t('theme_selection')}
           subtitle={$t('theme_selection_description')}
@@ -67,11 +67,11 @@
         />
       </div>
 
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingsLanguageSelector showSettingDescription />
       </div>
 
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingSwitch
           title={$t('default_locale')}
           subtitle={$t('default_locale_description')}
@@ -82,7 +82,7 @@
         </SettingSwitch>
       </div>
       {#if $locale !== 'default'}
-        <div class="ms-4">
+        <div class="ms-6">
           <SettingCombobox
             comboboxPlaceholder={$t('searching_locales')}
             {selectedOption}
@@ -94,25 +94,25 @@
         </div>
       {/if}
 
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingSwitch
           title={$t('display_original_photos')}
           subtitle={$t('display_original_photos_setting_description')}
           bind:checked={$alwaysLoadOriginalFile}
         />
       </div>
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingSwitch
           title={$t('video_hover_setting')}
           subtitle={$t('video_hover_setting_description')}
           bind:checked={$playVideoThumbnailOnHover}
         />
       </div>
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingSwitch title={$t('loop_videos')} subtitle={$t('loop_videos_description')} bind:checked={$loopVideo} />
       </div>
 
-      <div class="ms-4">
+      <div class="ms-6">
         <SettingSwitch
           title={$t('permanent_deletion_warning')}
           subtitle={$t('permanent_deletion_warning_setting_description')}

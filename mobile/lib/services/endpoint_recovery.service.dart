@@ -306,9 +306,14 @@ class EndpointRecoveryService {
     var loginSucceeded = false;
 
     _log.fine('Showing remote code modal for OTP verification');
-    await showRemoteCodeModal(context: context, email: email, onSuccess: () async {
-      loginSucceeded = true;
-    });
+    await showRemoteCodeModal(
+      context: context,
+      initiate: _ref.read(remoteAuthProvider).initiate,
+      email: email,
+      onSuccess: () async {
+        loginSucceeded = true;
+      },
+    );
 
     if (!loginSucceeded) {
       _log.fine('Remote code modal closed without successful login');

@@ -62,7 +62,7 @@
 </script>
 
 <div
-  class="border-2 rounded-lg border-immich-gray-border dark:border-immich-dark-gray-border mb-4 px-4 py-6 transition-all {isOpen
+  class="border-2 rounded-lg immich-border mb-4 px-4 py-6 transition-all {isOpen
     ? 'border-primary/60 dark:border-primary/60 shadow-md'
     : ''}"
   bind:this={accordionElement}

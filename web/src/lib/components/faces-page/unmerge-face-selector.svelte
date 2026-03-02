@@ -118,7 +118,7 @@
 
 <section
   transition:fly={{ y: 500, duration: 100, easing: quintOut }}
-  class="absolute start-0 top-0 h-full w-full bg-light"
+  class="absolute start-0 top-0 h-full w-full bg-bg"
 >
   <ControlAppBar {onClose}>
     {#snippet leading()}
@@ -153,11 +153,13 @@
     {/snippet}
   </ControlAppBar>
   {@render merge?.()}
-  <section class="px-[70px] pt-[100px]">
+  <section class="px-3 md:px-6 pt-[100px]">
     <section id="merge-face-selector relative">
       {#if selectedPerson !== null}
-        <div class="mb-10 h-[200px] place-content-center place-items-center">
-          <p class="mb-4 text-center uppercase dark:text-white">Choose matching faces to re assign</p>
+        <div class="mb-3 h-[200px] place-content-center place-items-center">
+          <p class="mb-4 text-center uppercase text-immich-gray-text dark:text-immich-dark-gray-text md:font-medium">
+            Choose matching faces to reassign
+          </p>
 
           <div class="grid grid-flow-col-dense place-content-center place-items-center gap-4">
             <FaceThumbnail
@@ -165,7 +167,7 @@
               border
               circle
               selectable
-              thumbnailSize={180}
+              thumbnailSize={156}
               onClick={handleRemoveSelectedPerson}
             />
           </div>

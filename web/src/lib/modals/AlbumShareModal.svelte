@@ -105,7 +105,7 @@
                   render={({ title, icon }) => ({ title, icon })}
                   onSelect={({ value }) => handleChangeRole(user, value)}
                   position="bottom-right"
-                  class="!min-w-[180px]"
+                  class="!min-w-[240px]"
                 />
               </div>
             {/key}
@@ -156,13 +156,17 @@
           size="small"
           fullWidth
           shape="round"
+          variant="outline"
           disabled={Object.keys(selectedUsers).length === 0}
           onclick={() =>
             onClose({
               action: 'sharedUsers',
               data: Object.values(selectedUsers).map(({ user, ...rest }) => ({ userId: user.id, ...rest })),
-            })}>{$t('add')}</Button
+            })}
+          class="bg-transparent"
         >
+          {$t('add')}
+        </Button>
       </div>
     {/if}
 

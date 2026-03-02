@@ -77,10 +77,14 @@
       appBarBorder,
       'place-items-center p-2 max-md:p-0 transition-all',
       tailwindClasses,
-      forceDark ? 'bg-immich-dark-gray! text-white' : 'bg-subtle dark:bg-immich-dark-gray',
+      forceDark ? 'bg-black! text-white' : 'bg-white dark:bg-black',
     ]}
   >
-    <div class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg {forceDark ? 'dark' : ''}">
+    <div
+      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {forceDark
+        ? 'dark'
+        : ''}"
+    >
       {#if showBackButton}
         <IconButton
           aria-label={$t('close')}

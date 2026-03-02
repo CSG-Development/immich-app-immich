@@ -31,7 +31,7 @@
 <svelte:document use:shortcut={{ shortcut: { key: 't' }, onShortcut: handleTagAssets }} />
 
 {#if menuItem}
-  <MenuOption {text} {icon} onClick={handleTagAssets} />
+  <MenuOption {text} {icon} onClick={handleTagAssets} scaledIcon />
 {/if}
 
 {#if !menuItem}

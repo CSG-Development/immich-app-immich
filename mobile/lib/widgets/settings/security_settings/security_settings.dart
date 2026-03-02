@@ -82,6 +82,7 @@ class SecuritySettings extends HookConsumerWidget {
           });
         }
       } else {
+        if (!context.mounted) return; 
         enablePasscodeLock.value = !value;
       }
     }
@@ -102,6 +103,7 @@ class SecuritySettings extends HookConsumerWidget {
           });
         }
       } else {
+        if (!context.mounted) return;
         enablePatternLock.value = !value;
       }
     }

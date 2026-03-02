@@ -82,10 +82,10 @@
   };
 </script>
 
-<section class="my-4">
+<section class="pb-1">
   <div in:fade={{ duration: 500 }}>
     <form autocomplete="off" {onsubmit}>
-      <div class="ms-4 mt-4 flex flex-col">
+      <div class="mt-4 flex flex-col">
         <SettingAccordion key="albums" title={$t('albums')} subtitle={$t('albums_feature_description')}>
           <div class="ms-4 mt-6">
             <!-- <SettingSelect               
@@ -106,7 +106,7 @@
         </SettingAccordion>
 
         <SettingAccordion key="folders" title={$t('folders')} subtitle={$t('folders_feature_description')}>
-          <div class="ms-4 mt-6">
+          <div class="ms-4">
             <SettingSwitch title={$t('enable')} bind:checked={foldersEnabled} />
           </div>
 
@@ -190,7 +190,9 @@
         </SettingAccordion>
 
         <div class="flex justify-end">
-          <Button shape="round" type="submit" size="small" onclick={() => handleSave()}>{$t('save')}</Button>
+          <Button shape="round" type="submit" size="small" class="settings-button" onclick={() => handleSave()}
+            >{$t('save')}</Button
+          >
         </div>
       </div>
     </form>

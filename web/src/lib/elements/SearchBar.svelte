@@ -39,9 +39,9 @@
 </script>
 
 <div
-  class="px-1 flex items-center text-sm {roundedBottom
-    ? 'rounded-2xl'
-    : 'rounded-t-lg'} place-items-center h-full bg-immich-gray-search-bar dark:bg-immich-dark-gray-search-bar border-1 border-immich-gray-border dark:border-immich-dark-gray-border"
+  class="flex items-center text-sm {roundedBottom
+    ? 'rounded-3xl'
+    : 'rounded-t-lg'} p-2 bg-immich-primary-12 dark:bg-immich-dark-primary-12 gap-2 place-items-center h-10 md:h-full border border-immich-gray-border dark:border-immich-dark-gray-border"
 >
   <div class="w-14">
     <IconButton
@@ -54,7 +54,7 @@
     />
   </div>
   <input
-    class="w-full gap-2 dark:text-white placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text"
+    class="w-full gap-2 dark:text-white"
     type="text"
     {placeholder}
     bind:value={name}

@@ -58,11 +58,11 @@
     ></div>
   {/if}
 
-  {#if person.name}
+  <!-- {#if person.name}
     <span
       class="w-100 text-white-shadow absolute bottom-2 start-0 w-full text-ellipsis px-1 text-center font-medium text-white hover:cursor-pointer"
     >
       {person.name}
     </span>
-  {/if}
+  {/if} -->
 </button>

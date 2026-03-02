@@ -56,7 +56,7 @@
   <div in:fade={{ duration: 200 }}>
     <form autocomplete="off" onsubmit={handleSubmit} class="mt-6">
       <div class="flex flex-col gap-6 place-items-center place-content-center">
-        <Heading>{$t('change_pin_code')}</Heading>
+        <Heading class="text-xl font-medium">{$t('change_pin_code')}</Heading>
         <PinCodeInput label={$t('current_pin_code')} bind:value={currentPinCode} tabindexStart={1} pinLength={6} />
 
         <PinCodeInput label={$t('new_pin_code')} bind:value={newPinCode} tabindexStart={7} pinLength={6} />
@@ -68,10 +68,17 @@
       </div>
 
       <div class="flex justify-end gap-2 mt-4">
-        <Button shape="round" color="secondary" type="button" size="small" onclick={resetForm}>
+        <Button shape="round" color="secondary" type="button" size="small" class="settings-button" onclick={resetForm}>
           {$t('clear')}
         </Button>
-        <Button shape="round" type="submit" size="small" loading={isLoading} disabled={!canSubmit}>
+        <Button
+          shape="round"
+          type="submit"
+          size="small"
+          loading={isLoading}
+          class="settings-button"
+          disabled={!canSubmit}
+        >
           {$t('save')}
         </Button>
       </div>

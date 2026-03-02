@@ -55,18 +55,18 @@
   </div>
   <div class="flex grow flex-row justify-between gap-1 ps-4 sm:ps-0">
     <div class="flex flex-col justify-center gap-1 dark:text-white">
-      <span class="text-sm">
+      <span>
         {#if device.deviceType || device.deviceOS}
           <span>{device.deviceOS || $t('unknown')} • {device.deviceType || $t('unknown')}</span>
         {:else}
           <span>{$t('unknown')}</span>
         {/if}
       </span>
-      <div class="text-sm">
+      <div>
         <span class="">{$t('last_seen')}</span>
         <span>{DateTime.fromISO(device.updatedAt, { locale: $locale }).toRelativeCalendar(options)}</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400"> - </span>
-        <span class="text-xs text-gray-500 dark:text-gray-400">
+        <span> - </span>
+        <span>
           {DateTime.fromISO(device.updatedAt, { locale: $locale }).toLocaleString(DateTime.DATETIME_MED, {
             locale: $locale,
           })}

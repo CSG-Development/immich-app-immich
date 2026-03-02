@@ -1,7 +1,7 @@
 import 'dart:math';
 
 String formatBytes(int bytes) {
-  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB'];
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
 
   int magnitude = 0;
   double remainder = bytes.toDouble();
