@@ -357,6 +357,6 @@
       {/if}
     </div>
 
-    <Button size="small" fullWidth onclick={cancel} color="danger" class="mt-2">{$t('cancel')}</Button>
+    <Button size="small" fullWidth onclick={cancel} color="secondary" class="mt-2">{$t('cancel')}</Button>
   </div>
 </div>

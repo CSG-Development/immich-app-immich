@@ -12,8 +12,15 @@ class SettingsRadioListTile<T> extends StatelessWidget {
   final List<SettingsRadioGroup<T>> groups;
   final T groupBy;
   final void Function(T?) onRadioChanged;
+  final ListTileControlAffinity? controlAffinity;
 
-  const SettingsRadioListTile({super.key, required this.groups, required this.groupBy, required this.onRadioChanged});
+  const SettingsRadioListTile({
+    super.key,
+    required this.groups,
+    required this.groupBy,
+    required this.onRadioChanged,
+    this.controlAffinity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +36,7 @@ class SettingsRadioListTile<T> extends StatelessWidget {
                 activeColor: context.primaryColor,
                 title: Text(g.title, style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
                 value: g.value,
-                controlAffinity: ListTileControlAffinity.trailing,
+                controlAffinity: controlAffinity ?? ListTileControlAffinity.trailing,
               ),
             )
             .toList(),

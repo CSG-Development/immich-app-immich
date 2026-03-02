@@ -11,6 +11,7 @@ class ServerEndpointInput extends StatelessWidget {
   final Widget? leadingIcon;
   final Widget? suffixIcon;
   final String? label;
+  final String? hintText;
   final bool isDetecting;
   final bool isEmpty;
 
@@ -23,6 +24,7 @@ class ServerEndpointInput extends StatelessWidget {
     this.leadingIcon,
     this.suffixIcon,
     this.label,
+    this.hintText,
     this.isDetecting = false,
     this.isEmpty = true,
   });
@@ -39,11 +41,13 @@ class ServerEndpointInput extends StatelessWidget {
           decoration: LoginInputDecorations.baseDecoration(
             context: context,
             labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
-            hintText: isDetecting
-                ? 'curator.oobe_welcome_dropdown_detecting'.tr()
-                : isEmpty
-                ? 'curator.login_form_endpoint_hint'.tr()
-                : '',
+            hintText:
+                hintText ??
+                (isDetecting
+                    ? 'curator.oobe_welcome_dropdown_detecting'.tr()
+                    : isEmpty
+                    ? 'curator.login_form_endpoint_hint'.tr()
+                    : ''),
             isError: hasExternalError,
             suffixIcon: shouldShowClearButton
                 ? IconButton(onPressed: controller.clear, icon: const Icon(Icons.highlight_off))

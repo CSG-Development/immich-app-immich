@@ -540,12 +540,16 @@
     >
       {#if !usingMobileDevice}
         {#if segment.hasLabel}
-          <div class="absolute end-5 top-[-16px] text-[12px] dark:text-immich-dark-fg font-immich-mono">
+          <div
+            class="absolute end-5 top-[-16px] text-sm dark:text-immich-dark-fg font-immich-mono dark:text-white/[.87]"
+          >
             {segment.year}
           </div>
         {/if}
         {#if segment.hasDot}
-          <div class="absolute end-3 bottom-0 h-[4px] w-[4px] rounded-full bg-gray-300"></div>
+          <div
+            class="absolute end-3 bottom-0 h-[6px] w-[6px] rounded-full bg-immich-gray-dark dark:bg-immich-dark-gray-light"
+          ></div>
         {/if}
       {/if}
     </div>

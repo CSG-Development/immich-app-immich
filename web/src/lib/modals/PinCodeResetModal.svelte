@@ -70,7 +70,7 @@
     {#if passwordLoginEnabled}
       <HStack fullWidth>
         <Button fullWidth shape="round" color="secondary" onclick={() => onClose()}>{$t('cancel')}</Button>
-        <Button type="submit" form="reset-pin-form" fullWidth shape="round" color="danger" disabled={!password}>
+        <Button type="submit" form="reset-pin-form" fullWidth shape="round" color="primary" disabled={!password}>
           {$t('reset')}
         </Button>
       </HStack>

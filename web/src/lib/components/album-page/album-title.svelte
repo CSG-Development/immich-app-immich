@@ -44,6 +44,6 @@
   type="text"
   bind:value={newAlbumName}
   disabled={!isOwned}
-  title={$t('edit_title')}
   placeholder={$t('add_a_title')}
+  title={$t('edit_title')}
 />

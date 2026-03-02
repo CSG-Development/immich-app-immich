@@ -34,7 +34,7 @@ export function handleError(error: unknown, message: string, component?: Compone
   try {
     let serverMessage = getServerErrorMessage(error);
     if (serverMessage) {
-      serverMessage = `${String(serverMessage).slice(0, 75)}\n${(error as ApiError)?.status >= 500 ? '(Curator Photos Server Error)' : ''}`;
+      serverMessage = `${String(serverMessage).slice(0, 75)}\n${(error as ApiError)?.status >= 500 ? '(Personal Cloud Photos Server Error)' : ''}`;
     }
 
     const errorMessage = serverMessage || message;

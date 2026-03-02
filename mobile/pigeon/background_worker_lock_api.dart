@@ -6,7 +6,7 @@ import 'package:pigeon/pigeon.dart';
     kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/background/BackgroundWorkerLock.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.background', includeErrorClass: false),
     dartOptions: DartOptions(),
-    dartPackageName: 'curator_photos',
+    dartPackageName: 'personal_cloud_photos',
   ),
 )
 @HostApi()

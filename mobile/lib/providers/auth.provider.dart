@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
@@ -69,7 +71,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> validateAuxilaryServerUrl(String url) async {
     try {
       final validEndpoint = await _apiService.resolveEndpoint(url);
-      return await _authService.validateAuxilaryServerUrl(validEndpoint);
+      return await _apiService.validateAuxilaryServerUrl(validEndpoint);
     } catch (_) {
       return false;
     }
@@ -83,11 +85,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     try {
-      await _secureStorageService.delete(kSecuredPinCode);
-      await _widgetService.clearCredentials();
+      try {
+        await Future.wait([
+          _secureStorageService.delete(kSecuredPinCode),
+          _secureStorageService.delete(kSecuredPasscode),
+          _secureStorageService.delete(kSecuredPattern),
+          _widgetService.clearCredentials(),
+        ]).timeout(const Duration(seconds: 5));
+      } on TimeoutException {
+        _log.warning("Timeout during secure storage/widget cleanup");
+      }
 
-      await _authService.logout();
-      await _uploadService.cancelBackup();
+      Store.put(StoreKey.enableBiometric, false);
+
+      try {
+        await _authService.logout().timeout(const Duration(seconds: 8));
+      } on TimeoutException {
+        _log.warning("Timeout during auth service logout");
+      }
+
+      try {
+        await _uploadService.cancelBackup().timeout(const Duration(seconds: 5));
+      } on TimeoutException {
+        _log.warning("Timeout during backup cancellation");
+      }
+    } catch (error, stackTrace) {
+      _log.severe("Error during logout", error, stackTrace);
     } finally {
       await _cleanUp();
     }
@@ -190,10 +213,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Returns the current server endpoint (with /api) URL from the store
   String? getServerEndpoint() {
     return Store.tryGet(StoreKey.serverEndpoint);
-  }
-
-  Future<String?> setOpenApiServiceEndpoint() {
-    return _authService.setOpenApiServiceEndpoint();
   }
 
   Future<bool> unlockPinCode(String pinCode) {

@@ -49,12 +49,7 @@ class TimelineRepository extends DatabaseRepository {
   }
 
   Stream<RenderList> watchAlbumTimeline(Album album, GroupAssetsBy groupAssetByOption) {
-    final base = album.assets.filter();
-    final query = (album.isLocal
-            ? base
-            : base.isTrashedEqualTo(false))
-        .not()
-        .visibilityEqualTo(AssetVisibilityEnum.locked);
+    final query = album.assets.filter().isTrashedEqualTo(false).not().visibilityEqualTo(AssetVisibilityEnum.locked);
 
     final withSortedOption = switch (album.sortOrder) {
       SortOrder.asc => query.sortByFileCreatedAt(),

@@ -47,9 +47,20 @@ class LanguageSettings extends HookConsumerWidget {
         if (searchTerm.isEmpty) {
           filteredLocaleEntries.value = localeEntries;
         } else {
-          filteredLocaleEntries.value = localeEntries
-              .where((entry) => entry.key.toLowerCase().contains(searchTerm.toLowerCase()))
-              .toList();
+          filteredLocaleEntries.value =
+              localeEntries.where((entry) => entry.key.toLowerCase().contains(searchTerm.toLowerCase())).toList()
+                ..sort((a, b) {
+                  final aKey = a.key.toLowerCase();
+                  final bKey = b.key.toLowerCase();
+                  final search = searchTerm.toLowerCase();
+
+                  final aPriority = aKey.startsWith(search) ? 0 : 1;
+                  final bPriority = bKey.startsWith(search) ? 0 : 1;
+
+                  if (aPriority != bPriority) return aPriority.compareTo(bPriority);
+
+                  return aKey.compareTo(bKey);
+                });
         }
       });
     }
@@ -89,7 +100,6 @@ class LanguageSettings extends HookConsumerWidget {
                       final countryName = filteredLocaleEntries.value[index].key;
                       final localeValue = filteredLocaleEntries.value[index].value;
                       final bool isSelected = selectedLocale.value == localeValue;
-
                       return _LanguageItem(
                         key: ValueKey(localeValue.toString()),
                         countryName: countryName,

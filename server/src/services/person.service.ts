@@ -67,12 +67,13 @@ export class PersonService extends BaseService {
       withHidden,
       closestFaceAssetId,
     });
-    const { total, hidden } = await this.personRepository.getNumberOfPeople(auth.user.id);
+    const { hidden } = await this.personRepository.getNumberOfPeople(auth.user.id);
+    const mappedPeople = items.map((person) => mapPerson(person));
 
     return {
-      people: items.map((person) => mapPerson(person)),
+      people: mappedPeople,
       hasNextPage,
-      total,
+      total: mappedPeople.length,
       hidden,
     };
   }

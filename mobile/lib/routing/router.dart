@@ -42,6 +42,7 @@ import 'package:immich_mobile/pages/common/headers_settings.page.dart';
 import 'package:immich_mobile/pages/common/native_video_viewer.page.dart';
 import 'package:immich_mobile/pages/common/settings.page.dart';
 import 'package:immich_mobile/pages/common/splash_screen.page.dart';
+import 'package:immich_mobile/pages/common/lock_screen.page.dart';
 import 'package:immich_mobile/pages/common/tab_controller.page.dart';
 import 'package:immich_mobile/pages/common/tab_shell.page.dart';
 import 'package:immich_mobile/pages/editing/crop.page.dart';
@@ -58,13 +59,15 @@ import 'package:immich_mobile/pages/library/partner/drift_partner.page.dart';
 import 'package:immich_mobile/pages/library/partner/partner.page.dart';
 import 'package:immich_mobile/pages/library/partner/partner_detail.page.dart';
 import 'package:immich_mobile/pages/library/people/people_collection.page.dart';
+import 'package:immich_mobile/presentation/pages/drift_people_merge.page.dart';
 import 'package:immich_mobile/pages/library/places/places_collection.page.dart';
 import 'package:immich_mobile/pages/library/shared_link/shared_link.page.dart';
 import 'package:immich_mobile/pages/library/shared_link/shared_link_edit.page.dart';
 import 'package:immich_mobile/pages/library/trash.page.dart';
 import 'package:immich_mobile/pages/login/change_password.page.dart';
 import 'package:immich_mobile/pages/login/login.page.dart';
-import 'package:immich_mobile/pages/login/unable_to_connect_screen.dart';
+import 'package:immich_mobile/pages/login/unable_to_connect.page.dart';
+import 'package:immich_mobile/pages/login/unable_to_detect.page.dart';
 import 'package:immich_mobile/pages/curator_onboarding/curator_onboarding.page.dart';
 import 'package:immich_mobile/pages/onboarding/permission_onboarding.page.dart';
 import 'package:immich_mobile/pages/photos/memory.page.dart';
@@ -80,6 +83,9 @@ import 'package:immich_mobile/pages/search/recently_taken.page.dart';
 import 'package:immich_mobile/pages/search/search.page.dart';
 import 'package:immich_mobile/pages/settings/sync_status.page.dart';
 import 'package:immich_mobile/pages/share_intent/share_intent.page.dart';
+import 'package:immich_mobile/pages/security/lock_flow.dart';
+import 'package:immich_mobile/pages/security/passcode_lock.page.dart';
+import 'package:immich_mobile/pages/security/pattern_lock.page.dart';
 import 'package:immich_mobile/presentation/pages/dev/feat_in_development.page.dart';
 import 'package:immich_mobile/presentation/pages/dev/main_timeline.page.dart';
 import 'package:immich_mobile/presentation/pages/dev/media_stat.page.dart';
@@ -165,8 +171,25 @@ class AppRouter extends RootStackRouter {
   @override
   late final List<AutoRoute> routes = [
     AutoRoute(page: SplashScreenRoute.page, initial: true),
+    CustomRoute(
+      page: LockScreenRoute.page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeIn, reverseCurve: Curves.easeOut)),
+          child: child,
+        );
+      },
+    ),
     AutoRoute(page: PermissionOnboardingRoute.page, guards: [_authGuard, _duplicateGuard]),
     AutoRoute(page: LoginRoute.page, guards: [_duplicateGuard]),
+    CustomRoute(
+      page: UnableToDetectRoute.page,
+      fullscreenDialog: true,
+      transitionsBuilder: TransitionsBuilders.slideBottom,
+    ),
     CustomRoute(
       page: UnableToConnectRoute.page,
       fullscreenDialog: true,
@@ -243,6 +266,8 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: SettingsSubRoute.page, guards: [_duplicateGuard]),
     AutoRoute(page: AppLogRoute.page, guards: [_duplicateGuard]),
     AutoRoute(page: AppLogDetailRoute.page, guards: [_duplicateGuard]),
+    AutoRoute(page: PasscodeLockRoute.page, guards: [_duplicateGuard]),
+    AutoRoute(page: PatternLockRoute.page, guards: [_duplicateGuard]),
     CustomRoute(
       page: ArchiveRoute.page,
       guards: [_authGuard, _duplicateGuard],
@@ -344,6 +369,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: DriftUploadDetailRoute.page, guards: [_authGuard, _duplicateGuard]),
     AutoRoute(page: SyncStatusRoute.page, guards: [_duplicateGuard]),
     AutoRoute(page: DriftPeopleCollectionRoute.page, guards: [_authGuard, _duplicateGuard]),
+    AutoRoute(page: DriftPeopleMergeRoute.page, guards: [_authGuard, _duplicateGuard]),
     AutoRoute(page: DriftPersonRoute.page, guards: [_authGuard]),
     AutoRoute(page: DriftBackupOptionsRoute.page, guards: [_authGuard, _duplicateGuard]),
     AutoRoute(page: DriftAlbumOptionsRoute.page, guards: [_authGuard, _duplicateGuard]),

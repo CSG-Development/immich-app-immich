@@ -267,7 +267,7 @@ class BackgroundServicePlugin: NSObject, FlutterPlugin {
     }
   
     // Checks the status of the Background App Refresh from the system
-    // Returns true if the service is enabled for Curator Photos, and false otherwise
+    // Returns true if the service is enabled for Personal Cloud Photos, and false otherwise
     func handleBackgroundRefreshStatus(call: FlutterMethodCall, result: FlutterResult) {
         switch UIApplication.shared.backgroundRefreshStatus {
         case .available:

@@ -1293,6 +1293,43 @@ class DriftPeopleCollectionRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DriftPeopleMergePage]
+class DriftPeopleMergeRoute extends PageRouteInfo<DriftPeopleMergeRouteArgs> {
+  DriftPeopleMergeRoute({
+    Key? key,
+    required DriftPerson person,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DriftPeopleMergeRoute.name,
+         args: DriftPeopleMergeRouteArgs(key: key, person: person),
+         initialChildren: children,
+       );
+
+  static const String name = 'DriftPeopleMergeRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DriftPeopleMergeRouteArgs>();
+      return DriftPeopleMergePage(key: args.key, person: args.person);
+    },
+  );
+}
+
+class DriftPeopleMergeRouteArgs {
+  const DriftPeopleMergeRouteArgs({this.key, required this.person});
+
+  final Key? key;
+
+  final DriftPerson person;
+
+  @override
+  String toString() {
+    return 'DriftPeopleMergeRouteArgs{key: $key, person: $person}';
+  }
+}
+
+/// generated route for
 /// [DriftPersonPage]
 class DriftPersonRoute extends PageRouteInfo<DriftPersonRouteArgs> {
   DriftPersonRoute({
@@ -1554,7 +1591,7 @@ class DriftVideoRoute extends PageRouteInfo<void> {
 class EditImageRoute extends PageRouteInfo<EditImageRouteArgs> {
   EditImageRoute({
     Key? key,
-    required Asset asset,
+    required BaseAsset asset,
     required Image image,
     required bool isEdited,
     List<PageRouteInfo>? children,
@@ -1595,7 +1632,7 @@ class EditImageRouteArgs {
 
   final Key? key;
 
-  final Asset asset;
+  final BaseAsset asset;
 
   final Image image;
 
@@ -1908,6 +1945,22 @@ class LocalTimelineRouteArgs {
 }
 
 /// generated route for
+/// [LockScreenPage]
+class LockScreenRoute extends PageRouteInfo<void> {
+  const LockScreenRoute({List<PageRouteInfo>? children})
+    : super(LockScreenRoute.name, initialChildren: children);
+
+  static const String name = 'LockScreenRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const LockScreenPage();
+    },
+  );
+}
+
+/// generated route for
 /// [LockedPage]
 class LockedRoute extends PageRouteInfo<void> {
   const LockedRoute({List<PageRouteInfo>? children})
@@ -2206,6 +2259,110 @@ class PartnerRoute extends PageRouteInfo<void> {
       return const PartnerPage();
     },
   );
+}
+
+/// generated route for
+/// [PasscodeLockPage]
+class PasscodeLockRoute extends PageRouteInfo<PasscodeLockRouteArgs> {
+  PasscodeLockRoute({
+    Key? key,
+    LockFlow flow = LockFlow.validate,
+    VoidCallback? onSuccess,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PasscodeLockRoute.name,
+         args: PasscodeLockRouteArgs(
+           key: key,
+           flow: flow,
+           onSuccess: onSuccess,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'PasscodeLockRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PasscodeLockRouteArgs>(
+        orElse: () => const PasscodeLockRouteArgs(),
+      );
+      return PasscodeLockPage(
+        key: args.key,
+        flow: args.flow,
+        onSuccess: args.onSuccess,
+      );
+    },
+  );
+}
+
+class PasscodeLockRouteArgs {
+  const PasscodeLockRouteArgs({
+    this.key,
+    this.flow = LockFlow.validate,
+    this.onSuccess,
+  });
+
+  final Key? key;
+
+  final LockFlow flow;
+
+  final VoidCallback? onSuccess;
+
+  @override
+  String toString() {
+    return 'PasscodeLockRouteArgs{key: $key, flow: $flow, onSuccess: $onSuccess}';
+  }
+}
+
+/// generated route for
+/// [PatternLockPage]
+class PatternLockRoute extends PageRouteInfo<PatternLockRouteArgs> {
+  PatternLockRoute({
+    Key? key,
+    LockFlow flow = LockFlow.validate,
+    VoidCallback? onSuccess,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PatternLockRoute.name,
+         args: PatternLockRouteArgs(key: key, flow: flow, onSuccess: onSuccess),
+         initialChildren: children,
+       );
+
+  static const String name = 'PatternLockRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PatternLockRouteArgs>(
+        orElse: () => const PatternLockRouteArgs(),
+      );
+      return PatternLockPage(
+        key: args.key,
+        flow: args.flow,
+        onSuccess: args.onSuccess,
+      );
+    },
+  );
+}
+
+class PatternLockRouteArgs {
+  const PatternLockRouteArgs({
+    this.key,
+    this.flow = LockFlow.validate,
+    this.onSuccess,
+  });
+
+  final Key? key;
+
+  final LockFlow flow;
+
+  final VoidCallback? onSuccess;
+
+  @override
+  String toString() {
+    return 'PatternLockRouteArgs{key: $key, flow: $flow, onSuccess: $onSuccess}';
+  }
 }
 
 /// generated route for
@@ -2782,5 +2939,44 @@ class UnableToConnectRouteArgs {
   @override
   String toString() {
     return 'UnableToConnectRouteArgs{key: $key, onRetry: $onRetry}';
+  }
+}
+
+/// generated route for
+/// [UnableToDetectPage]
+class UnableToDetectRoute extends PageRouteInfo<UnableToDetectRouteArgs> {
+  UnableToDetectRoute({
+    Key? key,
+    VoidCallback? onRetry,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UnableToDetectRoute.name,
+         args: UnableToDetectRouteArgs(key: key, onRetry: onRetry),
+         initialChildren: children,
+       );
+
+  static const String name = 'UnableToDetectRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<UnableToDetectRouteArgs>(
+        orElse: () => const UnableToDetectRouteArgs(),
+      );
+      return UnableToDetectPage(key: args.key, onRetry: args.onRetry);
+    },
+  );
+}
+
+class UnableToDetectRouteArgs {
+  const UnableToDetectRouteArgs({this.key, this.onRetry});
+
+  final Key? key;
+
+  final VoidCallback? onRetry;
+
+  @override
+  String toString() {
+    return 'UnableToDetectRouteArgs{key: $key, onRetry: $onRetry}';
   }
 }

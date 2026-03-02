@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/constants/locales.dart';
@@ -17,10 +18,13 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/generated/codegen_loader.g.dart';
 import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
+import 'package:immich_mobile/providers/endpoint_recovery.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
+import 'package:immich_mobile/providers/network_change_listener.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
@@ -28,6 +32,7 @@ import 'package:immich_mobile/providers/theme.provider.dart';
 import 'package:immich_mobile/routing/app_navigation_observer.dart';
 import 'package:immich_mobile/routing/performance_route_observer.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/background.service.dart';
 import 'package:immich_mobile/services/deep_link.service.dart';
 import 'package:immich_mobile/services/local_notification.service.dart';
@@ -35,6 +40,8 @@ import 'package:immich_mobile/theme/dynamic_theme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
+import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/utils/licenses.dart';
@@ -44,11 +51,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 
-import 'package:homecloud_frontend/homecloud_frontend.dart';
+
 
 void main() async {
   ImmichWidgetsBinding();
@@ -68,7 +74,23 @@ void main() async {
   // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
   // await telemetryChannel.invokeMethod('init', ['test']);
 
-  final remoteAccessDependencies = await initHCDevice();
+  final certPinning = HttpCertPinningManager(
+    config: const CertPinningConfig(
+      allowFallback: false,
+      installRootsInSecurityContext: true
+    ),
+  );
+
+  await HttpCertPinningManager.storeRootCerts([
+    'assets/tdci.pem',
+    'assets/fake-device-noveo.cer',
+  ]);
+
+  await certPinning.initialize();
+
+  final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
+
+  final apiservice = ApiService(certPinning: certPinning);
 
   runApp(
     ProviderScope(
@@ -77,6 +99,7 @@ void main() async {
         isarProvider.overrideWithValue(isar),
         driftProvider.overrideWith(driftOverride(drift)),
         remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
+        apiServiceProvider.overrideWithValue(apiservice),
       ],
       child: const MainWidget(),
     ),
@@ -98,7 +121,7 @@ Future<void> initApp() async {
 
   await DynamicTheme.fetchSystemPalette();
 
-  final log = Logger("ImmichErrorLogger");
+  final log = Logger("PersonalCloudPhotosErrorLogger");
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
@@ -116,12 +139,19 @@ Future<void> initApp() async {
 
   initializeTimeZones();
 
+  final certs = await HttpCertPinningManager.loadRootCertsBytes([
+    'assets/tdci.pem',
+    'assets/fake-device-noveo.cer'
+  ]);
+
   // Initialize the file downloader
   await FileDownloader().configure(
     // maxConcurrent: 6, maxConcurrentByHost(server):6, maxConcurrentByGroup: 3
 
     // On Android, if files are larger than 256MB, run in foreground service
     globalConfig: [(Config.holdingQueue, (6, 6, 3)), (Config.runInForegroundIfFileLargerThan, 256)],
+    iOSConfig: [(Config.configCertificatePinning, certs)],
+    androidConfig: [(Config.configCertificatePinning, certs)]
   );
 
   await FileDownloader().trackTasksInGroup(kDownloadGroupLivePhoto, markDownloadedComplete: false);
@@ -142,8 +172,7 @@ class ImmichApp extends ConsumerStatefulWidget {
   ImmichAppState createState() => ImmichAppState();
 }
 
-class ImmichAppState extends ConsumerState<ImmichApp>
-    with WidgetsBindingObserver {
+class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserver {
   int? _androidSdkInt;
 
   @override
@@ -238,6 +267,12 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     });
 
     ref.read(shareIntentUploadProvider.notifier).init();
+
+    // Initialize endpoint recovery service to start listening to connection state changes
+    ref.read(endpointRecoveryServiceProvider);
+
+    // Initialize network change listener to handle WiFi connectivity changes
+    ref.read(networkChangeListenerServiceProvider).startListening();
   }
 
   @override
@@ -254,7 +289,7 @@ class ImmichAppState extends ConsumerState<ImmichApp>
     return ProviderScope(
       overrides: [localeProvider.overrideWithValue(context.locale)],
       child: MaterialApp.router(
-        title: 'Curator Photos',
+        title: 'Personal Cloud Photos',
         debugShowCheckedModeBanner: true,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
@@ -265,20 +300,13 @@ class ImmichAppState extends ConsumerState<ImmichApp>
         theme: getThemeData(colorScheme: immichTheme.light, locale: context.locale),
         routerConfig: router.config(
           deepLinkBuilder: _deepLinkBuilder,
-          navigatorObservers: () => [
-            PerformanceRouteObserver(),
-            AppNavigationObserver(ref: ref),
-            ],
+          navigatorObservers: () => [PerformanceRouteObserver(), AppNavigationObserver(ref: ref)],
         ),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: computeOverlayStyle(context),
           child: ColoredBox(
             color: Theme.of(context).scaffoldBackgroundColor,
-            child: SafeArea(
-              bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
-              top: false,
-              child: child!,
-            ),
+            child: SafeArea(bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context), top: false, child: child!),
           ),
         ),
       ),

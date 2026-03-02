@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/pages/editing/edit.page.dart';
@@ -180,7 +181,7 @@ class BottomGalleryBar extends ConsumerWidget {
 
       context.navigator.push(
         MaterialPageRoute(
-          builder: (context) => EditImagePage(asset: asset, image: image, isEdited: false),
+          builder: (context) => EditImagePage(asset: asset as BaseAsset, image: image, isEdited: false),
         ),
       );
     }

@@ -10,7 +10,7 @@
   import { page } from '$app/state';
   import { handlePromiseError } from '$lib/utils';
   import { createContext } from '$lib/utils/context';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { SvelteURLSearchParams } from 'svelte/reactivity';
   import { writable, type Writable } from 'svelte/store';
 

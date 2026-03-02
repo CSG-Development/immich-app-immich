@@ -377,7 +377,7 @@ class NativeSyncApiSetup {
     #else
       let taskQueue: FlutterTaskQueue? = nil
     #endif
-    let shouldFullSyncChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.shouldFullSync\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let shouldFullSyncChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.shouldFullSync\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       shouldFullSyncChannel.setMessageHandler { _, reply in
         do {
@@ -391,8 +391,8 @@ class NativeSyncApiSetup {
       shouldFullSyncChannel.setMessageHandler(nil)
     }
     let getMediaChangesChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getMediaChanges\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getMediaChanges\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getMediaChanges\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getMediaChanges\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getMediaChangesChannel.setMessageHandler { _, reply in
         do {
@@ -405,7 +405,7 @@ class NativeSyncApiSetup {
     } else {
       getMediaChangesChannel.setMessageHandler(nil)
     }
-    let checkpointSyncChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.checkpointSync\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let checkpointSyncChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.checkpointSync\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       checkpointSyncChannel.setMessageHandler { _, reply in
         do {
@@ -418,7 +418,7 @@ class NativeSyncApiSetup {
     } else {
       checkpointSyncChannel.setMessageHandler(nil)
     }
-    let clearSyncCheckpointChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.clearSyncCheckpoint\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearSyncCheckpointChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.clearSyncCheckpoint\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearSyncCheckpointChannel.setMessageHandler { _, reply in
         do {
@@ -432,8 +432,8 @@ class NativeSyncApiSetup {
       clearSyncCheckpointChannel.setMessageHandler(nil)
     }
     let getAssetIdsForAlbumChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetIdsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetIdsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetIdsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetIdsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getAssetIdsForAlbumChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -449,8 +449,8 @@ class NativeSyncApiSetup {
       getAssetIdsForAlbumChannel.setMessageHandler(nil)
     }
     let getAlbumsChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAlbums\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAlbums\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAlbums\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAlbums\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getAlbumsChannel.setMessageHandler { _, reply in
         do {
@@ -464,8 +464,8 @@ class NativeSyncApiSetup {
       getAlbumsChannel.setMessageHandler(nil)
     }
     let getAssetsCountSinceChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsCountSince\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsCountSince\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetsCountSince\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetsCountSince\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getAssetsCountSinceChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -482,8 +482,8 @@ class NativeSyncApiSetup {
       getAssetsCountSinceChannel.setMessageHandler(nil)
     }
     let getAssetsForAlbumChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.getAssetsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.getAssetsForAlbum\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getAssetsForAlbumChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -500,8 +500,8 @@ class NativeSyncApiSetup {
       getAssetsForAlbumChannel.setMessageHandler(nil)
     }
     let hashAssetsChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.hashAssets\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.hashAssets\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.hashAssets\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.hashAssets\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       hashAssetsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -519,7 +519,7 @@ class NativeSyncApiSetup {
     } else {
       hashAssetsChannel.setMessageHandler(nil)
     }
-    let cancelHashingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.NativeSyncApi.cancelHashing\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let cancelHashingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NativeSyncApi.cancelHashing\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       cancelHashingChannel.setMessageHandler { _, reply in
         do {

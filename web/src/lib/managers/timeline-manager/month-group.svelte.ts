@@ -186,6 +186,8 @@ export class MonthGroup {
           : null,
         thumbhash: bucketAssets.thumbhash[i],
         people: null, // People are not included in the bucket assets
+        latitude: bucketAssets?.latitude?.[i],
+        longitude: bucketAssets?.longitude?.[i],
       };
       this.addTimelineAsset(timelineAsset, addContext);
     }

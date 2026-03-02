@@ -253,13 +253,13 @@
     {/if}
     <div class="flex flex-col text-start min-h-[140px]">
       <div>
-        <div class="flex flex-col" style="display: {showRelative ? 'none' : 'flex'}">
-          <label for="datetime">{$t('date_and_time')}</label>
+        <div class="flex flex-col pb-4" style="display: {showRelative ? 'none' : 'flex'}">
+          <label for="datetime" class="immich-form-label">{$t('date_and_time')}</label>
           <DateInput class="immich-form-input" id="datetime" type="datetime-local" bind:value={selectedDate} />
         </div>
         <div class="flex flex-col" style="display: {showRelative ? 'flex' : 'none'}">
           <div class="flex flex-col">
-            <label for="relativedatetime">{$t('offset')}</label>
+            <label for="relativedatetime" class="immich-form-label">{$t('offset')}</label>
             <DurationInput class="immich-form-input" id="relativedatetime" bind:value={selectedDuration} />
           </div>
         </div>

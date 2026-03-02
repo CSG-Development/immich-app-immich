@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -107,7 +107,7 @@
 		886774DBDDE6B35BF2B4F2CD /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
-		97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Curator Photos-Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		97C146EE1CF9000F007C117D /* Personal Cloud Photos-Debug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Personal Cloud Photos-Debug.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -160,9 +160,12 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B2CF7F8C2DDE4EBB00744BF6 /* Sync */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Sync;
+			sourceTree = "<group>";
+		};
+		BD05E0022F23714900730F41 /* CertificateFetcher */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CertificateFetcher;
 			sourceTree = "<group>";
 		};
 		F0B57D3D2DF764BD00DC5BCC /* WidgetExtension */ = {
@@ -280,7 +283,7 @@
 		97C146EF1CF9000F007C117D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */,
+				97C146EE1CF9000F007C117D /* Personal Cloud Photos-Debug.app */,
 				FAC6F8902D287C890078CB2F /* ShareExtension.appex */,
 				F0B57D382DF764BD00DC5BCC /* WidgetExtension.appex */,
 			);
@@ -290,6 +293,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				BD05E0022F23714900730F41 /* CertificateFetcher */,
 				B25D37792E72CA15008B6CA7 /* Connectivity */,
 				B21E34A62E5AF9760031FDB9 /* Background */,
 				CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */,
@@ -387,10 +391,11 @@
 			);
 			fileSystemSynchronizedGroups = (
 				B2CF7F8C2DDE4EBB00744BF6 /* Sync */,
+				BD05E0022F23714900730F41 /* CertificateFetcher */,
 			);
 			name = Runner;
 			productName = Runner;
-			productReference = 97C146EE1CF9000F007C117D /* Curator Photos-Debug.app */;
+			productReference = 97C146EE1CF9000F007C117D /* Personal Cloud Photos-Debug.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F0B57D372DF764BD00DC5BCC /* WidgetExtension */ = {
@@ -577,9 +582,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -609,9 +618,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -779,7 +792,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
-				PRODUCT_NAME = "Curator Photos-Profile";
+				PRODUCT_NAME = "Personal Cloud Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -925,7 +938,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug;
-				PRODUCT_NAME = "Curator Photos-Debug";
+				PRODUCT_NAME = "Personal Cloud Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -957,7 +970,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
-				PRODUCT_NAME = "Curator Photos";
+				PRODUCT_NAME = "Personal Cloud Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1047,7 +1060,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug;
-				PRODUCT_NAME = "Curator Photos-Debug";
+				PRODUCT_NAME = "Personal Cloud Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1179,7 +1192,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
-				PRODUCT_NAME = "Curator Photos";
+				PRODUCT_NAME = "Personal Cloud Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1305,7 +1318,7 @@
 				);
 				MARKETING_VERSION = 1.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
-				PRODUCT_NAME = "Curator Photos-Profile";
+				PRODUCT_NAME = "Personal Cloud Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

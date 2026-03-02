@@ -23,6 +23,8 @@ import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.loader.FlutterLoader
 import java.util.concurrent.TimeUnit
+import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApi
+import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApiImpl
 
 private const val TAG = "BackgroundWorker"
 
@@ -86,6 +88,7 @@ class BackgroundWorker(context: Context, params: WorkerParameters) :
         binaryMessenger = engine!!.dartExecutor.binaryMessenger,
         api = this
       )
+      CertificateFetcherApi.setUp(binaryMessenger = engine!!.dartExecutor.binaryMessenger, CertificateFetcherApiImpl())
 
       engine!!.dartExecutor.executeDartEntrypoint(
         DartExecutor.DartEntrypoint(

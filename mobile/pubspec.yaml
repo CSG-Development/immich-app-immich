@@ -2,13 +2,11 @@ name: immich_mobile
 description: Immich - selfhosted backup media file on mobile phone
 
 publish_to: 'none'
-version: 1.0.12+1
+version: 1.0.19+1
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
   flutter: 3.35.4
-
-isar_version: &isar_version 3.1.8
 
 dependencies:
   flutter:
@@ -16,7 +14,6 @@ dependencies:
 
   async: ^2.11.0
   auto_route: ^9.2.0
-  background_downloader: ^9.2.5
   cached_network_image: ^3.4.1
   cancellation_token_http: ^2.1.0
   cast: ^2.1.0
@@ -79,11 +76,14 @@ dependencies:
   firebase_performance: ^0.10.1+6
   ffmpeg_kit_flutter_new: ^3.2.0
 
+  background_downloader:
+    path: background_downloader
+
   image_editor:
     path: ../image_editor
 
-  homecloud_frontend:
-    path: ../homecloud_frontend
+  hc_device:
+    path: hc_device
 
   native_video_player:
     git:
@@ -91,15 +91,18 @@ dependencies:
       ref: '893894b'
   openapi:
     path: openapi
+
   isar:
-    version: *isar_version
-    hosted: https://pub.isar-community.dev/
-  isar_flutter_libs: # contains Isar Core
-    version: *isar_version
-    hosted: https://pub.isar-community.dev/
+    git:
+      url: https://github.com/immich-app/isar
+      ref: 'bb1dca40fe87a001122e5d43bc6254718cb49f3a'
+      path: packages/isar/
+  isar_community_flutter_libs: 3.3.0-dev.3
   # DB
   drift: ^2.23.1
   drift_flutter: ^0.2.4
+  basic_utils: ^5.8.2
+  pub_semver: ^2.2.0
 
 dependency_overrides:
   intl: ^0.20.2
@@ -116,7 +119,7 @@ dev_dependencies:
   isar_generator:
     git:
       url: https://github.com/immich-app/isar
-      ref: v3
+      ref: bb1dca40fe87a001122e5d43bc6254718cb49f3a
       path: packages/isar_generator/
   integration_test:
     sdk: flutter

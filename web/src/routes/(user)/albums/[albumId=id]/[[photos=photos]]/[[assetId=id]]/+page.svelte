@@ -465,6 +465,9 @@
       handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
     }
   };
+
+  let tooltipX = $state(0);
+  let tooltipY = $state(0);
 </script>
 
 <div class="flex overflow-hidden" use:scrollMemoryClearer={{ routeStartsWith: AppRoute.ALBUMS }}>
@@ -487,7 +490,16 @@
         {#if viewMode !== AlbumPageViewMode.SELECT_ASSETS}
           {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
             <!-- ALBUM TITLE -->
-            <section class="pt-8 md:pt-24">
+            <section
+              class="pt-8 md:pt-24"
+              aria-hidden="true"
+              style={`--tooltip-x:${tooltipX}px; --tooltip-y:${tooltipY}px`}
+              onmousemove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                tooltipX = e.clientX - rect.left + 12;
+                tooltipY = e.clientY - rect.top + 12;
+              }}
+            >
               <AlbumTitle
                 id={album.id}
                 albumName={album.albumName}

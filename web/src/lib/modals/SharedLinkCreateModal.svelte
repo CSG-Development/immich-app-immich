@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SettingSelect from '$lib/components/shared-components/settings/setting-select.svelte';
+  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { handleError } from '$lib/utils/handle-error';
   import { SharedLinkType, createSharedLink, updateSharedLink, type SharedLinkResponseDto } from '@immich/sdk';
@@ -41,9 +41,9 @@
 
   let relativeTime = $derived(new Intl.RelativeTimeFormat($locale));
   let expiredDateOptions = $derived([
-    { text: $t('never'), value: 0 },
+    { label: $t('never'), value: 0 },
     ...expirationOptions.map(([value, unit]) => ({
-      text: relativeTime.format(value, unit),
+      label: relativeTime.format(value, unit),
       value: Duration.fromObject({ [unit]: value }).toMillis(),
     })),
   ]);
@@ -68,6 +68,11 @@
 
     albumId = editingLink.album?.id;
     assetIds = editingLink.assets.map(({ id }) => id);
+    if (editingLink.expiresAt) {
+      expirationOption =
+        DateTime.fromISO(editingLink.expiresAt.split('.')[0]).toMillis() -
+        DateTime.fromISO(editingLink.createdAt.split('.')[0]).toMillis();
+    }
   }
 
   const handleCreateSharedLink = async () => {
@@ -135,6 +140,14 @@
     }
     return $t('create_link_to_share');
   };
+
+  const handleSelect = (option?: ComboBoxOption) => {
+    if (!option) {
+      return;
+    }
+
+    expirationOption = option.value as number;
+  };
 </script>
 
 <Modal title={getTitle()} icon={mdiLink} size="small" {onClose}>
@@ -180,12 +193,20 @@
       </Field>
 
       <div class="mt-2">
-        <SettingSelect
+        <!-- <SettingSelect
           bind:value={expirationOption}
           options={expiredDateOptions}
           label={$t('expire_after')}
           disabled={editingLink && !shouldChangeExpirationTime}
           number={true}
+        /> -->
+
+        <Combobox
+          label={$t('expire_after')}
+          selectedOption={expiredDateOptions.find((option) => option.value === expirationOption)}
+          options={expiredDateOptions}
+          onSelect={handleSelect}
+          disabled={editingLink && !shouldChangeExpirationTime}
         />
       </div>
 

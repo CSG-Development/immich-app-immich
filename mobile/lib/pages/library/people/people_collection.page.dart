@@ -33,7 +33,7 @@ class PeopleCollectionPage extends HookConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+        final isTablet = context.isTablet;
         final isPortrait = context.orientation == Orientation.portrait;
 
         return Scaffold(

@@ -228,15 +228,17 @@
   >
     <div use:focusOutside={{ onFocusOut: closeDropdown }} tabindex="-1">
       <label for="main-search-bar" class="sr-only">{$t('search_your_photos')}</label>
+
       <input
+        title={value ? '' : 'Please fill out this field.'}
         type="text"
         name="q"
         id="main-search-bar"
         class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg
-        {showClearIcon ? 'pe-[90px]' : 'pe-14'}
-        {grayTheme ? 'dark:bg-immich-dark-gray-search-bar/12' : 'dark:bg-immich-dark-bg'}
-        {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-immich-gray-search-bar/24'}
-        {searchStore.isSearchEnabled
+          {showClearIcon ? 'pe-[90px]' : 'pe-14'}
+          {grayTheme ? 'dark:bg-immich-dark-gray-search-bar/12' : 'dark:bg-immich-dark-bg'}
+          {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-immich-gray-search-bar/24'}
+          {searchStore.isSearchEnabled
           ? 'border-gray-200 dark:border-gray-700 bg-white'
           : 'border-immich-gray-border dark:border-immich-dark-gray-border'}"
         placeholder={$t('search_your_photos')}

@@ -52,7 +52,7 @@ class AssetDetailBottomSheet extends ConsumerWidget {
       isArchived: isArchived,
       isTrashEnabled: isTrashEnable,
       isInLockedView: isInLockedView,
-      isStacked: asset.hasRemote && (asset as RemoteAsset).stackId != null,
+      isStacked: asset is RemoteAsset && asset.stackId != null,
       currentAlbum: currentAlbum,
       advancedTroubleshooting: advancedTroubleshooting,
       source: ActionSource.viewer,
@@ -154,8 +154,7 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
         if (exifInfo != null) _SheetAssetDescription(exif: exifInfo),
         const SheetPeopleDetails(),
         const SheetLocationDetails(),
-        // Tags section mirrored to sheet style
-        const SheetTagsDetails(),
+        const SheetTagsDetailsBeta(),
         // Details header
         _SheetTile(
           title: 'exif_bottom_sheet_details'.t(context: context),
@@ -189,6 +188,7 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
               color: context.textTheme.bodyMedium?.color?.withAlpha(155),
             ),
           ),
+        const SizedBox(height: 64),
       ],
     );
   }

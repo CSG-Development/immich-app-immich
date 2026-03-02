@@ -2,9 +2,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:homecloud_frontend/homecloud_frontend.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_access_form.dart';
@@ -16,10 +17,11 @@ class LoginPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAuthenticated = ref.watch(remoteProvider).isAuthenticated;
+    final authenticatedEmail = ref.read(deviceProvider).login;
+    final devEnableSettingsOnLogin = ref.watch(developerOptionsProvider).devEnableSettingsOnLogin;
 
     final appVersion = useState('0.0.0');
-    final isRemoteAccessForm = useState<bool>(!isAuthenticated);
+    final isRemoteAccessForm = useState<bool>(authenticatedEmail.isEmpty);
 
     getAppInfo() async {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -38,36 +40,37 @@ class LoginPage extends HookConsumerWidget {
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  if (isAuthenticated) {
-                    ref.read(remoteProvider.notifier).logout();
-                  }
                   isRemoteAccessForm.value = true;
                 },
               ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         systemOverlayStyle: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-        actions: [
+        actions: devEnableSettingsOnLogin ? [
           IconButton(
             icon: const Icon(Icons.settings, size: 24.0),
             onPressed: () => context.pushRoute(const SettingsRoute()),
           ),
-        ],
+        ] : null,
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () => FocusScope.of(context).unfocus(),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isWide = context.isTablet || context.orientation == Orientation.landscape;
+
             return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, kToolbarHeight + 24.0),
-                    child: isRemoteAccessForm.value
-                        ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
-                        : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isWide ? 400 : double.infinity, minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
+                      child: isRemoteAccessForm.value
+                          ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
+                          : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+                    ),
                   ),
                 ),
               ),

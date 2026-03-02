@@ -21,7 +21,7 @@
     type PersonResponseDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiAccountOff, mdiArrowLeftThin, mdiPencil, mdiRestart, mdiTrashCan } from '@mdi/js';
+  import { mdiAccountOff, mdiArrowLeftThin, mdiPencilOutline, mdiRestart, mdiTrashCan } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { linear } from 'svelte/easing';
@@ -193,7 +193,7 @@
 
 <section
   transition:fly={{ x: 360, duration: 100, easing: linear }}
-  class="absolute top-0 h-full w-[360px] overflow-x-hidden p-2 dark:text-immich-dark-fg bg-light"
+  class="absolute top-0 h-full w-[360px] overflow-x-hidden p-2 dark:text-immich-dark-fg bg-light dark:bg-immich-dark-gray-card"
 >
   <div class="flex place-items-center justify-between gap-2">
     <div class="flex items-center gap-2">
@@ -324,7 +324,7 @@
                 {:else}
                   <IconButton
                     color="primary"
-                    icon={mdiPencil}
+                    icon={mdiPencilOutline}
                     aria-label={$t('select_new_face')}
                     size="small"
                     class="absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform"

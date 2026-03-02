@@ -1,30 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:homecloud_frontend/api/api.swagger.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:hc_device/hc_device.dart' show DeviceItem;
 import 'package:immich_mobile/widgets/forms/login/server_endpoint_input.dart';
-
-class DeviceItem {
-  final Uri? baseUrl;
-  final About? about;
-  final Status? status;
-  final bool isTemporary;
-
-  DeviceItem({this.baseUrl, this.about, this.status, this.isTemporary = false});
-
-  String get name => isTemporary
-      ? baseUrl.toString()
-      : about?.hostname.isNotEmpty == true
-      ? about!.hostname
-      : baseUrl?.host ?? 'Unknown Device';
-
-  bool get isReady => status == null || status!.state == StatusState.ready;
-
-  String warnStatus(BuildContext context) {
-    if (isReady) return "";
-    return " (dashboard_device_card_device_status(status!.state.name))";
-  }
-}
 
 class DeviceSelector extends HookWidget {
   final List devices;
@@ -77,6 +56,10 @@ class DeviceSelector extends HookWidget {
       if (focusNode == null) return null;
 
       void onFocusChange() {
+        controller.text = '${controller.text} ';
+        Future.microtask(() {
+          controller.text = controller.text.trim();
+        });
         if (!focusNode!.hasFocus) {
           isDropdownOpen.value = false;
         }
@@ -92,11 +75,10 @@ class DeviceSelector extends HookWidget {
         if (isDetecting) {
           icon = const Icon(Icons.search, size: 32);
         } else {
-          // icon = const Icon(Icons.cloud_off, size: 32, color: Colors.red);
           icon = null;
         }
       } else {
-        icon = Image.asset("assets/device.webp", width: 50, height: 40);
+        icon = UnconstrainedBox(child: SvgPicture.asset('assets/device.svg', width: 24.0, height: 24.0));
       }
       return icon != null
           ? Padding(
@@ -117,7 +99,7 @@ class DeviceSelector extends HookWidget {
         final exists = items.any((device) => device.name.toLowerCase() == input.toLowerCase());
         if (!exists) {
           // Create temporary device for manual input
-          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input), isTemporary: true);
+          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input));
           // Defer state update to avoid setState during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             manualInputDevice.value = manualDevice;
@@ -140,10 +122,6 @@ class DeviceSelector extends HookWidget {
     void onOptionSelected(DeviceItem value) {
       controller.text = value.name;
       onDeviceSelected(value);
-      // Clear temporary device after selection
-      if (value.isTemporary) {
-        manualInputDevice.value = null;
-      }
     }
 
     return Row(
@@ -152,102 +130,86 @@ class DeviceSelector extends HookWidget {
       spacing: 12,
       children: [
         Expanded(
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final double maxWidth = constraints.maxWidth;
-              return RawAutocomplete<DeviceItem>(
-                textEditingController: controller,
+          child: RawAutocomplete<DeviceItem>(
+            textEditingController: controller,
+            focusNode: focusNode,
+            optionsBuilder: (value) {
+              // final input = value.text.trim();
+              // final options = getFilteredOptions(input);
+              // Update dropdown state based on whether options are available and field has focus
+              // WidgetsBinding.instance.addPostFrameCallback((_) {
+              //   isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
+              // });
+              final List<DeviceItem> items = devices.cast<DeviceItem>();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                isDropdownOpen.value = items.isNotEmpty && (focusNode?.hasFocus ?? false);
+              });
+              return items;
+            },
+            displayStringForOption: (value) => value.name,
+            onSelected: (option) {
+              isDropdownOpen.value = false;
+              onOptionSelected(option);
+            },
+            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+              return ServerEndpointInput(
+                label: 'curator.sign_in_screen_dropdown_device_label'.tr(),
+                controller: controller,
                 focusNode: focusNode,
-                optionsBuilder: (value) {
-                  final input = value.text.trim();
-                  final options = getFilteredOptions(input);
-                  // Update dropdown state based on whether options are available and field has focus
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
-                  });
-                  return [...options, DeviceItem()];
+                leadingIcon: buildIconDevice(selectedDevice),
+                isDetecting: isDetecting,
+                isEmpty: devices.isEmpty,
+                suffixIcon: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  icon: Icon(
+                    isDropdownOpen.value ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    if (focusNode.hasFocus && isDropdownOpen.value) {
+                      focusNode.unfocus();
+                      isDropdownOpen.value = false;
+                    } else {
+                      focusNode.requestFocus();
+                      // Trigger optionsBuilder by notifying listeners
+                      controller.value = controller.value.copyWith(
+                        text: controller.text,
+                        selection: TextSelection.collapsed(offset: controller.text.length),
+                        composing: TextRange.empty,
+                      );
+                    }
+                  },
+                ),
+                onSubmit: () {
+                  if (controller.text.isEmpty) {
+                    onDeviceSelected(null);
+                  } else {
+                    onFieldSubmitted();
+                  }
                 },
-                displayStringForOption: (value) => value.name,
-                onSelected: (option) {
-                  isDropdownOpen.value = false;
-                  onOptionSelected(option);
-                },
-                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                  return ServerEndpointInput(
-                    label: 'curator.sign_in_screen_dropdown_device_label'.tr(),
-                    controller: controller,
-                    focusNode: focusNode,
-                    leadingIcon: buildIconDevice(selectedDevice),
-                    isDetecting: isDetecting,
-                    isEmpty: getFilteredOptions(controller.text).isEmpty,
-                    suffixIcon: IconButton(
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.builder(
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                      icon: Icon(
-                        isDropdownOpen.value ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        if (focusNode.hasFocus && isDropdownOpen.value) {
-                          focusNode.unfocus();
-                          isDropdownOpen.value = false;
-                        } else {
-                          focusNode.requestFocus();
-                          // Trigger optionsBuilder by notifying listeners
-                          controller.value = controller.value.copyWith(
-                            text: controller.text,
-                            selection: TextSelection.collapsed(offset: controller.text.length),
-                            composing: TextRange.empty,
-                          );
-                        }
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (_, index) {
+                        final option = options.elementAt(index);
+                        return ListTile(title: Text(option.name), onTap: () => onSelected(option));
                       },
                     ),
-                    onSubmit: () {
-                      if (controller.text.isEmpty) {
-                        onDeviceSelected(null);
-                      } else {
-                        onFieldSubmitted();
-                      }
-                    },
-                  );
-                },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(12),
-                      clipBehavior: Clip.antiAlias,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: 300, minWidth: maxWidth, maxWidth: maxWidth),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (_, index) {
-                            final option = options.elementAt(index);
-                            return option.baseUrl != null
-                                ? ListTile(
-                                    title: Text(
-                                      option.isTemporary ? option.name : option.name + option.warnStatus(context),
-                                    ),
-                                    onTap: () {
-                                      onSelected(option);
-                                    },
-                                  )
-                                : Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      index > 0 ? const Divider(height: 1) : const SizedBox.shrink(),
-                                      const ListTile(title: Text('I don’t see my Curator')),
-                                    ],
-                                  );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ),
               );
             },
           ),

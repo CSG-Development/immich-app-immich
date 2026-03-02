@@ -128,25 +128,25 @@ class ExternalNetworkPreference extends HookConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: Text('add_endpoint'.tr().toUpperCase()),
-                      onPressed: enabled
-                          ? () {
-                              entries.value = [
-                                ...entries.value,
-                                const AuxilaryEndpoint(url: '', status: AuxCheckStatus.unknown),
-                              ];
-                            }
-                          : null,
-                    ),
-                  ),
-                ),
+                // const SizedBox(height: 24),
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                //   child: SizedBox(
+                //     height: 48,
+                //     child: OutlinedButton.icon(
+                //       icon: const Icon(Icons.add),
+                //       label: Text('add_endpoint'.tr().toUpperCase()),
+                //       onPressed: enabled
+                //           ? () {
+                //               entries.value = [
+                //                 ...entries.value,
+                //                 const AuxilaryEndpoint(url: '', status: AuxCheckStatus.unknown),
+                //               ];
+                //             }
+                //           : null,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ],

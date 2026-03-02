@@ -1,8 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
@@ -35,7 +37,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+        final isTablet = context.isTablet;
         final isPortrait = context.orientation == Orientation.portrait;
 
         return Scaffold(
@@ -70,7 +72,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                 }
                 return GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isTablet ? 6 : 3,
+                    crossAxisCount: isTablet ? 4 : 2,
                     childAspectRatio: 0.85,
                     mainAxisSpacing: isPortrait && isTablet ? 36 : 0,
                   ),
@@ -79,20 +81,93 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                   itemBuilder: (context, index) {
                     final person = people[index];
 
+                    TextStyle textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
+
                     return Column(
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            context.pushRoute(DriftPersonRoute(person: person));
-                          },
-                          child: Material(
-                            shape: const CircleBorder(side: BorderSide.none),
-                            elevation: 3,
-                            child: CircleAvatar(
-                              maxRadius: isTablet ? 100 / 2 : 96 / 2,
-                              backgroundImage: NetworkImage(getFaceThumbnailUrl(person.id), headers: headers),
+                        Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                context.pushRoute(DriftPersonRoute(person: person));
+                              },
+                              child: Material(
+                                shape: const CircleBorder(side: BorderSide.none),
+                                elevation: 3,
+                                child: CircleAvatar(
+                                  maxRadius: 156 / 2,
+                                  backgroundImage: NetworkImage(getFaceThumbnailUrl(person.id), headers: headers),
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              right: 0.0,
+                              top: 0.0,
+                              child: PopupMenuButton<int>(
+                                onSelected: (int value) {
+                                  switch (value) {
+                                    case 0:
+                                      showNameEditModal(context, person);
+                                    case 1:
+                                      showBirthdayEditModal(context, person);
+                                    case 2:
+                                      context.pushRoute(DriftPeopleMergeRoute(person: person));
+                                    default:
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) {
+                                  return [
+                                    PopupMenuItem(
+                                      value: 0,
+                                      child: ListTile(
+                                        leading: const Icon(Icons.edit),
+                                        title: Text('edit_name'.t(context: context), style: textStyle),
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 1,
+                                      child: ListTile(
+                                        leading: const Icon(Icons.cake),
+                                        title: Text(
+                                          (person.birthDate != null ? 'edit_birthday' : "add_birthday").t(
+                                            context: context,
+                                          ),
+                                          style: textStyle,
+                                        ),
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 2,
+                                      child: ListTile(
+                                        leading: SizedBox(
+                                          width: 24.0,
+                                          height: 24.0,
+                                          child: Center(
+                                            child: SvgPicture.asset(
+                                              'assets/merge-people-menu-item.svg',
+                                              colorFilter: ColorFilter.mode(
+                                                context.colorScheme.onSurface,
+                                                BlendMode.srcIn,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        title: Text(("merge_people").t(context: context), style: textStyle),
+                                      ),
+                                    ),
+                                  ];
+                                },
+                                icon: Container(
+                                  decoration: BoxDecoration(
+                                    color: context.colorScheme.surfaceContainer,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const SizedBox(width: 40.0, height: 40, child: Icon(Icons.more_vert)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         GestureDetector(

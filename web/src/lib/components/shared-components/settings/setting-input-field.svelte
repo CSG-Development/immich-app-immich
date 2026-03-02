@@ -107,7 +107,7 @@
   {/if}
 
   {#if inputType !== SettingInputFieldType.PASSWORD}
-    <div class="flex place-items-center place-content-center gap-2">
+    <div class="flex place-items-center gap-2 w-full">
       {#if inputType === SettingInputFieldType.COLOR}
         <input
           bind:this={input}
@@ -124,7 +124,7 @@
           bind:value
           onchange={handleChange}
           {disabled}
-          {title}
+          title={title ?? (required && !value ? 'Please fill out this field.' : '')}
         />
       {/if}
 
@@ -144,7 +144,7 @@
         bind:value
         onchange={handleChange}
         {disabled}
-        {title}
+        title={title ?? (required && !value ? 'Please fill out this field.' : '')}
       />
 
       {@render trailingSnippet?.()}
@@ -160,7 +160,7 @@
       {required}
       bind:value={value as string}
       {disabled}
-      {title}
+      title={title ?? (required && !value ? 'Please fill out this field.' : '')}
     />
   {/if}
 </div>

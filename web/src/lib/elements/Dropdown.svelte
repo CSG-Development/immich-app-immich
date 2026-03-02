@@ -97,7 +97,7 @@
 
 <div use:clickOutside={{ onOutclick: handleClickOutside, onEscape: handleClickOutside }} class="relative">
   <!-- BUTTON TITLE -->
-  <Button onclick={() => (showMenu = true)} fullWidth {title} variant="ghost" color="secondary" size="small">
+  <Button onclick={() => (showMenu = !showMenu)} fullWidth variant="ghost" color="secondary" size="small" {title}>
     {#if renderedSelectedOption?.icon}
       <Icon path={renderedSelectedOption.icon} />
     {/if}

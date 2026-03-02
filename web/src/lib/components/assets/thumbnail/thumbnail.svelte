@@ -195,10 +195,7 @@
 </script>
 
 <div
-  class={[
-    'focus-visible:outline-none flex overflow-hidden',
-    disabled ? 'bg-gray-300' : 'bg-primary/30 dark:bg-primary/70',
-  ]}
+  class={['focus-visible:outline-none flex overflow-hidden', disabled ? 'bg-gray-300' : 'bg-primary']}
   style:width="{width}px"
   style:height="{height}px"
   onmouseenter={onMouseEnter}
@@ -226,7 +223,7 @@
   <div
     class={[
       'pointer-events-none absolute z-1 size-full outline-hidden outline-4 -outline-offset-4 outline-immich-primary',
-      { 'rounded-xl': selected },
+      { 'rounded-[14.1px]': selected },
     ]}
     data-outline
   ></div>
@@ -240,7 +237,7 @@
       class={[
         'absolute h-full w-full select-none bg-transparent transition-transform',
         { 'scale-[0.85]': selected },
-        { 'rounded-xl': selected },
+        { 'rounded-[14.1px]': selected },
       ]}
     >
       <!-- icon overlay -->
@@ -250,14 +247,14 @@
           <div
             class={[
               'absolute h-full w-full bg-linear-to-b from-black/25 via-[transparent_25%] opacity-0 transition-opacity group-hover:opacity-100',
-              { 'rounded-xl': selected },
+              { 'rounded-[14.1px]': selected },
             ]}
           ></div>
         {/if}
 
         <!-- Dimmed support -->
         {#if dimmed && !mouseOver}
-          <div id="a" class={['absolute h-full w-full bg-gray-700/40', { 'rounded-xl': selected }]}></div>
+          <div id="a" class={['absolute h-full w-full bg-gray-700/40', { 'rounded-[14.1px]': selected }]}></div>
         {/if}
 
         <!-- Favorite asset star -->
@@ -351,7 +348,7 @@
           class="absolute top-0 object-cover"
           style:width="{width}px"
           style:height="{height}px"
-          class:rounded-xl={selected}
+          class:rounded-[14.1px]={selected}
           draggable="false"
           out:fade={{ duration: THUMBHASH_FADE_DURATION }}
         ></canvas>
@@ -380,8 +377,11 @@
         {#if disabled}
           <Icon path={mdiCheckCircle} size="24" class="text-zinc-800" />
         {:else if selected}
-          <div class="rounded-full bg-[#D9DCEF] dark:bg-[#232932]">
-            <Icon path={mdiCheckCircle} size="24" class="text-primary" />
+          <div class="relative rounded-full bg-immich-gray-border dark:bg-immich-dark-gray-border">
+            <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
+              <div class="w-4 h-4 bg-white/[.87] dark:bg-black/[.87] rounded-full"></div>
+            </div>
+            <Icon path={mdiCheckCircle} size="24" class="text-primary relative" />
           </div>
         {:else}
           <Icon path={mdiCheckCircle} size="24" class="text-white/80 hover:text-white" />

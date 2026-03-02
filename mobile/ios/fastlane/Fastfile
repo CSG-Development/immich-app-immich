@@ -10,7 +10,7 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
-APP_NAME = "Curator Photos"
+APP_NAME = "Personal Cloud Photos"
 TEAM_ID = "57HJ3KH2XC"
 SECURITY_GROUP_ID = "group.com.seagate.curator"
 BUNDLE_ID_PROD = "com.seagate.curator.stxphotos.ios"

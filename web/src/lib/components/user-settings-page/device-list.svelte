@@ -75,9 +75,9 @@
         {/if}
       {/each}
     </div>
-    <h3 class="mb-2 text-xs font-medium text-immich-primary dark:text-immich-dark-primary">
+    <!-- <h3 class="mb-2 text-xs font-medium text-immich-primary dark:text-immich-dark-primary">
       {$t('log_out_all_devices').toUpperCase()}
-    </h3>
+    </h3> -->
     <div class="flex justify-end">
       <Button shape="round" color="danger" size="small" onclick={handleDeleteAll}>{$t('log_out_all_devices')}</Button>
     </div>

@@ -73,10 +73,7 @@
   let interactiveClass = $derived(interactive ? 'transition-colors' : '');
 </script>
 
-<figure
-  class="{sizeClass} {colorClass} {interactiveClass} overflow-hidden shadow-md rounded-full"
-  title={noTitle ? undefined : title}
->
+<figure class="{sizeClass} {colorClass} {interactiveClass} overflow-hidden shadow-md rounded-full">
   {#if user.profileImagePath}
     <img
       bind:this={img}
@@ -85,6 +82,7 @@
       class="h-full w-full object-cover"
       class:hidden={showFallback}
       draggable="false"
+      title={noTitle ? undefined : title}
     />
   {/if}
   {#if showFallback}

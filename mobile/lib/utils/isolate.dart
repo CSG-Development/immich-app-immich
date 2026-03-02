@@ -2,13 +2,19 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/cancel.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
+import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:logging/logging.dart';
@@ -40,6 +46,20 @@ Cancelable<T?> runInIsolateGentle<T>({
 
         final (isar, drift, logDb) = await Bootstrap.initDB();
         await Bootstrap.initDomain(isar, drift, logDb, shouldBufferLogs: false, listenStoreUpdates: false);
+
+        final certPinning = HttpCertPinningManager(
+          config: const CertPinningConfig(
+            allowFallback: false,
+            installRootsInSecurityContext: true
+          ),
+        );
+
+        await certPinning.initialize();
+
+        final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
+        final apiservice = ApiService(certPinning: certPinning);
+
+        
         final ref = ProviderContainer(
           overrides: [
             // TODO: Remove once isar is removed
@@ -47,6 +67,8 @@ Cancelable<T?> runInIsolateGentle<T>({
             isarProvider.overrideWithValue(isar),
             cancellationProvider.overrideWithValue(cancelledChecker),
             driftProvider.overrideWith(driftOverride(drift)),
+            remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
+            apiServiceProvider.overrideWithValue(apiservice)
           ],
         );
 

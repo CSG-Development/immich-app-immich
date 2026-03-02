@@ -227,6 +227,7 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
             if (mounted) {
               ref.read(currentRemoteAlbumProvider.notifier).dispose();
               ref.read(remoteAlbumProvider.notifier).refresh();
+              ref.read(remoteAlbumProvider.notifier).refreshAlbum(widget.album.id);
             }
           });
         }

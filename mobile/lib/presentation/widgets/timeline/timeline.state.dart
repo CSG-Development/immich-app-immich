@@ -14,7 +14,7 @@ class TimelineArgs {
   final double maxHeight;
   final double spacing;
   final int columnCount;
-  final bool? showStorageIndicator;
+  final bool showStorageIndicator;
   final bool withStack;
   final GroupAssetsBy? groupBy;
 
@@ -23,7 +23,7 @@ class TimelineArgs {
     required this.maxHeight,
     this.spacing = kTimelineSpacing,
     this.columnCount = kTimelineColumnCount,
-    this.showStorageIndicator,
+    this.showStorageIndicator = false,
     this.withStack = false,
     this.groupBy,
   });
@@ -106,5 +106,20 @@ final timelineSegmentProvider = StreamProvider.autoDispose<List<Segment>>((ref) 
     ).generate();
   });
 }, dependencies: [timelineServiceProvider, timelineArgsProvider]);
+
+/// Reactive provider exposing the total number of assets in the current timeline.
+///
+/// This listens to the buckets stream from `TimelineService` and computes the
+/// total asset count, so widgets can react to changes immediately.
+final timelineTotalAssetsProvider = StreamProvider.autoDispose<int>((ref) async* {
+  final timelineService = ref.watch(timelineServiceProvider);
+
+  // Emit initial value (will typically be 0 before the first buckets arrive).
+  yield timelineService.totalAssets;
+
+  yield* timelineService.watchBuckets().map(
+    (buckets) => buckets.fold<int>(0, (acc, bucket) => acc + bucket.assetCount),
+  );
+});
 
 final timelineStateProvider = NotifierProvider<TimelineStateNotifier, TimelineState>(TimelineStateNotifier.new);

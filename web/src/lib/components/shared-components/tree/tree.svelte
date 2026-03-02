@@ -9,9 +9,10 @@
     active: string;
     icons: { default: string; active: string };
     getLink: (path: string) => string;
+    handleClick?: () => void;
   }
 
-  let { node, active, icons, getLink }: Props = $props();
+  let { node, active, icons, getLink, handleClick }: Props = $props();
 
   const isTarget = $derived(active === node.path);
   const isActive = $derived(active === node.path || active.startsWith(node.value === '/' ? '/' : `${node.path}/`));
@@ -25,6 +26,7 @@
 
 <a
   href={getLink(node.path)}
+  onclick={handleClick}
   title={node.value}
   class={`flex grow place-items-center ps-2 py-1 text-sm rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 hover:font-semibold ${isTarget ? 'bg-slate-100 dark:bg-slate-700 font-semibold text-primary' : 'dark:text-gray-200'}`}
   data-sveltekit-keepfocus
@@ -46,5 +48,5 @@
 </a>
 
 {#if isOpen}
-  <TreeItems tree={node} {icons} {active} {getLink} />
+  <TreeItems tree={node} {icons} {active} {getLink} {handleClick} />
 {/if}

@@ -244,7 +244,7 @@ interface UpdateApi {
     fun setUp(binaryMessenger: BinaryMessenger, api: UpdateApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.UpdateApi.fetchLatestUpdate$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.UpdateApi.fetchLatestUpdate$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -261,7 +261,7 @@ interface UpdateApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.UpdateApi.startDownload$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.UpdateApi.startDownload$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -281,7 +281,7 @@ interface UpdateApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.curator_photos.UpdateApi.installDownloadedUpdate$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.UpdateApi.installDownloadedUpdate$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
@@ -309,7 +309,7 @@ class UpdateCallbacks(private val binaryMessenger: BinaryMessenger, private val 
   fun onDownloadProgress(progressArg: DownloadProgress, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadProgress$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadProgress$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(progressArg)) {
       if (it is List<*>) {
@@ -326,7 +326,7 @@ class UpdateCallbacks(private val binaryMessenger: BinaryMessenger, private val 
   fun onDownloadError(messageArg: String, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadError$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadError$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(messageArg)) {
       if (it is List<*>) {
@@ -343,7 +343,7 @@ class UpdateCallbacks(private val binaryMessenger: BinaryMessenger, private val 
   fun onDownloadCompleted(callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.curator_photos.UpdateCallbacks.onDownloadCompleted$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.personal_cloud_photos.UpdateCallbacks.onDownloadCompleted$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(null) {
       if (it is List<*>) {

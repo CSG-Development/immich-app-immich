@@ -44,7 +44,7 @@ enum AppSettingsEnum<T> {
   selectedAlbumSortReverse<bool>(StoreKey.selectedAlbumSortReverse, null, false),
   enableHapticFeedback<bool>(StoreKey.enableHapticFeedback, null, true),
   syncAlbums<bool>(StoreKey.syncAlbums, null, false),
-  autoEndpointSwitching<bool>(StoreKey.autoEndpointSwitching, null, false),
+  autoEndpointSwitching<bool>(StoreKey.autoEndpointSwitching, null, true),
   photoManagerCustomFilter<bool>(StoreKey.photoManagerCustomFilter, null, false),
   betaTimeline<bool>(StoreKey.betaTimeline, null, false),
   enableBackup<bool>(StoreKey.enableBackup, null, false),
@@ -53,7 +53,8 @@ enum AppSettingsEnum<T> {
   backupRequireCharging<bool>(StoreKey.backupRequireCharging, null, false),
   backupTriggerDelay<int>(StoreKey.backupTriggerDelay, null, 30),
   readonlyModeEnabled<bool>(StoreKey.readonlyModeEnabled, "readonlyModeEnabled", false),
-  enableBiometric<bool>(StoreKey.enableBiometric, null, false);
+  enableBiometric<bool>(StoreKey.enableBiometric, null, false),
+  appLockTimeoutIndex<int>(StoreKey.appLockTimeoutIndex, null, 0);
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);
 

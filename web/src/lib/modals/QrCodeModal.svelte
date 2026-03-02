@@ -24,7 +24,7 @@
       </div>
     </div>
     <HStack class="w-full pt-3" gap={1}>
-      <Input bind:value disabled class="flex flex-row" />
+      <Input bind:value disabled class="flex flex-row w-full" />
       <div>
         <IconButton
           variant="ghost"

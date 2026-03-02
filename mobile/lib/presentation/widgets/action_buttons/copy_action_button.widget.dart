@@ -5,9 +5,8 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/action_button_helpers.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
-import 'package:immich_mobile/repositories/asset.repository.dart' as repo;
-import 'package:immich_mobile/entities/asset.entity.dart' as entity;
 import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
@@ -19,24 +18,35 @@ class CopyActionButton extends ConsumerWidget {
 
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
     final selection = ref.read(multiSelectProvider).selectedAssets;
-    final supported = _isCopySupportedForSelection(selection);
-    if (!supported) {
+    if (!_isCopySupportedForSelection(selection)) {
       return;
     }
-    final resolved = await _resolveRemoteEntities(ref, selection);
+
+    final resolved = await ActionButtonHelpers.resolveEntities(ref, selection);
     if (resolved.isEmpty) {
       return;
     }
-    await ClipboardService.copyToClipboard(context, ref, resolved);
+
+    final result = await ClipboardService.copyToClipboard(context, ref, resolved);
 
     if (!context.mounted) return;
     ref.read(multiSelectProvider.notifier).reset();
-    ImmichToast.show(
-      context: context,
-      msg: 'copy_to_clipboard_success'.t(context: context),
-      gravity: ToastGravity.BOTTOM,
-      toastType: ToastType.success,
-    );
+
+    if (result.success) {
+      ImmichToast.show(
+        context: context,
+        msg: 'copy_to_clipboard_success'.t(context: context),
+        gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.success,
+      );
+    } else {
+      ImmichToast.show(
+        context: context,
+        msg: result.error ?? 'errors.unable.to.copy.to.clipboard'.t(context: context),
+        gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
+      );
+    }
   }
 
   @override
@@ -59,21 +69,10 @@ class CopyActionButton extends ConsumerWidget {
       if (!a.isImage) return false;
       final name = a.name.toLowerCase();
       if (!supportedImageExtensions.hasMatch(name)) return false;
-      if (!a.hasRemote) return false;
+      // Allow both remote and local-only assets for clipboard copy
+      // Local assets are now supported by copying to FileProvider-accessible location
     }
     return true;
-  }
-
-  Future<Set<entity.Asset>> _resolveRemoteEntities(WidgetRef ref, Set<BaseAsset> selection) async {
-    final repository = ref.read(repo.assetRepositoryProvider);
-    final Set<entity.Asset> result = {};
-    for (final a in selection.whereType<RemoteAsset>()) {
-      final e = await repository.getByRemoteId(a.id);
-      if (e != null) {
-        result.add(e);
-      }
-    }
-    return result;
   }
 }
 

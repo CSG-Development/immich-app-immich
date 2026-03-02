@@ -6,7 +6,7 @@ import 'package:pigeon/pigeon.dart';
     kotlinOut: 'android/app/src/main/kotlin/com/seagate/curator/stxphotos/android/update/UpdateApi.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.seagate.curator.stxphotos.android.update'),
     dartOptions: DartOptions(),
-    dartPackageName: 'curator_photos',
+    dartPackageName: 'personal_cloud_photos',
   ),
 )
 

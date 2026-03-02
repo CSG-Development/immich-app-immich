@@ -68,7 +68,7 @@
         : 'text-immich-fg dark:text-immich-bg'}"
     />
     <select
-      class="immich-form-input w-full appearance-none row-start-1 col-start-1 pe-6!"
+      class="immich-form-input bg-primary/[.20] w-full appearance-none row-start-1 col-start-1 pe-6!"
       {disabled}
       aria-describedby={desc ? `${name}-desc` : undefined}
       {name}

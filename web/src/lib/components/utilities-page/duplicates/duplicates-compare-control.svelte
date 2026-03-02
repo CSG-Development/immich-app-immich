@@ -2,11 +2,12 @@
   import { shortcuts } from '$lib/actions/shortcut';
   import DuplicateAsset from '$lib/components/utilities-page/duplicates/duplicate-asset.svelte';
   import Portal from '$lib/elements/Portal.svelte';
+  import { authManager } from '$lib/managers/auth-manager.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { handlePromiseError } from '$lib/utils';
   import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { navigate } from '$lib/utils/navigation';
-  import { type AssetResponseDto } from '@immich/sdk';
+  import { getAssetInfo, type AssetResponseDto } from '@immich/sdk';
   import { Button } from '@immich/ui';
   import { mdiCheck, mdiImageMultipleOutline, mdiTrashCanOutline } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
@@ -62,7 +63,7 @@
 
   const onRandom = async () => {
     if (assets.length <= 0) {
-      return undefined;
+      return;
     }
     const index = Math.floor(Math.random() * assets.length);
     const asset = assets[index];
@@ -84,6 +85,12 @@
 
   const onSelectAll = () => {
     selectedAssetIds = new SvelteSet(assets.map((asset) => asset.id));
+  };
+
+  const onViewAsset = async ({ id }: AssetResponseDto) => {
+    const asset = await getAssetInfo({ ...authManager.params, id });
+    setAsset(asset);
+    await navigate({ targetRoute: 'current', assetId: asset.id });
   };
 
   const handleResolve = () => {
@@ -112,7 +119,9 @@
   ]}
 />
 
-<div class="pt-4 rounded-3xl border dark:border-2 border-gray-300 dark:border-gray-700 max-w-216 mx-auto mb-4">
+<div
+  class="pt-4 rounded-3xl border dark:border-2 border-immich-gray-border dark:border-immich-dark-gray-border max-w-216 mx-auto mb-4"
+>
   <div class="flex flex-wrap gap-y-6 mb-4 px-6 w-full place-content-end justify-between">
     <!-- MARK ALL BUTTONS -->
     <div class="flex text-xs text-black">
@@ -120,12 +129,13 @@
         >{$t('select_keep_all')}</Button
       >
       <Button
-        class="rounded-e-full"
+        class="rounded-e-full bg-immich-dark-gray dark:bg-immich-bg"
         size="small"
-        color="secondary"
         leadingIcon={mdiTrashCanOutline}
-        onclick={onSelectNone}>{$t('select_trash_all')}</Button
+        onclick={onSelectNone}
       >
+        {$t('select_trash_all')}
+      </Button>
     </div>
 
     <!-- CONFIRM BUTTONS -->
@@ -164,7 +174,7 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap gap-1 mb-4 place-items-center place-content-center px-4 pt-4">
+  <div class="flex flex-wrap gap-2 mb-4 place-items-center place-content-center px-4 pt-4">
     {#each assets as asset (asset.id)}
       <DuplicateAsset
         {asset}

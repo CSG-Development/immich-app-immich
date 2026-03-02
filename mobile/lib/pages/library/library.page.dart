@@ -208,7 +208,7 @@ class PeopleCollectionCard extends ConsumerWidget {
     final people = ref.watch(getAllPeopleProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+        final isTablet = context.isTablet;
         final widthFactor = isTablet ? 0.25 : 0.5;
         final size = context.width * widthFactor - 20.0;
 
@@ -276,7 +276,7 @@ class LocalAlbumsCollectionCard extends HookConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+        final isTablet = context.isTablet;
         final widthFactor = isTablet ? 0.25 : 0.5;
         final size = context.width * widthFactor - 20.0;
 
@@ -333,7 +333,7 @@ class PlacesCollectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+        final isTablet = context.isTablet;
         final widthFactor = isTablet ? 0.25 : 0.5;
         final size = context.width * widthFactor - 20.0;
 

@@ -111,8 +111,8 @@ class ConnectivityApiSetup {
       let taskQueue: FlutterTaskQueue? = nil
     #endif
     let getCapabilitiesChannel = taskQueue == nil
-      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.ConnectivityApi.getCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.curator_photos.ConnectivityApi.getCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.ConnectivityApi.getCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.ConnectivityApi.getCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getCapabilitiesChannel.setMessageHandler { _, reply in
         do {

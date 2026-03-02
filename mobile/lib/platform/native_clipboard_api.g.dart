@@ -164,7 +164,7 @@ class NativeClipboardApi {
   /// Returns success status and any error message
   Future<ClipboardResult> copyPhotosToClipboard(List<String> filePaths) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.NativeClipboardApi.copyPhotosToClipboard$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.copyPhotosToClipboard$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -194,7 +194,7 @@ class NativeClipboardApi {
   /// Returns list of photo file paths if available
   Future<List<String>> getPhotosFromClipboard() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.NativeClipboardApi.getPhotosFromClipboard$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.getPhotosFromClipboard$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -224,7 +224,7 @@ class NativeClipboardApi {
   /// Returns true if photos are available
   Future<bool> hasPhotosInClipboard() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.NativeClipboardApi.hasPhotosInClipboard$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.hasPhotosInClipboard$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -254,7 +254,7 @@ class NativeClipboardApi {
   /// Returns list of photo information if available
   Future<List<ClipboardPhoto>> getClipboardPhotoMetadata() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.NativeClipboardApi.getClipboardPhotoMetadata$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.getClipboardPhotoMetadata$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -284,7 +284,7 @@ class NativeClipboardApi {
   /// Returns true if clipboard was cleared successfully
   Future<bool> clearClipboard() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.curator_photos.NativeClipboardApi.clearClipboard$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.NativeClipboardApi.clearClipboard$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,

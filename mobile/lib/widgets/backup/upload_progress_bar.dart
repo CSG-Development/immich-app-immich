@@ -30,7 +30,7 @@ class BackupUploadProgressBar extends ConsumerWidget {
             SizedBox(
               width: 110,
               child: Text(
-                "Curator Photos Upload",
+                "Personal Cloud Photos Upload",
                 style: context.textTheme.labelSmall,
               ),
             ),

@@ -48,7 +48,7 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
   /// This is a separate instance from the main Flutter engine that handles the UI.
   /// It operates in its own isolate and doesn't share memory with the main engine.
   /// Must be properly started, registered, and torn down during background execution.
-  private let engine = FlutterEngine(name: "BackgroundImmich")
+  private let engine = FlutterEngine(name: "BackgroundPersonalCloudPhotos")
   
   /// Used to call methods on the flutter side
   private var flutterApi: BackgroundWorkerFlutterApi?
@@ -98,6 +98,7 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     AppDelegate.registerPlugins(binaryMessenger: engine.binaryMessenger)
     flutterApi = BackgroundWorkerFlutterApi(binaryMessenger: engine.binaryMessenger)
     BackgroundWorkerBgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: self)
+    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: CertificateFetcherApiImplSimple())
     
     // Set up a timeout timer if maxSeconds was specified to prevent runaway background tasks
     if maxSeconds != nil {
