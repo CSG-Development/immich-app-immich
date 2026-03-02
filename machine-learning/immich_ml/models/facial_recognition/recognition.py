@@ -1,11 +1,11 @@
-from pathlib import Path
 from typing import Any
+
 import cv2
 import numpy as np
-from numpy.typing import NDArray
-from PIL import Image
 import onnxruntime as ort
 from insightface.model_zoo.arcface_onnx import ArcFaceONNX
+from numpy.typing import NDArray
+from PIL import Image
 
 from immich_ml.config import log, settings
 from immich_ml.models.base import InferenceModel
@@ -18,6 +18,7 @@ from immich_ml.schemas import (
     ModelTask,
     ModelType,
 )
+
 
 class FaceRecognizer(InferenceModel):
     depends = [(ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)]

@@ -6,8 +6,8 @@ from numpy.typing import NDArray
 
 from immich_ml.models.base import InferenceModel
 from immich_ml.models.transforms import decode_cv2
-from immich_ml.schemas import FaceDetectionOutput, ModelSession, ModelTask, ModelType, ModelFormat
-from immich_ml.config import log
+from immich_ml.schemas import FaceDetectionOutput, ModelSession, ModelTask, ModelType
+
 
 class FaceDetector(InferenceModel):
     depends = []
