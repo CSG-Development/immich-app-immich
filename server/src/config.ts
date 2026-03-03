@@ -62,6 +62,7 @@ export interface SystemConfig {
     clip: {
       enabled: boolean;
       modelName: string;
+      probabilityThreshold: number;
     };
     duplicateDetection: {
       enabled: boolean;
@@ -242,7 +243,8 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     clip: {
       enabled: true,
-      modelName: 'ViT-B-32__openai',
+      modelName: 'ViT-SO400M-16-SigLIP2-512__webli',
+      probabilityThreshold: 0.99,
     },
     duplicateDetection: {
       enabled: true,
@@ -250,8 +252,8 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     facialRecognition: {
       enabled: true,
-      modelName: 'buffalo_l',
-      minScore: 0.7,
+      modelName: 'arcfaceresnet8-100',
+      minScore: 0.5,
       maxDistance: 0.5,
       minFaces: 3,
     },

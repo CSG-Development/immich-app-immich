@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart';
+import 'package:immich_mobile/platform/update_api.g.dart';
+import 'package:immich_mobile/utils/env_config.dart';
+import 'package:immich_mobile/widgets/dialogs/update_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:immich_mobile/platform/update_api.g.dart';
-import 'package:immich_mobile/widgets/dialogs/update_dialog.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'dart:io' show Platform;
 
@@ -41,9 +42,7 @@ class AppUpdateService {
     UpdateCallbacks.setUp(_UpdateCallbacksImpl((_) {}, (_) {}, () {}));
     _log.info("checkOnStart invoked");
 
-    const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-    await dotenv.load(fileName: '.env.$env');
-    final updateUrl = dotenv.env['UPDATE_URL'];
+    final updateUrl = await EnvConfig.get(EnvKey.updateUrl);
     if (updateUrl == null) return;
 
     final info = await _api.fetchLatestUpdate(updateUrl);

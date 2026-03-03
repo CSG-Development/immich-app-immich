@@ -21,6 +21,8 @@
 		B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */; };
 		B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */; };
 		B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */; };
+		BD363D302F55866A00461B35 /* Debug-dev.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */; };
+		BD363D322F55868000461B35 /* Release-dev.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BD363D312F55868000461B35 /* Release-dev.xcconfig */; };
 		CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */; };
 		CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */; };
 		CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */; };
@@ -120,6 +122,8 @@
 		B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connectivity.g.swift; sourceTree = "<group>"; };
 		B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityApiImpl.swift; sourceTree = "<group>"; };
 		B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.g.swift; sourceTree = "<group>"; };
+		BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Debug-dev.xcconfig"; path = "Flutter/Debug-dev.xcconfig"; sourceTree = "<group>"; };
+		BD363D312F55868000461B35 /* Release-dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Release-dev.xcconfig"; path = "Flutter/Release-dev.xcconfig"; sourceTree = "<group>"; };
 		C4DBC5BB9D911AC10AC6063E /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		CDE1EAD0A3CF9D6EFE285FFF /* Pods-Runner.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"; sourceTree = "<group>"; };
 		CE12B3EF2E82D81C003BF43C /* Clipboard.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.g.swift; sourceTree = "<group>"; };
@@ -262,6 +266,8 @@
 				9740EEB21CF90195004384FC /* Debug.xcconfig */,
 				7AFA3C8E1D35360C0083082E /* Release.xcconfig */,
 				9740EEB31CF90195004384FC /* Generated.xcconfig */,
+				BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */,
+				BD363D312F55868000461B35 /* Release-dev.xcconfig */,
 			);
 			name = Flutter;
 			sourceTree = "<group>";
@@ -490,7 +496,9 @@
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				CE8353CC2DEEE8B800C413E8 /* GoogleService-Info.plist in Resources */,
+				BD363D322F55868000461B35 /* Release-dev.xcconfig in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
+				BD363D302F55866A00461B35 /* Debug-dev.xcconfig in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -781,7 +789,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -927,7 +934,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -959,7 +965,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = "RU5WSVJPTk1FTlQ9cHJvZA==";
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1039,7 +1044,7 @@
 		};
 		CE96182E2DE46A5F00FDAC5F /* Debug-dev */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			baseConfigurationReference = BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */;
 			buildSettings = {
 				APP_DISPLAY_NAME = "-dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1049,7 +1054,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1171,7 +1175,7 @@
 		};
 		CE9618342DE46A7A00FDAC5F /* Release-dev */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = BD363D312F55868000461B35 /* Release-dev.xcconfig */;
 			buildSettings = {
 				APP_DISPLAY_NAME = "-dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1181,7 +1185,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1297,7 +1300,7 @@
 		};
 		CE96183A2DE46A8F00FDAC5F /* Profile-dev */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = BD363D312F55868000461B35 /* Release-dev.xcconfig */;
 			buildSettings = {
 				APP_DISPLAY_NAME = "-dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1307,7 +1310,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
 				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DART_DEFINES = RU5WSVJPTk1FTlQ9ZGV2;
 				DEVELOPMENT_TEAM = 57HJ3KH2XC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;

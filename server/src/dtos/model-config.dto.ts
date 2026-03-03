@@ -14,7 +14,12 @@ export class ModelConfig extends TaskConfig {
   modelName!: string;
 }
 
-export class CLIPConfig extends ModelConfig {}
+export class CLIPConfig extends ModelConfig {
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  probabilityThreshold: number = 0.99;
+}
 
 export class DuplicateDetectionConfig extends TaskConfig {
   @IsNumber()

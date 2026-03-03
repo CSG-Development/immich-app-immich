@@ -5,7 +5,6 @@ import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -31,6 +30,7 @@ import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:immich_mobile/utils/env_config.dart';
 
 import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hc_device/hc_device.dart';
@@ -299,10 +299,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     }, []);
 
     void populateDevCredentials() async {
-      const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-      await dotenv.load(fileName: '.env.$env');
-      final emailValue = dotenv.env['DEV_EMAIL'];
-      final password = dotenv.env['DEV_PASSWORD'];
+      if (EnvConfig.environment != AppEnvironment.dev) return;
+      final emailValue = await EnvConfig.get(EnvKey.devEmail);
+      final password = await EnvConfig.get(EnvKey.devPassword);
 
       clearAllErrors();
       email.value = emailValue ?? '';

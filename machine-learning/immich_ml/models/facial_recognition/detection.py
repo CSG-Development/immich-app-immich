@@ -1,7 +1,7 @@
 from typing import Any
 
 import numpy as np
-from insightface.model_zoo import RetinaFace
+from insightface.model_zoo import SCRFD
 from numpy.typing import NDArray
 
 from immich_ml.models.base import InferenceModel
@@ -13,26 +13,26 @@ class FaceDetector(InferenceModel):
     depends = []
     identity = (ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)
 
-    def __init__(self, model_name: str, min_score: float = 0.7, **model_kwargs: Any) -> None:
+    def __init__(self, model_name: str = "scrfd_10g_gnkps", min_score: float = 0.5, **model_kwargs: Any) -> None:
         self.min_score = model_kwargs.pop("minScore", min_score)
         super().__init__(model_name, **model_kwargs)
 
     def _load(self) -> ModelSession:
-        session = self._make_session(self.model_path)
-        self.model = RetinaFace(session=session)
-        self.model.prepare(ctx_id=0, det_thresh=self.min_score, input_size=(640, 640))
+            session = self._make_session(self.model_path)
+            self.model = SCRFD(session=session)
+            self.model.prepare(ctx_id=0, det_thresh=self.min_score, input_size=(640, 640))
 
-        return session
+            return session
 
     def _predict(self, inputs: NDArray[np.uint8] | bytes, **kwargs: Any) -> FaceDetectionOutput:
-        inputs = decode_cv2(inputs)
+            inputs = decode_cv2(inputs)
 
-        bboxes, landmarks = self._detect(inputs)
-        return {
-            "boxes": bboxes[:, :4].round(),
-            "scores": bboxes[:, 4],
-            "landmarks": landmarks,
-        }
+            bboxes, landmarks = self._detect(inputs)
+            return {
+                "boxes": bboxes[:, :4].round(),
+                "scores": bboxes[:, 4],
+                "landmarks": landmarks,
+            }
 
     def _detect(self, inputs: NDArray[np.uint8] | bytes) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         return self.model.detect(inputs)  # type: ignore
