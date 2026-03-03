@@ -234,10 +234,10 @@
         type="text"
         name="q"
         id="main-search-bar"
-        class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg
+        class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg h-13 md:h-15.5 placeholder:text-base placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text
           {showClearIcon ? 'pe-[90px]' : 'pe-14'}
-          {grayTheme ? 'dark:bg-immich-dark-gray-search-bar/12' : 'dark:bg-immich-dark-bg'}
-          {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-immich-gray-search-bar/24'}
+          {grayTheme ? 'dark:bg-immich-dark-gray-search-bar' : 'dark:bg-immich-dark-bg'}
+          {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-immich-gray-search-bar'}
           {searchStore.isSearchEnabled
           ? 'border-gray-200 dark:border-gray-700 bg-white'
           : 'border-immich-gray-border dark:border-immich-dark-gray-border'}"
@@ -325,7 +325,7 @@
         size="medium"
         onclick={() => {}}
         shape="round"
-        color="secondary"
+        color="primary"
         variant="ghost"
       />
     </div>

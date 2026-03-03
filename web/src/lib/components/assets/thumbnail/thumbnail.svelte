@@ -18,11 +18,13 @@
 
   import { thumbhash } from '$lib/actions/thumbhash';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { moveFocus } from '$lib/utils/focus-util';
   import { currentUrlReplaceAssetId } from '$lib/utils/navigation';
   import { TUNABLES } from '$lib/utils/tunables';
+  import { Theme } from '@immich/ui';
   import { onMount } from 'svelte';
   import type { ClassValue } from 'svelte/elements';
   import { fade } from 'svelte/transition';
@@ -192,10 +194,15 @@
       document.removeEventListener('pointermove', moveHandler, true);
     };
   });
+
+  const theme = $derived(themeManager.value);
 </script>
 
 <div
-  class={['focus-visible:outline-none flex overflow-hidden', disabled ? 'bg-gray-300' : 'bg-primary']}
+  class={[
+    'focus-visible:outline-none flex overflow-hidden',
+    disabled ? 'bg-gray-300' : theme === Theme.Light ? 'bg-primary/20' : 'bg-primary/24',
+  ]}
   style:width="{width}px"
   style:height="{height}px"
   onmouseenter={onMouseEnter}
@@ -377,9 +384,9 @@
         {#if disabled}
           <Icon path={mdiCheckCircle} size="24" class="text-zinc-800" />
         {:else if selected}
-          <div class="relative rounded-full bg-immich-gray-border dark:bg-immich-dark-gray-border">
+          <div class="relative rounded-full bg-white dark:bg-black">
             <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
-              <div class="w-4 h-4 bg-white/[.87] dark:bg-black/[.87] rounded-full"></div>
+              <div class="w-4 h-4 bg-white dark:bg-black rounded-full"></div>
             </div>
             <Icon path={mdiCheckCircle} size="24" class="text-primary relative" />
           </div>

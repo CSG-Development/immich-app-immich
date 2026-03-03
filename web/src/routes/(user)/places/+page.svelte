@@ -2,6 +2,8 @@
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import PlacesControls from '$lib/components/places-page/places-controls.svelte';
   import Places from '$lib/components/places-page/places-list.svelte';
+  import SearchBar from '$lib/elements/SearchBar.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { locale, placesViewSettings } from '$lib/stores/preferences.store';
   import { type AssetResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
@@ -42,6 +44,12 @@
       <PlacesControls {placesGroups} bind:searchQuery />
     </div>
   {/snippet}
+
+  {#if mobileDevice.maxMd}
+    <div class="h-10 my-2">
+      <SearchBar placeholder={$t('search_places')} bind:name={searchQuery} showLoadingSpinner={false} />
+    </div>
+  {/if}
 
   <Places
     {places}

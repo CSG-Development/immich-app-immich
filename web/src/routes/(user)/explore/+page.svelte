@@ -101,7 +101,7 @@
         {#snippet children({ itemCount })}
           {#each places.slice(0, itemCount) as item (item.data.id)}
             <a
-              class="relative md:max-w-40 max-w-26.5"
+              class="relative md:w-40 w-26.5"
               href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`)}
               draggable="false"
             >

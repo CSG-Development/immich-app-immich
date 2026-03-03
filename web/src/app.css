@@ -98,7 +98,7 @@
     --immich-primary-12: 215 228 242;
     --immich-bg: 255 255 255;
     --immich-fg: 0 0 0;
-    --immich-gray-search-bar: 144 202 249;
+    --immich-gray-search-bar: 30 136 229 / 0.12;
     --immich-gray-dark: 78 78 78;
     --immich-gray-border: 224 224 224;
     --immich-gray-text: 122 122 122;
@@ -116,7 +116,7 @@
     --immich-dark-gray: 33 33 33;
     --immich-dark-gray-storage: 29 30 33;
     --immich-dark-gray-card: 38 39 41;
-    --immich-dark-gray-search-bar: 144 202 249;
+    --immich-dark-gray-search-bar: 144 202 249 / 0.12;
     --immich-dark-gray-light: 184 184 184;
     --immich-dark-gray-border: 97 97 97;
     --immich-dark-gray-text: 178 178 178;

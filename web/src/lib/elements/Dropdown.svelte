@@ -97,11 +97,19 @@
 
 <div use:clickOutside={{ onOutclick: handleClickOutside, onEscape: handleClickOutside }} class="relative">
   <!-- BUTTON TITLE -->
-  <Button onclick={() => (showMenu = !showMenu)} fullWidth variant="ghost" color="secondary" size="small" {title}>
+  <Button
+    onclick={() => (showMenu = !showMenu)}
+    fullWidth
+    variant="ghost"
+    color="secondary"
+    size="small"
+    {title}
+    class="gap-2"
+  >
     {#if renderedSelectedOption?.icon}
       <Icon path={renderedSelectedOption.icon} size="24" />
     {/if}
-    <Text class={hideTextOnSmallScreen ? 'hidden sm:block' : ''}>{renderedSelectedOption.title}</Text>
+    <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : ''}>{renderedSelectedOption.title}</Text>
   </Button>
 
   <!-- DROP DOWN MENU -->
@@ -129,7 +137,7 @@
             </p>
           {:else}
             <div></div>
-            <p class="justify-self-start">
+            <p class="justify-self-start font-normal text-base">
               {renderedOption.title}
             </p>
           {/if}
