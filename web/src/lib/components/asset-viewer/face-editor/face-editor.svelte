@@ -365,9 +365,7 @@
     </div>
 
     <div class="px-3 py-4 border-t immich-border">
-      <Button size="small" shape="round" fullWidth onclick={cancel} color="danger" class="settings-button"
-        >{$t('cancel')}</Button
-      >
+      <Button size="standard-large" fullWidth onclick={cancel} color="danger">{$t('cancel')}</Button>
     </div>
   </div>
 </div>

@@ -3,10 +3,9 @@
     notificationController,
     NotificationType,
   } from '$lib/components/shared-components/notification/notification';
-  import DateInput from '$lib/elements/DateInput.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updatePerson, type PersonResponseDto } from '@immich/sdk';
-  import { Button, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';
+  import { Button, DateInput, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';
   import { mdiCake } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -16,9 +15,7 @@
   }
 
   let { person, onClose }: Props = $props();
-  let birthDate = $state(person.birthDate ?? '');
-
-  const todayFormatted = new Date().toISOString().split('T')[0];
+  let birthDate = $state(person.birthDate ?? undefined);
 
   const handleUpdateBirthDate = async () => {
     try {
@@ -45,14 +42,8 @@
 
     <form onsubmit={() => handleUpdateBirthDate()} autocomplete="off" id="set-birth-date-form">
       <div class="my-4 flex flex-col gap-2">
-        <DateInput
-          class="immich-form-input"
-          id="birthDate"
-          name="birthDate"
-          type="date"
-          bind:value={birthDate}
-          max={todayFormatted}
-        />
+        <DateInput label="" bind:value={birthDate} />
+
         {#if person.birthDate}
           <div class="flex justify-end">
             <Button shape="round" color="secondary" size="small" onclick={() => (birthDate = '')}>
