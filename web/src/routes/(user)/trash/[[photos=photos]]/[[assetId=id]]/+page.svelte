@@ -58,7 +58,7 @@
 
       notificationController.show({
         message: $t('assets_permanently_deleted_count', { values: { count } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_empty_trash'));
@@ -77,7 +77,7 @@
       const { count } = await restoreTrash();
       notificationController.show({
         message: $t('assets_restored_count', { values: { count } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       // reset asset grid (TODO fix in asset store that it should reset when it is empty)

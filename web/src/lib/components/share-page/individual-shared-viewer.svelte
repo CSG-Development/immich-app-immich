@@ -64,7 +64,7 @@
 
       notificationController.show({
         message: $t('assets_added_count', { values: { count: added } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_assets_to_shared_link'));

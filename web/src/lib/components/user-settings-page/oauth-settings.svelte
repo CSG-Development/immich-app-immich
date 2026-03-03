@@ -28,7 +28,7 @@
 
         notificationController.show({
           message: $t('linked_oauth_account'),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       } catch (error) {
         handleError(error, $t('errors.unable_to_link_oauth_account'));
@@ -45,7 +45,7 @@
       user = await oauth.unlink();
       notificationController.show({
         message: $t('unlinked_oauth_account'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_unlink_account'));

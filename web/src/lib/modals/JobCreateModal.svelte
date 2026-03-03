@@ -36,7 +36,7 @@
 
     try {
       await createJob({ jobCreateDto: { name: selectedJob.value as ManualJobName } });
-      notificationController.show({ message: $t('admin.job_created'), type: NotificationType.Info });
+      notificationController.show({ message: $t('admin.job_created'), type: NotificationType.Success });
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.unable_to_submit_job'));

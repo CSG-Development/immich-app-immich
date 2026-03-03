@@ -75,7 +75,7 @@
 
       notificationController.show({
         message: $t('reassigned_assets_to_new_person', { values: { count: assetIds.length } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_reassign_assets_new_person'));
@@ -97,7 +97,7 @@
           message: $t('reassigned_assets_to_existing_person', {
             values: { count: assetIds.length, name: selectedPerson.name || null },
           }),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       }
     } catch (error) {

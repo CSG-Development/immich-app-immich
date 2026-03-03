@@ -79,7 +79,7 @@
       };
       notificationController.show({
         message: deleteMessages[reaction.type],
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_remove_reaction'));

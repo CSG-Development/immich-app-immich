@@ -25,7 +25,7 @@
         },
       });
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('album_cover_updated'),
         timeout: 1500,
       });

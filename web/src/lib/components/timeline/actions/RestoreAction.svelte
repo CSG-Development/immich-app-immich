@@ -31,7 +31,7 @@
 
       notificationController.show({
         message: $t('assets_restored_count', { values: { count: ids.length } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       clearSelect();

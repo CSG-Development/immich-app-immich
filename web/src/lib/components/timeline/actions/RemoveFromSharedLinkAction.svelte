@@ -47,7 +47,7 @@
       const count = results.filter((item) => item.success).length;
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('assets_removed_count', { values: { count } }),
       });
 

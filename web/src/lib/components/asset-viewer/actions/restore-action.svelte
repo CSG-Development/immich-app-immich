@@ -27,7 +27,7 @@
       onAction({ type: AssetAction.RESTORE, asset: toTimelineAsset(asset) });
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('restored_asset'),
       });
     } catch (error) {

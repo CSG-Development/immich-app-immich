@@ -33,7 +33,7 @@
 
       notificationController.show({
         message: $t('pin_code_setup_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       onCreated?.(newPinCode);

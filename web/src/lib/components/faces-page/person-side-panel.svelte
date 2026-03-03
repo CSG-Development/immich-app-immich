@@ -132,7 +132,7 @@
 
         notificationController.show({
           message: $t('people_edits_count', { values: { count: numberOfChanges } }),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       } catch (error) {
         handleError(error, $t('errors.cant_apply_changes'));

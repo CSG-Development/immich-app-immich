@@ -24,7 +24,7 @@
         personUpdateDto: { birthDate },
       });
 
-      notificationController.show({ message: $t('date_of_birth_saved'), type: NotificationType.Info });
+      notificationController.show({ message: $t('date_of_birth_saved'), type: NotificationType.Success });
       onClose(updatedPerson);
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_date_of_birth'));

@@ -31,7 +31,7 @@
 
       notificationController.show({
         message: $t('saved_profile'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_profile'));

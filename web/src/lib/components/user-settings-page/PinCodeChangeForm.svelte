@@ -36,7 +36,7 @@
 
       notificationController.show({
         message: $t('pin_code_changed_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('unable_to_change_pin_code'));

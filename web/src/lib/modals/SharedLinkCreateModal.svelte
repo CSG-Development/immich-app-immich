@@ -121,7 +121,7 @@
       });
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('edited'),
       });
 

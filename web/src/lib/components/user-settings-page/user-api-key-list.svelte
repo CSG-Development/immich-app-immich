@@ -64,7 +64,7 @@
       await updateApiKey({ id: key.id, apiKeyUpdateDto: { name: result.name, permissions: result.permissions } });
       notificationController.show({
         message: $t('saved_api_key'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_api_key'));
@@ -83,7 +83,7 @@
       await deleteApiKey({ id: key.id });
       notificationController.show({
         message: $t('removed_api_key', { values: { name: key.name } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_remove_api_key'));
