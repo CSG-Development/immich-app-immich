@@ -4,7 +4,7 @@
   import { featureFlags } from '$lib/stores/server-config.store';
   import { type OnDelete, type OnUndoDelete, deleteAssets } from '$lib/utils/actions';
   import { IconButton } from '@immich/ui';
-  import { mdiDeleteForeverOutline, mdiDeleteOutline, mdiTimerSand } from '@mdi/js';
+  import { mdiDeleteForeverOutline, mdiTimerSand, mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import MenuOption from '../../shared-components/context-menu/menu-option.svelte';
 
@@ -44,7 +44,7 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={label} icon={mdiDeleteOutline} onClick={handleTrash} />
+  <MenuOption text={label} icon={mdiTrashCanOutline} onClick={handleTrash} />
 {:else if loading}
   <IconButton
     shape="round"

@@ -14,12 +14,12 @@
 </script>
 
 {#if isBroken}
-  <BrokenAsset hideMessage class="aspect-square rounded-xl" />
+  <BrokenAsset hideMessage class="aspect-square rounded-2xl" />
 {:else}
   <img
     {alt}
     onerror={() => (isBroken = true)}
-    class="size-full rounded-xl object-cover aspect-square {className}"
+    class="size-full rounded-2xl object-cover aspect-square {className}"
     data-testid="album-image"
     draggable="false"
     loading={preload ? 'eager' : 'lazy'}

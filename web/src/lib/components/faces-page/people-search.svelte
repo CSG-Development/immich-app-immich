@@ -35,7 +35,7 @@
 
   interface Props {
     searchName: string;
-    searchedPeopleLocal: PersonResponseDto[];
+    searchedPeopleLocal?: PersonResponseDto[];
     type: 'searchBar' | 'input';
     numberPeopleToSearch?: number;
     inputClass?: string;

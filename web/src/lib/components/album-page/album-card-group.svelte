@@ -49,26 +49,27 @@
     <button
       type="button"
       onclick={() => toggleAlbumGroupCollapsing(group.id)}
-      class="w-full text-start mt-2 pt-2 pe-2 pb-2 rounded-md transition-colors cursor-pointer dark:text-immich-dark-fg hover:text-primary hover:bg-subtle dark:hover:bg-immich-dark-gray"
+      class="w-full text-start mt-2 pt-2 pe-2 pb-2 rounded-md transition-colors cursor-pointer dark:text-immich-dark-fg hover:text-primary hover:bg-subtle dark:hover:bg-immich-dark-gray flex items-center gap-1"
       aria-expanded={!isCollapsed}
     >
-      <Icon path={mdiChevronRight} size="24" class="inline-block -mt-2.5 transition-all duration-250 {iconRotation}" />
+      <Icon path={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
       <span class="font-bold text-3xl text-black dark:text-white">{group.name}</span>
-      <span class="ms-1.5">({$t('albums_count', { values: { count: albums.length } })})</span>
+      <span>({$t('albums_count', { values: { count: albums.length } })})</span>
     </button>
-    <hr class="dark:border-immich-dark-gray" />
+    <hr class="immich-border" />
   </div>
 {/if}
 
 <div class="mt-4">
   {#if !isCollapsed}
-    <div class="grid grid-auto-fill-56 gap-y-4" transition:slide={{ duration: 300 }}>
+    <div class="grid md:[grid-template-columns:repeat(auto-fit,276px)] gap-y-4" transition:slide={{ duration: 300 }}>
       {#each albums as album, index (album.id)}
         <a
           data-sveltekit-preload-data="hover"
           href={resolve(`${AppRoute.ALBUMS}/${album.id}`)}
           animate:flip={{ duration: 400 }}
           oncontextmenu={(event) => oncontextmenu(event, album)}
+          class="md:w-69"
         >
           <AlbumCard
             {album}

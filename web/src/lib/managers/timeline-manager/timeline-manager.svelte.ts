@@ -23,6 +23,7 @@ import {
   retrieveRange as retrieveRangeUtil,
 } from '$lib/managers/timeline-manager/internal/search-support.svelte';
 import { WebsocketSupport } from '$lib/managers/timeline-manager/internal/websocket-support.svelte';
+import { mobileDevice } from '$lib/stores/mobile-device.svelte';
 import { DayGroup } from './day-group.svelte';
 import { isMismatched, updateObject } from './internal/utils.svelte';
 import { MonthGroup } from './month-group.svelte';
@@ -380,7 +381,7 @@ export class TimelineManager {
     const viewportWidth = this.viewportWidth;
 
     return {
-      spacing: 2,
+      spacing: mobileDevice?.maxMd ? 4 : 12,
       heightTolerance: 0.15,
       rowHeight: this.#rowHeight,
       rowWidth: Math.floor(viewportWidth),

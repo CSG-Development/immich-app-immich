@@ -30,20 +30,20 @@
 </script>
 
 <div
-  class="flex w-full h-14 place-items-center {suggestedPeople.length > 0
-    ? 'rounded-t-lg dark:border-immich-dark-gray'
-    : 'rounded-lg'}  bg-gray-100 p-2 dark:bg-gray-700 border border-gray-200 dark:border-immich-dark-gray"
+  class="flex w-60 h-20 place-items-center {suggestedPeople.length > 0
+    ? 'rounded-t-xl'
+    : 'rounded-xl'} p-2 bg-light dark:bg-immich-dark-gray-card border immich-border"
 >
-  <ImageThumbnail circle shadow url={thumbnailData} altText={person.name} widthStyle="2rem" heightStyle="2rem" />
-  <form class="ms-4 flex w-full justify-between gap-16" autocomplete="off" {onsubmit}>
+  <ImageThumbnail circle shadow url={thumbnailData} altText={person.name} widthStyle="2.5rem" heightStyle="2.5rem" />
+  <form class="ms-3 flex w-full justify-between gap-3" autocomplete="off" {onsubmit}>
     <SearchPeople
       bind:searchName={name}
       bind:searchedPeopleLocal={suggestedPeople}
       type="input"
       numberPeopleToSearch={5}
-      inputClass="w-full gap-2 bg-gray-100 dark:bg-gray-700 dark:text-white"
+      inputClass="w-full font-bold gap-2 bg-white text-primary"
       bind:showLoadingSpinner={isSearchingPeople}
     />
-    <Button size="small" shape="round" type="submit">{$t('done')}</Button>
+    <Button class="rounded-3xl w-16.25 h-7 font-normal text-sm" type="submit">{$t('done')}</Button>
   </form>
 </div>

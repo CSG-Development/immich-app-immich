@@ -21,7 +21,7 @@
   const parents = $derived(node.parents);
 </script>
 
-<nav class="flex items-center py-2">
+<nav class="flex items-center py-3">
   {#if parentLink}
     <div>
       <IconButton
@@ -31,39 +31,40 @@
         icon={mdiArrowUpLeft}
         aria-label={$t('to_parent')}
         href={parentLink}
-        class="me-2"
+        class="me-3"
         onclick={handleClick}
+        size="large"
       />
     </div>
   {/if}
 
   <div
-    class="bg-gray-50 dark:bg-immich-dark-gray/50 w-full p-2 rounded-2xl border border-gray-100 dark:border-gray-900 overflow-y-auto immich-scrollbar"
+    class="bg-white dark:bg-immich-dark-gray-card w-full h-full px-2 py-[1px] rounded-3xl border immich-border overflow-y-auto immich-scrollbar"
   >
     <ol class="flex gap-2 items-center">
       <li>
         <IconButton
           shape="round"
-          color="secondary"
+          color="primary"
           variant="ghost"
           {icon}
           href={rootLink}
           aria-label={title}
-          size="medium"
+          size="large"
           aria-current={isRoot ? 'page' : undefined}
           onclick={handleClick}
         />
       </li>
       {#each parents as parent (parent)}
-        <li class="flex gap-2 items-center font-mono text-sm text-nowrap text-primary">
+        <li class="flex gap-2 items-center text-sm text-nowrap text-primary">
           <Icon path={mdiChevronRight} class="text-gray-500 dark:text-gray-300" size={16} ariaHidden />
-          <a class="underline hover:font-semibold whitespace-pre-wrap" href={getLink(parent.path)}>
+          <a class="hover:font-semibold whitespace-pre-wrap" href={getLink(parent.path)}>
             {parent.value}
           </a>
         </li>
       {/each}
 
-      <li class="flex gap-2 items-center font-mono text-sm text-nowrap text-primary">
+      <li class="flex gap-2 items-center text-sm text-nowrap text-primary">
         <Icon path={mdiChevronRight} class="text-gray-500 dark:text-gray-300" size={16} ariaHidden />
         <p class="cursor-default whitespace-pre-wrap">{node.value}</p>
       </li>

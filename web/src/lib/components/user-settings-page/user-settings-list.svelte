@@ -55,6 +55,7 @@
 
 <SettingAccordionState queryParam={QueryParameter.IS_OPEN}>
   <SettingAccordion
+    child={false}
     icon={mdiCogOutline}
     key="app-settings"
     title={$t('app_settings')}
@@ -68,6 +69,7 @@
   <!--  </SettingAccordion>-->
 
   <SettingAccordion
+    child={false}
     icon={mdiServerOutline}
     key="user-usage-info"
     title={$t('user_usage_stats')}
@@ -81,6 +83,7 @@
   <!--  </SettingAccordion>-->
 
   <SettingAccordion
+    child={false}
     icon={mdiDevices}
     key="authorized-devices"
     title={$t('authorized_devices')}
@@ -99,6 +102,7 @@
   <!--  </SettingAccordion>-->
 
   <SettingAccordion
+    child={false}
     icon={mdiFeatureSearchOutline}
     key="feature"
     title={$t('features')}
@@ -108,6 +112,7 @@
   </SettingAccordion>
 
   <SettingAccordion
+    child={false}
     icon={mdiBellOutline}
     key="notifications"
     title={$t('notifications')}
@@ -133,6 +138,7 @@
   <!--  </SettingAccordion>-->
 
   <SettingAccordion
+    child={false}
     icon={mdiAccountGroupOutline}
     key="partner-sharing"
     title={$t('partner_sharing')}
@@ -142,6 +148,7 @@
   </SettingAccordion>
 
   <SettingAccordion
+    child={false}
     icon={mdiLockSmart}
     key="user-pin-code-settings"
     title={$t('user_pin_code_settings')}
@@ -155,6 +162,7 @@
     <AdminSettings {config} bind:this={adminSettingElement}>
       {#snippet children({ savedConfig, defaultConfig })}
         <SettingAccordion
+          child={false}
           icon={mdiFileDocumentOutline}
           key="user-logging-settings"
           title={$t('admin.logging_settings')}

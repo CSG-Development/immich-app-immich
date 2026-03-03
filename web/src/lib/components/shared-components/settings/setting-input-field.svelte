@@ -82,8 +82,8 @@
 </script>
 
 <div class="mb-4 w-full">
-  <div class="flex place-items-center gap-1">
-    <label class="font-medium text-primary text-sm min-h-6 uppercase" for={label}>{label}</label>
+  <div class="flex place-items-center pb-1">
+    <label for={label}>{label}</label>
     {#if required}
       <div class="text-red-400">*</div>
     {/if}
@@ -99,7 +99,7 @@
   </div>
 
   {#if description}
-    <p class="immich-form-label pb-2 text-sm" id="{label}-desc">
+    <p class="immich-form-label pb-2" id="{label}-desc">
       {description}
     </p>
   {:else}
@@ -111,7 +111,7 @@
       {#if inputType === SettingInputFieldType.COLOR}
         <input
           bind:this={input}
-          class="immich-form-input w-full pb-2 rounded-none me-1"
+          class="immich-form-input h-13 w-full pb-2 me-1"
           aria-describedby={description ? `${label}-desc` : undefined}
           aria-labelledby="{label}-label"
           id={label}
@@ -130,7 +130,7 @@
 
       <input
         bind:this={input}
-        class="immich-form-input w-full mb-2"
+        class="h-full"
         class:color-picker={inputType === SettingInputFieldType.COLOR}
         aria-describedby={description ? `${label}-desc` : undefined}
         aria-labelledby="{label}-label"
@@ -171,7 +171,6 @@
     -moz-appearance: none;
     appearance: none;
     width: 52px;
-    height: 52px;
     background-color: transparent;
     border: none;
     cursor: pointer;
@@ -180,12 +179,16 @@
   }
 
   .color-picker::-webkit-color-swatch {
-    border-radius: 14px;
+    border-radius: 8px;
     border: none;
+    width: 52px;
+    height: 52px;
   }
 
   .color-picker::-moz-color-swatch {
-    border-radius: 14px;
+    border-radius: 8px;
     border: none;
+    width: 52px;
+    height: 52px;
   }
 </style>

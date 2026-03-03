@@ -24,13 +24,13 @@
 
 <UserPageLayout title={data.meta.title} use={[[scrollMemory, { routeStartsWith: AppRoute.ALBUMS }]]}>
   {#snippet buttons()}
-    <div class="flex place-items-center gap-2">
+    <div class="flex place-items-center gap-1">
       <AlbumsControls {albumGroups} bind:searchQuery />
     </div>
   {/snippet}
 
   <div class="xl:hidden">
-    <div class="w-fit h-14 dark:text-immich-dark-fg py-2">
+    <div class="w-fit h-14 dark:text-immich-dark-fg py-2 mx-auto">
       <GroupTab
         label={$t('show_albums')}
         filters={Object.keys(AlbumFilter)}
@@ -38,7 +38,7 @@
         onSelect={(selected) => ($albumViewSettings.filter = selected)}
       />
     </div>
-    <div class="w-60">
+    <div class="w-full md:w-60 pb-4">
       <SearchBar placeholder={$t('search_albums')} bind:name={searchQuery} showLoadingSpinner={false} />
     </div>
   </div>

@@ -39,7 +39,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { normalizeSearchString } from '$lib/utils/string-utils';
   import { addUsersToAlbum, deleteAlbum, isHttpError, type AlbumResponseDto, type AlbumUserAddDto } from '@immich/sdk';
-  import { mdiDeleteOutline, mdiDownload, mdiRenameOutline, mdiShareVariantOutline } from '@mdi/js';
+  import { mdiDownload, mdiRenameOutline, mdiShareVariantOutline, mdiTrashCanOutline } from '@mdi/js';
   import { groupBy } from 'lodash-es';
   import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -422,6 +422,6 @@
   {/if}
   <MenuOption icon={mdiDownload} text={$t('download')} onClick={() => handleDownloadAlbum()} />
   {#if showFullContextMenu}
-    <MenuOption icon={mdiDeleteOutline} text={$t('delete')} onClick={() => setAlbumToDelete()} />
+    <MenuOption icon={mdiTrashCanOutline} text={$t('delete')} onClick={() => setAlbumToDelete()} />
   {/if}
 </RightClickContextMenu>

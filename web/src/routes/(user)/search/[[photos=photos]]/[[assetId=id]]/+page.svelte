@@ -341,7 +341,7 @@
     <div class="fixed top-0 start-0 w-full">
       <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
         <div class="absolute bg-light"></div>
-        <div class="w-full flex-1 ps-4">
+        <div class="w-full flex-1 px-4">
           <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
         </div>
       </ControlAppBar>
@@ -352,20 +352,20 @@
 {#if terms}
   <section
     id="search-chips"
-    class="mt-24 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
+    class="md:mt-27.5 mt-21 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
   >
     {#each getObjectKeys(terms) as searchKey (searchKey)}
       {@const value = terms[searchKey]}
-      <div class="flex place-content-center place-items-center items-stretch text-xs">
+      <div class="flex place-content-center place-items-center items-stretch text-sm">
         <div
-          class="flex items-center justify-center bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
+          class="flex items-center justify-center bg-immich-primary px-4 text-white dark:text-black dark:bg-immich-dark-primary font-medium
           {value === true ? 'rounded-full' : 'rounded-s-full'}"
         >
           {getHumanReadableSearchKey(searchKey as keyof SearchTerms)}
         </div>
 
         {#if value !== true}
-          <div class="bg-gray-300 py-2 px-4 dark:bg-gray-800 dark:text-white rounded-e-full">
+          <div class="bg-primary/12 py-2 px-4 dark:bg-primary/24 dark:text-white rounded-e-full">
             {#if (searchKey === 'takenAfter' || searchKey === 'takenBefore') && typeof value === 'string'}
               {getHumanReadableDate(value)}
             {:else if searchKey === 'personIds' && Array.isArray(value)}
@@ -389,7 +389,7 @@
 {/if}
 
 <section
-  class="mb-12 m-4 max-h-screen"
+  class="mb-12 mt-6 mx-4 max-h-screen"
   bind:clientHeight={viewport.height}
   bind:clientWidth={viewport.width}
   bind:this={searchResultsElement}
@@ -489,7 +489,7 @@
       <div class="fixed top-0 start-0 w-full">
         <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
           <div class="absolute bg-light"></div>
-          <div class="w-full flex-1 ps-4">
+          <div class="w-full flex-1 px-4">
             <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
           </div>
         </ControlAppBar>

@@ -58,13 +58,11 @@
   }}
 />
 
-<main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
+<main class="relative h-dvh overflow-hidden px-3 md:px-6">
   <Timeline enableRouting={true} {album} {timelineManager} {assetInteraction}>
-    <section class="pt-8 md:pt-24 px-2 md:px-0">
+    <section class="pt-18 md:pt-24 px-2 md:px-0">
       <!-- ALBUM TITLE -->
-      <h1
-        class="text-2xl md:text-4xl lg:text-6xl text-immich-primary outline-none transition-all dark:text-immich-dark-primary"
-      >
+      <h1 class="text-[34px] text-immich-primary outline-none transition-all dark:text-immich-dark-primary">
         {album.albumName}
       </h1>
 
@@ -74,9 +72,7 @@
 
       <!-- ALBUM DESCRIPTION -->
       {#if album.description}
-        <p
-          class="whitespace-pre-line mb-12 mt-6 w-full pb-2 text-start font-medium text-base text-black dark:text-gray-300"
-        >
+        <p class="whitespace-pre-line mt-3 w-full text-start font-medium text-base text-black dark:text-gray-300">
           {album.description}
         </p>
       {/if}

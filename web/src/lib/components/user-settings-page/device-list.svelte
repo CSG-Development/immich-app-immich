@@ -54,19 +54,19 @@
   };
 </script>
 
-<section class="my-4">
+<section class="ms-6 my-6">
   {#if currentDevice}
     <div class="mb-6">
-      <h3 class="mb-2 text-xs font-medium text-immich-primary dark:text-immich-dark-primary">
-        {$t('current_device').toUpperCase()}
+      <h3 class="mb-3 font-medium text-primary">
+        {$t('current_device')}
       </h3>
       <DeviceCard device={currentDevice} />
     </div>
   {/if}
   {#if otherDevices.length > 0}
     <div class="mb-6">
-      <h3 class="mb-2 text-xs font-medium text-immich-primary dark:text-immich-dark-primary">
-        {$t('other_devices').toUpperCase()}
+      <h3 class="mb-3 font-medium text-primary">
+        {$t('other_devices')}
       </h3>
       {#each otherDevices as device, index (device.id)}
         <DeviceCard {device} onDelete={() => handleDelete(device)} />
@@ -79,7 +79,7 @@
       {$t('log_out_all_devices').toUpperCase()}
     </h3> -->
     <div class="flex justify-end">
-      <Button shape="round" color="danger" size="small" onclick={handleDeleteAll}>{$t('log_out_all_devices')}</Button>
+      <Button size="standard-large" color="danger" onclick={handleDeleteAll}>{$t('log_out_all_devices')}</Button>
     </div>
   {/if}
 </section>

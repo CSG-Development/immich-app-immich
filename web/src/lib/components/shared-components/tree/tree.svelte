@@ -28,23 +28,33 @@
   href={getLink(node.path)}
   onclick={handleClick}
   title={node.value}
-  class={`flex grow place-items-center ps-2 py-1 text-sm rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 hover:font-semibold ${isTarget ? 'bg-slate-100 dark:bg-slate-700 font-semibold text-primary' : 'dark:text-gray-200'}`}
+  class={`flex grow place-items-center ps-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 hover:font-semibold ${isTarget ? 'bg-slate-100 dark:bg-slate-700 font-semibold text-primary' : 'dark:text-black/60'}`}
   data-sveltekit-keepfocus
 >
   {#if node.size > 0}
     <button type="button" {onclick}>
-      <Icon path={isOpen ? mdiChevronDown : mdiChevronRight} class="text-gray-400" size={20} />
+      <Icon
+        path={isOpen ? mdiChevronDown : mdiChevronRight}
+        class={isActive ? 'text-primary' : 'text-black/60 dark:text-white/70'}
+        size={24}
+      />
     </button>
   {/if}
-  <div class={node.size === 0 ? 'ml-[1.5em] ' : ''}>
+  <div class={node.size === 0 ? 'ml-6' : ''}>
     <Icon
       path={isActive ? icons.active : icons.default}
-      class={isActive ? 'text-primary' : 'text-gray-400'}
+      class={isActive ? 'text-primary' : 'text-black/60 dark:text-white/70'}
       color={node.color}
-      size={20}
+      size={24}
     />
   </div>
-  <span class="text-nowrap overflow-hidden text-ellipsis font-mono ps-1 pt-1 whitespace-pre-wrap">{node.value}</span>
+  <span
+    class="text-nowrap overflow-hidden text-ellipsis ps-4 whitespace-pre-wrap {isActive
+      ? 'text-primary'
+      : 'text-black/60 dark:text-white/70'} font-medium"
+  >
+    {node.value}
+  </span>
 </a>
 
 {#if isOpen}

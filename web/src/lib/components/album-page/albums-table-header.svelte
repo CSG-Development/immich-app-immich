@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { albumViewSettings, SortOrder, AlbumSortBy } from '$lib/stores/preferences.store';
+  import Icon from '$lib/components/elements/icon.svelte';
+  import { AlbumSortBy, albumViewSettings, SortOrder } from '$lib/stores/preferences.store';
   import type { AlbumSortOptionMetadata } from '$lib/utils/album-utils';
+  import { mdiArrowDown, mdiArrowUp } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   interface Props {
@@ -28,18 +30,20 @@
   });
 </script>
 
-<th class="text-sm font-medium {option.columnStyle}">
+<th class="text-sm font-medium {option.columnStyle} bg-white">
   <button
     type="button"
-    class="rounded-lg p-2 hover:bg-immich-dark-primary hover:dark:bg-immich-dark-primary/50"
+    class="rounded-lg p-2 bg-white flex items-center overflow-hidden whitespace-nowrap text-ellipsis"
     onclick={handleSort}
   >
     {#if $albumViewSettings.sortBy === option.id}
       {#if $albumViewSettings.sortOrder === SortOrder.Desc}
-        &#8595;
+        <Icon path={mdiArrowDown} size="24" />
       {:else}
-        &#8593;
+        <Icon path={mdiArrowUp} size="24" />
       {/if}
+    {:else}
+      <div class="w-6 h-6"></div>
     {/if}
     {albumSortByNames[option.id]}
   </button>

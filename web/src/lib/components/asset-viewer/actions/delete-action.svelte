@@ -13,7 +13,7 @@
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { deleteAssets, type AssetResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiDeleteForeverOutline, mdiDeleteOutline } from '@mdi/js';
+  import { mdiDeleteForeverOutline, mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { OnAction, PreAction } from './action';
 
@@ -85,7 +85,7 @@
   color="secondary"
   shape="round"
   variant="ghost"
-  icon={asset.isTrashed ? mdiDeleteForeverOutline : mdiDeleteOutline}
+  icon={asset.isTrashed ? mdiDeleteForeverOutline : mdiTrashCanOutline}
   aria-label={asset.isTrashed ? $t('permanently_delete') : $t('delete')}
   onclick={() => trashOrDelete(asset.isTrashed)}
 />
