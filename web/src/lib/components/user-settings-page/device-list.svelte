@@ -79,9 +79,7 @@
       {$t('log_out_all_devices').toUpperCase()}
     </h3> -->
     <div class="flex justify-end">
-      <Button shape="round" color="danger" size="small" class="settings-button" onclick={handleDeleteAll}
-        >{$t('log_out_all_devices')}</Button
-      >
+      <Button size="standard-large" color="danger" onclick={handleDeleteAll}>{$t('log_out_all_devices')}</Button>
     </div>
   {/if}
 </section>

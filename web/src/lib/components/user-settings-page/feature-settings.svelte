@@ -190,9 +190,7 @@
         </SettingAccordion>
 
         <div class="flex justify-end">
-          <Button shape="round" type="submit" size="small" class="settings-button" onclick={() => handleSave()}
-            >{$t('save')}</Button
-          >
+          <Button type="submit" size="standard-large" onclick={() => handleSave()}>{$t('save')}</Button>
         </div>
       </div>
     </form>

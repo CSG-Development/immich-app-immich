@@ -71,9 +71,7 @@
         </div>
 
         <div class="flex justify-end">
-          <Button shape="round" type="submit" size="small" class="settings-button" onclick={() => handleSave()}
-            >{$t('save')}</Button
-          >
+          <Button size="standard-large" type="submit" onclick={() => handleSave()}>{$t('save')}</Button>
         </div>
       </div>
     </form>
