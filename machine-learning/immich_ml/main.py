@@ -20,6 +20,8 @@ from starlette.formparsers import MultiPartParser
 
 from immich_ml.models import get_model_deps
 from immich_ml.models.base import InferenceModel
+from immich_ml.models.facial_recognition.detection import FaceDetector
+from immich_ml.models.facial_recognition.recognition import FaceRecognizer
 from immich_ml.models.transforms import decode_pil
 
 from .config import PreloadModelData, log, settings
@@ -35,6 +37,7 @@ from .schemas import (
     PipelineRequest,
     T,
 )
+from .search.server import declare_endpoints
 
 MultiPartParser.max_file_size = 2**26  # spools to disk if payload is 64 MiB or larger
 
@@ -151,6 +154,7 @@ def get_entries(entries: str = Form()) -> InferenceEntries:
 
 app = FastAPI(lifespan=lifespan)
 
+declare_endpoints(app) # Search Query Analyzer Endpoints
 
 @app.get("/")
 async def root() -> ORJSONResponse:
@@ -191,7 +195,13 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
             except KeyError:
                 message = f"Task {entry['task']} of type {entry['type']} depends on output of {dep}"
                 raise HTTPException(400, message)
-        model = await load(model)
+        # TODO change placeholder below when detection model is replaced too
+        if model.model_name == "scrfd_10g_gnkps" and entry["type"] == ModelType.DETECTION:
+            model = FaceDetector(model_name="scrfd_10g_gnkps")
+        elif model.model_name == "arcfaceresnet8-100" and entry["type"] == ModelType.RECOGNITION:
+            model = FaceRecognizer(model_name=model.model_name)
+        else:
+            model = await load(model)
         output = await run(model.predict, *inputs, **entry["options"])
         outputs[model.identity] = output
         response[entry["task"]] = output
@@ -219,10 +229,15 @@ async def load(model: InferenceModel) -> InferenceModel:
 
     def _load(model: InferenceModel) -> InferenceModel:
         if model.load_attempts > 1:
-            raise HTTPException(500, f"Failed to load model '{model.model_name}'")
+            raise HTTPException(500, f"Failed to load model '{model}'")
         with lock:
             try:
-                model.load()
+                # Only download if needed
+                if model.model_name not in ["arcfaceresnet8-100", "scrfd_10g_gnkps"]:
+                    model.load()
+                else:
+                    log.info(f"Skipping download for internal model: '{model.model_name}'")
+                # model.load()
             except FileNotFoundError as e:
                 if model.model_format == ModelFormat.ONNX:
                     raise e

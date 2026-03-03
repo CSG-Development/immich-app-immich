@@ -43,6 +43,7 @@ import 'package:immich_mobile/utils/cache/widgets_binding.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/utils/env_config.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/utils/licenses.dart';
 import 'package:immich_mobile/utils/migration.dart';
@@ -53,8 +54,6 @@ import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
-
-
 
 void main() async {
   ImmichWidgetsBinding();
@@ -107,6 +106,11 @@ void main() async {
 }
 
 Future<void> initApp() async {
+  final startupLog = Logger("StartupLogger");
+  startupLog.info(
+    'Starting app with flavor: ${EnvConfig.appFlavor ?? 'unknown'} (env file: ${EnvConfig.envFileName})',
+  );
+
   await EasyLocalization.ensureInitialized();
   await initializeDateFormatting();
 

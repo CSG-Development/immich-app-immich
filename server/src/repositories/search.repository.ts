@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Kysely, OrderByDirection, Selectable, sql } from 'kysely';
+import {ExpressionBuilder, Kysely, OrderByDirection, Selectable, sql} from 'kysely';
 import { InjectKysely } from 'nestjs-kysely';
 import { randomUUID } from 'node:crypto';
 import { DummyValue, GenerateSql } from 'src/decorators';
@@ -81,6 +81,7 @@ export interface SearchExifOptions {
 
 export interface SearchEmbeddingOptions {
   embedding: string;
+  counterEmbedding?: string;
   userIds: string[];
 }
 
@@ -261,7 +262,6 @@ export class SearchRepository {
       .limit(size)
       .execute();
   }
-
   @GenerateSql({
     params: [
       { page: 1, size: 200 },
@@ -275,17 +275,33 @@ export class SearchRepository {
       },
     ],
   })
-  searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions) {
+  searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions, probabilityThreshold: number) {
     if (!isValidInteger(pagination.size, { min: 1, max: 1000 })) {
       throw new Error(`Invalid value for 'size': ${pagination.size}`);
     }
 
     return this.db.transaction().execute(async (trx) => {
       await sql`set local vchordrq.probes = ${sql.lit(probes[VectorIndex.Clip])}`.execute(trx);
-      const items = await searchAssetBuilder(trx, options)
-        .selectAll('asset')
+      const baseQuery = searchAssetBuilder(trx, options)
         .innerJoin('smart_search', 'asset.id', 'smart_search.assetId')
-        .orderBy(sql`smart_search.embedding <=> ${options.embedding}`)
+        .selectAll('asset')
+        .select((eb) =>
+          sql<number>`
+            1 / (
+              1 + exp(
+                100 * (
+                  (${eb.ref('smart_search.embedding')} <=> ${options.embedding})
+                  - (${eb.ref('smart_search.embedding')} <=> ${options.counterEmbedding})
+                )
+              )
+            )
+          `.as('prob')
+        );
+      const items = await trx
+        .selectFrom(baseQuery.as('scored'))
+        .selectAll()
+        .where('prob', '>=', probabilityThreshold)
+        .orderBy('prob', 'desc')
         .limit(pagination.size + 1)
         .offset((pagination.page - 1) * pagination.size)
         .execute();
