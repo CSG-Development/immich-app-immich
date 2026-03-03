@@ -44,13 +44,13 @@
       <div class="my-4 flex flex-col gap-2">
         <DateInput label="" bind:value={birthDate} />
 
-        {#if person.birthDate}
+        <!-- {#if person.birthDate}
           <div class="flex justify-end">
             <Button shape="round" color="secondary" size="small" onclick={() => (birthDate = '')}>
               {$t('clear')}
             </Button>
           </div>
-        {/if}
+        {/if} -->
       </div>
     </form>
   </ModalBody>
