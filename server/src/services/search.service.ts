@@ -27,7 +27,6 @@ import { isSmartSearchEnabled } from 'src/utils/misc';
 @Injectable()
 export class SearchService extends BaseService {
   private embeddingCache = new LRUMap<string, string>(100);
-  private counterEmbeddingCache = new LRUMap<string, string>(100);
 
   async searchPerson(auth: AuthDto, dto: SearchPeopleDto): Promise<PersonResponseDto[]> {
     const people = await this.personRepository.getByName(auth.user.id, dto.name, { withHidden: dto.withHidden });
@@ -104,7 +103,6 @@ export class SearchService extends BaseService {
   }
 
   async searchSmart(auth: AuthDto, dto: SmartSearchDto): Promise<SearchResponseDto> {
-    const config = await this.getConfig({ withCache: false });
     if (dto.visibility === AssetVisibility.Locked) {
       requireElevatedPermission(auth);
     }
@@ -116,13 +114,8 @@ export class SearchService extends BaseService {
 
     const userIds = this.getUserIdsToSearch(auth);
     let embedding;
-    // the meaning of this fake option should be fully opposite to the original text description,
-    // So, we decided to use the following magic word - 'other'
-    let counterEmbedding;
     if (dto.query) {
       const key = machineLearning.clip.modelName + dto.query + dto.language;
-      const counterKey = machineLearning.clip.modelName + 'other_default' + dto.language;
-
       embedding = this.embeddingCache.get(key);
       if (!embedding) {
         embedding = await this.machineLearningRepository.encodeText(dto.query, {
@@ -130,14 +123,6 @@ export class SearchService extends BaseService {
           language: dto.language,
         });
         this.embeddingCache.set(key, embedding);
-      }
-      counterEmbedding = this.counterEmbeddingCache.get(counterKey);
-      if (!counterEmbedding) {
-        counterEmbedding = await this.machineLearningRepository.encodeText('other', {
-          modelName: machineLearning.clip.modelName,
-          language: dto.language,
-        });
-        this.embeddingCache.set(key, counterEmbedding);
       }
     } else if (dto.queryAssetId) {
       await this.requireAccess({ auth, permission: Permission.AssetRead, ids: [dto.queryAssetId] });
@@ -154,8 +139,7 @@ export class SearchService extends BaseService {
     const size = dto.size || 100;
     const { hasNextPage, items } = await this.searchRepository.searchSmart(
       { page, size },
-      { ...dto, userIds: await userIds, embedding, counterEmbedding },
-      config.machineLearning.clip.probabilityThreshold
+      { ...dto, userIds: await userIds, embedding },
     );
 
     return this.mapResponse(items, hasNextPage ? (page + 1).toString() : null, { auth });
