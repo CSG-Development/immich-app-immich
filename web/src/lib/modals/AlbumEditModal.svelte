@@ -47,7 +47,7 @@
           </Field>
 
           <Field label={$t('description')}>
-            <Textarea bind:value={description} class="resize-none" />
+            <Textarea bind:value={description} class="h-22 rounded-3xl" />
           </Field>
         </div>
       </div>

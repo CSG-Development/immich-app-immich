@@ -45,7 +45,7 @@
     draggable="false"
     onfocus={() => (showVerticalDots = true)}
   >
-    <div class="w-full md:w-39 h-full rounded-xl brightness-95 filter">
+    <div class="w-39 h-full rounded-xl brightness-95 filter">
       <ImageThumbnail
         shadow
         url={getPeopleThumbnailUrl(person)}

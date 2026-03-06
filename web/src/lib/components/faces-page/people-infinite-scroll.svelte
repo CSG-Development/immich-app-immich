@@ -29,7 +29,7 @@
 </script>
 
 <div
-  class="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 {isVisibilityPage
+  class="pt-2 md:pt-8.5 w-full grid grid-cols-2 sm:grid-cols-3 gap-2 {isVisibilityPage
     ? 'md:gap-3 md:grid-cols-[repeat(auto-fit,minmax(15rem,max-content))]'
     : 'md:gap-4 md:grid-cols-[repeat(auto-fit,minmax(9.75rem,max-content))]'}"
 >
