@@ -1,9 +1,8 @@
 <script lang="ts">
-  import DateInput from '$lib/elements/DateInput.svelte';
   import DurationInput from '$lib/elements/DurationInput.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { getDateTimeOffsetLocaleString } from '$lib/utils/timeline-util.js';
-  import { ConfirmModal, Field, Switch } from '@immich/ui';
+  import { ConfirmModal, DateInput, Field, Switch, TimeInput } from '@immich/ui';
   import { mdiCalendarEditOutline } from '@mdi/js';
   import { DateTime, Duration } from 'luxon';
   import { t } from 'svelte-i18n';
@@ -89,12 +88,32 @@
 
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  let selectedDate = $state(initialDate.toFormat("yyyy-MM-dd'T'HH:mm"));
+  let selectedDate = $state(initialDate.toFormat('yyyy-MM-dd'));
+  let selectedTime = $state(initialDate.toFormat('hh:mm a'));
+  let selectedDateTime = $derived(() => {
+    // Parse 12-hour time back into 24-hour
+    const [time, meridiem] = selectedTime.split(' ');
+    const [hourStr, minuteStr] = time.split(':');
+    let hour = Number.parseInt(hourStr, 10);
+    const minute = Number.parseInt(minuteStr, 10);
+
+    if (meridiem === 'PM' && hour !== 12) {
+      hour += 12;
+    }
+    if (meridiem === 'AM' && hour === 12) {
+      hour = 0;
+    }
+
+    // Combine date + 24-hour time
+    return DateTime.fromISO(
+      `${selectedDate}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+    ).toFormat("yyyy-MM-dd'T'HH:mm");
+  });
   // Use a fixed modern date to calculate stable timezone offsets for the list
   // This ensures that the offsets shown in the combobox are always current,
   // regardless of the historical date selected by the user.
   let timezones: ZoneOption[] = knownTimezones
-    .map((zone) => zoneOptionForDate(zone, selectedDate))
+    .map((zone) => zoneOptionForDate(zone, selectedDateTime()))
     .filter((zone) => zone.valid)
     .sort((zoneA, zoneB) => sortTwoZones(zoneA, zoneB));
   // the offsets (and validity) for time zones may change if the date is changed, which is why we recompute the list
@@ -183,10 +202,10 @@
   const handleConfirm = () => {
     if (!showRelative && date.isValid && selectedAbsoluteOption) {
       // Get the local date/time components from the selected string using neutral timezone
-      const dtComponents = DateTime.fromISO(selectedDate, { zone: 'utc' });
+      const dtComponents = DateTime.fromISO(selectedDateTime(), { zone: 'utc' });
 
       // Determine the modern, DST-aware offset for the selected IANA zone
-      const { offsetMinutes } = getModernOffsetForZoneAndDate(selectedAbsoluteOption.value, selectedDate);
+      const { offsetMinutes } = getModernOffsetForZoneAndDate(selectedAbsoluteOption.value, selectedDateTime());
 
       // Construct the final ISO string with a fixed-offset zone.
       const fixedOffsetZone = `UTC${offsetMinutes >= 0 ? '+' : ''}${Duration.fromObject({ minutes: offsetMinutes }).toFormat('hh:mm')}`;
@@ -217,7 +236,7 @@
   let selectedOption = $derived(showRelative ? selectedRelativeOption : selectedAbsoluteOption);
 
   // when changing the time zone, assume the configured date/time is meant for that time zone (instead of updating it)
-  let date = $derived(DateTime.fromISO(selectedDate, { zone: selectedAbsoluteOption?.value, setZone: true }));
+  let date = $derived(DateTime.fromISO(selectedDateTime(), { zone: selectedAbsoluteOption?.value, setZone: true }));
 
   export function calcNewDate(timestamp: DateTime, selectedDuration: number, timezone?: string) {
     timestamp = timestamp.plus({ minutes: selectedDuration });
@@ -255,7 +274,10 @@
       <div>
         <div class="flex flex-col pb-4" style="display: {showRelative ? 'none' : 'flex'}">
           <label for="datetime" class="immich-form-label">{$t('date_and_time')}</label>
-          <DateInput class="immich-form-input" id="datetime" type="datetime-local" bind:value={selectedDate} />
+          <DateInput id="datetime" bind:value={selectedDate} />
+          <div class="pt-3">
+            <TimeInput bind:value={selectedTime} />
+          </div>
         </div>
         <div class="flex flex-col" style="display: {showRelative ? 'flex' : 'none'}">
           <div class="flex flex-col">
