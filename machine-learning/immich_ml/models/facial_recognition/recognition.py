@@ -36,11 +36,6 @@ class FaceRecognizer(InferenceModel):
         # Create ONNXRuntime session
         session = self._make_session(model_path)
 
-#         # If your session input has static batch dim and you need dynamic batching
-#         if (not self.batch_size or self.batch_size > 1) and str(session.get_inputs()[0].shape[0]) != "batch":
-#             self._add_batch_axis(self.model_path)
-#             session = self._make_session(model_path)
-
         # Initialize ArcFaceONNX wrapper
         self.model = ArcFaceONNX(
             model_path,
@@ -74,16 +69,6 @@ class FaceRecognizer(InferenceModel):
                 batch_embeddings.append(emb)
 
         return np.concatenate(batch_embeddings, axis=0)
-#         preprocess = transforms.Compose([
-#             transforms.ToTensor(),  # Converts to (C, H, W), normalizes to [0,1]
-#             transforms.Normalize(mean=[0.5]*3, std=[0.5]*3),  # Scale to [-1,1]
-#         ])
-#
-#         batch = torch.stack([preprocess(Image.fromarray(face)) for face in cropped_faces]).to(device)
-#         with torch.no_grad():
-#             embeddings = self.model(batch)
-#
-#         return embeddings.cpu().numpy() <- For Facenet Pytorch
 
     def postprocess(self, faces: FaceDetectionOutput, embeddings: NDArray[np.float32]) -> FacialRecognitionOutput:
         return [
@@ -95,8 +80,6 @@ class FaceRecognizer(InferenceModel):
             for (x1, y1, x2, y2), embedding, score in zip(faces["boxes"], embeddings, faces["scores"])
         ]
 
-#     def _crop(self, image: NDArray[np.uint8], faces: FaceDetectionOutput) -> list[NDArray[np.uint8]]:
-#         return [norm_crop(image, landmark) for landmark in faces["landmarks"]]
     def _crop(self, image: NDArray[np.uint8], faces: FaceDetectionOutput) -> list[NDArray[np.uint8]]:
         reference = np.array([
             [38.2946, 51.6963],
@@ -116,16 +99,6 @@ class FaceRecognizer(InferenceModel):
             aligned_faces.append(aligned)
 
         return aligned_faces
-
-#     def _add_batch_axis(self, model_path: Path) -> None:
-#         log.debug(f"Adding batch axis to model {model_path}")
-#         proto = onnx.load(model_path)
-#         static_input_dims = [shape.dim_value for shape in proto.graph.input[0].type.tensor_type.shape.dim[1:]]
-#         static_output_dims = [shape.dim_value for shape in proto.graph.output[0].type.tensor_type.shape.dim[1:]]
-#         input_dims = {proto.graph.input[0].name: ["batch"] + static_input_dims}
-#         output_dims = {proto.graph.output[0].name: ["batch"] + static_output_dims}
-#         updated_proto = update_inputs_outputs_dims(proto, input_dims, output_dims)
-#         onnx.save(updated_proto, model_path)
 
     @property
     def _batch_size_default(self) -> int | None:
