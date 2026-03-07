@@ -43,7 +43,10 @@ ENV NODE_ENV=production \
 COPY --from=server /output/server-pruned ./server
 COPY --from=web /usr/src/app/web/build /build/www
 COPY --from=cli /output/cli-pruned ./cli
+# DHI base runs as non-root; ln needs write access to server/bin
+USER root
 RUN ln -s ../../cli/bin/immich server/bin/immich
+USER node
 COPY LICENSE /licenses/LICENSE.txt
 COPY LICENSE /LICENSE
 
