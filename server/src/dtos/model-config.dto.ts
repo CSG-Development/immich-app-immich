@@ -18,7 +18,7 @@ export class CLIPConfig extends ModelConfig {
   @IsNumber()
   @Min(0)
   @Max(1)
-  probabilityThreshold: number = 0.99;
+  probabilityThreshold: number = 0.0;
 }
 
 export class DuplicateDetectionConfig extends TaskConfig {
