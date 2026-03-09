@@ -15,6 +15,10 @@ import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
 import 'package:immich_mobile/utils/hooks/add_biometric_auth_hook.dart';
 import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_header.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_logout_footer.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_responsive_layout.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_utils.dart';
 
 enum _PatternStage { verifyExisting, createNew, confirmNew }
 
@@ -27,20 +31,6 @@ class PatternLockPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      if (context.isTablet) return () {};
-
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      return () {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      };
-    }, []);
-
     final secureStorage = ref.watch(secureStorageServiceProvider);
 
     String t(String key, String fallback) {
@@ -174,6 +164,38 @@ class PatternLockPage extends HookConsumerWidget {
       context.replaceRoute(const LoginRoute());
     }
 
+    final isLandscape = isLandscapePhone(context);
+
+    final baseTitle = LockHeader(
+      title: getTitle(),
+      subtitle: getSubtitle(),
+      errorText: hasError.value ? errorText.value : null,
+      horizontalPadding: 16,
+    );
+
+    final contentTitle = isLandscape && flow == LockFlow.validate
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              baseTitle,
+              const Spacer(),
+              LockLogoutFooter(
+                visible: hasError.value,
+                onLogout: handleLogout,
+              ),
+            ],
+          )
+        : baseTitle;
+
+    final contentBoard = Center(
+      child: _PatternBoard(
+        hasError: hasError.value,
+        isDisabled: isLoading.value,
+        onStart: onStartDrawing,
+        onCompleted: handleCompleted,
+      ),
+    );
+
     return PopScope(
       canPop: flow != LockFlow.validate,
       onPopInvokedWithResult: (didPop, result) {
@@ -191,64 +213,19 @@ class PatternLockPage extends HookConsumerWidget {
           child: Column(
             children: [
               Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        getTitle(),
-                        style: context.textTheme.titleMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (getSubtitle().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          getSubtitle(),
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            color: context.colorScheme.onSurfaceVariant,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    if (hasError.value && errorText.value != null) ...[
-                      Text(
-                        errorText.value!,
-                        style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.error, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    Center(
-                      child: _PatternBoard(
-                        hasError: hasError.value,
-                        isDisabled: isLoading.value,
-                        onStart: onStartDrawing,
-                        onCompleted: handleCompleted,
-                      ),
-                    ),
-                  ],
+                child: LockResponsiveLayout(
+                  isLandscapePhone: isLandscape,
+                  left: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: contentTitle,
+                  ),
+                  right: contentBoard,
                 ),
               ),
-              if (flow == LockFlow.validate && hasError.value)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: GestureDetector(
-                    onTap: handleLogout,
-                    child: Text(
-                      "log_out".tr(),
-                      style: TextStyle(
-                        color: context.themeData.primaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+              if (!isLandscape)
+                LockLogoutFooter(
+                  visible: flow == LockFlow.validate && hasError.value,
+                  onLogout: handleLogout,
                 ),
             ],
           ),
