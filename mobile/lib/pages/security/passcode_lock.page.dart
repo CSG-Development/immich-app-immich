@@ -9,6 +9,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/pages/security/lock_flow.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_header.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_logout_footer.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_responsive_layout.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_utils.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
@@ -28,20 +32,6 @@ class PasscodeLockPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      if (context.isTablet) return () {};
-
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      return () {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      };
-    }, []);
-
     final secureStorage = ref.watch(secureStorageServiceProvider);
 
     final stage = useState<_PasscodeStage>(
@@ -165,6 +155,55 @@ class PasscodeLockPage extends HookConsumerWidget {
       context.replaceRoute(const LoginRoute());
     }
 
+    final isLandscape = isLandscapePhone(context);
+
+    final baseTitle = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LockHeader(
+          title: getTitle(),
+          subtitle: getSubtitle(),
+          errorText: hasError.value ? getError() : null,
+          horizontalPadding: 32,
+        ),
+        const SizedBox(height: 24),
+        _PasscodeDots(length: 4, filled: enteredPasscode.value.length, hasError: hasError.value),
+      ],
+    );
+
+    final contentTitle = isLandscape && flow == LockFlow.validate
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              baseTitle,
+              const Spacer(),
+              LockLogoutFooter(
+                visible: hasError.value,
+                onLogout: handleLogout,
+              ),
+            ],
+          )
+        : baseTitle;
+
+    final contentKeypad = isLandscape
+        ? FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: _PasscodeKeypad(
+              onDigitTap: onDigitTap,
+              onBackspace: onBackspace,
+              isLoading: isLoading.value,
+            ),
+          )
+        : Align(
+            alignment: AlignmentGeometry.center,
+            child: _PasscodeKeypad(
+              onDigitTap: onDigitTap,
+              onBackspace: onBackspace,
+              isLoading: isLoading.value,
+            ),
+          );
+
     return PopScope(
       canPop: flow != LockFlow.validate,
       onPopInvokedWithResult: (didPop, result) {
@@ -182,68 +221,16 @@ class PasscodeLockPage extends HookConsumerWidget {
           child: Column(
             children: [
               Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      getTitle(),
-                      style: context.textTheme.titleMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    if (getSubtitle().isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          getSubtitle(),
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            color: context.colorScheme.onSurfaceVariant,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    _PasscodeDots(length: 4, filled: enteredPasscode.value.length, hasError: hasError.value),
-                    if (hasError.value) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        getError(),
-                        style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.error, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: 40),
-                    Align(
-                      alignment: AlignmentGeometry.center,
-                      child: _PasscodeKeypad(
-                        onDigitTap: onDigitTap,
-                        onBackspace: onBackspace,
-                        isLoading: isLoading.value,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                  ],
+                child: LockResponsiveLayout(
+                  isLandscapePhone: isLandscape,
+                  left: contentTitle,
+                  right: contentKeypad,
                 ),
               ),
-              if (flow == LockFlow.validate && hasError.value)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: GestureDetector(
-                    onTap: handleLogout,
-                    child: Text(
-                      "log_out".tr(),
-                      style: TextStyle(
-                        color: context.themeData.primaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+              if (!isLandscape)
+                LockLogoutFooter(
+                  visible: flow == LockFlow.validate && hasError.value,
+                  onLogout: handleLogout,
                 ),
             ],
           ),
@@ -313,10 +300,10 @@ class _PasscodeKeypad extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                for (final row in keys) ...[
+                for (var i = 0; i < keys.length; i++) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: row.map((value) {
+                    children: keys[i].map((value) {
                       if (value == null) {
                         return const Expanded(child: SizedBox(height: 72));
                       }
@@ -337,7 +324,7 @@ class _PasscodeKeypad extends StatelessWidget {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 16),
+                  if (i != keys.length - 1) const SizedBox(height: 16),
                 ],
               ],
             ),
