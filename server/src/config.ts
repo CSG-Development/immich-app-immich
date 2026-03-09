@@ -244,7 +244,7 @@ export const defaults = Object.freeze<SystemConfig>({
     clip: {
       enabled: true,
       modelName: 'ViT-B-32__openai',
-      probabilityThreshold: 0,
+      probabilityThreshold: 0.5,
     },
     duplicateDetection: {
       enabled: true,
