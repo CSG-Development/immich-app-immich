@@ -81,6 +81,7 @@ export interface SearchExifOptions {
 
 export interface SearchEmbeddingOptions {
   embedding: string;
+  counterEmbedding?: string;
   userIds: string[];
 }
 
