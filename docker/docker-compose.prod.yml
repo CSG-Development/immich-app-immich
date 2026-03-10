@@ -57,6 +57,7 @@ services:
   redis:
     container_name: immich_redis
     image: dhi.io/valkey:8@sha256:b82e8e3b9d78b851f9006ba3e7faf1fb4d48db10dda9b5009f01a2551f4aee64
+    command: ["valkey-server", "--protected-mode", "no"]
     healthcheck:
       test: redis-cli ping || exit 1
     restart: always
