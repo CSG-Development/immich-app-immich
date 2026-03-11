@@ -7,12 +7,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+// Project imports:
+import 'package:image/image.dart' as img;
+
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/ai_editor_actions.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
+import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/core/utils/size_utils.dart';
@@ -56,6 +60,8 @@ class _EditorHistory {
   }
 }
 
+enum _OverlayMode { none, object }
+
 /// Standalone AI editor that can work with the same configs
 /// as `pro_image_editor`, but is dedicated to AI-related tools.
 ///
@@ -97,6 +103,9 @@ class AiEditorState extends State<AiEditor> {
 
   late final AiEditorActions _actions;
   bool _isProcessing = false;
+  _OverlayMode _overlayMode = _OverlayMode.none;
+
+  bool get _hasOverlay => _overlayMode != _OverlayMode.none;
 
   AiEditorInitConfigs get initConfigs => widget.initConfigs;
 
@@ -119,6 +128,8 @@ class AiEditorState extends State<AiEditor> {
   TransformConfigs? get initialTransformConfigs => initConfigs.transformConfigs;
 
   String get _backgroundModelPath => initConfigs.backgroundModelPathEffective;
+
+  String get _inpaintingModelPath => initConfigs.inpaintingModelPathEffective;
 
   String get _fastdvdnetModelPath => initConfigs.fastdvdnetModelPathEffective;
 
@@ -281,6 +292,34 @@ class AiEditorState extends State<AiEditor> {
     );
   }
 
+  Future<void> _handleObjectRemoval() async {
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+
+    setState(() {
+      _overlayMode = _OverlayMode.object;
+    });
+  }
+
+  Future<void> _runObjectRemoval(img.Image mask) async {
+    setState(() {
+      _overlayMode = _OverlayMode.none;
+    });
+
+    await _runImageProcessing(
+      modelPathOrUrl: _inpaintingModelPath,
+      modelName: 'Object removal',
+      emptyBytesMessage: 'No image data available for object removal.',
+      failureMessage: 'Failed to remove object.',
+      sameBytesErrorMessage:
+          'Failed to remove object (check that lama_fp32.onnx is available).',
+      successMessage: 'Removed.',
+      ensureAiTools: false,
+      debugTag: 'OR',
+      process: (bytes) => _actions.removeObjects(bytes, mask),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -296,13 +335,26 @@ class AiEditorState extends State<AiEditor> {
             children: [
               Scaffold(
                 backgroundColor: theme.scaffoldBackgroundColor,
-                appBar: _buildAppBar(),
+                appBar: _hasOverlay ? null : _buildAppBar(),
                 body: _buildBody(),
-                bottomNavigationBar: AiEditorBottombar(
+                bottomNavigationBar: _hasOverlay
+                    ? null
+                    : AiEditorBottombar(
                         onBlurBackground: _handleBlurBackground,
                         onDenoise: _runFastDenoise,
+                        onObjectRemoval: _handleObjectRemoval,
                       ),
               ),
+              if (_overlayMode == _OverlayMode.object)
+                ObjectRemovalOverlayHost(
+                  editorImage: editorImage,
+                  onApply: _runObjectRemoval,
+                  onCancel: () {
+                    setState(() {
+                      _overlayMode = _OverlayMode.none;
+                    });
+                  },
+                ),
             ],
           ),
         ),
