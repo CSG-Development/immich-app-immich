@@ -49,3 +49,5 @@
 -dontwarn com.arthenica.ffmpegkit.**
 -dontwarn com.arthenica.mobileffmpeg.**
 ##---------------End: ffmpeg-kit keep rules  ----------
+
+-keep class ai.onnxruntime.** { *; }

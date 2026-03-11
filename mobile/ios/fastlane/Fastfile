@@ -85,12 +85,14 @@ def local_create_app(
     )
 
     schemeName = ENV["API_environment_key"] ? "#{ENV["API_environment_key"]}" : "Runner"
+    configurationName = ENV["API_environment_key"] == "dev" ? "Release-dev" : "Release"
 
     app_definition = AppDefinition.new(
         lane: self,
         workspace_name: "Runner",
         project_name: "Runner",
         scheme: schemeName,
+        configuration: configurationName,
         export_method: export_method,
 		    xcargs: "-allowProvisioningUpdates",
         team_id: team_id,
