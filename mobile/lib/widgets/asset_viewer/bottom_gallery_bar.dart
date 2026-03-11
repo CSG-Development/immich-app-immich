@@ -22,6 +22,7 @@ import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/stack.service.dart';
 import 'package:immich_mobile/utils/hash.dart';
+import 'package:immich_mobile/utils/selection_handlers.dart';
 import 'package:immich_mobile/widgets/asset_grid/asset_grid_data_structure.dart';
 import 'package:immich_mobile/widgets/asset_grid/delete_dialog.dart';
 import 'package:immich_mobile/widgets/asset_viewer/video_controls.dart';
@@ -99,12 +100,7 @@ class BottomGalleryBar extends ConsumerWidget {
         if (isDeleted) {
           // Can only trash assets stored in server. Local assets are always permanently removed for now
           if (context.mounted && asset.isRemote && isStackPrimaryAsset) {
-            ImmichToast.show(
-              durationInSecond: 1,
-              context: context,
-              msg: 'asset_trashed'.tr(),
-              gravity: ToastGravity.BOTTOM,
-            );
+            showUndoTrashSnackBar(ref, context, [asset]);
           }
           removeAssetFromStack();
         }
