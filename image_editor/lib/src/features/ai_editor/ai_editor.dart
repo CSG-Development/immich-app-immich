@@ -17,6 +17,7 @@ import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_app
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
+import 'package:image_editor/src/features/ai_editor/people_removal/people_removal_overlay_host.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/core/utils/size_utils.dart';
@@ -60,7 +61,7 @@ class _EditorHistory {
   }
 }
 
-enum _OverlayMode { none, object }
+enum _OverlayMode { none, object, people }
 
 /// Standalone AI editor that can work with the same configs
 /// as `pro_image_editor`, but is dedicated to AI-related tools.
@@ -301,6 +302,23 @@ class AiEditorState extends State<AiEditor> {
     });
   }
 
+  Future<void> _handlePeopleRemoval() async {
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+
+    final modelPath = _backgroundModelPath;
+    final ok = await showModelDownloadDialog(
+      context,
+      modelPathOrUrl: modelPath,
+      modelName: 'People removal',
+    );
+    if (!ok || !mounted) return;
+
+    setState(() {
+      _overlayMode = _OverlayMode.people;
+    });
+  }
+
   Future<void> _runObjectRemoval(img.Image mask) async {
     setState(() {
       _overlayMode = _OverlayMode.none;
@@ -343,11 +361,23 @@ class AiEditorState extends State<AiEditor> {
                         onBlurBackground: _handleBlurBackground,
                         onDenoise: _runFastDenoise,
                         onObjectRemoval: _handleObjectRemoval,
+                        onPeopleRemoval: _handlePeopleRemoval,
                       ),
               ),
               if (_overlayMode == _OverlayMode.object)
                 ObjectRemovalOverlayHost(
                   editorImage: editorImage,
+                  onApply: _runObjectRemoval,
+                  onCancel: () {
+                    setState(() {
+                      _overlayMode = _OverlayMode.none;
+                    });
+                  },
+                ),
+              if (_overlayMode == _OverlayMode.people)
+                PeopleRemovalOverlayHost(
+                  editorImage: editorImage,
+                  backgroundRemovalService: _actions.backgroundRemovalService,
                   onApply: _runObjectRemoval,
                   onCancel: () {
                     setState(() {
