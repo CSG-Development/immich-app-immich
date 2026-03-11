@@ -132,6 +132,10 @@ class ActionNotifier extends Notifier<void> {
     return ActionResult(count: assets.length, success: true);
   }
 
+  /// Exposed helper to obtain the owned remote asset IDs for a given source.
+  /// Used by UI layers that need an undo context (e.g., trash with undo).
+  List<String> getOwnedRemoteIdsForSource(ActionSource source) => _getOwnedRemoteIdsForSource(source);
+
   Future<ActionResult> shareLink(ActionSource source, BuildContext context) async {
     final ids = _getRemoteIdsForSource(source);
     try {
@@ -218,6 +222,17 @@ class ActionNotifier extends Notifier<void> {
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to trash assets', error, stack);
+      return ActionResult(count: ids.length, success: false, error: error.toString());
+    }
+  }
+
+  /// Restore assets from trash by explicit remote IDs, used for undo flows.
+  Future<ActionResult> restoreTrashByIds(List<String> ids) async {
+    try {
+      await _service.restoreTrash(ids);
+      return ActionResult(count: ids.length, success: true);
+    } catch (error, stack) {
+      _logger.severe('Failed to restore trashed assets by ids', error, stack);
       return ActionResult(count: ids.length, success: false, error: error.toString());
     }
   }

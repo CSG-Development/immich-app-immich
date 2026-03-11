@@ -152,10 +152,13 @@ class MultiSelectNotifier extends Notifier<MultiSelectState> {
 }
 
 final bucketSelectionProvider = Provider.family<bool, List<BaseAsset>>((ref, bucketAssets) {
+  // Copy the list defensively to avoid concurrent modification if the backing
+  // collection changes while Riverpod is evaluating this provider.
+  if (bucketAssets.isEmpty) return false;
+  final bucketSnapshot = List<BaseAsset>.from(bucketAssets);
+
   final selectedAssets = ref.watch(multiSelectProvider.select((s) => s.selectedAssets));
 
-  if (bucketAssets.isEmpty) return false;
-
   // Check if all assets in the bucket are selected
-  return bucketAssets.every((asset) => selectedAssets.contains(asset));
+  return bucketSnapshot.every(selectedAssets.contains);
 }, dependencies: [multiSelectProvider, timelineServiceProvider]);
