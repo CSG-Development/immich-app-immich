@@ -1,5 +1,6 @@
 // Dart imports:
 import 'dart:async';
+import 'dart:typed_data';
 
 // Package imports:
 import 'package:flutter/foundation.dart';
@@ -8,10 +9,11 @@ import 'package:flutter/services.dart';
 
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/ai_editor_actions.dart';
-import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
+import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/core/utils/size_utils.dart';
 import 'package:pro_image_editor/features/filter_editor/widgets/filtered_widget.dart';
@@ -115,6 +117,8 @@ class AiEditorState extends State<AiEditor> {
   double get appliedBlurFactor => initConfigs.appliedBlurFactor;
 
   TransformConfigs? get initialTransformConfigs => initConfigs.transformConfigs;
+
+  String get _backgroundModelPath => initConfigs.backgroundModelPathEffective;
 
   String get _fastdvdnetModelPath => initConfigs.fastdvdnetModelPathEffective;
 
@@ -239,6 +243,24 @@ class AiEditorState extends State<AiEditor> {
     return false;
   }
 
+  Future<void> _runBackgroundEffect(
+    BackgroundEffectMode mode,
+    String successMessage,
+  ) async {
+    return _runImageProcessing(
+      modelPathOrUrl: _backgroundModelPath,
+      modelName: 'Background removal',
+      emptyBytesMessage: 'No image data available for background removal.',
+      failureMessage: 'Failed to remove background.',
+      sameBytesErrorMessage:
+          'Failed to apply background effect (device may be low on memory).',
+      successMessage: successMessage,
+      ensureAiTools: true,
+      debugTag: 'BG',
+      process: (bytes) => _actions.applyBackground(bytes, mode: mode),
+    );
+  }
+
   Future<void> _runFastDenoise() async {
     return _runImageProcessing(
       modelPathOrUrl: _fastdvdnetModelPath,
@@ -249,6 +271,13 @@ class AiEditorState extends State<AiEditor> {
       ensureAiTools: true,
       debugTag: 'FDN',
       process: _actions.denoiseFastdvdnet,
+    );
+  }
+
+  Future<void> _handleBlurBackground() {
+    return _runBackgroundEffect(
+      BackgroundEffectMode.blur,
+      'Background blurred.',
     );
   }
 
@@ -270,9 +299,10 @@ class AiEditorState extends State<AiEditor> {
                 appBar: _buildAppBar(),
                 body: _buildBody(),
                 bottomNavigationBar: AiEditorBottombar(
-                  onDenoise: _runFastDenoise,
-                ),
-              ) 
+                        onBlurBackground: _handleBlurBackground,
+                        onDenoise: _runFastDenoise,
+                      ),
+              ),
             ],
           ),
         ),
