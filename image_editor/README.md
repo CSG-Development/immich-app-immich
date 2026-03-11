@@ -1,39 +1,94 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# image_editor
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+A Flutter image editor package that extends [`pro_image_editor`](https://pub.dev/packages/pro_image_editor) with additional tools such as **vignette** and **AI‑powered editing** (background blur, denoise, object removal, people removal). It is designed as an embeddable editor for mobile and desktop applications.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+## What this package provides
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+- **Full image editor UI** built on top of `pro_image_editor`
+- **Vignette editor** with radial controls (intensity, radius, feather, color) that are baked into the final image
+- **AI tools** (native platforms only):
+  - **Background blur** – keep the subject sharp, blur the rest
+  - **Denoise** – reduce noise using ONNX denoisers (e.g. FastDVDnet)
+  - **Object removal** – remove painted regions via inpainting (LaMa)
+  - **People removal** – segment and remove people (MODNet + LaMa)
 
-## Features
+## Quick start
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+Add the package to your app’s `pubspec.yaml`:
 
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  image_editor:
+    path: ../image_editor  # or your own package location
 ```
 
-## Additional information
+Use the bundled editor widget in your app:
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+```dart
+import 'package:image_editor/image_editor.dart';
+
+Navigator.of(context).push(
+  MaterialPageRoute(
+    builder: (context) => ImageEditor(
+      config: ImageEditorConfig(
+        imageBytes: imageBytes,
+        onImageEditingComplete: (bytes) {
+          // Handle the edited image (save, share, etc.)
+        },
+        onCloseEditor: () => Navigator.of(context).pop(),
+        theme: ThemeData.dark(),
+        enableTuneAdjustments: true,
+      ),
+    ),
+  ),
+);
+```
+
+## AI runtime setup (host app)
+
+AI features are powered by `flutter_onnxruntime`. Because this package is a library, platform‑specific wiring must be done in the **host application**.
+
+- **Android**: add ProGuard keep rules for `ai.onnxruntime.**` in `android/app/proguard-rules.pro`
+- **iOS**:
+  - In your Xcode build settings set `STRIP_INSTALLED_PRODUCT = NO` and `STRIP_STYLE = non-global`
+- **Web**: not supported at the moment
+
+Web builds are not supported for this package right now; only Android and iOS are expected to work.
+
+## AI models (high‑level)
+
+Models are configured via `AiEditorInitConfigs` using either **local assets** or **remote URLs**:
+
+- **Object removal** – LaMa inpainting model
+- **Background / people** – MODNet foreground/background separation
+- **Denoise** – FastDVDnet backend
+
+On iOS and Android, remote models are downloaded on first use and cached.
+
+## Architecture in brief
+
+From a code perspective the package is a thin layer on top of `pro_image_editor`:
+
+- A single public entry point: `ImageEditor`
+- Feature pages (vignette, AI editor) that open on top of the main editor
+- Shared init‑config objects (e.g. `VignetteEditorInitConfigs`, `AiEditorInitConfigs`) so sub‑editors see the same image, transforms and theme
+- Reusable UI primitives (editor bottom bar, adjustment bottom bar, overlays)
+- AI services that wrap ONNX models and are orchestrated by the `AiEditor`
+
+To add a new tool, you typically:
+
+1. Add any feature‑specific fields to an `EditorInitConfigs` implementation
+2. Build a feature page that receives the current image and state, shows controls, and returns a baked `Uint8List`
+3. Wire a button in the bottom bar that captures the current editor image and pushes your page
+
+## Public API surface
+
+- `ImageEditor` – main editor widget
+- `EditorBottomBar` – toolbar hosting core and custom tools
+- `ImageEditorConfig` – configuration supplied by the host app
+- `ImageEffect` / `MonochromeEffect` – simple effect interfaces / examples
+- `color_matrix_utils`, `tune_adjustment_matrices` – low‑level utilities
+
+## License
+
+See the repository root for license and contribution guidelines.
