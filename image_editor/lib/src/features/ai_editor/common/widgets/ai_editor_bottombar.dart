@@ -7,9 +7,11 @@ import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 class AiEditorBottombar extends StatelessWidget {
   const AiEditorBottombar({
     super.key,
+    required this.onBlurBackground,
     required this.onDenoise,
   });
 
+  final VoidCallback onBlurBackground;
   final VoidCallback onDenoise;
 
   @override
@@ -17,6 +19,11 @@ class AiEditorBottombar extends StatelessWidget {
     final theme = Theme.of(context);
 
     final items = <_AiToolItem>[
+      _AiToolItem(
+        label: 'Blur background',
+        icon: Icons.blur_on,
+        onPressed: onBlurBackground,
+      ),
       _AiToolItem(
         label: 'Denoise',
         icon: Icons.grain,
