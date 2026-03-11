@@ -9,10 +9,12 @@ class AiEditorBottombar extends StatelessWidget {
     super.key,
     required this.onBlurBackground,
     required this.onDenoise,
+    required this.onObjectRemoval,
   });
 
   final VoidCallback onBlurBackground;
   final VoidCallback onDenoise;
+  final Future<void> Function()? onObjectRemoval;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,13 @@ class AiEditorBottombar extends StatelessWidget {
         label: 'Denoise',
         icon: Icons.grain,
         onPressed: onDenoise,
+      ),
+      _AiToolItem(
+        label: 'Object removal',
+        icon: Icons.brush,
+        onPressed: () {
+          onObjectRemoval!();
+        },
       ),
     ];
 

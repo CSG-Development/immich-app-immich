@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/background_removal/background_removal_feature.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/fastdvdnet_denoise/fastdvdnet_denoise_service.dart';
+import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_feature.dart';
+import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_service.dart';
 import 'package:logging/logging.dart';
 
 /// UI-agnostic orchestrator for running AI actions in the editor.
@@ -23,9 +26,14 @@ class AiEditorActions {
   // Denoise (FastDVDnet only)
   FastdvdnetDenoiseService? _fastService;
 
+  // Object removal / inpainting
+  ObjectRemovalService? _objectRemovalService;
+  ObjectRemovalFeature? _objectRemovalFeature;
+
   Future<void> _disposeAllExcept({
     bool keepBackground = false,
     bool keepFastdvdnet = false,
+    bool keepObjectRemoval = false,
   }) async {
     if (!keepBackground) {
       await _backgroundRemovalService?.dispose();
@@ -36,6 +44,12 @@ class AiEditorActions {
     if (!keepFastdvdnet) {
       await _fastService?.dispose();
       _fastService = null;
+    }
+    if (!keepObjectRemoval) {
+      await _objectRemovalService?.dispose();
+      _objectRemovalService = null;
+      _objectRemovalFeature?.dispose();
+      _objectRemovalFeature = null;
     }
   }
 
@@ -88,10 +102,31 @@ class AiEditorActions {
     return _fastService!.denoise(bytes);
   }
 
+  /// Runs LaMa-based inpainting using the given mask.
+  Future<Uint8List> removeObjects(Uint8List imageBytes, img.Image mask) async {
+    // Limit concurrent sessions: keep only object-removal-related ones alive.
+    _log.info(
+      '[OBJ] removeObjects() called '
+      'imageBytesLen=${imageBytes.length} '
+      'maskSize=${mask.width}x${mask.height}',
+    );
+    await _disposeAllExcept(keepObjectRemoval: true);
+    if (_objectRemovalService == null) {
+      final modelPath = _initConfigs.inpaintingModelPathEffective;
+      _log.info('[OBJ] Creating ObjectRemovalService with modelPath="$modelPath"');
+      _objectRemovalService = ObjectRemovalService(
+        modelPathOrUrl: modelPath,
+      );
+    }
+    _objectRemovalFeature ??= LamaObjectRemovalFeature(_objectRemovalService!);
+    return _objectRemovalFeature!.removeObjects(imageBytes, mask);
+  }
+
   Future<void> dispose() async {
     await _disposeAllExcept(
       keepBackground: false,
       keepFastdvdnet: false,
+      keepObjectRemoval: false,
     );
   }
 }
