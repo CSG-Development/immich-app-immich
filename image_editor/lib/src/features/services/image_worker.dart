@@ -104,7 +104,7 @@ class ImageWorker {
     int originalHeight,
   ) async {
     final result = await _runJob<Uint8List>(
-      'nafnet_postprocess',
+      'denoise_postprocess',
       <String, Object>{
         'outputList': outputList,
         'shape': shape,
