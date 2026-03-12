@@ -1,4 +1,4 @@
-FROM ghcr.io/immich-app/base-server-dev:202510281104@sha256:e2f94c2e92cbae5982b014e610ff29731c0fbcb4bf69022c7fe27594e40c9f83 AS builder
+FROM ghcr.io/csg-development/base-server-dev:202603100822@sha256:bae1e862aec337d31746c725f4037a1085ffbac687dbc3a6e66aebfee9e386be AS builder
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
   CI=1 \
   COREPACK_HOME=/tmp
@@ -33,7 +33,7 @@ RUN pnpm --filter @immich/sdk --filter @immich/cli --frozen-lockfile install && 
   pnpm --filter @immich/sdk --filter @immich/cli build && \
   pnpm --filter @immich/cli --prod --no-optional deploy /output/cli-pruned
 
-FROM ghcr.io/immich-app/base-server-prod:202509210934@sha256:0c7eacf0ba88ca52e1a267cfc62d20d07792ea2c604818c2cbd37dc7dcefdac9
+FROM ghcr.io/csg-development/base-server-prod:202603100822@sha256:7188061e18249a5a132c66e4de4dfaaceef80d8d806630575daa9e5398b9b341 AS builder
 
 WORKDIR /usr/src/app
 ENV NODE_ENV=production \
@@ -43,7 +43,10 @@ ENV NODE_ENV=production \
 COPY --from=server /output/server-pruned ./server
 COPY --from=web /usr/src/app/web/build /build/www
 COPY --from=cli /output/cli-pruned ./cli
+# DHI base runs as non-root; ln needs write access to server/bin
+USER root
 RUN ln -s ../../cli/bin/immich server/bin/immich
+USER node
 COPY LICENSE /licenses/LICENSE.txt
 COPY LICENSE /LICENSE
 
