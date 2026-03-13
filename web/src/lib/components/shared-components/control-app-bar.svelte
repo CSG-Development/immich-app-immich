@@ -68,12 +68,7 @@
   <nav
     id="asset-selection-app-bar"
     class={[
-      'grid h-16 md:h-21.5',
-      multiRow && 'grid-cols-[100%] md:grid-cols-[25%_50%_25%]',
-      !multiRow && trailing
-        ? 'grid-cols-[10%_80%_10%] sm:grid-cols-[25%_50%_25%]'
-        : 'grid-cols-[10%_90%] md:grid-cols-[25%_50%_25%]',
-      'justify-between content-center lg:grid-cols-[25%_50%_25%]',
+      'flex h-18 md:h-21.5',
       appBarBorder,
       'md:mx-2 md:my-2 place-items-center md:rounded-lg p-2 max-md:p-0 transition-all',
       tailwindClasses,

@@ -13,7 +13,12 @@
 </script>
 
 {#if menuItem}
-  <MenuOption text={$t('delete_link')} icon={mdiTrashCanOutline} onClick={onDelete} />
+  <MenuOption
+    textColor="text-immich-danger dark:text-immich-dark-danger"
+    text={$t('delete_link')}
+    icon={mdiTrashCanOutline}
+    onClick={onDelete}
+  />
 {:else}
   <IconButton
     color="danger"

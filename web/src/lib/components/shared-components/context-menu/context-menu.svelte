@@ -60,7 +60,7 @@
 
 <div
   bind:clientHeight={height}
-  class="fixed min-w-[240px] w-max max-w-[300px] overflow-hidden rounded-lg shadow-lg"
+  class="fixed min-w-[240px] w-max max-w-[300px] overflow-hidden rounded-lg shadow-lg z-2"
   style:left="{left - (mobileDevice.maxMd ? 12 : 48)}px"
   style:top="{top}px"
   transition:slide={{ duration: 250, easing: quintOut }}

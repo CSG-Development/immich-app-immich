@@ -198,6 +198,7 @@
           selectedOption={expiredDateOptions.find((option) => option.value === expirationOption)}
           options={expiredDateOptions}
           onSelect={handleSelect}
+          sortByValue
         />
       </div>
 

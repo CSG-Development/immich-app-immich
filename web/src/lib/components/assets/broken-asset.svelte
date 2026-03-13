@@ -20,6 +20,14 @@
 >
   <Icon path={mdiImageBrokenVariant} size="7em" class="max-w-full" />
   {#if !hideMessage}
-    <span class="text-center">{$t('error_loading_image')}</span>
+    <span
+      class="text-center {Number(width?.split('px')[0]) <= 160
+        ? 'text-xs'
+        : Number(width?.split('px')[0]) <= 200
+          ? 'text-sm'
+          : 'text-base'}"
+    >
+      {$t('error_loading_image')}
+    </span>
   {/if}
 </div>
