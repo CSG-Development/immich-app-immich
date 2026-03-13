@@ -26,6 +26,7 @@ class AiEditorInitConfigs implements EditorInitConfigs {
         'https://huggingface.co/onnx-community/modnet-webnn/resolve/main/onnx/model.onnx',
     this.denoiseModelPathOrUrl = 'assets/model_fp16.onnx',
     this.fastdvdnetModelPathOrUrl,
+    this.animalSegmentationModelPathOrUrl,
     required this.theme,
   });
 
@@ -37,6 +38,11 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   /// Path or URL to the background-removal ONNX model (e.g. MODNet).
   /// Can be an asset path or a remote URL.
   final String? backgroundRemovalModelPathOrUrl;
+
+  /// Optional separate path or URL to an animal-segmentation ONNX model.
+  /// If not provided, [backgroundRemovalModelPathOrUrl] (people/subject model)
+  /// will be reused for animal detection.
+  final String? animalSegmentationModelPathOrUrl;
 
   /// Path or URL to the denoise ONNX model (e.g. NAFNet-SIDD-width32).
   /// Can be an asset path or a remote URL.
@@ -55,6 +61,11 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   String get backgroundModelPathEffective =>
       backgroundRemovalModelPathOrUrl ??
       'https://huggingface.co/onnx-community/modnet-webnn/resolve/main/onnx/model.onnx';
+
+  /// Effective animal-segmentation model path or URL, falling back to
+  /// [backgroundModelPathEffective] if no dedicated animal model is given.
+  String get animalSegmentationModelPathEffective =>
+      animalSegmentationModelPathOrUrl ?? backgroundModelPathEffective;
 
   /// Effective denoise model path or URL, falling back to a sane default.
   String get denoiseModelPathEffective => denoiseModelPathOrUrl ?? 'assets/model_fp16.onnx';
@@ -116,6 +127,7 @@ class AiEditorInitConfigs implements EditorInitConfigs {
     String? backgroundRemovalModelPathOrUrl,
     String? denoiseModelPathOrUrl,
     String? fastdvdnetModelPathOrUrl,
+    String? animalSegmentationModelPathOrUrl,
     ThemeData? theme,
   }) {
     return AiEditorInitConfigs(
@@ -135,6 +147,8 @@ class AiEditorInitConfigs implements EditorInitConfigs {
           backgroundRemovalModelPathOrUrl ?? this.backgroundRemovalModelPathOrUrl,
       denoiseModelPathOrUrl: denoiseModelPathOrUrl ?? this.denoiseModelPathOrUrl,
       fastdvdnetModelPathOrUrl: fastdvdnetModelPathOrUrl ?? this.fastdvdnetModelPathOrUrl,
+      animalSegmentationModelPathOrUrl:
+          animalSegmentationModelPathOrUrl ?? this.animalSegmentationModelPathOrUrl,
       theme: theme ?? this.theme,
     );
   }

@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:logging/logging.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 
 final Logger _imageWorkerLog = Logger('ImageWorker');
 
@@ -393,7 +394,23 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
       numChannels: 4,
     );
 
-    const threshold = 0.5;
+    // Build a small grayscale mask from the raw model output so we can
+    // fill interior holes and feather the alpha edges before upsampling.
+    final rawMask = img.Image(width: outW, height: outH);
+    for (var my = 0; my < outH; my++) {
+      for (var mx = 0; mx < outW; mx++) {
+        final midx = my * outW + mx;
+        final raw = outputList[midx];
+        final v = raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
+        final byte = (v * 255).round().clamp(0, 255);
+        rawMask.setPixel(mx, my, img.ColorRgb8(byte, byte, byte));
+      }
+    }
+    final filledMask = MaskUtils.fillHoles(rawMask);
+    final featheredMask = MaskUtils.featherMaskEdges(
+      filledMask,
+      radius: 2,
+    );
 
     for (var y = 0; y < originalHeight; y++) {
       for (var x = 0; x < originalWidth; x++) {
@@ -401,20 +418,17 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
             (x * outW / originalWidth).clamp(0, outW - 1).toInt();
         final my =
             (y * outH / originalHeight).clamp(0, outH - 1).toInt();
-        final midx = my * outW + mx;
-
-        final raw = outputList[midx];
-        final maskValue =
-            raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
-
+        final mp = featheredMask.getPixel(mx, my);
+        final v = mp.r.toDouble().clamp(0.0, 255.0);
+        // Strengthen the mask so interior foreground becomes solid (alpha=1)
+        // while still allowing a small soft band around the edges.
         double weight;
-        if (maskValue > threshold + 0.05) {
+        if (v >= 220) {
           weight = 1.0;
-        } else if (maskValue < threshold - 0.05) {
+        } else if (v <= 40) {
           weight = 0.0;
         } else {
-          weight = ((maskValue - (threshold - 0.05)) / 0.1)
-              .clamp(0.0, 1.0);
+          weight = ((v - 40.0) / (220.0 - 40.0)).clamp(0.0, 1.0);
         }
 
         final src = base.getPixel(x, y);

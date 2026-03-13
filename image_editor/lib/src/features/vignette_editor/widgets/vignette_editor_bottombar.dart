@@ -100,7 +100,7 @@ class _VignetteColorPickerBar extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final color = _palette[index];
-          final bool isSelected = color.value == selectedColor.value;
+          final bool isSelected = color == selectedColor;
           final borderColor = isSelected ? theme.colorScheme.primary : Colors.white24;
 
           return GestureDetector(

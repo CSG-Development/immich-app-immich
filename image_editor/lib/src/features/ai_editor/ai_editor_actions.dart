@@ -23,12 +23,15 @@ class AiEditorActions {
   BackgroundRemovalService? _backgroundRemovalService;
   BackgroundRemovalFeature? _backgroundRemovalFeature;
 
+
   // Denoise (FastDVDnet only)
   FastdvdnetDenoiseService? _fastService;
 
   // Object removal / inpainting
   ObjectRemovalService? _objectRemovalService;
   ObjectRemovalFeature? _objectRemovalFeature;
+
+  // Animal-related AI features are disabled.
 
   Future<void> _disposeAllExcept({
     bool keepBackground = false,
@@ -66,6 +69,11 @@ class AiEditorActions {
           inputHeight: 256,
         );
       }();
+
+  /// Animal-related AI features are disabled, so this getter is unused.
+  BackgroundRemovalService get animalSegmentationService {
+    throw StateError('Animal segmentation is disabled in this build.');
+  }
 
   Future<Uint8List> applyBackground(
     Uint8List bytes, {
@@ -120,6 +128,14 @@ class AiEditorActions {
     }
     _objectRemovalFeature ??= LamaObjectRemovalFeature(_objectRemovalService!);
     return _objectRemovalFeature!.removeObjects(imageBytes, mask);
+  }
+
+  Future<Uint8List> insertAnimal({
+    required Uint8List baseImageBytes,
+    required Uint8List animalCutoutBytes,
+    required img.Image placementMask,
+  }) async {
+    throw StateError('Animal insertion is disabled in this build.');
   }
 
   Future<void> dispose() async {

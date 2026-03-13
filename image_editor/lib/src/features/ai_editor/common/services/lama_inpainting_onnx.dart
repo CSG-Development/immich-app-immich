@@ -172,9 +172,9 @@ class LamaInpaintingOnnx {
 }
 
 List<int> _inferShapeAndFlatten(dynamic value, List<dynamic> out) {
-  List<int> _shape(dynamic v) {
+  List<int> shape0(dynamic v) {
     if (v is List && v.isNotEmpty) {
-      return <int>[v.length, ..._shape(v.first)];
+      return <int>[v.length, ...shape0(v.first)];
     }
     if (v is List && v.isEmpty) {
       return <int>[0];
@@ -182,18 +182,18 @@ List<int> _inferShapeAndFlatten(dynamic value, List<dynamic> out) {
     return const <int>[];
   }
 
-  void _flatten(dynamic v) {
+  void flatten(dynamic v) {
     if (v is List) {
       for (final e in v) {
-        _flatten(e);
+        flatten(e);
       }
     } else {
       out.add(v);
     }
   }
 
-  final shape = _shape(value);
-  _flatten(value);
+  final shape = shape0(value);
+  flatten(value);
   return shape;
 }
 
@@ -215,8 +215,8 @@ Float32List _imageToFloat32NCHW(img.Image im) {
   return data;
 }
 
-// Mask: luminance > 0.5 → 1.0 (inpaint), else 0.0 (keep).
-// Per flutter-image-magic-eraser _uiMaskToFloatTensorIsolate.
+// Mask: use luminance in 0–1 range directly, allowing soft edges
+// (feathered masks) instead of forcing a hard 0/1 threshold.
 Float32List _maskToFloat32NCHW(img.Image mask) {
   final pixelCount = LamaInpaintingOnnx.modelSize * LamaInpaintingOnnx.modelSize;
   final data = Float32List(pixelCount);
@@ -228,7 +228,7 @@ Float32List _maskToFloat32NCHW(img.Image mask) {
       final g = p.g / 255.0;
       final b = p.b / 255.0;
       final luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-      data[idx++] = luminance > 0.5 ? 1.0 : 0.0;
+      data[idx++] = luminance.clamp(0.0, 1.0);
     }
   }
   return data;

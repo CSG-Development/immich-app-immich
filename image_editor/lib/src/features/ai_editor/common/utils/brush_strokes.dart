@@ -72,7 +72,15 @@ BrushStroke createStrokeFromLocalPosition({
   final dy = localPosition.dy.clamp(0.0, displaySize.height);
   final ix = dx * imageWidth / displaySize.width;
   final iy = dy * imageHeight / displaySize.height;
-  return BrushStroke(x: ix, y: iy, radius: brushRadius);
+  // Convert the user-facing brush radius (specified in display pixels)
+  // into image-space pixels so stroke size remains consistent regardless
+  // of the underlying image resolution.
+  final radiusInImagePixels = brushRadius * imageWidth / displaySize.width;
+  return BrushStroke(
+    x: ix,
+    y: iy,
+    radius: radiusInImagePixels,
+  );
 }
 
 /// Stroke that remembers whether it was drawn in "add" (draw) or

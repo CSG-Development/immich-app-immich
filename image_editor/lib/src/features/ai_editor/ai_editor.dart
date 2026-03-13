@@ -1,6 +1,5 @@
 // Dart imports:
 import 'dart:async';
-import 'dart:typed_data';
 
 // Package imports:
 import 'package:flutter/foundation.dart';
@@ -318,6 +317,8 @@ class AiEditorState extends State<AiEditor> {
       _overlayMode = _OverlayMode.people;
     });
   }
+
+  // Animal-related AI features are disabled.
 
   Future<void> _runObjectRemoval(img.Image mask) async {
     setState(() {
