@@ -45,6 +45,7 @@
   import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { albumPreviousRoute } from '$lib/stores/navigation.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -694,7 +695,7 @@
               <AlbumMap {album} />
             {/if}
 
-            {#if album.assetCount > 0}
+            {#if album.assetCount > 0 && !mobileDevice.maxMd}
               <IconButton
                 shape="round"
                 variant="ghost"
@@ -721,6 +722,10 @@
                 offset={{ x: 175, y: 25 }}
               >
                 {#if album.assetCount > 0}
+                  {#if mobileDevice.maxMd}
+                    <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+                    <MenuOption icon={mdiDownload} text={$t('download')} onClick={handleDownloadAlbum} />
+                  {/if}
                   <MenuOption
                     icon={mdiImageOutline}
                     text={$t('select_album_cover')}
@@ -734,7 +739,7 @@
             {/if}
 
             {#if isCreatingSharedAlbum && album.albumUsers.length === 0}
-              <Button size="small" disabled={album.assetCount === 0} onclick={handleShare}>
+              <Button size="standard-large" shape="round" disabled={album.assetCount === 0} onclick={handleShare}>
                 {$t('share')}
               </Button>
             {/if}
@@ -745,7 +750,7 @@
       {#if viewMode === AlbumPageViewMode.SELECT_ASSETS}
         <ControlAppBar onClose={handleCloseSelectAssets}>
           {#snippet leading()}
-            <p class="text-lg dark:text-immich-dark-fg">
+            <p class="text-lg dark:text-immich-dark-fg w-40">
               {#if !timelineInteraction.selectionActive}
                 {$t('add_to_album')}
               {:else}
@@ -755,10 +760,26 @@
           {/snippet}
 
           {#snippet trailing()}
-            <Button variant="ghost" leadingIcon={mdiUpload} onclick={handleSelectFromComputer}>
-              {$t('select_from_computer')}
-            </Button>
-            <Button disabled={!timelineInteraction.selectionActive} onclick={handleAddAssets}>{$t('done')}</Button>
+            {#if mobileDevice.maxMd}
+              <IconButton
+                shape="round"
+                variant="ghost"
+                color="secondary"
+                aria-label={$t('select_from_computer')}
+                onclick={handleSelectFromComputer}
+                icon={mdiUpload}
+              />
+            {:else}
+              <Button variant="ghost" color="secondary" leadingIcon={mdiUpload} onclick={handleSelectFromComputer}>
+                {$t('select_from_computer')}
+              </Button>
+            {/if}
+            <Button
+              size="standard-large"
+              shape="round"
+              disabled={!timelineInteraction.selectionActive}
+              onclick={handleAddAssets}>{$t('done')}</Button
+            >
           {/snippet}
         </ControlAppBar>
       {/if}
