@@ -6,6 +6,7 @@ import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.d
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/mask_stroke_overlay.dart';
 
 /// Overlay for drawing a mask (brush strokes) on an image to mark areas for
 /// object removal. Converts screen coordinates to image coordinates.
@@ -143,7 +144,7 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
                           Positioned(
                             left: 0,
                             top: 0,
-                            child: _StrokeOverlay(
+                            child: MaskStrokeOverlay(
                               strokes: _strokeHistory.strokes,
                               displayWidth: displaySize.width,
                               displayHeight: displaySize.height,
@@ -217,86 +218,6 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
         ),
       ),
     );
-  }
-}
-
-/// Paints brush strokes in display coordinates.
-class _StrokeOverlay extends StatelessWidget {
-  const _StrokeOverlay({
-    required this.strokes,
-    required this.displayWidth,
-    required this.displayHeight,
-    required this.imageWidth,
-    required this.imageHeight,
-  });
-
-  final List<ModeStroke> strokes;
-  // Width/height of the overlay in display pixels.
-  final double displayWidth;
-  final double displayHeight;
-  final double imageWidth;
-  final double imageHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(displayWidth, displayHeight),
-      painter: _StrokePainter(
-        strokes: strokes,
-        displayWidth: displayWidth,
-        displayHeight: displayHeight,
-        imageWidth: imageWidth,
-        imageHeight: imageHeight,
-      ),
-    );
-  }
-}
-
-class _StrokePainter extends CustomPainter {
-  _StrokePainter({
-    required this.strokes,
-    required this.displayWidth,
-    required this.displayHeight,
-    required this.imageWidth,
-    required this.imageHeight,
-  });
-
-  final List<ModeStroke> strokes;
-  final double displayWidth;
-  final double displayHeight;
-  final double imageWidth;
-  final double imageHeight;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final overlayRect = Offset.zero & size;
-    canvas.saveLayer(overlayRect, Paint());
-
-    final redPaint = Paint()
-      ..color = Colors.red.withValues(alpha: 0.5)
-      ..style = PaintingStyle.fill;
-
-    if (strokes.isNotEmpty) {
-      final erasePaint = Paint()..blendMode = BlendMode.clear;
-
-      for (final s in strokes) {
-        final sx = s.x * displayWidth / imageWidth;
-        final sy = s.y * displayHeight / imageHeight;
-        final sr = s.radius * displayWidth / imageWidth;
-        if (s.isAdd) {
-          canvas.drawCircle(Offset(sx, sy), sr, redPaint);
-        } else {
-          canvas.drawCircle(Offset(sx, sy), sr, erasePaint);
-        }
-      }
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _StrokePainter oldDelegate) {
-    return oldDelegate.strokes.length != strokes.length;
   }
 }
 
