@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
 
 /// Overlay for drawing a mask (brush strokes) on an image to mark areas for
 /// object removal. Converts screen coordinates to image coordinates.
@@ -29,8 +31,11 @@ class ObjectRemovalOverlay extends StatefulWidget {
 
 class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
   final StrokeHistory _strokeHistory = StrokeHistory();
-  static const double _minBrushRadius = 8.0;
-  static const double _maxBrushRadius = 80.0;
+  // Brush radius is defined in display pixels (converted to image space
+  // in the shared brush utilities), so keep this range modest so the
+  // brush feels precise across image resolutions.
+  static const double _minBrushRadius = 6.0;
+  static const double _maxBrushRadius = 48.0;
   double _brushRadius = 24.0;
 
   bool _isAddMode = true;
@@ -81,109 +86,31 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
       width: widget.imageWidth,
       height: widget.imageHeight,
     );
-    final mask = _strokeHistory.applyToMask(baseMask);
-    widget.onApply(mask);
+    final strokedMask = _strokeHistory.applyToMask(baseMask);
+    final holeFreeMask = MaskUtils.fillHoles(strokedMask);
+    final featheredMask = MaskUtils.featherMaskEdges(
+      holeFreeMask,
+      radius: 1,
+    );
+    widget.onApply(featheredMask);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.black87,
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.black87,
+      appBar: MaskEditorAppBar(
+        onCancel: widget.onCancel,
+        onApply: _apply,
+        applyEnabled: !_strokeHistory.strokes.isEmpty,
+        canUndo: _canUndo,
+        canRedo: _canRedo,
+        onUndo: _undo,
+        onRedo: _redo,
+      ),
+      body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: widget.onCancel,
-                        child: const Text('Cancel'),
-                      ),
-                      Text(
-                        'Paint over objects to remove',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed:
-                            _strokeHistory.strokes.isEmpty ? null : _apply,
-                        child: const Text('Apply'),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.brush),
-                        color: _isAddMode ? Colors.white : Colors.white54,
-                        onPressed: () {
-                          setState(() {
-                            _isAddMode = true;
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.auto_fix_off),
-                        color: !_isAddMode ? Colors.white : Colors.white54,
-                        onPressed: () {
-                          setState(() {
-                            _isAddMode = false;
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.undo),
-                        color: Colors.white70,
-                        onPressed: _canUndo ? _undo : null,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.redo),
-                        color: Colors.white70,
-                        onPressed: _canRedo ? _redo : null,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        color: Colors.white70,
-                        onPressed: _brushRadius > _minBrushRadius
-                            ? () => setState(() {
-                                  _brushRadius = (_brushRadius - 8)
-                                      .clamp(_minBrushRadius, _maxBrushRadius);
-                                })
-                            : null,
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: _brushRadius,
-                          min: _minBrushRadius,
-                          max: _maxBrushRadius,
-                          activeColor: Colors.white,
-                          onChanged: (v) => setState(() => _brushRadius = v),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        color: Colors.white70,
-                        onPressed: _brushRadius < _maxBrushRadius
-                            ? () => setState(() {
-                                  _brushRadius = (_brushRadius + 8)
-                                      .clamp(_minBrushRadius, _maxBrushRadius);
-                                })
-                            : null,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -229,6 +156,61 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
                     ),
                   );
                 },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.brush),
+                    color: _isAddMode ? Colors.white : Colors.white54,
+                    onPressed: () {
+                      setState(() {
+                        _isAddMode = true;
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.auto_fix_off),
+                    color: !_isAddMode ? Colors.white : Colors.white54,
+                    onPressed: () {
+                      setState(() {
+                        _isAddMode = false;
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    color: Colors.white70,
+                    onPressed: _brushRadius > _minBrushRadius
+                        ? () => setState(() {
+                              _brushRadius = (_brushRadius - 8)
+                                  .clamp(_minBrushRadius, _maxBrushRadius);
+                            })
+                        : null,
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _brushRadius,
+                      min: _minBrushRadius,
+                      max: _maxBrushRadius,
+                      activeColor: Colors.white,
+                      onChanged: (v) => setState(() => _brushRadius = v),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: Colors.white70,
+                    onPressed: _brushRadius < _maxBrushRadius
+                        ? () => setState(() {
+                              _brushRadius = (_brushRadius + 8)
+                                  .clamp(_minBrushRadius, _maxBrushRadius);
+                            })
+                        : null,
+                  ),
+                ],
               ),
             ),
           ],
@@ -291,7 +273,7 @@ class _StrokePainter extends CustomPainter {
     canvas.saveLayer(overlayRect, Paint());
 
     final redPaint = Paint()
-      ..color = Colors.red.withOpacity(0.5)
+      ..color = Colors.red.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     if (strokes.isNotEmpty) {

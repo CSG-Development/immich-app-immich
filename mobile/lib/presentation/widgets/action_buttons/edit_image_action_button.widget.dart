@@ -19,7 +19,12 @@ class EditImageActionButton extends ConsumerWidget {
         return;
       }
 
-      final image = Image(image: getFullImageProvider(currentAsset));
+      final image = Image(
+        image: getFullImageProvider(
+          currentAsset,
+          originalOnly: true,
+        ),
+      );
 
       context.navigator.push(
         MaterialPageRoute(

@@ -38,7 +38,7 @@ class VignetteOverlayPainter extends CustomPainter {
     final gradient = RadialGradient(
       center: Alignment.center,
       radius: 1.0,
-      colors: [Colors.transparent, Colors.transparent, color.withOpacity(intensity.clamp(0.0, 1.0))],
+      colors: [Colors.transparent, Colors.transparent, color.withValues(alpha: intensity.clamp(0.0, 1.0))],
       stops: [0.0, inner.clamp(0.0, 0.99), (inner + soft).clamp(0.0, 1.0)],
     );
 

@@ -227,9 +227,9 @@ class BackgroundRemovalOnnx {
 }
 
 List<int> _inferShapeAndFlatten(dynamic value, List<dynamic> out) {
-  List<int> _shape(dynamic v) {
+  List<int> shape0(dynamic v) {
     if (v is List && v.isNotEmpty) {
-      return <int>[v.length, ..._shape(v.first)];
+      return <int>[v.length, ...shape0(v.first)];
     }
     if (v is List && v.isEmpty) {
       return <int>[0];
@@ -237,18 +237,18 @@ List<int> _inferShapeAndFlatten(dynamic value, List<dynamic> out) {
     return const <int>[];
   }
 
-  void _flatten(dynamic v) {
+  void flatten(dynamic v) {
     if (v is List) {
       for (final e in v) {
-        _flatten(e);
+        flatten(e);
       }
     } else {
       out.add(v);
     }
   }
 
-  final shape = _shape(value);
-  _flatten(value);
+  final shape = shape0(value);
+  flatten(value);
   return shape;
 }
 

@@ -67,7 +67,7 @@ class BackgroundRemovalService {
       );
       _log.fine(
         '[BG] removeBackground() params '
-        'mode=$mode blurRadius=$blurRadius modelPath="${modelPathOrUrl}"',
+        'mode=$mode blurRadius=$blurRadius modelPath="$modelPathOrUrl"',
       );
 
       final decodeStart = DateTime.now();
