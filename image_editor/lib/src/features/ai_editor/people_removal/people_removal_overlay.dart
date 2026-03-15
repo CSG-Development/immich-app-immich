@@ -7,6 +7,7 @@ import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.da
 import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/mask_with_strokes_overlay.dart';
 import 'package:logging/logging.dart';
 
 /// Overlay for people removal: uses segmentation model to detect people,
@@ -227,10 +228,13 @@ class _PeopleRemovalOverlayState extends State<PeopleRemovalOverlay> {
                                     Positioned(
                                       left: 0,
                                       top: 0,
-                                      child: _PeopleMaskOverlay(
-                                        mask: _buildEffectiveMask(),
+                                      child: MaskWithStrokesOverlay(
+                                        mask: _initialMask,
+                                        strokes: _strokeHistory.strokes,
                                         displayWidth: displaySize.width,
                                         displayHeight: displaySize.height,
+                                        imageWidth: widget.imageWidth.toDouble(),
+                                        imageHeight: widget.imageHeight.toDouble(),
                                       ),
                                     ),
                                   ],
@@ -301,79 +305,6 @@ class _PeopleRemovalOverlayState extends State<PeopleRemovalOverlay> {
         ),
       ),
     );
-  }
-}
-
-class _PeopleMaskOverlay extends StatelessWidget {
-  const _PeopleMaskOverlay({
-    required this.mask,
-    required this.displayWidth,
-    required this.displayHeight,
-  });
-
-  final img.Image? mask;
-  final double displayWidth;
-  final double displayHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(displayWidth, displayHeight),
-      painter: _PeopleMaskPainter(
-        mask: mask,
-        displayWidth: displayWidth,
-        displayHeight: displayHeight,
-      ),
-    );
-  }
-}
-
-class _PeopleMaskPainter extends CustomPainter {
-  _PeopleMaskPainter({
-    required this.mask,
-    required this.displayWidth,
-    required this.displayHeight,
-  });
-
-  final img.Image? mask;
-  final double displayWidth;
-  final double displayHeight;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final mask = this.mask;
-    if (mask == null) return;
-
-    final overlayRect = Offset.zero & size;
-    canvas.saveLayer(overlayRect, Paint());
-
-    final redPaint = Paint()
-      ..color = Colors.red.withValues(alpha: 0.5)
-      ..style = PaintingStyle.fill;
-
-    // Use a 1px sampling step to render a smooth mask overlay.
-    const step = 1.0;
-    // 1) Draw the base segmentation mask in red.
-    for (var sy = 0.0; sy < displayHeight; sy += step) {
-      for (var sx = 0.0; sx < displayWidth; sx += step) {
-        final mx = (sx * mask.width / displayWidth).round().clamp(0, mask.width - 1);
-        final my = (sy * mask.height / displayHeight).round().clamp(0, mask.height - 1);
-        final p = mask.getPixel(mx, my);
-        if (p.r > 0 || p.g > 0 || p.b > 0) {
-          canvas.drawRect(
-            Rect.fromLTWH(sx, sy, step, step),
-            redPaint,
-          );
-        }
-      }
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _PeopleMaskPainter oldDelegate) {
-    return oldDelegate.mask != mask;
   }
 }
 
