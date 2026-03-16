@@ -11,12 +11,14 @@ class AiEditorBottombar extends StatelessWidget {
     required this.onDenoise,
     required this.onObjectRemoval,
     required this.onPeopleRemoval,
+    required this.isBusy,
   });
 
-  final VoidCallback onBlurBackground;
-  final VoidCallback onDenoise;
+  final VoidCallback? onBlurBackground;
+  final VoidCallback? onDenoise;
   final Future<void> Function()? onObjectRemoval;
   final Future<void> Function()? onPeopleRemoval;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -26,26 +28,30 @@ class AiEditorBottombar extends StatelessWidget {
       _AiToolItem(
         label: 'Blur background',
         icon: Icons.blur_on,
-        onPressed: onBlurBackground,
+        onPressed: isBusy || onBlurBackground == null ? null : onBlurBackground!,
       ),
       _AiToolItem(
         label: 'Denoise',
         icon: Icons.grain,
-        onPressed: onDenoise,
+        onPressed: isBusy || onDenoise == null ? null : onDenoise!,
       ),
       _AiToolItem(
         label: 'Object removal',
         icon: Icons.brush,
-        onPressed: () {
-          onObjectRemoval!();
-        },
+        onPressed: isBusy || onObjectRemoval == null
+            ? null
+            : () {
+                onObjectRemoval!();
+              },
       ),
       _AiToolItem(
         label: 'People removal',
         icon: Icons.person_off,
-        onPressed: () {
-          onPeopleRemoval!();
-        },
+        onPressed: isBusy || onPeopleRemoval == null
+            ? null
+            : () {
+                onPeopleRemoval!();
+              },
       ),
     ];
 
@@ -86,7 +92,7 @@ class AiEditorBottombar extends StatelessWidget {
 class _AiToolItem {
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const _AiToolItem({
     required this.label,

@@ -102,16 +102,12 @@ mixin CancellableImageProviderMixin<T extends Object> on CancellableImageProvide
   }
 }
 
-ImageProvider getFullImageProvider(
-  BaseAsset asset, {
-  Size size = const Size(1080, 1920),
-  bool originalOnly = false,
-}) {
+ImageProvider getFullImageProvider(BaseAsset asset, {Size size = const Size(1080, 1920), bool originalOnly = false}) {
   // Create new provider and cache it
   final ImageProvider provider;
   if (_shouldUseLocalAsset(asset)) {
     final id = asset is LocalAsset ? asset.id : (asset as RemoteAsset).localId!;
-    provider = LocalFullImageProvider(id: id, size: size, assetType: asset.type);
+    provider = LocalFullImageProvider(id: id, size: size, assetType: asset.type, originalOnly: originalOnly);
   } else {
     final String assetId;
     if (asset is LocalAsset && asset.hasRemote) {
