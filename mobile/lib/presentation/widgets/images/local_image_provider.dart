@@ -60,7 +60,12 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
   final Size size;
   final AssetType assetType;
 
-  LocalFullImageProvider({required this.id, required this.assetType, required this.size});
+  /// When true, the provider will skip the intermediate
+  /// scaled request and go straight to loading the
+  /// original file (Size.zero) as the first full frame.
+  final bool originalOnly;
+
+  LocalFullImageProvider({required this.id, required this.assetType, required this.size, this.originalOnly = false});
 
   @override
   Future<LocalFullImageProvider> obtainKey(ImageConfiguration configuration) {
@@ -71,6 +76,8 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
   ImageStreamCompleter loadImage(LocalFullImageProvider key, ImageDecoderCallback decode) {
     return OneFramePlaceholderImageStreamCompleter(
       _codec(key, decode),
+      // Still try to show a cached thumbnail as a fast placeholder,
+      // even when originalOnly is true.
       initialImage: getInitialImage(LocalThumbProvider(id: key.id, assetType: key.assetType)),
       informationCollector: () => <DiagnosticsNode>[
         DiagnosticsProperty<ImageProvider>('Image provider', this),
@@ -86,6 +93,14 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
 
     if (isCancelled) {
       evict();
+      return;
+    }
+
+    // When originalOnly is true, skip the intermediate scaled request
+    // and go straight to the original file as the first full frame.
+    if (originalOnly) {
+      var request = this.request = LocalImageRequest(localId: key.id, assetType: key.assetType, size: Size.zero);
+      yield* loadRequest(request, decode);
       return;
     }
 
@@ -116,7 +131,7 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is LocalFullImageProvider) {
-      return id == other.id && size == other.size;
+      return id == other.id && size == other.size && originalOnly == other.originalOnly;
     }
     return false;
   }

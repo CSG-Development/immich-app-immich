@@ -93,7 +93,13 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
       holeFreeMask,
       radius: 1,
     );
-    widget.onApply(featheredMask);
+    // Match the people-removal pipeline: slightly expand the mask so the
+    // inpainting area over-covers the drawn region and avoids harsh seams.
+    final expandedMask = MaskUtils.dilateMaskByPercent(
+      featheredMask,
+      percent: 0.02,
+    );
+    widget.onApply(expandedMask);
   }
 
   @override

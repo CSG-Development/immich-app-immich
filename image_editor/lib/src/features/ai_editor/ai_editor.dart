@@ -363,6 +363,7 @@ class AiEditorState extends State<AiEditor> {
                         onDenoise: _runFastDenoise,
                         onObjectRemoval: _handleObjectRemoval,
                         onPeopleRemoval: _handlePeopleRemoval,
+                        isBusy: _isProcessing,
                       ),
               ),
               if (_overlayMode == _OverlayMode.object)
@@ -398,6 +399,7 @@ class AiEditorState extends State<AiEditor> {
       theme: theme,
       canRedo: canRedo,
       canUndo: canUndo,
+      isBusy: _isProcessing,
       onClose: () {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
