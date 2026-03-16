@@ -34,7 +34,7 @@
 </script>
 
 <div
-  class="group relative rounded-2xl border border-transparent p-5 hover:bg-gray-100 hover:border-gray-200 dark:hover:border-gray-800 dark:hover:bg-gray-900"
+  class="group relative rounded-2xl border border-transparent md:p-[11px] hover:bg-gray-100 hover:border-gray-200 dark:hover:border-gray-800 dark:hover:bg-immich-dark-gray md:w-69"
   data-testid="album-card"
 >
   {#if onShowContextMenu}
@@ -44,23 +44,22 @@
       data-testid="context-button-parent"
     >
       <IconButton
-        color="secondary"
         aria-label={$t('show_album_options')}
         icon={mdiDotsVertical}
         shape="round"
         variant="ghost"
         size="medium"
-        class="icon-white-drop-shadow"
+        class="icon-white-drop-shadow text-white bg-black hover:bg-black"
         onclick={showAlbumContextMenu}
       />
     </div>
   {/if}
 
-  <AlbumCover {album} {preload} class="transition-all duration-300 hover:shadow-lg" />
+  <AlbumCover {album} {preload} class="transition-all duration-300 hover:shadow-lg w-full! md:w-63!" />
 
-  <div class="mt-4">
+  <div class="mt-5">
     <p
-      class="w-full leading-6 text-lg line-clamp-2 font-semibold text-black dark:text-white group-hover:text-immich-primary dark:group-hover:text-immich-dark-primary"
+      class="w-full leading-6 text-xl font-bold text-black dark:text-white group-hover:text-immich-primary dark:group-hover:text-immich-dark-primary"
       data-testid="album-name"
       title={album.albumName}
     >
@@ -68,12 +67,12 @@
     </p>
 
     {#if showDateRange && album.startDate && album.endDate}
-      <p class="flex text-sm dark:text-immich-dark-fg capitalize">
+      <p class="flex font-medium capitalize">
         {getShortDateRange(album.startDate, album.endDate)}
       </p>
     {/if}
 
-    <span class="flex gap-2 text-sm dark:text-immich-dark-fg" data-testid="album-details">
+    <span class="flex gap-0.5" data-testid="album-details">
       {#if showItemCount}
         <p>
           {$t('items_count', { values: { count: album.assetCount } })}
@@ -81,7 +80,7 @@
       {/if}
 
       {#if (showOwner || album.shared) && showItemCount}
-        <p>•</p>
+        <p class="w-3 text-center">•</p>
       {/if}
 
       {#if showOwner}

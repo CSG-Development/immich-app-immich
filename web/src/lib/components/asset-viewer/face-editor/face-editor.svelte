@@ -1,13 +1,17 @@
 <script lang="ts">
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
-  import { notificationController } from '$lib/components/shared-components/notification/notification';
+  import {
+    notificationController,
+    NotificationType,
+  } from '$lib/components/shared-components/notification/notification';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
   import { getPeopleThumbnailUrl } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { createFace, getAllPeople, type PersonResponseDto } from '@immich/sdk';
-  import { Button, Input } from '@immich/ui';
+  import { Button, Input, Theme } from '@immich/ui';
   import { Canvas, InteractiveFabricObject, Rect } from 'fabric';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -18,6 +22,8 @@
     containerHeight: number;
     assetId: string;
   }
+
+  const theme = $derived(themeManager.value);
 
   let { htmlElement, containerWidth, containerHeight, assetId }: Props = $props();
 
@@ -40,8 +46,9 @@
     InteractiveFabricObject.ownDefaults = {
       ...InteractiveFabricObject.ownDefaults,
       cornerStyle: 'circle',
-      cornerColor: 'rgb(153,166,251)',
-      cornerSize: 10,
+      cornerColor: theme === Theme.Light ? 'rgb(25,118,210)' : 'rgb(100,181,246)',
+      borderColor: 'rgb(255,255,255)',
+      cornerSize: 9,
       padding: 8,
       transparentCorners: false,
       lockRotation: true,
@@ -59,8 +66,8 @@
 
     // eslint-disable-next-line tscompat/tscompat
     faceRect = new Rect({
-      fill: 'rgba(66,80,175,0.25)',
-      stroke: 'rgb(66,80,175)',
+      fill: theme === Theme.Light ? 'rgba(25,118,210,0.24)' : 'rgba(100,181,246,0.24)',
+      stroke: theme === Theme.Light ? 'rgb(25,118,210)' : 'rgb(100,181,246)',
       strokeWidth: 2,
       strokeUniform: true,
       width: 112,
@@ -281,6 +288,7 @@
       if (!data) {
         notificationController.show({
           message: $t('error_tag_face_bounding_box'),
+          type: NotificationType.Error,
         });
         return;
       }
@@ -289,6 +297,7 @@
         prompt: person.name
           ? $t('confirm_tag_face', { values: { name: person.name } })
           : $t('confirm_tag_face_unnamed'),
+        confirmColor: 'primary',
       });
 
       if (!isConfirmed) {
@@ -318,31 +327,33 @@
   <div
     id="face-selector"
     bind:this={faceSelectorEl}
-    class="absolute top-[calc(50%-250px)] start-[calc(50%-125px)] max-w-[250px] w-[250px] bg-white dark:bg-immich-dark-gray dark:text-immich-dark-fg backdrop-blur-sm px-2 py-4 rounded-xl border border-gray-200 dark:border-gray-800"
+    class="absolute top-[calc(50%-250px)] start-[calc(50%-125px)] max-w-[250px] w-[250px] bg-white dark:bg-immich-dark-gray dark:text-immich-dark-fg backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-800"
   >
-    <p class="text-center text-sm">{$t('select_person_to_tag')}</p>
+    <p class="font-bold border-b immich-border px-3 py-4">{$t('select_person_to_tag')}</p>
 
-    <div class="my-3 relative">
+    <div class="relative px-3 py-3">
       <Input placeholder={$t('search_people')} bind:value={searchTerm} size="tiny" />
     </div>
 
-    <div class="h-[250px] overflow-y-auto mt-2">
+    <div class="h-[250px] overflow-y-auto px-3">
       {#if filteredCandidates.length > 0}
-        <div class="mt-2 rounded-lg">
-          {#each filteredCandidates as person (person.id)}
+        <div class="rounded-lg">
+          {#each filteredCandidates as person, index (person.id)}
             <button
               onclick={() => tagFace(person)}
               type="button"
-              class="w-full flex place-items-center gap-2 rounded-lg ps-1 pe-4 py-2 hover:bg-immich-primary/25"
+              class="w-full flex place-items-center gap-2 rounded-lg ps-1 pe-4 {index === 0
+                ? 'pb-2'
+                : 'py-2'} hover:bg-immich-primary/25"
             >
               <ImageThumbnail
-                curve
+                class="rounded-sm"
                 shadow
                 url={getPeopleThumbnailUrl(person)}
                 altText={person.name}
                 title={person.name}
-                widthStyle="30px"
-                heightStyle="30px"
+                widthStyle="32px"
+                heightStyle="32px"
               />
               <p class="text-sm">
                 {person.name}
@@ -357,6 +368,8 @@
       {/if}
     </div>
 
-    <Button size="small" fullWidth onclick={cancel} color="secondary" class="mt-2">{$t('cancel')}</Button>
+    <div class="px-3 py-4 border-t immich-border">
+      <Button size="standard-large" fullWidth onclick={cancel} color="danger">{$t('cancel')}</Button>
+    </div>
   </div>
 </div>

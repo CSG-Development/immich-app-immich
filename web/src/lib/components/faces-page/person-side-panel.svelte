@@ -21,7 +21,7 @@
     type PersonResponseDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiAccountOff, mdiArrowLeftThin, mdiPencilOutline, mdiRestart, mdiTrashCan } from '@mdi/js';
+  import { mdiAccountOff, mdiArrowLeftThin, mdiPencilOutline, mdiRestart, mdiTrashCanOutline } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { linear } from 'svelte/easing';
@@ -132,7 +132,7 @@
 
         notificationController.show({
           message: $t('people_edits_count', { values: { count: numberOfChanges } }),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       } catch (error) {
         handleError(error, $t('errors.cant_apply_changes'));
@@ -323,6 +323,7 @@
                   />
                 {:else}
                   <IconButton
+                    shape="round"
                     color="primary"
                     icon={mdiPencilOutline}
                     aria-label={$t('select_new_face')}
@@ -346,7 +347,7 @@
                   <IconButton
                     shape="round"
                     color="danger"
-                    icon={mdiTrashCan}
+                    icon={mdiTrashCanOutline}
                     aria-label={$t('delete_face')}
                     size="small"
                     class="absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform"

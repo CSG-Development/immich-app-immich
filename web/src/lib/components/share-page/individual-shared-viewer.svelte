@@ -64,7 +64,7 @@
 
       notificationController.show({
         message: $t('assets_added_count', { values: { count: added } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_assets_to_shared_link'));
@@ -140,7 +140,11 @@
         {/snippet}
       </ControlAppBar>
     {/if}
-    <section class="my-[160px] mx-4" bind:clientHeight={viewport.height} bind:clientWidth={viewport.width}>
+    <section
+      class="mt-[82px] md:mt-[114px] mx-3 md:mx-6"
+      bind:clientHeight={viewport.height}
+      bind:clientWidth={viewport.width}
+    >
       <GalleryViewer {assets} {assetInteraction} {viewport} />
     </section>
   {:else if assets.length === 1}

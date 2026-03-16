@@ -109,7 +109,7 @@
       message: $featureFlags.trash
         ? $t('assets_moved_to_trash_count', { values: { count: trashedCount } })
         : $t('permanently_deleted_assets_count', { values: { count: trashedCount } }),
-      type: NotificationType.Info,
+      type: NotificationType.Success,
     });
   };
 
@@ -187,7 +187,7 @@
 
         notificationController.show({
           message: $t('resolved_all_duplicates'),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
         page.url.searchParams.delete('index');
         await goto(resolve(AppRoute.DUPLICATES));

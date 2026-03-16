@@ -14,7 +14,7 @@
   import { isTenMinutesApart } from '$lib/utils/timesince';
   import { ReactionType, type ActivityResponseDto, type AssetTypeEnum, type UserResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiClose, mdiDeleteOutline, mdiDotsVertical, mdiHeart, mdiSend } from '@mdi/js';
+  import { mdiClose, mdiDotsVertical, mdiHeart, mdiSend, mdiTrashCanOutline } from '@mdi/js';
   import * as luxon from 'luxon';
   import { t } from 'svelte-i18n';
   import LoadingSpinner from '../shared-components/loading-spinner.svelte';
@@ -79,7 +79,7 @@
       };
       notificationController.show({
         message: deleteMessages[reaction.type],
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_remove_reaction'));
@@ -171,7 +171,7 @@
                   >
                     <MenuOption
                       activeColor="bg-red-200"
-                      icon={mdiDeleteOutline}
+                      icon={mdiTrashCanOutline}
                       text={$t('remove')}
                       onClick={() => handleDeleteReaction(reaction, index)}
                     />
@@ -224,7 +224,7 @@
                     >
                       <MenuOption
                         activeColor="bg-red-200"
-                        icon={mdiDeleteOutline}
+                        icon={mdiTrashCanOutline}
                         text={$t('remove')}
                         onClick={() => handleDeleteReaction(reaction, index)}
                       />

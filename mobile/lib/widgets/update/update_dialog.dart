@@ -2,13 +2,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/platform/update_api.g.dart';
 import 'package:logging/logging.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/infrastructure/app_update_progress.provider.dart';
-import 'package:flutter/services.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
-import 'package:immich_mobile/routing/router.dart';
 
 Future<bool> showUpdateAvailableDialog({
   required BuildContext context,
@@ -19,6 +18,8 @@ Future<bool> showUpdateAvailableDialog({
   String? sha256,
 }) async {
   final log = Logger('UpdateDialog');
+  final UpdateApi updateApi = UpdateApi();
+  var sessionId = 0;
 
   return await showDialog<bool>(
         context: context,
@@ -42,13 +43,17 @@ Future<bool> showUpdateAvailableDialog({
                     const SizedBox(height: 8),
                     Text('${'curator.update_dialog_downloading'.tr()}... $progress%'),
                   ],
+                  if (progressState.errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(progressState.errorMessage!, style: TextStyle(color: ctx.colorScheme.error)),
+                  ],
                 ],
               ),
               actions: [
-                if (!forced && !isDownloading)
+                if (!forced && !isDownloading && progress < 100)
                   TextButton(
                     onPressed: () {
-                      // Clear dialog-specific callbacks in case they were set earlier
+                      sessionId++;
                       UpdateCallbacks.setUp(null);
                       ctx.maybePop(false);
                     },
@@ -58,8 +63,10 @@ Future<bool> showUpdateAvailableDialog({
                   FilledButton(
                     onPressed: () async {
                       try {
-                        final res = await UpdateApi().installDownloadedUpdate();
-                        log.info('install_result success=${res.success} code=${res.errorCode} message=${res.message}');
+                        final res = await updateApi.installDownloadedUpdate();
+                        log.info(
+                          'install_result success=${res.success} code=${res.errorCode} message=${res.message}',
+                        );
                         if (!res.success) {
                           if (ctx.mounted) {
                             ImmichToast.show(
@@ -71,9 +78,8 @@ Future<bool> showUpdateAvailableDialog({
                               gravity: ToastGravity.BOTTOM,
                             );
                           }
-                          // Clear dialog-specific callbacks to avoid leaks
                           UpdateCallbacks.setUp(null);
-                          return; // Keep dialog open so user can retry
+                          return;
                         }
                       } catch (e) {
                         log.severe('install_error $e');
@@ -85,11 +91,9 @@ Future<bool> showUpdateAvailableDialog({
                             gravity: ToastGravity.BOTTOM,
                           );
                         }
-                        // Clear dialog-specific callbacks to avoid leaks
                         UpdateCallbacks.setUp(null);
                         return;
                       }
-                      // Clear dialog-specific callbacks when done
                       UpdateCallbacks.setUp(null);
                       if (ctx.mounted) ctx.maybePop(true);
                     },
@@ -97,10 +101,15 @@ Future<bool> showUpdateAvailableDialog({
                   ),
                 ] else if (isDownloading && progress < 100) ...[
                   TextButton(
-                    onPressed: () {
-                      // UI-level cancel: just clear callbacks and reset UI; download thread continues
+                    onPressed: () async {
+                      sessionId++;
+                      try {
+                        await updateApi.cancelDownload();
+                        await Future.delayed(const Duration(milliseconds: 100));
+                      } catch (e) {
+                        log.warning('cancel_download_error $e');
+                      }
                       UpdateCallbacks.setUp(null);
-                      const MethodChannel('immich/update_control').invokeMethod('cancelDownload');
                       ref.read(updateDownloadProvider.notifier).reset();
                       if (ctx.mounted) {
                         ImmichToast.show(
@@ -117,61 +126,83 @@ Future<bool> showUpdateAvailableDialog({
                 ] else ...[
                   FilledButton(
                     onPressed: () async {
+                      final currentState = ref.read(updateDownloadProvider);
+                      if (currentState.isDownloading) {
+                        log.warning('download_already_in_progress');
+                        return;
+                      }
+
                       log.info('download_clicked version=$version');
+
+                      sessionId++;
+                      final currentSessionId = sessionId;
+
+                      ref.read(updateDownloadProvider.notifier).reset();
                       ref.read(updateDownloadProvider.notifier).start();
-                      // Wire callbacks to update dialog state
+
                       UpdateCallbacks.setUp(
                         _DialogCallbacks(
                           onProgress: (p) {
+                            if (currentSessionId != sessionId) {
+                              log.fine(
+                                'ignoring_stale_progress_callback session=$currentSessionId current=$sessionId',
+                              );
+                              return;
+                            }
                             log.info('download_progress percent=${p.percent}');
                             ref.read(updateDownloadProvider.notifier).setProgress(p.percent);
                           },
                           onError: (m) async {
+                            if (currentSessionId != sessionId) {
+                              log.fine(
+                                'ignoring_stale_error_callback session=$currentSessionId current=$sessionId',
+                              );
+                              return;
+                            }
                             log.warning('download_error message=$m');
                             ref.read(updateDownloadProvider.notifier).error(m);
-                            // Clear dialog-specific callbacks
                             UpdateCallbacks.setUp(null);
-                            // Close the update modal and show a toast using root navigator context
                             if (ctx.mounted) {
-                              ctx.maybePop(false);
+                              ImmichToast.show(
+                                context: ctx,
+                                msg: m.isEmpty ? 'curator.update_dialog_download_error'.tr() : m,
+                                toastType: ToastType.error,
+                                gravity: ToastGravity.BOTTOM,
+                              );
                             }
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              Future<void>.delayed(const Duration(milliseconds: 50), () {
-                                final navState = ref.read(appRouterProvider).navigatorKey.currentState;
-                                final overlayCtx = navState?.overlay?.context ?? navState?.context ?? ctx;
-                                try {
-                                  if (overlayCtx.mounted) {
-                                    ImmichToast.show(
-                                      context: overlayCtx,
-                                      msg: m.isEmpty ? 'curator.update_dialog_download_error'.tr() : m,
-                                      toastType: ToastType.error,
-                                      gravity: ToastGravity.BOTTOM,
-                                    );
-                                    return;
-                                  }
-                                } catch (_) {}
-                                if (ctx.mounted) {
-                                  ImmichToast.show(
-                                    context: ctx,
-                                    msg: m.isEmpty ? 'curator.update_dialog_download_error'.tr() : m,
-                                    toastType: ToastType.error,
-                                    gravity: ToastGravity.BOTTOM,
-                                  );
-                                }
-                              });
-                            });
                           },
                           onCompleted: () {
+                            if (currentSessionId != sessionId) {
+                              log.fine(
+                                'ignoring_stale_completed_callback session=$currentSessionId current=$sessionId',
+                              );
+                              return;
+                            }
                             log.info('download_completed');
                             ref.read(updateDownloadProvider.notifier).complete();
-                            // Leave callbacks active until user presses Update
                           },
                         ),
                       );
+
                       try {
                         log.info('start_download version=$version url=$downloadUrl');
-                        await UpdateApi().startDownload(version, downloadUrl, sha256);
-                      } catch (_) {}
+                        await updateApi.startDownload(version, downloadUrl, sha256);
+                      } catch (e) {
+                        log.severe('start_download_error $e');
+
+                        if (currentSessionId == sessionId) {
+                          UpdateCallbacks.setUp(null);
+                          ref.read(updateDownloadProvider.notifier).error('Failed to start download: $e');
+                          if (ctx.mounted) {
+                            ImmichToast.show(
+                              context: ctx,
+                              msg: 'curator.update_dialog_download_error'.tr(),
+                              toastType: ToastType.error,
+                              gravity: ToastGravity.BOTTOM,
+                            );
+                          }
+                        }
+                      }
                     },
                     child: const Text('curator.update_dialog_download').tr(),
                   ),

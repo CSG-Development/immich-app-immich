@@ -54,7 +54,7 @@
       if (notifyIfSuccessful) {
         notificationController.show({
           message: $t('admin.paths_validated_successfully'),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       }
     } else {

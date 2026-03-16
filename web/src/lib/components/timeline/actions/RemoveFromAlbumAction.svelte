@@ -6,7 +6,7 @@
   import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import { getAlbumInfo, removeAssetFromAlbum, type AlbumResponseDto } from '@immich/sdk';
   import { IconButton, modalManager } from '@immich/ui';
-  import { mdiDeleteOutline, mdiImageRemoveOutline } from '@mdi/js';
+  import { mdiImageRemoveOutline, mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import MenuOption from '../../shared-components/context-menu/menu-option.svelte';
 
@@ -42,7 +42,7 @@
 
       const count = results.filter(({ success }) => success).length;
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('assets_removed_count', { values: { count } }),
       });
 
@@ -65,7 +65,7 @@
     color="secondary"
     variant="ghost"
     aria-label={$t('remove_from_album')}
-    icon={mdiDeleteOutline}
+    icon={mdiTrashCanOutline}
     onclick={removeFromAlbum}
   />
 {/if}

@@ -45,7 +45,7 @@
     draggable="false"
     onfocus={() => (showVerticalDots = true)}
   >
-    <div class="w-full h-full rounded-xl brightness-95 filter">
+    <div class="w-39 h-full rounded-xl brightness-95 filter">
       <ImageThumbnail
         shadow
         url={getPeopleThumbnailUrl(person)}
@@ -63,10 +63,11 @@
   </a>
 
   {#if showVerticalDots}
-    <div class="absolute top-2 end-2 z-1">
+    <div class="absolute top-2 end-2 z-1 bg-black rounded-full">
       <ButtonContextMenu
-        buttonClass="icon-white-drop-shadow focus:opacity-100 {showVerticalDots ? 'opacity-100' : 'opacity-0'}"
-        color="primary"
+        buttonClass="icon-white-drop-shadow focus:opacity-100 text-white {showVerticalDots
+          ? 'opacity-100'
+          : 'opacity-0'}"
         size="medium"
         icon={mdiDotsVertical}
         title={$t('show_person_options')}

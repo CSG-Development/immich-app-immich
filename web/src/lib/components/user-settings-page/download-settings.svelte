@@ -29,7 +29,7 @@
       });
       $preferences = newPreferences;
 
-      notificationController.show({ message: $t('saved_settings'), type: NotificationType.Info });
+      notificationController.show({ message: $t('saved_settings'), type: NotificationType.Success });
     } catch (error) {
       handleError(error, $t('errors.unable_to_update_settings'));
     }

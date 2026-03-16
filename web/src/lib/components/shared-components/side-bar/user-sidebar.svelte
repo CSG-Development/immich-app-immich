@@ -31,7 +31,6 @@
     mdiTagMultipleOutline,
     mdiToolbox,
     mdiToolboxOutline,
-    mdiTrashCan,
     mdiTrashCanOutline,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -178,7 +177,7 @@
       title={$t('trash')}
       href={resolve('/(user)/trash')}
       bind:isSelected={isTrashSelected}
-      icon={isTrashSelected ? mdiTrashCan : mdiTrashCanOutline}
+      icon={isTrashSelected ? mdiTrashCanOutline : mdiTrashCanOutline}
     ></SideBarLink>
   {/if}
 

@@ -195,6 +195,6 @@
   {/if}
 
   <div class="flex justify-end mt-5">
-    <Button shape="round" size="small" onclick={() => handleCreatePartners()}>{$t('add_partner')}</Button>
+    <Button size="standard-large" onclick={() => handleCreatePartners()}>{$t('add_partner')}</Button>
   </div>
 </section>

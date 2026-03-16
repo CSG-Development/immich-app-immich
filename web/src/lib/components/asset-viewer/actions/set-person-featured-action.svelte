@@ -35,7 +35,7 @@
       });
 
       await updatePerson({ id: person.id, personUpdateDto: { featureFaceAssetId: asset.id } });
-      notificationController.show({ message: $t('feature_photo_updated'), type: NotificationType.Info });
+      notificationController.show({ message: $t('feature_photo_updated'), type: NotificationType.Success });
     } catch (error) {
       handleError(error, $t('errors.unable_to_set_feature_photo'));
     }

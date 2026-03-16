@@ -201,7 +201,7 @@
     await memoryStore.updateMemorySaved(current.memory.id, newSavedState);
     notificationController.show({
       message: newSavedState ? $t('added_to_favorites') : $t('removed_from_favorites'),
-      type: NotificationType.Info,
+      type: NotificationType.Success,
     });
     init(page);
   };

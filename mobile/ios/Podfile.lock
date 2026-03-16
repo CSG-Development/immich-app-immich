@@ -178,6 +178,14 @@ PODS:
     - Flutter
   - nsd_ios (0.0.1):
     - Flutter
+  - onnxruntime (0.0.1):
+    - Flutter
+    - onnxruntime-objc (= 1.15.1)
+  - onnxruntime-c (1.15.1)
+  - onnxruntime-objc (1.15.1):
+    - onnxruntime-objc/Core (= 1.15.1)
+  - onnxruntime-objc/Core (1.15.1):
+    - onnxruntime-c (= 1.15.1)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -192,9 +200,9 @@ PODS:
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
   - SAMKeychain (1.5.3)
-  - SDWebImage (5.21.1):
-    - SDWebImage/Core (= 5.21.1)
-  - SDWebImage/Core (5.21.1)
+  - SDWebImage (5.21.7):
+    - SDWebImage/Core (= 5.21.7)
+  - SDWebImage/Core (5.21.7)
   - share_handler_ios (0.0.14):
     - Flutter
     - share_handler_ios/share_handler_ios_models (= 0.0.14)
@@ -263,6 +271,7 @@ DEPENDENCIES:
   - native_video_player (from `.symlinks/plugins/native_video_player/ios`)
   - network_info_plus (from `.symlinks/plugins/network_info_plus/ios`)
   - nsd_ios (from `.symlinks/plugins/nsd_ios/ios`)
+  - onnxruntime (from `.symlinks/plugins/onnxruntime/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
@@ -277,7 +286,7 @@ DEPENDENCIES:
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
 
 SPEC REPOS:
-  trunk:
+  https://github.com/CocoaPods/Specs.git:
     - DKImagePickerController
     - DKPhotoGallery
     - Firebase
@@ -302,6 +311,9 @@ SPEC REPOS:
     - SDWebImage
     - sqlite3
     - SwiftyGif
+  trunk:
+    - onnxruntime-c
+    - onnxruntime-objc
 
 EXTERNAL SOURCES:
   background_downloader:
@@ -356,6 +368,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/network_info_plus/ios"
   nsd_ios:
     :path: ".symlinks/plugins/nsd_ios/ios"
+  onnxruntime:
+    :path: ".symlinks/plugins/onnxruntime/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -426,6 +440,9 @@ SPEC CHECKSUMS:
   native_video_player: d12af78a1a4a8cf09775a5177d5b392def6fd23c
   network_info_plus: 6613d9d7cdeb0e6f366ed4dbe4b3c51c52d567a9
   nsd_ios: 8c37babdc6538e3350dbed3a52674d2edde98173
+  onnxruntime: e9346181d75b8dea8733bdae512a22c298962e00
+  onnxruntime-c: ebdcfd8650bcbd10121c125262f99dea681b92a3
+  onnxruntime-objc: ae7acec7a3d03eaf072d340afed7a35635c1c2a6
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
@@ -433,7 +450,7 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
   SAMKeychain: 483e1c9f32984d50ca961e26818a534283b4cd5c
-  SDWebImage: f29024626962457f3470184232766516dee8dfea
+  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_handler_ios: 6dd3a4ac5ca0d955274aec712ba0ecdcaf583e7c
   share_handler_ios_models: fc638c9b4330dc7f082586c92aee9dfa0b87b871
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
@@ -445,6 +462,6 @@ SPEC CHECKSUMS:
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
   wakelock_plus: 373cfe59b235a6dd5837d0fb88791d2f13a90d56
 
-PODFILE CHECKSUM: 7b6cd01e14c5632e6651ad3a11b8fd66502b690f
+PODFILE CHECKSUM: 0e9e827bd2d1a0c9f5a2cdad0b0537615e655fbf
 
 COCOAPODS: 1.16.2

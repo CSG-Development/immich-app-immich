@@ -48,6 +48,7 @@
     defaultFirstOption?: boolean;
     onSelect?: (option: ComboBoxOption | undefined) => void;
     forceFocus?: boolean;
+    sortByValue?: boolean;
   }
 
   let {
@@ -61,6 +62,7 @@
     defaultFirstOption = false,
     onSelect = () => {},
     forceFocus = false,
+    sortByValue = false,
   }: Props = $props();
 
   /**
@@ -245,17 +247,21 @@
     const _options = options
       .filter((o) => o.label.toLowerCase().includes(query))
       .sort((a, b) => {
-        const aLabel = a.label.toLowerCase();
-        const bLabel = b.label.toLowerCase();
+        if (sortByValue) {
+          return a.value - b.value;
+        } else {
+          const aLabel = a.label.toLowerCase();
+          const bLabel = b.label.toLowerCase();
 
-        const aStarts = aLabel.startsWith(query);
-        const bStarts = bLabel.startsWith(query);
+          const aStarts = aLabel.startsWith(query);
+          const bStarts = bLabel.startsWith(query);
 
-        if (aStarts !== bStarts) {
-          return aStarts ? -1 : 1;
+          if (aStarts !== bStarts) {
+            return aStarts ? -1 : 1;
+          }
+
+          return aLabel.localeCompare(bLabel);
         }
-
-        return aLabel.localeCompare(bLabel);
       });
 
     if (allowCreate && searchQuery !== '' && _options.filter((option) => option.label === searchQuery).length === 0) {
@@ -305,7 +311,7 @@
       class:!rounded-b-none={isOpen && dropdownDirection === 'bottom'}
       class:!rounded-t-none={isOpen && dropdownDirection === 'top'}
       class:cursor-pointer={!isActive}
-      class="immich-form-input bg-primary/[.20] text-sm w-full pe-12! transition-all"
+      class="immich-form-input w-full pe-12! transition-all rounded-3xl"
       id={inputId}
       onfocus={activate}
       oninput={onInput}
@@ -378,9 +384,9 @@
     role="listbox"
     id={listboxId}
     in:fly={{ duration: 250 }}
-    class="absolute z-[9999] text-start text-sm w-full overflow-hidden bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-900"
-    class:rounded-b-xl={dropdownDirection === 'bottom'}
-    class:rounded-t-xl={dropdownDirection === 'top'}
+    class="fixed z-[9999] text-start text-sm w-full overflow-hidden bg-white dark:bg-immich-dark-gray-storage border-immich-gray-border dark:border-immich-dark-gray-border"
+    class:rounded-b-3xl={dropdownDirection === 'bottom'}
+    class:rounded-t-3xl={dropdownDirection === 'top'}
     class:shadow={dropdownDirection === 'bottom'}
     class:border={isOpen}
     style:width={position?.width}
@@ -394,7 +400,7 @@
           role="option"
           aria-selected={selectedIndex === 0}
           aria-disabled={true}
-          class="text-start w-full px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default aria-selected:bg-gray-200 aria-selected:dark:bg-gray-700"
+          class="text-start w-full px-4 py-2 hover:bg-immich-primary-12 hover:dark:bg-immich-dark-primary-24 cursor-default aria-selected:bg-immich-primary-12 aria-selected:dark:bg-immich-dark-primary-24"
           id={`${listboxId}-${0}`}
           onclick={closeDropdown}
         >
@@ -407,7 +413,7 @@
           <li
             aria-selected={index === selectedIndex}
             bind:this={optionRefs[index]}
-            class="text-start w-full px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all cursor-pointer aria-selected:bg-gray-200 aria-selected:dark:bg-gray-700 break-words"
+            class="text-start w-full px-4 py-2 hover:bg-immich-primary-12 hover:dark:bg-immich-dark-primary-24 transition-all cursor-pointer aria-selected:bg-immich-primary-12 aria-selected:dark:bg-immich-dark-primary-24 break-words first-letter:uppercase"
             id={`${listboxId}-${index}`}
             onclick={() => handleSelect(option)}
             role="option"

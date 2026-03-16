@@ -9,7 +9,7 @@
   } from '$lib/components/shared-components/notification/notification';
   import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { Button, IconButton, Theme, type Color } from '@immich/ui';
-  import { mdiCloseCircleOutline, mdiInformationOutline, mdiWindowClose } from '@mdi/js';
+  import { mdiCheckCircleOutline, mdiCloseCircleOutline, mdiInformationOutline, mdiWindowClose } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
@@ -22,37 +22,62 @@
 
   let { notification }: Props = $props();
 
-  let icon = $derived(notification.type === NotificationType.Error ? mdiCloseCircleOutline : mdiInformationOutline);
+  let icon = $derived(
+    notification.type === NotificationType.Error
+      ? mdiCloseCircleOutline
+      : notification.type === NotificationType.Success
+        ? mdiCheckCircleOutline
+        : mdiInformationOutline,
+  );
   let hoverStyle = $derived(notification.action.type === 'discard' ? 'hover:cursor-pointer' : '');
 
   const backgroundColor: Record<NotificationType, string> = {
     [NotificationType.Info]: '#E4F2FE',
     [NotificationType.Error]: '#FBE8E6',
     [NotificationType.Warning]: '#FFF4CE',
+    [NotificationType.Success]: '#F9FCF9',
   };
 
   const backgroundColorDark: Record<NotificationType, string> = {
     [NotificationType.Info]: '#03233F',
     [NotificationType.Error]: '#3B100D',
     [NotificationType.Warning]: '#433519',
+    [NotificationType.Success]: '#1E211E',
   };
 
   const primaryColor: Record<NotificationType, string> = {
     [NotificationType.Info]: '#1976D2',
     [NotificationType.Error]: '#F44336',
     [NotificationType.Warning]: '#D08613',
+    [NotificationType.Success]: '#4CAF50',
   };
 
   const primaryColorDark: Record<NotificationType, string> = {
     [NotificationType.Info]: '#64B5F6',
     [NotificationType.Error]: '#F28F8C',
     [NotificationType.Warning]: '#FFD18D',
+    [NotificationType.Success]: '#4CAF50',
+  };
+
+  const borderColor: Record<NotificationType, string> = {
+    [NotificationType.Info]: '#2196F31F',
+    [NotificationType.Error]: '#F443361F',
+    [NotificationType.Warning]: '#FF98001F',
+    [NotificationType.Success]: '#4CAF501F',
+  };
+
+  const borderColorDark: Record<NotificationType, string> = {
+    [NotificationType.Info]: '#2196F33D',
+    [NotificationType.Error]: '#F28F8C3D',
+    [NotificationType.Warning]: '#FF98003D',
+    [NotificationType.Success]: '#4CAF503D',
   };
 
   const colors: Record<NotificationType, Color> = {
     [NotificationType.Info]: 'primary',
     [NotificationType.Error]: 'danger',
     [NotificationType.Warning]: 'warning',
+    [NotificationType.Success]: 'success',
   };
 
   onMount(() => {
@@ -85,6 +110,7 @@
   style:background-color={theme === Theme.Light
     ? backgroundColor[notification.type]
     : backgroundColorDark[notification.type]}
+  style:border-color={theme === Theme.Light ? borderColor[notification.type] : borderColorDark[notification.type]}
   class="border mb-4 w-[300px] rounded-2xl p-4 shadow-md {hoverStyle}"
   onclick={handleClick}
   onkeydown={handleClick}
@@ -103,6 +129,7 @@
       >
         {#if notification.type == NotificationType.Error}{$t('error')}
         {:else if notification.type == NotificationType.Warning}{$t('warning')}
+        {:else if notification.type == NotificationType.Success}{$t('success')}
         {:else if notification.type == NotificationType.Info}{$t('info')}{/if}
       </h2>
     </div>

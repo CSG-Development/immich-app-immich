@@ -6,9 +6,10 @@
     hasNextPage?: boolean | undefined;
     loadNextPage: () => void;
     children?: import('svelte').Snippet<[{ person: PersonResponseDto; index: number }]>;
+    isVisibilityPage?: boolean;
   }
 
-  let { people, hasNextPage = undefined, loadNextPage, children }: Props = $props();
+  let { people, hasNextPage = undefined, loadNextPage, children, isVisibilityPage = false }: Props = $props();
 
   let lastPersonContainer: HTMLElement | undefined = $state();
 
@@ -27,7 +28,11 @@
   });
 </script>
 
-<div class="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-10 gap-1">
+<div
+  class="pt-2 md:pt-8.5 w-full grid grid-cols-2 sm:grid-cols-3 gap-2 {isVisibilityPage
+    ? 'md:gap-3 md:grid-cols-[repeat(auto-fit,minmax(15rem,max-content))]'
+    : 'md:gap-4 md:grid-cols-[repeat(auto-fit,minmax(9.75rem,max-content))]'}"
+>
   {#each people as person, index (person.id)}
     {#if hasNextPage && index === people.length - 1}
       <div bind:this={lastPersonContainer}>

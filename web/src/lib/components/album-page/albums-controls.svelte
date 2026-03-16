@@ -134,6 +134,7 @@
   size="small"
   variant="ghost"
   color="secondary"
+  class="[&_svg]:w-6 [&_svg]:h-6"
 >
   <p class="hidden md:block">{$t('create_album')}</p>
 </Button>
@@ -148,6 +149,8 @@
     title: albumSortByNames[id],
     icon: sortIcon,
   })}
+  class="[&_svg]:w-6 [&_svg]:h-6"
+  position="bottom-right"
 />
 
 <!-- Group Albums -->
@@ -161,6 +164,7 @@
     icon: groupIcon,
     disabled: isDisabled(),
   })}
+  position="bottom-right"
 />
 
 {#if getSelectedAlbumGroupOption($albumViewSettings) !== AlbumGroupBy.None}
@@ -203,6 +207,7 @@
     size="small"
     variant="ghost"
     color="secondary"
+    class="[&_svg]:w-6 [&_svg]:h-6"
   >
     <Text class="hidden md:block">{$t('covers')}</Text>
   </Button>
@@ -213,6 +218,7 @@
     size="small"
     variant="ghost"
     color="secondary"
+    class="[&_svg]:w-6 [&_svg]:h-6"
   >
     <Text class="hidden md:block">{$t('list')}</Text>
   </Button>

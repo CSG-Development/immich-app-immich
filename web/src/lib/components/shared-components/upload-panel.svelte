@@ -56,7 +56,7 @@
       } else if ($stats.success > 0) {
         notificationController.show({
           message: $t('upload_success'),
-          type: NotificationType.Info,
+          type: NotificationType.Success,
         });
       }
       if ($stats.duplicates > 0) {

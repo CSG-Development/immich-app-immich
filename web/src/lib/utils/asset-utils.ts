@@ -595,7 +595,7 @@ export const toggleArchive = async (asset: AssetResponseDto) => {
     asset.isArchived = data.isArchived;
 
     notificationController.show({
-      type: NotificationType.Info,
+      type: NotificationType.Success,
       message: asset.isArchived ? $t(`added_to_archive`) : $t(`removed_from_archive`),
     });
   } catch (error) {

@@ -140,7 +140,7 @@ class _AdjustmentBottomBarState<TItem extends AdjustmentItemBase, TMatrix extend
               children: List.generate(widget.items.length, (index) {
                 final item = widget.items[index];
                 final bool isSelected = widget.selectedIndex == index;
-                final Color color = isSelected ? Colors.white : Colors.white.withOpacity(0.6);
+                final Color color = isSelected ? Colors.white : Colors.white.withValues(alpha: 0.6);
 
                 return FlatIconTextButton(
                   label: Text(item.name, style: _textStyle.copyWith(color: color)),

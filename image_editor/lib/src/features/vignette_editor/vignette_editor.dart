@@ -184,7 +184,10 @@ class VignetteEditorState extends State<VignetteEditor> {
     if (bytes == null || bytes.isEmpty) return;
 
     final color = vignetteColor;
-    final colorHex = (color.red << 16) | (color.green << 8) | color.blue;
+    final int red = (color.r * 255.0).round().clamp(0, 255).toInt();
+    final int green = (color.g * 255.0).round().clamp(0, 255).toInt();
+    final int blue = (color.b * 255.0).round().clamp(0, 255).toInt();
+    final colorHex = (red << 16) | (green << 8) | blue;
 
     final baked = await bakeVignetteAsync(
       bytes,
@@ -261,7 +264,7 @@ class VignetteEditorState extends State<VignetteEditor> {
   }
 
   void setVignetteColor(Color color) {
-    if (vignetteColor.value == color.value) return;
+    if (vignetteColor == color) return;
     setState(() {
       vignetteColor = color;
     });

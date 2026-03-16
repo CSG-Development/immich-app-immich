@@ -9,9 +9,18 @@
     src?: string;
     title?: string;
     descriptionText?: string;
+    class?: string;
   }
 
-  let { onClick = undefined, text, fullWidth = false, src = empty1Url, title, descriptionText = '' }: Props = $props();
+  let {
+    onClick = undefined,
+    text,
+    fullWidth = false,
+    src = empty1Url,
+    title,
+    descriptionText = '',
+    class: className = '',
+  }: Props = $props();
 
   let width = $derived(fullWidth ? 'w-full' : mobileDevice.maxMd ? 'max-w-70' : 'w-130');
 
@@ -24,15 +33,15 @@
 <svelte:element
   this={onClick ? 'button' : 'div'}
   onclick={onClick}
-  class="{width} md:h-85 m-auto mt-10 flex flex-col place-content-center place-items-center gap-8 rounded-3xl bg-gray-50 p-5 dark:bg-immich-dark-gray-card {hoverClasses}"
+  class="{width} md:h-85 m-auto mt-10 flex flex-col place-content-center place-items-center gap-8 rounded-3xl bg-gray-50 p-5 dark:bg-immich-dark-gray-card {hoverClasses} {className}"
 >
   <img class="md:h-[200px] h-32" {src} alt="" draggable="false" />
 
   {#if title}
-    <h2 class="text-xl font-medium my-4">{title}</h2>
+    <h2 class="text-xl my-4">{title}</h2>
   {/if}
   <span class="max-w-50 md:max-w-full pb-8 md:pb-0">
-    <p class="text-immich-gray-text dark:text-immich-dark-gray-text font-medium text-center uppercase md:text-xl">
+    <p class="text-immich-gray-text dark:text-immich-dark-gray-text text-center md:text-xl">
       {text}
     </p>
     {#if descriptionText}

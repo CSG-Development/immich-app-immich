@@ -75,7 +75,7 @@
       const file = new File([blob], 'profile-picture.png', { type: 'image/png' });
       const { profileImagePath, profileChangedAt } = await createProfileImage({ createProfileImageDto: { file } });
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('profile_picture_set'),
         timeout: 3000,
       });

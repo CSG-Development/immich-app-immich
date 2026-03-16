@@ -45,6 +45,7 @@
   import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { albumPreviousRoute } from '$lib/stores/navigation.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -76,7 +77,6 @@
   import {
     mdiArrowLeft,
     mdiCogOutline,
-    mdiDeleteOutline,
     mdiDotsVertical,
     mdiDownload,
     mdiImageOutline,
@@ -85,6 +85,7 @@
     mdiPlus,
     mdiPresentationPlay,
     mdiShareVariantOutline,
+    mdiTrashCanOutline,
     mdiUpload,
   } from '@mdi/js';
   import { onDestroy } from 'svelte';
@@ -185,7 +186,7 @@
 
       const count = results.filter(({ success }) => success).length;
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('assets_added_count', { values: { count } }),
       });
 
@@ -300,7 +301,7 @@
         },
       });
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('album_cover_updated'),
       });
     } catch (error) {
@@ -491,7 +492,7 @@
           {#if viewMode !== AlbumPageViewMode.SELECT_THUMBNAIL}
             <!-- ALBUM TITLE -->
             <section
-              class="pt-8 md:pt-24"
+              class="pt-4"
               aria-hidden="true"
               style={`--tooltip-x:${tooltipX}px; --tooltip-y:${tooltipY}px`}
               onmousemove={(e) => {
@@ -568,18 +569,18 @@
           {/if}
 
           {#if album.assetCount === 0}
-            <section id="empty-album" class=" mt-[200px] flex place-content-center place-items-center">
-              <div class="w-[300px]">
-                <p class="uppercase text-xs dark:text-immich-dark-fg">{$t('add_photos')}</p>
+            <section id="empty-album" class="flex place-content-center place-items-center">
+              <div class="w-full max-w-100 md:w-auto">
+                <p class="p-4 uppercase text-xs font-medium">{$t('add_photos')}</p>
                 <button
                   type="button"
                   onclick={() => (viewMode = AlbumPageViewMode.SELECT_ASSETS)}
-                  class="mt-5 bg-subtle flex w-full place-items-center gap-6 rounded-2xl border px-8 py-8 text-immich-fg transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-immich-primary dark:border-none dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
                 >
                   <span class="text-primary">
                     <Icon path={mdiPlus} size="24" />
                   </span>
-                  <span class="text-lg">{$t('select_photos')}</span>
+                  <span>{$t('select_photos')}</span>
                 </button>
               </div>
             </section>
@@ -694,7 +695,7 @@
               <AlbumMap {album} />
             {/if}
 
-            {#if album.assetCount > 0}
+            {#if album.assetCount > 0 && !mobileDevice.maxMd}
               <IconButton
                 shape="round"
                 variant="ghost"
@@ -721,6 +722,10 @@
                 offset={{ x: 175, y: 25 }}
               >
                 {#if album.assetCount > 0}
+                  {#if mobileDevice.maxMd}
+                    <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
+                    <MenuOption icon={mdiDownload} text={$t('download')} onClick={handleDownloadAlbum} />
+                  {/if}
                   <MenuOption
                     icon={mdiImageOutline}
                     text={$t('select_album_cover')}
@@ -729,12 +734,12 @@
                   <MenuOption icon={mdiCogOutline} text={$t('options')} onClick={handleOptions} />
                 {/if}
 
-                <MenuOption icon={mdiDeleteOutline} text={$t('delete_album')} onClick={() => handleRemoveAlbum()} />
+                <MenuOption icon={mdiTrashCanOutline} text={$t('delete_album')} onClick={() => handleRemoveAlbum()} />
               </ButtonContextMenu>
             {/if}
 
             {#if isCreatingSharedAlbum && album.albumUsers.length === 0}
-              <Button size="small" disabled={album.assetCount === 0} onclick={handleShare}>
+              <Button size="standard-large" shape="round" disabled={album.assetCount === 0} onclick={handleShare}>
                 {$t('share')}
               </Button>
             {/if}
@@ -745,7 +750,7 @@
       {#if viewMode === AlbumPageViewMode.SELECT_ASSETS}
         <ControlAppBar onClose={handleCloseSelectAssets}>
           {#snippet leading()}
-            <p class="text-lg dark:text-immich-dark-fg">
+            <p class="text-lg dark:text-immich-dark-fg w-40">
               {#if !timelineInteraction.selectionActive}
                 {$t('add_to_album')}
               {:else}
@@ -755,10 +760,26 @@
           {/snippet}
 
           {#snippet trailing()}
-            <Button variant="ghost" leadingIcon={mdiUpload} onclick={handleSelectFromComputer}>
-              {$t('select_from_computer')}
-            </Button>
-            <Button disabled={!timelineInteraction.selectionActive} onclick={handleAddAssets}>{$t('done')}</Button>
+            {#if mobileDevice.maxMd}
+              <IconButton
+                shape="round"
+                variant="ghost"
+                color="secondary"
+                aria-label={$t('select_from_computer')}
+                onclick={handleSelectFromComputer}
+                icon={mdiUpload}
+              />
+            {:else}
+              <Button variant="ghost" color="secondary" leadingIcon={mdiUpload} onclick={handleSelectFromComputer}>
+                {$t('select_from_computer')}
+              </Button>
+            {/if}
+            <Button
+              size="standard-large"
+              shape="round"
+              disabled={!timelineInteraction.selectionActive}
+              onclick={handleAddAssets}>{$t('done')}</Button
+            >
           {/snippet}
         </ControlAppBar>
       {/if}

@@ -4,7 +4,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { removeSharedLinkAssets, type SharedLinkResponseDto } from '@immich/sdk';
   import { IconButton, modalManager } from '@immich/ui';
-  import { mdiDeleteOutline } from '@mdi/js';
+  import { mdiTrashCanOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { NotificationType, notificationController } from '../../shared-components/notification/notification';
 
@@ -47,7 +47,7 @@
       const count = results.filter((item) => item.success).length;
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('assets_removed_count', { values: { count } }),
       });
 
@@ -64,5 +64,5 @@
   variant="ghost"
   aria-label={$t('remove_from_shared_link')}
   onclick={handleRemove}
-  icon={mdiDeleteOutline}
+  icon={mdiTrashCanOutline}
 />

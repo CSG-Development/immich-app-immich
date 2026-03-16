@@ -123,3 +123,62 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
   @override
   int get hashCode => assetId.hashCode;
 }
+
+/// Remote image provider that always loads the original image file only.
+///
+/// Unlike [RemoteFullImageProvider], this provider does **not** stream the
+/// preview-sized image first. It directly requests the original asset URL.
+/// This is intended for use cases like image editing where we must operate
+/// on the full‑resolution source.
+class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOriginalImageProvider>
+    with CancellableImageProviderMixin<RemoteOriginalImageProvider> {
+  static final cacheManager = RemoteThumbnailCacheManager();
+  final String assetId;
+
+  RemoteOriginalImageProvider({required this.assetId});
+
+  @override
+  Future<RemoteOriginalImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture(this);
+  }
+
+  @override
+  ImageStreamCompleter loadImage(RemoteOriginalImageProvider key, ImageDecoderCallback decode) {
+    return OneFramePlaceholderImageStreamCompleter(
+      _codec(key, decode),
+      informationCollector: () => <DiagnosticsNode>[
+        DiagnosticsProperty<ImageProvider>('Image provider', this),
+        DiagnosticsProperty<String>('Asset Id', key.assetId),
+      ],
+      onDispose: cancel,
+    );
+  }
+
+  Stream<ImageInfo> _codec(RemoteOriginalImageProvider key, ImageDecoderCallback decode) async* {
+    if (isCancelled) {
+      evict();
+      return;
+    }
+
+    final headers = ApiService.getRequestHeaders();
+    final request = this.request = RemoteImageRequest(
+      uri: getOriginalUrlForRemoteId(key.assetId),
+      headers: headers,
+      cacheManager: cacheManager,
+    );
+    yield* loadRequest(request, decode);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is RemoteOriginalImageProvider) {
+      return assetId == other.assetId;
+    }
+
+    return false;
+  }
+
+  @override
+  int get hashCode => assetId.hashCode;
+}

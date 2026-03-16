@@ -33,7 +33,7 @@
 
       notificationController.show({
         message: $t('pin_code_setup_successfully'),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       onCreated?.(newPinCode);
@@ -62,10 +62,10 @@
   </div>
 
   <div class="flex justify-end gap-2 mt-4">
-    <Button shape="round" color="secondary" type="button" size="small" onclick={resetForm}>
+    <Button size="standard-large" color="secondary" type="button" onclick={resetForm}>
       {$t('clear')}
     </Button>
-    <Button shape="round" type="submit" size="small" loading={isLoading} disabled={!canSubmit}>
+    <Button size="standard-large" type="submit" loading={isLoading} disabled={!canSubmit}>
       {$t('create')}
     </Button>
   </div>

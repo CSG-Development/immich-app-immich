@@ -53,8 +53,6 @@
   $effect(() => {
     theme = themeManager.theme;
   });
-
-  console.log(typeof path);
 </script>
 
 <svg

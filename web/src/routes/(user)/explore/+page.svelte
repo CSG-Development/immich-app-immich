@@ -1,5 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import emptyPeople from '$lib/assets/empty-people.svg';
+  import emptyPlaces from '$lib/assets/empty-places.svg';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
@@ -43,20 +45,22 @@
 </script>
 
 <UserPageLayout title={data.meta.title}>
-  {#if hasPeople}
-    <div class="mb-6 mt-2">
-      <div class="flex justify-between">
-        <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('people')}</p>
-        <a
-          href={resolve(AppRoute.PEOPLE)}
-          class="pe-4 text-sm font-medium hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
-          draggable="false">{$t('view_all')}</a
-        >
-      </div>
-      <SingleGridRow class="grid grid-flow-col md:grid-auto-fill-28 grid-auto-fill-20 gap-x-4">
+  <div class="mt-2">
+    <div class="flex justify-between pt-6 pb-8">
+      <p class="font-medium dark:text-immich-dark-fg">{$t('people')}</p>
+      <a
+        href={resolve(AppRoute.PEOPLE)}
+        class="pe-4 text-sm hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+        draggable="false"
+      >
+        {$t('view_all')}
+      </a>
+    </div>
+    {#if hasPeople}
+      <SingleGridRow class="grid grid-flow-col md:auto-cols-[7.25rem] auto-cols-[4.875rem] md:gap-x-4 gap-x-2">
         {#snippet children({ itemCount })}
           {#each people.slice(0, itemCount) as person (person.id)}
-            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative">
+            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative md:max-w-29 max-w-19.5">
               <ImageThumbnail
                 circle
                 shadow
@@ -69,29 +73,35 @@
                   <Icon path={mdiHeart} size="24" class="text-white" />
                 </div>
               {/if}
-              <p class="mt-2 text-ellipsis text-sm font-medium dark:text-white">{person.name}</p>
+              <p class="mt-2 text-ellipsis text-sm dark:text-white whitespace-nowrap overflow-hidden">
+                {person.name.split(' ')[0]}
+              </p>
             </a>
           {/each}
         {/snippet}
       </SingleGridRow>
-    </div>
-  {/if}
+    {:else}
+      <EmptyPlaceholder text={$t('search_no_people')} src={emptyPeople} class="!mt-0" />
+    {/if}
+  </div>
 
-  {#if places.length > 0}
-    <div class="mb-6 mt-2">
-      <div class="flex justify-between">
-        <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('places')}</p>
-        <a
-          href={resolve(AppRoute.PLACES)}
-          class="pe-4 text-sm font-medium hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
-          draggable="false">{$t('view_all')}</a
-        >
-      </div>
-      <SingleGridRow class="grid grid-flow-col md:grid-auto-fill-36 grid-auto-fill-28 gap-x-4">
+  <div>
+    <div class="flex justify-between py-8">
+      <p class="font-medium dark:text-immich-dark-fg">{$t('places')}</p>
+      <a
+        href={resolve(AppRoute.PLACES)}
+        class="pe-4 text-sm hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+        draggable="false"
+      >
+        {$t('view_all')}
+      </a>
+    </div>
+    {#if places.length > 0}
+      <SingleGridRow class="grid grid-flow-col md:auto-cols-[10rem] auto-cols-[6.625rem] md:gap-x-4 gap-x-[9px]">
         {#snippet children({ itemCount })}
           {#each places.slice(0, itemCount) as item (item.data.id)}
             <a
-              class="relative"
+              class="relative md:w-40 w-26.5"
               href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`)}
               draggable="false"
             >
@@ -103,7 +113,7 @@
                 />
               </div>
               <span
-                class="w-100 absolute bottom-2 w-full text-ellipsis px-1 text-center text-sm font-medium capitalize text-white backdrop-blur-[1px] hover:cursor-pointer"
+                class="w-100 absolute bottom-1 w-full px-1 text-center text-sm capitalize text-white hover:cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis"
               >
                 {item.value}
               </span>
@@ -111,10 +121,8 @@
           {/each}
         {/snippet}
       </SingleGridRow>
-    </div>
-  {/if}
-
-  {#if !hasPeople && places.length === 0}
-    <EmptyPlaceholder text={$t('no_explore_results_message')} />
-  {/if}
+    {:else}
+      <EmptyPlaceholder text={$t('search_no_places')} src={emptyPlaces} class="!mt-0" />
+    {/if}
+  </div>
 </UserPageLayout>

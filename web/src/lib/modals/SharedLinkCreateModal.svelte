@@ -3,7 +3,7 @@
   import { locale } from '$lib/stores/preferences.store';
   import { handleError } from '$lib/utils/handle-error';
   import { SharedLinkType, createSharedLink, updateSharedLink, type SharedLinkResponseDto } from '@immich/sdk';
-  import { Button, Field, Input, Modal, ModalBody, ModalFooter, PasswordInput, Switch, Text } from '@immich/ui';
+  import { Button, Field, HStack, Input, Modal, ModalBody, ModalFooter, PasswordInput, Switch, Text } from '@immich/ui';
   import { mdiLink } from '@mdi/js';
   import { DateTime, Duration } from 'luxon';
   import { t } from 'svelte-i18n';
@@ -121,7 +121,7 @@
       });
 
       notificationController.show({
-        type: NotificationType.Info,
+        type: NotificationType.Success,
         message: $t('edited'),
       });
 
@@ -156,9 +156,9 @@
       {#if !editingLink}
         <div>{$t('album_with_link_access')}</div>
       {:else}
-        <div class="text-sm">
+        <div>
           {$t('public_album')} |
-          <span class="text-immich-primary dark:text-immich-dark-primary">{editingLink.album?.albumName}</span>
+          <span class="text-primary">{editingLink.album?.albumName}</span>
         </div>
       {/if}
     {/if}
@@ -167,9 +167,9 @@
       {#if !editingLink}
         <div>{$t('create_link_to_share_description')}</div>
       {:else}
-        <div class="text-sm">
+        <div>
           {$t('individual_share')} |
-          <span class="text-immich-primary dark:text-immich-dark-primary">{editingLink.description || ''}</span>
+          <span class="text-primary">{editingLink.description || ''}</span>
         </div>
       {/if}
     {/if}
@@ -193,20 +193,12 @@
       </Field>
 
       <div class="mt-2">
-        <!-- <SettingSelect
-          bind:value={expirationOption}
-          options={expiredDateOptions}
-          label={$t('expire_after')}
-          disabled={editingLink && !shouldChangeExpirationTime}
-          number={true}
-        /> -->
-
         <Combobox
           label={$t('expire_after')}
           selectedOption={expiredDateOptions.find((option) => option.value === expirationOption)}
           options={expiredDateOptions}
           onSelect={handleSelect}
-          disabled={editingLink && !shouldChangeExpirationTime}
+          sortByValue
         />
       </div>
 
@@ -222,19 +214,24 @@
         <Switch bind:checked={allowUpload} />
       </Field>
 
-      {#if editingLink}
+      <!-- {#if editingLink}
         <Field label={$t('change_expiration_time')}>
           <Switch bind:checked={shouldChangeExpirationTime} />
         </Field>
-      {/if}
+      {/if} -->
     </div>
   </ModalBody>
 
   <ModalFooter>
-    {#if editingLink}
-      <Button fullWidth onclick={handleEditLink}>{$t('confirm')}</Button>
-    {:else}
-      <Button fullWidth onclick={handleCreateSharedLink}>{$t('create_link')}</Button>
-    {/if}
+    <HStack fullWidth>
+      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>
+        {$t('cancel')}
+      </Button>
+      {#if editingLink}
+        <Button shape="round" fullWidth onclick={handleEditLink}>{$t('confirm')}</Button>
+      {:else}
+        <Button shape="round" fullWidth onclick={handleCreateSharedLink}>{$t('create_link')}</Button>
+      {/if}
+    </HStack>
   </ModalFooter>
 </Modal>

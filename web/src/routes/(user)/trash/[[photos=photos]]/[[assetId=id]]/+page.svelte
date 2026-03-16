@@ -46,7 +46,7 @@
   const handleEmptyTrash = async () => {
     const isConfirmed = await modalManager.showDialog({
       prompt: $t('empty_trash_confirmation'),
-      confirmColor: 'primary',
+      confirmColor: 'danger',
     });
 
     if (!isConfirmed) {
@@ -58,7 +58,7 @@
 
       notificationController.show({
         message: $t('assets_permanently_deleted_count', { values: { count } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
     } catch (error) {
       handleError(error, $t('errors.unable_to_empty_trash'));
@@ -68,7 +68,7 @@
   const handleRestoreTrash = async () => {
     const isConfirmed = await modalManager.showDialog({
       prompt: $t('assets_restore_confirmation'),
-      confirmColor: 'primary',
+      confirmColor: 'danger',
     });
     if (!isConfirmed) {
       return;
@@ -77,7 +77,7 @@
       const { count } = await restoreTrash();
       notificationController.show({
         message: $t('assets_restored_count', { values: { count } }),
-        type: NotificationType.Info,
+        type: NotificationType.Success,
       });
 
       // reset asset grid (TODO fix in asset store that it should reset when it is empty)
@@ -108,6 +108,7 @@
     {#snippet buttons()}
       <HStack gap={0}>
         <Button
+          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
           leadingIcon={mdiHistory}
           onclick={handleRestoreTrash}
           disabled={assetInteraction.selectionActive}
@@ -118,6 +119,7 @@
           <Text class="hidden md:block font-medium">{$t('restore_all')}</Text>
         </Button>
         <Button
+          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
           leadingIcon={mdiDeleteForeverOutline}
           onclick={() => handleEmptyTrash()}
           disabled={assetInteraction.selectionActive}
@@ -131,7 +133,7 @@
     {/snippet}
 
     <Timeline enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape}>
-      <p class="font-medium text-gray-500/60 dark:text-gray-300/60 p-4">
+      <p class="font-medium text-black/60 dark:text-white/70 py-4">
         {$t('trashed_items_will_be_permanently_deleted_after', { values: { days: $serverConfig.trashDays } })}
       </p>
       {#snippet empty()}

@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:immich_mobile/platform/update_api.g.dart';
+import 'package:immich_mobile/utils/env_config.dart';
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:immich_mobile/platform/update_api.g.dart';
-import 'package:immich_mobile/widgets/dialogs/update_dialog.dart';
+import 'package:immich_mobile/widgets/update/update_dialog.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'dart:io' show Platform;
 
@@ -28,49 +28,66 @@ class _UpdateCallbacksImpl extends UpdateCallbacks {
 
 class AppUpdateService {
   final _log = Logger('AppUpdateService');
-  final UpdateApi _api = UpdateApi();
+  final UpdateApi _updateApi = UpdateApi();
 
   Future<void> checkOnStart({required BuildContext context}) async {
-    // Guard by platform/flavor: Android sideload only
     final bool isAndroid = defaultTargetPlatform == TargetPlatform.android && Platform.isAndroid;
     if (!isAndroid) {
       _log.info("checkOnStart skipped: non-Android");
       return;
     }
-    // Register callbacks (no-op; dialog will override as needed)
+
     UpdateCallbacks.setUp(_UpdateCallbacksImpl((_) {}, (_) {}, () {}));
     _log.info("checkOnStart invoked");
 
-    const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'prod');
-    await dotenv.load(fileName: '.env.$env');
-    final updateUrl = dotenv.env['UPDATE_URL'];
-    if (updateUrl == null) return;
+    try {
+      final updateUrl = await EnvConfig.get(EnvKey.updateUrl);
+      if (updateUrl == null || updateUrl.isEmpty) {
+        _log.info("checkOnStart skipped: UPDATE_URL not configured");
+        return;
+      }
 
-    final info = await _api.fetchLatestUpdate(updateUrl);
-    _log.info("checkOnStart info: ${info?.version ?? 'null'}");
-    if (info == null) return;
-    final pkg = await PackageInfo.fromPlatform();
+      final info = await _updateApi.fetchLatestUpdate(updateUrl);
+      _log.info("checkOnStart info: ${info?.version ?? 'null'}");
+      if (info == null) return;
 
-    final localVersionString = _extractVersion(pkg.version);
-    final remoteVersionString = _extractVersion(info.version);
+      final pkg = await PackageInfo.fromPlatform();
 
-    final local = Version.parse(localVersionString);
-    final remote = Version.parse(remoteVersionString);
-    _log.info("local=${local.toString()} remote=${remote.toString()}");
-    if (remote <= local) {
-      _log.info("No update needed");
-      return;
+      final localVersionString = _extractVersion(pkg.version);
+      final remoteVersionString = _extractVersion(info.version);
+
+      Version local;
+      Version remote;
+      try {
+        local = Version.parse(localVersionString);
+        remote = Version.parse(remoteVersionString);
+      } catch (e, stack) {
+        _log.warning(
+          "checkOnStart failed to parse versions local='$localVersionString' remote='$remoteVersionString'",
+          e,
+          stack,
+        );
+        return;
+      }
+
+      _log.info("local=$local remote=$remote");
+      if (remote <= local) {
+        _log.info("No update needed");
+        return;
+      }
+
+      _log.info("show_update_dialog version=${info.version}");
+      await showUpdateAvailableDialog(
+        context: context,
+        version: info.version,
+        changelog: info.changelog,
+        forced: false,
+        downloadUrl: info.url,
+        sha256: info.sha256,
+      );
+    } catch (e, stack) {
+      _log.severe("checkOnStart failed", e, stack);
     }
-
-    _log.info("show_update_dialog version=${info.version}");
-    await showUpdateAvailableDialog(
-      context: context,
-      version: info.version,
-      changelog: info.changelog,
-      forced: false,
-      downloadUrl: info.url,
-      sha256: info.sha256,
-    );
   }
 
   String _extractVersion(String version) {

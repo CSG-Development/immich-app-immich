@@ -29,7 +29,7 @@
 
     notificationController.show({
       message: $t('tag_created', { values: { tag: tag.value } }),
-      type: NotificationType.Info,
+      type: NotificationType.Success,
     });
 
     onClose(tag);
@@ -38,8 +38,8 @@
 
 <Modal size="small" title={$t('create_tag')} icon={mdiTag} {onClose}>
   <ModalBody>
-    <div class="text-immich-primary dark:text-immich-dark-primary">
-      <p class="text-sm dark:text-immich-dark-fg">
+    <div>
+      <p>
         {$t('create_tag_description')}
       </p>
     </div>
@@ -48,7 +48,7 @@
       <div class="my-4 flex flex-col gap-2">
         <SettingInputField
           inputType={SettingInputFieldType.TEXT}
-          label={$t('tag').toUpperCase()}
+          label={$t('tag')}
           bind:value={tagValue}
           required={true}
           autofocus={true}

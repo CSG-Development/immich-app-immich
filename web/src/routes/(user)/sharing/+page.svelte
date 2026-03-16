@@ -46,8 +46,9 @@
         size="small"
         variant="ghost"
         color="secondary"
+        shape="round"
       >
-        <Text class="hidden md:block">{$t('create_album')}</Text>
+        <Text class="hidden md:block font-medium">{$t('create_album')}</Text>
       </Button>
       <Button
         leadingIcon={mdiLink}
@@ -55,17 +56,18 @@
         size="small"
         variant="ghost"
         color="secondary"
+        shape="round"
       >
-        <Text class="hidden md:block">{$t('shared_links')}</Text>
+        <Text class="hidden md:block font-medium">{$t('shared_links')}</Text>
       </Button>
     </HStack>
   {/snippet}
 
   <div class="flex flex-col">
     {#if data.partners.length > 0}
-      <div class="mb-6 mt-2">
-        <div>
-          <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('partners')}</p>
+      <div class="mb-6 md:mt-2">
+        <div class="h-12 md:h-auto flex items-center mb-4">
+          <p class="font-medium dark:text-immich-dark-fg">{$t('partners')}</p>
         </div>
 
         <div class="flex flex-row flex-wrap gap-4">
@@ -91,9 +93,9 @@
       <hr class="mb-4 dark:border-immich-dark-gray" />
     {/if}
 
-    <div class="mb-6 mt-2">
-      <div>
-        <p class="mb-4 font-medium dark:text-immich-dark-fg">{$t('albums')}</p>
+    <div class="mb-6 md:mt-2">
+      <div class="h-12 md:h-auto flex items-center md:mb-4">
+        <p class="font-medium dark:text-immich-dark-fg">{$t('albums')}</p>
       </div>
 
       <div>

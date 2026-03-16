@@ -1,6 +1,7 @@
 <script lang="ts">
   import { clickOutside } from '$lib/actions/click-outside';
   import { languageManager } from '$lib/managers/language-manager.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import type { Snippet } from 'svelte';
   import { quintOut } from 'svelte/easing';
   import { slide } from 'svelte/transition';
@@ -59,8 +60,8 @@
 
 <div
   bind:clientHeight={height}
-  class="fixed min-w-[200px] w-max max-w-[300px] overflow-hidden rounded-lg shadow-lg"
-  style:left="{left}px"
+  class="fixed min-w-[240px] w-max max-w-[300px] overflow-hidden rounded-lg shadow-lg z-2"
+  style:left="{left - (mobileDevice.maxMd ? 12 : 48)}px"
   style:top="{top}px"
   transition:slide={{ duration: 250, easing: quintOut }}
   use:clickOutside={{ onOutclick: onClose }}
