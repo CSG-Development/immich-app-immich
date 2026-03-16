@@ -8,63 +8,121 @@ import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import javax.net.ssl.*
+import java.net.InetAddress
 
 class CertificateFetcherApiImpl : CertificateFetcherApi {
 
   override fun fetchCertificateChain(
-    request: CertificateChainRequest,
-    callback: (Result<CertificateChainResponse>) -> Unit
+      request: CertificateChainRequest,
+      callback: (Result<CertificateChainResponse>) -> Unit
   ) {
     Thread {
-      try {
-        val host = requireNotNull(request.host) { "host is null" }
-        val port = request.port.toInt()
+        // Declare variables with default values
+        var host: String = ""
+        var port: Int = 0
+        var vpnActive: Boolean = false
+        var hostReachable: Boolean = false
 
-        val defaultTrustManager = defaultTrustManager()
-        val capturingTrustManager = CapturingTrustManager(defaultTrustManager)
+        try {
+            host = requireNotNull(request.host) { "host is null" }
+            port = request.port.toInt()
 
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(
-          null,
-          arrayOf<TrustManager>(capturingTrustManager),
-          SecureRandom()
-        )
-
-        val socket = sslContext.socketFactory.createSocket() as SSLSocket
-
-        socket.use { sslSocket ->
-          sslSocket.soTimeout = 5_000
-          sslSocket.connect(InetSocketAddress(host, port), 5_000)
-
-          try {
-            sslSocket.startHandshake()
-          } catch (e: SSLException) {
-            // Handshake may fail, but the certificate chain is already captured
-          }
-
-          val certificates = capturingTrustManager.capturedChain
-            ?.map { cert ->
-              Base64.encodeToString(cert.encoded, Base64.NO_WRAP)
+            // VPN detection
+            vpnActive = try {
+                val networks = java.net.NetworkInterface.getNetworkInterfaces()
+                var vpnFound = false
+                while (networks.hasMoreElements()) {
+                    val network = networks.nextElement()
+                    if (network.displayName.contains("tun", ignoreCase = true) ||
+                        network.displayName.contains("ppp", ignoreCase = true) ||
+                        network.displayName.contains("vpn", ignoreCase = true)) {
+                        vpnFound = true
+                        break
+                    }
+                }
+                vpnFound
+            } catch (e: Exception) {
+                false
             }
-            .orEmpty()
 
-          if (certificates.isNotEmpty()) {
-            callback(Result.success(CertificateChainResponse(certificates)))
-          } else {
-            callback(Result.failure(RuntimeException("TLS_HANDSHAKE_FAILED")))
-          }
+            // Host reachability check
+            hostReachable = try {
+                val inetAddress = InetAddress.getByName(host)
+                inetAddress.isReachable(2000)
+            } catch (e: Exception) {
+                false
+            }
+
+            val defaultTrustManager = defaultTrustManager()
+            val capturingTrustManager = CapturingTrustManager(defaultTrustManager)
+
+            val sslContext = SSLContext.getInstance("TLS")
+            sslContext.init(
+                null,
+                arrayOf<TrustManager>(capturingTrustManager),
+                SecureRandom()
+            )
+
+            val socket = sslContext.socketFactory.createSocket() as SSLSocket
+
+            socket.use { sslSocket ->
+                sslSocket.soTimeout = 5_000
+                sslSocket.connect(InetSocketAddress(host, port), 5_000)
+
+                try {
+                    sslSocket.startHandshake()
+                } catch (e: SSLException) {
+                    // Handshake may fail, but the certificate chain is already captured
+                }
+
+                val certificates = capturingTrustManager.capturedChain
+                    ?.map { cert ->
+                        Base64.encodeToString(cert.encoded, Base64.NO_WRAP)
+                    }
+                    .orEmpty()
+
+                if (certificates.isNotEmpty()) {
+                    callback(Result.success(CertificateChainResponse(certificates)))
+                } else {
+                    callback(Result.failure(RuntimeException("TLS_HANDSHAKE_FAILED")))
+                }
+            }
+
+        } catch (e: SocketTimeoutException) {
+            val errorDetails = mapOf(
+                "error_type" to "CONNECTION_TIMEOUT",
+                "message" to (e.message ?: "Unknown timeout"),
+                "vpn_active" to vpnActive.toString(),
+                "host_reachable" to hostReachable.toString(),
+                "host" to host,
+                "port" to port.toString()
+            )
+            callback(Result.failure(RuntimeException(errorDetails.toString(), e)))
+
+        } catch (e: IOException) {
+            val errorDetails = mapOf(
+                "error_type" to "CONNECTION_FAILED",
+                "message" to (e.message ?: "Unknown IO error"),
+                "vpn_active" to vpnActive.toString(),
+                "host_reachable" to hostReachable.toString(),
+                "host" to host,
+                "port" to port.toString()
+            )
+            callback(Result.failure(RuntimeException(errorDetails.toString(), e)))
+
+        } catch (e: Exception) {
+            val errorDetails = mapOf(
+                "error_type" to "UNKNOWN_ERROR",
+                "message" to (e.message ?: "Unknown error"),
+                "vpn_active" to vpnActive.toString(),
+                "host_reachable" to hostReachable.toString(),
+                "host" to host,
+                "port" to port.toString()
+            )
+            callback(Result.failure(RuntimeException(errorDetails.toString(), e)))
         }
-
-      } catch (e: SocketTimeoutException) {
-        callback(Result.failure(RuntimeException("CONNECTION_TIMEOUT", e)))
-      } catch (e: IOException) {
-        callback(Result.failure(RuntimeException("CONNECTION_FAILED", e)))
-      } catch (e: Exception) {
-        callback(Result.failure(RuntimeException("UNKNOWN_ERROR: ${e.message}", e)))
-      }
     }.start()
-  }
-
+}
   private fun defaultTrustManager(): X509TrustManager {
     val factory = TrustManagerFactory.getInstance(
       TrustManagerFactory.getDefaultAlgorithm()

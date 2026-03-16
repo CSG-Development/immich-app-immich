@@ -175,6 +175,14 @@ class HttpCertPinningManager {
 
       return response.certificates;
     } on PlatformException catch (e) {
+      final errorString = e.message ?? '';
+      if (errorString.contains('vpn_active=true')) {
+        if (errorString.contains('host_reachable=false')) {
+          _log.warning('VPN blocking local network: $host:$port');
+        } else {
+          _log.warning('VPN blocking: $host:$port');
+        }
+      }
       throw CertificateChainFetchException('Platform error while fetching chain: ${e.message}', host: host, port: port);
     } catch (e) {
       throw CertificateChainFetchException('Failed to fetch certificate chain: $e', host: host, port: port);
