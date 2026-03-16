@@ -243,8 +243,8 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     clip: {
       enabled: true,
-      modelName: 'ViT-SO400M-16-SigLIP2-512__webli',
-      probabilityThreshold: 0.99,
+      modelName: 'ViT-B-32__openai',
+      probabilityThreshold: 0.5,
     },
     duplicateDetection: {
       enabled: true,

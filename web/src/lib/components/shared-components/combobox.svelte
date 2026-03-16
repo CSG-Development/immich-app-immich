@@ -48,6 +48,7 @@
     defaultFirstOption?: boolean;
     onSelect?: (option: ComboBoxOption | undefined) => void;
     forceFocus?: boolean;
+    sortByValue?: boolean;
   }
 
   let {
@@ -61,6 +62,7 @@
     defaultFirstOption = false,
     onSelect = () => {},
     forceFocus = false,
+    sortByValue = false,
   }: Props = $props();
 
   /**
@@ -245,17 +247,21 @@
     const _options = options
       .filter((o) => o.label.toLowerCase().includes(query))
       .sort((a, b) => {
-        const aLabel = a.label.toLowerCase();
-        const bLabel = b.label.toLowerCase();
+        if (sortByValue) {
+          return a.value - b.value;
+        } else {
+          const aLabel = a.label.toLowerCase();
+          const bLabel = b.label.toLowerCase();
 
-        const aStarts = aLabel.startsWith(query);
-        const bStarts = bLabel.startsWith(query);
+          const aStarts = aLabel.startsWith(query);
+          const bStarts = bLabel.startsWith(query);
 
-        if (aStarts !== bStarts) {
-          return aStarts ? -1 : 1;
+          if (aStarts !== bStarts) {
+            return aStarts ? -1 : 1;
+          }
+
+          return aLabel.localeCompare(bLabel);
         }
-
-        return aLabel.localeCompare(bLabel);
       });
 
     if (allowCreate && searchQuery !== '' && _options.filter((option) => option.label === searchQuery).length === 0) {
@@ -269,9 +275,9 @@
 </script>
 
 <svelte:window onresize={onPositionChange} />
-<label class="font-bold" class:sr-only={hideLabel} for={inputId}>{label}</label>
+<label class="immich-form-label" class:sr-only={hideLabel} for={inputId}>{label}</label>
 <div
-  class="relative w-full dark:text-gray-300 text-gray-700 text-base mt-2"
+  class="relative w-full dark:text-gray-300 text-gray-700 text-base"
   use:focusOutside={{ onFocusOut: deactivate }}
   use:shortcuts={[
     {

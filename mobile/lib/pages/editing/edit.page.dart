@@ -15,6 +15,7 @@ import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -34,9 +35,13 @@ class EditImagePage extends ConsumerWidget {
 
   const EditImagePage({super.key, required this.asset, required this.image, required this.isEdited});
 
-  Future<Uint8List> _imageToUint8List(Image image) async {
+  Future<Uint8List> _imageToUint8List(BaseAsset asset) async {
     final Completer<Uint8List> completer = Completer<Uint8List>();
-    final ImageStream stream = image.image.resolve(const ImageConfiguration());
+    final imageProvider = getFullImageProvider(
+      asset,
+      originalOnly: true,
+    );
+    final ImageStream stream = imageProvider.resolve(const ImageConfiguration());
 
     late final ImageStreamListener listener;
     listener = ImageStreamListener(
@@ -110,7 +115,7 @@ class EditImagePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       body: FutureBuilder<Uint8List>(
-        future: _imageToUint8List(image),
+        future: _imageToUint8List(asset),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ImageEditor(

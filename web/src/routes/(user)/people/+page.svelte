@@ -386,7 +386,9 @@
   {#if countVisiblePeople > 0 && (!searchName || searchedPeopleLocal.length > 0)}
     <PeopleInfiniteScroll people={showPeople} hasNextPage={!!nextPage && !searchName} {loadNextPage}>
       {#snippet children({ person })}
-        <div class="p-1 rounded-xl hover:p-[3px] hover:border-1 hover:border-primary hover:bg-immich-bg-gray">
+        <div
+          class="pt-1 flex flex-col items-center w-41 h-50 rounded-xl border border-transparent hover:border-primary hover:bg-immich-bg-gray"
+        >
           <PeopleCard
             {person}
             onSetBirthDate={() => handleChangeBirthDate(person)}

@@ -102,7 +102,11 @@ mixin CancellableImageProviderMixin<T extends Object> on CancellableImageProvide
   }
 }
 
-ImageProvider getFullImageProvider(BaseAsset asset, {Size size = const Size(1080, 1920)}) {
+ImageProvider getFullImageProvider(
+  BaseAsset asset, {
+  Size size = const Size(1080, 1920),
+  bool originalOnly = false,
+}) {
   // Create new provider and cache it
   final ImageProvider provider;
   if (_shouldUseLocalAsset(asset)) {
@@ -117,7 +121,7 @@ ImageProvider getFullImageProvider(BaseAsset asset, {Size size = const Size(1080
     } else {
       throw ArgumentError("Unsupported asset type: ${asset.runtimeType}");
     }
-    provider = RemoteFullImageProvider(assetId: assetId);
+    provider = originalOnly ? RemoteOriginalImageProvider(assetId: assetId) : RemoteFullImageProvider(assetId: assetId);
   }
 
   return provider;

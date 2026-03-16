@@ -253,12 +253,17 @@ class MultiselectGrid extends HookConsumerWidget {
             gravity: ToastGravity.BOTTOM,
           );
         } else {
-          ImmichToast.show(
-            context: context,
-            msg: 'assets_trashed'
-                .tr(namedArgs: {'count': "${selection.value.length}"}),
-            gravity: ToastGravity.BOTTOM,
-          );
+          final trashedRemote = toDelete.where((a) => a.isRemote).toList();
+          if (trashedRemote.isNotEmpty) {
+            showUndoTrashSnackBar(ref, context, trashedRemote);
+          } else {
+            ImmichToast.show(
+              context: context,
+              msg: 'assets_trashed'
+                  .tr(namedArgs: {'count': "${selection.value.length}"}),
+              gravity: ToastGravity.BOTTOM,
+            );
+          }
         }
         selectionEnabledHook.value = false;
       }
@@ -353,13 +358,17 @@ class MultiselectGrid extends HookConsumerWidget {
           if (updateAfterDeletedRemote != null) {
             await updateAfterDeletedRemote!(toDelete);
           }
-          ImmichToast.show(
-            context: context,
-            msg: shouldDeletePermanently
-                ? 'assets_deleted_permanently_from_server'.tr(namedArgs: {'count': "${toDelete.length}"})
-                : 'assets_trashed_from_server'.tr(namedArgs: {'count': "${toDelete.length}"}),
-            gravity: ToastGravity.BOTTOM,
-          );
+          if (!shouldDeletePermanently && toDelete.isNotEmpty) {
+            showUndoTrashSnackBar(ref, context, toDelete);
+          } else {
+            ImmichToast.show(
+              context: context,
+              msg: shouldDeletePermanently
+                  ? 'assets_deleted_permanently_from_server'.tr(namedArgs: {'count': "${toDelete.length}"})
+                  : 'assets_trashed_from_server'.tr(namedArgs: {'count': "${toDelete.length}"}),
+              gravity: ToastGravity.BOTTOM,
+            );
+          }
         }
       } finally {
         selectionEnabledHook.value = false;

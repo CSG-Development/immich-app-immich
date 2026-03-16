@@ -38,10 +38,6 @@
   grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--spacing) * --value(number)), 100%), 1fr));
 }
 
-@utility settings-button {
-  @apply rounded-3xl! px-6! py-[13px]! font-normal!;
-}
-
 @custom-variant dark (&:where(.dark, .dark *):not(.light));
 
 @theme inline {
@@ -163,7 +159,7 @@
     font-family: 'Roboto', sans-serif;
     /* Used by layouts to ensure proper spacing between navbar and content */
     --navbar-height: calc(4.5rem + 4px);
-    --navbar-height-md: calc(4.5rem + 4px - 14px);
+    --navbar-height-md: 4.5rem;
   }
 
   :root.dark {

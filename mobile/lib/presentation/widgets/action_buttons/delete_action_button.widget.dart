@@ -9,6 +9,7 @@ import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_bu
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_viewer.state.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
+import 'package:immich_mobile/utils/selection_handlers.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 /// This delete action has the following behavior:
@@ -49,7 +50,11 @@ class DeleteActionButton extends ConsumerWidget {
       if (confirm != true) return;
     }
 
-    final result = await ref.read(actionProvider.notifier).trashRemoteAndDeleteLocal(source);
+    final actionNotifier = ref.read(actionProvider.notifier);
+    // Capture remote IDs that will be trashed so we can restore them on undo (remote only).
+    final remoteIds = actionNotifier.getOwnedRemoteIdsForSource(source);
+
+    final result = await actionNotifier.trashRemoteAndDeleteLocal(source);
     ref.read(multiSelectProvider.notifier).reset();
 
     if (source == ActionSource.viewer) {
@@ -59,12 +64,45 @@ class DeleteActionButton extends ConsumerWidget {
     final successMessage = 'delete_action_prompt'.t(context: context, args: {'count': result.count.toString()});
 
     if (context.mounted) {
-      ImmichToast.show(
-        context: context,
-        msg: result.success ? successMessage : 'scaffold_body_error_occurred'.t(context: context),
-        gravity: ToastGravity.BOTTOM,
-        toastType: result.success ? ToastType.success : ToastType.error,
-      );
+      if (result.success && remoteIds.isNotEmpty) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.zero,
+            content: buildUndoInfoCard(
+              context: context,
+              title: 'info'.t(context: context),
+              message: successMessage,
+              onClose: () => messenger.hideCurrentSnackBar(),
+              onUndo: () async {
+                messenger.hideCurrentSnackBar();
+                final undoResult = await actionNotifier.restoreTrashByIds(remoteIds);
+                if (!undoResult.success && context.mounted) {
+                  ImmichToast.show(
+                    context: context,
+                    msg: 'scaffold_body_error_occurred'.t(context: context),
+                    gravity: ToastGravity.BOTTOM,
+                    toastType: ToastType.error,
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        ImmichToast.show(
+          context: context,
+          msg: result.success ? successMessage : 'scaffold_body_error_occurred'.t(context: context),
+          gravity: ToastGravity.BOTTOM,
+          toastType: result.success ? ToastType.success : ToastType.error,
+        );
+      }
     }
   }
 

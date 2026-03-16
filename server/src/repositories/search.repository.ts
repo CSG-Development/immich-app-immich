@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {ExpressionBuilder, Kysely, OrderByDirection, Selectable, sql} from 'kysely';
+import { ExpressionBuilder, Kysely, OrderByDirection, Selectable, sql } from 'kysely';
 import { InjectKysely } from 'nestjs-kysely';
 import { randomUUID } from 'node:crypto';
 import { DummyValue, GenerateSql } from 'src/decorators';
@@ -262,6 +262,7 @@ export class SearchRepository {
       .limit(size)
       .execute();
   }
+
   @GenerateSql({
     params: [
       { page: 1, size: 200 },
