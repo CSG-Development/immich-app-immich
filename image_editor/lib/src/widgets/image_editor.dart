@@ -3,7 +3,6 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/features/tune_editor/utils/tune_presets.dart';
 
 import 'package:image_editor/src/models/image_editor_config.dart';
-// import 'package:image_editor/src/effects/monochrome_effect.dart';
 import 'package:image_editor/src/utils/tune_adjustment_matrices.dart';
 import 'package:image_editor/src/widgets/editor_bottom_bar.dart';
 
@@ -23,25 +22,6 @@ class _ImageEditorState extends State<ImageEditor> {
   // Default icon set and i18n for the tune presets and labels
   final TuneEditorIcons icons = const TuneEditorIcons();
   final I18n i18n = const I18n();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  // Future<void> _handleCustomEffectButton(ProImageEditorState editor) async {
-  //   final currentBytes = await editor.editorImage?.safeByteArray();
-  //   if (currentBytes == null) return;
-
-  //   final monochromeEffect = MonochromeEffect();
-  //   final transformedBytes = await monochromeEffect.apply(currentBytes);
-  //   await editor.updateBackgroundImage(EditorImage(byteArray: transformedBytes));
-  // }
 
   @override
   Widget build(BuildContext context) {

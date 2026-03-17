@@ -26,6 +26,7 @@ class LamaInpaintingOnnx {
   final String maskInputName;
   final String? outputName;
 
+  // LaMa model in this project expects fixed 512x512 input.
   static const int modelSize = 512;
 
   OrtSession? _session;

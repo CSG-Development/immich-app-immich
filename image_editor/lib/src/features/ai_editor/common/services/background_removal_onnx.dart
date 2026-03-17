@@ -25,6 +25,9 @@ class BackgroundRemovalOnnx {
     this.outputName,
     this.inputWidth = 256,
     this.inputHeight = 256,
+    this.rescaleFactor = 0.00392156862745098,
+    this.imageMean = const [0.5, 0.5, 0.5],
+    this.imageStd = const [0.5, 0.5, 0.5],
   });
 
   final String modelPathOrUrl;
@@ -32,12 +35,15 @@ class BackgroundRemovalOnnx {
   final int inputHeight;
   final String? imageInputName;
   final String? outputName;
+  final double rescaleFactor;
+  final List<double> imageMean;
+  final List<double> imageStd;
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
   static final Logger _log = Logger('BackgroundRemovalOnnx');
 
-  // Normalization parameters from the MODNet preprocessor config:
+  // Default normalization parameters from the MODNet preprocessor config:
   // https://huggingface.co/onnx-community/modnet-webnn
   // preprocessor_config.json:
   // {
@@ -48,9 +54,10 @@ class BackgroundRemovalOnnx {
   //   "image_std": [0.5, 0.5, 0.5],
   //   "size": { "width": 256, "height": 256 }
   // }
-  static const double _rescale = 0.00392156862745098; // 1 / 255
-  static const List<double> _mean = [0.5, 0.5, 0.5];
-  static const List<double> _std = [0.5, 0.5, 0.5];
+  //
+  // Some other matting/segmentation models (e.g. U^2-Net used by rembg) expect
+  // ImageNet mean/std. Callers can override [rescaleFactor], [imageMean],
+  // and [imageStd] to match their model docs.
 
   /// Decodes [imageBytes], resizes to [inputWidth] x [inputHeight] and returns
   /// an RGB image suitable for tensor encoding.
@@ -78,17 +85,19 @@ class BackgroundRemovalOnnx {
     final Float32List inputData =
         Float32List(1 * 3 * inputHeight * inputWidth);
     final pixelCount = inputWidth * inputHeight;
+    final mean = imageMean;
+    final std = imageStd;
     var index = 0;
     for (var y = 0; y < inputHeight; y++) {
       for (var x = 0; x < inputWidth; x++) {
         final pixel = rgbImage.getPixel(x, y);
-        final r = pixel.r.toDouble() * _rescale;
-        final g = pixel.g.toDouble() * _rescale;
-        final b = pixel.b.toDouble() * _rescale;
+        final r = pixel.r.toDouble() * rescaleFactor;
+        final g = pixel.g.toDouble() * rescaleFactor;
+        final b = pixel.b.toDouble() * rescaleFactor;
 
-        final rNorm = (r - _mean[0]) / _std[0];
-        final gNorm = (g - _mean[1]) / _std[1];
-        final bNorm = (b - _mean[2]) / _std[2];
+        final rNorm = (r - mean[0]) / std[0];
+        final gNorm = (g - mean[1]) / std[1];
+        final bNorm = (b - mean[2]) / std[2];
 
         inputData[index] = rNorm;
         inputData[pixelCount + index] = gNorm;

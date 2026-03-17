@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/core/models/layers/layer_interaction.dart';
 
@@ -99,18 +101,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   Size _fitImageRect(Size bodySize) {
-    final imgAspect = widget.mainImageSize.width / widget.mainImageSize.height;
-    final bodyAspect = bodySize.width / bodySize.height;
-
-    if (imgAspect > bodyAspect) {
-      final width = bodySize.width;
-      final height = width / imgAspect;
-      return Size(width, height);
-    } else {
-      final height = bodySize.height;
-      final width = height * imgAspect;
-      return Size(width, height);
-    }
+    return fitSizeWithinBounds(widget.mainImageSize, bodySize);
   }
 
   Future<void> _pickLogo() async {
@@ -321,18 +312,17 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
         },
         child: Scaffold(
           backgroundColor: widget.theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            backgroundColor: widget.theme.appBarTheme.backgroundColor ?? Colors.black,
-            foregroundColor: widget.theme.appBarTheme.foregroundColor ?? Colors.white,
-            leading: IconButton(tooltip: 'Back', icon: const Icon(Icons.arrow_back), onPressed: _handleCancel),
-            actions: [
-              IconButton(
-                tooltip: 'Apply',
-                icon: const Icon(Icons.check, size: 28, color: Colors.white),
-                onPressed: _handleApply,
-              ),
-            ],
+          appBar: EditorActionAppBar(
+            theme: widget.theme,
+            showLeadingBack: true,
+            onBack: _handleCancel,
+            onUndo: () {},
+            onRedo: () {},
+            onConfirm: _handleApply,
+            canUndo: false,
+            canRedo: false,
+            showUndoRedo: false,
+            confirmTooltip: 'Apply',
           ),
           body: LayoutBuilder(
             builder: (context, _) {

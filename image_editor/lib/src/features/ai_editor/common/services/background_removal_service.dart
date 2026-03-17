@@ -34,12 +34,18 @@ class BackgroundRemovalService {
     this.inputHeight = 256,
     this.imageInputName,
     this.outputName,
+    this.rescaleFactor,
+    this.imageMean,
+    this.imageStd,
   }) : _onnx = BackgroundRemovalOnnx(
           modelPathOrUrl: modelPathOrUrl,
           inputWidth: inputWidth,
           inputHeight: inputHeight,
           imageInputName: imageInputName,
           outputName: outputName,
+          rescaleFactor: rescaleFactor ?? 0.00392156862745098,
+          imageMean: imageMean ?? const [0.5, 0.5, 0.5],
+          imageStd: imageStd ?? const [0.5, 0.5, 0.5],
         );
 
   final String modelPathOrUrl;
@@ -47,6 +53,9 @@ class BackgroundRemovalService {
   final int inputHeight;
   final String? imageInputName;
   final String? outputName;
+  final double? rescaleFactor;
+  final List<double>? imageMean;
+  final List<double>? imageStd;
 
   final BackgroundRemovalOnnx _onnx;
   static final Logger _log = Logger('BackgroundRemovalService');
@@ -172,10 +181,17 @@ class BackgroundRemovalService {
     }
   }
 
-  /// Returns the foreground segmentation mask (people/subject = 255, background = 0)
-  /// resized to the original image dimensions. Used for people-removal pipeline.
+  /// Returns the foreground segmentation mask resized to the original image dimensions.
+  ///
+  /// By default this is a hard binary mask (0/255) to preserve current behavior.
+  /// For smoother cutout edges, set [softMask] to true to keep continuous alpha.
   /// Returns null on error.
-  Future<img.Image?> getSegmentationMask(Uint8List imageBytes) async {
+  Future<img.Image?> getSegmentationMask(
+    Uint8List imageBytes, {
+    double threshold = 0.5,
+    bool softMask = false,
+    int featherRadius = 0,
+  }) async {
     try {
       final decodedResult = await decodeImageInCompute(imageBytes);
       if (decodedResult == null) return null;
@@ -195,12 +211,11 @@ class BackgroundRemovalService {
       if (outH <= 0 || outW <= 0) return null;
 
       final maskSmall = img.Image(width: outW, height: outH);
-      const threshold = 0.5;
       for (var y = 0; y < outH; y++) {
         for (var x = 0; x < outW; x++) {
           final raw = outputBytes[y * outW + x];
           final v = raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
-          final byte = v > threshold ? 255 : 0;
+          final byte = softMask ? (v * 255).round().clamp(0, 255) : (v > threshold ? 255 : 0);
           maskSmall.setPixel(x, y, img.ColorRgb8(byte, byte, byte));
         }
       }
@@ -209,9 +224,12 @@ class BackgroundRemovalService {
         maskSmall,
         width: originalWidth,
         height: originalHeight,
-        interpolation: img.Interpolation.nearest,
+        interpolation: softMask ? img.Interpolation.linear : img.Interpolation.nearest,
       );
-      return mask;
+      if (!softMask || featherRadius <= 0) {
+        return mask;
+      }
+      return img.gaussianBlur(mask, radius: featherRadius);
     } catch (e, st) {
       _log.severe('[BG] Exception in getSegmentationMask', e, st);
       return null;

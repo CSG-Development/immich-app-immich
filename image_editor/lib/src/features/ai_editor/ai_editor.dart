@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 // Project imports:
 import 'package:image/image.dart' as img;
@@ -16,7 +17,9 @@ import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_app
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
-import 'package:image_editor/src/features/ai_editor/people_removal/people_removal_overlay_host.dart';
+import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
+import 'package:image_editor/src/features/ai_editor/photo_enhancement/ai_photo_enhancement_page.dart';
+import 'package:image_editor/src/features/ai_editor/smart_insertion/smart_insertion_flow.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/core/utils/size_utils.dart';
@@ -24,43 +27,7 @@ import 'package:pro_image_editor/features/filter_editor/widgets/filtered_widget.
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/shared/widgets/transform/transformed_content_generator.dart';
 
-/// Simple in-memory history for `EditorImage` states used by the AI editor.
-class _EditorHistory {
-  _EditorHistory(EditorImage initial)
-      : _items = [initial],
-        _index = 0;
-
-  final List<EditorImage> _items;
-  int _index;
-
-  EditorImage get current => _items[_index];
-
-  bool get canUndo => _index > 0;
-  bool get canRedo => _index < _items.length - 1;
-
-  bool undo() {
-    if (!canUndo) return false;
-    _index -= 1;
-    return true;
-  }
-
-  bool redo() {
-    if (!canRedo) return false;
-    _index += 1;
-    return true;
-  }
-
-  /// Pushes a new image state and discards any redo history.
-  void push(EditorImage image) {
-    if (_index < _items.length - 1) {
-      _items.removeRange(_index + 1, _items.length);
-    }
-    _items.add(image);
-    _index = _items.length - 1;
-  }
-}
-
-enum _OverlayMode { none, object, people }
+enum _OverlayMode { none, object }
 
 /// Standalone AI editor that can work with the same configs
 /// as `pro_image_editor`, but is dedicated to AI-related tools.
@@ -68,17 +35,9 @@ enum _OverlayMode { none, object, people }
 /// For now this is a dummy page that simply shows the image and returns
 /// the original bytes when the user taps "Done".
 class AiEditor extends StatefulWidget {
-  const AiEditor._({
-    super.key,
-    required this.initConfigs,
-    required this.editorImage,
-  });
+  const AiEditor._({super.key, required this.initConfigs, required this.editorImage});
 
-  factory AiEditor.memory(
-    Uint8List byteArray, {
-    Key? key,
-    required AiEditorInitConfigs initConfigs,
-  }) {
+  factory AiEditor.memory(Uint8List byteArray, {Key? key, required AiEditorInitConfigs initConfigs}) {
     return AiEditor._(
       key: key,
       editorImage: EditorImage(byteArray: byteArray),
@@ -98,7 +57,7 @@ class AiEditorState extends State<AiEditor> {
   late final StreamController<void> uiStream;
   Size editorBodySize = Size.zero;
 
-  late _EditorHistory _history;
+  late HistoryStack<EditorImage> _history;
   EditorImage get editorImage => _history.current;
 
   late final AiEditorActions _actions;
@@ -127,11 +86,7 @@ class AiEditorState extends State<AiEditor> {
 
   TransformConfigs? get initialTransformConfigs => initConfigs.transformConfigs;
 
-  String get _backgroundModelPath => initConfigs.backgroundModelPathEffective;
-
   String get _inpaintingModelPath => initConfigs.inpaintingModelPathEffective;
-
-  String get _fastdvdnetModelPath => initConfigs.fastdvdnetModelPathEffective;
 
   Object get heroTag => 'ai_editor_hero';
 
@@ -139,13 +94,54 @@ class AiEditorState extends State<AiEditor> {
 
   bool get canRedo => _history.canRedo;
 
+  Future<T?> _openSubEditorPage<T>(Widget page, {Duration duration = const Duration(milliseconds: 300)}) {
+    final subEditorStyle = configs.mainEditor.style.subEditorPage;
+    return Navigator.push<T?>(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: subEditorStyle.barrierColor,
+        barrierDismissible: subEditorStyle.barrierDismissible,
+        transitionDuration: duration,
+        reverseTransitionDuration: duration,
+        transitionsBuilder: subEditorStyle.transitionsBuilder ??
+            (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+        pageBuilder: (context, animation, secondaryAnimation) {
+          if (!subEditorStyle.requireReposition) return page;
+
+          return SafeArea(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned(
+                  top: subEditorStyle.positionTop,
+                  left: subEditorStyle.positionLeft,
+                  right: subEditorStyle.positionRight,
+                  bottom: subEditorStyle.positionBottom,
+                  child: Center(
+                    child: Container(
+                      width: subEditorStyle.enforceSizeFromMainEditor ? MediaQuery.of(context).size.width : null,
+                      height: subEditorStyle.enforceSizeFromMainEditor ? MediaQuery.of(context).size.height : null,
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(borderRadius: subEditorStyle.borderRadius),
+                      child: page,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _runImageProcessing({
     required String modelPathOrUrl,
     required String modelName,
-    required String emptyBytesMessage,
-    required String failureMessage,
     required Future<Uint8List> Function(Uint8List bytes) process,
-    String? successMessage,
     String? sameBytesErrorMessage,
     bool ensureAiTools = true,
     String? debugTag,
@@ -153,11 +149,7 @@ class AiEditorState extends State<AiEditor> {
     if (_isProcessing) return;
     if (ensureAiTools && !_ensureAiToolsAvailable()) return;
 
-    final ok = await showModelDownloadDialog(
-      context,
-      modelPathOrUrl: modelPathOrUrl,
-      modelName: modelName,
-    );
+    final ok = await showModelDownloadDialog(context, modelPathOrUrl: modelPathOrUrl, modelName: modelName);
     if (!ok || !mounted) return;
 
     setState(() {
@@ -210,7 +202,7 @@ class AiEditorState extends State<AiEditor> {
   void initState() {
     super.initState();
     uiStream = StreamController<void>.broadcast();
-    _history = _EditorHistory(widget.editorImage);
+    _history = HistoryStack<EditorImage>(widget.editorImage);
     _actions = AiEditorActions(initConfigs: initConfigs);
   }
 
@@ -254,140 +246,6 @@ class AiEditorState extends State<AiEditor> {
     return false;
   }
 
-  Future<void> _runBackgroundEffect(
-    BackgroundEffectMode mode,
-    String successMessage,
-  ) async {
-    return _runImageProcessing(
-      modelPathOrUrl: _backgroundModelPath,
-      modelName: 'Background removal',
-      emptyBytesMessage: 'No image data available for background removal.',
-      failureMessage: 'Failed to remove background.',
-      sameBytesErrorMessage:
-          'Failed to apply background effect (device may be low on memory).',
-      successMessage: successMessage,
-      ensureAiTools: true,
-      debugTag: 'BG',
-      process: (bytes) => _actions.applyBackground(bytes, mode: mode),
-    );
-  }
-
-  Future<void> _runFastDenoise() async {
-    if (_isProcessing) return;
-    if (!_ensureAiToolsAvailable()) return;
-
-    // Sliders from "Fast" to "Good" for model size and sigma.
-    final result = await showDialog<_DenoiseSliderResult>(
-      context: context,
-      builder: (context) {
-        // Discrete steps for size and sigma.
-        const sizeSteps = <int>[128, 256, 512, 1024];
-        const sigmaSteps = <double>[0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4];
-
-        double tSize = 1 / (sizeSteps.length - 1); // start near 256
-        double tSigma = 0; // start at first sigma step (0.1)
-
-        int _sizeFromT(double value) {
-          final idx =
-              (value * (sizeSteps.length - 1)).round().clamp(0, sizeSteps.length - 1);
-          return sizeSteps[idx];
-        }
-
-        double _sigmaFromT(double value) {
-          final idx =
-              (value * (sigmaSteps.length - 1)).round().clamp(0, sigmaSteps.length - 1);
-          return sigmaSteps[idx];
-        }
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final currentSize = _sizeFromT(tSize);
-            final currentSigma = _sigmaFromT(tSigma);
-            return AlertDialog(
-              title: const Text('Denoise'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Detail level'),
-                  Slider(
-                    value: tSize,
-                    divisions: sizeSteps.length - 1,
-                    onChanged: (v) {
-                      setState(() {
-                        tSize = v;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Lower levels are faster. Higher levels keep more fine detail but may take longer.',
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Denoise strength'),
-                  Slider(
-                    value: tSigma,
-                    divisions: sigmaSteps.length - 1,
-                    onChanged: (v) {
-                      setState(() {
-                        tSigma = v;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Higher strength removes more visible noise, but can make the image look smoother.',
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(
-                      _DenoiseSliderResult(
-                        sigma: currentSigma,
-                        modelSize: _sizeFromT(tSize),
-                      ),
-                    );
-                  },
-                  child: const Text('Apply'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == null || !mounted) return;
-
-    await _runImageProcessing(
-      modelPathOrUrl: _fastdvdnetModelPath,
-      modelName: 'Denoise',
-      emptyBytesMessage: 'No image data available for denoising.',
-      failureMessage: 'Failed to denoise image.',
-      successMessage: 'Noise reduced.',
-      ensureAiTools: true,
-      debugTag: 'FDN',
-      process: (bytes) => _actions.denoiseFastdvdnet(
-        bytes,
-        noiseSigma: result.sigma,
-        modelSize: result.modelSize,
-      ),
-    );
-  }
-
-  Future<void> _handleBlurBackground() {
-    return _runBackgroundEffect(
-      BackgroundEffectMode.blur,
-      'Background blurred.',
-    );
-  }
-
   Future<void> _handleObjectRemoval() async {
     if (_isProcessing) return;
     if (!_ensureAiToolsAvailable()) return;
@@ -397,24 +255,67 @@ class AiEditorState extends State<AiEditor> {
     });
   }
 
-  Future<void> _handlePeopleRemoval() async {
+  Future<void> _handleSmartInsertion() async {
     if (_isProcessing) return;
     if (!_ensureAiToolsAvailable()) return;
 
-    final modelPath = _backgroundModelPath;
-    final ok = await showModelDownloadDialog(
-      context,
-      modelPathOrUrl: modelPath,
-      modelName: 'People removal',
-    );
-    if (!ok || !mounted) return;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) {
+      return;
+    }
+    final pickedImageBytes = await picked.readAsBytes();
+    if (!mounted || pickedImageBytes.isEmpty) return;
 
-    setState(() {
-      _overlayMode = _OverlayMode.people;
-    });
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) {
+          return SmartInsertionFlow(
+            params: SmartInsertionParams(
+              editorImage: editorImage,
+              actions: _actions,
+              backgroundRemovalService: _actions.backgroundRemovalService,
+              backgroundEffectMode: BackgroundEffectMode.remove,
+            ),
+            pickedImageBytes: pickedImageBytes,
+            onCompleted: (resultBytes) async {
+              final newImage = EditorImage(byteArray: resultBytes);
+              _history.push(newImage);
+              uiStream.add(null);
+              if (Navigator.of(ctx).canPop()) {
+                Navigator.of(ctx).pop();
+              }
+            },
+            onCancel: () {
+              if (Navigator.of(ctx).canPop()) {
+                Navigator.of(ctx).pop();
+              }
+            },
+          );
+        },
+      ),
+    );
   }
 
-  // Animal-related AI features are disabled.
+  Future<void> _handleEnhance() async {
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+
+    final bytes = await editorImage.safeByteArray();
+    if (!mounted || bytes.isEmpty) return;
+
+    final result = await _openSubEditorPage<Uint8List?>(
+      AiPhotoEnhancementPage(initConfigs: initConfigs, initialImageBytes: bytes),
+    );
+
+    if (!mounted || result == null || result.isEmpty) {
+      return;
+    }
+
+    final newImage = EditorImage(byteArray: result);
+    _history.push(newImage);
+    uiStream.add(null);
+  }
 
   Future<void> _runObjectRemoval(img.Image mask) async {
     setState(() {
@@ -423,16 +324,30 @@ class AiEditorState extends State<AiEditor> {
 
     await _runImageProcessing(
       modelPathOrUrl: _inpaintingModelPath,
-      modelName: 'Object removal',
-      emptyBytesMessage: 'No image data available for object removal.',
-      failureMessage: 'Failed to remove object.',
-      sameBytesErrorMessage:
-          'Failed to remove object (check that lama_fp32.onnx is available).',
-      successMessage: 'Removed.',
+      modelName: 'Smart removal',
+      sameBytesErrorMessage: 'Failed to remove object (check that lama_fp32.onnx is available).',
       ensureAiTools: false,
       debugTag: 'OR',
       process: (bytes) => _actions.removeObjects(bytes, mask),
     );
+  }
+
+  void _closeOverlay() {
+    setState(() {
+      _overlayMode = _OverlayMode.none;
+    });
+  }
+
+  List<Widget> _buildOverlayHosts() {
+    return [
+      if (_overlayMode == _OverlayMode.object)
+        ObjectRemovalOverlayHost(
+          editorImage: editorImage,
+          backgroundRemovalService: _actions.backgroundRemovalService,
+          onApply: _runObjectRemoval,
+          onCancel: _closeOverlay,
+        ),
+    ];
   }
 
   @override
@@ -454,35 +369,14 @@ class AiEditorState extends State<AiEditor> {
                 body: _buildBody(),
                 bottomNavigationBar: _hasOverlay
                     ? null
-                    : AiEditorBottombar(
-                        onBlurBackground: _handleBlurBackground,
-                        onDenoise: _runFastDenoise,
+                    : AiEditorBottomBar(
                         onObjectRemoval: _handleObjectRemoval,
-                        onPeopleRemoval: _handlePeopleRemoval,
+                        onEnhance: _handleEnhance,
+                        onSmartInsertion: _handleSmartInsertion,
                         isBusy: _isProcessing,
                       ),
               ),
-              if (_overlayMode == _OverlayMode.object)
-                ObjectRemovalOverlayHost(
-                  editorImage: editorImage,
-                  onApply: _runObjectRemoval,
-                  onCancel: () {
-                    setState(() {
-                      _overlayMode = _OverlayMode.none;
-                    });
-                  },
-                ),
-              if (_overlayMode == _OverlayMode.people)
-                PeopleRemovalOverlayHost(
-                  editorImage: editorImage,
-                  backgroundRemovalService: _actions.backgroundRemovalService,
-                  onApply: _runObjectRemoval,
-                  onCancel: () {
-                    setState(() {
-                      _overlayMode = _OverlayMode.none;
-                    });
-                  },
-                ),
+              ..._buildOverlayHosts(),
             ],
           ),
         ),
@@ -491,7 +385,7 @@ class AiEditorState extends State<AiEditor> {
   }
 
   PreferredSizeWidget? _buildAppBar() {
-    return AiEditorAppbar(
+    return AiEditorAppBar(
       theme: theme,
       canRedo: canRedo,
       canUndo: canUndo,
@@ -519,9 +413,7 @@ class AiEditorState extends State<AiEditor> {
             if (_isProcessing)
               Container(
                 color: Colors.black26,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               ),
           ],
         );
@@ -573,9 +465,7 @@ class AiEditorState extends State<AiEditor> {
   }
 
   Size _computeImageDisplaySize(Size bodySize) {
-    if (initConfigs.mainImageSize != null &&
-        bodySize.width > 0 &&
-        bodySize.height > 0) {
+    if (initConfigs.mainImageSize != null && bodySize.width > 0 && bodySize.height > 0) {
       final imgSize = initConfigs.mainImageSize!;
       return fitSizeWithinBounds(imgSize, bodySize);
     }
@@ -585,12 +475,3 @@ class AiEditorState extends State<AiEditor> {
   }
 }
 
-class _DenoiseSliderResult {
-  const _DenoiseSliderResult({
-    required this.sigma,
-    required this.modelSize,
-  });
-
-  final double sigma;
-  final int modelSize;
-}

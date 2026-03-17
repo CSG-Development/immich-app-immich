@@ -4,20 +4,18 @@ import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 /// Bottom bar for AI tools.
 ///
 /// The background remove tool is wired up; other tools remain placeholders.
-class AiEditorBottombar extends StatelessWidget {
-  const AiEditorBottombar({
+class AiEditorBottomBar extends StatelessWidget {
+  const AiEditorBottomBar({
     super.key,
-    required this.onBlurBackground,
-    required this.onDenoise,
     required this.onObjectRemoval,
-    required this.onPeopleRemoval,
+    required this.onEnhance,
+    this.onSmartInsertion,
     required this.isBusy,
   });
 
-  final VoidCallback? onBlurBackground;
-  final VoidCallback? onDenoise;
   final Future<void> Function()? onObjectRemoval;
-  final Future<void> Function()? onPeopleRemoval;
+  final Future<void> Function()? onEnhance;
+  final VoidCallback? onSmartInsertion;
   final bool isBusy;
 
   @override
@@ -26,18 +24,8 @@ class AiEditorBottombar extends StatelessWidget {
 
     final items = <_AiToolItem>[
       _AiToolItem(
-        label: 'Blur background',
-        icon: Icons.blur_on,
-        onPressed: isBusy || onBlurBackground == null ? null : onBlurBackground!,
-      ),
-      _AiToolItem(
-        label: 'Denoise',
-        icon: Icons.grain,
-        onPressed: isBusy || onDenoise == null ? null : onDenoise!,
-      ),
-      _AiToolItem(
-        label: 'Object removal',
-        icon: Icons.brush,
+        label: 'Smart removal',
+        icon: Icons.healing,
         onPressed: isBusy || onObjectRemoval == null
             ? null
             : () {
@@ -45,13 +33,18 @@ class AiEditorBottombar extends StatelessWidget {
               },
       ),
       _AiToolItem(
-        label: 'People removal',
-        icon: Icons.person_off,
-        onPressed: isBusy || onPeopleRemoval == null
+        label: 'Enhance',
+        icon: Icons.auto_fix_high,
+        onPressed: isBusy || onEnhance == null
             ? null
             : () {
-                onPeopleRemoval!();
+                onEnhance!();
               },
+      ),
+      _AiToolItem(
+        label: 'Smart insertion',
+        icon: Icons.add_photo_alternate_outlined,
+        onPressed: isBusy || onSmartInsertion == null ? null : onSmartInsertion,
       ),
     ];
 
@@ -88,6 +81,8 @@ class AiEditorBottombar extends StatelessWidget {
 
   static const _bottomTextStyle = TextStyle(fontSize: 10.0, color: Colors.white);
 }
+
+typedef AiEditorBottombar = AiEditorBottomBar;
 
 class _AiToolItem {
   final String label;

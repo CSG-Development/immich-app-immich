@@ -6,6 +6,7 @@ import 'package:image_editor/src/utils/image_decode_utils.dart';
 import 'package:logging/logging.dart';
 
 final Logger _log = Logger('ObjectRemovalService');
+typedef InpaintDebugStepCallback = void Function(String stepName, img.Image image);
 
 /// Point in image coordinates (pixels).
 typedef MaskPoint = ({double x, double y});
@@ -93,7 +94,12 @@ class ObjectRemovalService {
   /// Pixels with value > 0 are inpainted (object to remove).
   ///
   /// Returns PNG bytes of the result. On error, returns [imageBytes] unchanged.
-  Future<Uint8List> inpaint(Uint8List imageBytes, img.Image mask) async {
+  Future<Uint8List> inpaint(
+    Uint8List imageBytes,
+    img.Image mask, {
+    InpaintDebugStepCallback? debugStepCallback,
+    double? maxRoiAreaRatio,
+  }) async {
     final totalStart = DateTime.now();
     try {
       _log.info('[OBJ] inpaint() called. Input length=${imageBytes.length}');
@@ -122,7 +128,12 @@ class ObjectRemovalService {
           height: origH,
           interpolation: img.Interpolation.nearest,
         );
-        return inpaint(imageBytes, resizedMask);
+        return inpaint(
+          imageBytes,
+          resizedMask,
+          debugStepCallback: debugStepCallback,
+          maxRoiAreaRatio: maxRoiAreaRatio,
+        );
       }
 
       var hasMask = false;
@@ -144,7 +155,12 @@ class ObjectRemovalService {
           decoded.numChannels == 3 ? decoded : decoded.convert(numChannels: 3);
 
       final patchStart = DateTime.now();
-      final result = await _inpaintPatchBased(rgbImage, mask);
+      final result = await _inpaintPatchBased(
+        rgbImage,
+        mask,
+        debugStepCallback: debugStepCallback,
+        maxRoiAreaRatio: maxRoiAreaRatio,
+      );
       final patchElapsed =
           DateTime.now().difference(patchStart).inMilliseconds;
       _log.info('[OBJ] _inpaintPatchBased completed in ${patchElapsed}ms');
@@ -172,7 +188,10 @@ class ObjectRemovalService {
   Future<img.Image> _inpaintPatchBased(
     img.Image rgbImage,
     img.Image mask,
-  ) async {
+    {
+    InpaintDebugStepCallback? debugStepCallback,
+    double? maxRoiAreaRatio,
+  }) async {
     final totalStart = DateTime.now();
     final origW = rgbImage.width;
     final origH = rgbImage.height;
@@ -195,8 +214,8 @@ class ObjectRemovalService {
 
     final cropW0 = maxX - minX + 1;
     final cropH0 = maxY - minY + 1;
-    const expandPct = 0.3;
-    const maxExpansion = 200;
+    const expandPct = 0.15;
+    const maxExpansion = 96;
     final expW = (cropW0 * expandPct).round().clamp(0, maxExpansion);
     final expH = (cropH0 * expandPct).round().clamp(0, maxExpansion);
     minX = (minX - expW).clamp(0, origW - 1);
@@ -206,11 +225,39 @@ class ObjectRemovalService {
 
     final cropW = maxX - minX + 1;
     final cropH = maxY - minY + 1;
+    final cropAreaRatio = (cropW * cropH) / (origW * origH);
+
+    // Optional guard for memory-sensitive flows (e.g. smart insertion).
+    if (maxRoiAreaRatio != null && cropAreaRatio > maxRoiAreaRatio) {
+      _log.warning(
+        '[OBJ] Inpaint ROI too large (${(cropAreaRatio * 100).toStringAsFixed(1)}%), '
+        'skipping (max allowed ${(maxRoiAreaRatio * 100).toStringAsFixed(1)}%).',
+      );
+      return rgbImage;
+    }
+
+    const lowMemoryTileSide = 768;
+    if (cropW > lowMemoryTileSide || cropH > lowMemoryTileSide) {
+      _log.info(
+        '[OBJ] Large ROI ${cropW}x$cropH detected, using tiled low-memory inpaint.',
+      );
+      return _inpaintPatchTiled(
+        rgbImage: rgbImage,
+        mask: mask,
+        roiMinX: minX,
+        roiMinY: minY,
+        roiMaxX: maxX,
+        roiMaxY: maxY,
+        tileSide: lowMemoryTileSide,
+      );
+    }
 
     final croppedImage =
         img.copyCrop(rgbImage, x: minX, y: minY, width: cropW, height: cropH);
     final croppedMask =
         img.copyCrop(mask, x: minX, y: minY, width: cropW, height: cropH);
+    debugStepCallback?.call('cropped_image', croppedImage);
+    debugStepCallback?.call('cropped_mask', croppedMask);
 
     final resizedImage = img.copyResize(
       croppedImage,
@@ -224,6 +271,8 @@ class ObjectRemovalService {
       height: LamaInpaintingOnnx.modelSize,
       interpolation: img.Interpolation.nearest,
     );
+    debugStepCallback?.call('resized_image', resizedImage);
+    debugStepCallback?.call('resized_mask', resizedMask);
 
     final patchStart = DateTime.now();
     final inpaintedPatch =
@@ -236,6 +285,7 @@ class ObjectRemovalService {
     }
     final patchElapsed =
         DateTime.now().difference(patchStart).inMilliseconds;
+    debugStepCallback?.call('inpainted_patch_raw', inpaintedPatch);
     _log.info(
       '[OBJ] LamaInpaintingOnnx.runOnCroppedPatch completed in ${patchElapsed}ms',
     );
@@ -246,6 +296,7 @@ class ObjectRemovalService {
       height: cropH,
       interpolation: img.Interpolation.linear,
     );
+    debugStepCallback?.call('inpainted_patch_resized', inpaintedResized);
 
     final blendStart = DateTime.now();
     final result = rgbImage.clone();
@@ -265,6 +316,7 @@ class ObjectRemovalService {
 
     final blendElapsed =
         DateTime.now().difference(blendStart).inMilliseconds;
+    debugStepCallback?.call('final_result', result);
     final totalElapsed =
         DateTime.now().difference(totalStart).inMilliseconds;
     _log.info(
@@ -273,6 +325,81 @@ class ObjectRemovalService {
     );
 
     return result;
+  }
+
+  Future<img.Image> _inpaintPatchTiled({
+    required img.Image rgbImage,
+    required img.Image mask,
+    required int roiMinX,
+    required int roiMinY,
+    required int roiMaxX,
+    required int roiMaxY,
+    required int tileSide,
+  }) async {
+    const overlap = 64;
+    final stride = (tileSide - overlap * 2).clamp(128, tileSide);
+    final result = rgbImage.clone();
+    final roiW = roiMaxX - roiMinX + 1;
+    final roiH = roiMaxY - roiMinY + 1;
+
+    for (var ty = 0; ty < roiH; ty += stride) {
+      for (var tx = 0; tx < roiW; tx += stride) {
+        final x0 = roiMinX + tx;
+        final y0 = roiMinY + ty;
+        final x1 = (x0 + tileSide - 1).clamp(0, rgbImage.width - 1);
+        final y1 = (y0 + tileSide - 1).clamp(0, rgbImage.height - 1);
+        final w = x1 - x0 + 1;
+        final h = y1 - y0 + 1;
+        if (w <= 0 || h <= 0) continue;
+        if (!_hasAnyMask(mask, x0, y0, w, h)) continue;
+
+        // Use progressively updated result as context for neighboring tiles.
+        final tileImage = img.copyCrop(result, x: x0, y: y0, width: w, height: h);
+        final tileMask = img.copyCrop(mask, x: x0, y: y0, width: w, height: h);
+        final resizedImage = img.copyResize(
+          tileImage,
+          width: LamaInpaintingOnnx.modelSize,
+          height: LamaInpaintingOnnx.modelSize,
+          interpolation: img.Interpolation.linear,
+        );
+        final resizedMask = img.copyResize(
+          tileMask,
+          width: LamaInpaintingOnnx.modelSize,
+          height: LamaInpaintingOnnx.modelSize,
+          interpolation: img.Interpolation.nearest,
+        );
+
+        final inpaintedPatch = await _onnx.runOnCroppedPatch(resizedImage, resizedMask);
+        if (inpaintedPatch == null) continue;
+
+        final inpaintedResized = img.copyResize(
+          inpaintedPatch,
+          width: w,
+          height: h,
+          interpolation: img.Interpolation.linear,
+        );
+
+        for (var y = 0; y < h; y++) {
+          for (var x = 0; x < w; x++) {
+            final m = tileMask.getPixel(x, y);
+            if (m.r == 0 && m.g == 0 && m.b == 0) continue;
+            result.setPixel(x0 + x, y0 + y, inpaintedResized.getPixel(x, y));
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  bool _hasAnyMask(img.Image mask, int x0, int y0, int w, int h) {
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        final p = mask.getPixel(x0 + x, y0 + y);
+        if (p.r > 0 || p.g > 0 || p.b > 0) return true;
+      }
+    }
+    return false;
   }
 
   Future<void> dispose() async {
