@@ -20,6 +20,7 @@ class FastdvdnetOnnx {
     this.noiseInputName,
     this.outputName,
     this.modelSize = 256,
+    this.noiseSigma = 0.1,
   });
 
   final String modelPathOrUrl;
@@ -29,6 +30,10 @@ class FastdvdnetOnnx {
   final String? noiseInputName;
   final String? outputName;
   final int modelSize;
+  /// Global noise level \(\sigma\) used to build the noise map tensor.
+  /// Lower values preserve more detail (less denoising), higher values
+  /// are more aggressive.
+  final double noiseSigma;
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
@@ -107,9 +112,8 @@ class FastdvdnetOnnx {
       );
 
       // Create a simple noise map tensor. For single-image denoising we
-      // typically pass a constant noise level (e.g. sigma=0.1) across the
-      // whole frame.
-      const sigma = 0.1;
+      // typically pass a constant noise level across the whole frame.
+      final sigma = noiseSigma;
       final noiseData = Float32List(1 * 1 * modelSize * modelSize);
       for (var i = 0; i < noiseData.length; i++) {
         noiseData[i] = sigma;

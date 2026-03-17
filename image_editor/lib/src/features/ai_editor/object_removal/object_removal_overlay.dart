@@ -1,12 +1,14 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
-import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_stroke_overlay.dart';
+import 'package:image_editor/src/features/services/image_worker.dart';
+import 'package:logging/logging.dart';
 
 /// Overlay for drawing a mask (brush strokes) on an image to mark areas for
 /// object removal. Converts screen coordinates to image coordinates.
@@ -31,7 +33,12 @@ class ObjectRemovalOverlay extends StatefulWidget {
 }
 
 class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
+  static final Logger _log = Logger('ObjectRemovalOverlay');
   final StrokeHistory _strokeHistory = StrokeHistory();
+  // Remember the last stroke in the current drag so we can interpolate
+  // intermediate strokes and avoid dotted lines, especially for small
+  // brush sizes.
+  BrushStroke? _lastStrokeForCurrentDrag;
   // Brush radius is defined in display pixels (converted to image space
   // in the shared brush utilities), so keep this range modest so the
   // brush feels precise across image resolutions.
@@ -47,6 +54,7 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
   void _onPanStart(Offset localPosition, Size displaySize) {
     setState(() {
       _strokeHistory.startBatch(_isAddMode);
+      _lastStrokeForCurrentDrag = null;
       _addStrokePoint(localPosition, displaySize);
     });
   }
@@ -65,7 +73,27 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
       imageHeight: widget.imageHeight,
       brushRadius: _brushRadius,
     );
+
+    final last = _lastStrokeForCurrentDrag;
+    if (last != null) {
+      final dx = stroke.x - last.x;
+      final dy = stroke.y - last.y;
+      final distance = math.sqrt(dx * dx + dy * dy);
+      // Step size scales with brush radius so smaller brushes
+      // get more densely sampled strokes, producing a solid line.
+      final step = stroke.radius * 0.6;
+      final steps = step > 0 ? (distance / step).ceil() : 0;
+
+      for (var i = 1; i <= steps; i++) {
+        final t = i / (steps + 1);
+        final ix = last.x + dx * t;
+        final iy = last.y + dy * t;
+        _strokeHistory.addStroke(ix, iy, stroke.radius);
+      }
+    }
+
     _strokeHistory.addStroke(stroke.x, stroke.y, stroke.radius);
+    _lastStrokeForCurrentDrag = stroke;
   }
 
   void _undo() {
@@ -82,24 +110,56 @@ class _ObjectRemovalOverlayState extends State<ObjectRemovalOverlay> {
     });
   }
 
-  void _apply() {
-    final baseMask = img.Image(
+  Future<void> _apply() async {
+    final startedAt = DateTime.now();
+    _log.info(
+      '[OBJ_OVERLAY] Apply tapped. strokes=${_strokeHistory.strokes.length} '
+      'imageSize=${widget.imageWidth}x${widget.imageHeight}',
+    );
+
+    final strokesPayload = _strokeHistory.strokes
+        .map(
+          (s) => <String, Object>{
+            'x': s.x,
+            'y': s.y,
+            'radius': s.radius,
+            'isAdd': s.isAdd,
+          },
+        )
+        .toList();
+
+    final maskData = await ImageWorker.instance.buildStrokeMask(
       width: widget.imageWidth,
       height: widget.imageHeight,
+      strokes: strokesPayload,
     );
-    final strokedMask = _strokeHistory.applyToMask(baseMask);
-    final holeFreeMask = MaskUtils.fillHoles(strokedMask);
-    final featheredMask = MaskUtils.featherMaskEdges(
-      holeFreeMask,
-      radius: 1,
+    final workerElapsed =
+        DateTime.now().difference(startedAt).inMilliseconds;
+    _log.info(
+      '[OBJ_OVERLAY] buildStrokeMask completed in ${workerElapsed}ms '
+      '(strokesPayload=${strokesPayload.length})',
     );
-    // Match the people-removal pipeline: slightly expand the mask so the
-    // inpainting area over-covers the drawn region and avoids harsh seams.
-    final expandedMask = MaskUtils.dilateMaskByPercent(
-      featheredMask,
-      percent: 0.02,
-    );
-    widget.onApply(expandedMask);
+    if (maskData == null) {
+      return;
+    }
+
+    final width = maskData['width'] as int;
+    final height = maskData['height'] as int;
+    final data = maskData['data'] as Uint8List;
+
+    if (data.length != width * height) {
+      return;
+    }
+
+    final mask = img.Image(width: width, height: height);
+    var idx = 0;
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        final v = data[idx++];
+        mask.setPixel(x, y, img.ColorRgb8(v, v, v));
+      }
+    }
+    widget.onApply(mask);
   }
 
   @override

@@ -94,19 +94,29 @@ class AiEditorActions {
     );
   }
 
-  Future<Uint8List> denoiseFastdvdnet(Uint8List bytes) async {
+  Future<Uint8List> denoiseFastdvdnet(
+    Uint8List bytes, {
+    required double noiseSigma,
+    required int modelSize,
+  }) async {
     // Limit concurrent sessions: keep only FastDVDnet-related ones alive.
     _log.info(
       '[FDN] denoiseFastdvdnet() called bytesLen=${bytes.length}',
     );
-    await _disposeAllExcept(keepFastdvdnet: true);
-    if (_fastService == null) {
-      final modelPath = _initConfigs.fastdvdnetModelPathEffective;
-      _log.info('[FDN] Creating FastdvdnetDenoiseService with modelPath="$modelPath"');
-      _fastService = FastdvdnetDenoiseService(
-        modelPathOrUrl: modelPath,
-      );
-    }
+    await _disposeAllExcept(keepFastdvdnet: false);
+
+    final modelPath = _initConfigs.fastdvdnetModelPathEffective;
+    _log.info(
+      '[FDN] Creating FastdvdnetDenoiseService with '
+      'modelPath="$modelPath", sigma=$noiseSigma, size=$modelSize',
+    );
+
+    _fastService = FastdvdnetDenoiseService(
+      modelPathOrUrl: modelPath,
+      noiseSigma: noiseSigma,
+      modelSize: modelSize,
+    );
+
     return _fastService!.denoise(bytes);
   }
 

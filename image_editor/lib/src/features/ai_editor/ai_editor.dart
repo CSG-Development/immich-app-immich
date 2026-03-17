@@ -273,7 +273,99 @@ class AiEditorState extends State<AiEditor> {
   }
 
   Future<void> _runFastDenoise() async {
-    return _runImageProcessing(
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+
+    // Sliders from "Fast" to "Good" for model size and sigma.
+    final result = await showDialog<_DenoiseSliderResult>(
+      context: context,
+      builder: (context) {
+        // Discrete steps for size and sigma.
+        const sizeSteps = <int>[128, 256, 512, 1024];
+        const sigmaSteps = <double>[0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4];
+
+        double tSize = 1 / (sizeSteps.length - 1); // start near 256
+        double tSigma = 0; // start at first sigma step (0.1)
+
+        int _sizeFromT(double value) {
+          final idx =
+              (value * (sizeSteps.length - 1)).round().clamp(0, sizeSteps.length - 1);
+          return sizeSteps[idx];
+        }
+
+        double _sigmaFromT(double value) {
+          final idx =
+              (value * (sigmaSteps.length - 1)).round().clamp(0, sigmaSteps.length - 1);
+          return sigmaSteps[idx];
+        }
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final currentSize = _sizeFromT(tSize);
+            final currentSigma = _sigmaFromT(tSigma);
+            return AlertDialog(
+              title: const Text('Denoise'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Detail level'),
+                  Slider(
+                    value: tSize,
+                    divisions: sizeSteps.length - 1,
+                    onChanged: (v) {
+                      setState(() {
+                        tSize = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Lower levels are faster. Higher levels keep more fine detail but may take longer.',
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Denoise strength'),
+                  Slider(
+                    value: tSigma,
+                    divisions: sigmaSteps.length - 1,
+                    onChanged: (v) {
+                      setState(() {
+                        tSigma = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Higher strength removes more visible noise, but can make the image look smoother.',
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(
+                      _DenoiseSliderResult(
+                        sigma: currentSigma,
+                        modelSize: _sizeFromT(tSize),
+                      ),
+                    );
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || !mounted) return;
+
+    await _runImageProcessing(
       modelPathOrUrl: _fastdvdnetModelPath,
       modelName: 'Denoise',
       emptyBytesMessage: 'No image data available for denoising.',
@@ -281,7 +373,11 @@ class AiEditorState extends State<AiEditor> {
       successMessage: 'Noise reduced.',
       ensureAiTools: true,
       debugTag: 'FDN',
-      process: _actions.denoiseFastdvdnet,
+      process: (bytes) => _actions.denoiseFastdvdnet(
+        bytes,
+        noiseSigma: result.sigma,
+        modelSize: result.modelSize,
+      ),
     );
   }
 
@@ -487,4 +583,14 @@ class AiEditorState extends State<AiEditor> {
     final baseSize = mainImageSize ?? mainBodySize;
     return getValidSizeOrDefault(baseSize, editorBodySize);
   }
+}
+
+class _DenoiseSliderResult {
+  const _DenoiseSliderResult({
+    required this.sigma,
+    required this.modelSize,
+  });
+
+  final double sigma;
+  final int modelSize;
 }

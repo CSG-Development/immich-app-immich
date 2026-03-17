@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -41,6 +42,10 @@ class _AnimalRemovalOverlayState extends State<AnimalRemovalOverlay> {
   String? _error;
 
   final StrokeHistory _strokeHistory = StrokeHistory();
+  // Remember the last stroke in the current drag so we can interpolate
+  // intermediate strokes and avoid dotted lines, especially for small
+  // brush sizes.
+  BrushStroke? _lastStrokeForCurrentDrag;
 
   // Brush radius is defined in display pixels (converted to image space
   // in the shared brush utilities), so these values directly map to what
@@ -93,6 +98,7 @@ class _AnimalRemovalOverlayState extends State<AnimalRemovalOverlay> {
     if (_initialMask == null) return;
     setState(() {
       _strokeHistory.startBatch(_isAddMode);
+      _lastStrokeForCurrentDrag = null;
       _addStrokePoint(localPosition, displaySize);
     });
   }
@@ -115,7 +121,26 @@ class _AnimalRemovalOverlayState extends State<AnimalRemovalOverlay> {
       imageHeight: widget.imageHeight,
       brushRadius: _brushRadius,
     );
+    final last = _lastStrokeForCurrentDrag;
+    if (last != null) {
+      final dx = stroke.x - last.x;
+      final dy = stroke.y - last.y;
+      final distance = math.sqrt(dx * dx + dy * dy);
+      // Step size scales with brush radius so smaller brushes
+      // get more densely sampled strokes, producing a solid line.
+      final step = stroke.radius * 0.6;
+      final steps = step > 0 ? (distance / step).ceil() : 0;
+
+      for (var i = 1; i <= steps; i++) {
+        final t = i / (steps + 1);
+        final ix = last.x + dx * t;
+        final iy = last.y + dy * t;
+        _strokeHistory.addStroke(ix, iy, stroke.radius);
+      }
+    }
+
     _strokeHistory.addStroke(stroke.x, stroke.y, stroke.radius);
+    _lastStrokeForCurrentDrag = stroke;
   }
 
   void _undo() {

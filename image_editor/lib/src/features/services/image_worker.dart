@@ -221,6 +221,8 @@ Future<Object?> _handleJob(String type, Object payload) async {
       return _handleVignetteBake(payload);
     case 'bg_apply_mask':
       return _handleBackgroundMaskApply(payload);
+    case 'build_stroke_mask':
+      return _handleBuildStrokeMask(payload);
     default:
       throw UnsupportedError('Unknown ImageWorker job type: $type');
   }
