@@ -52,6 +52,12 @@ class _MaskStrokePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw strokes into an offscreen layer so `BlendMode.clear` fully
+    // punches through previously drawn red strokes, revealing the image
+    // beneath instead of leaving black artifacts.
+    final overlayRect = Offset.zero & size;
+    canvas.saveLayer(overlayRect, Paint());
+
     final redPaint = Paint()
       ..color = Colors.red.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
@@ -70,6 +76,8 @@ class _MaskStrokePainter extends CustomPainter {
         }
       }
     }
+
+    canvas.restore();
   }
 
   @override

@@ -142,6 +142,9 @@ class _MaskWithStrokesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final overlayRect = Offset.zero & size;
+    canvas.saveLayer(overlayRect, Paint());
+
     if (cachedPicture != null) {
       canvas.drawPicture(cachedPicture!);
     }
@@ -161,6 +164,8 @@ class _MaskWithStrokesPainter extends CustomPainter {
         canvas.drawCircle(Offset(sx, sy), sr, erasePaint);
       }
     }
+
+    canvas.restore();
   }
 
   @override
