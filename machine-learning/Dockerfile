@@ -1,6 +1,7 @@
 ARG DEVICE=cpu
 
-FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
+#FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
+FROM dhi.io/python:3.11-debian13 AS builder-cpu
 
 FROM builder-cpu AS builder-openvino
 
