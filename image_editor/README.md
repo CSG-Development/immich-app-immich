@@ -81,6 +81,26 @@ To add a new tool, you typically:
 2. Build a feature page that receives the current image and state, shows controls, and returns a baked `Uint8List`
 3. Wire a button in the bottom bar that captures the current editor image and pushes your page
 
+## Watermark tool implementation
+
+The watermark tool is implemented as a live `WidgetLayer` on top of `pro_image_editor`:
+
+- The tool is opened from `EditorBottomBar` and receives `ProImageEditorState`
+- A dedicated layer is tracked with `groupId: custom-watermark-layer`
+- Control changes (text/logo/mode/position/opacity/size/angle/color) rebuild that layer immediately
+- `Apply` keeps the current layer; `Cancel` restores the previous watermark layer (if there was one)
+
+For export consistency, the watermark layer uses the same sizing model as stickers:
+
+- Base content is built in a canvas with width `stickerEditor.initWidth`
+- Layer `scale` is computed from fitted image width (`fit.width / initWidth`)
+- Layer `offset` compensates `stickerEditor.layerFractionalOffset` so placement matches editor anchor rules
+
+Web behavior:
+
+- `Logo` and `Text + Logo` modes are disabled on web (no gallery picking flow in this package path)
+- `Text` mode remains available
+
 ## Public API surface
 
 - `ImageEditor` – main editor widget

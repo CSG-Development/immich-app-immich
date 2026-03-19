@@ -80,15 +80,14 @@ class ImageWorker {
   }
 
   /// Denoise preprocessing: returns tensor + original image size.
-  Future<({Float32List tensor, int originalWidth, int originalHeight})?>
-      denoisePreprocess(Uint8List imageBytes, int modelSize) async {
-    final result = await _runJob<Map<String, Object?>>(
-      'denoise_preprocess',
-      <String, Object>{
-        'bytes': imageBytes,
-        'modelSize': modelSize,
-      },
-    );
+  Future<({Float32List tensor, int originalWidth, int originalHeight})?> denoisePreprocess(
+    Uint8List imageBytes,
+    int modelSize,
+  ) async {
+    final result = await _runJob<Map<String, Object?>>('denoise_preprocess', <String, Object>{
+      'bytes': imageBytes,
+      'modelSize': modelSize,
+    });
     if (result == null) return null;
     return (
       tensor: result['tensor'] as Float32List,
@@ -104,15 +103,12 @@ class ImageWorker {
     int originalWidth,
     int originalHeight,
   ) async {
-    final result = await _runJob<Uint8List>(
-      'denoise_postprocess',
-      <String, Object>{
-        'outputList': outputList,
-        'shape': shape,
-        'originalWidth': originalWidth,
-        'originalHeight': originalHeight,
-      },
-    );
+    final result = await _runJob<Uint8List>('denoise_postprocess', <String, Object>{
+      'outputList': outputList,
+      'shape': shape,
+      'originalWidth': originalWidth,
+      'originalHeight': originalHeight,
+    });
     return result;
   }
 
@@ -125,16 +121,33 @@ class ImageWorker {
     required String mode, // 'remove' or 'blur'
     required int blurRadius,
   }) async {
-    return _runJob<Uint8List>(
-      'bg_apply_mask',
-      <String, Object>{
-        'bytes': imageBytes,
-        'outputList': outputList,
-        'shape': shape,
-        'mode': mode,
-        'blurRadius': blurRadius,
-      },
-    );
+    return _runJob<Uint8List>('bg_apply_mask', <String, Object>{
+      'bytes': imageBytes,
+      'outputList': outputList,
+      'shape': shape,
+      'mode': mode,
+      'blurRadius': blurRadius,
+    });
+  }
+
+  /// Builds an inpainting mask from user strokes (and optional base mask)
+  /// entirely in the background isolate and returns a lightweight serialized
+  /// representation: `{ 'width': int, 'height': int, 'data': Uint8List }`.
+  ///
+  /// This is used by object/people removal overlays so that "Apply" does not
+  /// block the UI thread on large images.
+  Future<Map<String, Object>?> buildStrokeMask({
+    required int width,
+    required int height,
+    required List<Map<String, Object>> strokes,
+    Map<String, Object>? baseMask,
+  }) async {
+    return _runJob<Map<String, Object>>('build_stroke_mask', <String, Object?>{
+      'width': width,
+      'height': height,
+      'strokes': strokes,
+      'baseMask': baseMask,
+    });
   }
 
   /// Vignette baking: applies a radial vignette and returns encoded bytes.
@@ -145,16 +158,13 @@ class ImageWorker {
     required double feather,
     int? colorHex,
   }) async {
-    return _runJob<Uint8List>(
-      'vignette_bake',
-      <String, Object?>{
-        'bytes': imageBytes,
-        'intensity': intensity,
-        'radius': radius,
-        'feather': feather,
-        'colorHex': colorHex ?? 0x000000,
-      },
-    );
+    return _runJob<Uint8List>('vignette_bake', <String, Object?>{
+      'bytes': imageBytes,
+      'intensity': intensity,
+      'radius': radius,
+      'feather': feather,
+      'colorHex': colorHex ?? 0x000000,
+    });
   }
 
   Future<void> dispose() async {
@@ -216,6 +226,119 @@ Future<Object?> _handleJob(String type, Object payload) async {
   }
 }
 
+Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
+  final map = payload as Map<Object?, Object?>;
+  final startedAt = DateTime.now();
+  final width = map['width'] as int;
+  final height = map['height'] as int;
+  final strokesPayload = (map['strokes'] as List).cast<Map<Object?, Object?>>();
+  final baseMaskMap = map['baseMask'] as Map<Object?, Object?>?;
+
+  // Work in a downscaled coordinate space so that very large images do not
+  // require building and post-processing huge masks. Keep aspect ratio but
+  // clamp the longest side to 512px.
+  const int maxSide = 512;
+  final double scale = (width <= maxSide && height <= maxSide) ? 1.0 : (maxSide / math.max(width, height));
+  final int workW = (width * scale).round().clamp(1, width);
+  final int workH = (height * scale).round().clamp(1, height);
+  _imageWorkerLog.info('[MASK_WORKER] Using working mask size ${workW}x$workH for original ${width}x$height');
+
+  img.Image baseMask = img.Image(width: workW, height: workH);
+  if (baseMaskMap != null) {
+    _imageWorkerLog.info('[MASK_WORKER] Reconstructing base mask in isolate...');
+    final baseStart = DateTime.now();
+    final bw = baseMaskMap['width'] as int? ?? width;
+    final bh = baseMaskMap['height'] as int? ?? height;
+    final data = baseMaskMap['data'] as Uint8List?;
+    if (data != null && data.length == bw * bh) {
+      baseMask = img.Image(width: bw, height: bh);
+      var idx = 0;
+      for (var y = 0; y < bh; y++) {
+        for (var x = 0; x < bw; x++) {
+          final v = data[idx++];
+          baseMask.setPixel(x, y, img.ColorRgb8(v, v, v));
+        }
+      }
+      if (bw != workW || bh != workH) {
+        _imageWorkerLog.info('[MASK_WORKER] Resizing base mask from ${bw}x$bh to ${workW}x$workH');
+        baseMask = img.copyResize(baseMask, width: workW, height: workH, interpolation: img.Interpolation.nearest);
+      }
+    }
+    final baseElapsed = DateTime.now().difference(baseStart).inMilliseconds;
+    _imageWorkerLog.info('[MASK_WORKER] Base mask reconstruction took ${baseElapsed}ms');
+  }
+
+  _imageWorkerLog.info('[MASK_WORKER] Applying ${strokesPayload.length} strokes...');
+  final strokesStart = DateTime.now();
+
+  final mask = baseMask.clone();
+  final w = mask.width;
+  final h = mask.height;
+
+  for (final raw in strokesPayload) {
+    final originalX = (raw['x'] as num).toDouble();
+    final originalY = (raw['y'] as num).toDouble();
+    final originalR = (raw['radius'] as num).toDouble();
+
+    final scaledX = originalX * scale;
+    final scaledY = originalY * scale;
+    final scaledR = originalR * scale;
+
+    final cx = scaledX.round();
+    final cy = scaledY.round();
+    final r = scaledR.round().clamp(1, 200);
+    final r2 = r * r;
+    final isAdd = (raw['isAdd'] as bool?) ?? true;
+    final color = isAdd ? img.ColorRgb8(255, 255, 255) : img.ColorRgb8(0, 0, 0);
+
+    for (var dy = -r; dy <= r; dy++) {
+      for (var dx = -r; dx <= r; dx++) {
+        if (dx * dx + dy * dy <= r2) {
+          final x = cx + dx;
+          final y = cy + dy;
+          if (x >= 0 && x < w && y >= 0 && y < h) {
+            mask.setPixel(x, y, color);
+          }
+        }
+      }
+    }
+  }
+
+  final strokesElapsed = DateTime.now().difference(strokesStart).inMilliseconds;
+  _imageWorkerLog.info('[MASK_WORKER] Stroke application took ${strokesElapsed}ms');
+
+  final postStart = DateTime.now();
+  final holeFreeMask = MaskUtils.fillHoles(mask);
+  final featheredMask = MaskUtils.featherMaskEdges(holeFreeMask, radius: 1);
+  final expandedMask = MaskUtils.dilateMaskByPercent(featheredMask, percent: 0.02);
+  final postElapsed = DateTime.now().difference(postStart).inMilliseconds;
+  _imageWorkerLog.info('[MASK_WORKER] Post-process (fill/feather/dilate) took ${postElapsed}ms');
+
+  final packStart = DateTime.now();
+  // Upscale the working mask back to the original image dimensions.
+  final upscaledMask = (workW == width && workH == height)
+      ? expandedMask
+      : img.copyResize(expandedMask, width: width, height: height, interpolation: img.Interpolation.nearest);
+
+  final out = Uint8List(width * height);
+  var idxOut = 0;
+  for (var y = 0; y < upscaledMask.height; y++) {
+    for (var x = 0; x < upscaledMask.width; x++) {
+      final p = upscaledMask.getPixel(x, y);
+      out[idxOut++] = p.r.toInt().clamp(0, 255);
+    }
+  }
+  final packElapsed = DateTime.now().difference(packStart).inMilliseconds;
+
+  final totalElapsed = DateTime.now().difference(startedAt).inMilliseconds;
+  _imageWorkerLog.info(
+    '[MASK_WORKER] buildStrokeMask total=${totalElapsed}ms '
+    '(strokes=${strokesElapsed}ms, post=$postElapsed ms, pack=${packElapsed}ms)',
+  );
+
+  return <String, Object>{'width': width, 'height': height, 'data': out};
+}
+
 Future<Map<String, Object?>> _handleDenoisePreprocess(Object payload) async {
   final map = payload as Map<Object?, Object?>;
   final bytes = map['bytes'] as Uint8List;
@@ -228,12 +351,9 @@ Future<Map<String, Object?>> _handleDenoisePreprocess(Object payload) async {
 
   final originalWidth = decoded.width;
   final originalHeight = decoded.height;
-  _imageWorkerLog.info(
-    '[DENOISE] Preprocess(worker): original size ${originalWidth}x$originalHeight',
-  );
+  _imageWorkerLog.info('[DENOISE] Preprocess(worker): original size ${originalWidth}x$originalHeight');
 
-  final rgbImage =
-      decoded.numChannels == 3 ? decoded : decoded.convert(numChannels: 3);
+  final rgbImage = decoded.numChannels == 3 ? decoded : decoded.convert(numChannels: 3);
 
   final resized = img.copyResize(
     rgbImage,
@@ -244,11 +364,7 @@ Future<Map<String, Object?>> _handleDenoisePreprocess(Object payload) async {
 
   final tensor = _denoiseImageToFloat32NCHW(resized);
 
-  return <String, Object?>{
-    'tensor': tensor,
-    'originalWidth': originalWidth,
-    'originalHeight': originalHeight,
-  };
+  return <String, Object?>{'tensor': tensor, 'originalWidth': originalWidth, 'originalHeight': originalHeight};
 }
 
 Future<Uint8List> _handleDenoisePostprocess(Object payload) async {
@@ -313,8 +429,9 @@ Future<Uint8List?> _handleVignetteBake(Object payload) async {
   const baseOffsetRange = 0.07;
   final baseOffset = baseOffsetMin + baseOffsetRange * t;
   const smallRadiusLandscapeBoostMax = 0.06;
-  final smallRadiusLandscapeBoost =
-      landscapeScale > 0 ? smallRadiusLandscapeBoostMax * (1.0 - t) * landscapeScale : 0.0;
+  final smallRadiusLandscapeBoost = landscapeScale > 0
+      ? smallRadiusLandscapeBoostMax * (1.0 - t) * landscapeScale
+      : 0.0;
 
   final inner = 0.15 + 0.6 * (t * aspectScale) + baseOffset + smallRadiusLandscapeBoost;
   final soft = (0.05 + 0.35 * feather.clamp(0.0, 1.0)).clamp(0.01, 1.0);
@@ -340,14 +457,9 @@ Future<Uint8List?> _handleVignetteBake(Object payload) async {
     }
   }
 
-  final isJpeg = bytes.length >= 3 &&
-      bytes[0] == 0xFF &&
-      bytes[1] == 0xD8 &&
-      bytes[2] == 0xFF;
+  final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 
-  return Uint8List.fromList(
-    isJpeg ? img.encodeJpg(decoded) : img.encodePng(decoded),
-  );
+  return Uint8List.fromList(isJpeg ? img.encodeJpg(decoded) : img.encodePng(decoded));
 }
 
 Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
@@ -376,23 +488,12 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
   final originalHeight = decoded.height;
 
   if (outC == 1) {
-    final base = decoded.numChannels == 4
-        ? decoded
-        : decoded.convert(numChannels: 4);
+    final base = decoded.numChannels == 4 ? decoded : decoded.convert(numChannels: 4);
 
     final useBlur = mode == 'blur';
-    final blurred = useBlur
-        ? img.gaussianBlur(
-            base.clone(),
-            radius: blurRadius.clamp(1, 64),
-          )
-        : null;
+    final blurred = useBlur ? img.gaussianBlur(base.clone(), radius: blurRadius.clamp(1, 64)) : null;
 
-    final result = img.Image(
-      width: originalWidth,
-      height: originalHeight,
-      numChannels: 4,
-    );
+    final result = img.Image(width: originalWidth, height: originalHeight, numChannels: 4);
 
     // Build a small grayscale mask from the raw model output so we can
     // fill interior holes and feather the alpha edges before upsampling.
@@ -407,17 +508,12 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
       }
     }
     final filledMask = MaskUtils.fillHoles(rawMask);
-    final featheredMask = MaskUtils.featherMaskEdges(
-      filledMask,
-      radius: 2,
-    );
+    final featheredMask = MaskUtils.featherMaskEdges(filledMask, radius: 2);
 
     for (var y = 0; y < originalHeight; y++) {
       for (var x = 0; x < originalWidth; x++) {
-        final mx =
-            (x * outW / originalWidth).clamp(0, outW - 1).toInt();
-        final my =
-            (y * outH / originalHeight).clamp(0, outH - 1).toInt();
+        final mx = (x * outW / originalWidth).clamp(0, outW - 1).toInt();
+        final my = (y * outH / originalHeight).clamp(0, outH - 1).toInt();
         final mp = featheredMask.getPixel(mx, my);
         final v = mp.r.toDouble().clamp(0.0, 255.0);
         // Strengthen the mask so interior foreground becomes solid (alpha=1)
@@ -442,12 +538,9 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
           final bg = bp.g.toDouble();
           final bb = bp.b.toDouble();
 
-          final r =
-              (weight * sr + (1 - weight) * br).round().clamp(0, 255);
-          final g =
-              (weight * sg + (1 - weight) * bg).round().clamp(0, 255);
-          final b =
-              (weight * sb + (1 - weight) * bb).round().clamp(0, 255);
+          final r = (weight * sr + (1 - weight) * br).round().clamp(0, 255);
+          final g = (weight * sg + (1 - weight) * bg).round().clamp(0, 255);
+          final b = (weight * sb + (1 - weight) * bb).round().clamp(0, 255);
 
           result.setPixel(x, y, img.ColorRgba8(r, g, b, 255));
         } else {
@@ -455,25 +548,15 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
           result.setPixel(
             x,
             y,
-            img.ColorRgba8(
-              sr.toInt().clamp(0, 255),
-              sg.toInt().clamp(0, 255),
-              sb.toInt().clamp(0, 255),
-              alpha,
-            ),
+            img.ColorRgba8(sr.toInt().clamp(0, 255), sg.toInt().clamp(0, 255), sb.toInt().clamp(0, 255), alpha),
           );
         }
       }
     }
 
-    final isJpeg = bytes.length >= 3 &&
-        bytes[0] == 0xFF &&
-        bytes[1] == 0xD8 &&
-        bytes[2] == 0xFF;
+    final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 
-    return Uint8List.fromList(
-      isJpeg ? img.encodeJpg(result) : img.encodePng(result),
-    );
+    return Uint8List.fromList(isJpeg ? img.encodeJpg(result) : img.encodePng(result));
   }
 
   if (outC == 3) {
@@ -481,12 +564,9 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
     var idx = 0;
     for (var y = 0; y < outH; y++) {
       for (var x = 0; x < outW; x++) {
-        final r = _denoiseOutputToByte(
-            (outputList[idx++] as num).toDouble());
-        final g = _denoiseOutputToByte(
-            (outputList[idx++] as num).toDouble());
-        final b = _denoiseOutputToByte(
-            (outputList[idx++] as num).toDouble());
+        final r = _denoiseOutputToByte((outputList[idx++] as num).toDouble());
+        final g = _denoiseOutputToByte((outputList[idx++] as num).toDouble());
+        final b = _denoiseOutputToByte((outputList[idx++] as num).toDouble());
         outImage.setPixel(x, y, img.ColorRgba8(r, g, b, 255));
       }
     }
@@ -498,14 +578,9 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
       interpolation: img.Interpolation.linear,
     );
 
-    final isJpeg = bytes.length >= 3 &&
-        bytes[0] == 0xFF &&
-        bytes[1] == 0xD8 &&
-        bytes[2] == 0xFF;
+    final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 
-    return Uint8List.fromList(
-      isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut),
-    );
+    return Uint8List.fromList(isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut));
   }
 
   throw StateError('[BG_WORKER] Unsupported channel layout: C=$outC');
@@ -575,4 +650,3 @@ img.Image _denoiseFloat32NHWCToImage(List<dynamic> raw, int w, int h) {
   }
   return out;
 }
-
