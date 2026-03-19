@@ -18,7 +18,11 @@
     const sharedLink = await modalManager.show(SharedLinkCreateModal, { assetIds: [asset.id] });
 
     if (sharedLink) {
-      await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink) });
+      await modalManager.show(QrCodeModal, {
+        title: $t('view_link'),
+        value: makeSharedLinkUrl(sharedLink),
+        mdFullSize: false,
+      });
     }
   };
 </script>

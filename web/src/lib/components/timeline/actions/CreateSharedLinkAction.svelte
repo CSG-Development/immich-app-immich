@@ -15,7 +15,11 @@
     });
 
     if (sharedLink) {
-      await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink) });
+      await modalManager.show(QrCodeModal, {
+        title: $t('view_link'),
+        value: makeSharedLinkUrl(sharedLink),
+        mdFullSize: false,
+      });
     }
   };
 </script>

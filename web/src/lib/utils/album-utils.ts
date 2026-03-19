@@ -214,7 +214,7 @@ export const confirmAlbumDelete = async (album: AlbumResponseDto) => {
   const description = $t('album_delete_confirmation_description');
   const prompt = `${confirmation} ${description}`;
 
-  return modalManager.showDialog({ prompt });
+  return modalManager.showDialog({ prompt, mdFullSize: false });
 };
 
 interface AlbumSortOption {
