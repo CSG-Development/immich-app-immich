@@ -6,6 +6,7 @@ import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs
 import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/ai_editor.dart';
 import 'package:image_editor/src/features/vignette_editor/vignette_editor.dart';
+import 'package:image_editor/src/features/watermark_editor/watermark_editor.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 class _EditorToolItem {
@@ -125,10 +126,46 @@ class EditorBottomBar extends StatelessWidget {
     );
   }
 
+  /// Opens the watermark editor on top of the main editor.
+  void openWatermarkEditor({required BuildContext context}) async {
+    if (!context.mounted) return;
+    var currentBytes = await editor.editorImage?.safeByteArray();
+    currentBytes ??= await editor.captureEditorImage();
+    if (currentBytes.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No image to edit. Load an image first.')));
+      }
+      return;
+    }
+
+    final theme = editor.configs.theme ?? ThemeData.dark();
+    final sizesManager = editor.sizesManager;
+
+    await editor.openPage(
+      HeroMode(
+        child: WatermarkEditor.memory(
+          currentBytes,
+          editor: editor,
+          theme: theme,
+          mainImageSize: sizesManager.decodedImageSize,
+          mainBodySize: sizesManager.bodySize,
+          onDone: () {},
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
     final tools = <_EditorToolItem>[
       _EditorToolItem(label: 'Paint', icon: Icons.edit_rounded, onPressed: editor.openPaintEditor),
       _EditorToolItem(label: 'Text', icon: Icons.text_fields, onPressed: editor.openTextEditor),
+      _EditorToolItem(
+        label: 'Watermark',
+        icon: Icons.star_rounded,
+        onPressed: () => openWatermarkEditor(context: context),
+      ),
       _EditorToolItem(
         label: 'Vignette',
         icon: Icons.vignette_rounded,
