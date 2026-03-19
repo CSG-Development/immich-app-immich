@@ -21,6 +21,7 @@
       title: $t('remove_assets_title'),
       prompt: $t('remove_assets_shared_link_confirmation', { values: { count: getAssets().length } }),
       confirmText: $t('remove'),
+      mdFullSize: false,
     });
 
     if (!isConfirmed) {

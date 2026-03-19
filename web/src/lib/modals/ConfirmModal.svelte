@@ -13,6 +13,7 @@
     size?: 'small' | 'medium';
     onClose: (confirmed: boolean) => void;
     promptSnippet?: Snippet;
+    mdFullSize?: boolean;
   }
 
   let {
@@ -25,6 +26,7 @@
     size = 'small',
     onClose,
     promptSnippet,
+    mdFullSize = true,
   }: Props = $props();
 
   const handleConfirm = () => {
@@ -32,7 +34,7 @@
   };
 </script>
 
-<Modal {title} onClose={() => onClose(false)} {size} {icon}>
+<Modal {title} onClose={() => onClose(false)} {size} {icon} {mdFullSize}>
   <ModalBody>
     {#if promptSnippet}{@render promptSnippet()}{:else}
       <p>{prompt}</p>
@@ -41,10 +43,25 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose(false)}>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose(false)}
+      >
         {$t('cancel')}
       </Button>
-      <Button shape="round" color={confirmColor} fullWidth onclick={handleConfirm} {disabled}>
+      <Button
+        shape="round"
+        color={confirmColor}
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={handleConfirm}
+        {disabled}
+      >
         {confirmText}
       </Button>
     </HStack>

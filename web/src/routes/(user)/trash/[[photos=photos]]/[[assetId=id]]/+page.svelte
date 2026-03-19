@@ -47,6 +47,7 @@
     const isConfirmed = await modalManager.showDialog({
       prompt: $t('empty_trash_confirmation'),
       confirmColor: 'danger',
+      mdFullSize: false,
     });
 
     if (!isConfirmed) {
@@ -69,6 +70,7 @@
     const isConfirmed = await modalManager.showDialog({
       prompt: $t('assets_restore_confirmation'),
       confirmColor: 'danger',
+      mdFullSize: false,
     });
     if (!isConfirmed) {
       return;
