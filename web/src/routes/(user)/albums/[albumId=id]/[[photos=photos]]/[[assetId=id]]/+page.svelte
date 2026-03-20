@@ -661,7 +661,13 @@
       </AssetSelectControlBar>
     {:else}
       {#if viewMode === AlbumPageViewMode.VIEW}
-        <ControlAppBar showBackButton backIcon={mdiArrowLeft} onClose={() => goto(backUrl)}>
+        <ControlAppBar
+          showBackButton
+          backIcon={mdiArrowLeft}
+          onClose={async () => {
+            await goto(backUrl);
+          }}
+        >
           {#snippet trailing()}
             <CastButton />
 
