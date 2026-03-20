@@ -36,7 +36,14 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="primary" fullWidth onclick={() => onClose()}>
+      <Button
+        shape="round"
+        color="primary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}
+      >
         {$t('done')}
       </Button>
     </HStack>

@@ -70,12 +70,28 @@
     {#if passwordLoginEnabled}
       <HStack fullWidth>
         <Button fullWidth shape="round" color="secondary" onclick={() => onClose()}>{$t('cancel')}</Button>
-        <Button type="submit" form="reset-pin-form" fullWidth shape="round" color="primary" disabled={!password}>
+        <Button
+          type="submit"
+          form="reset-pin-form"
+          fullWidth
+          shape="round"
+          color="primary"
+          size="standard-large"
+          class="font-normal"
+          disabled={!password}
+        >
           {$t('reset')}
         </Button>
       </HStack>
     {:else}
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>{$t('close')}</Button>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}>{$t('close')}</Button
+      >
     {/if}
   </ModalFooter>
 </Modal>

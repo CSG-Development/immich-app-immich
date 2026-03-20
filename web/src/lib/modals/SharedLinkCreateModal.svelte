@@ -224,13 +224,24 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}
+      >
         {$t('cancel')}
       </Button>
       {#if editingLink}
-        <Button shape="round" fullWidth onclick={handleEditLink}>{$t('confirm')}</Button>
+        <Button shape="round" size="standard-large" class="font-normal" fullWidth onclick={handleEditLink}
+          >{$t('confirm')}</Button
+        >
       {:else}
-        <Button shape="round" fullWidth onclick={handleCreateSharedLink}>{$t('create_link')}</Button>
+        <Button shape="round" size="standard-large" class="font-normal" fullWidth onclick={handleCreateSharedLink}
+          >{$t('create_link')}</Button
+        >
       {/if}
     </HStack>
   </ModalFooter>

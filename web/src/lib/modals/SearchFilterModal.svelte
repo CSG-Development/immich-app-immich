@@ -210,10 +210,18 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" size="large" type="reset" color="secondary" fullWidth form={formId}
-        >{$t('clear_all')}</Button
+      <Button
+        shape="round"
+        size="standard-large"
+        class="font-normal"
+        type="reset"
+        color="secondary"
+        fullWidth
+        form={formId}>{$t('clear_all')}</Button
       >
-      <Button shape="round" size="large" type="submit" fullWidth form={formId}>{$t('search')}</Button>
+      <Button shape="round" size="standard-large" class="font-normal" type="submit" fullWidth form={formId}
+        >{$t('search')}</Button
+      >
     </HStack>
   </ModalFooter>
 </Modal>

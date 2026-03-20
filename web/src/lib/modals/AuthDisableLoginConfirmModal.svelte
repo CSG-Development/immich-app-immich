@@ -33,10 +33,24 @@
   </ModalBody>
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose(false)}>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose(false)}
+      >
         {$t('cancel')}
       </Button>
-      <Button shape="round" color="danger" fullWidth onclick={() => onClose(true)}>
+      <Button
+        shape="round"
+        color="danger"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose(true)}
+      >
         {$t('confirm')}
       </Button>
     </HStack>

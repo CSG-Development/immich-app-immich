@@ -71,7 +71,13 @@
 
       <ModalFooter>
         {#if selectedUsers.length > 0}
-          <Button shape="round" fullWidth onclick={() => onClose(selectedUsers)}>{$t('add')}</Button>
+          <Button
+            shape="round"
+            fullWidth
+            size="standard-large"
+            class="font-normal"
+            onclick={() => onClose(selectedUsers)}>{$t('add')}</Button
+          >
         {/if}
       </ModalFooter>
     </div>
