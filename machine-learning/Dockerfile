@@ -1,8 +1,15 @@
 ARG DEVICE=cpu
 
+FROM debian:13-slim AS bootstrap
+
+RUN apt-get update && apt-get install -y bash util-linux
+
 #FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
 #FROM dhi.io/python:3.11-debian13 AS builder-cpu
 FROM dhi.io/python:3.11-debian13 AS base-fixed
+
+COPY --from=bootstrap /bin/sh /bin/sh
+COPY --from=bootstrap /bin/bash /bin/bash
 
 # dhi.io/python:3.11-debian13-dev -> dhi.io/python:3.11-debian13
 RUN apt-get update && apt-get install -y --no-install-recommends \
