@@ -1,8 +1,8 @@
 ARG DEVICE=cpu
 
 #FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
-FROM dhi.io/python:3.11-debian13 AS builder-cpu
-
+#FROM dhi.io/python:3.11-debian13 AS builder-cpu
+FROM dhi.io/python:3.11-debian13 AS base-fixed
 
 # dhi.io/python:3.11-debian13-dev -> dhi.io/python:3.11-debian13
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #RUN if ! getent group 65532; then groupadd -g 65532 _apt; fi && \
 #    if ! id -u 42 >/dev/null 2>&1; then useradd -u 42 -g 65532 -r -s /usr/sbin/nologin _apt; fi
 
+
+FROM base-fixed AS builder-cpu
 
 FROM builder-cpu AS builder-openvino
 
