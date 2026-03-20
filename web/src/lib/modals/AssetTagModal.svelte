@@ -100,8 +100,23 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" fullWidth color="secondary" onclick={() => onClose()}>{$t('cancel')}</Button>
-      <Button type="submit" shape="round" fullWidth form="create-tag-form" {disabled}>{$t('tag_assets')}</Button>
+      <Button
+        shape="round"
+        fullWidth
+        size="standard-large"
+        class="font-normal"
+        color="secondary"
+        onclick={() => onClose()}>{$t('cancel')}</Button
+      >
+      <Button
+        type="submit"
+        shape="round"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        form="create-tag-form"
+        {disabled}>{$t('tag_assets')}</Button
+      >
     </HStack>
   </ModalFooter>
 </Modal>

@@ -61,13 +61,35 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>{cancelText}</Button>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}>{cancelText}</Button
+      >
       {#if isEditing}
-        <Button shape="round" color="danger" fullWidth onclick={() => onClose({ action: 'delete' })}>
+        <Button
+          shape="round"
+          color="danger"
+          size="standard-large"
+          class="font-normal"
+          fullWidth
+          onclick={() => onClose({ action: 'delete' })}
+        >
           {$t('delete')}
         </Button>
       {/if}
-      <Button shape="round" type="submit" disabled={!canSubmit} fullWidth form="library-import-path-form">
+      <Button
+        shape="round"
+        type="submit"
+        size="standard-large"
+        class="font-normal"
+        disabled={!canSubmit}
+        fullWidth
+        form="library-import-path-form"
+      >
         {submitText}
       </Button>
     </HStack>

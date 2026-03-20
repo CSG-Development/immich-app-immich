@@ -64,13 +64,33 @@
   </ModalBody>
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>{$t('cancel')}</Button>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}>{$t('cancel')}</Button
+      >
       {#if isEditing}
-        <Button shape="round" color="danger" fullWidth onclick={() => onClose({ action: 'delete' })}
-          >{$t('delete')}</Button
+        <Button
+          shape="round"
+          color="danger"
+          size="standard-large"
+          class="font-normal"
+          fullWidth
+          onclick={() => onClose({ action: 'delete' })}>{$t('delete')}</Button
         >
       {/if}
-      <Button shape="round" type="submit" disabled={!canSubmit} fullWidth form="add-exclusion-pattern-form">
+      <Button
+        shape="round"
+        type="submit"
+        size="standard-large"
+        class="font-normal"
+        disabled={!canSubmit}
+        fullWidth
+        form="add-exclusion-pattern-form"
+      >
         {submitText}
       </Button>
     </HStack>

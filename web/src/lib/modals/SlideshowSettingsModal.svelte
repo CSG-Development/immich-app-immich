@@ -110,8 +110,17 @@
   </ModalBody>
   <ModalFooter>
     <HStack fullWidth>
-      <Button color="secondary" shape="round" fullWidth onclick={() => onClose()}>{$t('cancel')}</Button>
-      <Button fullWidth color="primary" shape="round" onclick={applyChanges}>{$t('confirm')}</Button>
+      <Button
+        color="secondary"
+        shape="round"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}>{$t('cancel')}</Button
+      >
+      <Button fullWidth color="primary" shape="round" size="standard-large" class="font-normal" onclick={applyChanges}
+        >{$t('confirm')}</Button
+      >
     </HStack>
   </ModalFooter>
 </Modal>

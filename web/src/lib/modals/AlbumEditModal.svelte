@@ -56,8 +56,23 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>{$t('cancel')}</Button>
-      <Button shape="round" type="submit" fullWidth disabled={isSubmitting} form="edit-album-form">{$t('save')}</Button>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}>{$t('cancel')}</Button
+      >
+      <Button
+        shape="round"
+        type="submit"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        disabled={isSubmitting}
+        form="edit-album-form">{$t('save')}</Button
+      >
     </HStack>
   </ModalFooter>
 </Modal>
