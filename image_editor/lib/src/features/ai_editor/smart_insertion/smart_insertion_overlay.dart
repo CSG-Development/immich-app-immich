@@ -9,6 +9,7 @@ import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_selection_widgets.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_with_strokes_overlay.dart';
+import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 
 typedef SmartInsertionResult = ({Uint8List cutoutBytes, img.Image placementMask});
 
@@ -471,16 +472,16 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.gesture),
-                    color: _activeBottomAction == SmartInsertionBottomAction.target ? Colors.white : Colors.white70,
-                    tooltip: 'Target selection shape',
+                  _buildBottomActionButton(
+                    label: 'Target',
+                    icon: Icons.gesture,
+                    isActive: _activeBottomAction == SmartInsertionBottomAction.target,
                     onPressed: _openShapePicker,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.brush),
-                    color: _activeBottomAction == SmartInsertionBottomAction.brush ? Colors.white : Colors.white54,
-                    tooltip: 'Brush',
+                  _buildBottomActionButton(
+                    label: 'Brush',
+                    icon: Icons.brush,
+                    isActive: _activeBottomAction == SmartInsertionBottomAction.brush,
                     onPressed: () {
                       setState(() {
                         _targetShape = null;
@@ -489,10 +490,10 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
                       });
                     },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.auto_fix_off),
-                    color: _activeBottomAction == SmartInsertionBottomAction.eraser ? Colors.white : Colors.white54,
-                    tooltip: 'Eraser',
+                  _buildBottomActionButton(
+                    label: 'Eraser',
+                    icon: Icons.auto_fix_off,
+                    isActive: _activeBottomAction == SmartInsertionBottomAction.eraser,
                     onPressed: () {
                       setState(() {
                         _targetShape = null;
@@ -507,6 +508,20 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBottomActionButton({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onPressed,
+  }) {
+    final color = isActive ? Colors.white : Colors.white70;
+    return FlatIconTextButton(
+      label: Text(label, style: TextStyle(fontSize: 10.0, color: color)),
+      icon: Icon(icon, size: 22, color: color),
+      onPressed: onPressed,
     );
   }
 }

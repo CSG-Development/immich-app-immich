@@ -16,10 +16,32 @@ Future<bool> showModelDownloadDialog(
   required String modelName,
 }) async {
   if (modelPathOrUrl == null || modelPathOrUrl.isEmpty) return false;
-  if (!OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) return true;
-  if (await OnnxModelLoader.isCached(modelPathOrUrl)) return true;
+  final isRemote = OnnxModelLoader.isRemoteUrl(modelPathOrUrl);
+  final localAvailable = await OnnxModelLoader.isLocallyAvailable(modelPathOrUrl);
+  if (localAvailable) return true;
 
   if (!context.mounted) return false;
+
+  if (!isRemote) {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: Text('$modelName model not found'),
+        content: Text(
+          'The required model was not found at:\n$modelPathOrUrl\n\n'
+          'Please provide a valid model asset/path and try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
 
   final confirmed = await showDialog<bool>(
     context: context,

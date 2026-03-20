@@ -65,10 +65,17 @@ class AiEditorBottomBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (final item in items)
-                    FlatIconTextButton(
-                      label: Text(item.label, style: _bottomTextStyle),
-                      icon: Icon(item.icon, size: 22, color: Colors.white),
-                      onPressed: item.onPressed,
+                    Tooltip(
+                      message: item.label,
+                      child: Semantics(
+                        button: true,
+                        label: item.label,
+                        child: FlatIconTextButton(
+                          label: Text(item.label, style: _bottomTextStyle),
+                          icon: Icon(item.icon, size: 22, color: Colors.white),
+                          onPressed: item.onPressed,
+                        ),
+                      ),
                     ),
                 ],
               ),

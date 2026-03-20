@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_session_lifecycle.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 import 'package:onnxruntime/src/ort_isolate_session.dart';
@@ -55,20 +56,39 @@ class RealEsrganOnnx {
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
+  bool _didRetrySessionInit = false;
 
   Future<void> _ensureSession() async {
     if (_session != null) return;
     _log.info('[ESRGAN_ONNX] Creating ONNX session from: $modelPathOrUrl');
+    final options = OrtSessionOptions();
     try {
       OrtEnv.instance.init();
       final bytes = await OnnxModelLoader.loadBytes(modelPathOrUrl);
-      final options = OrtSessionOptions();
       _session = OrtSession.fromBuffer(bytes, options);
       _isolateSession = OrtIsolateSession(_session!);
+      _didRetrySessionInit = false;
       _log.info('[ESRGAN_ONNX] ONNX isolate session created successfully.');
     } catch (e, st) {
       _log.severe('[ESRGAN_ONNX] Failed to create ONNX session', e, st);
       _session = null;
+      if (!_didRetrySessionInit && OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+        _didRetrySessionInit = true;
+        _log.warning('[ESRGAN_ONNX] Clearing cached model and retrying once.');
+        try {
+          await OnnxModelLoader.clearCached(modelPathOrUrl);
+          await _ensureSession();
+          return;
+        } catch (retryError, retryStack) {
+          _log.severe(
+            '[ESRGAN_ONNX] Retry after cache clear failed',
+            retryError,
+            retryStack,
+          );
+        }
+      }
+    } finally {
+      options.release();
     }
   }
 
@@ -78,6 +98,11 @@ class RealEsrganOnnx {
   Future<Uint8List> upscale(Uint8List imageBytes) async {
     final totalStart = DateTime.now();
     try {
+      final modelPathLower = modelPathOrUrl.toLowerCase();
+      final expectsFixed256 =
+          modelPathLower.contains('x4-256') ||
+          modelPathLower.endsWith('realesrgan-x4-256.onnx');
+
       // Decode and prepare a safe working-size RGB image.
       final decoded = img.decodeImage(imageBytes);
       if (decoded == null) {
@@ -95,11 +120,17 @@ class RealEsrganOnnx {
       int workW;
       int workH;
       img.Image workImage;
+      final int? effectiveFixedInputSize = expectsFixed256
+          ? 256
+          : fixedInputSize;
+      final int effectiveMaxInputSide = expectsFixed256
+          ? 256
+          : maxInputSide;
 
-      if (fixedInputSize != null) {
+      if (effectiveFixedInputSize != null) {
         // Force a square input for fixed-shape models.
-        workW = fixedInputSize!;
-        workH = fixedInputSize!;
+        workW = effectiveFixedInputSize;
+        workH = effectiveFixedInputSize;
         workImage = img.copyResize(
           rgbImage,
           width: workW,
@@ -109,7 +140,7 @@ class RealEsrganOnnx {
       } else {
         final longestSide = math.max(rgbImage.width, rgbImage.height);
         final scale =
-            longestSide > maxInputSide ? maxInputSide / longestSide : 1.0;
+            longestSide > effectiveMaxInputSide ? effectiveMaxInputSide / longestSide : 1.0;
         workW =
             (rgbImage.width * scale).round().clamp(1, rgbImage.width);
         workH =
@@ -128,7 +159,7 @@ class RealEsrganOnnx {
       _log.info(
         '[ESRGAN_ONNX] Original ${rgbImage.width}x${rgbImage.height}, '
         'working ${workW}x$workH '
-        '(maxInputSide=$maxInputSide, fixedInputSize=$fixedInputSize)',
+        '(maxInputSide=$effectiveMaxInputSide, fixedInputSize=$effectiveFixedInputSize)',
       );
 
       final prepStart = DateTime.now();
@@ -175,119 +206,106 @@ class RealEsrganOnnx {
         resolvedImageInputName: inputTensor,
       };
 
-      final onnxStart = DateTime.now();
-      final isolateSession = _isolateSession;
-      final outputs = isolateSession != null
-          ? await isolateSession.run(
-              runOptions,
-              inputs,
-              <String>[resolvedOutputName],
-            )
-          : await session.runAsync(
-              runOptions,
-              inputs,
-              <String>[resolvedOutputName],
-            );
-      final onnxElapsed =
-          DateTime.now().difference(onnxStart).inMilliseconds;
-      _log.info(
-        '[ESRGAN_ONNX] session.run (isolate=${isolateSession != null}) '
-        'completed in ${onnxElapsed}ms',
-      );
+      List<OrtValue?>? outputs;
+      int onnxElapsed = 0;
+      try {
+        final onnxStart = DateTime.now();
+        final isolateSession = _isolateSession;
+        outputs = isolateSession != null
+            ? await isolateSession.run(
+                runOptions,
+                inputs,
+                <String>[resolvedOutputName],
+              )
+            : await session.runAsync(
+                runOptions,
+                inputs,
+                <String>[resolvedOutputName],
+              );
+        onnxElapsed = DateTime.now().difference(onnxStart).inMilliseconds;
+        _log.info(
+          '[ESRGAN_ONNX] session.run (isolate=${isolateSession != null}) '
+          'completed in ${onnxElapsed}ms',
+        );
 
-      inputTensor.release();
-      runOptions.release();
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) {
+          _log.warning(
+            '[ESRGAN_ONNX] Output tensor "$resolvedOutputName" not found.',
+          );
+          return imageBytes;
+        }
 
-      final outputTensor = outputs?.first;
-      if (outputTensor == null) {
+        final raw = outputTensor.value;
+        final flatData = <dynamic>[];
+        final shape = _inferShapeAndFlatten(raw, flatData);
+
+        if (shape.length != 4) {
+          _log.warning(
+            '[ESRGAN_ONNX] Unexpected output rank: ${shape.length} (shape=$shape)',
+          );
+          return imageBytes;
+        }
+
+        // Support both NCHW \[1, 3, H, W] and NHWC \[1, H, W, 3].
+        final bool isNchw = shape[1] == 3;
+        final outH = isNchw ? shape[2] : shape[1];
+        final outW = isNchw ? shape[3] : shape[2];
+
+        final outImage = isNchw
+            ? _srFloat32NchwToImage(flatData, outW, outH)
+            : _srFloat32NhwcToImage(flatData, outW, outH);
+
+        // Render to the user-selected output longest side (maxOutputSide).
+        // This makes modal output selection deterministic.
+        final originalLongestSide = math.max(originalWidth, originalHeight);
+        final targetLongest = math.max(1, maxOutputSide);
+        final outputScale =
+            originalLongestSide > 0 ? targetLongest / originalLongestSide : 1.0;
+        final targetW = (originalWidth * outputScale).round().clamp(1, targetLongest);
+        final targetH = (originalHeight * outputScale).round().clamp(1, targetLongest);
+
+        final resizedOut = (targetW == outImage.width &&
+                targetH == outImage.height)
+            ? outImage
+            : img.copyResize(
+                outImage,
+                width: targetW,
+                height: targetH,
+                interpolation: img.Interpolation.linear,
+              );
+
+        final isJpeg = imageBytes.length >= 3 &&
+            imageBytes[0] == 0xFF &&
+            imageBytes[1] == 0xD8 &&
+            imageBytes[2] == 0xFF;
+
+        final encoded = Uint8List.fromList(
+          isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut),
+        );
+
+        final totalElapsed =
+            DateTime.now().difference(totalStart).inMilliseconds;
+        _log.info(
+          '[ESRGAN_ONNX] upscale() total elapsed ${totalElapsed}ms '
+          '(pre=${prepElapsed}ms, onnx=${onnxElapsed}ms)',
+        );
+
+        return encoded;
+      } finally {
         outputs?.forEach((t) => t?.release());
-        _log.warning(
-          '[ESRGAN_ONNX] Output tensor "$resolvedOutputName" not found.',
-        );
-        return imageBytes;
+        inputTensor.release();
+        runOptions.release();
       }
-
-      final raw = outputTensor.value;
-      final flatData = <dynamic>[];
-      final shape = _inferShapeAndFlatten(raw, flatData);
-
-      outputs?.forEach((t) => t?.release());
-
-      if (shape.length != 4) {
-        _log.warning(
-          '[ESRGAN_ONNX] Unexpected output rank: ${shape.length} (shape=$shape)',
-        );
-        return imageBytes;
-      }
-
-      // Support both NCHW \[1, 3, H, W] and NHWC \[1, H, W, 3].
-      final bool isNchw = shape[1] == 3;
-      final outH = isNchw ? shape[2] : shape[1];
-      final outW = isNchw ? shape[3] : shape[2];
-
-      final outImage = isNchw
-          ? _srFloat32NchwToImage(flatData, outW, outH)
-          : _srFloat32NhwcToImage(flatData, outW, outH);
-
-      // Infer scale factor from working size to model output,
-      // then apply the same factor to the original dimensions, but clamp
-      // the final longest side to [1, maxOutputSide] to keep memory bounded.
-      final scaleW = outW / workW;
-      final scaleH = outH / workH;
-      final approxScale = math.min(scaleW, scaleH);
-
-      double desiredFactor;
-      if ((approxScale - 4.0).abs() < 0.3) {
-        desiredFactor = 4.0;
-      } else if ((approxScale - 2.0).abs() < 0.3) {
-        desiredFactor = 2.0;
-      } else {
-        desiredFactor = approxScale.clamp(1.0, 8.0);
-      }
-
-      final originalLongestSide = math.max(originalWidth, originalHeight);
-      final maxFactorByOutput =
-          originalLongestSide > 0 ? maxOutputSide / originalLongestSide : 1.0;
-      final factor =
-          math.min(desiredFactor, maxFactorByOutput.clamp(1.0, 8.0));
-
-      final unclampedTargetW = (originalWidth * factor).round();
-      final unclampedTargetH = (originalHeight * factor).round();
-      final targetW =
-          unclampedTargetW.clamp(1, math.max(1, maxOutputSide)).toInt();
-      final targetH =
-          unclampedTargetH.clamp(1, math.max(1, maxOutputSide)).toInt();
-
-      final resizedOut = (targetW == outImage.width &&
-              targetH == outImage.height)
-          ? outImage
-          : img.copyResize(
-              outImage,
-              width: targetW,
-              height: targetH,
-              interpolation: img.Interpolation.linear,
-            );
-
-      final isJpeg = imageBytes.length >= 3 &&
-          imageBytes[0] == 0xFF &&
-          imageBytes[1] == 0xD8 &&
-          imageBytes[2] == 0xFF;
-
-      final encoded = Uint8List.fromList(
-        isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut),
-      );
-
-      final totalElapsed =
-          DateTime.now().difference(totalStart).inMilliseconds;
-      _log.info(
-        '[ESRGAN_ONNX] upscale() total elapsed ${totalElapsed}ms '
-        '(pre=${prepElapsed}ms, onnx=${onnxElapsed}ms)',
-      );
-
-      return encoded;
     } catch (e, st) {
       _log.severe('[ESRGAN_ONNX] Exception during upscale', e, st);
       return imageBytes;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'ESRGAN_ONNX',
+        dispose: dispose,
+      );
     }
   }
 

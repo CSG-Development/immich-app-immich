@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
@@ -6,6 +7,7 @@ import 'package:image_editor/src/features/ai_editor/common/services/background_r
 import 'package:image_editor/src/features/ai_editor/background_removal/background_removal_feature.dart';
 import 'package:image_editor/src/features/ai_editor/fastdvdnet_denoise/fastdvdnet_denoise_service.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_feature.dart';
+import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_artifact_pipeline.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/smart_insertion/smart_insertion_feature.dart';
 import 'package:image_editor/src/features/ai_editor/smart_insertion/smart_insertion_service.dart';
@@ -101,21 +103,72 @@ class AiEditorActions {
   }
 
   /// Runs LaMa-based inpainting using the given mask.
-  Future<Uint8List> removeObjects(Uint8List imageBytes, img.Image mask) async {
+  Future<Uint8List> removeObjectsInpaintOnly(
+    Uint8List imageBytes,
+    img.Image mask,
+  ) async {
     // Limit concurrent sessions: keep only object-removal-related ones alive.
     _log.info(
       '[OBJ] removeObjects() called '
       'imageBytesLen=${imageBytes.length} '
       'maskSize=${mask.width}x${mask.height}',
     );
-    await _disposeAllExcept(keepObjectRemoval: true);
-    if (_objectRemovalService == null) {
-      final modelPath = _initConfigs.inpaintingModelPathEffective;
-      _log.info('[OBJ] Creating ObjectRemovalService with modelPath="$modelPath"');
-      _objectRemovalService = ObjectRemovalService(modelPathOrUrl: modelPath);
-    }
+    await _ensureObjectRemovalReady();
     _objectRemovalFeature ??= LamaObjectRemovalFeature(_objectRemovalService!);
     return _objectRemovalFeature!.removeObjects(imageBytes, mask);
+  }
+
+  Future<img.Image?> detectArtifactMask(
+    Uint8List imageBytes,
+    img.Image seedMask,
+  ) async {
+    await _ensureObjectRemovalReady();
+    final artifactPipeline = ObjectRemovalArtifactPipeline(
+      initConfigs: _initConfigs,
+      objectRemovalService: _objectRemovalService!,
+    );
+    return artifactPipeline.detectArtifactMask(
+      processedBytes: imageBytes,
+      seedMask: seedMask,
+    );
+  }
+
+  Future<Uint8List> removeArtifacts(
+    Uint8List imageBytes,
+    img.Image seedMask,
+    img.Image artifactMask,
+  ) async {
+    await _ensureObjectRemovalReady();
+    final artifactPipeline = ObjectRemovalArtifactPipeline(
+      initConfigs: _initConfigs,
+      objectRemovalService: _objectRemovalService!,
+    );
+    return artifactPipeline.processWithArtifactMask(
+      initialBytes: imageBytes,
+      initialSeedMask: seedMask,
+      artifactMask: artifactMask,
+    );
+  }
+
+  Future<void> _ensureObjectRemovalReady() async {
+    await _disposeAllExcept(keepObjectRemoval: true);
+    if (_objectRemovalService != null) return;
+    final modelPath = _initConfigs.inpaintingModelPathEffective;
+    _log.info('[OBJ] Creating ObjectRemovalService with modelPath="$modelPath"');
+    _objectRemovalService = ObjectRemovalService(
+      modelPathOrUrl: modelPath,
+      componentExpandPercent: _initConfigs.objectInpaintComponentExpandPercent,
+      componentExpandMaxPixels: _initConfigs.objectInpaintComponentExpandMaxPixels,
+      maskHardThreshold: _initConfigs.objectInpaintMaskHardThreshold,
+      prefillBeforeOnnx: _initConfigs.objectInpaintPrefillBeforeOnnx,
+      prefillMaxIterations: _initConfigs.objectInpaintPrefillMaxIterations,
+      maskPrepEnabled: _initConfigs.objectInpaintMaskPrepEnabled,
+      adaptiveDilationEnabled: _initConfigs.objectInpaintAdaptiveDilationEnabled,
+      featherRadius: _initConfigs.objectInpaintFeatherRadius,
+      shrinkOnLatePasses: _initConfigs.objectInpaintShrinkOnLatePasses,
+      anchorPointsEnabled: _initConfigs.objectInpaintAnchorPointsEnabled,
+      anchorPointCount: _initConfigs.objectInpaintAnchorPointCount,
+    );
   }
 
   Future<Uint8List> insertSmart({
@@ -151,4 +204,5 @@ class AiEditorActions {
       keepSmartInsertion: false,
     );
   }
+
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:pro_image_editor/core/models/init_configs/editor_init_configs.dart';
 import 'package:pro_image_editor/features/filter_editor/types/filter_matrix.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
-import 'package:image_editor/src/core/models/init_configs/ai_enhancement_models.dart';
 
 /// Init configuration for the AI editor.
 ///
@@ -28,15 +27,35 @@ class AiEditorInitConfigs implements EditorInitConfigs {
     this.denoiseModelPathOrUrl = 'assets/model_fp16.onnx',
     this.fastdvdnetModelPathOrUrl,
     this.animalSegmentationModelPathOrUrl,
-    this.realEsrganModelPathOrUrl =
-        'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4-256.onnx',
     this.realEsrganX2ModelPathOrUrl =
-        'https://huggingface.co/tidus2102/Real-ESRGAN/resolve/main/Real-ESRGAN_x2plus.onnx',
-    this.superResolutionModelPathOrUrl =
-        'https://huggingface.co/onnxmodelzoo/super-resolution-10/resolve/main/super-resolution-10.onnx',
-    this.personMattingModelPathOrUrl =
-        'https://huggingface.co/f5aiteam/rembg/resolve/0097d75761f9310c2041e7c64bb30846071ccb06/u2net_human_seg.onnx',
+        'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4-256.onnx',
     this.fcnSegmentationModelPathOrUrl,
+    this.relightStrength = 0.25,
+    this.relightMaskGamma = 1.0,
+    this.relightMaskBlurRadius = 1.5,
+    this.artifactRemovalEnabled = true,
+    this.artifactDiffThreshold = 26,
+    this.artifactMaskCleanupEnabled = true,
+    this.artifactMaxMaskCoverageRatio = 0.35,
+    this.artifactMaxRoiAreaRatio = 1.0,
+    this.artifactMaxPasses = 3,
+    this.artifactStopCoverageRatio = 0.0007,
+    this.artifactAdaptiveDetectorEnabled = true,
+    this.artifactAdaptiveDetectorSensitivity = 1.0,
+    this.objectInpaintComponentExpandPercent = 0.15,
+    this.objectInpaintComponentExpandMaxPixels = 96,
+    this.objectInpaintLowMemoryTileSide = 768,
+    this.objectInpaintMaskHardThreshold = 16,
+    this.objectInpaintPrefillBeforeOnnx = true,
+    this.objectInpaintPrefillMaxIterations = 64,
+    this.objectInpaintMaskPrepEnabled = true,
+    this.objectInpaintAdaptiveDilationEnabled = true,
+    this.objectInpaintFeatherRadius = 0.0,
+    this.objectInpaintShrinkOnLatePasses = true,
+    this.objectInpaintAnchorPointsEnabled = false,
+    this.objectInpaintAnchorPointCount = 4,
+    this.artifactStopAreaRatioThreshold = 0.7,
+    this.artifactStopAreaRatioConsecutivePasses = 1,
     required this.theme,
   });
 
@@ -63,14 +82,6 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   /// dedicated animal model when available.
   final String? animalSegmentationModelPathOrUrl;
 
-  /// Path or URL to the primary RealESRGAN ONNX model for photo upscaling
-  /// (typically an x4 variant).
-  ///
-  /// This is used when the user explicitly asks for stronger upscaling.
-  /// Can be an asset path or a remote URL. Defaults to AXERA-TECH
-  /// Real-ESRGAN x4 ONNX.
-  final String? realEsrganModelPathOrUrl;
-
   /// Path or URL to the RealESRGAN x2 ONNX model for gentler upscaling and
   /// detail enhancement.
   ///
@@ -78,24 +89,6 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   /// \"AI Fix\"-style enhancements where we want to sharpen without overly
   /// increasing resolution.
   final String? realEsrganX2ModelPathOrUrl;
-
-  /// Path or URL to a generic super-resolution ONNX model (sub-pixel SR),
-  /// based on the ONNX Model Zoo `super-resolution-10` reference.
-  ///
-  /// Can be an asset path or a remote URL. Used as a lightweight sharpening /
-  /// small upscaling stage in the enhancement pipeline.
-  final String? superResolutionModelPathOrUrl;
-
-  /// Path or URL to a person-matting ONNX model (e.g. rembg U^2-Net or MODNet).
-  ///
-  /// Can be an asset path or a remote URL. This is used as the primary
-  /// portrait matting backend in the AI editor and as an input to the
-  /// enhancement pipeline when we need a foreground mask.
-  ///
-  /// Typical models operate on RGB images resized to 512x512 and produce an
-  /// alpha matte in \[0, 1\]. Defaults to f5aiteam/rembg
-  /// `u2net_human_seg.onnx`.
-  final String? personMattingModelPathOrUrl;
 
   /// Path or URL to an FCN-based segmentation ONNX model (e.g. FCN-ResNet50).
   ///
@@ -108,6 +101,85 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   /// output a class map over the same spatial resolution. Defaults to an
   /// INT8-quantized FCN-ResNet50 from the ONNX Model Zoo.
   final String? fcnSegmentationModelPathOrUrl;
+
+  /// Exposure boost strength for relight effect.
+  final double relightStrength;
+
+  /// Gamma exponent applied to the segmentation mask before relight.
+  final double relightMaskGamma;
+
+  /// Blur radius in pixels for smoothing relight mask transitions.
+  final double relightMaskBlurRadius;
+
+  /// Enables ONNX artifact-removal post-processing for enhancement effects.
+  final bool artifactRemovalEnabled;
+
+  /// Grayscale threshold (0..255) for artifact difference mask generation.
+  final int artifactDiffThreshold;
+
+  /// Whether artifact masks receive a light cleanup pass before inpainting.
+  final bool artifactMaskCleanupEnabled;
+
+  /// Maximum artifact mask coverage before post-processing is skipped.
+  final double artifactMaxMaskCoverageRatio;
+
+  /// Maximum expanded ROI area ratio allowed by LaMa inpainting stage.
+  final double artifactMaxRoiAreaRatio;
+
+  /// Maximum number of iterative artifact-cleanup passes.
+  final int artifactMaxPasses;
+
+  /// Early-stop threshold for residual artifact mask coverage (0..1).
+  final double artifactStopCoverageRatio;
+
+  /// Enables adaptive detector voting in object-removal artifact cleanup.
+  final bool artifactAdaptiveDetectorEnabled;
+
+  /// Sensitivity for adaptive detector (higher => more aggressive masking).
+  final double artifactAdaptiveDetectorSensitivity;
+
+  /// Per-component ROI expansion before inpainting (0..1).
+  final double objectInpaintComponentExpandPercent;
+
+  /// Hard cap for per-component ROI expansion in pixels.
+  final int objectInpaintComponentExpandMaxPixels;
+
+  /// If ROI side exceeds this value, use tiled inpaint path.
+  final int objectInpaintLowMemoryTileSide;
+
+  /// Hard threshold applied to inpaint masks (0..255) before ONNX.
+  /// Lower values include more soft edges, higher values are stricter.
+  final int objectInpaintMaskHardThreshold;
+
+  /// Whether to prefill masked area from edges to center before ONNX.
+  final bool objectInpaintPrefillBeforeOnnx;
+
+  /// Max wave iterations for prefill stage.
+  final int objectInpaintPrefillMaxIterations;
+
+  /// Enables dedicated mask preparation immediately before ONNX inpaint.
+  final bool objectInpaintMaskPrepEnabled;
+
+  /// Enables area/resolution-aware dilation during mask prep.
+  final bool objectInpaintAdaptiveDilationEnabled;
+
+  /// Optional feather radius for prepared mask before re-threshold.
+  final double objectInpaintFeatherRadius;
+
+  /// If true, late passes can shrink mask slightly (erode) for seam cleanup.
+  final bool objectInpaintShrinkOnLatePasses;
+
+  /// Experimental: place sparse boundary guide points before inpaint.
+  final bool objectInpaintAnchorPointsEnabled;
+
+  /// Number of boundary guide points used when anchor points are enabled.
+  final int objectInpaintAnchorPointCount;
+
+  /// Stop if artifact area does not shrink enough (newArea/prevArea > threshold).
+  final double artifactStopAreaRatioThreshold;
+
+  /// Required consecutive non-shrinking passes before stopping.
+  final int artifactStopAreaRatioConsecutivePasses;
 
   /// Path or URL to the denoise ONNX model (e.g. NAFNet-SIDD-width32).
   ///
@@ -142,40 +214,15 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   String get fastdvdnetModelPathEffective =>
       fastdvdnetModelPathOrUrl ?? 'assets/fastdvdnet_m4.onnx';
 
-  /// Effective RealESRGAN model path or URL, falling back to a sane default.
-  String get realEsrganModelPathEffective =>
-      realEsrganModelPathOrUrl ??
-      'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4-256.onnx';
-
   /// Effective RealESRGAN x2 model path or URL, falling back to a sane default.
   String get realEsrganX2ModelPathEffective =>
       realEsrganX2ModelPathOrUrl ??
-      'https://huggingface.co/tidus2102/Real-ESRGAN/resolve/main/Real-ESRGAN_x2plus.onnx';
-
-  /// Effective sub-pixel super-resolution model path or URL, falling back to a
-  /// sane default.
-  String get superResolutionModelPathEffective =>
-      superResolutionModelPathOrUrl ??
-      'https://huggingface.co/onnxmodelzoo/super-resolution-10/resolve/main/super-resolution-10.onnx';
-
-  /// Effective person-matting model path or URL, falling back to a sane default.
-  String get personMattingModelPathEffective =>
-      personMattingModelPathOrUrl ??
-      'https://huggingface.co/f5aiteam/rembg/resolve/0097d75761f9310c2041e7c64bb30846071ccb06/u2net_human_seg.onnx';
+      'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4-256.onnx';
 
   /// Effective FCN segmentation model path or URL, falling back to a sane default.
   String get fcnSegmentationModelPathEffective =>
       fcnSegmentationModelPathOrUrl ??
-      'https://huggingface.co/onnxmodelzoo/fcn-resnet50-12-int8/resolve/main/model/fcn-resnet50-12.onnx';
-
-  /// Convenience accessor that aggregates all AI enhancement-related model
-  /// endpoints into a single immutable DTO.
-  ///
-  /// This allows higher-level orchestration code (e.g. the AI photo
-  /// enhancement pipeline) to depend on a single object instead of directly
-  /// reading individual `*_Effective` getters.
-  AiEnhancementModelConfig get enhancementModels =>
-      AiEnhancementModelConfig.fromInitConfigs(this);
+      'https://huggingface.co/onnxmodelzoo/fcn-resnet50-12-int8/resolve/main/fcn-resnet50-12-int8.onnx';
 
   // EditorInitConfigs fields
   @override
@@ -231,11 +278,34 @@ class AiEditorInitConfigs implements EditorInitConfigs {
     String? denoiseModelPathOrUrl,
     String? fastdvdnetModelPathOrUrl,
     String? animalSegmentationModelPathOrUrl,
-    String? realEsrganModelPathOrUrl,
     String? realEsrganX2ModelPathOrUrl,
-    String? superResolutionModelPathOrUrl,
-    String? personMattingModelPathOrUrl,
     String? fcnSegmentationModelPathOrUrl,
+    double? relightStrength,
+    double? relightMaskGamma,
+    double? relightMaskBlurRadius,
+    bool? artifactRemovalEnabled,
+    int? artifactDiffThreshold,
+    bool? artifactMaskCleanupEnabled,
+    double? artifactMaxMaskCoverageRatio,
+    double? artifactMaxRoiAreaRatio,
+    int? artifactMaxPasses,
+    double? artifactStopCoverageRatio,
+    bool? artifactAdaptiveDetectorEnabled,
+    double? artifactAdaptiveDetectorSensitivity,
+    double? objectInpaintComponentExpandPercent,
+    int? objectInpaintComponentExpandMaxPixels,
+    int? objectInpaintLowMemoryTileSide,
+    int? objectInpaintMaskHardThreshold,
+    bool? objectInpaintPrefillBeforeOnnx,
+    int? objectInpaintPrefillMaxIterations,
+    bool? objectInpaintMaskPrepEnabled,
+    bool? objectInpaintAdaptiveDilationEnabled,
+    double? objectInpaintFeatherRadius,
+    bool? objectInpaintShrinkOnLatePasses,
+    bool? objectInpaintAnchorPointsEnabled,
+    int? objectInpaintAnchorPointCount,
+    double? artifactStopAreaRatioThreshold,
+    int? artifactStopAreaRatioConsecutivePasses,
     ThemeData? theme,
   }) {
     return AiEditorInitConfigs(
@@ -257,15 +327,56 @@ class AiEditorInitConfigs implements EditorInitConfigs {
       fastdvdnetModelPathOrUrl: fastdvdnetModelPathOrUrl ?? this.fastdvdnetModelPathOrUrl,
       animalSegmentationModelPathOrUrl:
           animalSegmentationModelPathOrUrl ?? this.animalSegmentationModelPathOrUrl,
-      realEsrganModelPathOrUrl: realEsrganModelPathOrUrl ?? this.realEsrganModelPathOrUrl,
       realEsrganX2ModelPathOrUrl:
           realEsrganX2ModelPathOrUrl ?? this.realEsrganX2ModelPathOrUrl,
-      superResolutionModelPathOrUrl:
-          superResolutionModelPathOrUrl ?? this.superResolutionModelPathOrUrl,
-      personMattingModelPathOrUrl:
-          personMattingModelPathOrUrl ?? this.personMattingModelPathOrUrl,
       fcnSegmentationModelPathOrUrl:
           fcnSegmentationModelPathOrUrl ?? this.fcnSegmentationModelPathOrUrl,
+      relightStrength: relightStrength ?? this.relightStrength,
+      relightMaskGamma: relightMaskGamma ?? this.relightMaskGamma,
+      relightMaskBlurRadius: relightMaskBlurRadius ?? this.relightMaskBlurRadius,
+      artifactRemovalEnabled: artifactRemovalEnabled ?? this.artifactRemovalEnabled,
+      artifactDiffThreshold: artifactDiffThreshold ?? this.artifactDiffThreshold,
+      artifactMaskCleanupEnabled:
+          artifactMaskCleanupEnabled ?? this.artifactMaskCleanupEnabled,
+      artifactMaxMaskCoverageRatio:
+          artifactMaxMaskCoverageRatio ?? this.artifactMaxMaskCoverageRatio,
+      artifactMaxRoiAreaRatio:
+          artifactMaxRoiAreaRatio ?? this.artifactMaxRoiAreaRatio,
+      artifactMaxPasses: artifactMaxPasses ?? this.artifactMaxPasses,
+      artifactStopCoverageRatio:
+          artifactStopCoverageRatio ?? this.artifactStopCoverageRatio,
+      artifactAdaptiveDetectorEnabled:
+          artifactAdaptiveDetectorEnabled ?? this.artifactAdaptiveDetectorEnabled,
+      artifactAdaptiveDetectorSensitivity:
+          artifactAdaptiveDetectorSensitivity ?? this.artifactAdaptiveDetectorSensitivity,
+      objectInpaintComponentExpandPercent:
+          objectInpaintComponentExpandPercent ?? this.objectInpaintComponentExpandPercent,
+      objectInpaintComponentExpandMaxPixels:
+          objectInpaintComponentExpandMaxPixels ?? this.objectInpaintComponentExpandMaxPixels,
+      objectInpaintLowMemoryTileSide:
+          objectInpaintLowMemoryTileSide ?? this.objectInpaintLowMemoryTileSide,
+      objectInpaintMaskHardThreshold:
+          objectInpaintMaskHardThreshold ?? this.objectInpaintMaskHardThreshold,
+      objectInpaintPrefillBeforeOnnx:
+          objectInpaintPrefillBeforeOnnx ?? this.objectInpaintPrefillBeforeOnnx,
+      objectInpaintPrefillMaxIterations:
+          objectInpaintPrefillMaxIterations ?? this.objectInpaintPrefillMaxIterations,
+      objectInpaintMaskPrepEnabled:
+          objectInpaintMaskPrepEnabled ?? this.objectInpaintMaskPrepEnabled,
+      objectInpaintAdaptiveDilationEnabled:
+          objectInpaintAdaptiveDilationEnabled ?? this.objectInpaintAdaptiveDilationEnabled,
+      objectInpaintFeatherRadius:
+          objectInpaintFeatherRadius ?? this.objectInpaintFeatherRadius,
+      objectInpaintShrinkOnLatePasses:
+          objectInpaintShrinkOnLatePasses ?? this.objectInpaintShrinkOnLatePasses,
+      objectInpaintAnchorPointsEnabled:
+          objectInpaintAnchorPointsEnabled ?? this.objectInpaintAnchorPointsEnabled,
+      objectInpaintAnchorPointCount:
+          objectInpaintAnchorPointCount ?? this.objectInpaintAnchorPointCount,
+      artifactStopAreaRatioThreshold:
+          artifactStopAreaRatioThreshold ?? this.artifactStopAreaRatioThreshold,
+      artifactStopAreaRatioConsecutivePasses: artifactStopAreaRatioConsecutivePasses ??
+          this.artifactStopAreaRatioConsecutivePasses,
       theme: theme ?? this.theme,
     );
   }

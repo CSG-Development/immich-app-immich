@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,7 +13,8 @@ Future<bool> isCachedImpl(String url) async {
   final cacheDir = await _getCacheDirectory();
   final fileName = _fileNameFromUrl(url);
   final file = File('${cacheDir.path}${Platform.pathSeparator}$fileName');
-  return file.existsSync();
+  if (!file.existsSync()) return false;
+  return !_isLikelyInvalidOnnxFile(file);
 }
 
 /// Implementation of [getCachedFilePath] for native platforms (uses dart:io).
@@ -34,8 +36,17 @@ Future<String> getCachedFilePathWithProgressImpl(
   final file = File('${cacheDir.path}${Platform.pathSeparator}$fileName');
 
   if (await file.exists()) {
-    _log.info('[OnnxModelLoader] Using cached model: ${file.path}');
-    return file.path;
+    if (_isLikelyInvalidOnnxFile(file)) {
+      _log.warning(
+        '[OnnxModelLoader] Cached model looks invalid, re-downloading: ${file.path}',
+      );
+      try {
+        await file.delete();
+      } catch (_) {}
+    } else {
+      _log.info('[OnnxModelLoader] Using cached model: ${file.path}');
+      return file.path;
+    }
   }
 
   _log.info('[OnnxModelLoader] Downloading model from $url');
@@ -70,10 +81,33 @@ Future<String> getCachedFilePathWithProgressImpl(
     }
 
     if (contentLength <= 0) onProgress(1.0);
-    _log.info('[OnnxModelLoader] Cached model to ${file.path}');
+
+    if (_isLikelyInvalidOnnxFile(file)) {
+      try {
+        await file.delete();
+      } catch (_) {}
+      throw const FormatException(
+        'Downloaded model is not a valid ONNX binary (likely HTML/LFS pointer).',
+      );
+    }
+
+    _log.info('[OnnxModelLoader] Using cached model: ${file.path}');
     return file.path;
-  } finally {
+  }
+  finally {
     client.close();
+  }
+}
+
+Future<void> clearCachedImpl(String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null || !uri.hasScheme) return;
+
+  final cacheDir = await _getCacheDirectory();
+  final fileName = _fileNameFromUrl(url);
+  final file = File('${cacheDir.path}${Platform.pathSeparator}$fileName');
+  if (await file.exists()) {
+    await file.delete();
   }
 }
 
@@ -95,4 +129,28 @@ String _fileNameFromUrl(String url) {
     }
   }
   return 'model_${url.hashCode.abs()}.onnx';
+}
+
+bool _isLikelyInvalidOnnxFile(File file) {
+  try {
+    final stat = file.statSync();
+    if (stat.size < 1024) {
+      return true;
+    }
+    final bytes = file.openSync(mode: FileMode.read)
+      ..setPositionSync(0);
+    try {
+      final header = bytes.readSync(512);
+      if (header.isEmpty) return true;
+      final text = latin1.decode(header, allowInvalid: true).toLowerCase();
+      if (text.contains('git-lfs.github.com/spec/v1')) return true;
+      if (text.contains('<!doctype html') || text.contains('<html')) return true;
+      if (text.contains('access denied') || text.contains('error 404')) return true;
+    } finally {
+      bytes.closeSync();
+    }
+    return false;
+  } catch (_) {
+    return true;
+  }
 }

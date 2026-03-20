@@ -1,16 +1,14 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 import 'package:image_editor/src/core/interfaces.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
-import 'package:image_editor/src/core/models/init_configs/ai_enhancement_models.dart';
-import 'package:image_editor/src/features/ai_editor/photo_enhancement/ai_enhancement_parameters.dart';
-import 'package:image_editor/src/features/ai_editor/photo_enhancement/ai_photo_enhancement_pipeline.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/photo_enhancement_service.dart' as pe;
-import 'package:image_editor/src/features/ai_editor/photo_enhancement/portrait_enhancement_service.dart';
-import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:logging/logging.dart';
@@ -36,10 +34,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
   late final pe.PhotoEnhancementService _service;
   late HistoryStack<Uint8List> _history;
   bool _isProcessing = false;
-
-  // Simple preset + strength wiring for the portrait pipeline-backed effect.
-  AiEnhancementParameters _currentParams = AiEnhancementParameters.portrait;
-  String _currentPreset = 'Portrait';
+  late final Size _sourceImageSize;
 
   List<ImageEffect> get _effects => _service.effects;
   Uint8List get _currentBytes => _history.current;
@@ -50,12 +45,25 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
   void initState() {
     super.initState();
     _history = HistoryStack<Uint8List>(widget.initialImageBytes);
-    _service = pe.PhotoEnhancementService(configs: widget.initConfigs);
+    final decoded = img.decodeImage(widget.initialImageBytes);
+    _sourceImageSize = decoded != null
+        ? Size(decoded.width.toDouble(), decoded.height.toDouble())
+        : const Size(1, 1);
+    _service = pe.PhotoEnhancementService(
+      configs: widget.initConfigs,
+    );
+  }
+
+  bool _isFixed256SuperResolutionModel() {
+    final path = widget.initConfigs.realEsrganX2ModelPathEffective.toLowerCase();
+    return path.contains('x4-256') || path.endsWith('realesrgan-x4-256.onnx');
   }
 
   @override
   void dispose() {
-    _service.dispose();
+    // Dispose model sessions asynchronously on page teardown.
+    unawaited(_service.dispose());
+    _clearImageCaches();
     super.dispose();
   }
 
@@ -63,35 +71,164 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     return showDialog<_SuperResolutionConfigResult>(
       context: context,
       builder: (context) {
-        const options = <int>[1024, 2048, 4096];
-        int selected = 1; // default to medium (2048)
+        final outputOptions = List<int>.generate(13, (i) => 512 + i * 128);
+        const dynamicInputOptions = <int>[128, 256, 384, 512];
+        const fixed256InputOptions = <int>[256];
+        final fixed256Model = _isFixed256SuperResolutionModel();
+        final inputOptions = fixed256Model ? fixed256InputOptions : dynamicInputOptions;
+        int selectedOutput = 4; // default to balanced (1024)
+        int selectedInput = fixed256Model ? 0 : 1; // default to balanced (256)
+        bool useFixedSquareInput = fixed256Model ? true : true;
+        var useArtifactPostprocess = false;
+        final srcW = _sourceImageSize.width;
+        final srcH = _sourceImageSize.height;
+        final srcLongestSide = srcW > srcH ? srcW : srcH;
+        final srcMegaPixels = (srcW * srcH) / 1000000.0;
+        final srcBytesMb = widget.initialImageBytes.length / (1024.0 * 1024.0);
+
+        String? _buildRiskWarning({
+          required int maxOutputSide,
+          required int workingInput,
+          required bool fixedSquareInput,
+        }) {
+          final aggressiveOutput = maxOutputSide >= 1536;
+          final veryAggressiveOutput = maxOutputSide >= 2048;
+          final largeSource = srcMegaPixels >= 3.5 || srcLongestSide >= 1800;
+          final veryLargeSource = srcMegaPixels >= 5.0 || srcLongestSide >= 2400;
+          final heavyFile = srcBytesMb >= 4.0;
+          final tinyWorkingInput = workingInput <= 128;
+          final hugeGap = srcLongestSide > 0 && (maxOutputSide / srcLongestSide) >= 1.2;
+          if (!largeSource && !heavyFile && !aggressiveOutput) return null;
+
+          final b = StringBuffer();
+          if (largeSource || heavyFile) {
+            b.write(
+              'Warning: source image is already high resolution '
+              '(${srcW.toInt()}x${srcH.toInt()}, ${srcMegaPixels.toStringAsFixed(2)} MP, '
+              '${srcBytesMb.toStringAsFixed(1)} MB). ',
+            );
+            b.write(
+              'Super resolution is primarily intended for low/medium quality images. '
+              'On large images it may increase RAM/CPU pressure and can cause instability '
+              '(freeze, restart, or process kill).',
+            );
+            if (aggressiveOutput) {
+              b.write(' Current output ${maxOutputSide}px increases this risk.');
+            }
+            b.write(' Prefer lower output size or disable artifact postprocess.');
+          } else {
+            b.write(
+              'Warning: high output size (${maxOutputSide}px) may cause high RAM/CPU pressure '
+              'and unstable behavior on some devices.',
+            );
+          }
+
+          if (veryAggressiveOutput || veryLargeSource || heavyFile) {
+            b.write(' Recommended safer output: 1024 or 1536.');
+          }
+          if (!fixedSquareInput && tinyWorkingInput && hugeGap) {
+            b.write(' Avoid very low working input for more stable results.');
+          }
+          return b.toString();
+        }
 
         return StatefulBuilder(
           builder: (context, setState) {
+            final selectedOutputSide = outputOptions[selectedOutput];
+            final workingInputSize = inputOptions[selectedInput];
+            final riskWarning = _buildRiskWarning(
+              maxOutputSide: selectedOutputSide,
+              workingInput: workingInputSize,
+              fixedSquareInput: useFixedSquareInput,
+            );
+
             return AlertDialog(
               title: const Text('Super resolution settings'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (riskWarning != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.45)),
+                      ),
+                      child: Text(
+                        riskWarning,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   const Text('Maximum output size'),
                   const SizedBox(height: 8),
                   Slider(
-                    value: selected.toDouble(),
+                    value: selectedOutput.toDouble(),
                     min: 0,
-                    max: (options.length - 1).toDouble(),
-                    divisions: options.length - 1,
-                    label: '${options[selected]} px',
+                    max: (outputOptions.length - 1).toDouble(),
+                    divisions: outputOptions.length - 1,
+                    label: '${outputOptions[selectedOutput]} px',
                     onChanged: (v) {
                       setState(() {
-                        selected = v.round().clamp(0, options.length - 1);
+                        selectedOutput = v.round().clamp(0, outputOptions.length - 1);
                       });
                     },
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Higher values produce larger images but may use more memory '
-                    'and take longer to process.',
+                    'Higher values produce larger images but use significantly more memory '
+                    'and can become unstable on large source photos.',
+                  ),
+                  if (!fixed256Model) ...[
+                    const SizedBox(height: 16),
+                    const Text('Working input size'),
+                    const SizedBox(height: 8),
+                    Slider(
+                      value: selectedInput.toDouble(),
+                      min: 0,
+                      max: (inputOptions.length - 1).toDouble(),
+                      divisions: inputOptions.length > 1 ? inputOptions.length - 1 : null,
+                      label: '${inputOptions[selectedInput]} px',
+                      onChanged: (v) {
+                        setState(() {
+                          selectedInput = v.round().clamp(0, inputOptions.length - 1);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Higher values can keep more detail, but increase RAM usage and latency.',
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Use fixed square input'),
+                      subtitle: const Text(
+                        'Keeps model input square. Turn off to keep original aspect ratio.',
+                      ),
+                      value: useFixedSquareInput,
+                      onChanged: (value) {
+                        setState(() {
+                          useFixedSquareInput = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Artifact removal postprocess'),
+                    subtitle: const Text('Use extra artifact cleanup after enhancement.'),
+                    value: useArtifactPostprocess,
+                    onChanged: (value) {
+                      setState(() {
+                        useArtifactPostprocess = value;
+                      });
+                    },
                   ),
                 ],
               ),
@@ -99,7 +236,15 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                 TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(_SuperResolutionConfigResult(maxOutputSide: options[selected]));
+                    final workingInputSize = inputOptions[selectedInput];
+                    Navigator.of(context).pop(
+                      _SuperResolutionConfigResult(
+                        maxOutputSide: outputOptions[selectedOutput],
+                        maxInputSide: workingInputSize,
+                        fixedInputSize: useFixedSquareInput ? workingInputSize : null,
+                        enableArtifactPostprocess: useArtifactPostprocess,
+                      ),
+                    );
                   },
                   child: const Text('Apply'),
                 ),
@@ -120,6 +265,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
         double tSize = 1 / (sizeSteps.length - 1); // 256 default
         double tSigma = 2 / (sigmaSteps.length - 1); // 0.2 default
+        var useArtifactPostprocess = true;
 
         int _sizeFromT(double value) {
           final idx = (value * (sizeSteps.length - 1)).round().clamp(0, sizeSteps.length - 1);
@@ -165,14 +311,216 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   ),
                   const SizedBox(height: 8),
                   const Text('Higher strength removes more visible noise, but can make the image look smoother.'),
+                  const SizedBox(height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Artifact removal postprocess'),
+                    subtitle: const Text('Use an extra cleanup pass after denoise. Turn off to keep more native detail.'),
+                    value: useArtifactPostprocess,
+                    onChanged: (value) {
+                      setState(() {
+                        useArtifactPostprocess = value;
+                      });
+                    },
+                  ),
                 ],
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(_DenoiseConfigResult(sigma: currentSigma, modelSize: _sizeFromT(tSize)));
+                    Navigator.of(context).pop(
+                      _DenoiseConfigResult(
+                        sigma: currentSigma,
+                        modelSize: _sizeFromT(tSize),
+                        enableArtifactPostprocess: useArtifactPostprocess,
+                      ),
+                    );
                   },
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<_RelightConfigResult?> _showRelightConfigDialog() {
+    return showDialog<_RelightConfigResult>(
+      context: context,
+      builder: (context) {
+        var selectedPreset = _RelightPreset.balanced;
+        double strength = widget.initConfigs.relightStrength.clamp(-0.4, 1.0);
+        double gamma = widget.initConfigs.relightMaskGamma.clamp(0.25, 2.5);
+        double blur = widget.initConfigs.relightMaskBlurRadius.clamp(0.0, 10.0);
+        var useArtifactPostprocess = false;
+
+        void applyPreset(_RelightPreset preset) {
+          switch (preset) {
+            case _RelightPreset.subtle:
+              strength = 0.16;
+              gamma = 1.2;
+              blur = 1.0;
+              break;
+            case _RelightPreset.natural:
+              strength = 0.2;
+              gamma = 1.1;
+              blur = 1.2;
+              break;
+            case _RelightPreset.balanced:
+              strength = 0.25;
+              gamma = 1.0;
+              blur = 1.5;
+              break;
+            case _RelightPreset.studio:
+              strength = 0.32;
+              gamma = 1.3;
+              blur = 1.8;
+              break;
+            case _RelightPreset.portraitPop:
+              strength = 0.34;
+              gamma = 1.25;
+              blur = 2.0;
+              break;
+            case _RelightPreset.softGlow:
+              strength = 0.22;
+              gamma = 0.85;
+              blur = 3.0;
+              break;
+            case _RelightPreset.strong:
+              strength = 0.42;
+              gamma = 1.35;
+              blur = 2.0;
+              break;
+            case _RelightPreset.dramatic:
+              strength = 0.52;
+              gamma = 1.6;
+              blur = 1.4;
+              break;
+            case _RelightPreset.goldenHour:
+              strength = 0.28;
+              gamma = 0.9;
+              blur = 3.2;
+              break;
+            case _RelightPreset.blueHour:
+              strength = 0.18;
+              gamma = 1.05;
+              blur = 3.6;
+              break;
+            case _RelightPreset.backlitFix:
+              strength = 0.46;
+              gamma = 0.82;
+              blur = 2.6;
+              break;
+            case _RelightPreset.flatSceneBoost:
+              strength = 0.38;
+              gamma = 1.45;
+              blur = 1.2;
+              break;
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Relight settings'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Preset'),
+                  const SizedBox(height: 8),
+                  DropdownButton<_RelightPreset>(
+                    value: selectedPreset,
+                    isExpanded: true,
+                    items: _RelightPreset.values
+                        .map(
+                          (preset) => DropdownMenuItem<_RelightPreset>(
+                            value: preset,
+                            child: Text(preset.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedPreset = value;
+                        applyPreset(value);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Strength (${strength.toStringAsFixed(2)})'),
+                  Slider(
+                    value: strength,
+                    min: -0.4,
+                    max: 1.0,
+                    divisions: 28,
+                    onChanged: (v) {
+                      setState(() {
+                        strength = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Mask focus (${gamma.toStringAsFixed(2)})'),
+                  Slider(
+                    value: gamma,
+                    min: 0.25,
+                    max: 2.5,
+                    divisions: 45,
+                    onChanged: (v) {
+                      setState(() {
+                        gamma = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Mask smoothness (${blur.toStringAsFixed(1)})'),
+                  Slider(
+                    value: blur,
+                    min: 0.0,
+                    max: 10.0,
+                    divisions: 20,
+                    onChanged: (v) {
+                      setState(() {
+                        blur = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Artifact removal postprocess'),
+                    subtitle: const Text(
+                      'Use extra artifact cleanup after relight.',
+                    ),
+                    value: useArtifactPostprocess,
+                    onChanged: (value) {
+                      setState(() {
+                        useArtifactPostprocess = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(
+                    _RelightConfigResult(
+                      preset: selectedPreset,
+                      strength: strength,
+                      maskGamma: gamma,
+                      maskBlurRadius: blur,
+                      enableArtifactPostprocess: useArtifactPostprocess,
+                    ),
+                  ),
                   child: const Text('Apply'),
                 ),
               ],
@@ -189,15 +537,9 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     String? modelPathOrUrl;
     String? modelName;
 
-    if (effect is PortraitEnhancementService) {
-      modelPathOrUrl = configs.personMattingModelPathEffective;
-      modelName = 'Portrait enhancement';
-    } else if (effect is pe.SuperResolutionEffect) {
-      modelPathOrUrl = configs.realEsrganModelPathEffective;
+    if (effect is pe.SuperResolutionEffect) {
+      modelPathOrUrl = configs.realEsrganX2ModelPathEffective;
       modelName = 'Super resolution';
-    } else if (effect is pe.ModelZooSuperResolutionEffect) {
-      modelPathOrUrl = configs.superResolutionModelPathEffective;
-      modelName = 'Super resolution (Model Zoo)';
     } else if (effect is pe.ModnetBackgroundEnhancementEffect) {
       modelPathOrUrl = configs.backgroundModelPathEffective;
       modelName = 'Background (MODNet)';
@@ -209,17 +551,27 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
       modelName = 'Denoise';
     }
 
-    if (modelPathOrUrl == null || modelName == null || !OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+    if (modelPathOrUrl == null || modelName == null) {
       return true;
     }
 
     final ok = await showModelDownloadDialog(context, modelPathOrUrl: modelPathOrUrl, modelName: modelName);
-    return ok;
+    if (!ok) return false;
+
+    if (configs.artifactRemovalEnabled) {
+      final artifactOk = await showModelDownloadDialog(
+        context,
+        modelPathOrUrl: configs.inpaintingModelPathEffective,
+        modelName: 'Artifact cleanup',
+      );
+      if (!artifactOk) return false;
+    }
+
+    return true;
   }
 
   Future<void> _runEffect(ImageEffect effect) async {
     if (_isProcessing || _currentBytes.isEmpty) return;
-    AiPhotoEnhancementPipeline? tmpPipeline;
     await runWithBusyAndError<void>(
       context: context,
       state: this,
@@ -234,67 +586,79 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         }
 
         ImageEffect effective = effect;
+        var createdTemporaryEffect = false;
 
         // For super-resolution effects, show a small config dialog to let
         // the user choose output size and then construct a fresh effect
         // instance with those settings.
-        if (effect is pe.SuperResolutionEffect || effect is pe.ModelZooSuperResolutionEffect) {
+        if (effect is pe.SuperResolutionEffect) {
           final config = await _showSuperResolutionConfigDialog();
           if (config == null) return;
 
           final configs = widget.initConfigs;
-          if (effect is pe.SuperResolutionEffect) {
-            effective = pe.SuperResolutionEffect(
-              modelPathOrUrl: configs.realEsrganModelPathEffective,
-              maxOutputSide: config.maxOutputSide,
-            );
-          } else if (effect is pe.ModelZooSuperResolutionEffect) {
-            effective = pe.ModelZooSuperResolutionEffect(
-              modelPathOrUrl: configs.superResolutionModelPathEffective,
-              maxOutputSide: config.maxOutputSide,
-            );
-          }
+          effective = _service.createSuperResolutionEffect(
+            modelPathOrUrl: configs.realEsrganX2ModelPathEffective,
+            maxOutputSide: config.maxOutputSide,
+            maxInputSide: _isFixed256SuperResolutionModel() ? 256 : config.maxInputSide,
+            fixedInputSize: _isFixed256SuperResolutionModel() ? 256 : config.fixedInputSize,
+            enableArtifactPostprocess: config.enableArtifactPostprocess,
+          );
+          createdTemporaryEffect = true;
         }
 
         if (effect is pe.FastdvdnetDenoiseEnhancementEffect) {
           final config = await _showDenoiseConfigDialog();
           if (config == null) return;
 
-          effective = pe.FastdvdnetDenoiseEnhancementEffect(
+          effective = _service.createDenoiseEffect(
             modelPathOrUrl: widget.initConfigs.fastdvdnetModelPathEffective,
             noiseSigma: config.sigma,
             modelSize: config.modelSize,
+            enableArtifactPostprocess: config.enableArtifactPostprocess,
           );
+          createdTemporaryEffect = true;
         }
 
-        // If the user selected a preset, rebuild the portrait effect with those
-        // parameters so the pipeline actually uses the chosen strengths.
-        if (effective is PortraitEnhancementService) {
-          tmpPipeline = AiPhotoEnhancementPipeline(
-            modelConfig: AiEnhancementModelConfig.fromInitConfigs(widget.initConfigs),
+        if (effect is pe.RelightEffect) {
+          final config = await _showRelightConfigDialog();
+          if (config == null) return;
+          effective = _service.createRelightEffect(
+            fcnModelPathOrUrl: widget.initConfigs.fcnSegmentationModelPathEffective,
+            strength: config.strength,
+            maskGamma: config.maskGamma,
+            maskBlurRadius: config.maskBlurRadius,
+            enableArtifactPostprocess: config.enableArtifactPostprocess,
           );
-          effective = PortraitEnhancementService(
-            personMattingModelPathOrUrl: widget.initConfigs.personMattingModelPathEffective,
-            pipeline: tmpPipeline,
-            params: _currentParams,
-          );
+          createdTemporaryEffect = true;
         }
 
-        final result = await effective.apply(_currentBytes);
-        if (!mounted) return;
-        if (result.isEmpty) {
-          // If the effect failed gracefully, keep the previous bytes to avoid
-          // surprising the user with a blank image.
-          setState(() {});
-          return;
-        }
+        try {
+          final result = await effective.apply(_currentBytes);
+          if (!mounted) return;
+          if (result.isEmpty) {
+            // If the effect failed gracefully, keep the previous bytes to avoid
+            // surprising the user with a blank image.
+            setState(() {});
+            return;
+          }
 
-        setState(() {
-          _history.push(result);
-        });
+          setState(() {
+            _history.push(result);
+          });
+          _clearImageCaches();
+        } finally {
+          if (createdTemporaryEffect) {
+            if (effective case pe.SuperResolutionEffect()) {
+              await effective.dispose();
+            } else if (effective case pe.FastdvdnetDenoiseEnhancementEffect()) {
+              await effective.dispose();
+            } else if (effective case pe.RelightEffect()) {
+              await effective.dispose();
+            }
+          }
+        }
       },
     );
-    await tmpPipeline?.dispose();
   }
 
   void _handleUndo() {
@@ -312,15 +676,23 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
   }
 
   void _handleClose() {
+    _clearImageCaches();
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
   }
 
   void _handleDone() {
+    _clearImageCaches();
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop(_currentBytes);
     }
+  }
+
+  void _clearImageCaches() {
+    final cache = PaintingBinding.instance.imageCache;
+    cache.clear();
+    cache.clearLiveImages();
   }
 
   @override
@@ -365,15 +737,29 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
   Widget _buildImagePreview() {
     return Container(
       color: Colors.black,
-      alignment: Alignment.center,
-      child: SingleChildScrollView(
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: _currentBytes.isEmpty ? const SizedBox.shrink() : Image.memory(_currentBytes, fit: BoxFit.contain),
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final displaySize = fitSizeWithinBounds(
+            _sourceImageSize,
+            Size(constraints.maxWidth, constraints.maxHeight),
+          );
+          final cacheWidth = (displaySize.width * MediaQuery.devicePixelRatioOf(context)).round();
+          final cacheHeight = (displaySize.height * MediaQuery.devicePixelRatioOf(context)).round();
+          return Center(
+            child: SizedBox(
+              width: displaySize.width,
+              height: displaySize.height,
+              child: _currentBytes.isEmpty
+                  ? const SizedBox.shrink()
+                  : Image.memory(
+                      _currentBytes,
+                      fit: BoxFit.cover,
+                      cacheWidth: cacheWidth,
+                      cacheHeight: cacheHeight,
+                    ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -388,118 +774,84 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     return Container(
       color: theme.bottomAppBarTheme.color ?? Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Preset row.
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _PresetChip(
-                label: 'Portrait',
-                selected: _currentPreset == 'Portrait',
-                onSelected: _isProcessing
-                    ? null
-                    : () {
-                        setState(() {
-                          _currentPreset = 'Portrait';
-                          _currentParams = AiEnhancementParameters.portrait;
-                        });
-                      },
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final effect in _effects)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: FlatIconTextButton(
+                  label: Text(effect.name, style: const TextStyle(fontSize: 10.0, color: Colors.white)),
+                  icon: Icon(effect.icon, size: 22, color: Colors.white),
+                  onPressed: _isProcessing ? null : () => _runEffect(effect),
+                ),
               ),
-              _PresetChip(
-                label: 'Landscape',
-                selected: _currentPreset == 'Landscape',
-                onSelected: _isProcessing
-                    ? null
-                    : () {
-                        setState(() {
-                          _currentPreset = 'Landscape';
-                          _currentParams = AiEnhancementParameters.landscape;
-                        });
-                      },
-              ),
-              _PresetChip(
-                label: 'Night',
-                selected: _currentPreset == 'Night',
-                onSelected: _isProcessing
-                    ? null
-                    : () {
-                        setState(() {
-                          _currentPreset = 'Night';
-                          _currentParams = AiEnhancementParameters.night;
-                        });
-                      },
-              ),
-              _PresetChip(
-                label: 'Neutral',
-                selected: _currentPreset == 'Neutral',
-                onSelected: _isProcessing
-                    ? null
-                    : () {
-                        setState(() {
-                          _currentPreset = 'Neutral';
-                          _currentParams = AiEnhancementParameters.neutral;
-                        });
-                      },
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // Effects row (buttons).
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final effect in _effects)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: FlatIconTextButton(
-                      label: Text(effect.name, style: const TextStyle(fontSize: 10.0, color: Colors.white)),
-                      icon: Icon(effect.icon, size: 22, color: Colors.white),
-                      onPressed: _isProcessing ? null : () => _runEffect(effect),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _SuperResolutionConfigResult {
-  const _SuperResolutionConfigResult({required this.maxOutputSide});
+  const _SuperResolutionConfigResult({
+    required this.maxOutputSide,
+    required this.maxInputSide,
+    required this.fixedInputSize,
+    required this.enableArtifactPostprocess,
+  });
 
   final int maxOutputSide;
+  final int maxInputSide;
+  final int? fixedInputSize;
+  final bool enableArtifactPostprocess;
 }
 
 class _DenoiseConfigResult {
-  const _DenoiseConfigResult({required this.sigma, required this.modelSize});
+  const _DenoiseConfigResult({
+    required this.sigma,
+    required this.modelSize,
+    required this.enableArtifactPostprocess,
+  });
 
   final double sigma;
   final int modelSize;
+  final bool enableArtifactPostprocess;
 }
 
-class _PresetChip extends StatelessWidget {
-  const _PresetChip({required this.label, required this.selected, required this.onSelected});
+enum _RelightPreset {
+  subtle('Subtle'),
+  natural('Natural light'),
+  balanced('Balanced'),
+  studio('Studio light'),
+  portraitPop('Portrait pop'),
+  softGlow('Soft glow'),
+  strong('Strong'),
+  dramatic('Dramatic'),
+  goldenHour('Golden hour'),
+  blueHour('Blue hour'),
+  backlitFix('Backlit fix'),
+  flatSceneBoost('Flat scene boost');
 
+  const _RelightPreset(this.label);
   final String label;
-  final bool selected;
-  final VoidCallback? onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-      child: ChoiceChip(
-        label: Text(label, style: const TextStyle(fontSize: 10.0)),
-        selected: selected,
-        onSelected: onSelected == null ? null : (_) => onSelected!(),
-      ),
-    );
-  }
 }
+
+class _RelightConfigResult {
+  const _RelightConfigResult({
+    required this.preset,
+    required this.strength,
+    required this.maskGamma,
+    required this.maskBlurRadius,
+    required this.enableArtifactPostprocess,
+  });
+
+  final _RelightPreset preset;
+  final double strength;
+  final double maskGamma;
+  final double maskBlurRadius;
+  final bool enableArtifactPostprocess;
+}
+

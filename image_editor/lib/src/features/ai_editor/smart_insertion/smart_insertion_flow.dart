@@ -15,12 +15,14 @@ class SmartInsertionParams {
     required this.actions,
     required this.backgroundRemovalService,
     required this.backgroundEffectMode,
+    required this.inpaintingModelPathOrUrl,
   });
 
   final EditorImage editorImage;
   final AiEditorActions actions;
   final BackgroundRemovalService backgroundRemovalService;
   final BackgroundEffectMode backgroundEffectMode;
+  final String inpaintingModelPathOrUrl;
 }
 
 class SmartInsertionFlow extends StatefulWidget {
@@ -75,12 +77,20 @@ class _SmartInsertionFlowState extends State<SmartInsertionFlow> {
     widget.onCompleted(composed);
   }
 
-  Future<bool> _ensureSegmentationModelReady() {
-    return showModelDownloadDialog(
+  Future<bool> _ensureRequiredModelsReady() async {
+    final segmentationReady = await showModelDownloadDialog(
       context,
       modelPathOrUrl: _cutoutBackgroundRemovalService.modelPathOrUrl,
       modelName: 'Smart insertion',
     );
+    if (!segmentationReady) return false;
+
+    final inpaintingReady = await showModelDownloadDialog(
+      context,
+      modelPathOrUrl: widget.params.inpaintingModelPathOrUrl,
+      modelName: 'Smart insertion inpaint',
+    );
+    return inpaintingReady;
   }
 
   @override
@@ -136,7 +146,7 @@ class _SmartInsertionFlowState extends State<SmartInsertionFlow> {
               imageWidth: pickedDecoded.width,
               imageHeight: pickedDecoded.height,
               backgroundRemovalService: _cutoutBackgroundRemovalService,
-              ensureModelReady: _ensureSegmentationModelReady,
+              ensureModelReady: _ensureRequiredModelsReady,
               onApply: (cutoutBytes) {
                 setState(() {
                   _cutoutBytes = cutoutBytes;

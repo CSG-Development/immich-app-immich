@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_session_lifecycle.dart';
 import 'package:image_editor/src/utils/image_decode_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
@@ -36,6 +37,7 @@ class FcnSegmentationOnnx {
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
+  bool _didRetrySessionInit = false;
   static final Logger _log = Logger('FcnSegmentationOnnx');
 
   Future<img.Image?> _decodeAndResize(Uint8List imageBytes) async {
@@ -82,16 +84,34 @@ class FcnSegmentationOnnx {
   Future<void> _ensureSession() async {
     if (_session != null) return;
     _log.info('[FCN_ONNX] Creating ONNX session from: $modelPathOrUrl');
+    final options = OrtSessionOptions();
     try {
       OrtEnv.instance.init();
       final bytes = await OnnxModelLoader.loadBytes(modelPathOrUrl);
-      final options = OrtSessionOptions();
       _session = OrtSession.fromBuffer(bytes, options);
       _isolateSession = OrtIsolateSession(_session!);
+      _didRetrySessionInit = false;
       _log.info('[FCN_ONNX] ONNX isolate session created successfully.');
     } catch (e, st) {
       _log.severe('[FCN_ONNX] Failed to create ONNX session', e, st);
       _session = null;
+      if (!_didRetrySessionInit && OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+        _didRetrySessionInit = true;
+        _log.warning('[FCN_ONNX] Clearing cached model and retrying once.');
+        try {
+          await OnnxModelLoader.clearCached(modelPathOrUrl);
+          await _ensureSession();
+          return;
+        } catch (retryError, retryStack) {
+          _log.severe(
+            '[FCN_ONNX] Retry after cache clear failed',
+            retryError,
+            retryStack,
+          );
+        }
+      }
+    } finally {
+      options.release();
     }
   }
 
@@ -135,40 +155,44 @@ class FcnSegmentationOnnx {
         resolvedImageInputName: inputTensor,
       };
 
-      final onnxStart = DateTime.now();
-      final isolateSession = _isolateSession;
-      final outputs = isolateSession != null
-          ? await isolateSession.run(
-              runOptions,
-              inputs,
-              <String>[resolvedOutputName],
-            )
-          : await session.runAsync(
-              runOptions,
-              inputs,
-              <String>[resolvedOutputName],
-            );
-      final onnxElapsed =
-          DateTime.now().difference(onnxStart).inMilliseconds;
-      _log.info(
-        '[FCN_ONNX] session.run (isolate=${isolateSession != null}) '
-        'completed in ${onnxElapsed}ms',
-      );
-
-      inputTensor.release();
-      runOptions.release();
-
-      final outputTensor = outputs?.first;
-      if (outputTensor == null) {
-        outputs?.forEach((t) => t?.release());
-        _log.warning(
-          '[FCN_ONNX] Output tensor "$resolvedOutputName" not found.',
+      List<OrtValue?>? outputs;
+      int onnxElapsed = 0;
+      dynamic raw;
+      try {
+        final onnxStart = DateTime.now();
+        final isolateSession = _isolateSession;
+        outputs = isolateSession != null
+            ? await isolateSession.run(
+                runOptions,
+                inputs,
+                <String>[resolvedOutputName],
+              )
+            : await session.runAsync(
+                runOptions,
+                inputs,
+                <String>[resolvedOutputName],
+              );
+        onnxElapsed =
+            DateTime.now().difference(onnxStart).inMilliseconds;
+        _log.info(
+          '[FCN_ONNX] session.run (isolate=${isolateSession != null}) '
+          'completed in ${onnxElapsed}ms',
         );
-        return null;
-      }
 
-      final raw = outputTensor.value;
-      outputs?.forEach((t) => t?.release());
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) {
+          _log.warning(
+            '[FCN_ONNX] Output tensor "$resolvedOutputName" not found.',
+          );
+          return null;
+        }
+
+        raw = outputTensor.value;
+      } finally {
+        outputs?.forEach((t) => t?.release());
+        inputTensor.release();
+        runOptions.release();
+      }
 
       // Expect output of shape [1, C, H, W] with class scores.
       if (raw is! List || raw.isEmpty || raw.first is! List) {
@@ -212,6 +236,12 @@ class FcnSegmentationOnnx {
     } catch (e, st) {
       _log.severe('[FCN_ONNX] Exception during run', e, st);
       return null;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'FCN_ONNX',
+        dispose: dispose,
+      );
     }
   }
 

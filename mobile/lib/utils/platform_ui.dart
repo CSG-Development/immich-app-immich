@@ -15,7 +15,6 @@ class PlatformUiUtils {
 
     final viewPaddingBottom = MediaQuery.viewPaddingOf(context).bottom;
     // Android 2-button and 3-button nav bars are typically >= 24 logical px
-    debugPrint('viewPaddingBottom: $viewPaddingBottom');
     return viewPaddingBottom >= 24.0;
   }
 }

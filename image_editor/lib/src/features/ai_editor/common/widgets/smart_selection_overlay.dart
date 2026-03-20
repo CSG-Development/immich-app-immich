@@ -10,6 +10,7 @@ import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_a
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_selection_widgets.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_with_strokes_overlay.dart';
 import 'package:image_editor/src/features/services/image_worker.dart';
+import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 
 enum SmartSelectionShape { rectangle, ellipse, lasso }
 
@@ -648,53 +649,43 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.auto_awesome),
-                    color: _activeBottomAction == SmartSelectionBottomAction.stars
-                        ? Colors.white
-                        : Colors.white70,
-                    tooltip: 'Full smart selection',
+                  _buildBottomActionButton(
+                    label: 'Smart',
+                    icon: Icons.auto_awesome,
+                    isActive: _activeBottomAction == SmartSelectionBottomAction.stars,
                     onPressed: _isDetecting ? null : _runFullSmartSelection,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.gesture),
-                    color: _activeBottomAction == SmartSelectionBottomAction.target
-                        ? Colors.white
-                        : Colors.white70,
-                    tooltip: 'Target selection shape',
+                  _buildBottomActionButton(
+                    label: 'Target',
+                    icon: Icons.gesture,
+                    isActive: _activeBottomAction == SmartSelectionBottomAction.target,
                     onPressed: _isDetecting ? null : _openShapePicker,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.brush),
-                    color: _activeBottomAction == SmartSelectionBottomAction.brush
-                        ? Colors.white
-                        : Colors.white54,
-                    tooltip: 'Brush',
+                  _buildBottomActionButton(
+                    label: 'Brush',
+                    icon: Icons.brush,
+                    isActive: _activeBottomAction == SmartSelectionBottomAction.brush,
                     onPressed: _isDetecting
                         ? null
                         : () {
                             setState(() {
                               _targetShape = null;
                               _selectedTool = SmartSelectionTool.brush;
-                              _activeBottomAction =
-                                  SmartSelectionBottomAction.brush;
+                              _activeBottomAction = SmartSelectionBottomAction.brush;
                             });
                           },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.auto_fix_off),
-                    color: _activeBottomAction == SmartSelectionBottomAction.eraser
-                        ? Colors.white
-                        : Colors.white54,
-                    tooltip: 'Eraser',
+                  _buildBottomActionButton(
+                    label: 'Eraser',
+                    icon: Icons.auto_fix_off,
+                    isActive: _activeBottomAction == SmartSelectionBottomAction.eraser,
                     onPressed: _isDetecting
                         ? null
                         : () {
                             setState(() {
                               _targetShape = null;
                               _selectedTool = SmartSelectionTool.eraser;
-                              _activeBottomAction =
-                                  SmartSelectionBottomAction.eraser;
+                              _activeBottomAction = SmartSelectionBottomAction.eraser;
                             });
                           },
                   ),
@@ -704,6 +695,20 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBottomActionButton({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback? onPressed,
+  }) {
+    final color = isActive ? Colors.white : Colors.white70;
+    return FlatIconTextButton(
+      label: Text(label, style: TextStyle(fontSize: 10.0, color: color)),
+      icon: Icon(icon, size: 22, color: color),
+      onPressed: onPressed,
     );
   }
 }

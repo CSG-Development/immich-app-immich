@@ -138,66 +138,6 @@ class AiEditorState extends State<AiEditor> {
     );
   }
 
-  Future<void> _runImageProcessing({
-    required String modelPathOrUrl,
-    required String modelName,
-    required Future<Uint8List> Function(Uint8List bytes) process,
-    String? sameBytesErrorMessage,
-    bool ensureAiTools = true,
-    String? debugTag,
-  }) async {
-    if (_isProcessing) return;
-    if (ensureAiTools && !_ensureAiToolsAvailable()) return;
-
-    final ok = await showModelDownloadDialog(context, modelPathOrUrl: modelPathOrUrl, modelName: modelName);
-    if (!ok || !mounted) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      final bytes = await editorImage.safeByteArray();
-      if (bytes.isEmpty) {
-        return;
-      }
-
-      if (kDebugMode && debugTag != null) {
-        _log.fine('[$debugTag] Input bytes length: ${bytes.length}');
-      }
-
-      final processed = await process(bytes);
-
-      if (!mounted) return;
-
-      if (kDebugMode && debugTag != null) {
-        _log.fine('[$debugTag] Processed bytes length: ${processed.length}');
-      }
-
-      if (sameBytesErrorMessage != null && listEquals(processed, bytes)) {
-        return;
-      }
-
-      final newImage = EditorImage(byteArray: processed);
-      _history.push(newImage);
-      uiStream.add(null);
-
-      // Intentionally no automatic toast/snackbar here; host app can surface
-      // success via its own callbacks if desired.
-    } catch (e) {
-      if (kDebugMode) {
-        _log.warning('$modelName failed: $e');
-      }
-      if (!mounted) return;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -243,6 +183,11 @@ class AiEditorState extends State<AiEditor> {
     if (!kIsWeb) {
       return true;
     }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('AI tools are currently unavailable on web.')),
+      );
+    }
     return false;
   }
 
@@ -276,6 +221,7 @@ class AiEditorState extends State<AiEditor> {
               actions: _actions,
               backgroundRemovalService: _actions.backgroundRemovalService,
               backgroundEffectMode: BackgroundEffectMode.remove,
+              inpaintingModelPathOrUrl: initConfigs.inpaintingModelPathEffective,
             ),
             pickedImageBytes: pickedImageBytes,
             onCompleted: (resultBytes) async {
@@ -321,14 +267,80 @@ class AiEditorState extends State<AiEditor> {
     setState(() {
       _overlayMode = _OverlayMode.none;
     });
-
-    await _runImageProcessing(
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+    final ok = await showModelDownloadDialog(
+      context,
       modelPathOrUrl: _inpaintingModelPath,
       modelName: 'Smart removal',
-      sameBytesErrorMessage: 'Failed to remove object (check that lama_fp32.onnx is available).',
-      ensureAiTools: false,
-      debugTag: 'OR',
-      process: (bytes) => _actions.removeObjects(bytes, mask),
+    );
+    if (!ok || !mounted) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final bytes = await editorImage.safeByteArray();
+      if (bytes.isEmpty || !mounted) return;
+
+      final removed = await _actions.removeObjectsInpaintOnly(bytes, mask);
+      if (!mounted) return;
+      if (listEquals(removed, bytes)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to remove object (check that lama_fp32.onnx is available).'),
+          ),
+        );
+        return;
+      }
+
+      _history.push(EditorImage(byteArray: removed));
+      uiStream.add(null);
+
+      final artifactMask = await _actions.detectArtifactMask(removed, mask);
+      if (!mounted || artifactMask == null) return;
+
+      final applyArtifacts = await _askApplyArtifactCleanup();
+      if (!mounted || applyArtifacts != true) return;
+
+      final cleaned = await _actions.removeArtifacts(removed, mask, artifactMask);
+      if (!mounted) return;
+      if (!listEquals(cleaned, removed)) {
+        _history.push(EditorImage(byteArray: cleaned));
+        uiStream.add(null);
+      }
+    } catch (e) {
+      _log.warning('Smart removal failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  Future<bool?> _askApplyArtifactCleanup() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Artifacts detected'),
+        content: const Text(
+          'Try to remove detected artifacts automatically?\n\n'
+          'Warning: automatic artifact cleanup can be unpredictable and may make '
+          'the result worse in some cases.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
     );
   }
 

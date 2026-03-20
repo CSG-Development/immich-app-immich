@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_service.dart';
 import 'package:image_editor/src/features/services/image_worker.dart';
-import 'package:logging/logging.dart';
 
 /// Simple compositing-based service that pastes a cutout (RGBA with
 /// transparent background) into a base image within a placement mask.
@@ -17,8 +16,6 @@ class SmartInsertionService {
 
   String? _inpaintingModelPathOrUrl;
   ObjectRemovalService? _inpaintService;
-  static final Logger _log = Logger('SmartInsertionService');
-  static const bool _debugInpaintSteps = false;
 
   String get _effectiveInpaintingModelPath {
     final value = _inpaintingModelPathOrUrl;
@@ -43,11 +40,6 @@ class SmartInsertionService {
       baseImageBytes,
       placementMask,
       maxRoiAreaRatio: 0.6,
-      debugStepCallback: _debugInpaintSteps
-          ? (stepName, image) {
-              _log.info('[SMART_INSERT_DEBUG] $stepName: ${image.width}x${image.height}');
-            }
-          : null,
     );
 
     final placementMaskData = Uint8List(placementMask.width * placementMask.height);
