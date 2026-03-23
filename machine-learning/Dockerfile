@@ -1,25 +1,37 @@
 ARG DEVICE=cpu
 
-FROM debian:13-slim AS bootstrap
+FROM dhi.io/python:3.11-debian13-dev AS dev-base
 
-RUN apt-get update && apt-get install -y bash util-linux
-
-#FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
-#FROM dhi.io/python:3.11-debian13 AS builder-cpu
 FROM dhi.io/python:3.11-debian13 AS base-fixed
 
-COPY --from=bootstrap /bin/sh /bin/sh
-COPY --from=bootstrap /bin/bash /bin/bash
+# --- Shell ---
+COPY --from=dev-base /bin/sh /bin/sh
+COPY --from=dev-base /bin/bash /bin/bash
 
-# dhi.io/python:3.11-debian13-dev -> dhi.io/python:3.11-debian13
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    util-linux \
-    && rm -rf /var/lib/apt/lists/*
+# --- APT + dpkg ---
+COPY --from=dev-base /usr/bin/apt /usr/bin/apt
+COPY --from=dev-base /usr/bin/apt-get /usr/bin/apt-get
+COPY --from=dev-base /usr/bin/dpkg /usr/bin/dpkg
 
-#RUN if ! getent group 65532; then groupadd -g 65532 _apt; fi && \
-#    if ! id -u 42 >/dev/null 2>&1; then useradd -u 42 -g 65532 -r -s /usr/sbin/nologin _apt; fi
+# --- Base utils ---
+COPY --from=dev-base /bin/ls /bin/ls
+COPY --from=dev-base /bin/cp /bin/cp
+COPY --from=dev-base /bin/mv /bin/mv
+COPY --from=dev-base /bin/rm /bin/rm
 
+# --- util-linux (mount, etc) ---
+COPY --from=dev-base /usr/bin/mount /usr/bin/mount
+
+# --- libs ---
+COPY --from=dev-base /lib/ /lib/
+COPY --from=dev-base /usr/lib/ /usr/lib/
+
+# --- apt config ---
+COPY --from=dev-base /etc/apt /etc/apt
+
+# --- users (including _apt) ---
+COPY --from=dev-base /etc/passwd /etc/passwd
+COPY --from=dev-base /etc/group /etc/group
 
 FROM base-fixed AS builder-cpu
 
