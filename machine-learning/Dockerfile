@@ -21,7 +21,7 @@ COPY --from=dev-base /bin/rm /bin/rm
 
 # --- util-linux (mount, etc) ---
 #COPY --from=dev-base /usr/bin/mount /usr/bin/mount
-COPY --from=dev-base /usr/sbin/mount /usr/sbin/mount
+#COPY --from=dev-base /usr/sbin/mount /usr/sbin/mount
 
 # --- libs ---
 #COPY --from=dev-base /lib/ /lib/
@@ -109,8 +109,6 @@ RUN if [ "$DEVICE" = "rocm" ]; then \
 
 FROM dhi.io/python:3.11-debian13-dev AS prod-cpu
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
-
 FROM dhi.io/python:3.11-debian13-dev AS prod-openvino
 
 RUN apt-get update && \
@@ -127,7 +125,7 @@ RUN apt-get update && \
 
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04@sha256:94c1577b2cd9dd6c0312dc04dff9cb2fdce2b268018abc3d7c2dbcacf1155000 AS prod-cuda
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+#ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -yqq libcudnn9-cuda-12 && \
@@ -142,8 +140,9 @@ FROM rocm/dev-ubuntu-22.04:6.4.3-complete@sha256:1f7e92ca7e3a3785680473329ed1091
 
 FROM prod-cpu AS prod-armnn
 
-ENV LD_LIBRARY_PATH=/opt/armnn \
-    LD_PRELOAD=/usr/lib/libmimalloc.so.3
+#ENV LD_LIBRARY_PATH=/opt/armnn \
+#    LD_PRELOAD=/usr/lib/libmimalloc.so.3
+ENV LD_LIBRARY_PATH=/opt/armnn
 
 RUN apt-get update && apt-get install -y --no-install-recommends ocl-icd-libopencl1 mesa-opencl-icd libgomp1 && \
     rm -rf /var/lib/apt/lists/* && \
