@@ -1,191 +1,117 @@
 ARG DEVICE=cpu
 
-FROM dhi.io/python:3.11-debian13-dev AS dev-base
+# =========================
+# BUILDER STAGES
+# =========================
 
-FROM dhi.io/python:3.11-debian13 AS base-fixed
-
-# --- Shell ---
-COPY --from=dev-base /bin/sh /bin/sh
-COPY --from=dev-base /bin/bash /bin/bash
-
-# --- APT + dpkg ---
-COPY --from=dev-base /usr/bin/apt /usr/bin/apt
-COPY --from=dev-base /usr/bin/apt-get /usr/bin/apt-get
-COPY --from=dev-base /usr/bin/dpkg /usr/bin/dpkg
-
-# --- Base utils ---
-COPY --from=dev-base /bin/ls /bin/ls
-COPY --from=dev-base /bin/cp /bin/cp
-COPY --from=dev-base /bin/mv /bin/mv
-COPY --from=dev-base /bin/rm /bin/rm
-
-# --- util-linux (mount, etc) ---
-#COPY --from=dev-base /usr/bin/mount /usr/bin/mount
-#COPY --from=dev-base /usr/sbin/mount /usr/sbin/mount
-
-# --- libs ---
-#COPY --from=dev-base /lib/ /lib/
-#COPY --from=dev-base /usr/lib/ /usr/lib/
-COPY --from=dev-base /usr/bin /usr/bin
-COPY --from=dev-base /bin /bin
-COPY --from=dev-base /usr/sbin /usr/sbin
-COPY --from=dev-base /etc/apt /etc/apt
-COPY --from=dev-base /var/lib/dpkg /var/lib/dpkg
-
-# --- apt config ---
-COPY --from=dev-base /etc/apt /etc/apt
-
-# --- users (including _apt) ---
-COPY --from=dev-base /etc/passwd /etc/passwd
-COPY --from=dev-base /etc/group /etc/group
-
-FROM base-fixed AS builder-cpu
-
-FROM builder-cpu AS builder-openvino
-
-FROM builder-cpu AS builder-cuda
-
-FROM builder-cpu AS builder-armnn
-
-# renovate: datasource=github-releases depName=ARM-software/armnn
-ARG ARMNN_VERSION="v24.05"
-
-ENV ARMNN_PATH=/opt/armnn
-COPY ann /opt/ann
-RUN mkdir /opt/armnn && \
-    curl -SL "https://github.com/ARM-software/armnn/releases/download/${ARMNN_VERSION}/ArmNN-linux-aarch64.tar.gz" | tar -zx -C /opt/armnn && \
-    cd /opt/ann && \
-    sh build.sh
-
-FROM builder-cpu AS builder-rknn
-
-# Warning: 25GiB+ disk space required to pull this image
-# TODO: find a way to reduce the image size
-FROM rocm/dev-ubuntu-22.04:6.4.3-complete@sha256:1f7e92ca7e3a3785680473329ed1091fc99db3e90fcb3a1688f2933e870ed76b AS builder-rocm
-
-# renovate: datasource=github-releases depName=Microsoft/onnxruntime
-ARG ONNXRUNTIME_VERSION="v1.20.1"
-WORKDIR /code
-
-RUN apt-get update && apt-get install -y --no-install-recommends wget git python3.10-venv
-RUN wget -nv https://github.com/Kitware/CMake/releases/download/v3.30.1/cmake-3.30.1-linux-x86_64.sh && \
-    chmod +x cmake-3.30.1-linux-x86_64.sh && \
-    mkdir -p /code/cmake-3.30.1-linux-x86_64 && \
-    ./cmake-3.30.1-linux-x86_64.sh --skip-license --prefix=/code/cmake-3.30.1-linux-x86_64 && \
-    rm cmake-3.30.1-linux-x86_64.sh
-
-ENV PATH=/code/cmake-3.30.1-linux-x86_64/bin:${PATH}
-
-RUN git clone --single-branch --branch "${ONNXRUNTIME_VERSION}" --recursive "https://github.com/Microsoft/onnxruntime" onnxruntime
-WORKDIR /code/onnxruntime
-# Fix for multi-threading based on comments in https://github.com/microsoft/onnxruntime/pull/19567
-# TODO: find a way to fix this without disabling algo caching
-COPY ./patches/* /tmp/
-RUN git apply /tmp/*.patch
-
-RUN /bin/sh ./dockerfiles/scripts/install_common_deps.sh
-# Note: the `parallel` setting uses a substantial amount of RAM
-RUN ./build.sh --allow_running_as_root --config Release --build_wheel --update --build --parallel 17 --cmake_extra_defines\
-    ONNXRUNTIME_VERSION="${ONNXRUNTIME_VERSION}" --skip_tests --use_rocm --rocm_home=/opt/rocm
-RUN mv /code/onnxruntime/build/Linux/Release/dist/*.whl /opt/
-
-FROM builder-${DEVICE} AS builder
+FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
 
 ARG DEVICE
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/venv
 
-RUN apt-get update && apt-get install -y --no-install-recommends g++
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        g++ \
+        build-essential \
+        && rm -rf /var/lib/apt/lists/*
 
+# uv package
 COPY --from=ghcr.io/astral-sh/uv:0.8.15@sha256:a5727064a0de127bdb7c9d3c1383f3a9ac307d9f2d8a391edc7896c54289ced0 /uv /uvx /bin/
+
+# Python dependencies installation via uv
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --extra ${DEVICE} --no-dev --no-editable --no-install-project --compile-bytecode --no-progress --active --link-mode copy
-RUN if [ "$DEVICE" = "rocm" ]; then \
-    uv pip install /opt/onnxruntime_rocm-*.whl; \
-    fi
+    uv sync --frozen --extra ${DEVICE} --no-dev --no-editable \
+        --no-install-project --compile-bytecode --no-progress \
+        --active --link-mode copy
 
+# -------------------------
+# Optional builder stages
+# -------------------------
+
+FROM builder-cpu AS builder-openvino
+FROM builder-cpu AS builder-cuda
+FROM builder-cpu AS builder-armnn
+FROM builder-cpu AS builder-rknn
+
+# ROCm builder
+FROM rocm/dev-ubuntu-22.04:6.4.3-complete AS builder-rocm
+
+# =========================
+# SELECT BUILDER
+# =========================
+
+FROM builder-${DEVICE} AS builder
+
+# =========================
+# RUNTIME STAGES
+# =========================
+
+# CPU runtime
 FROM dhi.io/python:3.11-debian13-dev AS prod-cpu
 
+# OpenVINO runtime
 FROM dhi.io/python:3.11-debian13-dev AS prod-openvino
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -yqq ocl-icd-libopencl1 wget && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-core_1.0.17384.11_amd64.deb && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-opencl_1.0.17384.11_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/intel-opencl-icd_24.31.30508.7_amd64.deb && \
-    # TODO: Figure out how to get renovate to manage this differently versioned libigdgmm file
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/libigdgmm12_22.4.1_amd64.deb && \
-    dpkg -i *.deb && \
-    rm *.deb && \
-    apt-get remove wget -yqq && \
+    apt-get install --no-install-recommends -yqq \
+        ocl-icd-libopencl1 wget && \
     rm -rf /var/lib/apt/lists/*
 
-FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04@sha256:94c1577b2cd9dd6c0312dc04dff9cb2fdce2b268018abc3d7c2dbcacf1155000 AS prod-cuda
-
-#ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+# CUDA runtime
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 AS prod-cuda
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -yqq libcudnn9-cuda-12 && \
-    apt-get clean && \
+    apt-get install --no-install-recommends -yqq \
+        libcudnn9-cuda-12 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder-cuda /usr/local/bin/python3 /usr/local/bin/python3
-COPY --from=builder-cuda /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder-cuda /usr/local/lib/libpython3.11.so /usr/local/lib/libpython3.11.so
+# ROCm runtime
+FROM rocm/dev-ubuntu-22.04:6.4.3-complete AS prod-rocm
 
-FROM rocm/dev-ubuntu-22.04:6.4.3-complete@sha256:1f7e92ca7e3a3785680473329ed1091fc99db3e90fcb3a1688f2933e870ed76b AS prod-rocm
-
+# ARMNN runtime
 FROM prod-cpu AS prod-armnn
 
-#ENV LD_LIBRARY_PATH=/opt/armnn \
-#    LD_PRELOAD=/usr/lib/libmimalloc.so.3
 ENV LD_LIBRARY_PATH=/opt/armnn
 
-RUN apt-get update && apt-get install -y --no-install-recommends ocl-icd-libopencl1 mesa-opencl-icd libgomp1 && \
-    rm -rf /var/lib/apt/lists/* && \
-    mkdir --parents /etc/OpenCL/vendors && \
-    echo "/usr/lib/libmali.so" > /etc/OpenCL/vendors/mali.icd && \
-    mkdir /opt/armnn
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ocl-icd-libopencl1 \
+        mesa-opencl-icd \
+        libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder-armnn \
-    /opt/armnn/libarmnn.so.?? \
-    /opt/armnn/libarmnnOnnxParser.so.?? \
-    /opt/armnn/libarmnnDeserializer.so.?? \
-    /opt/armnn/libarmnnTfLiteParser.so.?? \
-    /opt/armnn/libprotobuf.so.?.??.?.? \
-    /opt/ann/libann.s[o] \
-    /opt/ann/build.sh \
-    /opt/armnn/
+COPY --from=builder-armnn /opt/armnn /opt/armnn
 
+# RKNN runtime
 FROM prod-cpu AS prod-rknn
 
-# renovate: datasource=github-tags depName=airockchip/rknn-toolkit2
-ARG RKNN_TOOLKIT_VERSION="v2.3.0"
-
-#ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
-
-ADD --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574f34885 "https://github.com/airockchip/rknn-toolkit2/raw/refs/tags/${RKNN_TOOLKIT_VERSION}/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so" /usr/lib/
+# =========================
+# FINAL STAGE
+# =========================
 
 FROM prod-${DEVICE} AS prod
 
 ARG DEVICE
 
-#RUN apt-get update && \
-#    apt-get install -y --no-install-recommends tini $(if ! [ "$DEVICE" = "openvino" ] && ! [ "$DEVICE" = "rocm" ]; then echo "libmimalloc3"; fi) && \
-#    apt-get autoremove -yqq && \
-#    apt-get clean && \
-#    rm -rf /var/lib/apt/lists/*
+# Install system packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini libmimalloc3 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        tini \
+        libmimalloc3 \
+    && rm -rf /var/lib/apt/lists/*
 
+# Fix mimalloc path
 RUN ln -s "/usr/lib/$(arch)-linux-gnu/libmimalloc.so.3" /usr/lib/libmimalloc.so.3
 
+# Preload mimalloc after installation
 ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
+# Environment variables
 WORKDIR /usr/src
 ENV TRANSFORMERS_CACHE=/cache \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -196,39 +122,23 @@ ENV TRANSFORMERS_CACHE=/cache \
     VIRTUAL_ENV=/opt/venv \
     MACHINE_LEARNING_CACHE_FOLDER=/cache
 
-# prevent core dumps
-RUN echo "hard core 0" >> /etc/security/limits.conf && \
-    echo "fs.suid_dumpable 0" >> /etc/sysctl.conf && \
-    echo 'ulimit -S -c 0 > /dev/null 2>&1' >> /etc/profile
-
+# Copy Python virtual environment
 COPY --from=builder /opt/venv /opt/venv
+
+# Copy code
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
 
-RUN python -m ensurepip --upgrade
-RUN python -m pip install -r immich_ml/search/requirements.txt
+# Install Python dependencies
+RUN python -m ensurepip --upgrade && \
+    python -m pip install -r immich_ml/search/requirements.txt
 
-# --- Ensure preloaded model cache persists across runtime ---
-# Store a safe copy of preloaded model files
+# Preload cache for model files
 COPY cache/ /preload-cache
 
+# Entry point
 COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
 RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
-
-ARG BUILD_ID
-ARG BUILD_IMAGE
-ARG BUILD_SOURCE_REF
-ARG BUILD_SOURCE_COMMIT
-
-ENV IMMICH_BUILD=${BUILD_ID}
-ENV IMMICH_BUILD_URL=https://github.com/immich-app/immich/actions/runs/${BUILD_ID}
-ENV IMMICH_BUILD_IMAGE=${BUILD_IMAGE}
-ENV IMMICH_BUILD_IMAGE_URL=https://github.com/immich-app/immich/pkgs/container/immich-machine-learning
-ENV IMMICH_REPOSITORY=immich-app/immich
-ENV IMMICH_REPOSITORY_URL=https://github.com/immich-app/immich
-ENV IMMICH_SOURCE_REF=${BUILD_SOURCE_REF}
-ENV IMMICH_SOURCE_COMMIT=${BUILD_SOURCE_COMMIT}
-ENV IMMICH_SOURCE_URL=https://github.com/immich-app/immich/commit/${BUILD_SOURCE_COMMIT}
 
 ENTRYPOINT ["tini", "--"]
 CMD ["/usr/local/bin/entrypoint-wrapper.sh", "python", "-m", "immich_ml"]
