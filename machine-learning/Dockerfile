@@ -20,11 +20,17 @@ COPY --from=dev-base /bin/mv /bin/mv
 COPY --from=dev-base /bin/rm /bin/rm
 
 # --- util-linux (mount, etc) ---
-COPY --from=dev-base /usr/bin/mount /usr/bin/mount
+#COPY --from=dev-base /usr/bin/mount /usr/bin/mount
+COPY --from=dev-base /usr/sbin/mount /usr/sbin/mount
 
 # --- libs ---
-COPY --from=dev-base /lib/ /lib/
-COPY --from=dev-base /usr/lib/ /usr/lib/
+#COPY --from=dev-base /lib/ /lib/
+#COPY --from=dev-base /usr/lib/ /usr/lib/
+COPY --from=dev-base /usr/bin /usr/bin
+COPY --from=dev-base /bin /bin
+COPY --from=dev-base /usr/sbin /usr/sbin
+COPY --from=dev-base /etc/apt /etc/apt
+COPY --from=dev-base /var/lib/dpkg /var/lib/dpkg
 
 # --- apt config ---
 COPY --from=dev-base /etc/apt /etc/apt
@@ -160,7 +166,7 @@ FROM prod-cpu AS prod-rknn
 # renovate: datasource=github-tags depName=airockchip/rknn-toolkit2
 ARG RKNN_TOOLKIT_VERSION="v2.3.0"
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+#ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
 ADD --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574f34885 "https://github.com/airockchip/rknn-toolkit2/raw/refs/tags/${RKNN_TOOLKIT_VERSION}/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so" /usr/lib/
 
@@ -168,13 +174,18 @@ FROM prod-${DEVICE} AS prod
 
 ARG DEVICE
 
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends tini $(if ! [ "$DEVICE" = "openvino" ] && ! [ "$DEVICE" = "rocm" ]; then echo "libmimalloc3"; fi) && \
+#    apt-get autoremove -yqq && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/*
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini $(if ! [ "$DEVICE" = "openvino" ] && ! [ "$DEVICE" = "rocm" ]; then echo "libmimalloc3"; fi) && \
-    apt-get autoremove -yqq && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends tini libmimalloc3 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN ln -s "/usr/lib/$(arch)-linux-gnu/libmimalloc.so.3" /usr/lib/libmimalloc.so.3
+
+ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
 WORKDIR /usr/src
 ENV TRANSFORMERS_CACHE=/cache \
