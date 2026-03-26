@@ -247,9 +247,11 @@
     await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, page.url);
   };
 
-  let people = $derived(data.people.people);
+  let people = $state(data.people.people);
+  let totalPeople = $derived(people.length);
+  let hiddenCount = $derived(people.filter((p) => p.isHidden).length);
   let visiblePeople = $derived(people.filter((people) => !people.isHidden));
-  let countVisiblePeople = $derived(searchName ? searchedPeopleLocal.length : data.people.total - data.people.hidden);
+  let countVisiblePeople = $derived(searchName ? searchedPeopleLocal.length : totalPeople - hiddenCount);
   let showPeople = $derived(searchName ? searchedPeopleLocal : visiblePeople);
 
   const onNameChangeInputFocus = (person: PersonResponseDto) => {
@@ -310,6 +312,11 @@
     return searchResult.find(
       (person) => person.name.toLowerCase() === name.toLowerCase() && person.id !== personId && person.name,
     );
+  };
+
+  const refreshPeople = async () => {
+    const result = await getAllPeople({ withHidden: true });
+    people = result.people;
   };
 </script>
 
@@ -399,7 +406,7 @@
 
           <input
             type="text"
-            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white focus:bg-white"
+            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white dark:hover:bg-immich-dark-gray-card focus:bg-white"
             value={person.name}
             placeholder={$t('add_a_name')}
             use:shortcut={{ shortcut: { key: 'Enter' }, onShortcut: (e) => e.currentTarget.blur() }}
@@ -429,7 +436,7 @@
   >
     <ManagePeopleVisibility
       bind:people
-      totalPeopleCount={data.people.total}
+      totalPeopleCount={totalPeople}
       titleId="manage-visibility-title"
       onClose={() => (selectHidden = false)}
       {loadNextPage}
