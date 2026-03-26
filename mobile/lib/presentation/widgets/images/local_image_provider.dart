@@ -76,9 +76,12 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
   ImageStreamCompleter loadImage(LocalFullImageProvider key, ImageDecoderCallback decode) {
     return OneFramePlaceholderImageStreamCompleter(
       _codec(key, decode),
-      // Still try to show a cached thumbnail as a fast placeholder,
-      // even when originalOnly is true.
-      initialImage: getInitialImage(LocalThumbProvider(id: key.id, assetType: key.assetType)),
+      // For normal usage, show a cached thumbnail as a fast placeholder.
+      // When originalOnly is true, skip the placeholder so the first
+      // delivered frame is guaranteed to be the original image.
+      initialImage: key.originalOnly
+          ? null
+          : getInitialImage(LocalThumbProvider(id: key.id, assetType: key.assetType)),
       informationCollector: () => <DiagnosticsNode>[
         DiagnosticsProperty<ImageProvider>('Image provider', this),
         DiagnosticsProperty<String>('Id', key.id),
@@ -89,18 +92,27 @@ class LocalFullImageProvider extends CancellableImageProvider<LocalFullImageProv
   }
 
   Stream<ImageInfo> _codec(LocalFullImageProvider key, ImageDecoderCallback decode) async* {
+    if (originalOnly) {
+      if (isCancelled) {
+        evict();
+        return;
+      }
+      // Go straight to the original file as the first full frame.
+      var request = this.request = LocalImageRequest(
+        localId: key.id,
+        assetType: key.assetType,
+        size: Size.zero,
+      );
+      yield* loadRequest(request, decode);
+      return;
+    }
+
+    // Normal path: optional cached image, then scaled request, then
+    // optional original depending on settings.
     yield* initialImageStream();
 
     if (isCancelled) {
       evict();
-      return;
-    }
-
-    // When originalOnly is true, skip the intermediate scaled request
-    // and go straight to the original file as the first full frame.
-    if (originalOnly) {
-      var request = this.request = LocalImageRequest(localId: key.id, assetType: key.assetType, size: Size.zero);
-      yield* loadRequest(request, decode);
       return;
     }
 

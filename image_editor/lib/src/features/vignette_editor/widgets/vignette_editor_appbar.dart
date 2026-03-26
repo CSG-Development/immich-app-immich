@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 
 /// App bar for the vignette editor, with undo/redo and done/close actions.
-class VignetteEditorAppbar extends StatelessWidget implements PreferredSizeWidget {
-  const VignetteEditorAppbar({
+class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const VignetteEditorAppBar({
     super.key,
     required this.theme,
     required this.canRedo,
@@ -26,41 +27,20 @@ class VignetteEditorAppbar extends StatelessWidget implements PreferredSizeWidge
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: theme.appBarTheme.backgroundColor ?? Colors.black,
-      foregroundColor: theme.appBarTheme.foregroundColor ?? Colors.white,
-      actions: [
-        IconButton(
-          tooltip: 'Back',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: const Icon(Icons.arrow_back),
-          onPressed: onClose,
-        ),
-        const Spacer(),
-        IconButton(
-          tooltip: 'Undo',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: Icon(Icons.undo, color: canUndo ? Colors.white : Colors.white.withAlpha(80)),
-          onPressed: canUndo ? onUndo : null,
-        ),
-        IconButton(
-          tooltip: 'Redo',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: Icon(Icons.redo, color: canRedo ? Colors.white : Colors.white.withAlpha(80)),
-          onPressed: canRedo ? onRedo : null,
-        ),
-        IconButton(
-          tooltip: 'Done',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: const Icon(Icons.check),
-          iconSize: 28,
-          onPressed: onDone,
-        ),
-      ],
+    return EditorActionAppBar(
+      theme: theme,
+      onBack: onClose,
+      onUndo: onUndo,
+      onRedo: onRedo,
+      onConfirm: onDone,
+      canUndo: canUndo,
+      canRedo: canRedo,
+      confirmTooltip: 'Done',
     );
   }
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
+
+typedef VignetteEditorAppbar = VignetteEditorAppBar;

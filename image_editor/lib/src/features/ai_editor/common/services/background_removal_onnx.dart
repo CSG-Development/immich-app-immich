@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_session_lifecycle.dart';
 import 'package:image_editor/src/utils/image_decode_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
@@ -25,6 +26,9 @@ class BackgroundRemovalOnnx {
     this.outputName,
     this.inputWidth = 256,
     this.inputHeight = 256,
+    this.rescaleFactor = 0.00392156862745098,
+    this.imageMean = const [0.5, 0.5, 0.5],
+    this.imageStd = const [0.5, 0.5, 0.5],
   });
 
   final String modelPathOrUrl;
@@ -32,12 +36,16 @@ class BackgroundRemovalOnnx {
   final int inputHeight;
   final String? imageInputName;
   final String? outputName;
+  final double rescaleFactor;
+  final List<double> imageMean;
+  final List<double> imageStd;
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
+  bool _didRetrySessionInit = false;
   static final Logger _log = Logger('BackgroundRemovalOnnx');
 
-  // Normalization parameters from the MODNet preprocessor config:
+  // Default normalization parameters from the MODNet preprocessor config:
   // https://huggingface.co/onnx-community/modnet-webnn
   // preprocessor_config.json:
   // {
@@ -48,9 +56,10 @@ class BackgroundRemovalOnnx {
   //   "image_std": [0.5, 0.5, 0.5],
   //   "size": { "width": 256, "height": 256 }
   // }
-  static const double _rescale = 0.00392156862745098; // 1 / 255
-  static const List<double> _mean = [0.5, 0.5, 0.5];
-  static const List<double> _std = [0.5, 0.5, 0.5];
+  //
+  // Some other matting/segmentation models (e.g. U^2-Net used by rembg) expect
+  // ImageNet mean/std. Callers can override [rescaleFactor], [imageMean],
+  // and [imageStd] to match their model docs.
 
   /// Decodes [imageBytes], resizes to [inputWidth] x [inputHeight] and returns
   /// an RGB image suitable for tensor encoding.
@@ -78,17 +87,19 @@ class BackgroundRemovalOnnx {
     final Float32List inputData =
         Float32List(1 * 3 * inputHeight * inputWidth);
     final pixelCount = inputWidth * inputHeight;
+    final mean = imageMean;
+    final std = imageStd;
     var index = 0;
     for (var y = 0; y < inputHeight; y++) {
       for (var x = 0; x < inputWidth; x++) {
         final pixel = rgbImage.getPixel(x, y);
-        final r = pixel.r.toDouble() * _rescale;
-        final g = pixel.g.toDouble() * _rescale;
-        final b = pixel.b.toDouble() * _rescale;
+        final r = pixel.r.toDouble() * rescaleFactor;
+        final g = pixel.g.toDouble() * rescaleFactor;
+        final b = pixel.b.toDouble() * rescaleFactor;
 
-        final rNorm = (r - _mean[0]) / _std[0];
-        final gNorm = (g - _mean[1]) / _std[1];
-        final bNorm = (b - _mean[2]) / _std[2];
+        final rNorm = (r - mean[0]) / std[0];
+        final gNorm = (g - mean[1]) / std[1];
+        final bNorm = (b - mean[2]) / std[2];
 
         inputData[index] = rNorm;
         inputData[pixelCount + index] = gNorm;
@@ -104,18 +115,36 @@ class BackgroundRemovalOnnx {
     _log.info(
       '[BG_ONNX] Creating ONNX session from: $modelPathOrUrl',
     );
+    final options = OrtSessionOptions();
     try {
       // Initialize global ORT environment once.
       OrtEnv.instance.init();
 
       final bytes = await OnnxModelLoader.loadBytes(modelPathOrUrl);
-      final options = OrtSessionOptions();
       _session = OrtSession.fromBuffer(bytes, options);
       _isolateSession = OrtIsolateSession(_session!);
+      _didRetrySessionInit = false;
       _log.info('[BG_ONNX] ONNX session (isolate) created successfully.');
     } catch (e, st) {
       _log.severe('[BG_ONNX] Failed to create ONNX session', e, st);
       _session = null;
+      if (!_didRetrySessionInit && OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+        _didRetrySessionInit = true;
+        _log.warning('[BG_ONNX] Clearing cached model and retrying once.');
+        try {
+          await OnnxModelLoader.clearCached(modelPathOrUrl);
+          await _ensureSession();
+          return;
+        } catch (retryError, retryStack) {
+          _log.severe(
+            '[BG_ONNX] Retry after cache clear failed',
+            retryError,
+            retryStack,
+          );
+        }
+      }
+    } finally {
+      options.release();
     }
   }
 
@@ -168,53 +197,61 @@ class BackgroundRemovalOnnx {
         resolvedImageInputName: inputTensor,
       };
       final runOptions = OrtRunOptions();
-      final isolateSession = _isolateSession;
-      final onnxStart = DateTime.now();
-      final outputs = isolateSession != null
-          ? await isolateSession.run(
-              runOptions,
-              inputs,
-              [resolvedOutputName],
-            )
-          : await session.runAsync(
-              runOptions,
-              inputs,
-              [resolvedOutputName],
-            );
-      final onnxElapsed =
-          DateTime.now().difference(onnxStart).inMilliseconds;
-      _log.info(
-        '[BG_ONNX] session.run (isolate=${isolateSession != null}) '
-        'completed in ${onnxElapsed}ms',
-      );
+      List<OrtValue?>? outputs;
+      int onnxElapsed = 0;
+      try {
+        final isolateSession = _isolateSession;
+        final onnxStart = DateTime.now();
+        outputs = isolateSession != null
+            ? await isolateSession.run(
+                runOptions,
+                inputs,
+                [resolvedOutputName],
+              )
+            : await session.runAsync(
+                runOptions,
+                inputs,
+                [resolvedOutputName],
+              );
+        onnxElapsed =
+            DateTime.now().difference(onnxStart).inMilliseconds;
+        _log.info(
+          '[BG_ONNX] session.run (isolate=${isolateSession != null}) '
+          'completed in ${onnxElapsed}ms',
+        );
 
-      inputTensor.release();
-      runOptions.release();
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) {
+          _log.warning('[BG_ONNX] Output tensor "$resolvedOutputName" not found.');
+          return null;
+        }
 
-      final outputTensor = outputs?.first;
-      if (outputTensor == null) {
+        final raw = outputTensor.value;
+        final flatData = <dynamic>[];
+        final shape = _inferShapeAndFlatten(raw, flatData);
+
+        final totalElapsed =
+            DateTime.now().difference(totalStart).inMilliseconds;
+        _log.info(
+          '[BG_ONNX] run() total elapsed ${totalElapsed}ms '
+          '(prep=${prepElapsed}ms, onnx=${onnxElapsed}ms)',
+        );
+
+        return (data: flatData, shape: shape);
+      } finally {
         outputs?.forEach((t) => t?.release());
-        _log.warning('[BG_ONNX] Output tensor "$resolvedOutputName" not found.');
-        return null;
+        inputTensor.release();
+        runOptions.release();
       }
-
-      final raw = outputTensor.value;
-      final flatData = <dynamic>[];
-      final shape = _inferShapeAndFlatten(raw, flatData);
-
-      outputs?.forEach((t) => t?.release());
-
-      final totalElapsed =
-          DateTime.now().difference(totalStart).inMilliseconds;
-      _log.info(
-        '[BG_ONNX] run() total elapsed ${totalElapsed}ms '
-        '(prep=${prepElapsed}ms, onnx=${onnxElapsed}ms)',
-      );
-
-      return (data: flatData, shape: shape);
     } catch (e, st) {
       _log.severe('[BG_ONNX] Exception during run', e, st);
       return null;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'BG_ONNX',
+        dispose: dispose,
+      );
     }
   }
 

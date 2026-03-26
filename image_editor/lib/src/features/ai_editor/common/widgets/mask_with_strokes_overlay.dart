@@ -66,17 +66,17 @@ class _MaskWithStrokesOverlayState extends State<MaskWithStrokesOverlay> {
       ..color = Colors.red.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
-    const step = 1.0;
+    // Keep traversal in display space (the pre-refactor behavior) because
+    // masks can be much larger than the viewport and iterating mask pixels
+    // directly can cause noticeable brush lag.
+    final step = (w * h) > 500000 ? 2.0 : 1.0;
     for (var sy = 0.0; sy < h; sy += step) {
       for (var sx = 0.0; sx < w; sx += step) {
         final mx = (sx * mask.width / w).round().clamp(0, mask.width - 1);
         final my = (sy * mask.height / h).round().clamp(0, mask.height - 1);
         final p = mask.getPixel(mx, my);
         if (p.r > 0 || p.g > 0 || p.b > 0) {
-          canvas.drawRect(
-            Rect.fromLTWH(sx, sy, step, step),
-            redPaint,
-          );
+          canvas.drawRect(Rect.fromLTWH(sx, sy, step, step), redPaint);
         }
       }
     }
@@ -142,6 +142,9 @@ class _MaskWithStrokesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final overlayRect = Offset.zero & size;
+    canvas.saveLayer(overlayRect, Paint());
+
     if (cachedPicture != null) {
       canvas.drawPicture(cachedPicture!);
     }
@@ -161,11 +164,12 @@ class _MaskWithStrokesPainter extends CustomPainter {
         canvas.drawCircle(Offset(sx, sy), sr, erasePaint);
       }
     }
+
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _MaskWithStrokesPainter oldDelegate) {
-    return oldDelegate.cachedPicture != cachedPicture ||
-        oldDelegate.strokes.length != strokes.length;
+    return oldDelegate.cachedPicture != cachedPicture || oldDelegate.strokes.length != strokes.length;
   }
 }

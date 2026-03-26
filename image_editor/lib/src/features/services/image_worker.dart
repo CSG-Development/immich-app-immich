@@ -141,12 +141,34 @@ class ImageWorker {
     required int height,
     required List<Map<String, Object>> strokes,
     Map<String, Object>? baseMask,
+    double dilatePercent = 0.02,
   }) async {
     return _runJob<Map<String, Object>>('build_stroke_mask', <String, Object?>{
       'width': width,
       'height': height,
       'strokes': strokes,
       'baseMask': baseMask,
+      'dilatePercent': dilatePercent,
+    });
+  }
+
+  /// Smart insertion preprocessing: performs heavy compositing math in worker
+  /// and returns:
+  /// - `pastedBytes`: composited image before AI harmonization (PNG)
+  /// - `maskWidth`/`maskHeight` + `maskData`: seam mask for inpainting
+  Future<Map<String, Object>?> smartInsertionPrepare({
+    required Uint8List baseImageBytes,
+    required Uint8List cutoutBytes,
+    required int maskWidth,
+    required int maskHeight,
+    required Uint8List placementMaskData,
+  }) async {
+    return _runJob<Map<String, Object>>('smart_insertion_prepare', <String, Object>{
+      'baseImageBytes': baseImageBytes,
+      'cutoutBytes': cutoutBytes,
+      'maskWidth': maskWidth,
+      'maskHeight': maskHeight,
+      'placementMaskData': placementMaskData,
     });
   }
 
@@ -221,9 +243,190 @@ Future<Object?> _handleJob(String type, Object payload) async {
       return _handleVignetteBake(payload);
     case 'bg_apply_mask':
       return _handleBackgroundMaskApply(payload);
+    case 'build_stroke_mask':
+      return _handleBuildStrokeMask(payload);
+    case 'smart_insertion_prepare':
+      return _handleSmartInsertionPrepare(payload);
     default:
       throw UnsupportedError('Unknown ImageWorker job type: $type');
   }
+}
+
+Future<Map<String, Object>> _handleSmartInsertionPrepare(Object payload) async {
+  final map = payload as Map<Object?, Object?>;
+  final baseImageBytes = map['baseImageBytes'] as Uint8List;
+  final cutoutBytes = map['cutoutBytes'] as Uint8List;
+  final maskWidth = map['maskWidth'] as int;
+  final maskHeight = map['maskHeight'] as int;
+  final placementMaskData = map['placementMaskData'] as Uint8List;
+
+  final baseDecoded = img.decodeImage(baseImageBytes);
+  final cutoutDecoded = img.decodeImage(cutoutBytes);
+  if (baseDecoded == null || cutoutDecoded == null) {
+    throw StateError('[SMART_INSERT_WORKER] Failed to decode base/cutout image.');
+  }
+  final baseW = baseDecoded.width;
+  final baseH = baseDecoded.height;
+
+  if (placementMaskData.length != maskWidth * maskHeight) {
+    throw StateError('[SMART_INSERT_WORKER] Invalid mask data length.');
+  }
+
+  var placementMask = img.Image(width: maskWidth, height: maskHeight);
+  var maskIdx = 0;
+  for (var y = 0; y < maskHeight; y++) {
+    for (var x = 0; x < maskWidth; x++) {
+      final v = placementMaskData[maskIdx++];
+      placementMask.setPixel(x, y, img.ColorRgb8(v, v, v));
+    }
+  }
+  if (placementMask.width != baseW || placementMask.height != baseH) {
+    placementMask = img.copyResize(
+      placementMask,
+      width: baseW,
+      height: baseH,
+      interpolation: img.Interpolation.nearest,
+    );
+  }
+
+  var minX = baseW;
+  var minY = baseH;
+  var maxX = 0;
+  var maxY = 0;
+  var hasMask = false;
+  for (var y = 0; y < baseH; y++) {
+    for (var x = 0; x < baseW; x++) {
+      final p = placementMask.getPixel(x, y);
+      if (p.r > 0 || p.g > 0 || p.b > 0) {
+        hasMask = true;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (!hasMask) {
+    final emptyMask = Uint8List(baseW * baseH);
+    return <String, Object>{
+      'pastedBytes': baseImageBytes,
+      'maskWidth': baseW,
+      'maskHeight': baseH,
+      'maskData': emptyMask,
+    };
+  }
+
+  var cutout = cutoutDecoded;
+  if (cutout.numChannels != 4) {
+    cutout = cutout.convert(numChannels: 4);
+  }
+
+  final targetW = (maxX - minX + 1).clamp(1, baseW);
+  final targetH = (maxY - minY + 1).clamp(1, baseH);
+  final cutoutW = cutout.width;
+  final cutoutH = cutout.height;
+  final coverScale = (targetW / cutoutW) > (targetH / cutoutH) ? (targetW / cutoutW) : (targetH / cutoutH);
+  final maxCanvasScale = (baseW / cutoutW) < (baseH / cutoutH) ? (baseW / cutoutW) : (baseH / cutoutH);
+  final scale = coverScale < maxCanvasScale ? coverScale : maxCanvasScale;
+  final placedW = ((cutoutW * scale).round()).clamp(1, baseW);
+  final placedH = ((cutoutH * scale).round()).clamp(1, baseH);
+  final resizedCutout = img.copyResize(cutout, width: placedW, height: placedH, interpolation: img.Interpolation.linear);
+  final offsetX = ((targetW - placedW) / 2).floor();
+  final offsetY = ((targetH - placedH) / 2).floor();
+
+  final bgCandidates = <img.Color>[
+    resizedCutout.getPixel(0, 0),
+    resizedCutout.getPixel(placedW - 1, 0),
+    resizedCutout.getPixel(0, placedH - 1),
+    resizedCutout.getPixel(placedW - 1, placedH - 1),
+  ];
+  final bg = bgCandidates[0];
+  final bgR = bg.r.toInt();
+  final bgG = bg.g.toInt();
+  final bgB = bg.b.toInt();
+
+  final out = baseDecoded.numChannels == 4 ? baseDecoded.clone() : baseDecoded.convert(numChannels: 4);
+  final blendMask = img.Image(width: baseW, height: baseH);
+  for (var y = 0; y < placedH; y++) {
+    for (var x = 0; x < placedW; x++) {
+      final bx = minX + offsetX + x;
+      final by = minY + offsetY + y;
+      if (bx < 0 || bx >= baseW || by < 0 || by >= baseH) continue;
+      final cutoutPixel = resizedCutout.getPixel(x, y);
+      final alpha = cutoutPixel.a / 255.0;
+      if (alpha <= 0) continue;
+      final dr = (cutoutPixel.r.toInt() - bgR).abs();
+      final dg = (cutoutPixel.g.toInt() - bgG).abs();
+      final db = (cutoutPixel.b.toInt() - bgB).abs();
+      final maxDiff = [dr, dg, db].reduce((a, b) => a > b ? a : b);
+      if (maxDiff <= 12) continue;
+      final basePixel = out.getPixel(bx, by);
+      final r = (cutoutPixel.r * alpha + basePixel.r * (1 - alpha)).round();
+      final g = (cutoutPixel.g * alpha + basePixel.g * (1 - alpha)).round();
+      final b = (cutoutPixel.b * alpha + basePixel.b * (1 - alpha)).round();
+      out.setPixel(bx, by, img.ColorRgba8(r, g, b, 255));
+    }
+  }
+
+  const seamRadius = 1;
+  final isForeground = List<bool>.filled(placedW * placedH, false);
+  int idxOf(int x, int y) => y * placedW + x;
+  for (var y = 0; y < placedH; y++) {
+    for (var x = 0; x < placedW; x++) {
+      isForeground[idxOf(x, y)] = resizedCutout.getPixel(x, y).a.toInt() > 12;
+    }
+  }
+
+  bool hasForegroundNeighbor(int x, int y) {
+    for (var ny = y - 1; ny <= y + 1; ny++) {
+      for (var nx = x - 1; nx <= x + 1; nx++) {
+        if (nx == x && ny == y) continue;
+        if (nx < 0 || nx >= placedW || ny < 0 || ny >= placedH) continue;
+        if (isForeground[idxOf(nx, ny)]) return true;
+      }
+    }
+    return false;
+  }
+
+  for (var y = 0; y < placedH; y++) {
+    for (var x = 0; x < placedW; x++) {
+      // For insertion, keep the subject untouched. Mark only background pixels
+      // near the subject boundary for AI harmonization.
+      if (isForeground[idxOf(x, y)]) continue;
+      if (!hasForegroundNeighbor(x, y)) continue;
+
+      for (var dy = -seamRadius; dy <= seamRadius; dy++) {
+        for (var dx = -seamRadius; dx <= seamRadius; dx++) {
+          if (dx * dx + dy * dy > seamRadius * seamRadius) continue;
+          final tx = x + dx;
+          final ty = y + dy;
+          if (tx < 0 || tx >= placedW || ty < 0 || ty >= placedH) continue;
+          // Never include subject pixels in inpaint mask.
+          if (isForeground[idxOf(tx, ty)]) continue;
+          final bx = minX + offsetX + tx;
+          final by = minY + offsetY + ty;
+          if (bx < 0 || bx >= baseW || by < 0 || by >= baseH) continue;
+          blendMask.setPixel(bx, by, img.ColorRgb8(255, 255, 255));
+        }
+      }
+    }
+  }
+
+  final packedMask = Uint8List(baseW * baseH);
+  var outIdx = 0;
+  for (var y = 0; y < baseH; y++) {
+    for (var x = 0; x < baseW; x++) {
+      packedMask[outIdx++] = blendMask.getPixel(x, y).r.toInt().clamp(0, 255);
+    }
+  }
+
+  return <String, Object>{
+    'pastedBytes': Uint8List.fromList(img.encodePng(out)),
+    'maskWidth': baseW,
+    'maskHeight': baseH,
+    'maskData': packedMask,
+  };
 }
 
 Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
@@ -233,6 +436,7 @@ Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
   final height = map['height'] as int;
   final strokesPayload = (map['strokes'] as List).cast<Map<Object?, Object?>>();
   final baseMaskMap = map['baseMask'] as Map<Object?, Object?>?;
+  final dilatePercent = (map['dilatePercent'] as num?)?.toDouble() ?? 0.02;
 
   // Work in a downscaled coordinate space so that very large images do not
   // require building and post-processing huge masks. Keep aspect ratio but
@@ -310,7 +514,10 @@ Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
   final postStart = DateTime.now();
   final holeFreeMask = MaskUtils.fillHoles(mask);
   final featheredMask = MaskUtils.featherMaskEdges(holeFreeMask, radius: 1);
-  final expandedMask = MaskUtils.dilateMaskByPercent(featheredMask, percent: 0.02);
+  final expandedMask = MaskUtils.dilateMaskByPercent(
+    featheredMask,
+    percent: dilatePercent,
+  );
   final postElapsed = DateTime.now().difference(postStart).inMilliseconds;
   _imageWorkerLog.info('[MASK_WORKER] Post-process (fill/feather/dilate) took ${postElapsed}ms');
 
@@ -457,9 +664,7 @@ Future<Uint8List?> _handleVignetteBake(Object payload) async {
     }
   }
 
-  final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
-
-  return Uint8List.fromList(isJpeg ? img.encodeJpg(decoded) : img.encodePng(decoded));
+  return _encodeLikeInput(decoded, bytes);
 }
 
 Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
@@ -554,9 +759,7 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
       }
     }
 
-    final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
-
-    return Uint8List.fromList(isJpeg ? img.encodeJpg(result) : img.encodePng(result));
+    return _encodeLikeInput(result, bytes);
   }
 
   if (outC == 3) {
@@ -578,9 +781,7 @@ Future<Uint8List> _handleBackgroundMaskApply(Object payload) async {
       interpolation: img.Interpolation.linear,
     );
 
-    final isJpeg = bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
-
-    return Uint8List.fromList(isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut));
+    return _encodeLikeInput(resizedOut, bytes);
   }
 
   throw StateError('[BG_WORKER] Unsupported channel layout: C=$outC');
@@ -649,4 +850,12 @@ img.Image _denoiseFloat32NHWCToImage(List<dynamic> raw, int w, int h) {
     }
   }
   return out;
+}
+
+Uint8List _encodeLikeInput(img.Image image, Uint8List sourceBytes) {
+  return Uint8List.fromList(_isJpeg(sourceBytes) ? img.encodeJpg(image) : img.encodePng(image));
+}
+
+bool _isJpeg(Uint8List bytes) {
+  return bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 }

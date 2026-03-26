@@ -8,11 +8,17 @@ class FastdvdnetDenoiseService {
   FastdvdnetDenoiseService({
     required String modelPathOrUrl,
     String? imageInputName,
+    String? noiseInputName,
     String? outputName,
+    double noiseSigma = 0.1,
+    int modelSize = 256,
   }) : _onnx = FastdvdnetOnnx(
           modelPathOrUrl: modelPathOrUrl,
           imageInputName: imageInputName,
+          noiseInputName: noiseInputName,
           outputName: outputName,
+          noiseSigma: noiseSigma,
+          modelSize: modelSize,
         );
 
   final FastdvdnetOnnx _onnx;

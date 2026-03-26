@@ -217,10 +217,17 @@ class EditorBottomBar extends StatelessWidget {
     required VoidCallback onPressed,
     Color? labelColor,
   }) {
-    return FlatIconTextButton(
-      label: Text(label, style: _bottomTextStyle.copyWith(color: labelColor)),
-      icon: Icon(icon, size: 22, color: Colors.white),
-      onPressed: onPressed,
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        button: true,
+        label: label,
+        child: FlatIconTextButton(
+          label: Text(label, style: _bottomTextStyle.copyWith(color: labelColor)),
+          icon: Icon(icon, size: 22, color: Colors.white),
+          onPressed: onPressed,
+        ),
+      ),
     );
   }
 

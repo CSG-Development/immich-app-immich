@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_session_lifecycle.dart';
 import 'package:image_editor/src/features/services/image_worker.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
@@ -20,6 +21,7 @@ class FastdvdnetOnnx {
     this.noiseInputName,
     this.outputName,
     this.modelSize = 256,
+    this.noiseSigma = 0.1,
   });
 
   final String modelPathOrUrl;
@@ -29,25 +31,48 @@ class FastdvdnetOnnx {
   final String? noiseInputName;
   final String? outputName;
   final int modelSize;
+  /// Global noise level \(\sigma\) used to build the noise map tensor.
+  /// Lower values preserve more detail (less denoising), higher values
+  /// are more aggressive.
+  final double noiseSigma;
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
+  bool _didRetrySessionInit = false;
 
   Future<void> _ensureSession() async {
     if (_session != null) return;
     _log.info(
       '[FDN_ONNX] Creating ONNX session from: $modelPathOrUrl',
     );
+    final options = OrtSessionOptions();
     try {
       OrtEnv.instance.init();
       final bytes = await OnnxModelLoader.loadBytes(modelPathOrUrl);
-      final options = OrtSessionOptions();
       _session = OrtSession.fromBuffer(bytes, options);
       _isolateSession = OrtIsolateSession(_session!);
+      _didRetrySessionInit = false;
       _log.info('[FDN_ONNX] ONNX isolate session created successfully.');
     } catch (e, st) {
       _log.severe('[FDN_ONNX] Failed to create ONNX session', e, st);
       _session = null;
+      if (!_didRetrySessionInit && OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+        _didRetrySessionInit = true;
+        _log.warning('[FDN_ONNX] Clearing cached model and retrying once.');
+        try {
+          await OnnxModelLoader.clearCached(modelPathOrUrl);
+          await _ensureSession();
+          return;
+        } catch (retryError, retryStack) {
+          _log.severe(
+            '[FDN_ONNX] Retry after cache clear failed',
+            retryError,
+            retryStack,
+          );
+        }
+      }
+    } finally {
+      options.release();
     }
   }
 
@@ -107,9 +132,8 @@ class FastdvdnetOnnx {
       );
 
       // Create a simple noise map tensor. For single-image denoising we
-      // typically pass a constant noise level (e.g. sigma=0.1) across the
-      // whole frame.
-      const sigma = 0.1;
+      // typically pass a constant noise level across the whole frame.
+      final sigma = noiseSigma;
       final noiseData = Float32List(1 * 1 * modelSize * modelSize);
       for (var i = 0; i < noiseData.length; i++) {
         noiseData[i] = sigma;
@@ -150,38 +174,40 @@ class FastdvdnetOnnx {
       }
 
       final runOptions = OrtRunOptions();
-      final isolateSession = _isolateSession;
-      final outputs = isolateSession != null
-          ? await isolateSession.run(
-              runOptions,
-              <String, OrtValue>{
-                resolvedImageName: inputTensor,
-                resolvedNoiseName: noiseTensor,
-              },
-              [resolvedOutputName],
-            )
-          : await session.runAsync(
-              runOptions,
-              <String, OrtValue>{
-                resolvedImageName: inputTensor,
-                resolvedNoiseName: noiseTensor,
-              },
-              [resolvedOutputName],
-            );
-
-      inputTensor.release();
-      noiseTensor.release();
-      runOptions.release();
-
-      final outputTensor = outputs?.first;
-      if (outputTensor == null) {
-        outputs?.forEach((t) => t?.release());
-        return imageBytes;
-      }
-      final raw = outputTensor.value;
+      List<OrtValue?>? outputs;
       final outputList = <dynamic>[];
-      _flattenToList(raw, outputList);
-      outputs?.forEach((t) => t?.release());
+      try {
+        final isolateSession = _isolateSession;
+        outputs = isolateSession != null
+            ? await isolateSession.run(
+                runOptions,
+                <String, OrtValue>{
+                  resolvedImageName: inputTensor,
+                  resolvedNoiseName: noiseTensor,
+                },
+                [resolvedOutputName],
+              )
+            : await session.runAsync(
+                runOptions,
+                <String, OrtValue>{
+                  resolvedImageName: inputTensor,
+                  resolvedNoiseName: noiseTensor,
+                },
+                [resolvedOutputName],
+              );
+
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) {
+          return imageBytes;
+        }
+        final raw = outputTensor.value;
+        _flattenToList(raw, outputList);
+      } finally {
+        outputs?.forEach((t) => t?.release());
+        inputTensor.release();
+        noiseTensor.release();
+        runOptions.release();
+      }
 
       final postStart = DateTime.now();
       final resultBytes = await ImageWorker.instance.denoisePostprocess(
@@ -213,6 +239,12 @@ class FastdvdnetOnnx {
     } catch (e, st) {
       _log.severe('[FDN_ONNX] Exception in denoise', e, st);
       return imageBytes;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'FDN_ONNX',
+        dispose: dispose,
+      );
     }
   }
 

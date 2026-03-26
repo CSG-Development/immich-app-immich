@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 // Project imports:
 import 'package:image/image.dart' as img;
@@ -14,9 +15,12 @@ import 'package:image_editor/src/features/ai_editor/ai_editor_actions.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
-import 'package:image_editor/src/features/ai_editor/people_removal/people_removal_overlay_host.dart';
+import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
+import 'package:image_editor/src/features/ai_editor/photo_enhancement/ai_photo_enhancement_page.dart';
+import 'package:image_editor/src/features/ai_editor/smart_insertion/smart_insertion_flow.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/core/utils/size_utils.dart';
@@ -24,43 +28,7 @@ import 'package:pro_image_editor/features/filter_editor/widgets/filtered_widget.
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/shared/widgets/transform/transformed_content_generator.dart';
 
-/// Simple in-memory history for `EditorImage` states used by the AI editor.
-class _EditorHistory {
-  _EditorHistory(EditorImage initial)
-      : _items = [initial],
-        _index = 0;
-
-  final List<EditorImage> _items;
-  int _index;
-
-  EditorImage get current => _items[_index];
-
-  bool get canUndo => _index > 0;
-  bool get canRedo => _index < _items.length - 1;
-
-  bool undo() {
-    if (!canUndo) return false;
-    _index -= 1;
-    return true;
-  }
-
-  bool redo() {
-    if (!canRedo) return false;
-    _index += 1;
-    return true;
-  }
-
-  /// Pushes a new image state and discards any redo history.
-  void push(EditorImage image) {
-    if (_index < _items.length - 1) {
-      _items.removeRange(_index + 1, _items.length);
-    }
-    _items.add(image);
-    _index = _items.length - 1;
-  }
-}
-
-enum _OverlayMode { none, object, people }
+enum _OverlayMode { none, object }
 
 /// Standalone AI editor that can work with the same configs
 /// as `pro_image_editor`, but is dedicated to AI-related tools.
@@ -68,17 +36,9 @@ enum _OverlayMode { none, object, people }
 /// For now this is a dummy page that simply shows the image and returns
 /// the original bytes when the user taps "Done".
 class AiEditor extends StatefulWidget {
-  const AiEditor._({
-    super.key,
-    required this.initConfigs,
-    required this.editorImage,
-  });
+  const AiEditor._({super.key, required this.initConfigs, required this.editorImage});
 
-  factory AiEditor.memory(
-    Uint8List byteArray, {
-    Key? key,
-    required AiEditorInitConfigs initConfigs,
-  }) {
+  factory AiEditor.memory(Uint8List byteArray, {Key? key, required AiEditorInitConfigs initConfigs}) {
     return AiEditor._(
       key: key,
       editorImage: EditorImage(byteArray: byteArray),
@@ -98,7 +58,7 @@ class AiEditorState extends State<AiEditor> {
   late final StreamController<void> uiStream;
   Size editorBodySize = Size.zero;
 
-  late _EditorHistory _history;
+  late HistoryStack<EditorImage> _history;
   EditorImage get editorImage => _history.current;
 
   late final AiEditorActions _actions;
@@ -127,11 +87,7 @@ class AiEditorState extends State<AiEditor> {
 
   TransformConfigs? get initialTransformConfigs => initConfigs.transformConfigs;
 
-  String get _backgroundModelPath => initConfigs.backgroundModelPathEffective;
-
   String get _inpaintingModelPath => initConfigs.inpaintingModelPathEffective;
-
-  String get _fastdvdnetModelPath => initConfigs.fastdvdnetModelPathEffective;
 
   Object get heroTag => 'ai_editor_hero';
 
@@ -139,78 +95,55 @@ class AiEditorState extends State<AiEditor> {
 
   bool get canRedo => _history.canRedo;
 
-  Future<void> _runImageProcessing({
-    required String modelPathOrUrl,
-    required String modelName,
-    required String emptyBytesMessage,
-    required String failureMessage,
-    required Future<Uint8List> Function(Uint8List bytes) process,
-    String? successMessage,
-    String? sameBytesErrorMessage,
-    bool ensureAiTools = true,
-    String? debugTag,
-  }) async {
-    if (_isProcessing) return;
-    if (ensureAiTools && !_ensureAiToolsAvailable()) return;
-
-    final ok = await showModelDownloadDialog(
+  Future<T?> _openSubEditorPage<T>(Widget page, {Duration duration = const Duration(milliseconds: 300)}) {
+    final subEditorStyle = configs.mainEditor.style.subEditorPage;
+    return Navigator.push<T?>(
       context,
-      modelPathOrUrl: modelPathOrUrl,
-      modelName: modelName,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: subEditorStyle.barrierColor,
+        barrierDismissible: subEditorStyle.barrierDismissible,
+        transitionDuration: duration,
+        reverseTransitionDuration: duration,
+        transitionsBuilder: subEditorStyle.transitionsBuilder ??
+            (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+        pageBuilder: (context, animation, secondaryAnimation) {
+          if (!subEditorStyle.requireReposition) return page;
+
+          return SafeArea(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned(
+                  top: subEditorStyle.positionTop,
+                  left: subEditorStyle.positionLeft,
+                  right: subEditorStyle.positionRight,
+                  bottom: subEditorStyle.positionBottom,
+                  child: Center(
+                    child: Container(
+                      width: subEditorStyle.enforceSizeFromMainEditor ? MediaQuery.of(context).size.width : null,
+                      height: subEditorStyle.enforceSizeFromMainEditor ? MediaQuery.of(context).size.height : null,
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(borderRadius: subEditorStyle.borderRadius),
+                      child: page,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
-    if (!ok || !mounted) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      final bytes = await editorImage.safeByteArray();
-      if (bytes.isEmpty) {
-        return;
-      }
-
-      if (kDebugMode && debugTag != null) {
-        _log.fine('[$debugTag] Input bytes length: ${bytes.length}');
-      }
-
-      final processed = await process(bytes);
-
-      if (!mounted) return;
-
-      if (kDebugMode && debugTag != null) {
-        _log.fine('[$debugTag] Processed bytes length: ${processed.length}');
-      }
-
-      if (sameBytesErrorMessage != null && listEquals(processed, bytes)) {
-        return;
-      }
-
-      final newImage = EditorImage(byteArray: processed);
-      _history.push(newImage);
-      uiStream.add(null);
-
-      // Intentionally no automatic toast/snackbar here; host app can surface
-      // success via its own callbacks if desired.
-    } catch (e) {
-      if (kDebugMode) {
-        _log.warning('$modelName failed: $e');
-      }
-      if (!mounted) return;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-      }
-    }
   }
 
   @override
   void initState() {
     super.initState();
     uiStream = StreamController<void>.broadcast();
-    _history = _EditorHistory(widget.editorImage);
+    _history = HistoryStack<EditorImage>(widget.editorImage);
     _actions = AiEditorActions(initConfigs: initConfigs);
   }
 
@@ -251,45 +184,12 @@ class AiEditorState extends State<AiEditor> {
     if (!kIsWeb) {
       return true;
     }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('AI tools are currently unavailable on web.')),
+      );
+    }
     return false;
-  }
-
-  Future<void> _runBackgroundEffect(
-    BackgroundEffectMode mode,
-    String successMessage,
-  ) async {
-    return _runImageProcessing(
-      modelPathOrUrl: _backgroundModelPath,
-      modelName: 'Background removal',
-      emptyBytesMessage: 'No image data available for background removal.',
-      failureMessage: 'Failed to remove background.',
-      sameBytesErrorMessage:
-          'Failed to apply background effect (device may be low on memory).',
-      successMessage: successMessage,
-      ensureAiTools: true,
-      debugTag: 'BG',
-      process: (bytes) => _actions.applyBackground(bytes, mode: mode),
-    );
-  }
-
-  Future<void> _runFastDenoise() async {
-    return _runImageProcessing(
-      modelPathOrUrl: _fastdvdnetModelPath,
-      modelName: 'Denoise',
-      emptyBytesMessage: 'No image data available for denoising.',
-      failureMessage: 'Failed to denoise image.',
-      successMessage: 'Noise reduced.',
-      ensureAiTools: true,
-      debugTag: 'FDN',
-      process: _actions.denoiseFastdvdnet,
-    );
-  }
-
-  Future<void> _handleBlurBackground() {
-    return _runBackgroundEffect(
-      BackgroundEffectMode.blur,
-      'Background blurred.',
-    );
   }
 
   Future<void> _handleObjectRemoval() async {
@@ -301,42 +201,167 @@ class AiEditorState extends State<AiEditor> {
     });
   }
 
-  Future<void> _handlePeopleRemoval() async {
+  Future<void> _handleSmartInsertion() async {
     if (_isProcessing) return;
     if (!_ensureAiToolsAvailable()) return;
 
-    final modelPath = _backgroundModelPath;
-    final ok = await showModelDownloadDialog(
-      context,
-      modelPathOrUrl: modelPath,
-      modelName: 'People removal',
-    );
-    if (!ok || !mounted) return;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) {
+      return;
+    }
+    final pickedImageBytes = await picked.readAsBytes();
+    if (!mounted || pickedImageBytes.isEmpty) return;
 
-    setState(() {
-      _overlayMode = _OverlayMode.people;
-    });
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) {
+          return SmartInsertionFlow(
+            params: SmartInsertionParams(
+              editorImage: editorImage,
+              actions: _actions,
+              backgroundRemovalService: _actions.backgroundRemovalService,
+              backgroundEffectMode: BackgroundEffectMode.remove,
+              inpaintingModelPathOrUrl: initConfigs.inpaintingModelPathEffective,
+            ),
+            pickedImageBytes: pickedImageBytes,
+            onCompleted: (resultBytes) async {
+              final newImage = EditorImage(byteArray: resultBytes);
+              _history.push(newImage);
+              uiStream.add(null);
+              if (Navigator.of(ctx).canPop()) {
+                Navigator.of(ctx).pop();
+              }
+            },
+            onCancel: () {
+              if (Navigator.of(ctx).canPop()) {
+                Navigator.of(ctx).pop();
+              }
+            },
+          );
+        },
+      ),
+    );
   }
 
-  // Animal-related AI features are disabled.
+  Future<void> _handleEnhance() async {
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+
+    final bytes = await editorImage.safeByteArray();
+    if (!mounted || bytes.isEmpty) return;
+
+    final result = await _openSubEditorPage<Uint8List?>(
+      AiPhotoEnhancementPage(initConfigs: initConfigs, initialImageBytes: bytes),
+    );
+
+    if (!mounted || result == null || result.isEmpty) {
+      return;
+    }
+
+    final newImage = EditorImage(byteArray: result);
+    _history.push(newImage);
+    uiStream.add(null);
+  }
 
   Future<void> _runObjectRemoval(img.Image mask) async {
     setState(() {
       _overlayMode = _OverlayMode.none;
     });
-
-    await _runImageProcessing(
+    if (_isProcessing) return;
+    if (!_ensureAiToolsAvailable()) return;
+    final ok = await showModelDownloadDialog(
+      context,
       modelPathOrUrl: _inpaintingModelPath,
-      modelName: 'Object removal',
-      emptyBytesMessage: 'No image data available for object removal.',
-      failureMessage: 'Failed to remove object.',
-      sameBytesErrorMessage:
-          'Failed to remove object (check that lama_fp32.onnx is available).',
-      successMessage: 'Removed.',
-      ensureAiTools: false,
-      debugTag: 'OR',
-      process: (bytes) => _actions.removeObjects(bytes, mask),
+      modelName: 'Smart removal',
     );
+    if (!ok || !mounted) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final bytes = await editorImage.safeByteArray();
+      if (bytes.isEmpty || !mounted) return;
+
+      final removed = await _actions.removeObjectsInpaintOnly(bytes, mask);
+      if (!mounted) return;
+      if (listEquals(removed, bytes)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to remove object (check that lama_fp32.onnx is available).'),
+          ),
+        );
+        return;
+      }
+
+      _history.push(EditorImage(byteArray: removed));
+      uiStream.add(null);
+
+      final artifactMask = await _actions.detectArtifactMask(removed, mask);
+      if (!mounted || artifactMask == null) return;
+
+      final applyArtifacts = await _askApplyArtifactCleanup();
+      if (!mounted || applyArtifacts != true) return;
+
+      final cleaned = await _actions.removeArtifacts(removed, mask, artifactMask);
+      if (!mounted) return;
+      if (!listEquals(cleaned, removed)) {
+        _history.push(EditorImage(byteArray: cleaned));
+        uiStream.add(null);
+      }
+    } catch (e) {
+      _log.warning('Smart removal failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  Future<bool?> _askApplyArtifactCleanup() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Artifacts detected'),
+        content: const Text(
+          'Try to remove detected artifacts automatically?\n\n'
+          'Warning: automatic artifact cleanup can be unpredictable and may make '
+          'the result worse in some cases.',
+          style: AiModalUi.contentStyle,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _closeOverlay() {
+    setState(() {
+      _overlayMode = _OverlayMode.none;
+    });
+  }
+
+  List<Widget> _buildOverlayHosts() {
+    return [
+      if (_overlayMode == _OverlayMode.object)
+        ObjectRemovalOverlayHost(
+          editorImage: editorImage,
+          backgroundRemovalService: _actions.backgroundRemovalService,
+          onApply: _runObjectRemoval,
+          onCancel: _closeOverlay,
+        ),
+    ];
   }
 
   @override
@@ -358,35 +383,14 @@ class AiEditorState extends State<AiEditor> {
                 body: _buildBody(),
                 bottomNavigationBar: _hasOverlay
                     ? null
-                    : AiEditorBottombar(
-                        onBlurBackground: _handleBlurBackground,
-                        onDenoise: _runFastDenoise,
+                    : AiEditorBottomBar(
                         onObjectRemoval: _handleObjectRemoval,
-                        onPeopleRemoval: _handlePeopleRemoval,
+                        onEnhance: _handleEnhance,
+                        onSmartInsertion: _handleSmartInsertion,
                         isBusy: _isProcessing,
                       ),
               ),
-              if (_overlayMode == _OverlayMode.object)
-                ObjectRemovalOverlayHost(
-                  editorImage: editorImage,
-                  onApply: _runObjectRemoval,
-                  onCancel: () {
-                    setState(() {
-                      _overlayMode = _OverlayMode.none;
-                    });
-                  },
-                ),
-              if (_overlayMode == _OverlayMode.people)
-                PeopleRemovalOverlayHost(
-                  editorImage: editorImage,
-                  backgroundRemovalService: _actions.backgroundRemovalService,
-                  onApply: _runObjectRemoval,
-                  onCancel: () {
-                    setState(() {
-                      _overlayMode = _OverlayMode.none;
-                    });
-                  },
-                ),
+              ..._buildOverlayHosts(),
             ],
           ),
         ),
@@ -395,7 +399,7 @@ class AiEditorState extends State<AiEditor> {
   }
 
   PreferredSizeWidget? _buildAppBar() {
-    return AiEditorAppbar(
+    return AiEditorAppBar(
       theme: theme,
       canRedo: canRedo,
       canUndo: canUndo,
@@ -423,9 +427,7 @@ class AiEditorState extends State<AiEditor> {
             if (_isProcessing)
               Container(
                 color: Colors.black26,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               ),
           ],
         );
@@ -477,9 +479,7 @@ class AiEditorState extends State<AiEditor> {
   }
 
   Size _computeImageDisplaySize(Size bodySize) {
-    if (initConfigs.mainImageSize != null &&
-        bodySize.width > 0 &&
-        bodySize.height > 0) {
+    if (initConfigs.mainImageSize != null && bodySize.width > 0 && bodySize.height > 0) {
       final imgSize = initConfigs.mainImageSize!;
       return fitSizeWithinBounds(imgSize, bodySize);
     }
@@ -488,3 +488,4 @@ class AiEditorState extends State<AiEditor> {
     return getValidSizeOrDefault(baseSize, editorBodySize);
   }
 }
+
