@@ -95,8 +95,16 @@ class UploadRepository {
   Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
     final httpClient = Client();
     final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
+    final stopwatch = Stopwatch()..start();
+    final totalTasks = tasks.length;
+    int succeeded = 0;
+    int failed = 0;
+    int processed = 0;
 
     Logger logger = Logger('UploadRepository');
+    logger.info(
+      'upload_telemetry source=dart_http stage=batch_start endpoint=$savedEndpoint taskCount=$totalTasks',
+    );
     for (final candidate in tasks) {
       if (cancelToken.isCancelled) {
         logger.warning("Backup was cancelled by the user");
@@ -121,23 +129,45 @@ class UploadRepository {
         final response = await httpClient.send(baseRequest, cancellationToken: cancelToken);
 
         final responseBody = jsonDecode(await response.stream.bytesToString());
+        processed++;
 
         if (![200, 201].contains(response.statusCode)) {
           final error = responseBody;
+          failed++;
 
           logger.warning(
             "Error(${error['statusCode']}) uploading ${candidate.task.filename} | Created on ${candidate.task.fields["fileCreatedAt"]} | ${error['error']}",
           );
+          logger.info(
+            'upload_telemetry source=dart_http stage=item_error index=$processed status=${response.statusCode} '
+            'taskId=${candidate.task.taskId}',
+          );
 
           continue;
         }
+        succeeded++;
+        logger.info(
+          'upload_telemetry source=dart_http stage=item_success index=$processed taskId=${candidate.task.taskId} '
+          'status=${response.statusCode}',
+        );
       } on CancelledException {
         logger.warning("Backup was cancelled by the user");
         break;
       } catch (error, stackTrace) {
+        processed++;
+        failed++;
         logger.warning("Error backup asset: ${error.toString()}: $stackTrace");
+        logger.info(
+          'upload_telemetry source=dart_http stage=item_exception index=$processed taskId=${candidate.task.taskId} '
+          'error=${error.runtimeType}',
+        );
         continue;
       }
     }
+    stopwatch.stop();
+    logger.info(
+      'upload_telemetry source=dart_http stage=batch_end processed=$processed succeeded=$succeeded failed=$failed '
+      'elapsedMs=${stopwatch.elapsedMilliseconds}',
+    );
   }
 }

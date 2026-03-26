@@ -27,7 +27,7 @@ sealed class AssetResult {
 }
 
 @SuppressLint("InlinedApi")
-open class NativeSyncApiImplBase(context: Context) {
+open class NativeSyncApiImplBase(context: Context) : ImmichPlugin() {
   private val ctx: Context = context.applicationContext
 
   private var hashTask: Job? = null
@@ -237,7 +237,7 @@ open class NativeSyncApiImplBase(context: Context) {
     callback: (Result<List<HashResult>>) -> Unit
   ) {
     if (assetIds.isEmpty()) {
-      callback(Result.success(emptyList()))
+      completeWhenActive(callback, Result.success(emptyList()))
       return
     }
 
@@ -253,9 +253,10 @@ open class NativeSyncApiImplBase(context: Context) {
           }
         }.awaitAll()
 
-        callback(Result.success(results))
+        completeWhenActive(callback, Result.success(results))
       } catch (e: CancellationException) {
-        callback(
+        completeWhenActive(
+          callback,
           Result.failure(
             FlutterError(
               HASHING_CANCELLED_CODE,
@@ -265,7 +266,7 @@ open class NativeSyncApiImplBase(context: Context) {
           )
         )
       } catch (e: Exception) {
-        callback(Result.failure(e))
+        completeWhenActive(callback, Result.failure(e))
       }
     }
   }
