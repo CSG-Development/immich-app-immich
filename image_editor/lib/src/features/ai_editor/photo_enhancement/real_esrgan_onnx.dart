@@ -102,6 +102,8 @@ class RealEsrganOnnx {
       final expectsFixed256 =
           modelPathLower.contains('x4-256') ||
           modelPathLower.endsWith('realesrgan-x4-256.onnx');
+      final expectsFixed64 =
+          !expectsFixed256 && modelPathLower.endsWith('realesrgan-x4.onnx');
 
       // Decode and prepare a safe working-size RGB image.
       final decoded = img.decodeImage(imageBytes);
@@ -122,10 +124,10 @@ class RealEsrganOnnx {
       img.Image workImage;
       final int? effectiveFixedInputSize = expectsFixed256
           ? 256
-          : fixedInputSize;
+          : (expectsFixed64 ? 64 : fixedInputSize);
       final int effectiveMaxInputSide = expectsFixed256
           ? 256
-          : maxInputSide;
+          : (expectsFixed64 ? 64 : maxInputSide);
 
       if (effectiveFixedInputSize != null) {
         // Force a square input for fixed-shape models.

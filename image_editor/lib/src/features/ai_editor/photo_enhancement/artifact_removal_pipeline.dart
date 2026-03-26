@@ -3,6 +3,8 @@ import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
+import 'package:image_editor/src/features/ai_editor/common/artifact_removal/artifact_mask_detector.dart'
+    as artifact_detector;
 import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/enhancement_object_removal_service.dart';
 import 'package:logging/logging.dart';
@@ -189,6 +191,8 @@ class EnhancementArtifactRemovalPipeline {
     double? overrideMaxMaskCoverageRatio,
     bool disableRectMaskExpansion = false,
     double inpaintScale = 1.0,
+    int? maskComputationMaxSide,
+    bool useSmartRemovalDetector = false,
   }) async {
     final start = DateTime.now();
     try {
@@ -211,6 +215,21 @@ class EnhancementArtifactRemovalPipeline {
         _log.info('[ART] pipeline completed in ${totalElapsed}ms');
         return currentBytes;
       }
+      final normalizedMaxSide = maskComputationMaxSide == null
+          ? null
+          : maskComputationMaxSide.clamp(64, 4096);
+      final shouldUseMaskComputationScale = normalizedMaxSide != null &&
+          (processed.width > normalizedMaxSide || processed.height > normalizedMaxSide);
+      final maskComputationImage = shouldUseMaskComputationScale
+          ? _resizeImageToMaxSide(
+              processed,
+              maxSide: normalizedMaxSide,
+              interpolation: img.Interpolation.linear,
+            )
+          : processed;
+      final maskComputationBytes = shouldUseMaskComputationScale
+          ? Uint8List.fromList(img.encodePng(maskComputationImage))
+          : currentBytes;
 
         final originalAligned = original == null
             ? null
@@ -243,24 +262,63 @@ class EnhancementArtifactRemovalPipeline {
           expandPixels: selfAnomalyOnly ? 12 : 24,
         );
         final searchRegionMask = baseSeedRegionMask;
+        final originalForMaskComputation = shouldUseMaskComputationScale
+            ? (originalAligned == null
+                ? null
+                : img.copyResize(
+                    originalAligned,
+                    width: maskComputationImage.width,
+                    height: maskComputationImage.height,
+                    interpolation: img.Interpolation.linear,
+                  ))
+            : originalAligned;
+        final focusMaskForMaskComputation = shouldUseMaskComputationScale
+            ? _resizeMaskTo(
+                focusMaskAligned,
+                width: maskComputationImage.width,
+                height: maskComputationImage.height,
+              )
+            : focusMaskAligned;
+        final seedMainMaskForMaskComputation = shouldUseMaskComputationScale
+            ? _resizeMaskTo(
+                seedMainMask,
+                width: maskComputationImage.width,
+                height: maskComputationImage.height,
+              )
+            : seedMainMask;
+        final detectionRegionForMaskComputation = shouldUseMaskComputationScale
+            ? _resizeMaskTo(
+                _intersectMasks(focusMaskAligned, searchRegionMask),
+                width: maskComputationImage.width,
+                height: maskComputationImage.height,
+              )!
+            : _intersectMasks(focusMaskAligned, searchRegionMask);
 
         final maskStart = DateTime.now();
-        final detectionRegion = _intersectMasks(focusMaskAligned, searchRegionMask);
         final isolateResult = await _computeMaskOnBackground(
-          processedBytes: currentBytes,
-          originalAligned: originalAligned,
-          detectionRegion: detectionRegion,
-          seedMainMask: seedMainMask,
-          focusMaskAligned: focusMaskAligned,
+          processedBytes: maskComputationBytes,
+          originalAligned: originalForMaskComputation,
+          detectionRegion: detectionRegionForMaskComputation,
+          seedMainMask: seedMainMaskForMaskComputation,
+          focusMaskAligned: focusMaskForMaskComputation,
           effectiveDiffThreshold: effectiveDiffThreshold,
           effectiveMaxMaskCoverageRatio: effectiveMaxMaskCoverageRatio,
           selfAnomalyOnly: selfAnomalyOnly,
           enableMaskCleanup: enableMaskCleanup,
           disableRectMaskExpansion: disableRectMaskExpansion,
+          useSmartRemovalDetector: useSmartRemovalDetector,
         );
-        final mask = isolateResult.finalMask;
+        final mask = shouldUseMaskComputationScale
+            ? _resizeAndNormalizeMaskForTarget(
+                isolateResult.finalMask,
+                sourceWidth: maskComputationImage.width,
+                sourceHeight: maskComputationImage.height,
+                targetWidth: processed.width,
+                targetHeight: processed.height,
+              )
+            : isolateResult.finalMask;
         final rawCoverage = isolateResult.rawCoverage;
-        final coverage = isolateResult.finalCoverage;
+        final coverage = _maskCoverage(mask);
         final appliedThreshold = isolateResult.appliedThreshold;
 
         final maskElapsed = DateTime.now().difference(maskStart).inMilliseconds;
@@ -368,6 +426,7 @@ Future<_MaskComputationResult> _computeMaskOnBackground({
   required bool selfAnomalyOnly,
   required bool enableMaskCleanup,
   required bool disableRectMaskExpansion,
+  required bool useSmartRemovalDetector,
 }) async {
   final args = <String, Object?>{
     'processedBytes': processedBytes,
@@ -383,6 +442,7 @@ Future<_MaskComputationResult> _computeMaskOnBackground({
     'selfAnomalyOnly': selfAnomalyOnly,
     'enableMaskCleanup': enableMaskCleanup,
     'disableRectMaskExpansion': disableRectMaskExpansion,
+    'useSmartRemovalDetector': useSmartRemovalDetector,
   };
   final result = await Isolate.run<Map<String, Object?>>(
     () => _computeMaskOnBackgroundSync(args),
@@ -428,6 +488,7 @@ Map<String, Object?> _computeMaskOnBackgroundSync(Map<String, Object?> args) {
   final selfAnomalyOnly = args['selfAnomalyOnly'] as bool;
   final enableMaskCleanup = args['enableMaskCleanup'] as bool;
   final disableRectMaskExpansion = args['disableRectMaskExpansion'] as bool;
+  final useSmartRemovalDetector = args['useSmartRemovalDetector'] as bool;
 
   final originalAligned =
       originalAlignedBytes == null ? null : img.decodeImage(originalAlignedBytes);
@@ -436,21 +497,41 @@ Map<String, Object?> _computeMaskOnBackgroundSync(Map<String, Object?> args) {
   final focusMaskAligned =
       focusMaskAlignedBytes == null ? null : img.decodeImage(focusMaskAlignedBytes);
 
-  final maskBuild = selfAnomalyOnly
-      ? _buildSelfAnomalyMask(
+  final maskBuild = useSmartRemovalDetector
+      ? _buildArtifactMaskWithSmartRemovalDetector(
           processed: processed,
           baseThreshold: effectiveDiffThreshold,
-          focusMask: detectionRegion,
-          ignoreMask: null,
+          fallback: selfAnomalyOnly
+              ? _buildSelfAnomalyMask(
+                  processed: processed,
+                  baseThreshold: effectiveDiffThreshold,
+                  focusMask: detectionRegion,
+                  ignoreMask: null,
+                )
+              : _buildArtifactMask(
+                  originalAligned: originalAligned!,
+                  processed: processed,
+                  baseThreshold: effectiveDiffThreshold,
+                  maxCoverageRatio: effectiveMaxMaskCoverageRatio,
+                  focusMask: detectionRegion,
+                  ignoreMask: seedMainMask,
+                ),
         )
-      : _buildArtifactMask(
-          originalAligned: originalAligned!,
-          processed: processed,
-          baseThreshold: effectiveDiffThreshold,
-          maxCoverageRatio: effectiveMaxMaskCoverageRatio,
-          focusMask: detectionRegion,
-          ignoreMask: seedMainMask,
-        );
+      : (selfAnomalyOnly
+            ? _buildSelfAnomalyMask(
+                processed: processed,
+                baseThreshold: effectiveDiffThreshold,
+                focusMask: detectionRegion,
+                ignoreMask: null,
+              )
+            : _buildArtifactMask(
+                originalAligned: originalAligned!,
+                processed: processed,
+                baseThreshold: effectiveDiffThreshold,
+                maxCoverageRatio: effectiveMaxMaskCoverageRatio,
+                focusMask: detectionRegion,
+                ignoreMask: seedMainMask,
+              ));
 
   var mask = maskBuild.mask;
   final rawMask = mask.clone();
@@ -778,6 +859,132 @@ _ArtifactMaskBuildResult _buildSelfAnomalyMask({
   return _ArtifactMaskBuildResult(
     mask: refined,
     appliedThreshold: t,
+  );
+}
+
+_ArtifactMaskBuildResult _buildArtifactMaskWithSmartRemovalDetector({
+  required img.Image processed,
+  required int baseThreshold,
+  required _ArtifactMaskBuildResult fallback,
+}) {
+  final fullSeed = img.Image(width: processed.width, height: processed.height);
+  final white = img.ColorRgb8(255, 255, 255);
+  for (var y = 0; y < fullSeed.height; y++) {
+    for (var x = 0; x < fullSeed.width; x++) {
+      fullSeed.setPixel(x, y, white);
+    }
+  }
+
+  final smartMask = artifact_detector.buildArtifactMaskPreviewFromImage(
+    processedImage: processed,
+    seedMask: fullSeed,
+    constraintMask: null,
+    useSeedMaskAsRegion: true,
+    mergeNearbyAreas: true,
+    mergeKernelSize: 3,
+    mergeSmoothSigma: 0.9,
+    // SR often produces neutral gray block artifacts; keep detector generic.
+    prioritizeColorArtifacts: false,
+    colorOnlyArtifacts: false,
+    finalPolishForInpaint: true,
+    finalSmoothKernelSize: 7,
+    finalSmoothSigma: 1.2,
+    finalExpandPercent: 0.0,
+    // Slightly lower than base to catch subtle patch seams.
+    threshold: (baseThreshold - 4).clamp(0, 255),
+    adaptiveSensitivity: 1.2,
+  );
+  if (smartMask == null) {
+    return fallback;
+  }
+  var tinySpecks = _buildTinyColorAgnosticSpeckMask(processed);
+  // Residual specks are often 1-3px cores with weak edges; expand just this
+  // mask a little before merging so inpaint fully covers them.
+  tinySpecks = _dilateMask(tinySpecks, radius: 1);
+  var merged = _orMasks(smartMask, tinySpecks);
+  // Slightly grow/smooth the merged mask so tiny detected specks are fully
+  // covered for inpaint (instead of only touching a few center pixels).
+  merged = _closeMask(merged, radius: 1);
+  merged = MaskUtils.fillHoles(merged.clone());
+  merged = MaskUtils.dilateMaskByPercent(
+    merged.clone(),
+    percent: 0.004,
+    maxRadius: 4,
+  );
+  return _ArtifactMaskBuildResult(
+    mask: merged,
+    appliedThreshold: baseThreshold.clamp(0, 255),
+  );
+}
+
+img.Image _buildTinyColorAgnosticSpeckMask(img.Image processed) {
+  final w = processed.width;
+  final h = processed.height;
+  final mask = img.Image(width: w, height: h);
+  final white = img.ColorRgb8(255, 255, 255);
+  final black = img.ColorRgb8(0, 0, 0);
+
+  double luma(img.Pixel p) => 0.299 * p.r + 0.587 * p.g + 0.114 * p.b;
+
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      final p = processed.getPixel(x, y);
+      final r = p.r.toDouble();
+      final g = p.g.toDouble();
+      final b = p.b.toDouble();
+      final cMax = math.max(r, math.max(g, b));
+      final cMin = math.min(r, math.min(g, b));
+      final chroma = cMax - cMin;
+      final sat = chroma / (cMax + 1.0);
+      final centerLuma = luma(p);
+      var sum = 0.0;
+      var sumSq = 0.0;
+      var sumChroma = 0.0;
+      var sumSat = 0.0;
+      var count = 0;
+      for (var yy = (y - 1).clamp(0, h - 1); yy <= (y + 1).clamp(0, h - 1); yy++) {
+        for (var xx = (x - 1).clamp(0, w - 1); xx <= (x + 1).clamp(0, w - 1); xx++) {
+          if (xx == x && yy == y) continue;
+          final np = processed.getPixel(xx, yy);
+          final nl = luma(np);
+          final nr = np.r.toDouble();
+          final ng = np.g.toDouble();
+          final nb = np.b.toDouble();
+          final nMax = math.max(nr, math.max(ng, nb));
+          final nMin = math.min(nr, math.min(ng, nb));
+          final nChroma = nMax - nMin;
+          sum += nl;
+          sumSq += nl * nl;
+          sumChroma += nChroma;
+          sumSat += nChroma / (nMax + 1.0);
+          count++;
+        }
+      }
+      final localMean = count == 0 ? centerLuma : (sum / count);
+      final localVar = count == 0 ? 0.0 : ((sumSq / count) - (localMean * localMean));
+      final localStd = math.sqrt(localVar.clamp(0.0, 1e9));
+      final localChromaMean = count == 0 ? chroma : (sumChroma / count);
+      final localSatMean = count == 0 ? sat : (sumSat / count);
+      final localDelta = (centerLuma - localMean).abs();
+
+      // Color-agnostic tiny artifact outlier:
+      // - strong local luma deviation OR
+      // - strong local chroma/saturation deviation (any hue),
+      // while preferring flat neighborhoods where specks stand out.
+      final lumaOutlier = localDelta > math.max(6.0, localStd * 1.05);
+      final chromaOutlier = chroma > (localChromaMean + 10.0);
+      final satOutlier = sat > (localSatMean + 0.07);
+      final inFlatRegion = localStd < 20.0;
+      final isSpeckLike = (lumaOutlier && inFlatRegion) || (chromaOutlier && satOutlier);
+      mask.setPixel(x, y, isSpeckLike ? white : black);
+    }
+  }
+
+  // Keep tiny clusters while dropping single-pixel noise.
+  return _retainDenseAnomalyComponents(
+    _closeMask(mask, radius: 1),
+    minPixels: 2,
+    minDensity: 0.008,
   );
 }
 
@@ -1635,5 +1842,70 @@ double _maskCoverage(img.Image mask) {
     }
   }
   return count / total;
+}
+
+img.Image _resizeImageToMaxSide(
+  img.Image source, {
+  required int maxSide,
+  img.Interpolation interpolation = img.Interpolation.linear,
+}) {
+  final maxDim = math.max(source.width, source.height);
+  if (maxDim <= maxSide) return source.clone();
+  final scale = maxSide / maxDim;
+  final targetWidth = math.max(1, (source.width * scale).round());
+  final targetHeight = math.max(1, (source.height * scale).round());
+  return img.copyResize(
+    source,
+    width: targetWidth,
+    height: targetHeight,
+    interpolation: interpolation,
+  );
+}
+
+img.Image? _resizeMaskTo(
+  img.Image? mask, {
+  required int width,
+  required int height,
+}) {
+  if (mask == null) return null;
+  if (mask.width == width && mask.height == height) return mask.clone();
+  return img.copyResize(
+    mask,
+    width: width,
+    height: height,
+    interpolation: img.Interpolation.nearest,
+  );
+}
+
+img.Image _resizeAndNormalizeMaskForTarget(
+  img.Image mask, {
+  required int sourceWidth,
+  required int sourceHeight,
+  required int targetWidth,
+  required int targetHeight,
+}) {
+  var out = _resizeMaskTo(mask, width: targetWidth, height: targetHeight)!;
+  _binarizeMaskInPlace(out, threshold: 127);
+  final scaleX = sourceWidth <= 0 ? 1.0 : targetWidth / sourceWidth;
+  final scaleY = sourceHeight <= 0 ? 1.0 : targetHeight / sourceHeight;
+  final scale = math.max(scaleX, scaleY);
+  final radius = ((scale - 1.0).round()).clamp(0, 2);
+  if (radius > 0) {
+    out = _dilateMask(out, radius: radius);
+  }
+  return out;
+}
+
+void _binarizeMaskInPlace(img.Image mask, {int threshold = 127}) {
+  final t = threshold.clamp(0, 255);
+  final white = img.ColorRgb8(255, 255, 255);
+  final black = img.ColorRgb8(0, 0, 0);
+  for (var y = 0; y < mask.height; y++) {
+    for (var x = 0; x < mask.width; x++) {
+      final p = mask.getPixel(x, y);
+      final on = p.r >= t || p.g >= t || p.b >= t;
+      mask.setPixel(x, y, on ? white : black);
+    }
+  }
 }
 

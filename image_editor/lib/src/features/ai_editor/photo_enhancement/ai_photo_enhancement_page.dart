@@ -9,6 +9,7 @@ import 'package:image_editor/src/core/interfaces.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/photo_enhancement_service.dart' as pe;
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:logging/logging.dart';
@@ -54,9 +55,15 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     );
   }
 
-  bool _isFixed256SuperResolutionModel() {
-    final path = widget.initConfigs.realEsrganX2ModelPathEffective.toLowerCase();
-    return path.contains('x4-256') || path.endsWith('realesrgan-x4-256.onnx');
+  int? _fixedInputSizeForSuperResolutionModel([String? modelPathOrUrl]) {
+    final path = (modelPathOrUrl ?? widget.initConfigs.realEsrganX2ModelPathEffective).toLowerCase();
+    if (path.contains('x4-256') || path.endsWith('realesrgan-x4-256.onnx')) {
+      return 256;
+    }
+    if (path.endsWith('realesrgan-x4.onnx')) {
+      return 64;
+    }
+    return null;
   }
 
   @override
@@ -71,15 +78,28 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     return showDialog<_SuperResolutionConfigResult>(
       context: context,
       builder: (context) {
+        final modelOptions = <_SrModelOption>[
+          _SrModelOption(
+            label: 'Default (configured)',
+            modelPathOrUrl: widget.initConfigs.realEsrganX2ModelPathEffective,
+          ),
+          const _SrModelOption(
+            label: 'RealESRGAN x4 (dynamic)',
+            modelPathOrUrl:
+                'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4.onnx',
+          ),
+        ];
+        var selectedModelPath = modelOptions.first.modelPathOrUrl;
         final outputOptions = List<int>.generate(13, (i) => 512 + i * 128);
         const dynamicInputOptions = <int>[128, 256, 384, 512];
-        const fixed256InputOptions = <int>[256];
-        final fixed256Model = _isFixed256SuperResolutionModel();
-        final inputOptions = fixed256Model ? fixed256InputOptions : dynamicInputOptions;
         int selectedOutput = 4; // default to balanced (1024)
-        int selectedInput = fixed256Model ? 0 : 1; // default to balanced (256)
-        bool useFixedSquareInput = fixed256Model ? true : true;
+        int selectedInput = _fixedInputSizeForSuperResolutionModel(selectedModelPath) != null ? 0 : 1;
+        bool useFixedSquareInput = true;
         var useArtifactPostprocess = false;
+        var modelReady = false;
+        var isCheckingModel = true;
+        const contentTextStyle = TextStyle(fontSize: 13);
+        const noteTextStyle = TextStyle(fontSize: 12);
         final srcW = _sourceImageSize.width;
         final srcH = _sourceImageSize.height;
         final srcLongestSide = srcW > srcH ? srcW : srcH;
@@ -134,8 +154,32 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> refreshModelReady() async {
+              setState(() {
+                isCheckingModel = true;
+              });
+              final ready = await OnnxModelLoader.isLocallyAvailable(selectedModelPath);
+              if (!context.mounted) return;
+              setState(() {
+                modelReady = ready;
+                isCheckingModel = false;
+              });
+            }
+
+            if (isCheckingModel) {
+              Future<void>.microtask(refreshModelReady);
+            }
+
+            final fixedInputSize = _fixedInputSizeForSuperResolutionModel(selectedModelPath);
+            final fixedShapeModel = fixedInputSize != null;
+            final currentInputOptions = fixedShapeModel
+                ? <int>[fixedInputSize]
+                : dynamicInputOptions;
+            if (selectedInput >= currentInputOptions.length) {
+              selectedInput = currentInputOptions.length - 1;
+            }
             final selectedOutputSide = outputOptions[selectedOutput];
-            final workingInputSize = inputOptions[selectedInput];
+            final workingInputSize = currentInputOptions[selectedInput];
             final riskWarning = _buildRiskWarning(
               maxOutputSide: selectedOutputSide,
               workingInput: workingInputSize,
@@ -148,6 +192,81 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedModelPath,
+                    decoration: const InputDecoration(
+                      labelText: 'SR model',
+                      isDense: true,
+                    ),
+                    items: modelOptions
+                        .map(
+                          (option) => DropdownMenuItem<String>(
+                            value: option.modelPathOrUrl,
+                            child: Text(option.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedModelPath = value;
+                        selectedInput = 0;
+                        useFixedSquareInput = true;
+                        isCheckingModel = true;
+                      });
+                    },
+                  ),
+                  if (_fixedInputSizeForSuperResolutionModel(selectedModelPath) case final fixed?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'This model uses fixed ${fixed}x$fixed input.',
+                        style: noteTextStyle,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  if (isCheckingModel)
+                    const Row(
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text('Checking model availability...', style: noteTextStyle),
+                      ],
+                    )
+                  else if (modelReady)
+                    const Text('Model ready on this device.', style: noteTextStyle)
+                  else
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Selected model is not downloaded yet.',
+                            style: noteTextStyle,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final ok = await showModelDownloadDialog(
+                              context,
+                              modelPathOrUrl: selectedModelPath,
+                              modelName: 'Super resolution',
+                            );
+                            if (!context.mounted) return;
+                            if (ok) {
+                              setState(() {
+                                isCheckingModel = true;
+                              });
+                            }
+                          },
+                          child: const Text('Download'),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 12),
                   if (riskWarning != null) ...[
                     Container(
                       width: double.infinity,
@@ -164,7 +283,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  const Text('Maximum output size'),
+                  const Text('Maximum output size', style: contentTextStyle),
                   const SizedBox(height: 8),
                   Slider(
                     value: selectedOutput.toDouble(),
@@ -182,26 +301,29 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   const Text(
                     'Higher values produce larger images but use significantly more memory '
                     'and can become unstable on large source photos.',
+                    style: noteTextStyle,
                   ),
-                  if (!fixed256Model) ...[
+                  if (!fixedShapeModel) ...[
                     const SizedBox(height: 16),
-                    const Text('Working input size'),
+                    const Text('Working input size', style: contentTextStyle),
                     const SizedBox(height: 8),
                     Slider(
                       value: selectedInput.toDouble(),
                       min: 0,
-                      max: (inputOptions.length - 1).toDouble(),
-                      divisions: inputOptions.length > 1 ? inputOptions.length - 1 : null,
-                      label: '${inputOptions[selectedInput]} px',
+                      max: (currentInputOptions.length - 1).toDouble(),
+                      divisions:
+                          currentInputOptions.length > 1 ? currentInputOptions.length - 1 : null,
+                      label: '${currentInputOptions[selectedInput]} px',
                       onChanged: (v) {
                         setState(() {
-                          selectedInput = v.round().clamp(0, inputOptions.length - 1);
+                          selectedInput = v.round().clamp(0, currentInputOptions.length - 1);
                         });
                       },
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Higher values can keep more detail, but increase RAM usage and latency.',
+                      style: noteTextStyle,
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile.adaptive(
@@ -235,17 +357,20 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
               actions: [
                 TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
                 TextButton(
-                  onPressed: () {
-                    final workingInputSize = inputOptions[selectedInput];
-                    Navigator.of(context).pop(
-                      _SuperResolutionConfigResult(
-                        maxOutputSide: outputOptions[selectedOutput],
-                        maxInputSide: workingInputSize,
-                        fixedInputSize: useFixedSquareInput ? workingInputSize : null,
-                        enableArtifactPostprocess: useArtifactPostprocess,
-                      ),
-                    );
-                  },
+                  onPressed: (!modelReady || isCheckingModel)
+                      ? null
+                      : () {
+                          final workingInputSize = currentInputOptions[selectedInput];
+                          Navigator.of(context).pop(
+                            _SuperResolutionConfigResult(
+                              modelPathOrUrl: selectedModelPath,
+                              maxOutputSide: outputOptions[selectedOutput],
+                              maxInputSide: workingInputSize,
+                              fixedInputSize: useFixedSquareInput ? workingInputSize : null,
+                              enableArtifactPostprocess: useArtifactPostprocess,
+                            ),
+                          );
+                        },
                   child: const Text('Apply'),
                 ),
               ],
@@ -538,7 +663,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     String? modelName;
 
     if (effect is pe.SuperResolutionEffect) {
-      modelPathOrUrl = configs.realEsrganX2ModelPathEffective;
+      modelPathOrUrl = effect.modelPathOrUrl;
       modelName = 'Super resolution';
     } else if (effect is pe.ModnetBackgroundEnhancementEffect) {
       modelPathOrUrl = configs.backgroundModelPathEffective;
@@ -580,11 +705,6 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
       errorMessageBuilder: (_, __) => 'Failed to apply "${effect.name}". Please try again.',
       onError: (error, stackTrace) => _log.warning('Enhancement effect "${effect.name}" failed', error, stackTrace),
       run: () async {
-        final allowed = await _ensureModelPermission(effect);
-        if (!allowed) {
-          return;
-        }
-
         ImageEffect effective = effect;
         var createdTemporaryEffect = false;
 
@@ -595,15 +715,20 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
           final config = await _showSuperResolutionConfigDialog();
           if (config == null) return;
 
-          final configs = widget.initConfigs;
           effective = _service.createSuperResolutionEffect(
-            modelPathOrUrl: configs.realEsrganX2ModelPathEffective,
+            modelPathOrUrl: config.modelPathOrUrl,
             maxOutputSide: config.maxOutputSide,
-            maxInputSide: _isFixed256SuperResolutionModel() ? 256 : config.maxInputSide,
-            fixedInputSize: _isFixed256SuperResolutionModel() ? 256 : config.fixedInputSize,
+            maxInputSide: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ??
+                config.maxInputSide,
+            fixedInputSize: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ??
+                config.fixedInputSize,
             enableArtifactPostprocess: config.enableArtifactPostprocess,
           );
           createdTemporaryEffect = true;
+        }
+        final allowed = await _ensureModelPermission(effective);
+        if (!allowed) {
+          return;
         }
 
         if (effect is pe.FastdvdnetDenoiseEnhancementEffect) {
@@ -797,16 +922,28 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
 class _SuperResolutionConfigResult {
   const _SuperResolutionConfigResult({
+    required this.modelPathOrUrl,
     required this.maxOutputSide,
     required this.maxInputSide,
     required this.fixedInputSize,
     required this.enableArtifactPostprocess,
   });
 
+  final String modelPathOrUrl;
   final int maxOutputSide;
   final int maxInputSide;
   final int? fixedInputSize;
   final bool enableArtifactPostprocess;
+}
+
+class _SrModelOption {
+  const _SrModelOption({
+    required this.label,
+    required this.modelPathOrUrl,
+  });
+
+  final String label;
+  final String modelPathOrUrl;
 }
 
 class _DenoiseConfigResult {

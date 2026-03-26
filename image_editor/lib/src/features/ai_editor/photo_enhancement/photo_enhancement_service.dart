@@ -14,14 +14,20 @@ import 'package:logging/logging.dart';
 
 /// ImageEffect that wraps the RealESRGAN ONNX helper to provide
 /// high-quality super resolution for photos.
+enum SrArtifactCleanupLevel { low, medium, high }
+
 class SuperResolutionEffect implements ImageEffect {
   SuperResolutionEffect({
-    required String modelPathOrUrl,
+    required this.modelPathOrUrl,
     this.label = 'Super resolution',
     this.maxOutputSide = 4096,
     this.maxInputSide = 256,
     this.fixedInputSize = 256,
     this.enableArtifactPostprocess = false,
+    this.strength = 1.0,
+    this.postSmoothStrength = 0.0,
+    this.resizedOriginalBlurRadius = 1,
+    this.artifactCleanupLevel = SrArtifactCleanupLevel.medium,
     EnhancementArtifactRemovalPipeline? artifactRemovalPipeline,
   }) : _sr = RealEsrganOnnx(
           modelPathOrUrl: modelPathOrUrl,
@@ -36,11 +42,16 @@ class SuperResolutionEffect implements ImageEffect {
   static final Logger _log = Logger('SuperResolutionEffect');
 
   final RealEsrganOnnx _sr;
+  final String modelPathOrUrl;
   final String label;
   final int maxOutputSide;
   final int maxInputSide;
   final int? fixedInputSize;
   final bool enableArtifactPostprocess;
+  final double strength;
+  final double postSmoothStrength;
+  final int resizedOriginalBlurRadius;
+  final SrArtifactCleanupLevel artifactCleanupLevel;
   final EnhancementArtifactRemovalPipeline? _artifactRemovalPipeline;
 
   @override
@@ -58,7 +69,10 @@ class SuperResolutionEffect implements ImageEffect {
         return processed;
       }
       if (pipeline == null || processed.isEmpty) {
-        return processed;
+        return _applyStrengthBlend(
+          sourceBytes: imageBytes,
+          srBytes: _applyPostSmooth(processed),
+        );
       }
 
       // Super-resolution changes pixel grid/texture significantly. Comparing
@@ -77,23 +91,54 @@ class SuperResolutionEffect implements ImageEffect {
           '[SuperResolution] Skipping artifact postprocess for large upscaled '
           'output ${out.width}x${out.height} to reduce OOM risk.',
         );
-        return processed;
-      }
-
-      if (isUpscaled) {
-        return pipeline.process(
-          originalBytes: imageBytes,
-          processedBytes: processed,
-          selfAnomalyOnly: true,
-          disableRectMaskExpansion: true,
-          inpaintScale: 0.8,
-          overrideMaxMaskCoverageRatio: 0.4,
+        return _applyStrengthBlend(
+          sourceBytes: imageBytes,
+          srBytes: _applyPostSmooth(processed),
         );
       }
 
-      return pipeline.process(
+      if (isUpscaled) {
+        var resizedOriginal = img.copyResize(
+          src,
+          width: out.width,
+          height: out.height,
+          interpolation: img.Interpolation.linear,
+        );
+        final safeBlurRadius = resizedOriginalBlurRadius.clamp(0, 4);
+        if (safeBlurRadius > 0) {
+          // Slight smoothing helps suppress pixel-grid noise after upscaling
+          // source alignment, while keeping most structure for diff masking.
+          resizedOriginal = img.gaussianBlur(resizedOriginal, radius: safeBlurRadius);
+        }
+        final resizedOriginalBytes = Uint8List.fromList(
+          src.hasAlpha ? img.encodePng(resizedOriginal) : img.encodeJpg(resizedOriginal, quality: 92),
+        );
+        final cleanup = _cleanupTuning(artifactCleanupLevel);
+        final cleaned = await pipeline.process(
+          // For SR edge-cases, detect differences against resized original,
+          // but inpaint directly on the upscaled output.
+          originalBytes: resizedOriginalBytes,
+          processedBytes: processed,
+          selfAnomalyOnly: false,
+          disableRectMaskExpansion: cleanup.disableRectMaskExpansion,
+          inpaintScale: cleanup.inpaintScale,
+          overrideDiffThreshold: cleanup.overrideDiffThreshold,
+          overrideMaxMaskCoverageRatio: cleanup.overrideMaxMaskCoverageRatio,
+          useSmartRemovalDetector: true,
+        );
+        return _applyStrengthBlend(
+          sourceBytes: imageBytes,
+          srBytes: _applyPostSmooth(cleaned),
+        );
+      }
+
+      final cleaned = await pipeline.process(
         originalBytes: imageBytes,
         processedBytes: processed,
+      );
+      return _applyStrengthBlend(
+        sourceBytes: imageBytes,
+        srBytes: _applyPostSmooth(cleaned),
       );
     } catch (e, st) {
       _log.severe('[SuperResolution] Exception while upscaling', e, st);
@@ -108,6 +153,74 @@ class SuperResolutionEffect implements ImageEffect {
 
   Future<void> dispose() async {
     await _sr.dispose();
+  }
+
+  Uint8List _applyPostSmooth(Uint8List bytes) {
+    final smooth = postSmoothStrength.clamp(0.0, 2.0);
+    if (smooth < 0.05) return bytes;
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    final radius = (smooth * 2.0).round().clamp(1, 4);
+    final smoothed = img.gaussianBlur(decoded, radius: radius);
+    return Uint8List.fromList(img.encodePng(smoothed));
+  }
+
+  Future<Uint8List> _applyStrengthBlend({
+    required Uint8List sourceBytes,
+    required Uint8List srBytes,
+  }) async {
+    final amount = strength.clamp(0.0, 1.0);
+    if (amount >= 0.999) return srBytes;
+    final srImage = img.decodeImage(srBytes);
+    final source = img.decodeImage(sourceBytes);
+    if (srImage == null || source == null) return srBytes;
+    final sourceAligned = (source.width == srImage.width && source.height == srImage.height)
+        ? source
+        : img.copyResize(
+            source,
+            width: srImage.width,
+            height: srImage.height,
+            interpolation: img.Interpolation.linear,
+          );
+    final out = srImage.clone();
+    for (var y = 0; y < out.height; y++) {
+      for (var x = 0; x < out.width; x++) {
+        final s = sourceAligned.getPixel(x, y);
+        final p = srImage.getPixel(x, y);
+        final r = (s.r * (1 - amount) + p.r * amount).round().clamp(0, 255);
+        final g = (s.g * (1 - amount) + p.g * amount).round().clamp(0, 255);
+        final b = (s.b * (1 - amount) + p.b * amount).round().clamp(0, 255);
+        out.setPixel(x, y, img.ColorRgb8(r, g, b));
+      }
+    }
+    return Uint8List.fromList(img.encodePng(out));
+  }
+
+  ({int overrideDiffThreshold, double overrideMaxMaskCoverageRatio, bool disableRectMaskExpansion, double inpaintScale})
+      _cleanupTuning(SrArtifactCleanupLevel level) {
+    switch (level) {
+      case SrArtifactCleanupLevel.low:
+        return (
+          overrideDiffThreshold: 26,
+          overrideMaxMaskCoverageRatio: 0.30,
+          disableRectMaskExpansion: true,
+          inpaintScale: 0.95,
+        );
+      case SrArtifactCleanupLevel.high:
+        return (
+          overrideDiffThreshold: 20,
+          overrideMaxMaskCoverageRatio: 0.55,
+          disableRectMaskExpansion: false,
+          inpaintScale: 0.85,
+        );
+      case SrArtifactCleanupLevel.medium:
+        return (
+          overrideDiffThreshold: 22,
+          overrideMaxMaskCoverageRatio: 0.45,
+          disableRectMaskExpansion: true,
+          inpaintScale: 0.90,
+        );
+    }
   }
 }
 
@@ -414,6 +527,10 @@ class PhotoEnhancementService {
     required int maxInputSide,
     required int? fixedInputSize,
     bool enableArtifactPostprocess = false,
+    double strength = 1.0,
+    double postSmoothStrength = 0.0,
+    int resizedOriginalBlurRadius = 1,
+    SrArtifactCleanupLevel artifactCleanupLevel = SrArtifactCleanupLevel.medium,
   }) {
     return SuperResolutionEffect(
       modelPathOrUrl: modelPathOrUrl,
@@ -421,6 +538,10 @@ class PhotoEnhancementService {
       maxInputSide: maxInputSide,
       fixedInputSize: fixedInputSize,
       enableArtifactPostprocess: enableArtifactPostprocess,
+      strength: strength,
+      postSmoothStrength: postSmoothStrength,
+      resizedOriginalBlurRadius: resizedOriginalBlurRadius,
+      artifactCleanupLevel: artifactCleanupLevel,
       artifactRemovalPipeline: _artifactRemovalPipeline,
     );
   }
