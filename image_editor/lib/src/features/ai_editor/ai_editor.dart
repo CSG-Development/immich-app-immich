@@ -15,6 +15,7 @@ import 'package:image_editor/src/features/ai_editor/ai_editor_actions.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
@@ -329,6 +330,7 @@ class AiEditorState extends State<AiEditor> {
           'Try to remove detected artifacts automatically?\n\n'
           'Warning: automatic artifact cleanup can be unpredictable and may make '
           'the result worse in some cases.',
+          style: AiModalUi.contentStyle,
         ),
         actions: [
           TextButton(

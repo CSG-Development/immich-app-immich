@@ -11,6 +11,7 @@ import 'package:image_editor/src/features/ai_editor/photo_enhancement/photo_enha
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
@@ -98,8 +99,8 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         var useArtifactPostprocess = false;
         var modelReady = false;
         var isCheckingModel = true;
-        const contentTextStyle = TextStyle(fontSize: 13);
-        const noteTextStyle = TextStyle(fontSize: 12);
+        const contentTextStyle = AiModalUi.contentStyle;
+        const noteTextStyle = AiModalUi.noteStyle;
         final srcW = _sourceImageSize.width;
         final srcH = _sourceImageSize.height;
         final srcLongestSide = srcW > srcH ? srcW : srcH;
@@ -194,15 +195,13 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                 children: [
                   DropdownButtonFormField<String>(
                     value: selectedModelPath,
-                    decoration: const InputDecoration(
-                      labelText: 'SR model',
-                      isDense: true,
-                    ),
+                    style: AiModalUi.selectorValueStyle,
+                    decoration: AiModalUi.selectDecoration('SR model'),
                     items: modelOptions
                         .map(
                           (option) => DropdownMenuItem<String>(
                             value: option.modelPathOrUrl,
-                            child: Text(option.label),
+                            child: Text(option.label, style: AiModalUi.selectorValueStyle),
                           ),
                         )
                         .toList(),
@@ -278,12 +277,12 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                       ),
                       child: Text(
                         riskWarning,
-                        style: const TextStyle(fontSize: 12),
+                        style: AiModalUi.noteStyle,
                       ),
                     ),
                     const SizedBox(height: 12),
                   ],
-                  const Text('Maximum output size', style: contentTextStyle),
+                  const Text('Maximum output size', style: AiModalUi.sectionTitleStyle),
                   const SizedBox(height: 8),
                   Slider(
                     value: selectedOutput.toDouble(),
@@ -305,7 +304,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   ),
                   if (!fixedShapeModel) ...[
                     const SizedBox(height: 16),
-                    const Text('Working input size', style: contentTextStyle),
+                    const Text('Working input size', style: AiModalUi.sectionTitleStyle),
                     const SizedBox(height: 8),
                     Slider(
                       value: selectedInput.toDouble(),
@@ -328,9 +327,11 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     const SizedBox(height: 16),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Use fixed square input'),
+                      dense: true,
+                      title: const Text('Use fixed square input', style: contentTextStyle),
                       subtitle: const Text(
                         'Keeps model input square. Turn off to keep original aspect ratio.',
+                        style: noteTextStyle,
                       ),
                       value: useFixedSquareInput,
                       onChanged: (value) {
@@ -343,8 +344,9 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   ],
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Artifact removal postprocess'),
-                    subtitle: const Text('Use extra artifact cleanup after enhancement.'),
+                    dense: true,
+                    title: const Text('Artifact removal postprocess', style: contentTextStyle),
+                    subtitle: const Text('Use extra artifact cleanup after enhancement.', style: noteTextStyle),
                     value: useArtifactPostprocess,
                     onChanged: (value) {
                       setState(() {
@@ -411,7 +413,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Detail level'),
+                  const Text('Detail level', style: AiModalUi.sectionTitleStyle),
                   Slider(
                     value: tSize,
                     divisions: sizeSteps.length - 1,
@@ -422,9 +424,12 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  const Text('Lower levels are faster. Higher levels keep more fine detail but may take longer.'),
+                  const Text(
+                    'Lower levels are faster. Higher levels keep more fine detail but may take longer.',
+                    style: AiModalUi.noteStyle,
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Denoise strength'),
+                  const Text('Denoise strength', style: AiModalUi.sectionTitleStyle),
                   Slider(
                     value: tSigma,
                     divisions: sigmaSteps.length - 1,
@@ -435,12 +440,19 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  const Text('Higher strength removes more visible noise, but can make the image look smoother.'),
+                  const Text(
+                    'Higher strength removes more visible noise, but can make the image look smoother.',
+                    style: AiModalUi.noteStyle,
+                  ),
                   const SizedBox(height: 16),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Artifact removal postprocess'),
-                    subtitle: const Text('Use an extra cleanup pass after denoise. Turn off to keep more native detail.'),
+                    dense: true,
+                    title: const Text('Artifact removal postprocess', style: AiModalUi.contentStyle),
+                    subtitle: const Text(
+                      'Use an extra cleanup pass after denoise. Turn off to keep more native detail.',
+                      style: AiModalUi.noteStyle,
+                    ),
                     value: useArtifactPostprocess,
                     onChanged: (value) {
                       setState(() {
@@ -555,16 +567,17 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Preset'),
+                  const Text('Preset', style: AiModalUi.sectionTitleStyle),
                   const SizedBox(height: 8),
-                  DropdownButton<_RelightPreset>(
+                  DropdownButtonFormField<_RelightPreset>(
                     value: selectedPreset,
-                    isExpanded: true,
+                    style: AiModalUi.selectorValueStyle,
+                    decoration: AiModalUi.selectDecoration('Lighting preset'),
                     items: _RelightPreset.values
                         .map(
                           (preset) => DropdownMenuItem<_RelightPreset>(
                             value: preset,
-                            child: Text(preset.label),
+                            child: Text(preset.label, style: AiModalUi.selectorValueStyle),
                           ),
                         )
                         .toList(),
@@ -577,7 +590,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Text('Strength (${strength.toStringAsFixed(2)})'),
+                  Text('Strength (${strength.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
                   Slider(
                     value: strength,
                     min: -0.4,
@@ -590,7 +603,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  Text('Mask focus (${gamma.toStringAsFixed(2)})'),
+                  Text('Mask focus (${gamma.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
                   Slider(
                     value: gamma,
                     min: 0.25,
@@ -603,7 +616,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  Text('Mask smoothness (${blur.toStringAsFixed(1)})'),
+                  Text('Mask smoothness (${blur.toStringAsFixed(1)})', style: AiModalUi.sectionTitleStyle),
                   Slider(
                     value: blur,
                     min: 0.0,
@@ -618,9 +631,11 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   const SizedBox(height: 12),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Artifact removal postprocess'),
+                    dense: true,
+                    title: const Text('Artifact removal postprocess', style: AiModalUi.contentStyle),
                     subtitle: const Text(
                       'Use extra artifact cleanup after relight.',
+                      style: AiModalUi.noteStyle,
                     ),
                     value: useArtifactPostprocess,
                     onChanged: (value) {

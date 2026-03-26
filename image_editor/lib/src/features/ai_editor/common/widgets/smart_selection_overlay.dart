@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_selection_widgets.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_with_strokes_overlay.dart';
@@ -256,25 +257,46 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
       context: context,
       builder: (ctx) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.crop_free),
-                title: const Text('Rectangle'),
-                onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.rectangle),
-              ),
-              ListTile(
-                leading: const Icon(Icons.circle_outlined),
-                title: const Text('Ellipse'),
-                onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.ellipse),
-              ),
-              ListTile(
-                leading: const Icon(Icons.gesture),
-                title: const Text('Lasso'),
-                onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.lasso),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select target shape', style: AiModalUi.sectionTitleStyle),
+                const SizedBox(height: AiModalUi.itemSpacing),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AiModalSelectTile(
+                        icon: Icons.crop_free,
+                        label: 'Rectangle',
+                        isSelected: false,
+                        onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.rectangle),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AiModalSelectTile(
+                        icon: Icons.circle_outlined,
+                        label: 'Ellipse',
+                        isSelected: false,
+                        onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.ellipse),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AiModalSelectTile(
+                        icon: Icons.gesture,
+                        label: 'Lasso',
+                        isSelected: false,
+                        onTap: () => Navigator.of(ctx).pop(SmartSelectionShape.lasso),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
