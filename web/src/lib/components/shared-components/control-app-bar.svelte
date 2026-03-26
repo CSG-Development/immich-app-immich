@@ -76,7 +76,7 @@
     ]}
   >
     <div
-      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {forceDark
+      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium w-full {forceDark
         ? 'dark'
         : ''}"
     >
@@ -91,7 +91,7 @@
           size="large"
         />
       {/if}
-      {@render leading?.()}
+      <span class="w-full">{@render leading?.()}</span>
     </div>
 
     <div class="w-full">
