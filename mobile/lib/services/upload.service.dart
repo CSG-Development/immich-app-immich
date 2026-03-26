@@ -55,6 +55,7 @@ class UploadService {
   final DriftLocalAssetRepository _localAssetRepository;
   final AppSettingsService _appSettingsService;
   final Logger _logger = Logger('UploadService');
+  static const String _telemetryTag = 'upload_telemetry';
 
   final StreamController<TaskStatusUpdate> _taskStatusController = StreamController<TaskStatusUpdate>.broadcast();
   final StreamController<TaskProgressUpdate> _taskProgressController = StreamController<TaskProgressUpdate>.broadcast();
@@ -123,10 +124,12 @@ class UploadService {
 
     final candidates = await _backupRepository.getCandidates(userId);
     if (candidates.isEmpty) {
+      _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=0');
       return;
     }
 
     const batchSize = 100;
+    _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=${candidates.length} batchSize=$batchSize');
     int count = 0;
     for (int i = 0; i < candidates.length; i += batchSize) {
       if (shouldAbortQueuingTasks) {
@@ -134,6 +137,10 @@ class UploadService {
       }
 
       final batch = candidates.skip(i).take(batchSize).toList();
+      _logger.info(
+        '$_telemetryTag source=background_downloader stage=build_batch index=${(i / batchSize).floor()} '
+        'batchCandidates=${batch.length} enqueuedSoFar=$count',
+      );
       List<UploadTask> tasks = [];
       for (final asset in batch) {
         final task = await _getUploadTask(asset);
@@ -145,10 +152,12 @@ class UploadService {
       if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
         count += tasks.length;
         await enqueueTasks(tasks);
+        await _logQueueSnapshot(source: 'background_downloader', batchIndex: (i / batchSize).floor(), queuedInBatch: tasks.length);
 
         onEnqueueTasks(EnqueueStatus(enqueueCount: count, totalCount: candidates.length));
       }
     }
+    _logger.info('$_telemetryTag source=background_downloader stage=end_backup enqueuedTotal=$count candidates=${candidates.length}');
   }
 
   Future<void> startBackupWithHttpClient(String userId, bool hasWifi, CancellationToken token) async {
@@ -158,21 +167,31 @@ class UploadService {
 
     final candidates = await _backupRepository.getCandidates(userId);
     if (candidates.isEmpty) {
+      _logger.info('$_telemetryTag source=dart_http stage=start_backup candidates=0');
       return;
     }
 
     const batchSize = 100;
+    _logger.info(
+      '$_telemetryTag source=dart_http stage=start_backup candidates=${candidates.length} batchSize=$batchSize hasWifi=$hasWifi',
+    );
     for (int i = 0; i < candidates.length; i += batchSize) {
       if (shouldAbortQueuingTasks || token.isCancelled) {
         break;
       }
 
       final batch = candidates.skip(i).take(batchSize).toList();
+      _logger.info(
+        '$_telemetryTag source=dart_http stage=build_batch index=${(i / batchSize).floor()} '
+        'batchCandidates=${batch.length}',
+      );
       List<UploadTaskWithFile> tasks = [];
+      int skippedForWifi = 0;
       for (final asset in batch) {
         final requireWifi = _shouldRequireWiFi(asset);
         if (requireWifi && !hasWifi) {
           _logger.warning('Skipping upload for ${asset.id} because it requires WiFi');
+          skippedForWifi++;
           continue;
         }
 
@@ -183,9 +202,14 @@ class UploadService {
       }
 
       if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
+        _logger.info(
+          '$_telemetryTag source=dart_http stage=upload_batch index=${(i / batchSize).floor()} '
+          'uploadable=${tasks.length} skippedForWifi=$skippedForWifi',
+        );
         await _uploadRepository.backupWithDartClient(tasks, token);
       }
     }
+    _logger.info('$_telemetryTag source=dart_http stage=end_backup candidates=${candidates.length}');
   }
 
   /// Cancel all ongoing uploads and reset the upload queue
@@ -436,6 +460,30 @@ class UploadService {
       updates: Updates.statusAndProgress,
       retries: 3,
     );
+  }
+
+  Future<void> _logQueueSnapshot({
+    required String source,
+    required int batchIndex,
+    required int queuedInBatch,
+  }) async {
+    try {
+      final [activeBackup, activeLivePhoto, enqueued, running, waitingRetry] = await Future.wait([
+        _uploadRepository.getActiveTasks(kBackupGroup),
+        _uploadRepository.getActiveTasks(kBackupLivePhotoGroup),
+        FileDownloader().database.allRecordsWithStatus(TaskStatus.enqueued, group: kBackupGroup),
+        FileDownloader().database.allRecordsWithStatus(TaskStatus.running, group: kBackupGroup),
+        FileDownloader().database.allRecordsWithStatus(TaskStatus.waitingToRetry, group: kBackupGroup),
+      ]);
+
+      _logger.info(
+        '$_telemetryTag source=$source stage=queue_snapshot batchIndex=$batchIndex queuedInBatch=$queuedInBatch '
+        'activeBackup=${activeBackup.length} activeLivePhoto=${activeLivePhoto.length} '
+        'enqueued=${enqueued.length} running=${running.length} waitingRetry=${waitingRetry.length}',
+      );
+    } catch (error, stackTrace) {
+      _logger.warning('$_telemetryTag source=$source stage=queue_snapshot_error', error, stackTrace);
+    }
   }
 }
 
