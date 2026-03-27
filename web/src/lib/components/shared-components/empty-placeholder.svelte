@@ -10,6 +10,7 @@
     title?: string;
     descriptionText?: string;
     class?: string;
+    truncate?: boolean;
   }
 
   let {
@@ -20,6 +21,7 @@
     title,
     descriptionText = '',
     class: className = '',
+    truncate = false,
   }: Props = $props();
 
   let width = $derived(fullWidth ? 'w-full' : mobileDevice.maxMd ? 'max-w-70' : 'w-130');
@@ -41,7 +43,9 @@
     <h2 class="text-xl my-4">{title}</h2>
   {/if}
   <span class="max-w-50 md:max-w-full pb-8 md:pb-0">
-    <p class="text-immich-gray-text dark:text-immich-dark-gray-text text-center md:text-xl truncate">
+    <p
+      class="text-immich-gray-text dark:text-immich-dark-gray-text text-center md:text-xl {truncate ? 'truncate' : ''}"
+    >
       {text}
     </p>
     {#if descriptionText}

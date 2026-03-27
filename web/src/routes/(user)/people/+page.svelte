@@ -421,6 +421,7 @@
     <EmptyPlaceholder
       text={$t(searchName ? 'search_no_people_named' : 'search_no_people', { values: { name: searchName } })}
       src={emptyPeople}
+      truncate
     />
   {/if}
 </UserPageLayout>
