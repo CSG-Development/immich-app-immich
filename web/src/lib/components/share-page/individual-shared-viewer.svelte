@@ -2,7 +2,6 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
-  import ImmichLogoSmallLink from '$lib/components/shared-components/immich-logo-small-link.svelte';
   import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import RemoveFromSharedLink from '$lib/components/timeline/actions/RemoveFromSharedLinkAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
@@ -10,13 +9,14 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { Viewport } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
+  import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
   import { cancelMultiselect, downloadArchive } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { addSharedLinkAssets, getAssetInfo, type SharedLinkResponseDto } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiArrowLeft, mdiDownload, mdiFileImagePlusOutline, mdiSelectAll } from '@mdi/js';
+  import { mdiArrowLeft, mdiDownload, mdiFileImagePlusOutline, mdiSelectAll, mdiSelectRemove } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import AssetViewer from '../asset-viewer/asset-viewer.svelte';
   import ControlAppBar from '../shared-components/control-app-bar.svelte';
@@ -75,6 +75,10 @@
     assetInteraction.selectAssets(assets);
   };
 
+  const handleCancel = () => {
+    cancelMultiselect(assetInteraction);
+  };
+
   const handleAction = async (action: Action) => {
     switch (action.type) {
       case AssetAction.ARCHIVE:
@@ -85,22 +89,27 @@
       }
     }
   };
+
+  $effect(() => {
+    if (assets.length == assetInteraction.selectedAssets.length) {
+      isSelectingAllAssets.set(true);
+    } else {
+      isSelectingAllAssets.set(false);
+    }
+  });
 </script>
 
 <section>
   {#if sharedLink?.allowUpload || assets.length > 1}
     {#if assetInteraction.selectionActive}
-      <AssetSelectControlBar
-        assets={assetInteraction.selectedAssets}
-        clearSelect={() => cancelMultiselect(assetInteraction)}
-      >
+      <AssetSelectControlBar assets={assetInteraction.selectedAssets} clearSelect={handleCancel}>
         <IconButton
           shape="round"
           color="secondary"
           variant="ghost"
-          aria-label={$t('select_all')}
-          icon={mdiSelectAll}
-          onclick={handleSelectAll}
+          aria-label={$isSelectingAllAssets ? $t('unselect_all') : $t('select_all')}
+          icon={$isSelectingAllAssets ? mdiSelectRemove : mdiSelectAll}
+          onclick={$isSelectingAllAssets ? handleCancel : handleSelectAll}
         />
         {#if sharedLink?.allowDownload}
           <DownloadAction filename="immich-shared.zip" />
@@ -110,11 +119,12 @@
         {/if}
       </AssetSelectControlBar>
     {:else}
-      <ControlAppBar onClose={() => goto(resolve(AppRoute.PHOTOS))} backIcon={mdiArrowLeft} showBackButton={false}>
-        {#snippet leading()}
-          <ImmichLogoSmallLink />
-        {/snippet}
-
+      <ControlAppBar
+        backIcon={mdiArrowLeft}
+        onClose={async () => {
+          await goto(resolve(AppRoute.SHARED_LINKS));
+        }}
+      >
         {#snippet trailing()}
           {#if sharedLink?.allowUpload}
             <IconButton

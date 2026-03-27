@@ -45,7 +45,6 @@
   onDestroy(() => timelineManager.destroy());
 
   const assetInteraction = new AssetInteraction();
-  const timelineInteraction = new AssetInteraction();
 
   /* dragAndDropFilesStore.subscribe((value) => {
     if (value.isDragging && value.files.length > 0) {
