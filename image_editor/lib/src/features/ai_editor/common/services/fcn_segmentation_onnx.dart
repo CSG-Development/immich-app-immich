@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
@@ -235,6 +236,125 @@ class FcnSegmentationOnnx {
       return mask;
     } catch (e, st) {
       _log.severe('[FCN_ONNX] Exception during run', e, st);
+      return null;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'FCN_ONNX',
+        dispose: dispose,
+      );
+    }
+  }
+
+  /// Runs FCN and returns a soft mask for a specific class index.
+  ///
+  /// The output is an 8-bit grayscale image where 255 means strong confidence
+  /// for [classIndex]. Falls back to argmax-binary if score structure is
+  /// incompatible with softmax conversion.
+  Future<img.Image?> runClassMask(Uint8List imageBytes, {required int classIndex}) async {
+    final totalStart = DateTime.now();
+    try {
+      await _ensureSession();
+      final session = _session;
+      if (session == null) return null;
+
+      final rgb = await _decodeAndResize(imageBytes);
+      if (rgb == null) return null;
+
+      final inputData = _encodeToNchw(rgb);
+      final inputTensor = OrtValueTensor.createTensorWithDataList(
+        inputData,
+        <int>[1, 3, inputHeight, inputWidth],
+      );
+
+      final inputNames = session.inputNames;
+      final outputNames = session.outputNames;
+
+      final resolvedImageInputName = imageInputName ??
+          (inputNames.isNotEmpty ? inputNames.first : null);
+      final resolvedOutputName = outputName ??
+          (outputNames.isNotEmpty ? outputNames.first : null);
+
+      if (resolvedImageInputName == null || resolvedOutputName == null) {
+        inputTensor.release();
+        return null;
+      }
+
+      final runOptions = OrtRunOptions();
+      final inputs = <String, OrtValue>{resolvedImageInputName: inputTensor};
+
+      List<OrtValue?>? outputs;
+      dynamic raw;
+      try {
+        final isolateSession = _isolateSession;
+        outputs = isolateSession != null
+            ? await isolateSession.run(runOptions, inputs, <String>[resolvedOutputName])
+            : await session.runAsync(runOptions, inputs, <String>[resolvedOutputName]);
+
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) return null;
+        raw = outputTensor.value;
+      } finally {
+        outputs?.forEach((t) => t?.release());
+        inputTensor.release();
+        runOptions.release();
+      }
+
+      if (raw is! List || raw.isEmpty || raw.first is! List) {
+        return null;
+      }
+
+      final scores = raw; // [1][C][H][W]
+      final cList = scores[0] as List; // [C][H][W]
+      final numClasses = cList.length;
+      if (numClasses == 0) return null;
+      final h = (cList[0] as List).length;
+      final w = (cList[0] as List)[0].length;
+      final targetClass = classIndex.clamp(0, numClasses - 1);
+
+      final mask = img.Image(width: w, height: h);
+      for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+          var maxScore = double.negativeInfinity;
+          for (var c = 0; c < numClasses; c++) {
+            final v = (cList[c][y][x] as num).toDouble();
+            if (v > maxScore) maxScore = v;
+          }
+
+          var expSum = 0.0;
+          var targetExp = 0.0;
+          for (var c = 0; c < numClasses; c++) {
+            final shifted = (cList[c][y][x] as num).toDouble() - maxScore;
+            final ex = math.exp(shifted);
+            if (c == targetClass) targetExp = ex;
+            expSum += ex;
+          }
+
+          double prob;
+          if (expSum <= 1e-6) {
+            var bestClass = 0;
+            var bestScore = double.negativeInfinity;
+            for (var c = 0; c < numClasses; c++) {
+              final v = (cList[c][y][x] as num).toDouble();
+              if (v > bestScore) {
+                bestScore = v;
+                bestClass = c;
+              }
+            }
+            prob = bestClass == targetClass ? 1.0 : 0.0;
+          } else {
+            prob = (targetExp / expSum).clamp(0.0, 1.0);
+          }
+          final vv = (prob * 255.0).round().clamp(0, 255);
+          mask.setPixel(x, y, img.ColorRgb8(vv, vv, vv));
+        }
+      }
+
+      final totalElapsed = DateTime.now().difference(totalStart).inMilliseconds;
+      _log.info('[FCN_ONNX] runClassMask() total elapsed ${totalElapsed}ms');
+      return mask;
+    } catch (e, st) {
+      _log.severe('[FCN_ONNX] Exception during runClassMask', e, st);
       return null;
     } finally {
       await OnnxSessionLifecycle.maybeUnloadAfterRun(

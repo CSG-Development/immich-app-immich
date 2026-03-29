@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
-import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_selection_widgets.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/mask_with_strokes_overlay.dart';
+import 'package:image_editor/src/features/services/image_worker.dart';
 import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 
 typedef SmartInsertionResult = ({Uint8List cutoutBytes, img.Image placementMask});
@@ -378,14 +378,62 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
 
   Future<void> _apply() async {
     if (_isApplying) return;
-    final baseMask = _initialMask ?? img.Image(width: widget.baseImageWidth, height: widget.baseImageHeight);
-    final mask = _strokeHistory.applyToMask(baseMask);
-    final holeFreeMask = MaskUtils.fillHoles(mask);
-    final featheredMask = MaskUtils.featherMaskEdges(holeFreeMask, radius: 1);
-    final expandedMask = MaskUtils.dilateMaskByPercent(featheredMask, percent: 0.01);
     setState(() => _isApplying = true);
     try {
-      await widget.onApply((cutoutBytes: widget.cutoutBytes, placementMask: expandedMask));
+      Map<String, Object>? baseMask;
+      final initialMask = _initialMask;
+      if (initialMask != null) {
+        final baseData = Uint8List(initialMask.width * initialMask.height);
+        var baseIdx = 0;
+        for (var y = 0; y < initialMask.height; y++) {
+          for (var x = 0; x < initialMask.width; x++) {
+            final p = initialMask.getPixel(x, y);
+            baseData[baseIdx++] = p.r.toInt().clamp(0, 255);
+          }
+        }
+        baseMask = <String, Object>{
+          'width': initialMask.width,
+          'height': initialMask.height,
+          'data': baseData,
+        };
+      }
+
+      final maskData = await ImageWorker.instance.buildStrokeMask(
+        width: widget.baseImageWidth,
+        height: widget.baseImageHeight,
+        strokes: _strokeHistory.strokes
+            .map(
+              (s) => <String, Object>{
+                'x': s.x,
+                'y': s.y,
+                'radius': s.radius,
+                'isAdd': s.isAdd,
+              },
+            )
+            .toList(),
+        baseMask: baseMask,
+        dilatePercent: 0.01,
+        // Keep full-resolution shape fidelity for insertion placement.
+        maxWorkSide: 0,
+      );
+      if (maskData == null) return;
+      final width = maskData['width'] as int;
+      final height = maskData['height'] as int;
+      final data = maskData['data'] as Uint8List;
+      if (data.length != width * height) return;
+
+      final expandedMask = img.Image(width: width, height: height);
+      var idx = 0;
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          final v = data[idx++];
+          expandedMask.setPixel(x, y, img.ColorRgb8(v, v, v));
+        }
+      }
+
+      await widget.onApply(
+        (cutoutBytes: widget.cutoutBytes, placementMask: expandedMask),
+      );
     } finally {
       if (mounted) {
         setState(() => _isApplying = false);
