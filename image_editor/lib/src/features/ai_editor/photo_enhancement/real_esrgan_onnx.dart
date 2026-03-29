@@ -80,11 +80,7 @@ class RealEsrganOnnx {
           await _ensureSession();
           return;
         } catch (retryError, retryStack) {
-          _log.severe(
-            '[ESRGAN_ONNX] Retry after cache clear failed',
-            retryError,
-            retryStack,
-          );
+          _log.severe('[ESRGAN_ONNX] Retry after cache clear failed', retryError, retryStack);
         }
       }
     } finally {
@@ -99,11 +95,10 @@ class RealEsrganOnnx {
     final totalStart = DateTime.now();
     try {
       final modelPathLower = modelPathOrUrl.toLowerCase();
-      final expectsFixed256 =
-          modelPathLower.contains('x4-256') ||
-          modelPathLower.endsWith('realesrgan-x4-256.onnx');
-      final expectsFixed64 =
-          !expectsFixed256 && modelPathLower.endsWith('realesrgan-x4.onnx');
+      final isSwin2sr =
+          modelPathLower.contains('swin2sr-realworld-4x-onnx') || modelPathLower.endsWith('swin2sr-realworld-x4.onnx');
+      final expectsFixed256 = modelPathLower.contains('x4-256') || modelPathLower.endsWith('realesrgan-x4-256.onnx');
+      final expectsFixed64 = !expectsFixed256 && modelPathLower.endsWith('realesrgan-x4.onnx');
 
       // Decode and prepare a safe working-size RGB image.
       final decoded = img.decodeImage(imageBytes);
@@ -115,47 +110,36 @@ class RealEsrganOnnx {
       final originalWidth = decoded.width;
       final originalHeight = decoded.height;
 
-      final rgbImage = decoded.numChannels == 3
-          ? decoded
-          : decoded.convert(numChannels: 3);
+      final rgbImage = decoded.numChannels == 3 ? decoded : decoded.convert(numChannels: 3);
 
       int workW;
       int workH;
       img.Image workImage;
-      final int? effectiveFixedInputSize = expectsFixed256
-          ? 256
-          : (expectsFixed64 ? 64 : fixedInputSize);
-      final int effectiveMaxInputSide = expectsFixed256
-          ? 256
-          : (expectsFixed64 ? 64 : maxInputSide);
+      final int? effectiveFixedInputSize = expectsFixed256 ? 256 : (expectsFixed64 ? 64 : fixedInputSize);
+      final int effectiveMaxInputSide = expectsFixed256 ? 256 : (expectsFixed64 ? 64 : maxInputSide);
 
       if (effectiveFixedInputSize != null) {
         // Force a square input for fixed-shape models.
         workW = effectiveFixedInputSize;
         workH = effectiveFixedInputSize;
-        workImage = img.copyResize(
-          rgbImage,
-          width: workW,
-          height: workH,
-          interpolation: img.Interpolation.linear,
-        );
+        workImage = img.copyResize(rgbImage, width: workW, height: workH, interpolation: img.Interpolation.linear);
       } else {
         final longestSide = math.max(rgbImage.width, rgbImage.height);
-        final scale =
-            longestSide > effectiveMaxInputSide ? effectiveMaxInputSide / longestSide : 1.0;
-        workW =
-            (rgbImage.width * scale).round().clamp(1, rgbImage.width);
-        workH =
-            (rgbImage.height * scale).round().clamp(1, rgbImage.height);
+        final scale = longestSide > effectiveMaxInputSide ? effectiveMaxInputSide / longestSide : 1.0;
+        workW = (rgbImage.width * scale).round().clamp(1, rgbImage.width);
+        workH = (rgbImage.height * scale).round().clamp(1, rgbImage.height);
+
+        if (isSwin2sr) {
+          // Swin2SR window partition/unpartition requires spatial dimensions
+          // aligned to window size (8 for this model).
+          const windowSize = 8;
+          workW = _alignToMultiple(workW, windowSize);
+          workH = _alignToMultiple(workH, windowSize);
+        }
 
         workImage = (workW == rgbImage.width && workH == rgbImage.height)
             ? rgbImage
-            : img.copyResize(
-                rgbImage,
-                width: workW,
-                height: workH,
-                interpolation: img.Interpolation.linear,
-              );
+            : img.copyResize(rgbImage, width: workW, height: workH, interpolation: img.Interpolation.linear);
       }
 
       _log.info(
@@ -168,11 +152,8 @@ class RealEsrganOnnx {
 
       // Encode to simple NCHW float32 in \[0, 1].
       final tensorData = _encodeImageToNchw(workImage);
-      final prepElapsed =
-          DateTime.now().difference(prepStart).inMilliseconds;
-      _log.info(
-        '[ESRGAN_ONNX] Preprocess completed in ${prepElapsed}ms',
-      );
+      final prepElapsed = DateTime.now().difference(prepStart).inMilliseconds;
+      _log.info('[ESRGAN_ONNX] Preprocess completed in ${prepElapsed}ms');
 
       await _ensureSession();
       final session = _session;
@@ -181,18 +162,13 @@ class RealEsrganOnnx {
         return imageBytes;
       }
 
-      final inputTensor = OrtValueTensor.createTensorWithDataList(
-        tensorData,
-        <int>[1, 3, workH, workW],
-      );
+      final inputTensor = OrtValueTensor.createTensorWithDataList(tensorData, <int>[1, 3, workH, workW]);
 
       final inputNames = session.inputNames;
       final outputNames = session.outputNames;
 
-      final resolvedImageInputName = imageInputName ??
-          (inputNames.isNotEmpty ? inputNames.first : null);
-      final resolvedOutputName = outputName ??
-          (outputNames.isNotEmpty ? outputNames.first : null);
+      final resolvedImageInputName = imageInputName ?? (inputNames.isNotEmpty ? inputNames.first : null);
+      final resolvedOutputName = outputName ?? (outputNames.isNotEmpty ? outputNames.first : null);
 
       if (resolvedImageInputName == null || resolvedOutputName == null) {
         inputTensor.release();
@@ -204,9 +180,7 @@ class RealEsrganOnnx {
       }
 
       final runOptions = OrtRunOptions();
-      final inputs = <String, OrtValue>{
-        resolvedImageInputName: inputTensor,
-      };
+      final inputs = <String, OrtValue>{resolvedImageInputName: inputTensor};
 
       List<OrtValue?>? outputs;
       int onnxElapsed = 0;
@@ -214,16 +188,8 @@ class RealEsrganOnnx {
         final onnxStart = DateTime.now();
         final isolateSession = _isolateSession;
         outputs = isolateSession != null
-            ? await isolateSession.run(
-                runOptions,
-                inputs,
-                <String>[resolvedOutputName],
-              )
-            : await session.runAsync(
-                runOptions,
-                inputs,
-                <String>[resolvedOutputName],
-              );
+            ? await isolateSession.run(runOptions, inputs, <String>[resolvedOutputName])
+            : await session.runAsync(runOptions, inputs, <String>[resolvedOutputName]);
         onnxElapsed = DateTime.now().difference(onnxStart).inMilliseconds;
         _log.info(
           '[ESRGAN_ONNX] session.run (isolate=${isolateSession != null}) '
@@ -232,9 +198,7 @@ class RealEsrganOnnx {
 
         final outputTensor = outputs?.first;
         if (outputTensor == null) {
-          _log.warning(
-            '[ESRGAN_ONNX] Output tensor "$resolvedOutputName" not found.',
-          );
+          _log.warning('[ESRGAN_ONNX] Output tensor "$resolvedOutputName" not found.');
           return imageBytes;
         }
 
@@ -243,9 +207,7 @@ class RealEsrganOnnx {
         final shape = _inferShapeAndFlatten(raw, flatData);
 
         if (shape.length != 4) {
-          _log.warning(
-            '[ESRGAN_ONNX] Unexpected output rank: ${shape.length} (shape=$shape)',
-          );
+          _log.warning('[ESRGAN_ONNX] Unexpected output rank: ${shape.length} (shape=$shape)');
           return imageBytes;
         }
 
@@ -262,32 +224,20 @@ class RealEsrganOnnx {
         // This makes modal output selection deterministic.
         final originalLongestSide = math.max(originalWidth, originalHeight);
         final targetLongest = math.max(1, maxOutputSide);
-        final outputScale =
-            originalLongestSide > 0 ? targetLongest / originalLongestSide : 1.0;
+        final outputScale = originalLongestSide > 0 ? targetLongest / originalLongestSide : 1.0;
         final targetW = (originalWidth * outputScale).round().clamp(1, targetLongest);
         final targetH = (originalHeight * outputScale).round().clamp(1, targetLongest);
 
-        final resizedOut = (targetW == outImage.width &&
-                targetH == outImage.height)
+        final resizedOut = (targetW == outImage.width && targetH == outImage.height)
             ? outImage
-            : img.copyResize(
-                outImage,
-                width: targetW,
-                height: targetH,
-                interpolation: img.Interpolation.linear,
-              );
+            : img.copyResize(outImage, width: targetW, height: targetH, interpolation: img.Interpolation.linear);
 
-        final isJpeg = imageBytes.length >= 3 &&
-            imageBytes[0] == 0xFF &&
-            imageBytes[1] == 0xD8 &&
-            imageBytes[2] == 0xFF;
+        final isJpeg =
+            imageBytes.length >= 3 && imageBytes[0] == 0xFF && imageBytes[1] == 0xD8 && imageBytes[2] == 0xFF;
 
-        final encoded = Uint8List.fromList(
-          isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut),
-        );
+        final encoded = Uint8List.fromList(isJpeg ? img.encodeJpg(resizedOut) : img.encodePng(resizedOut));
 
-        final totalElapsed =
-            DateTime.now().difference(totalStart).inMilliseconds;
+        final totalElapsed = DateTime.now().difference(totalStart).inMilliseconds;
         _log.info(
           '[ESRGAN_ONNX] upscale() total elapsed ${totalElapsed}ms '
           '(pre=${prepElapsed}ms, onnx=${onnxElapsed}ms)',
@@ -303,11 +253,7 @@ class RealEsrganOnnx {
       _log.severe('[ESRGAN_ONNX] Exception during upscale', e, st);
       return imageBytes;
     } finally {
-      await OnnxSessionLifecycle.maybeUnloadAfterRun(
-        logger: _log,
-        tag: 'ESRGAN_ONNX',
-        dispose: dispose,
-      );
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(logger: _log, tag: 'ESRGAN_ONNX', dispose: dispose);
     }
   }
 
@@ -317,6 +263,12 @@ class RealEsrganOnnx {
     _session = null;
     _isolateSession = null;
   }
+}
+
+int _alignToMultiple(int value, int multiple) {
+  if (multiple <= 1) return value.clamp(1, 1 << 20);
+  final aligned = ((value + multiple - 1) ~/ multiple) * multiple;
+  return aligned.clamp(multiple, 1 << 20);
 }
 
 Float32List _encodeImageToNchw(img.Image image) {
@@ -409,4 +361,3 @@ int _srOutputToByte(double v) {
   }
   return (v * 255).round().clamp(0, 255);
 }
-

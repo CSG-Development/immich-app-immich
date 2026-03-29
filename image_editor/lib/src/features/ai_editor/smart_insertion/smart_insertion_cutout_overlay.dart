@@ -154,9 +154,11 @@ class _SmartInsertionCutoutOverlayState extends State<SmartInsertionCutoutOverla
       backgroundRemovalService: widget.backgroundRemovalService,
       ensureModelReady: widget.ensureModelReady,
       applyDilatePercent: 0.0,
-      softSegmentationMask: true,
-      segmentationFeatherRadius: 1,
-      segmentationThreshold: 0.45,
+      // Match smart removal editing behavior: keep a binary mask while editing
+      // for responsive brush/eraser interactions, then soften at apply time.
+      softSegmentationMask: false,
+      segmentationFeatherRadius: 0,
+      segmentationThreshold: 0.5,
       title: 'Smart insertion',
       failureMessage: 'Failed to detect subject',
       onCancel: widget.onCancel,

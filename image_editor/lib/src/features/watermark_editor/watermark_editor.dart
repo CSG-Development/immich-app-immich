@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:image_editor/src/common/utils/platform_tooltip.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
@@ -552,13 +553,13 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                   children: [
                     if (!kIsWeb)
                       IconButton(
-                        tooltip: 'Pick logo',
+                        tooltip: tooltipForPlatform(context, 'Pick logo'),
                         onPressed: _pickLogo,
                         icon: const Icon(Icons.image, color: Colors.white),
                       ),
                     if (_watermarkLogoBytes != null)
                       IconButton(
-                        tooltip: 'Remove logo',
+                        tooltip: tooltipForPlatform(context, 'Remove logo'),
                         onPressed: _removeLogo,
                         icon: const Icon(Icons.delete_outline, color: Colors.white),
                       ),

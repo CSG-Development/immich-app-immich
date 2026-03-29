@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/utils/platform_tooltip.dart';
 
 /// Reusable editor app bar with back/undo/redo/confirm actions.
 class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -29,7 +30,7 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
   final bool canUndo;
   final bool canRedo;
   final bool isBusy;
-  final String confirmTooltip;
+  final String? confirmTooltip;
   final IconData confirmIcon;
   final bool showLeadingBack;
   final bool confirmEnabled;
@@ -47,7 +48,7 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
       foregroundColor: foregroundColor,
       leading: showLeadingBack
           ? IconButton(
-              tooltip: 'Back',
+              tooltip: tooltipForPlatform(context, 'Back'),
               icon: const Icon(Icons.arrow_back),
               onPressed: canRunActions ? onBack : null,
             )
@@ -56,7 +57,7 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
       actions: [
         if (!showLeadingBack)
           IconButton(
-            tooltip: 'Back',
+            tooltip: tooltipForPlatform(context, 'Back'),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: const Icon(Icons.arrow_back),
             onPressed: canRunActions ? onBack : null,
@@ -64,20 +65,20 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
         if (!showLeadingBack) const Spacer(),
         if (showUndoRedo)
           IconButton(
-            tooltip: 'Undo',
+            tooltip: tooltipForPlatform(context, 'Undo'),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: Icon(Icons.undo, color: canUndo && canRunActions ? foregroundColor : disabledColor),
             onPressed: canUndo && canRunActions ? onUndo : null,
           ),
         if (showUndoRedo)
           IconButton(
-            tooltip: 'Redo',
+            tooltip: tooltipForPlatform(context, 'Redo'),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: Icon(Icons.redo, color: canRedo && canRunActions ? foregroundColor : disabledColor),
             onPressed: canRedo && canRunActions ? onRedo : null,
           ),
         IconButton(
-          tooltip: confirmTooltip,
+          tooltip: tooltipForPlatform(context, confirmTooltip),
           padding: const EdgeInsets.symmetric(horizontal: 8),
           iconSize: 28,
           icon: Icon(confirmIcon, color: canRunActions && confirmEnabled ? foregroundColor : disabledColor),

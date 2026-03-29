@@ -206,30 +206,31 @@ class BackgroundRemovalService {
       final shape = result.shape;
 
       if (shape.length != 4 || shape[1] != 1) return null;
-      final outH = shape[2].toInt();
-      final outW = shape[3].toInt();
-      if (outH <= 0 || outW <= 0) return null;
+      final maskData = await ImageWorker.instance.segmentationMaskFromOutput(
+        outputList: outputBytes,
+        shape: shape,
+        targetWidth: originalWidth,
+        targetHeight: originalHeight,
+        threshold: threshold,
+        softMask: softMask,
+        featherRadius: featherRadius,
+      );
+      if (maskData == null) return null;
+      final width = maskData['width'] as int;
+      final height = maskData['height'] as int;
+      final data = maskData['data'] as Uint8List;
+      if (width != originalWidth || height != originalHeight) return null;
+      if (data.length != width * height) return null;
 
-      final maskSmall = img.Image(width: outW, height: outH);
-      for (var y = 0; y < outH; y++) {
-        for (var x = 0; x < outW; x++) {
-          final raw = outputBytes[y * outW + x];
-          final v = raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
-          final byte = softMask ? (v * 255).round().clamp(0, 255) : (v > threshold ? 255 : 0);
-          maskSmall.setPixel(x, y, img.ColorRgb8(byte, byte, byte));
+      final mask = img.Image(width: width, height: height);
+      var idx = 0;
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          final v = data[idx++];
+          mask.setPixel(x, y, img.ColorRgb8(v, v, v));
         }
       }
-
-      final mask = img.copyResize(
-        maskSmall,
-        width: originalWidth,
-        height: originalHeight,
-        interpolation: softMask ? img.Interpolation.linear : img.Interpolation.nearest,
-      );
-      if (!softMask || featherRadius <= 0) {
-        return mask;
-      }
-      return img.gaussianBlur(mask, radius: featherRadius);
+      return mask;
     } catch (e, st) {
       _log.severe('[BG] Exception in getSegmentationMask', e, st);
       return null;

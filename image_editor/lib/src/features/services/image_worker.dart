@@ -142,6 +142,7 @@ class ImageWorker {
     required List<Map<String, Object>> strokes,
     Map<String, Object>? baseMask,
     double dilatePercent = 0.02,
+    int? maxWorkSide,
   }) async {
     return _runJob<Map<String, Object>>('build_stroke_mask', <String, Object?>{
       'width': width,
@@ -149,7 +150,33 @@ class ImageWorker {
       'strokes': strokes,
       'baseMask': baseMask,
       'dilatePercent': dilatePercent,
+      'maxWorkSide': maxWorkSide,
     });
+  }
+
+  /// Builds a segmentation mask in the isolate from raw model output and
+  /// returns `{ 'width': int, 'height': int, 'data': Uint8List }`.
+  Future<Map<String, Object>?> segmentationMaskFromOutput({
+    required List<dynamic> outputList,
+    required List<int> shape,
+    required int targetWidth,
+    required int targetHeight,
+    required double threshold,
+    required bool softMask,
+    required int featherRadius,
+  }) async {
+    return _runJob<Map<String, Object>>(
+      'segmentation_mask_from_output',
+      <String, Object>{
+        'outputList': outputList,
+        'shape': shape,
+        'targetWidth': targetWidth,
+        'targetHeight': targetHeight,
+        'threshold': threshold,
+        'softMask': softMask,
+        'featherRadius': featherRadius,
+      },
+    );
   }
 
   /// Smart insertion preprocessing: performs heavy compositing math in worker
@@ -245,6 +272,8 @@ Future<Object?> _handleJob(String type, Object payload) async {
       return _handleBackgroundMaskApply(payload);
     case 'build_stroke_mask':
       return _handleBuildStrokeMask(payload);
+    case 'segmentation_mask_from_output':
+      return _handleSegmentationMaskFromOutput(payload);
     case 'smart_insertion_prepare':
       return _handleSmartInsertionPrepare(payload);
     default:
@@ -437,11 +466,12 @@ Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
   final strokesPayload = (map['strokes'] as List).cast<Map<Object?, Object?>>();
   final baseMaskMap = map['baseMask'] as Map<Object?, Object?>?;
   final dilatePercent = (map['dilatePercent'] as num?)?.toDouble() ?? 0.02;
+  final maxWorkSide = (map['maxWorkSide'] as int?) ?? 512;
 
   // Work in a downscaled coordinate space so that very large images do not
   // require building and post-processing huge masks. Keep aspect ratio but
   // clamp the longest side to 512px.
-  const int maxSide = 512;
+  final maxSide = maxWorkSide <= 0 ? math.max(width, height) : maxWorkSide;
   final double scale = (width <= maxSide && height <= maxSide) ? 1.0 : (maxSide / math.max(width, height));
   final int workW = (width * scale).round().clamp(1, width);
   final int workH = (height * scale).round().clamp(1, height);
@@ -544,6 +574,65 @@ Future<Map<String, Object>> _handleBuildStrokeMask(Object payload) async {
   );
 
   return <String, Object>{'width': width, 'height': height, 'data': out};
+}
+
+Future<Map<String, Object>> _handleSegmentationMaskFromOutput(
+  Object payload,
+) async {
+  final map = payload as Map<Object?, Object?>;
+  final outputList = map['outputList'] as List<dynamic>;
+  final shape = (map['shape'] as List).cast<int>();
+  final targetWidth = map['targetWidth'] as int;
+  final targetHeight = map['targetHeight'] as int;
+  final threshold = (map['threshold'] as num).toDouble();
+  final softMask = (map['softMask'] as bool?) ?? false;
+  final featherRadius = (map['featherRadius'] as int?) ?? 0;
+
+  if (shape.length != 4 || shape[1] != 1) {
+    throw StateError('[SEG_MASK_WORKER] Unexpected output shape: $shape');
+  }
+  final outH = shape[2];
+  final outW = shape[3];
+  if (outH <= 0 || outW <= 0 || targetWidth <= 0 || targetHeight <= 0) {
+    throw StateError(
+      '[SEG_MASK_WORKER] Invalid size out=${outW}x$outH target=${targetWidth}x$targetHeight',
+    );
+  }
+
+  final maskSmall = img.Image(width: outW, height: outH);
+  for (var y = 0; y < outH; y++) {
+    for (var x = 0; x < outW; x++) {
+      final raw = outputList[y * outW + x];
+      final v = raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
+      final byte = softMask
+          ? (v * 255).round().clamp(0, 255)
+          : (v > threshold ? 255 : 0);
+      maskSmall.setPixel(x, y, img.ColorRgb8(byte, byte, byte));
+    }
+  }
+
+  var mask = img.copyResize(
+    maskSmall,
+    width: targetWidth,
+    height: targetHeight,
+    interpolation: softMask ? img.Interpolation.linear : img.Interpolation.nearest,
+  );
+  if (softMask && featherRadius > 0) {
+    mask = img.gaussianBlur(mask, radius: featherRadius);
+  }
+
+  final data = Uint8List(targetWidth * targetHeight);
+  var idx = 0;
+  for (var y = 0; y < targetHeight; y++) {
+    for (var x = 0; x < targetWidth; x++) {
+      data[idx++] = mask.getPixel(x, y).r.toInt().clamp(0, 255);
+    }
+  }
+  return <String, Object>{
+    'width': targetWidth,
+    'height': targetHeight,
+    'data': data,
+  };
 }
 
 Future<Map<String, Object?>> _handleDenoisePreprocess(Object payload) async {

@@ -48,12 +48,8 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     super.initState();
     _history = HistoryStack<Uint8List>(widget.initialImageBytes);
     final decoded = img.decodeImage(widget.initialImageBytes);
-    _sourceImageSize = decoded != null
-        ? Size(decoded.width.toDouble(), decoded.height.toDouble())
-        : const Size(1, 1);
-    _service = pe.PhotoEnhancementService(
-      configs: widget.initConfigs,
-    );
+    _sourceImageSize = decoded != null ? Size(decoded.width.toDouble(), decoded.height.toDouble()) : const Size(1, 1);
+    _service = pe.PhotoEnhancementService(configs: widget.initConfigs);
   }
 
   int? _fixedInputSizeForSuperResolutionModel([String? modelPathOrUrl]) {
@@ -67,6 +63,12 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     return null;
   }
 
+  // Swin2SR hidden from SR dialog — restore with model option + defaults below:
+  // bool _isSwin2srModel(String modelPathOrUrl) {
+  //   final path = modelPathOrUrl.toLowerCase();
+  //   return path.contains('swin2sr-realworld-4x-onnx') || path.endsWith('swin2sr-realworld-x4.onnx');
+  // }
+
   @override
   void dispose() {
     // Dispose model sessions asynchronously on page teardown.
@@ -75,28 +77,42 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     super.dispose();
   }
 
-  Future<_SuperResolutionConfigResult?> _showSuperResolutionConfigDialog() {
+  Future<_SuperResolutionConfigResult?> _showSuperResolutionConfigDialog({
+    String? initialModelPathOrUrl,
+    String dialogTitle = 'Super resolution settings',
+  }) {
     return showDialog<_SuperResolutionConfigResult>(
       context: context,
       builder: (context) {
         final modelOptions = <_SrModelOption>[
           _SrModelOption(
-            label: 'Default (configured)',
+            label: 'Default ESRGAN (configured)',
             modelPathOrUrl: widget.initConfigs.realEsrganX2ModelPathEffective,
           ),
+          // _SrModelOption(
+          //   label: 'Swin2SR real-world x4 (configured)',
+          //   modelPathOrUrl: widget.initConfigs.swin2srRealworldX4ModelPathEffective,
+          // ),
           const _SrModelOption(
             label: 'RealESRGAN x4 (dynamic)',
-            modelPathOrUrl:
-                'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4.onnx',
+            modelPathOrUrl: 'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4.onnx',
           ),
         ];
-        var selectedModelPath = modelOptions.first.modelPathOrUrl;
+        final availableModels = modelOptions.map((e) => e.modelPathOrUrl).toSet();
+        var selectedModelPath = availableModels.contains(initialModelPathOrUrl)
+            ? initialModelPathOrUrl!
+            : modelOptions.first.modelPathOrUrl;
         final outputOptions = List<int>.generate(13, (i) => 512 + i * 128);
         const dynamicInputOptions = <int>[128, 256, 384, 512];
         int selectedOutput = 4; // default to balanced (1024)
         int selectedInput = _fixedInputSizeForSuperResolutionModel(selectedModelPath) != null ? 0 : 1;
         bool useFixedSquareInput = true;
         var useArtifactPostprocess = false;
+        // With Swin2SR option: strength = _isSwin2srModel(selectedModelPath) ? 0.95 : 1.0;
+        // With Swin2SR option: postSmoothStrength = _isSwin2srModel(selectedModelPath) ? 0.15 : 0.0;
+        double strength = 1.0;
+        double postSmoothStrength = 0.0;
+        pe.SrArtifactCleanupLevel artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
         var modelReady = false;
         var isCheckingModel = true;
         const contentTextStyle = AiModalUi.contentStyle;
@@ -106,6 +122,27 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         final srcLongestSide = srcW > srcH ? srcW : srcH;
         final srcMegaPixels = (srcW * srcH) / 1000000.0;
         final srcBytesMb = widget.initialImageBytes.length / (1024.0 * 1024.0);
+
+        // With Swin2SR model option restored, use:
+        // void applyModelDefaults(String modelPathOrUrl) {
+        //   if (_isSwin2srModel(modelPathOrUrl)) {
+        //     strength = 1.0;
+        //     postSmoothStrength = 0.0;
+        //     artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
+        //     useArtifactPostprocess = false;
+        //   } else {
+        //     strength = 1.0;
+        //     postSmoothStrength = 0.0;
+        //     artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
+        //     useArtifactPostprocess = false;
+        //   }
+        // }
+        void applyModelDefaults(String _) {
+          strength = 1.0;
+          postSmoothStrength = 0.0;
+          artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
+          useArtifactPostprocess = false;
+        }
 
         String? _buildRiskWarning({
           required int maxOutputSide,
@@ -173,9 +210,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
             final fixedInputSize = _fixedInputSizeForSuperResolutionModel(selectedModelPath);
             final fixedShapeModel = fixedInputSize != null;
-            final currentInputOptions = fixedShapeModel
-                ? <int>[fixedInputSize]
-                : dynamicInputOptions;
+            final currentInputOptions = fixedShapeModel ? <int>[fixedInputSize] : dynamicInputOptions;
             if (selectedInput >= currentInputOptions.length) {
               selectedInput = currentInputOptions.length - 1;
             }
@@ -188,173 +223,224 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
             );
 
             return AlertDialog(
-              title: const Text('Super resolution settings'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: selectedModelPath,
-                    style: AiModalUi.selectorValueStyle,
-                    decoration: AiModalUi.selectDecoration('SR model'),
-                    items: modelOptions
-                        .map(
-                          (option) => DropdownMenuItem<String>(
-                            value: option.modelPathOrUrl,
-                            child: Text(option.label, style: AiModalUi.selectorValueStyle),
+              title: Text(dialogTitle),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: selectedModelPath,
+                      style: AiModalUi.selectorValueStyle,
+                      decoration: AiModalUi.selectDecoration('SR model'),
+                      items: modelOptions
+                          .map(
+                            (option) => DropdownMenuItem<String>(
+                              value: option.modelPathOrUrl,
+                              child: Text(option.label, style: AiModalUi.selectorValueStyle),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          selectedModelPath = value;
+                          selectedInput = 0;
+                          useFixedSquareInput = true;
+                          applyModelDefaults(value);
+                          isCheckingModel = true;
+                        });
+                      },
+                    ),
+                    if (_fixedInputSizeForSuperResolutionModel(selectedModelPath) case final fixed?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text('This model uses fixed ${fixed}x$fixed input.', style: noteTextStyle),
+                      ),
+                    // if (_isSwin2srModel(selectedModelPath))
+                    //   const Padding(
+                    //     padding: EdgeInsets.only(top: 6),
+                    //     child: Text(
+                    //       'Swin2SR: keep working input at 256+ (prefer 384/512) for sharper results.',
+                    //       style: noteTextStyle,
+                    //     ),
+                    //   ),
+                    const SizedBox(height: 8),
+                    if (isCheckingModel)
+                      const Row(
+                        children: [
+                          SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                          SizedBox(width: 8),
+                          Text('Checking model availability...', style: noteTextStyle),
+                        ],
+                      )
+                    else if (modelReady)
+                      const Text('Model ready on this device.', style: noteTextStyle)
+                    else
+                      Row(
+                        children: [
+                          const Expanded(child: Text('Selected model is not downloaded yet.', style: noteTextStyle)),
+                          TextButton(
+                            onPressed: () async {
+                              final ok = await showModelDownloadDialog(
+                                context,
+                                modelPathOrUrl: selectedModelPath,
+                                modelName: 'Super resolution',
+                              );
+                              if (!context.mounted) return;
+                              if (ok) {
+                                setState(() {
+                                  isCheckingModel = true;
+                                });
+                              }
+                            },
+                            child: const Text('Download'),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        selectedModelPath = value;
-                        selectedInput = 0;
-                        useFixedSquareInput = true;
-                        isCheckingModel = true;
-                      });
-                    },
-                  ),
-                  if (_fixedInputSizeForSuperResolutionModel(selectedModelPath) case final fixed?)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        'This model uses fixed ${fixed}x$fixed input.',
-                        style: noteTextStyle,
+                        ],
                       ),
-                    ),
-                  const SizedBox(height: 8),
-                  if (isCheckingModel)
-                    const Row(
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 8),
-                        Text('Checking model availability...', style: noteTextStyle),
-                      ],
-                    )
-                  else if (modelReady)
-                    const Text('Model ready on this device.', style: noteTextStyle)
-                  else
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Selected model is not downloaded yet.',
-                            style: noteTextStyle,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final ok = await showModelDownloadDialog(
-                              context,
-                              modelPathOrUrl: selectedModelPath,
-                              modelName: 'Super resolution',
-                            );
-                            if (!context.mounted) return;
-                            if (ok) {
-                              setState(() {
-                                isCheckingModel = true;
-                              });
-                            }
-                          },
-                          child: const Text('Download'),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 12),
-                  if (riskWarning != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.withValues(alpha: 0.45)),
-                      ),
-                      child: Text(
-                        riskWarning,
-                        style: AiModalUi.noteStyle,
-                      ),
-                    ),
                     const SizedBox(height: 12),
-                  ],
-                  const Text('Maximum output size', style: AiModalUi.sectionTitleStyle),
-                  const SizedBox(height: 8),
-                  Slider(
-                    value: selectedOutput.toDouble(),
-                    min: 0,
-                    max: (outputOptions.length - 1).toDouble(),
-                    divisions: outputOptions.length - 1,
-                    label: '${outputOptions[selectedOutput]} px',
-                    onChanged: (v) {
-                      setState(() {
-                        selectedOutput = v.round().clamp(0, outputOptions.length - 1);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Higher values produce larger images but use significantly more memory '
-                    'and can become unstable on large source photos.',
-                    style: noteTextStyle,
-                  ),
-                  if (!fixedShapeModel) ...[
-                    const SizedBox(height: 16),
-                    const Text('Working input size', style: AiModalUi.sectionTitleStyle),
+                    if (riskWarning != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.45)),
+                        ),
+                        child: Text(riskWarning, style: AiModalUi.noteStyle),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    const Text('Maximum output size', style: AiModalUi.sectionTitleStyle),
                     const SizedBox(height: 8),
                     Slider(
-                      value: selectedInput.toDouble(),
+                      value: selectedOutput.toDouble(),
                       min: 0,
-                      max: (currentInputOptions.length - 1).toDouble(),
-                      divisions:
-                          currentInputOptions.length > 1 ? currentInputOptions.length - 1 : null,
-                      label: '${currentInputOptions[selectedInput]} px',
+                      max: (outputOptions.length - 1).toDouble(),
+                      divisions: outputOptions.length - 1,
+                      label: '${outputOptions[selectedOutput]} px',
                       onChanged: (v) {
                         setState(() {
-                          selectedInput = v.round().clamp(0, currentInputOptions.length - 1);
+                          selectedOutput = v.round().clamp(0, outputOptions.length - 1);
                         });
                       },
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Higher values can keep more detail, but increase RAM usage and latency.',
+                      'Higher values produce larger images but use significantly more memory '
+                      'and can become unstable on large source photos.',
                       style: noteTextStyle,
                     ),
-                    const SizedBox(height: 16),
+                    if (!fixedShapeModel) ...[
+                      const SizedBox(height: 16),
+                      const Text('Working input size', style: AiModalUi.sectionTitleStyle),
+                      const SizedBox(height: 8),
+                      Slider(
+                        value: selectedInput.toDouble(),
+                        min: 0,
+                        max: (currentInputOptions.length - 1).toDouble(),
+                        divisions: currentInputOptions.length > 1 ? currentInputOptions.length - 1 : null,
+                        label: '${currentInputOptions[selectedInput]} px',
+                        onChanged: (v) {
+                          setState(() {
+                            selectedInput = v.round().clamp(0, currentInputOptions.length - 1);
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Higher values can keep more detail, but increase RAM usage and latency.',
+                        style: noteTextStyle,
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Use fixed square input', style: contentTextStyle),
+                        subtitle: const Text(
+                          'Keeps model input square. Turn off to keep original aspect ratio.',
+                          style: noteTextStyle,
+                        ),
+                        value: useFixedSquareInput,
+                        onChanged: (value) {
+                          setState(() {
+                            useFixedSquareInput = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       dense: true,
-                      title: const Text('Use fixed square input', style: contentTextStyle),
-                      subtitle: const Text(
-                        'Keeps model input square. Turn off to keep original aspect ratio.',
-                        style: noteTextStyle,
-                      ),
-                      value: useFixedSquareInput,
+                      title: const Text('Artifact removal postprocess', style: contentTextStyle),
+                      subtitle: const Text('Use extra artifact cleanup after enhancement.', style: noteTextStyle),
+                      value: useArtifactPostprocess,
                       onChanged: (value) {
                         setState(() {
-                          useFixedSquareInput = value;
+                          useArtifactPostprocess = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Model tuning', style: AiModalUi.sectionTitleStyle),
+                    const SizedBox(height: 8),
+                    Text('Blend with original (${strength.toStringAsFixed(2)})', style: noteTextStyle),
+                    Slider(
+                      value: strength,
+                      min: 0.7,
+                      max: 1.0,
+                      divisions: 30,
+                      onChanged: (v) {
+                        setState(() {
+                          strength = v;
                         });
                       },
                     ),
                     const SizedBox(height: 8),
+                    Text('Post smoothing (${postSmoothStrength.toStringAsFixed(2)})', style: noteTextStyle),
+                    Slider(
+                      value: postSmoothStrength,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 20,
+                      onChanged: (v) {
+                        setState(() {
+                          postSmoothStrength = v;
+                        });
+                      },
+                    ),
+                    if (useArtifactPostprocess) ...[
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<pe.SrArtifactCleanupLevel>(
+                        value: artifactCleanupLevel,
+                        style: AiModalUi.selectorValueStyle,
+                        decoration: AiModalUi.selectDecoration('Cleanup level'),
+                        items: const [
+                          DropdownMenuItem(
+                            value: pe.SrArtifactCleanupLevel.low,
+                            child: Text('Low', style: AiModalUi.selectorValueStyle),
+                          ),
+                          DropdownMenuItem(
+                            value: pe.SrArtifactCleanupLevel.medium,
+                            child: Text('Medium', style: AiModalUi.selectorValueStyle),
+                          ),
+                          DropdownMenuItem(
+                            value: pe.SrArtifactCleanupLevel.high,
+                            child: Text('High', style: AiModalUi.selectorValueStyle),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() {
+                            artifactCleanupLevel = value;
+                          });
+                        },
+                      ),
+                    ],
                   ],
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: const Text('Artifact removal postprocess', style: contentTextStyle),
-                    subtitle: const Text('Use extra artifact cleanup after enhancement.', style: noteTextStyle),
-                    value: useArtifactPostprocess,
-                    onChanged: (value) {
-                      setState(() {
-                        useArtifactPostprocess = value;
-                      });
-                    },
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
@@ -370,6 +456,9 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                               maxInputSide: workingInputSize,
                               fixedInputSize: useFixedSquareInput ? workingInputSize : null,
                               enableArtifactPostprocess: useArtifactPostprocess,
+                              strength: strength,
+                              postSmoothStrength: postSmoothStrength,
+                              artifactCleanupLevel: artifactCleanupLevel,
                             ),
                           );
                         },
@@ -492,7 +581,13 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         double strength = widget.initConfigs.relightStrength.clamp(-0.4, 1.0);
         double gamma = widget.initConfigs.relightMaskGamma.clamp(0.25, 2.5);
         double blur = widget.initConfigs.relightMaskBlurRadius.clamp(0.0, 10.0);
-        var useArtifactPostprocess = false;
+        double shadowThreshold = widget.initConfigs.relightShadowThreshold.clamp(0.1, 0.8);
+        double highlightThreshold = widget.initConfigs.relightHighlightThreshold.clamp(0.55, 0.95);
+        double highlightProtection = widget.initConfigs.relightHighlightProtection.clamp(0.0, 1.0);
+        bool usePersonMaskOnly = widget.initConfigs.relightUsePersonMaskOnly;
+        bool useLuminanceToneMapping = widget.initConfigs.relightUseLuminanceToneMapping;
+        bool useLightBalance = false;
+        bool lightBalanceShadowOnly = widget.initConfigs.relightLightBalanceShadowOnly;
 
         void applyPreset(_RelightPreset preset) {
           switch (preset) {
@@ -563,94 +658,150 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Relight settings'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Preset', style: AiModalUi.sectionTitleStyle),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<_RelightPreset>(
-                    value: selectedPreset,
-                    style: AiModalUi.selectorValueStyle,
-                    decoration: AiModalUi.selectDecoration('Lighting preset'),
-                    items: _RelightPreset.values
-                        .map(
-                          (preset) => DropdownMenuItem<_RelightPreset>(
-                            value: preset,
-                            child: Text(preset.label, style: AiModalUi.selectorValueStyle),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        selectedPreset = value;
-                        applyPreset(value);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Strength (${strength.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
-                  Slider(
-                    value: strength,
-                    min: -0.4,
-                    max: 1.0,
-                    divisions: 28,
-                    onChanged: (v) {
-                      setState(() {
-                        strength = v;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Mask focus (${gamma.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
-                  Slider(
-                    value: gamma,
-                    min: 0.25,
-                    max: 2.5,
-                    divisions: 45,
-                    onChanged: (v) {
-                      setState(() {
-                        gamma = v;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Mask smoothness (${blur.toStringAsFixed(1)})', style: AiModalUi.sectionTitleStyle),
-                  Slider(
-                    value: blur,
-                    min: 0.0,
-                    max: 10.0,
-                    divisions: 20,
-                    onChanged: (v) {
-                      setState(() {
-                        blur = v;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: const Text('Artifact removal postprocess', style: AiModalUi.contentStyle),
-                    subtitle: const Text(
-                      'Use extra artifact cleanup after relight.',
-                      style: AiModalUi.noteStyle,
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Preset', style: AiModalUi.sectionTitleStyle),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<_RelightPreset>(
+                      value: selectedPreset,
+                      style: AiModalUi.selectorValueStyle,
+                      decoration: AiModalUi.selectDecoration('Lighting preset'),
+                      items: _RelightPreset.values
+                          .map(
+                            (preset) => DropdownMenuItem<_RelightPreset>(
+                              value: preset,
+                              child: Text(preset.label, style: AiModalUi.selectorValueStyle),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          selectedPreset = value;
+                          applyPreset(value);
+                        });
+                      },
                     ),
-                    value: useArtifactPostprocess,
-                    onChanged: (value) {
-                      setState(() {
-                        useArtifactPostprocess = value;
-                      });
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Text('Strength (${strength.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
+                    Slider(
+                      value: strength,
+                      min: -0.4,
+                      max: 1.0,
+                      divisions: 28,
+                      onChanged: (v) {
+                        setState(() {
+                          strength = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Mask focus (${gamma.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
+                    Slider(
+                      value: gamma,
+                      min: 0.25,
+                      max: 2.5,
+                      divisions: 45,
+                      onChanged: (v) {
+                        setState(() {
+                          gamma = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Mask smoothness (${blur.toStringAsFixed(1)})', style: AiModalUi.sectionTitleStyle),
+                    Slider(
+                      value: blur,
+                      min: 0.0,
+                      max: 10.0,
+                      divisions: 20,
+                      onChanged: (v) {
+                        setState(() {
+                          blur = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: const Text('Use person-only mask', style: AiModalUi.contentStyle),
+                      subtitle: const Text('Relight focuses on person class from FCN segmentation.', style: AiModalUi.noteStyle),
+                      value: usePersonMaskOnly,
+                      onChanged: (value) {
+                        setState(() {
+                          usePersonMaskOnly = value;
+                        });
+                      },
+                    ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: const Text('Luminance-aware tone mapping', style: AiModalUi.contentStyle),
+                      subtitle: const Text(
+                        'Lift shadows and protect highlights (less color shift).',
+                        style: AiModalUi.noteStyle,
+                      ),
+                      value: useLuminanceToneMapping,
+                      onChanged: (value) {
+                        setState(() {
+                          useLuminanceToneMapping = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Shadow threshold (${shadowThreshold.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
+                    Slider(
+                      value: shadowThreshold,
+                      min: 0.1,
+                      max: 0.8,
+                      divisions: 35,
+                      onChanged: (v) {
+                        setState(() {
+                          shadowThreshold = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Highlight threshold (${highlightThreshold.toStringAsFixed(2)})',
+                      style: AiModalUi.sectionTitleStyle,
+                    ),
+                    Slider(
+                      value: highlightThreshold,
+                      min: 0.55,
+                      max: 0.95,
+                      divisions: 40,
+                      onChanged: (v) {
+                        setState(() {
+                          highlightThreshold = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Highlight protection (${highlightProtection.toStringAsFixed(2)})',
+                      style: AiModalUi.sectionTitleStyle,
+                    ),
+                    Slider(
+                      value: highlightProtection,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 20,
+                      onChanged: (v) {
+                        setState(() {
+                          highlightProtection = v;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
-                ),
+                TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(
                     _RelightConfigResult(
@@ -658,7 +809,99 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                       strength: strength,
                       maskGamma: gamma,
                       maskBlurRadius: blur,
-                      enableArtifactPostprocess: useArtifactPostprocess,
+                      usePersonMaskOnly: usePersonMaskOnly,
+                      useLuminanceToneMapping: useLuminanceToneMapping,
+                      shadowThreshold: shadowThreshold,
+                      highlightThreshold: highlightThreshold,
+                      highlightProtection: highlightProtection,
+                      enableLightBalance: useLightBalance,
+                      lightBalanceStrength: widget.initConfigs.relightLightBalanceStrength,
+                      lightBalanceShadowOnly: lightBalanceShadowOnly,
+                    ),
+                  ),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<_RelightQuickConfigResult?> _showRelightQuickConfigDialog() {
+    return showDialog<_RelightQuickConfigResult>(
+      context: context,
+      builder: (context) {
+        double strength = widget.initConfigs.relightStrength.clamp(-0.2, 0.8);
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Relight quick'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Strength (${strength.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
+                Slider(
+                  value: strength,
+                  min: -0.2,
+                  max: 0.8,
+                  divisions: 20,
+                  onChanged: (v) => setState(() => strength = v),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(_RelightQuickConfigResult(strength: strength)),
+                child: const Text('Apply'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<_RelightLightBalanceConfigResult?> _showRelightLightBalanceDialog() {
+    return showDialog<_RelightLightBalanceConfigResult>(
+      context: context,
+      builder: (context) {
+        double strength = widget.initConfigs.relightLightBalanceStrength.clamp(0.0, 1.0);
+        bool shadowOnly = widget.initConfigs.relightLightBalanceShadowOnly;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Light balance'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Balance strength (${strength.toStringAsFixed(2)})', style: AiModalUi.sectionTitleStyle),
+                  Slider(
+                    value: strength,
+                    min: 0.0,
+                    max: 1.0,
+                    divisions: 20,
+                    onChanged: (v) => setState(() => strength = v),
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: const Text('Apply mostly in shadows', style: AiModalUi.contentStyle),
+                    value: shadowOnly,
+                    onChanged: (value) => setState(() => shadowOnly = value),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(
+                    _RelightLightBalanceConfigResult(
+                      strength: strength,
+                      shadowOnly: shadowOnly,
                     ),
                   ),
                   child: const Text('Apply'),
@@ -698,7 +941,26 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     final ok = await showModelDownloadDialog(context, modelPathOrUrl: modelPathOrUrl, modelName: modelName);
     if (!ok) return false;
 
-    if (configs.artifactRemovalEnabled) {
+    if (effect is pe.RelightEffect &&
+        effect.enableLightBalance &&
+        effect.lightBalanceModelPathOrUrl != null &&
+        effect.lightBalanceModelPathOrUrl!.isNotEmpty) {
+      final lightBalanceOk = await showModelDownloadDialog(
+        context,
+        modelPathOrUrl: effect.lightBalanceModelPathOrUrl!,
+        modelName: 'Relight light balance',
+      );
+      if (!lightBalanceOk) return false;
+    }
+
+    final needsArtifactModel = switch (effect) {
+      pe.SuperResolutionEffect(enableArtifactPostprocess: final enabled) => enabled,
+      pe.FastdvdnetDenoiseEnhancementEffect(enableArtifactPostprocess: final enabled) => enabled,
+      pe.ModnetBackgroundEnhancementEffect(enableArtifactPostprocess: final enabled) => enabled,
+      _ => false,
+    };
+
+    if (configs.artifactRemovalEnabled && needsArtifactModel) {
       final artifactOk = await showModelDownloadDialog(
         context,
         modelPathOrUrl: configs.inpaintingModelPathEffective,
@@ -727,25 +989,24 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         // the user choose output size and then construct a fresh effect
         // instance with those settings.
         if (effect is pe.SuperResolutionEffect) {
-          final config = await _showSuperResolutionConfigDialog();
+          final config = await _showSuperResolutionConfigDialog(
+            initialModelPathOrUrl: effect.modelPathOrUrl,
+            dialogTitle: '${effect.name} settings',
+          );
           if (config == null) return;
 
           effective = _service.createSuperResolutionEffect(
             modelPathOrUrl: config.modelPathOrUrl,
             maxOutputSide: config.maxOutputSide,
-            maxInputSide: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ??
-                config.maxInputSide,
-            fixedInputSize: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ??
-                config.fixedInputSize,
+            maxInputSide: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ?? config.maxInputSide,
+            fixedInputSize: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ?? config.fixedInputSize,
             enableArtifactPostprocess: config.enableArtifactPostprocess,
+            strength: config.strength,
+            postSmoothStrength: config.postSmoothStrength,
+            artifactCleanupLevel: config.artifactCleanupLevel,
           );
           createdTemporaryEffect = true;
         }
-        final allowed = await _ensureModelPermission(effective);
-        if (!allowed) {
-          return;
-        }
-
         if (effect is pe.FastdvdnetDenoiseEnhancementEffect) {
           final config = await _showDenoiseConfigDialog();
           if (config == null) return;
@@ -759,16 +1020,75 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
           createdTemporaryEffect = true;
         }
 
+        final allowed = await _ensureModelPermission(effective);
+        if (!allowed) {
+          return;
+        }
+
         if (effect is pe.RelightEffect) {
-          final config = await _showRelightConfigDialog();
-          if (config == null) return;
-          effective = _service.createRelightEffect(
-            fcnModelPathOrUrl: widget.initConfigs.fcnSegmentationModelPathEffective,
-            strength: config.strength,
-            maskGamma: config.maskGamma,
-            maskBlurRadius: config.maskBlurRadius,
-            enableArtifactPostprocess: config.enableArtifactPostprocess,
-          );
+          if (effect.mode == pe.RelightFeatureMode.quick) {
+            final config = await _showRelightQuickConfigDialog();
+            if (config == null) return;
+            effective = _service.createRelightEffect(
+              mode: pe.RelightFeatureMode.quick,
+              fcnModelPathOrUrl: widget.initConfigs.fcnSegmentationModelPathEffective,
+              fcnInputSize: widget.initConfigs.relightSegmentationInputSize,
+              strength: config.strength,
+              maskGamma: 1.0,
+              maskBlurRadius: 1.5,
+              usePersonMaskOnly: true,
+              personClassId: widget.initConfigs.relightPersonClassId,
+              useLuminanceToneMapping: true,
+              shadowThreshold: widget.initConfigs.relightShadowThreshold,
+              highlightThreshold: widget.initConfigs.relightHighlightThreshold,
+              highlightProtection: widget.initConfigs.relightHighlightProtection,
+              correctionSmoothingRadius: widget.initConfigs.relightCorrectionSmoothingRadius,
+              lightBalanceModelPathOrUrl: null,
+              enableLightBalance: false,
+            );
+          } else if (effect.mode == pe.RelightFeatureMode.lightBalance) {
+            final config = await _showRelightLightBalanceDialog();
+            if (config == null) return;
+            effective = _service.createRelightEffect(
+              mode: pe.RelightFeatureMode.lightBalance,
+              fcnModelPathOrUrl: widget.initConfigs.fcnSegmentationModelPathEffective,
+              fcnInputSize: widget.initConfigs.relightSegmentationInputSize,
+              strength: (widget.initConfigs.relightStrength * 0.45).clamp(0.05, 0.4),
+              maskGamma: widget.initConfigs.relightMaskGamma,
+              maskBlurRadius: widget.initConfigs.relightMaskBlurRadius,
+              usePersonMaskOnly: true,
+              personClassId: widget.initConfigs.relightPersonClassId,
+              useLuminanceToneMapping: true,
+              shadowThreshold: widget.initConfigs.relightShadowThreshold,
+              highlightThreshold: widget.initConfigs.relightHighlightThreshold,
+              highlightProtection: widget.initConfigs.relightHighlightProtection,
+              correctionSmoothingRadius: widget.initConfigs.relightCorrectionSmoothingRadius,
+              lightBalanceModelPathOrUrl: widget.initConfigs.relightLightBalanceModelPathEffective,
+              enableLightBalance: true,
+              lightBalanceStrength: config.strength,
+              lightBalanceShadowOnly: config.shadowOnly,
+            );
+          } else {
+            final config = await _showRelightConfigDialog();
+            if (config == null) return;
+            effective = _service.createRelightEffect(
+              mode: pe.RelightFeatureMode.pro,
+              fcnModelPathOrUrl: widget.initConfigs.fcnSegmentationModelPathEffective,
+              fcnInputSize: widget.initConfigs.relightSegmentationInputSize,
+              strength: config.strength,
+              maskGamma: config.maskGamma,
+              maskBlurRadius: config.maskBlurRadius,
+              usePersonMaskOnly: config.usePersonMaskOnly,
+              personClassId: widget.initConfigs.relightPersonClassId,
+              useLuminanceToneMapping: config.useLuminanceToneMapping,
+              shadowThreshold: config.shadowThreshold,
+              highlightThreshold: config.highlightThreshold,
+              highlightProtection: config.highlightProtection,
+              correctionSmoothingRadius: widget.initConfigs.relightCorrectionSmoothingRadius,
+              lightBalanceModelPathOrUrl: widget.initConfigs.relightLightBalanceModelPathEffective,
+              enableLightBalance: false,
+            );
+          }
           createdTemporaryEffect = true;
         }
 
@@ -879,10 +1199,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
       color: Colors.black,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final displaySize = fitSizeWithinBounds(
-            _sourceImageSize,
-            Size(constraints.maxWidth, constraints.maxHeight),
-          );
+          final displaySize = fitSizeWithinBounds(_sourceImageSize, Size(constraints.maxWidth, constraints.maxHeight));
           final cacheWidth = (displaySize.width * MediaQuery.devicePixelRatioOf(context)).round();
           final cacheHeight = (displaySize.height * MediaQuery.devicePixelRatioOf(context)).round();
           return Center(
@@ -891,12 +1208,7 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
               height: displaySize.height,
               child: _currentBytes.isEmpty
                   ? const SizedBox.shrink()
-                  : Image.memory(
-                      _currentBytes,
-                      fit: BoxFit.cover,
-                      cacheWidth: cacheWidth,
-                      cacheHeight: cacheHeight,
-                    ),
+                  : Image.memory(_currentBytes, fit: BoxFit.cover, cacheWidth: cacheWidth, cacheHeight: cacheHeight),
             ),
           );
         },
@@ -942,6 +1254,9 @@ class _SuperResolutionConfigResult {
     required this.maxInputSide,
     required this.fixedInputSize,
     required this.enableArtifactPostprocess,
+    required this.strength,
+    required this.postSmoothStrength,
+    required this.artifactCleanupLevel,
   });
 
   final String modelPathOrUrl;
@@ -949,28 +1264,37 @@ class _SuperResolutionConfigResult {
   final int maxInputSide;
   final int? fixedInputSize;
   final bool enableArtifactPostprocess;
+  final double strength;
+  final double postSmoothStrength;
+  final pe.SrArtifactCleanupLevel artifactCleanupLevel;
 }
 
 class _SrModelOption {
-  const _SrModelOption({
-    required this.label,
-    required this.modelPathOrUrl,
-  });
+  const _SrModelOption({required this.label, required this.modelPathOrUrl});
 
   final String label;
   final String modelPathOrUrl;
 }
 
 class _DenoiseConfigResult {
-  const _DenoiseConfigResult({
-    required this.sigma,
-    required this.modelSize,
-    required this.enableArtifactPostprocess,
-  });
+  const _DenoiseConfigResult({required this.sigma, required this.modelSize, required this.enableArtifactPostprocess});
 
   final double sigma;
   final int modelSize;
   final bool enableArtifactPostprocess;
+}
+
+class _RelightQuickConfigResult {
+  const _RelightQuickConfigResult({required this.strength});
+
+  final double strength;
+}
+
+class _RelightLightBalanceConfigResult {
+  const _RelightLightBalanceConfigResult({required this.strength, required this.shadowOnly});
+
+  final double strength;
+  final bool shadowOnly;
 }
 
 enum _RelightPreset {
@@ -997,13 +1321,26 @@ class _RelightConfigResult {
     required this.strength,
     required this.maskGamma,
     required this.maskBlurRadius,
-    required this.enableArtifactPostprocess,
+    required this.usePersonMaskOnly,
+    required this.useLuminanceToneMapping,
+    required this.shadowThreshold,
+    required this.highlightThreshold,
+    required this.highlightProtection,
+    required this.enableLightBalance,
+    required this.lightBalanceStrength,
+    required this.lightBalanceShadowOnly,
   });
 
   final _RelightPreset preset;
   final double strength;
   final double maskGamma;
   final double maskBlurRadius;
-  final bool enableArtifactPostprocess;
+  final bool usePersonMaskOnly;
+  final bool useLuminanceToneMapping;
+  final double shadowThreshold;
+  final double highlightThreshold;
+  final double highlightProtection;
+  final bool enableLightBalance;
+  final double lightBalanceStrength;
+  final bool lightBalanceShadowOnly;
 }
-

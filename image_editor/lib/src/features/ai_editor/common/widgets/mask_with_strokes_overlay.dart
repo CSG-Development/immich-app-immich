@@ -66,18 +66,28 @@ class _MaskWithStrokesOverlayState extends State<MaskWithStrokesOverlay> {
       ..color = Colors.red.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
-    // Keep traversal in display space (the pre-refactor behavior) because
-    // masks can be much larger than the viewport and iterating mask pixels
-    // directly can cause noticeable brush lag.
+    // Keep traversal in display space because masks can be much larger than
+    // the viewport. Draw contiguous spans per row instead of one rect per
+    // pixel to avoid replaying an extremely large display list on each frame.
     final step = (w * h) > 500000 ? 2.0 : 1.0;
     for (var sy = 0.0; sy < h; sy += step) {
+      final my = (sy * mask.height / h).round().clamp(0, mask.height - 1);
+      var runStartX = -1.0;
       for (var sx = 0.0; sx < w; sx += step) {
         final mx = (sx * mask.width / w).round().clamp(0, mask.width - 1);
-        final my = (sy * mask.height / h).round().clamp(0, mask.height - 1);
         final p = mask.getPixel(mx, my);
-        if (p.r > 0 || p.g > 0 || p.b > 0) {
-          canvas.drawRect(Rect.fromLTWH(sx, sy, step, step), redPaint);
+        final isMasked = p.r > 0 || p.g > 0 || p.b > 0;
+        if (isMasked) {
+          runStartX = runStartX < 0 ? sx : runStartX;
+          continue;
         }
+        if (runStartX >= 0) {
+          canvas.drawRect(Rect.fromLTWH(runStartX, sy, sx - runStartX, step), redPaint);
+          runStartX = -1.0;
+        }
+      }
+      if (runStartX >= 0) {
+        canvas.drawRect(Rect.fromLTWH(runStartX, sy, w - runStartX, step), redPaint);
       }
     }
 
