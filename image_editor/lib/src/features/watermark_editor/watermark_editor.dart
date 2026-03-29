@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,10 @@ enum WatermarkMode { text, logo, both }
 
 enum WatermarkPosition { topLeft, topRight, bottomLeft, bottomRight, center, patternGrid }
 
-/// Watermark UI that previews and updates a live widget layer.
+/// Watermark UI with a local preview; the main editor gets a [WidgetLayer] only
+/// on **Apply**, matching the official sticker flow (`setLayer` → one shot)
+/// rather than mutating the layer on every keystroke (which breaks history /
+/// background capture). See [pro_image_editor examples](https://github.com/hm21/pro_image_editor/tree/stable/example/lib).
 class WatermarkEditor extends StatefulWidget {
   const WatermarkEditor._({
     super.key,
@@ -61,6 +65,7 @@ class WatermarkEditor extends StatefulWidget {
 class _WatermarkEditorState extends State<WatermarkEditor> {
   static const String _watermarkGroupId = 'custom-watermark-layer';
   final _textController = TextEditingController();
+  final _watermarkFocus = FocusNode();
   static const List<int> _colorPresets = <int>[0xFFFFFF, 0x000000, 0xFACC15, 0x22C55E, 0x38BDF8, 0xA78BFA, 0xEF4444];
 
   WatermarkMode _mode = WatermarkMode.text;
@@ -74,15 +79,22 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
   WidgetLayer? _initialLayer;
 
+  void _onWatermarkTextControllerChanged() {
+    final v = _textController.text;
+    if (v == _watermarkText) return;
+    setState(() => _watermarkText = v);
+  }
+
   @override
   void initState() {
     super.initState();
+    _textController.addListener(_onWatermarkTextControllerChanged);
     _textController.text = _watermarkText;
     if (kIsWeb && _mode != WatermarkMode.text) {
       _mode = WatermarkMode.text;
     }
-    // Delay layer mutations until after the first frame to avoid
-    // triggering editor setState while this route is still building.
+    // Remove any existing watermark from the main stack so the user edits in
+    // this page's preview only; we add one fresh layer on Apply (sticker-style).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final existing = _findCurrentWatermarkLayer();
@@ -90,21 +102,47 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
         _initialLayer = existing;
         widget.editor?.removeLayer(existing, blockCaptureScreenshot: true);
       }
-      _rebuildLayer();
     });
   }
 
   @override
   void dispose() {
+    _textController.removeListener(_onWatermarkTextControllerChanged);
+    _watermarkFocus.dispose();
     _textController.dispose();
     super.dispose();
   }
 
-  Size _fitImageRect(Size bodySize) {
-    return fitSizeWithinBounds(widget.mainImageSize, bodySize);
+  void _unfocusWatermarkField() {
+    _watermarkFocus.unfocus();
+  }
+
+  /// Axis-aligned bounds of [w]×[h] after rotation by [angleDegrees].
+  static Size _rotatedAabbSize(double w, double h, double angleDegrees) {
+    if (w <= 0 || h <= 0) return Size.zero;
+    final r = angleDegrees * math.pi / 180.0;
+    final c = math.cos(r).abs();
+    final s = math.sin(r).abs();
+    return Size(w * c + h * s, w * s + h * c);
+  }
+
+  /// Prefer live sizes from the main editor so layer placement matches the
+  /// canvas **after** IME/keyboard layout (stale [mainBodySize] from route
+  /// open misaligns watermark when Apply unfocuses first).
+  Size _liveBodySize(ProImageEditorState editor) {
+    final s = editor.sizesManager.bodySize;
+    if (s.width > 0 && s.height > 0) return s;
+    return widget.mainBodySize;
+  }
+
+  Size _liveImageSize(ProImageEditorState editor) {
+    final s = editor.sizesManager.decodedImageSize;
+    if (s.width > 0 && s.height > 0) return s;
+    return widget.mainImageSize;
   }
 
   Future<void> _pickLogo() async {
+    _unfocusWatermarkField();
     if (kIsWeb) return;
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
@@ -118,14 +156,13 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     setState(() {
       _watermarkLogoBytes = Uint8List.fromList(bytes);
     });
-    _rebuildLayer();
   }
 
   void _removeLogo() {
+    _unfocusWatermarkField();
     setState(() {
       _watermarkLogoBytes = null;
     });
-    _rebuildLayer();
   }
 
   WidgetLayer? _findCurrentWatermarkLayer() {
@@ -145,7 +182,58 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     return hasText || hasLogo;
   }
 
-  Widget _buildWatermarkContentForSize(Size canvasSize) {
+  /// Identity for [ValueKey] so the editor layer subtree is not element-reused
+  /// with stale [Text] painting when only the string (or other visuals) change.
+  String get _watermarkVisualIdentity {
+    final logo = _watermarkLogoBytes;
+    final logoTag = logo == null ? '0' : '${logo.length}_${logo.hashCode}';
+    return 'wm|$_watermarkText|$_mode|$_position|'
+        '${_opacity.toStringAsFixed(4)}|${_sizeFactor.toStringAsFixed(4)}|'
+        '${_angleDegrees.toStringAsFixed(2)}|$_textColorRgb|$logoTag';
+  }
+
+  TextStyle _watermarkTextStyle(double textFont) {
+    return TextStyle(
+      color: Color(0xFF000000 | _textColorRgb),
+      fontWeight: FontWeight.w600,
+      fontSize: textFont,
+      height: 1,
+    );
+  }
+
+  /// Unrotated width/height of the watermark tile (for pattern grid spacing).
+  Size _intrinsicTileSize(Size canvasSize, TextScaler textScaler) {
+    final hasText = _mode != WatermarkMode.logo && _watermarkText.trim().isNotEmpty;
+    final hasLogo = _mode != WatermarkMode.text && _watermarkLogoBytes != null;
+    if (!hasText && !hasLogo) return Size.zero;
+
+    final longSide = canvasSize.longestSide;
+    final textFont = longSide * (_mode == WatermarkMode.both ? 0.026 : 0.032) * _sizeFactor;
+    final logoBox = longSide * (_mode == WatermarkMode.both ? 0.045 : 0.06) * _sizeFactor;
+    final gap = longSide * 0.012 * _sizeFactor;
+
+    if (_mode == WatermarkMode.text || !hasLogo) {
+      final tp = TextPainter(
+        text: TextSpan(text: _watermarkText, style: _watermarkTextStyle(textFont)),
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+      )..layout();
+      return Size(tp.width, tp.height);
+    }
+    if (_mode == WatermarkMode.logo || !hasText) {
+      return Size(logoBox, logoBox);
+    }
+    final tp = TextPainter(
+      text: TextSpan(text: _watermarkText, style: _watermarkTextStyle(textFont)),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+    )..layout();
+    final rowW = logoBox + gap + tp.width;
+    final rowH = math.max(logoBox, tp.height);
+    return Size(rowW, rowH);
+  }
+
+  Widget _buildWatermarkContentForSize(Size canvasSize, {TextScaler textScaler = TextScaler.noScaling}) {
     final hasText = _mode != WatermarkMode.logo && _watermarkText.trim().isNotEmpty;
     final hasLogo = _mode != WatermarkMode.text && _watermarkLogoBytes != null;
     if (!hasText && !hasLogo) return const SizedBox.shrink();
@@ -154,17 +242,14 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     final textFont = longSide * (_mode == WatermarkMode.both ? 0.026 : 0.032) * _sizeFactor;
     final logoBox = longSide * (_mode == WatermarkMode.both ? 0.045 : 0.06) * _sizeFactor;
     final gap = longSide * 0.012 * _sizeFactor;
+    final edgeInset = longSide * 0.012;
 
     Widget item;
     if (_mode == WatermarkMode.text || !hasLogo) {
       item = Text(
         _watermarkText,
-        style: TextStyle(
-          color: Color(0xFF000000 | _textColorRgb),
-          fontWeight: FontWeight.w600,
-          fontSize: textFont,
-          height: 1,
-        ),
+        key: ValueKey<String>(_watermarkText),
+        style: _watermarkTextStyle(textFont),
       );
     } else if (_mode == WatermarkMode.logo || !hasText) {
       item = SizedBox(
@@ -184,12 +269,8 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
           SizedBox(width: gap),
           Text(
             _watermarkText,
-            style: TextStyle(
-              color: Color(0xFF000000 | _textColorRgb),
-              fontWeight: FontWeight.w600,
-              fontSize: textFont,
-              height: 1,
-            ),
+            key: ValueKey<String>(_watermarkText),
+            style: _watermarkTextStyle(textFont),
           ),
         ],
       );
@@ -201,8 +282,17 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     );
 
     if (_position == WatermarkPosition.patternGrid) {
-      final stepX = canvasSize.width * (_mode == WatermarkMode.both ? 0.28 : 0.22);
-      final stepY = canvasSize.height * (_mode == WatermarkMode.both ? 0.20 : 0.16);
+      final intrinsic = _intrinsicTileSize(canvasSize, textScaler);
+      final aabb = _rotatedAabbSize(intrinsic.width, intrinsic.height, _angleDegrees);
+      final minGap = longSide * 0.014 * _sizeFactor;
+      final stepX = math.max(
+        canvasSize.width * (_mode == WatermarkMode.both ? 0.28 : 0.22),
+        aabb.width + minGap,
+      );
+      final stepY = math.max(
+        canvasSize.height * (_mode == WatermarkMode.both ? 0.20 : 0.16),
+        aabb.height + minGap,
+      );
       final cellsX = (canvasSize.width / stepX).ceil() + 2;
       final cellsY = (canvasSize.height / stepY).ceil() + 2;
       return SizedBox(
@@ -229,7 +319,10 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     return SizedBox(
       width: canvasSize.width,
       height: canvasSize.height,
-      child: Align(alignment: alignment, child: item),
+      child: Padding(
+        padding: EdgeInsets.all(edgeInset),
+        child: Align(alignment: alignment, child: item),
+      ),
     );
   }
 
@@ -240,30 +333,49 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
     }
   }
 
+  /// Commits the watermark to the main editor (call from **Apply** only).
+  ///
+  /// Matches the sticker example: one [WidgetLayer] add after the user
+  /// finishes, instead of updating the stack on every control change.
   void _rebuildLayer() {
     final editor = widget.editor;
-    _removeWorkingLayer();
-    if (editor == null || !_hasRenderableContent) return;
+    if (editor == null) return;
 
-    final fit = _fitImageRect(widget.mainBodySize);
+    if (!_hasRenderableContent) {
+      _removeWorkingLayer();
+      return;
+    }
+
+    final bodySize = _liveBodySize(editor);
+    final imageSize = _liveImageSize(editor);
+    final fit = fitSizeWithinBounds(imageSize, bodySize);
     final initWidth = editor.configs.stickerEditor.initWidth;
     final layerCanvas = Size(initWidth, initWidth * (fit.height / fit.width));
-    final topLeft = Offset((widget.mainBodySize.width - fit.width) / 2, (widget.mainBodySize.height - fit.height) / 2);
+    final topLeft = Offset((bodySize.width - fit.width) / 2, (bodySize.height - fit.height) / 2);
     final fractional = editor.configs.stickerEditor.layerFractionalOffset;
     final desiredOffsetInBody = Offset(topLeft.dx - fractional.dx * fit.width, topLeft.dy - fractional.dy * fit.height);
     final offset = Offset(
-      desiredOffsetInBody.dx - widget.mainBodySize.width / 2,
-      desiredOffsetInBody.dy - widget.mainBodySize.height / 2,
+      desiredOffsetInBody.dx - bodySize.width / 2,
+      desiredOffsetInBody.dy - bodySize.height / 2,
     );
     final scale = fit.width / initWidth;
+    final textScaler = mounted ? MediaQuery.textScalerOf(context) : TextScaler.noScaling;
+
+    final painted = KeyedSubtree(
+      key: ValueKey<String>(_watermarkVisualIdentity),
+      child: _buildWatermarkContentForSize(layerCanvas, textScaler: textScaler),
+    );
+
     final layer = WidgetLayer(
-      widget: _buildWatermarkContentForSize(layerCanvas),
+      widget: painted,
       offset: offset,
       scale: scale,
       interaction: LayerInteraction.fromDefaultValue(false),
       groupId: _watermarkGroupId,
       meta: const {'type': 'watermark'},
     );
+
+    _removeWorkingLayer();
     editor.addLayer(
       layer,
       blockSelectLayer: true,
@@ -278,6 +390,25 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   Future<void> _handleApply() async {
+    // 1) Commit IME into the controller.
+    FocusScope.of(context).unfocus();
+    // 2) Let focus loss + keyboard inset animate so [sizesManager.bodySize]
+    // matches the main canvas before we compute layer offset/scale.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    // 3) Sync text, rebuild layer with live editor geometry, then save.
+    _watermarkText = _textController.text;
+    if (mounted) setState(() {});
+    _rebuildLayer();
+
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
     await _notifyDone();
     if (mounted && Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
@@ -285,6 +416,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   void _handleCancel() {
+    _unfocusWatermarkField();
     _removeWorkingLayer();
     final editor = widget.editor;
     if (editor != null && _initialLayer != null) {
@@ -311,6 +443,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
           if (!didPop) _handleCancel();
         },
         child: Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: widget.theme.scaffoldBackgroundColor,
           appBar: EditorActionAppBar(
             theme: widget.theme,
@@ -324,41 +457,55 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
             showUndoRedo: false,
             confirmTooltip: 'Apply',
           ),
-          body: LayoutBuilder(
-            builder: (context, _) {
-              final fitted = _fitImageRect(widget.mainBodySize);
-              final previewBaseWidth = widget.editor?.configs.stickerEditor.initWidth ?? 100;
-              final previewCanvas = Size(previewBaseWidth, previewBaseWidth * (fitted.height / fitted.width));
+          body: Column(
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxPreview = Size(constraints.maxWidth, constraints.maxHeight);
+                    final displayFit = fitSizeWithinBounds(widget.mainImageSize, maxPreview);
+                    final previewBaseWidth = widget.editor?.configs.stickerEditor.initWidth ?? 100;
+                    final previewCanvas = Size(
+                      previewBaseWidth,
+                      previewBaseWidth * (displayFit.height / displayFit.width),
+                    );
+                    final textScaler = MediaQuery.textScalerOf(context);
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: Center(
+                    return Center(
                       child: SizedBox(
-                        width: fitted.width,
-                        height: fitted.height,
+                        width: displayFit.width,
+                        height: displayFit.height,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.memory(widget.imageBytes, fit: BoxFit.fill),
-                            IgnorePointer(
-                              child: SizedBox(
-                                width: fitted.width,
+                            Positioned.fill(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _unfocusWatermarkField,
+                                child: Image.memory(widget.imageBytes, fit: BoxFit.contain),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: IgnorePointer(
                                 child: FittedBox(
                                   fit: BoxFit.contain,
-                                  child: _buildWatermarkContentForSize(previewCanvas),
+                                  alignment: Alignment.center,
+                                  child: _buildWatermarkContentForSize(
+                                    previewCanvas,
+                                    textScaler: textScaler,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                  _buildControls(),
-                ],
-              );
-            },
+                    );
+                  },
+                ),
+              ),
+              _buildControls(),
+            ],
           ),
         ),
       ),
@@ -366,133 +513,135 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   Widget _buildControls() {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return SafeArea(
       top: false,
       child: Container(
         color: Colors.black,
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildSelectorButtons(),
-            const SizedBox(height: 10),
-            _buildColorPicker(),
-            const SizedBox(height: 10),
-            if (_mode == WatermarkMode.text || _mode == WatermarkMode.both)
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(12, 10, 12, 12 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildSelectorButtons(),
+              const SizedBox(height: 10),
+              _buildColorPicker(),
+              const SizedBox(height: 10),
+              if (_mode == WatermarkMode.text || _mode == WatermarkMode.both)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        focusNode: _watermarkFocus,
+                        decoration: const InputDecoration(
+                          labelText: 'Watermark text',
+                          labelStyle: TextStyle(color: Colors.white),
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onTapOutside: (_) => _unfocusWatermarkField(),
+                        onEditingComplete: _unfocusWatermarkField,
+                      ),
+                    ),
+                  ],
+                ),
+              if (_mode == WatermarkMode.logo || _mode == WatermarkMode.both)
+                Row(
+                  children: [
+                    if (!kIsWeb)
+                      IconButton(
+                        tooltip: 'Pick logo',
+                        onPressed: _pickLogo,
+                        icon: const Icon(Icons.image, color: Colors.white),
+                      ),
+                    if (_watermarkLogoBytes != null)
+                      IconButton(
+                        tooltip: 'Remove logo',
+                        onPressed: _removeLogo,
+                        icon: const Icon(Icons.delete_outline, color: Colors.white),
+                      ),
+                  ],
+                ),
+              const SizedBox(height: 10),
               Row(
                 children: [
+                  const SizedBox(
+                    width: 62,
+                    child: Text('Opacity', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  ),
                   Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      decoration: const InputDecoration(
-                        labelText: 'Watermark text',
-                        labelStyle: TextStyle(color: Colors.white),
-                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                      ),
-                      style: const TextStyle(color: Colors.white),
+                    child: Slider(
+                      value: _opacity,
+                      min: 0,
+                      max: 1,
+                      onChangeStart: (_) => _unfocusWatermarkField(),
                       onChanged: (v) {
-                        setState(() => _watermarkText = v);
-                        _rebuildLayer();
+                        setState(() => _opacity = v);
                       },
                     ),
                   ),
+                  SizedBox(
+                    width: 60,
+                    child: Text(
+                      '${(_opacity * 100).round()}%',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
                 ],
               ),
-            if (_mode == WatermarkMode.logo || _mode == WatermarkMode.both)
               Row(
                 children: [
-                  if (!kIsWeb)
-                    IconButton(
-                      tooltip: 'Pick logo',
-                      onPressed: _pickLogo,
-                      icon: const Icon(Icons.image, color: Colors.white),
+                  const SizedBox(
+                    width: 62,
+                    child: Text('Angle', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _angleDegrees,
+                      min: -180,
+                      max: 180,
+                      onChangeStart: (_) => _unfocusWatermarkField(),
+                      onChanged: (v) {
+                        setState(() => _angleDegrees = v);
+                      },
                     ),
-                  if (_watermarkLogoBytes != null)
-                    IconButton(
-                      tooltip: 'Remove logo',
-                      onPressed: _removeLogo,
-                      icon: const Icon(Icons.delete_outline, color: Colors.white),
-                    ),
+                  ),
+                  SizedBox(
+                    width: 60,
+                    child: Text('${_angleDegrees.round()}°', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  ),
                 ],
               ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const SizedBox(
-                  width: 62,
-                  child: Text('Opacity', style: TextStyle(color: Colors.white, fontSize: 12)),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _opacity,
-                    min: 0,
-                    max: 1,
-                    onChanged: (v) {
-                      setState(() => _opacity = v);
-                      _rebuildLayer();
-                    },
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 62,
+                    child: Text('Size', style: TextStyle(color: Colors.white, fontSize: 12)),
                   ),
-                ),
-                SizedBox(
-                  width: 60,
-                  child: Text(
-                    '${(_opacity * 100).round()}%',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  Expanded(
+                    child: Slider(
+                      value: _sizeFactor,
+                      min: 0.5,
+                      max: 2.0,
+                      onChangeStart: (_) => _unfocusWatermarkField(),
+                      onChanged: (v) {
+                        setState(() => _sizeFactor = v);
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                const SizedBox(
-                  width: 62,
-                  child: Text('Angle', style: TextStyle(color: Colors.white, fontSize: 12)),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _angleDegrees,
-                    min: -180,
-                    max: 180,
-                    onChanged: (v) {
-                      setState(() => _angleDegrees = v);
-                      _rebuildLayer();
-                    },
+                  SizedBox(
+                    width: 60,
+                    child: Text(
+                      '${(_sizeFactor * 100).round()}%',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: 60,
-                  child: Text('${_angleDegrees.round()}°', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                const SizedBox(
-                  width: 62,
-                  child: Text('Size', style: TextStyle(color: Colors.white, fontSize: 12)),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _sizeFactor,
-                    min: 0.5,
-                    max: 2.0,
-                    onChanged: (v) {
-                      setState(() => _sizeFactor = v);
-                      _rebuildLayer();
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: 60,
-                  child: Text(
-                    '${(_sizeFactor * 100).round()}%',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -527,6 +676,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   Future<void> _openPositionPickerModal() async {
+    _unfocusWatermarkField();
     final selected = await showModalBottomSheet<WatermarkPosition>(
       context: context,
       backgroundColor: const Color(0xFF1F1F1F),
@@ -562,10 +712,10 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
     if (!mounted || selected == null || selected == _position) return;
     setState(() => _position = selected);
-    _rebuildLayer();
   }
 
   Future<void> _openModePickerModal() async {
+    _unfocusWatermarkField();
     final selected = await showModalBottomSheet<WatermarkMode>(
       context: context,
       backgroundColor: const Color(0xFF1F1F1F),
@@ -614,7 +764,6 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
     if (!mounted || selected == null || selected == _mode) return;
     setState(() => _mode = selected);
-    _rebuildLayer();
   }
 
   Widget _buildSelectorButtons() {
@@ -652,8 +801,8 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                 padding: const EdgeInsets.only(right: 10),
                 child: GestureDetector(
                   onTap: () {
+                    _unfocusWatermarkField();
                     setState(() => _textColorRgb = color);
-                    _rebuildLayer();
                   },
                   child: Container(
                     width: 24,

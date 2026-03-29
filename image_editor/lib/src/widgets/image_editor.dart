@@ -37,12 +37,16 @@ class _ImageEditorState extends State<ImageEditor> {
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
         imageGeneration: const ImageGenerationConfigs(
-          // Always generate from the composed scene instead of returning the
-          // original input bytes, and disable background generation so that
-          // the final capture always reflects the latest background image
-          // (including programmatic updates like baked vignette), even on
-          // web release builds.
+          // Never short-circuit export with raw input bytes.
           enableUseOriginalBytes: false,
+          // Background generation off: no per-edit isolate/worker capture. Final
+          // export still composites from the live tree via captureFinalScreenshot
+          // (see pro_image_editor). That matches the earlier Immich setup where
+          // programmatic background updates (e.g. baked vignette) and web must
+          // not rely on stale pre-captured frames.
+          //
+          // Watermark/history alignment is handled in WatermarkEditor (single
+          // commit on Apply + blockCaptureScreenshot), not by turning this on.
           enableBackgroundGeneration: false,
         ),
         mainEditor: MainEditorConfigs(
