@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/common/utils/platform_tooltip.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
@@ -79,6 +80,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   double _angleDegrees = 0.0;
 
   WidgetLayer? _initialLayer;
+  bool _isApplying = false;
 
   void _onWatermarkTextControllerChanged() {
     final v = _textController.text;
@@ -391,32 +393,39 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   }
 
   Future<void> _handleApply() async {
-    // 1) Commit IME into the controller.
-    FocusScope.of(context).unfocus();
-    // 2) Let focus loss + keyboard inset animate so [sizesManager.bodySize]
-    // matches the main canvas before we compute layer offset/scale.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
+    if (_isApplying) return;
 
-    // 3) Sync text, rebuild layer with live editor geometry, then save.
-    _watermarkText = _textController.text;
-    if (mounted) setState(() {});
-    _rebuildLayer();
+    await runBusyUiFlow(
+      state: this,
+      setBusy: () => setState(() => _isApplying = true),
+      clearBusy: () => setState(() => _isApplying = false),
+      run: () async {
+        // 1) Commit IME into the controller.
+        FocusScope.of(context).unfocus();
+        // 2) Let focus loss + keyboard inset animate so [sizesManager.bodySize]
+        // matches the main canvas before we compute layer offset/scale.
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
 
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
+        // 3) Sync text, rebuild layer with live editor geometry, then save.
+        _watermarkText = _textController.text;
+        if (mounted) setState(() {});
+        _rebuildLayer();
 
-    await _notifyDone();
-    if (mounted && Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+
+        await completeAndPop(state: this, context: context, onComplete: _notifyDone);
+      },
+    );
   }
 
   void _handleCancel() {
+    if (_isApplying) return;
     _unfocusWatermarkField();
     _removeWorkingLayer();
     final editor = widget.editor;
@@ -455,57 +464,71 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
             onConfirm: _handleApply,
             canUndo: false,
             canRedo: false,
+            isBusy: _isApplying,
             showUndoRedo: false,
             confirmTooltip: 'Apply',
           ),
           body: Column(
             children: [
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final maxPreview = Size(constraints.maxWidth, constraints.maxHeight);
-                    final displayFit = fitSizeWithinBounds(widget.mainImageSize, maxPreview);
-                    final previewBaseWidth = widget.editor?.configs.stickerEditor.initWidth ?? 100;
-                    final previewCanvas = Size(
-                      previewBaseWidth,
-                      previewBaseWidth * (displayFit.height / displayFit.width),
-                    );
-                    final textScaler = MediaQuery.textScalerOf(context);
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    IgnorePointer(
+                      ignoring: _isApplying,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxPreview = Size(constraints.maxWidth, constraints.maxHeight);
+                          final displayFit = fitSizeWithinBounds(widget.mainImageSize, maxPreview);
+                          final previewBaseWidth = widget.editor?.configs.stickerEditor.initWidth ?? 100;
+                          final previewCanvas = Size(
+                            previewBaseWidth,
+                            previewBaseWidth * (displayFit.height / displayFit.width),
+                          );
+                          final textScaler = MediaQuery.textScalerOf(context);
 
-                    return Center(
-                      child: SizedBox(
-                        width: displayFit.width,
-                        height: displayFit.height,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Positioned.fill(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _unfocusWatermarkField,
-                                child: Image.memory(widget.imageBytes, fit: BoxFit.contain),
-                              ),
-                            ),
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: FittedBox(
-                                  fit: BoxFit.contain,
-                                  alignment: Alignment.center,
-                                  child: _buildWatermarkContentForSize(
-                                    previewCanvas,
-                                    textScaler: textScaler,
+                          return Center(
+                            child: SizedBox(
+                              width: displayFit.width,
+                              height: displayFit.height,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Positioned.fill(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: _unfocusWatermarkField,
+                                      child: Image.memory(widget.imageBytes, fit: BoxFit.contain),
+                                    ),
                                   ),
-                                ),
+                                  Positioned.fill(
+                                    child: IgnorePointer(
+                                      child: FittedBox(
+                                        fit: BoxFit.contain,
+                                        alignment: Alignment.center,
+                                        child: _buildWatermarkContentForSize(
+                                          previewCanvas,
+                                          textScaler: textScaler,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                    if (_isApplying)
+                      Container(
+                        color: Colors.black26,
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                  ],
                 ),
               ),
-              _buildControls(),
+              IgnorePointer(ignoring: _isApplying, child: _buildControls()),
             ],
           ),
         ),

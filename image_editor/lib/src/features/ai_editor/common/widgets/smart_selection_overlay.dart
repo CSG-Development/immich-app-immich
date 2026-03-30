@@ -66,6 +66,7 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
   static const double _minTargetSizeDisplayPx = 12.0;
   double _brushRadius = 24.0;
   bool _isDetecting = false;
+  bool _isApplying = false;
 
   SmartSelectionTool _selectedTool = SmartSelectionTool.brush;
   SmartSelectionBottomAction _activeBottomAction =
@@ -84,6 +85,7 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
   bool get _canRedo =>
       _baseMaskHistoryIndex < _baseMaskHistory.length - 1 ||
       _strokeHistory.canRedo;
+  bool get _isBusy => _isDetecting || _isApplying;
 
   void _pushBaseMaskHistory(img.Image? mask) {
     if (_baseMaskHistoryIndex < _baseMaskHistory.length - 1) {
@@ -123,6 +125,11 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
   }
 
   Future<void> _apply() async {
+    if (_isBusy) return;
+    setState(() => _isApplying = true);
+    await WidgetsBinding.instance.endOfFrame;
+
+    try {
     Map<String, Object>? baseMask;
     final initialMask = _initialMask;
     if (initialMask != null) {
@@ -173,6 +180,11 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
       }
     }
     await widget.onApplyMask(mask);
+    } finally {
+      if (mounted) {
+        setState(() => _isApplying = false);
+      }
+    }
   }
 
   Offset _clampToDisplay(Offset p, Size size) => Offset(
@@ -577,7 +589,8 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
       appBar: MaskEditorAppBar(
         onCancel: widget.onCancel,
         onApply: _apply,
-        applyEnabled: _initialMask != null || _strokeHistory.strokes.isNotEmpty,
+        isBusy: _isBusy,
+        applyEnabled: !_isBusy && (_initialMask != null || _strokeHistory.strokes.isNotEmpty),
         canUndo: _canUndo,
         canRedo: _canRedo,
         onUndo: _undo,
@@ -635,7 +648,7 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
                                     ),
                                   ),
                                 ),
-                              if (_isDetecting)
+                              if (_isBusy)
                                 const Positioned.fill(
                                   child: ColoredBox(
                                     color: Colors.black38,
@@ -675,19 +688,19 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
                     label: 'Smart',
                     icon: Icons.auto_awesome,
                     isActive: _activeBottomAction == SmartSelectionBottomAction.stars,
-                    onPressed: _isDetecting ? null : _runFullSmartSelection,
+                    onPressed: _isBusy ? null : _runFullSmartSelection,
                   ),
                   _buildBottomActionButton(
                     label: 'Target',
                     icon: Icons.gesture,
                     isActive: _activeBottomAction == SmartSelectionBottomAction.target,
-                    onPressed: _isDetecting ? null : _openShapePicker,
+                    onPressed: _isBusy ? null : _openShapePicker,
                   ),
                   _buildBottomActionButton(
                     label: 'Brush',
                     icon: Icons.brush,
                     isActive: _activeBottomAction == SmartSelectionBottomAction.brush,
-                    onPressed: _isDetecting
+                    onPressed: _isBusy
                         ? null
                         : () {
                             setState(() {
@@ -701,7 +714,7 @@ class _SmartSelectionOverlayState extends State<SmartSelectionOverlay> {
                     label: 'Eraser',
                     icon: Icons.auto_fix_off,
                     isActive: _activeBottomAction == SmartSelectionBottomAction.eraser,
-                    onPressed: _isDetecting
+                    onPressed: _isBusy
                         ? null
                         : () {
                             setState(() {
