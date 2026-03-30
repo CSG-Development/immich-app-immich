@@ -15,6 +15,8 @@ Future<T?> runWithBusyAndError<T>({
   void Function(Object error, StackTrace stackTrace)? onError,
 }) async {
   setBusy();
+  // Yield one frame so loading UI becomes visible before expensive work starts.
+  await WidgetsBinding.instance.endOfFrame;
   try {
     return await run();
   } catch (error, stackTrace) {
@@ -28,5 +30,42 @@ Future<T?> runWithBusyAndError<T>({
     if (state.mounted) {
       clearBusy();
     }
+  }
+}
+
+/// Runs async work while toggling a busy state and optionally yielding one UI frame first.
+Future<void> runBusyUiFlow({
+  required State state,
+  required VoidCallback setBusy,
+  required VoidCallback clearBusy,
+  required Future<void> Function() run,
+  bool waitFrameBeforeRun = true,
+}) async {
+  setBusy();
+  if (waitFrameBeforeRun) {
+    await WidgetsBinding.instance.endOfFrame;
+  }
+  try {
+    await run();
+  } finally {
+    if (state.mounted) {
+      clearBusy();
+    }
+  }
+}
+
+/// Runs completion callback and pops route with one-frame handoff to avoid flicker.
+Future<void> completeAndPop({
+  required State state,
+  required BuildContext context,
+  required Future<void> Function() onComplete,
+  bool waitFrameBeforePop = true,
+}) async {
+  await onComplete();
+  if (waitFrameBeforePop) {
+    await WidgetsBinding.instance.endOfFrame;
+  }
+  if (state.mounted && Navigator.of(context).canPop()) {
+    Navigator.of(context).pop();
   }
 }

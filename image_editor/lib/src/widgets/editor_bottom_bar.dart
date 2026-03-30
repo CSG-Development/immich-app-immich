@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
-import 'package:image_editor/src/features/ai_editor/ai_editor.dart';
+import 'package:image_editor/src/features/ai_editor/ai_editor_stub.dart'
+    if (dart.library.io) 'package:image_editor/src/features/ai_editor/ai_editor.dart';
 import 'package:image_editor/src/features/vignette_editor/vignette_editor.dart';
 import 'package:image_editor/src/features/watermark_editor/watermark_editor.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
