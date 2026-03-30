@@ -106,8 +106,18 @@ export class StorageRepository {
   async readFile(filepath: string, options?: fs.FileReadOptions<Buffer>): Promise<Buffer> {
     const file = await fs.open(filepath);
     try {
-      const { buffer } = await file.read(options);
-      return buffer;
+      const opts = {
+        ...options,
+        offset: options?.offset ?? undefined,
+        length: options?.length ?? undefined
+      };
+      const { buffer: abv } = await file.read(opts);
+
+// Convert to Uint8Array (bytes) first
+      const uint8 = new Uint8Array(abv.buffer, abv.byteOffset, abv.byteLength);
+
+// Then convert to Node Buffer
+      return Buffer.from(uint8);
     } finally {
       await file.close();
     }

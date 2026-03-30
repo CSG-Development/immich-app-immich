@@ -183,7 +183,7 @@ export interface SystemConfig {
 }
 
 export type MachineLearningConfig = SystemConfig['machineLearning'];
-const tilesUrl = process.env.MAP_TILES_URL ?? 'https://homecloud-map.noveogroup.com';
+const tilesUrl = process.env.MAP_TILES_URL ?? 'https://map-tiles-test.api.mylyve.com';
 
 export const defaults = Object.freeze<SystemConfig>({
   backup: {

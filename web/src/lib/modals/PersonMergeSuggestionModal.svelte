@@ -149,8 +149,22 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button fullWidth shape="round" color="secondary" onclick={() => onClose()}>{$t('no')}</Button>
-      <Button id="merge-confirm-button" fullWidth shape="round" onclick={handleMergePerson}>
+      <Button
+        fullWidth
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        onclick={() => onClose()}>{$t('no')}</Button
+      >
+      <Button
+        id="merge-confirm-button"
+        fullWidth
+        shape="round"
+        size="standard-large"
+        class="font-normal"
+        onclick={handleMergePerson}
+      >
         {$t('yes')}
       </Button>
     </HStack>

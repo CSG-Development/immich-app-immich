@@ -34,12 +34,18 @@ class BackgroundRemovalService {
     this.inputHeight = 256,
     this.imageInputName,
     this.outputName,
+    this.rescaleFactor,
+    this.imageMean,
+    this.imageStd,
   }) : _onnx = BackgroundRemovalOnnx(
           modelPathOrUrl: modelPathOrUrl,
           inputWidth: inputWidth,
           inputHeight: inputHeight,
           imageInputName: imageInputName,
           outputName: outputName,
+          rescaleFactor: rescaleFactor ?? 0.00392156862745098,
+          imageMean: imageMean ?? const [0.5, 0.5, 0.5],
+          imageStd: imageStd ?? const [0.5, 0.5, 0.5],
         );
 
   final String modelPathOrUrl;
@@ -47,6 +53,9 @@ class BackgroundRemovalService {
   final int inputHeight;
   final String? imageInputName;
   final String? outputName;
+  final double? rescaleFactor;
+  final List<double>? imageMean;
+  final List<double>? imageStd;
 
   final BackgroundRemovalOnnx _onnx;
   static final Logger _log = Logger('BackgroundRemovalService');
@@ -172,10 +181,17 @@ class BackgroundRemovalService {
     }
   }
 
-  /// Returns the foreground segmentation mask (people/subject = 255, background = 0)
-  /// resized to the original image dimensions. Used for people-removal pipeline.
+  /// Returns the foreground segmentation mask resized to the original image dimensions.
+  ///
+  /// By default this is a hard binary mask (0/255) to preserve current behavior.
+  /// For smoother cutout edges, set [softMask] to true to keep continuous alpha.
   /// Returns null on error.
-  Future<img.Image?> getSegmentationMask(Uint8List imageBytes) async {
+  Future<img.Image?> getSegmentationMask(
+    Uint8List imageBytes, {
+    double threshold = 0.5,
+    bool softMask = false,
+    int featherRadius = 0,
+  }) async {
     try {
       final decodedResult = await decodeImageInCompute(imageBytes);
       if (decodedResult == null) return null;
@@ -190,27 +206,30 @@ class BackgroundRemovalService {
       final shape = result.shape;
 
       if (shape.length != 4 || shape[1] != 1) return null;
-      final outH = shape[2].toInt();
-      final outW = shape[3].toInt();
-      if (outH <= 0 || outW <= 0) return null;
+      final maskData = await ImageWorker.instance.segmentationMaskFromOutput(
+        outputList: outputBytes,
+        shape: shape,
+        targetWidth: originalWidth,
+        targetHeight: originalHeight,
+        threshold: threshold,
+        softMask: softMask,
+        featherRadius: featherRadius,
+      );
+      if (maskData == null) return null;
+      final width = maskData['width'] as int;
+      final height = maskData['height'] as int;
+      final data = maskData['data'] as Uint8List;
+      if (width != originalWidth || height != originalHeight) return null;
+      if (data.length != width * height) return null;
 
-      final maskSmall = img.Image(width: outW, height: outH);
-      const threshold = 0.5;
-      for (var y = 0; y < outH; y++) {
-        for (var x = 0; x < outW; x++) {
-          final raw = outputBytes[y * outW + x];
-          final v = raw is num ? raw.toDouble().clamp(0.0, 1.0) : 0.0;
-          final byte = v > threshold ? 255 : 0;
-          maskSmall.setPixel(x, y, img.ColorRgb8(byte, byte, byte));
+      final mask = img.Image(width: width, height: height);
+      var idx = 0;
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          final v = data[idx++];
+          mask.setPixel(x, y, img.ColorRgb8(v, v, v));
         }
       }
-
-      final mask = img.copyResize(
-        maskSmall,
-        width: originalWidth,
-        height: originalHeight,
-        interpolation: img.Interpolation.nearest,
-      );
       return mask;
     } catch (e, st) {
       _log.severe('[BG] Exception in getSegmentationMask', e, st);

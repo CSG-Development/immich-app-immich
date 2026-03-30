@@ -68,7 +68,7 @@
   <nav
     id="asset-selection-app-bar"
     class={[
-      'flex h-18 md:h-21.5',
+      'flex h-18 md:h-21.5 relative z-50',
       appBarBorder,
       'md:mx-2 md:my-2 place-items-center md:rounded-lg p-2 max-md:p-0 transition-all',
       tailwindClasses,
@@ -76,7 +76,7 @@
     ]}
   >
     <div
-      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {forceDark
+      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium w-full {forceDark
         ? 'dark'
         : ''}"
     >
@@ -91,7 +91,7 @@
           size="large"
         />
       {/if}
-      {@render leading?.()}
+      <span class="w-full">{@render leading?.()}</span>
     </div>
 
     <div class="w-full">

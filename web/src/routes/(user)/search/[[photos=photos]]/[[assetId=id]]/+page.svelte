@@ -30,6 +30,7 @@
   import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -50,7 +51,7 @@
     type SmartSearchDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiArrowLeft, mdiDotsVertical, mdiPlus, mdiPresentationPlay, mdiSelectAll } from '@mdi/js';
+  import { mdiArrowLeft, mdiDotsVertical, mdiPlus, mdiPresentationPlay, mdiSelectAll, mdiSelectRemove } from '@mdi/js';
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
@@ -143,6 +144,10 @@
 
   const handleSelectAll = () => {
     assetInteraction.selectAssets(searchResultAssets);
+  };
+
+  const handleCancel = () => {
+    cancelMultiselect(assetInteraction);
   };
 
   async function onSearchQueryUpdate() {
@@ -283,6 +288,14 @@
       );
     }
   };
+
+  $effect(() => {
+    if (searchResultAssets.length == assetInteraction.selectedAssets.length) {
+      isSelectingAllAssets.set(true);
+    } else {
+      isSelectingAllAssets.set(false);
+    }
+  });
 </script>
 
 <svelte:window bind:scrollY />
@@ -295,14 +308,13 @@
         assets={assetInteraction.selectedAssets}
         clearSelect={() => cancelMultiselect(assetInteraction)}
       >
-        <CreateSharedLink />
         <IconButton
           shape="round"
           color="secondary"
           variant="ghost"
-          aria-label={$t('select_all')}
-          icon={mdiSelectAll}
-          onclick={handleSelectAll}
+          aria-label={$isSelectingAllAssets ? $t('unselect_all') : $t('select_all')}
+          icon={$isSelectingAllAssets ? mdiSelectRemove : mdiSelectAll}
+          onclick={$isSelectingAllAssets ? handleCancel : handleSelectAll}
         />
         <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
           <AddToAlbum {onAddToAlbum} />

@@ -30,7 +30,7 @@
 </script>
 
 <div
-  class="flex w-60 h-20 place-items-center {suggestedPeople.length > 0
+  class="flex w-80 h-20 place-items-center {suggestedPeople.length > 0
     ? 'rounded-t-xl'
     : 'rounded-xl'} p-2 bg-light dark:bg-immich-dark-gray-card border immich-border"
 >
@@ -41,7 +41,7 @@
       bind:searchedPeopleLocal={suggestedPeople}
       type="input"
       numberPeopleToSearch={5}
-      inputClass="w-full font-bold gap-2 bg-white text-primary"
+      inputClass="w-full font-bold gap-2 bg-white text-primary dark:bg-immich-dark-gray-card"
       bind:showLoadingSpinner={isSearchingPeople}
     />
     <Button class="rounded-3xl w-16.25 h-7 font-normal text-sm" type="submit">{$t('done')}</Button>

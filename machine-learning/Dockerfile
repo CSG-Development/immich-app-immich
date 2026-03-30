@@ -169,9 +169,6 @@ RUN python -m pip install -r immich_ml/search/requirements.txt
 # Store a safe copy of preloaded model files
 COPY cache/ /preload-cache
 
-COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
-RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
-
 ARG BUILD_ID
 ARG BUILD_IMAGE
 ARG BUILD_SOURCE_REF
@@ -188,6 +185,6 @@ ENV IMMICH_SOURCE_COMMIT=${BUILD_SOURCE_COMMIT}
 ENV IMMICH_SOURCE_URL=https://github.com/immich-app/immich/commit/${BUILD_SOURCE_COMMIT}
 
 ENTRYPOINT ["tini", "--"]
-CMD ["/usr/local/bin/entrypoint-wrapper.sh", "python", "-m", "immich_ml"]
+CMD ["python", "-m", "immich_ml"]
 
 HEALTHCHECK CMD python3 healthcheck.py

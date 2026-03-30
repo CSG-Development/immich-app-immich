@@ -3,7 +3,6 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/features/tune_editor/utils/tune_presets.dart';
 
 import 'package:image_editor/src/models/image_editor_config.dart';
-// import 'package:image_editor/src/effects/monochrome_effect.dart';
 import 'package:image_editor/src/utils/tune_adjustment_matrices.dart';
 import 'package:image_editor/src/widgets/editor_bottom_bar.dart';
 
@@ -25,25 +24,6 @@ class _ImageEditorState extends State<ImageEditor> {
   final I18n i18n = const I18n();
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  // Future<void> _handleCustomEffectButton(ProImageEditorState editor) async {
-  //   final currentBytes = await editor.editorImage?.safeByteArray();
-  //   if (currentBytes == null) return;
-
-  //   final monochromeEffect = MonochromeEffect();
-  //   final transformedBytes = await monochromeEffect.apply(currentBytes);
-  //   await editor.updateBackgroundImage(EditorImage(byteArray: transformedBytes));
-  // }
-
-  @override
   Widget build(BuildContext context) {
     return ProImageEditor.memory(
       widget.config.imageBytes,
@@ -57,12 +37,16 @@ class _ImageEditorState extends State<ImageEditor> {
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
         imageGeneration: const ImageGenerationConfigs(
-          // Always generate from the composed scene instead of returning the
-          // original input bytes, and disable background generation so that
-          // the final capture always reflects the latest background image
-          // (including programmatic updates like baked vignette), even on
-          // web release builds.
+          // Never short-circuit export with raw input bytes.
           enableUseOriginalBytes: false,
+          // Background generation off: no per-edit isolate/worker capture. Final
+          // export still composites from the live tree via captureFinalScreenshot
+          // (see pro_image_editor). That matches the earlier Immich setup where
+          // programmatic background updates (e.g. baked vignette) and web must
+          // not rely on stale pre-captured frames.
+          //
+          // Watermark/history alignment is handled in WatermarkEditor (single
+          // commit on Apply + blockCaptureScreenshot), not by turning this on.
           enableBackgroundGeneration: false,
         ),
         mainEditor: MainEditorConfigs(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 
 
 /// Shows a dialog asking the user whether to download an AI model.
@@ -16,10 +17,33 @@ Future<bool> showModelDownloadDialog(
   required String modelName,
 }) async {
   if (modelPathOrUrl == null || modelPathOrUrl.isEmpty) return false;
-  if (!OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) return true;
-  if (await OnnxModelLoader.isCached(modelPathOrUrl)) return true;
+  final isRemote = OnnxModelLoader.isRemoteUrl(modelPathOrUrl);
+  final localAvailable = await OnnxModelLoader.isLocallyAvailable(modelPathOrUrl);
+  if (localAvailable) return true;
 
   if (!context.mounted) return false;
+
+  if (!isRemote) {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: Text('$modelName model not found'),
+        content: Text(
+          'The required model was not found at:\n$modelPathOrUrl\n\n'
+          'Please provide a valid model asset/path and try again.',
+          style: AiModalUi.contentStyle,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
 
   final confirmed = await showDialog<bool>(
     context: context,
@@ -58,6 +82,7 @@ class _ModelDownloadDialog extends StatelessWidget {
       title: Text('Download $modelName model?'),
       content: Text(
         'This model is required for $modelName. It will be downloaded and stored on your device. This may use mobile data.',
+        style: AiModalUi.contentStyle,
       ),
       actions: [
         TextButton(
@@ -129,7 +154,7 @@ class _ModelDownloadProgressDialogState extends State<_ModelDownloadProgressDial
               children: [
                 Text(
                   _error!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: (theme.textTheme.bodyMedium ?? AiModalUi.contentStyle).copyWith(
                     color: theme.colorScheme.error,
                   ),
                 ),
@@ -146,7 +171,7 @@ class _ModelDownloadProgressDialogState extends State<_ModelDownloadProgressDial
                   _progress >= 0
                       ? '${(_progress * 100).toStringAsFixed(0)}%'
                       : 'Downloading…',
-                  style: theme.textTheme.bodySmall,
+                  style: AiModalUi.noteStyle,
                 ),
               ],
             ),

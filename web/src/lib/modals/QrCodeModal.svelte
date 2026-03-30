@@ -9,14 +9,15 @@
     title: string;
     value: string;
     onClose: () => void;
+    mdFullSize?: boolean;
   };
 
-  let { title, value, onClose }: Props = $props();
+  let { title, value, onClose, mdFullSize = true }: Props = $props();
 
   let modalWidth = $state(0);
 </script>
 
-<Modal {title} icon={mdiLink} {onClose} size="small">
+<Modal {title} icon={mdiLink} {onClose} size="small" {mdFullSize}>
   <ModalBody>
     <div class="w-full py-2 px-10">
       <div bind:clientWidth={modalWidth} class="w-full">

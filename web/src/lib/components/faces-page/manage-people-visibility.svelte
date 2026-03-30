@@ -71,6 +71,7 @@
     try {
       if (changed.length > 0) {
         const results = await updatePeople({ peopleUpdateDto: { people: changed } });
+        /* await onRefresh(); */
         const successCount = results.filter(({ success }) => success).length;
         const failCount = results.length - successCount;
         if (failCount > 0) {
@@ -110,7 +111,7 @@
 <svelte:document use:shortcut={{ shortcut: { key: 'Escape' }, onShortcut: onClose }} />
 
 <div
-  class="fixed top-0 flex h-18 md:h-20 w-full items-center justify-between border-b bg-white p-1 dark:border-immich-dark-gray dark:bg-black dark:text-immich-dark-fg md:p-8"
+  class="fixed top-0 flex h-18 md:h-20 w-full items-center justify-between border-b bg-white p-1 dark:border-immich-dark-gray dark:bg-black dark:text-immich-dark-fg md:p-8 z-50"
 >
   <div class="flex items-center w-full">
     <IconButton
@@ -169,11 +170,11 @@
           widthStyle="100%"
           hiddenIconClass="text-white group-hover:text-black transition-colors"
         />
-        {#if person.name}
+        <!-- {#if person.name}
           <span class="absolute bottom-2 start-0 w-full select-text px-1 text-center font-medium text-white">
             {person.name}
           </span>
-        {/if}
+        {/if} -->
       </button>
     {/snippet}
   </PeopleInfiniteScroll>

@@ -15,3 +15,5 @@ Future<String> getCachedFilePathWithProgressImpl(
     'Remote model loading is not supported on web. Use asset paths instead.',
   );
 }
+
+Future<void> clearCachedImpl(String url) async {}

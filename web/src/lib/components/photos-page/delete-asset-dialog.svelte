@@ -10,9 +10,10 @@
     size: number;
     onConfirm: () => void;
     onCancel: () => void;
+    mdFullSize?: boolean;
   }
 
-  let { size, onConfirm, onCancel }: Props = $props();
+  let { size, onConfirm, onCancel, mdFullSize = false }: Props = $props();
 
   let checked = $state(false);
 
@@ -29,6 +30,7 @@
   confirmText={$t('delete')}
   icon={mdiDeleteForeverOutline}
   onClose={(confirmed) => (confirmed ? handleConfirm() : onCancel())}
+  {mdFullSize}
 >
   {#snippet promptSnippet()}
     <p>

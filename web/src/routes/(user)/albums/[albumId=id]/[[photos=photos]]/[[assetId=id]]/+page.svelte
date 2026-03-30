@@ -401,7 +401,11 @@
 
     if (sharedLink) {
       await refreshAlbum();
-      await modalManager.show(QrCodeModal, { title: $t('view_link'), value: makeSharedLinkUrl(sharedLink) });
+      await modalManager.show(QrCodeModal, {
+        title: $t('view_link'),
+        value: makeSharedLinkUrl(sharedLink),
+        mdFullSize: false,
+      });
     }
   };
 
@@ -473,7 +477,9 @@
 
 <div class="flex overflow-hidden" use:scrollMemoryClearer={{ routeStartsWith: AppRoute.ALBUMS }}>
   <div class="relative w-full shrink">
-    <main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
+    <main
+      class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-[calc(var(--navbar-height)+30px)]"
+    >
       <Timeline
         enableRouting={viewMode === AlbumPageViewMode.SELECT_ASSETS ? false : true}
         {album}
@@ -657,7 +663,13 @@
       </AssetSelectControlBar>
     {:else}
       {#if viewMode === AlbumPageViewMode.VIEW}
-        <ControlAppBar showBackButton backIcon={mdiArrowLeft} onClose={() => goto(backUrl)}>
+        <ControlAppBar
+          showBackButton
+          backIcon={mdiArrowLeft}
+          onClose={async () => {
+            await goto(backUrl);
+          }}
+        >
           {#snippet trailing()}
             <CastButton />
 
@@ -680,7 +692,7 @@
               />
             {/if}
 
-            {#if isOwned}
+            {#if isOwned && !isCreatingSharedAlbum}
               <IconButton
                 shape="round"
                 variant="ghost"

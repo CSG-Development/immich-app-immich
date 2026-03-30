@@ -43,6 +43,7 @@
       title: $t('delete_shared_link'),
       prompt: $t('confirm_delete_shared_link'),
       confirmText: $t('delete'),
+      mdFullSize: false,
     });
 
     if (!isConfirmed) {

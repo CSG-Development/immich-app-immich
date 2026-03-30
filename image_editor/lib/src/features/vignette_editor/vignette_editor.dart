@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // Project imports:
+import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
+import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:image_editor/src/features/vignette_editor/models/vignette_adjustment_item.dart';
 import 'package:image_editor/src/features/vignette_editor/models/vignette_adjustment_matrix.dart';
 import 'package:image_editor/src/features/vignette_editor/utils/vignette_baker.dart';
@@ -142,13 +145,12 @@ class VignetteEditorState extends State<VignetteEditor> {
 
   Object get heroTag => 'vignette_editor_hero';
 
-  List<List<VignetteAdjustmentMatrix>> _undoStack = [];
+  late HistoryStack<List<VignetteAdjustmentMatrix>> _history;
+  bool _isProcessing = false;
 
-  List<List<VignetteAdjustmentMatrix>> _redoStack = [];
+  bool get canUndo => _history.canUndo;
 
-  bool get canUndo => _undoStack.isNotEmpty;
-
-  bool get canRedo => _redoStack.isNotEmpty;
+  bool get canRedo => _history.canRedo;
 
   late Color vignetteColor;
 
@@ -167,6 +169,7 @@ class VignetteEditorState extends State<VignetteEditor> {
     for (final item in items) {
       vignetteAdjustmentMatrix.add(item.toMatrixItem());
     }
+    _history = HistoryStack<List<VignetteAdjustmentMatrix>>(_cloneMatrixList(vignetteAdjustmentMatrix));
 
     vignetteColor = initConfigs.initialVignetteColor;
   }
@@ -180,56 +183,60 @@ class VignetteEditorState extends State<VignetteEditor> {
   }
 
   Future<void> done() async {
+    if (_isProcessing) return;
     final bytes = await editorImage?.safeByteArray();
     if (bytes == null || bytes.isEmpty) return;
 
-    final color = vignetteColor;
-    final int red = (color.r * 255.0).round().clamp(0, 255).toInt();
-    final int green = (color.g * 255.0).round().clamp(0, 255).toInt();
-    final int blue = (color.b * 255.0).round().clamp(0, 255).toInt();
-    final colorHex = (red << 16) | (green << 8) | blue;
+    await runBusyUiFlow(
+      state: this,
+      setBusy: () => setState(() => _isProcessing = true),
+      clearBusy: () => setState(() => _isProcessing = false),
+      run: () async {
+        final color = vignetteColor;
+        final int red = (color.r * 255.0).round().clamp(0, 255).toInt();
+        final int green = (color.g * 255.0).round().clamp(0, 255).toInt();
+        final int blue = (color.b * 255.0).round().clamp(0, 255).toInt();
+        final colorHex = (red << 16) | (green << 8) | blue;
 
-    final baked = await bakeVignetteAsync(
-      bytes,
-      intensity: _getAdjustmentValue('intensity'),
-      radius: _getAdjustmentValue('radius'),
-      feather: _getAdjustmentValue('feather'),
-      colorHex: colorHex,
+        final baked = await bakeVignetteAsync(
+          bytes,
+          intensity: _getAdjustmentValue('intensity'),
+          radius: _getAdjustmentValue('radius'),
+          feather: _getAdjustmentValue('feather'),
+          colorHex: colorHex,
+        );
+        if (baked != null && mounted) {
+          await completeAndPop(
+            state: this,
+            context: context,
+            onComplete: () => initConfigs.callbacks.onImageEditingComplete?.call(baked) ?? Future<void>.value(),
+          );
+        }
+      },
     );
-    if (baked != null && mounted) {
-      await initConfigs.callbacks.onImageEditingComplete?.call(baked);
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    }
   }
 
   void reset() {
-    _undoStack = [];
-    _redoStack = [];
     _resetMatrixList();
+    _history = HistoryStack<List<VignetteAdjustmentMatrix>>(_cloneMatrixList(vignetteAdjustmentMatrix));
     vignetteColor = initConfigs.initialVignetteColor;
     setState(() {});
   }
 
   void redo() {
-    if (_redoStack.isNotEmpty) {
-      _undoStack.add(List.from(vignetteAdjustmentMatrix.map((e) => e.copy())));
-
-      vignetteAdjustmentMatrix = _redoStack.removeLast();
-
-      setState(() {});
-    }
+    if (!_history.redo()) return;
+    setState(() {
+      vignetteAdjustmentMatrix = _cloneMatrixList(_history.current);
+      uiStream.add(null);
+    });
   }
 
   void undo() {
-    if (_undoStack.isNotEmpty) {
-      _redoStack.add(List.from(vignetteAdjustmentMatrix.map((e) => e.copy())));
-
-      vignetteAdjustmentMatrix = _undoStack.removeLast();
-
-      setState(() {});
-    }
+    if (!_history.undo()) return;
+    setState(() {
+      vignetteAdjustmentMatrix = _cloneMatrixList(_history.current);
+      uiStream.add(null);
+    });
   }
 
   void _resetMatrixList() {
@@ -255,8 +262,7 @@ class VignetteEditorState extends State<VignetteEditor> {
   }
 
   void onChangedStart(double value) {
-    _undoStack.add(vignetteAdjustmentMatrix.map((e) => e.copy()).toList());
-    _redoStack.clear();
+    _history.push(_cloneMatrixList(vignetteAdjustmentMatrix));
   }
 
   void onChangedEnd(double value) {
@@ -293,10 +299,11 @@ class VignetteEditorState extends State<VignetteEditor> {
   }
 
   PreferredSizeWidget? _buildAppBar() {
-    return VignetteEditorAppbar(
+    return VignetteEditorAppBar(
       theme: theme,
       canRedo: canRedo,
       canUndo: canUndo,
+      isBusy: _isProcessing,
       onClose: () {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
@@ -315,7 +322,15 @@ class VignetteEditorState extends State<VignetteEditor> {
         return Stack(
           alignment: Alignment.center,
           fit: StackFit.expand,
-          children: [_buildBackground(), if (initConfigs.showLayers && layers != null) _buildLayers()],
+          children: [
+            _buildBackground(),
+            if (initConfigs.showLayers && layers != null) _buildLayers(),
+            if (_isProcessing)
+              Container(
+                color: Colors.black26,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+          ],
         );
       },
     );
@@ -344,21 +359,7 @@ class VignetteEditorState extends State<VignetteEditor> {
             Size size;
 
             if (initConfigs.mainImageSize != null && bodySize.width > 0 && bodySize.height > 0) {
-              final imgSize = initConfigs.mainImageSize!;
-              final imgAspect = imgSize.width / imgSize.height;
-              final bodyAspect = bodySize.width / bodySize.height;
-
-              if (imgAspect > bodyAspect) {
-                // Image is wider than the body: fit to width.
-                final width = bodySize.width;
-                final height = width / imgAspect;
-                size = Size(width, height);
-              } else {
-                // Image is taller than the body: fit to height.
-                final height = bodySize.height;
-                final width = height * imgAspect;
-                size = Size(width, height);
-              }
+              size = fitSizeWithinBounds(initConfigs.mainImageSize!, bodySize);
             } else {
               final baseSize = mainImageSize ?? mainBodySize;
               size = getValidSizeOrDefault(baseSize, editorBodySize);
@@ -405,6 +406,10 @@ class VignetteEditorState extends State<VignetteEditor> {
     );
   }
 
+  List<VignetteAdjustmentMatrix> _cloneMatrixList(List<VignetteAdjustmentMatrix> source) {
+    return source.map((e) => e.copy()).toList(growable: false);
+  }
+
   Widget _buildLayers() {
     return LayerStack(
       transformHelper: TransformHelper(
@@ -422,7 +427,7 @@ class VignetteEditorState extends State<VignetteEditor> {
 
   /// Builds the bottom navigation bar with vignette options.
   Widget? _buildBottomNavBar() {
-    return VignetteEditorBottombar(
+    return VignetteEditorBottomBar(
       state: this,
       vignetteAdjustmentList: vignetteAdjustmentList,
       vignetteAdjustmentMatrix: vignetteAdjustmentMatrix,

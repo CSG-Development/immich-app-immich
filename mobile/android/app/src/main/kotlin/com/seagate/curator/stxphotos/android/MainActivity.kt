@@ -14,6 +14,7 @@ import com.seagate.curator.stxphotos.android.images.ThumbnailsImpl
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApi
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl26
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl30
+import com.seagate.curator.stxphotos.android.sync.ImmichPlugin
 import com.seagate.curator.stxphotos.android.clipboard.NativeClipboardApi
 import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
 import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApi
@@ -53,6 +54,14 @@ class MainActivity : FlutterFragmentActivity() {
       flutterEngine.plugins.add(BackgroundServicePlugin())
       flutterEngine.plugins.add(HttpSSLOptionsPlugin())
       flutterEngine.plugins.add(backgroundEngineLockImpl)
+      flutterEngine.plugins.add(nativeSyncApiImpl)
+    }
+
+    fun cancelPlugins(flutterEngine: FlutterEngine) {
+      val nativeApi =
+        flutterEngine.plugins.get(NativeSyncApiImpl26::class.java) as ImmichPlugin?
+          ?: flutterEngine.plugins.get(NativeSyncApiImpl30::class.java) as ImmichPlugin?
+      nativeApi?.detachFromEngine()
     }
   }
 }

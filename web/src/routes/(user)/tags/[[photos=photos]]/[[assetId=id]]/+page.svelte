@@ -106,6 +106,7 @@
       title: $t('delete_tag'),
       prompt: $t('delete_tag_confirmation_prompt', { values: { tagName: tag.value } }),
       confirmText: $t('delete'),
+      mdFullSize: false,
     });
 
     if (!isConfirm) {

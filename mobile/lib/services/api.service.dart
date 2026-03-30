@@ -260,6 +260,7 @@ class ApiService implements Authentication {
         for (final auxiliaryEndpoint in auxiliaryEndpoints) {
           endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint);
           if (endpoint != null) {
+            _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint');
             return endpoint;
           }
         }
@@ -268,12 +269,16 @@ class ApiService implements Authentication {
       // Try local connection first
       endpoint = await _setLocalConnection();
       if (endpoint != null) {
+        _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=local endpoint=$endpoint');
         return endpoint;
       }
 
       try {
         endpoint ??= await _setRemoteConnection();
         dPrint(() => endpoint ?? 'failed to set endpoint');
+        if (endpoint != null) {
+          _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=remote endpoint=$endpoint');
+        }
         return endpoint;
       } catch (error, stackTrace) {
         _log.severe("Cannot set remote endpoint", error, stackTrace);
@@ -284,6 +289,7 @@ class ApiService implements Authentication {
         dPrint(() => 'Falling back to previous endpoint: $previousEndpoint');
         await resolveAndSetEndpoint(previousEndpoint);
         endpoint = previousEndpoint;
+        _log.warning('upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint');
       }
 
       return endpoint;  
@@ -411,6 +417,7 @@ class ApiService implements Authentication {
   }
 
   Future<String> resolveAndSetEndpoint(String serverUrl) async {
+    final stopwatch = Stopwatch()..start();
     final uri = Uri.parse(serverUrl);
     await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
     final endpoint = await resolveEndpoint(serverUrl);
@@ -418,6 +425,11 @@ class ApiService implements Authentication {
 
     // Save in local database for next startup
     Store.put(StoreKey.serverEndpoint, endpoint);
+    stopwatch.stop();
+    _log.info(
+      'upload_telemetry source=api_service stage=resolve_and_set endpoint=$endpoint '
+      'host=${uri.host} elapsedMs=${stopwatch.elapsedMilliseconds}',
+    );
     return endpoint;
   }
 

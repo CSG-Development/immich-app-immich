@@ -21,7 +21,7 @@
     type PersonResponseDto,
   } from '@immich/sdk';
   import { IconButton } from '@immich/ui';
-  import { mdiAccountOff, mdiArrowLeftThin, mdiPencilOutline, mdiRestart, mdiTrashCanOutline } from '@mdi/js';
+  import { mdiAccountOffOutline, mdiArrowLeftThin, mdiPencilOutline, mdiRestart, mdiTrashCanOutline } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { linear } from 'svelte/easing';
@@ -175,6 +175,7 @@
 
       const isConfirmed = await modalManager.showDialog({
         prompt: $t('confirm_delete_face', { values: { name: face.person.name } }),
+        mdFullSize: false,
       });
       if (!isConfirmed) {
         return;
@@ -210,7 +211,7 @@
     {#if !isShowLoadingDone}
       <button
         type="button"
-        class="justify-self-end rounded-lg p-2 hover:bg-immich-dark-primary hover:dark:bg-immich-dark-primary/50"
+        class="justify-self-end rounded-lg p-2 text-primary hover:bg-immich-dark-primary hover:dark:bg-immich-dark-primary/50 font-medium"
         onclick={() => handleEditFaces()}
       >
         {$t('done')}
@@ -309,7 +310,7 @@
                 </p>
               {/if}
 
-              <div class="absolute -end-[3px] -top-[3px] h-[20px] w-[20px] rounded-full">
+              <div class="absolute -end-[3px] -top-[3px] h-[20px] w-[20px] rounded-full dark:[&_svg]:text-white">
                 {#if selectedPersonToCreate[face.id] || selectedPersonToReassign[face.id]}
                   <IconButton
                     shape="round"
@@ -336,14 +337,14 @@
               <div class="absolute end-[33px] -top-[3px] h-[20px] w-[20px] rounded-full">
                 {#if !selectedPersonToCreate[face.id] && !selectedPersonToReassign[face.id] && !face.person}
                   <div
-                    class="flex place-content-center place-items-center rounded-full bg-[#d3d3d3] p-1 transition-all absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform"
+                    class="flex place-content-center place-items-center rounded-full bg-[#d3d3d3] p-1 transition-all absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform dark:[&_svg]:text-white"
                   >
-                    <Icon color="primary" path={mdiAccountOff} ariaHidden size="24" />
+                    <Icon color="primary" path={mdiAccountOffOutline} ariaHidden size="24" />
                   </div>
                 {/if}
               </div>
               {#if face.person != null}
-                <div class="absolute -end-[3px] top-[33px] h-[20px] w-[20px] rounded-full">
+                <div class="absolute -end-[3px] top-[33px] h-[20px] w-[20px] rounded-full dark:[&_svg]:text-white">
                   <IconButton
                     shape="round"
                     color="danger"

@@ -10,8 +10,8 @@ import 'package:image_editor/src/widgets/adjustment_bottom_bar.dart';
 ///
 /// Thin wrapper around [AdjustmentBottomBar] so the vignette editor can reuse
 /// the generic adjustment UI.
-class VignetteEditorBottombar extends StatelessWidget {
-  const VignetteEditorBottombar({
+class VignetteEditorBottomBar extends StatelessWidget {
+  const VignetteEditorBottomBar({
     super.key,
     required this.vignetteAdjustmentList,
     required this.vignetteAdjustmentMatrix,
@@ -65,6 +65,8 @@ class VignetteEditorBottombar extends StatelessWidget {
     );
   }
 }
+
+typedef VignetteEditorBottombar = VignetteEditorBottomBar;
 
 class _VignetteColorPickerBar extends StatelessWidget {
   const _VignetteColorPickerBar({required this.selectedColor, required this.onColorChanged, required this.theme});

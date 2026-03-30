@@ -30,8 +30,17 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" fullWidth color="secondary" onclick={() => onClose()}>{$t('cancel')}</Button>
-      <Button shape="round" fullWidth type="submit" form="rename-library-form">{$t('save')}</Button>
+      <Button
+        shape="round"
+        fullWidth
+        size="standard-large"
+        class="font-normal"
+        color="secondary"
+        onclick={() => onClose()}>{$t('cancel')}</Button
+      >
+      <Button shape="round" fullWidth size="standard-large" class="font-normal" type="submit" form="rename-library-form"
+        >{$t('save')}</Button
+      >
     </HStack>
   </ModalFooter>
 </Modal>

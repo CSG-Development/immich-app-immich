@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 
 /// App bar for the AI editor, with undo/redo and done/close actions.
-class AiEditorAppbar extends StatelessWidget implements PreferredSizeWidget {
-  const AiEditorAppbar({
+class AiEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const AiEditorAppBar({
     super.key,
     required this.theme,
     required this.canRedo,
@@ -11,6 +12,7 @@ class AiEditorAppbar extends StatelessWidget implements PreferredSizeWidget {
     required this.onUndo,
     required this.onClose,
     required this.onDone,
+    required this.isBusy,
   });
 
   final ThemeData theme;
@@ -19,6 +21,8 @@ class AiEditorAppbar extends StatelessWidget implements PreferredSizeWidget {
 
   final bool canUndo;
 
+  final bool isBusy;
+
   final VoidCallback onRedo;
   final VoidCallback onUndo;
   final VoidCallback onClose;
@@ -26,43 +30,23 @@ class AiEditorAppbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: theme.appBarTheme.backgroundColor ?? Colors.black,
-      foregroundColor: theme.appBarTheme.foregroundColor ?? Colors.white,
-      title: const Text('AI Tools'),
-      actions: [
-        IconButton(
-          tooltip: 'Back',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: const Icon(Icons.arrow_back),
-          onPressed: onClose,
-        ),
-        const Spacer(),
-        IconButton(
-          tooltip: 'Undo',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: Icon(Icons.undo, color: canUndo ? Colors.white : Colors.white.withAlpha(80)),
-          onPressed: canUndo ? onUndo : null,
-        ),
-        IconButton(
-          tooltip: 'Redo',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: Icon(Icons.redo, color: canRedo ? Colors.white : Colors.white.withAlpha(80)),
-          onPressed: canRedo ? onRedo : null,
-        ),
-        IconButton(
-          tooltip: 'Done',
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          icon: const Icon(Icons.check),
-          iconSize: 28,
-          onPressed: onDone,
-        ),
-      ],
+    return EditorActionAppBar(
+      theme: theme,
+      title: 'AI Tools',
+      onBack: onClose,
+      onUndo: onUndo,
+      onRedo: onRedo,
+      onConfirm: onDone,
+      canUndo: canUndo,
+      canRedo: canRedo,
+      isBusy: isBusy,
+      confirmTooltip: 'Done',
     );
   }
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
+
+typedef AiEditorAppbar = AiEditorAppBar;
 

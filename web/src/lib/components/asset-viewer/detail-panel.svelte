@@ -362,12 +362,14 @@
         />
       {/if}
 
-      <div class="flex gap-4 py-4">
+      <div class="flex justify-between place-items-start gap-4 py-4">
         <div><Icon path={mdiImageOutline} size="24" /></div>
 
         <div>
-          <p class="break-all flex place-items-center gap-2 whitespace-pre-wrap">
-            {asset.originalFileName}
+          <div class="flex w-83.75 md:w-70 justify-between gap-2 truncate">
+            <p class="truncate block w-70 md:w-53">
+              {asset.originalFileName}
+            </p>
             {#if isOwner}
               <IconButton
                 icon={mdiInformationOutline}
@@ -376,16 +378,17 @@
                 shape="round"
                 color="secondary"
                 variant="ghost"
+                class="[&_svg]:w-6 [&_svg]:h-6"
                 onclick={toggleAssetPath}
               />
             {/if}
-          </p>
+          </div>
           {#if showAssetPath}
             <p
-              class="text-xs opacity-50 break-all pb-2 hover:dark:text-immich-dark-primary hover:text-immich-primary"
+              class="text-xs opacity-50 pb-2 hover:dark:text-immich-dark-primary hover:text-immich-primary truncate"
               transition:slide={{ duration: 250 }}
             >
-              <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap">
+              <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap truncate">
                 {asset.originalPath}
               </a>
             </p>

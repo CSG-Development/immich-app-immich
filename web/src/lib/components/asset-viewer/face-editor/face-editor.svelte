@@ -298,6 +298,7 @@
           ? $t('confirm_tag_face', { values: { name: person.name } })
           : $t('confirm_tag_face_unnamed'),
         confirmColor: 'primary',
+        mdFullSize: false,
       });
 
       if (!isConfirmed) {

@@ -176,7 +176,11 @@
 
     <div class="flex flex-col gap-4 mt-4">
       <div>
-        <Field label={$t('custom_url')} description={$t('shared_link_custom_url_description')}>
+        <Field
+          label={$t('custom_url')}
+          description={$t('shared_link_custom_url_description')}
+          class="[&_label]:font-bold"
+        >
           <Input bind:value={slug} autocomplete="off" />
         </Field>
         {#if slug}
@@ -184,11 +188,11 @@
         {/if}
       </div>
 
-      <Field label={$t('password')} description={$t('shared_link_password_description')}>
+      <Field label={$t('password')} description={$t('shared_link_password_description')} class="[&_label]:font-bold">
         <PasswordInput bind:value={password} autocomplete="new-password" />
       </Field>
 
-      <Field label={$t('description')}>
+      <Field label={$t('description')} class="[&_label]:font-bold">
         <Input bind:value={description} autocomplete="off" />
       </Field>
 
@@ -224,13 +228,24 @@
 
   <ModalFooter>
     <HStack fullWidth>
-      <Button shape="round" color="secondary" fullWidth onclick={() => onClose()}>
+      <Button
+        shape="round"
+        color="secondary"
+        size="standard-large"
+        class="font-normal"
+        fullWidth
+        onclick={() => onClose()}
+      >
         {$t('cancel')}
       </Button>
       {#if editingLink}
-        <Button shape="round" fullWidth onclick={handleEditLink}>{$t('confirm')}</Button>
+        <Button shape="round" size="standard-large" class="font-normal" fullWidth onclick={handleEditLink}
+          >{$t('confirm')}</Button
+        >
       {:else}
-        <Button shape="round" fullWidth onclick={handleCreateSharedLink}>{$t('create_link')}</Button>
+        <Button shape="round" size="standard-large" class="font-normal" fullWidth onclick={handleCreateSharedLink}
+          >{$t('create_link')}</Button
+        >
       {/if}
     </HStack>
   </ModalFooter>

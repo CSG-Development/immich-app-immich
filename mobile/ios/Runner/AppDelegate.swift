@@ -42,7 +42,7 @@ import AVFoundation
 
     GeneratedPluginRegistrant.register(with: self)
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
-    AppDelegate.registerPlugins(binaryMessenger: controller.binaryMessenger)
+    AppDelegate.registerPlugins(with: controller.engine)
     BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
 
     BackgroundServicePlugin.registerBackgroundProcessing()
@@ -80,12 +80,16 @@ import AVFoundation
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
-  public static func registerPlugins(binaryMessenger: FlutterBinaryMessenger) {
-    NativeSyncApiSetup.setUp(binaryMessenger: binaryMessenger, api: NativeSyncApiImpl())
-    ThumbnailApiSetup.setUp(binaryMessenger: binaryMessenger, api: ThumbnailApiImpl())
-    BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: BackgroundWorkerApiImpl())
-    NativeClipboardApiSetup.setUp(binaryMessenger: binaryMessenger, api: ClipboardApiImpl())
-    CertificateFetcherApiSetup.setUp(binaryMessenger: binaryMessenger, api: CertificateFetcherApiImplSimple())
+  public static func registerPlugins(with engine: FlutterEngine) {
+    NativeSyncApiImpl.register(with: engine.registrar(forPlugin: NativeSyncApiImpl.name)!)
+    ThumbnailApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ThumbnailApiImpl())
+    BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: BackgroundWorkerApiImpl())
+    NativeClipboardApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ClipboardApiImpl())
+    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: CertificateFetcherApiImplSimple())
+  }
+
+  public static func cancelPlugins(with engine: FlutterEngine) {
+    (engine.valuePublished(byPlugin: NativeSyncApiImpl.name) as? NativeSyncApiImpl)?.detachFromEngine()
   }
 }
 

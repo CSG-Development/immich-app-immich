@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
+import 'package:image_editor/src/features/ai_editor/common/utils/onnx_session_lifecycle.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 import 'package:onnxruntime/src/ort_isolate_session.dart';
@@ -26,26 +27,46 @@ class LamaInpaintingOnnx {
   final String maskInputName;
   final String? outputName;
 
+  // LaMa model in this project expects fixed 512x512 input.
   static const int modelSize = 512;
 
   OrtSession? _session;
   OrtIsolateSession? _isolateSession;
+  bool _didRetrySessionInit = false;
 
   Future<void> _ensureSession() async {
     if (_session != null) return;
     _log.info(
       '[INP_ONNX] Creating ONNX session from: $modelPathOrUrl',
     );
+    final options = OrtSessionOptions();
     try {
       OrtEnv.instance.init();
       final bytes = await OnnxModelLoader.loadBytes(modelPathOrUrl);
-      final options = OrtSessionOptions();
       _session = OrtSession.fromBuffer(bytes, options);
       _isolateSession = OrtIsolateSession(_session!);
+      _didRetrySessionInit = false;
       _log.info('[INP_ONNX] ONNX isolate session created successfully.');
     } catch (e, st) {
       _log.severe('[INP_ONNX] Failed to create ONNX session', e, st);
       _session = null;
+      if (!_didRetrySessionInit && OnnxModelLoader.isRemoteUrl(modelPathOrUrl)) {
+        _didRetrySessionInit = true;
+        _log.warning('[INP_ONNX] Clearing cached model and retrying once.');
+        try {
+          await OnnxModelLoader.clearCached(modelPathOrUrl);
+          await _ensureSession();
+          return;
+        } catch (retryError, retryStack) {
+          _log.severe(
+            '[INP_ONNX] Retry after cache clear failed',
+            retryError,
+            retryStack,
+          );
+        }
+      }
+    } finally {
+      options.release();
     }
   }
 
@@ -91,68 +112,71 @@ class LamaInpaintingOnnx {
       }
 
       final runOptions = OrtRunOptions();
-      final isolateSession = _isolateSession;
-      final onnxStart = DateTime.now();
-      final outputs = isolateSession != null
-          ? await isolateSession.run(
-              runOptions,
-              <String, OrtValue>{
-                imageInputName: imageTensor,
-                maskInputName: maskTensor,
-              },
-              [resolvedOutputName],
-            )
-          : await session.runAsync(
-              runOptions,
-              <String, OrtValue>{
-                imageInputName: imageTensor,
-                maskInputName: maskTensor,
-              },
-              [resolvedOutputName],
-            );
-      final onnxElapsed =
-          DateTime.now().difference(onnxStart).inMilliseconds;
-      _log.info(
-        '[INP_ONNX] session.run (isolate=${isolateSession != null}) '
-        'completed in ${onnxElapsed}ms',
-      );
+      List<OrtValue?>? outputs;
+      int onnxElapsed = 0;
+      try {
+        final isolateSession = _isolateSession;
+        final onnxStart = DateTime.now();
+        outputs = isolateSession != null
+            ? await isolateSession.run(
+                runOptions,
+                <String, OrtValue>{
+                  imageInputName: imageTensor,
+                  maskInputName: maskTensor,
+                },
+                [resolvedOutputName],
+              )
+            : await session.runAsync(
+                runOptions,
+                <String, OrtValue>{
+                  imageInputName: imageTensor,
+                  maskInputName: maskTensor,
+                },
+                [resolvedOutputName],
+              );
+        onnxElapsed =
+            DateTime.now().difference(onnxStart).inMilliseconds;
+        _log.info(
+          '[INP_ONNX] session.run (isolate=${isolateSession != null}) '
+          'completed in ${onnxElapsed}ms',
+        );
 
-      imageTensor.release();
-      maskTensor.release();
-      runOptions.release();
+        final outputTensor = outputs?.first;
+        if (outputTensor == null) {
+          return null;
+        }
+        final raw = outputTensor.value;
+        final outputList = <dynamic>[];
+        final shape = _inferShapeAndFlatten(raw, outputList);
 
-      final outputTensor = outputs?.first;
-      if (outputTensor == null) {
+        if (shape.length != 4 || shape[1] != 3 || shape[2] != modelSize || shape[3] != modelSize) {
+          _log.warning('[INP_ONNX] Unexpected output shape: $shape');
+          return null;
+        }
+
+        final postStart = DateTime.now();
+        final outImage =
+            _float32NCHWToImage(outputList, modelSize, modelSize);
+        final postElapsed =
+            DateTime.now().difference(postStart).inMilliseconds;
+        _log.info(
+          '[INP_ONNX] postprocess (tensor -> image) completed in ${postElapsed}ms',
+        );
+
+        final totalElapsed =
+            DateTime.now().difference(totalStart).inMilliseconds;
+        _log.info(
+          '[INP_ONNX] runOnCroppedPatch total elapsed ${totalElapsed}ms '
+          '(prep=${prepElapsed}ms, onnx=${onnxElapsed}ms, post=${postElapsed}ms)',
+        );
+
+        return outImage;
+      } finally {
         outputs?.forEach((t) => t?.release());
-        return null;
+        imageTensor.release();
+        maskTensor.release();
+        runOptions.release();
       }
-      final raw = outputTensor.value;
-      final outputList = <dynamic>[];
-      final shape = _inferShapeAndFlatten(raw, outputList);
-      outputs?.forEach((t) => t?.release());
-
-      if (shape.length != 4 || shape[1] != 3 || shape[2] != modelSize || shape[3] != modelSize) {
-        _log.warning('[INP_ONNX] Unexpected output shape: $shape');
-        return null;
-      }
-
-      final postStart = DateTime.now();
-      final outImage =
-          _float32NCHWToImage(outputList, modelSize, modelSize);
-      final postElapsed =
-          DateTime.now().difference(postStart).inMilliseconds;
-      _log.info(
-        '[INP_ONNX] postprocess (tensor -> image) completed in ${postElapsed}ms',
-      );
-
-      final totalElapsed =
-          DateTime.now().difference(totalStart).inMilliseconds;
-      _log.info(
-        '[INP_ONNX] runOnCroppedPatch total elapsed ${totalElapsed}ms '
-        '(prep=${prepElapsed}ms, onnx=${onnxElapsed}ms, post=${postElapsed}ms)',
-      );
-
-      return outImage;
     } catch (e, st) {
       _log.severe(
         '[INP_ONNX] Exception in runOnCroppedPatch',
@@ -160,6 +184,12 @@ class LamaInpaintingOnnx {
         st,
       );
       return null;
+    } finally {
+      await OnnxSessionLifecycle.maybeUnloadAfterRun(
+        logger: _log,
+        tag: 'INP_ONNX',
+        dispose: dispose,
+      );
     }
   }
 

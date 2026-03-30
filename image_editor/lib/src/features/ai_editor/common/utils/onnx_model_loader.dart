@@ -48,6 +48,32 @@ class OnnxModelLoader {
     return loader.getCachedFilePathImpl(url);
   }
 
+  /// Returns true if [source] can be loaded immediately from local storage.
+  ///
+  /// - For remote URLs, this checks whether the file is already cached.
+  /// - For local paths, this checks filesystem existence on native platforms.
+  /// - For asset paths, this attempts to resolve through [rootBundle].
+  static Future<bool> isLocallyAvailable(String source) async {
+    if (source.isEmpty) return false;
+    if (isRemoteUrl(source)) {
+      return isCached(source);
+    }
+
+    if (!kIsWeb) {
+      final file = File(source);
+      if (await file.exists()) {
+        return true;
+      }
+    }
+
+    try {
+      await rootBundle.load(source);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Same as [getCachedFilePath] but reports download progress via [onProgress]
   /// (0.0 to 1.0). If already cached, returns immediately without calling [onProgress].
   static Future<String> getCachedFilePathWithProgress(
@@ -60,6 +86,12 @@ class OnnxModelLoader {
       );
     }
     return loader.getCachedFilePathWithProgressImpl(url, onProgress);
+  }
+
+  /// Deletes cached file for [url] if present.
+  static Future<void> clearCached(String url) async {
+    if (kIsWeb) return;
+    await loader.clearCachedImpl(url);
   }
 
   /// Loads model bytes either from an asset path or a cached file path / URL.
