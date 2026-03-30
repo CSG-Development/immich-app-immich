@@ -13,7 +13,8 @@ import {
   AssetMetadataUpsertDto,
   AssetStatsDto,
   UpdateAssetDto,
-  mapStats, AssetJobsAllDto,
+  mapStats,
+  AssetJobsAllDto,
 } from 'src/dtos/asset.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName } from 'src/enum';

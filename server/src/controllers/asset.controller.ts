@@ -4,7 +4,8 @@ import { EndpointLifecycle } from 'src/decorators';
 import { AssetResponseDto } from 'src/dtos/asset-response.dto';
 import {
   AssetBulkDeleteDto,
-  AssetBulkUpdateDto, AssetJobName, AssetJobsAllDto,
+  AssetBulkUpdateDto,
+  AssetJobsAllDto,
   AssetJobsDto,
   AssetMetadataResponseDto,
   AssetMetadataRouteParams,

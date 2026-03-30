@@ -252,7 +252,6 @@ export class JobService extends BaseService {
       const jobMetric = `immich.jobs.${snakeCase(job.name)}.${status}`;
       this.telemetryRepository.jobs.addToCounter(jobMetric, 1);
       if (status === JobStatus.Success || status == JobStatus.Skipped) {
-        console.log(1, status);
         await this.onDone(job);
       }
     } catch (error: Error | any) {
