@@ -4,7 +4,7 @@ import { EndpointLifecycle } from 'src/decorators';
 import { AssetResponseDto } from 'src/dtos/asset-response.dto';
 import {
   AssetBulkDeleteDto,
-  AssetBulkUpdateDto,
+  AssetBulkUpdateDto, AssetJobName, AssetJobsAllDto,
   AssetJobsDto,
   AssetMetadataResponseDto,
   AssetMetadataRouteParams,
@@ -57,6 +57,13 @@ export class AssetController {
   @HttpCode(HttpStatus.NO_CONTENT)
   runAssetJobs(@Auth() auth: AuthDto, @Body() dto: AssetJobsDto): Promise<void> {
     return this.service.run(auth, dto);
+  }
+
+  @Post('jobs-all')
+  @Authenticated()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  runAssetJobsAll(@Auth() auth: AuthDto, @Body() dto: AssetJobsAllDto): Promise<void> {
+    return this.service.runAll(auth, dto);
   }
 
   @Put()

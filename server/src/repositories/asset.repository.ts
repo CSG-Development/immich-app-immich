@@ -790,6 +790,16 @@ export class AssetRepository {
       .execute();
   }
 
+  @GenerateSql({ params: [{ ownerId: DummyValue.UUID }] })
+  getAssetIdsByOwner(ownerId: string) {
+    return this.db
+      .selectFrom('asset')
+      .select('asset.id')
+      .where('asset.ownerId', '=', asUuid(ownerId))
+      .where('asset.visibility', '!=', AssetVisibility.Hidden)
+      .execute();
+  }
+
   @GenerateSql({ params: [{ userIds: [DummyValue.UUID], updatedAfter: DummyValue.DATE, limit: 100 }] })
   async getChangedDeltaSync(options: AssetDeltaSyncOptions) {
     return this.db

@@ -13,7 +13,7 @@ import {
   AssetMetadataUpsertDto,
   AssetStatsDto,
   UpdateAssetDto,
-  mapStats,
+  mapStats, AssetJobsAllDto,
 } from 'src/dtos/asset.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName } from 'src/enum';
@@ -315,6 +315,41 @@ export class AssetService extends BaseService {
     const jobs: JobItem[] = [];
 
     for (const id of dto.assetIds) {
+      switch (dto.name) {
+        case AssetJobName.REFRESH_FACES: {
+          jobs.push({ name: JobName.AssetDetectFaces, data: { id } });
+          break;
+        }
+
+        case AssetJobName.REFRESH_METADATA: {
+          jobs.push({ name: JobName.AssetExtractMetadata, data: { id } });
+          break;
+        }
+
+        case AssetJobName.REGENERATE_THUMBNAIL: {
+          jobs.push({ name: JobName.AssetGenerateThumbnails, data: { id } });
+          break;
+        }
+
+        case AssetJobName.TRANSCODE_VIDEO: {
+          jobs.push({ name: JobName.AssetEncodeVideo, data: { id } });
+          break;
+        }
+      }
+    }
+
+    await this.jobRepository.queueAll(jobs);
+  }
+
+  async runAll(auth: AuthDto, dto: AssetJobsAllDto) {
+    const assetIds: string[] = (
+      await this.assetRepository.getAssetIdsByOwner(auth.user.id)
+    ).map((row: { id: string }) => row.id);
+    await this.requireAccess({ auth, permission: Permission.AssetUpdate, ids: assetIds });
+
+    const jobs: JobItem[] = [];
+
+    for (const id of assetIds) {
       switch (dto.name) {
         case AssetJobName.REFRESH_FACES: {
           jobs.push({ name: JobName.AssetDetectFaces, data: { id } });
