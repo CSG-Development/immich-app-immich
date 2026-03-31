@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/advanced_info_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/archive_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/copy_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_local_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_permanent_action_button.widget.dart';
@@ -45,6 +48,7 @@ class ActionButtonContext {
 
 enum ActionButtonType {
   advancedInfo,
+  copy,
   share,
   shareLink,
   archive,
@@ -65,6 +69,10 @@ enum ActionButtonType {
     return switch (this) {
       ActionButtonType.advancedInfo => context.advancedTroubleshooting,
       ActionButtonType.share => true,
+      ActionButtonType.copy =>
+        Platform.isAndroid &&
+            context.asset.isImage &&
+            RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)$", caseSensitive: false).hasMatch(context.asset.name),
       ActionButtonType.shareLink =>
         !context.isInLockedView && //
             context.asset.hasRemote,
@@ -130,6 +138,7 @@ enum ActionButtonType {
     return switch (this) {
       ActionButtonType.advancedInfo => AdvancedInfoActionButton(source: context.source),
       ActionButtonType.share => ShareActionButton(source: context.source),
+      ActionButtonType.copy => CopyActionButton(source: context.source),
       ActionButtonType.shareLink => ShareLinkActionButton(source: context.source),
       ActionButtonType.archive => ArchiveActionButton(source: context.source),
       ActionButtonType.unarchive => UnArchiveActionButton(source: context.source),
