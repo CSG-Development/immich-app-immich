@@ -58,7 +58,7 @@ class ShareService {
       }
 
       final size = MediaQuery.of(context).size;
-      Share.shareXFiles(
+      await Share.shareXFiles(
         downloadedXFiles,
         sharePositionOrigin: Rect.fromPoints(Offset.zero, Offset(size.width / 3, size.height)),
       );

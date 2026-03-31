@@ -4,6 +4,7 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/archive_action_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/copy_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_local_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/edit_image_action_button.widget.dart';
@@ -41,6 +42,7 @@ class ViewerBottomBar extends ConsumerWidget {
     }
 
     final actions = <Widget>[
+      if (asset.isImage) const CopyActionButton(source: ActionSource.viewer),
       const ShareActionButton(source: ActionSource.viewer),
       if (asset.isLocalOnly) const UploadActionButton(source: ActionSource.viewer),
       if (asset.type == AssetType.image) const EditImageActionButton(),
@@ -79,7 +81,17 @@ class ViewerBottomBar extends ConsumerWidget {
                       children: [
                         if (asset.isVideo) const VideoControls(),
                         if (!isInLockedView && !isReadonlyModeEnabled)
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: actions),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                for (int i = 0; i < actions.length; i++) ...[
+                                  actions[i],
+                                  if (i < actions.length - 1) const SizedBox(width: 8),
+                                ],
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
