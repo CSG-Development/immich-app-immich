@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import _ from 'lodash';
 import { DateTime, Duration } from 'luxon';
 import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
@@ -14,6 +14,7 @@ import {
   AssetStatsDto,
   UpdateAssetDto,
   mapStats,
+  AssetJobsAllDto,
 } from 'src/dtos/asset.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName } from 'src/enum';
@@ -315,6 +316,47 @@ export class AssetService extends BaseService {
     const jobs: JobItem[] = [];
 
     for (const id of dto.assetIds) {
+      switch (dto.name) {
+        case AssetJobName.REFRESH_FACES: {
+          jobs.push({ name: JobName.AssetDetectFaces, data: { id } });
+          break;
+        }
+
+        case AssetJobName.REFRESH_METADATA: {
+          jobs.push({ name: JobName.AssetExtractMetadata, data: { id } });
+          break;
+        }
+
+        case AssetJobName.REGENERATE_THUMBNAIL: {
+          jobs.push({ name: JobName.AssetGenerateThumbnails, data: { id } });
+          break;
+        }
+
+        case AssetJobName.TRANSCODE_VIDEO: {
+          jobs.push({ name: JobName.AssetEncodeVideo, data: { id } });
+          break;
+        }
+      }
+    }
+
+    await this.jobRepository.queueAll(jobs);
+  }
+
+  /**
+   * Intentionally made to affect all assets in database, not just
+   * current user's
+   */
+  async runAll(auth: AuthDto, dto: AssetJobsAllDto) {
+    if (!auth.user.isAdmin) {
+      throw new UnauthorizedException();
+    }
+    const assetIds: string[] = (
+      await this.assetRepository.getAllAssetIds()
+    ).map((row: { id: string }) => row.id);
+
+    const jobs: JobItem[] = [];
+
+    for (const id of assetIds) {
       switch (dto.name) {
         case AssetJobName.REFRESH_FACES: {
           jobs.push({ name: JobName.AssetDetectFaces, data: { id } });
