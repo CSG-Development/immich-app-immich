@@ -9,6 +9,7 @@ class MaskEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.title,
     required this.onCancel,
     required this.onApply,
+    this.isBusy = false,
     required this.applyEnabled,
     required this.canUndo,
     required this.canRedo,
@@ -19,6 +20,7 @@ class MaskEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final VoidCallback onCancel;
   final VoidCallback onApply;
+  final bool isBusy;
   final bool applyEnabled;
   final bool canUndo;
   final bool canRedo;
@@ -35,6 +37,7 @@ class MaskEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
       onUndo: onUndo,
       onRedo: onRedo,
       onConfirm: onApply,
+      isBusy: isBusy,
       canUndo: canUndo,
       canRedo: canRedo,
       confirmEnabled: applyEnabled,

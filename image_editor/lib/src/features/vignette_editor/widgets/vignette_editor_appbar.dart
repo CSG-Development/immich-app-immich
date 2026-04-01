@@ -8,6 +8,7 @@ class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidge
     required this.theme,
     required this.canRedo,
     required this.canUndo,
+    required this.isBusy,
     required this.onRedo,
     required this.onUndo,
     required this.onClose,
@@ -19,6 +20,7 @@ class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidge
   final bool canRedo;
 
   final bool canUndo;
+  final bool isBusy;
 
   final VoidCallback onRedo;
   final VoidCallback onUndo;
@@ -35,6 +37,7 @@ class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidge
       onConfirm: onDone,
       canUndo: canUndo,
       canRedo: canRedo,
+      isBusy: isBusy,
       confirmTooltip: 'Done',
     );
   }

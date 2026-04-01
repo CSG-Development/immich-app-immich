@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // Project imports:
+import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
@@ -145,6 +146,7 @@ class VignetteEditorState extends State<VignetteEditor> {
   Object get heroTag => 'vignette_editor_hero';
 
   late HistoryStack<List<VignetteAdjustmentMatrix>> _history;
+  bool _isProcessing = false;
 
   bool get canUndo => _history.canUndo;
 
@@ -181,28 +183,37 @@ class VignetteEditorState extends State<VignetteEditor> {
   }
 
   Future<void> done() async {
+    if (_isProcessing) return;
     final bytes = await editorImage?.safeByteArray();
     if (bytes == null || bytes.isEmpty) return;
 
-    final color = vignetteColor;
-    final int red = (color.r * 255.0).round().clamp(0, 255).toInt();
-    final int green = (color.g * 255.0).round().clamp(0, 255).toInt();
-    final int blue = (color.b * 255.0).round().clamp(0, 255).toInt();
-    final colorHex = (red << 16) | (green << 8) | blue;
+    await runBusyUiFlow(
+      state: this,
+      setBusy: () => setState(() => _isProcessing = true),
+      clearBusy: () => setState(() => _isProcessing = false),
+      run: () async {
+        final color = vignetteColor;
+        final int red = (color.r * 255.0).round().clamp(0, 255).toInt();
+        final int green = (color.g * 255.0).round().clamp(0, 255).toInt();
+        final int blue = (color.b * 255.0).round().clamp(0, 255).toInt();
+        final colorHex = (red << 16) | (green << 8) | blue;
 
-    final baked = await bakeVignetteAsync(
-      bytes,
-      intensity: _getAdjustmentValue('intensity'),
-      radius: _getAdjustmentValue('radius'),
-      feather: _getAdjustmentValue('feather'),
-      colorHex: colorHex,
+        final baked = await bakeVignetteAsync(
+          bytes,
+          intensity: _getAdjustmentValue('intensity'),
+          radius: _getAdjustmentValue('radius'),
+          feather: _getAdjustmentValue('feather'),
+          colorHex: colorHex,
+        );
+        if (baked != null && mounted) {
+          await completeAndPop(
+            state: this,
+            context: context,
+            onComplete: () => initConfigs.callbacks.onImageEditingComplete?.call(baked) ?? Future<void>.value(),
+          );
+        }
+      },
     );
-    if (baked != null && mounted) {
-      await initConfigs.callbacks.onImageEditingComplete?.call(baked);
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    }
   }
 
   void reset() {
@@ -292,6 +303,7 @@ class VignetteEditorState extends State<VignetteEditor> {
       theme: theme,
       canRedo: canRedo,
       canUndo: canUndo,
+      isBusy: _isProcessing,
       onClose: () {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
@@ -310,7 +322,15 @@ class VignetteEditorState extends State<VignetteEditor> {
         return Stack(
           alignment: Alignment.center,
           fit: StackFit.expand,
-          children: [_buildBackground(), if (initConfigs.showLayers && layers != null) _buildLayers()],
+          children: [
+            _buildBackground(),
+            if (initConfigs.showLayers && layers != null) _buildLayers(),
+            if (_isProcessing)
+              Container(
+                color: Colors.black26,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+          ],
         );
       },
     );

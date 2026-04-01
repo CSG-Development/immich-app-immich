@@ -16,6 +16,7 @@ import 'package:image_editor/src/features/ai_editor/common/services/background_r
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_appbar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
+import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
@@ -158,10 +159,11 @@ class AiEditorState extends State<AiEditor> {
     final bytes = await editorImage.safeByteArray();
     if (bytes.isEmpty) return;
 
-    await initConfigs.callbacks.onImageEditingComplete?.call(bytes);
-    if (mounted && Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    await completeAndPop(
+      state: this,
+      context: context,
+      onComplete: () => initConfigs.callbacks.onImageEditingComplete?.call(bytes) ?? Future<void>.value(),
+    );
   }
 
   void _undo() {
@@ -265,24 +267,40 @@ class AiEditorState extends State<AiEditor> {
   }
 
   Future<void> _runObjectRemoval(img.Image mask) async {
-    setState(() {
-      _overlayMode = _OverlayMode.none;
-    });
+    final shouldCloseObjectOverlay = _overlayMode == _OverlayMode.object;
+    void closeObjectOverlayIfNeeded() {
+      if (!shouldCloseObjectOverlay || !mounted || _overlayMode == _OverlayMode.none) {
+        return;
+      }
+      setState(() {
+        _overlayMode = _OverlayMode.none;
+      });
+    }
+
     if (_isProcessing) return;
-    if (!_ensureAiToolsAvailable()) return;
+    if (!_ensureAiToolsAvailable()) {
+      closeObjectOverlayIfNeeded();
+      return;
+    }
     final ok = await showModelDownloadDialog(
       context,
       modelPathOrUrl: _inpaintingModelPath,
       modelName: 'Smart removal',
     );
-    if (!ok || !mounted) return;
+    if (!ok || !mounted) {
+      closeObjectOverlayIfNeeded();
+      return;
+    }
 
     setState(() {
       _isProcessing = true;
     });
     try {
       final bytes = await editorImage.safeByteArray();
-      if (bytes.isEmpty || !mounted) return;
+      if (bytes.isEmpty || !mounted) {
+        closeObjectOverlayIfNeeded();
+        return;
+      }
 
       final removed = await _actions.removeObjectsInpaintOnly(bytes, mask);
       if (!mounted) return;
@@ -292,11 +310,13 @@ class AiEditorState extends State<AiEditor> {
             content: Text('Failed to remove object (check that lama_fp32.onnx is available).'),
           ),
         );
+        closeObjectOverlayIfNeeded();
         return;
       }
 
       _history.push(EditorImage(byteArray: removed));
       uiStream.add(null);
+      closeObjectOverlayIfNeeded();
 
       final artifactMask = await _actions.detectArtifactMask(removed, mask);
       if (!mounted || artifactMask == null) return;
@@ -312,6 +332,7 @@ class AiEditorState extends State<AiEditor> {
       }
     } catch (e) {
       _log.warning('Smart removal failed: $e');
+      closeObjectOverlayIfNeeded();
     } finally {
       if (mounted) {
         setState(() {
