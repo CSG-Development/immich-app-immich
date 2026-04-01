@@ -790,13 +790,11 @@ export class AssetRepository {
       .execute();
   }
 
-  @GenerateSql({ params: [{ ownerId: DummyValue.UUID }] })
-  getAssetIdsByOwner(ownerId: string) {
+  @GenerateSql()
+  getAllAssetIds() {
     return this.db
       .selectFrom('asset')
       .select('asset.id')
-      .where('asset.ownerId', '=', asUuid(ownerId))
-      .where('asset.visibility', '!=', AssetVisibility.Hidden)
       .execute();
   }
 

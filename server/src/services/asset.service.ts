@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import _ from 'lodash';
 import { DateTime, Duration } from 'luxon';
 import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
@@ -342,11 +342,17 @@ export class AssetService extends BaseService {
     await this.jobRepository.queueAll(jobs);
   }
 
+  /**
+   * Intentionally made to affect all assets in database, not just
+   * current user's
+   */
   async runAll(auth: AuthDto, dto: AssetJobsAllDto) {
+    if (!auth.user.isAdmin) {
+      throw new UnauthorizedException();
+    }
     const assetIds: string[] = (
-      await this.assetRepository.getAssetIdsByOwner(auth.user.id)
+      await this.assetRepository.getAllAssetIds()
     ).map((row: { id: string }) => row.id);
-    await this.requireAccess({ auth, permission: Permission.AssetUpdate, ids: assetIds });
 
     const jobs: JobItem[] = [];
 
