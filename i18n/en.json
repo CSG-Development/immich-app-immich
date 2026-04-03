@@ -516,7 +516,7 @@
   "assets_permanently_deleted_count": "Permanently deleted {count, plural, one {# asset} other {# assets}}",
   "assets_removed_count": "Removed {count, plural, one {# asset} other {# assets}}",
   "assets_removed_permanently_from_device": "{count} asset(s) removed permanently from your device",
-  "assets_restore_confirmation": "Are you sure you want to restore all your trashed assets? You cannot undo this action! Note that any offline assets cannot be restored this way.",
+  "assets_restore_confirmation": "Are you sure you want to restore all your trashed assets? You cannot undo this action!\n\nNote that any offline assets cannot be restored this way.",
   "assets_restored_count": "Restored {count, plural, one {# asset} other {# assets}}",
   "assets_restored_successfully": "{count} asset(s) restored successfully",
   "assets_trashed": "{count} asset(s) trashed",
