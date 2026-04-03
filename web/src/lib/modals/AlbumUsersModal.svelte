@@ -100,12 +100,13 @@
     <section class="immich-scrollbar max-h-[400px] overflow-y-auto pb-4">
       <div class="flex w-full place-items-center justify-between gap-4 p-5">
         <div class="flex place-items-center gap-4">
-          <UserAvatar user={album.owner} size="md" />
-          <p class="text-sm font-medium">{album.owner.name}</p>
-        </div>
-
-        <div id="icon-{album.owner.id}" class="flex place-items-center">
-          <p class="text-sm">{$t('owner')}</p>
+          <UserAvatar user={album.owner} size="lg" />
+          <div class="flex flex-col gap-4">
+            <p class="leading-none">{album.owner.name}</p>
+            <div id="icon-{album.owner.id}" class="flex place-items-center">
+              <p class="text-sm leading-none">{$t('owner')}</p>
+            </div>
+          </div>
         </div>
       </div>
       {#each album.albumUsers as { user, role } (user.id)}
@@ -113,18 +114,20 @@
           class="flex w-full place-items-center justify-between gap-4 p-5 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
         >
           <div class="flex place-items-center gap-4">
-            <UserAvatar {user} size="md" />
-            <p class="text-sm font-medium">{user.name}</p>
+            <UserAvatar {user} size="lg" />
+            <div class="flex flex-col gap-4">
+              <p class="leading-none">{user.name}</p>
+              <div>
+                {#if role === AlbumUserRole.Viewer}
+                  <p class="text-sm leading-none">{$t('role_viewer')}</p>
+                {:else}
+                  <p class="text-sm leading-none">{$t('role_editor')}</p>
+                {/if}
+              </div>
+            </div>
           </div>
 
           <div id="icon-{user.id}" class="flex place-items-center gap-2 text-sm">
-            <div>
-              {#if role === AlbumUserRole.Viewer}
-                {$t('role_viewer')}
-              {:else}
-                {$t('role_editor')}
-              {/if}
-            </div>
             {#if isOwned}
               <ButtonContextMenu icon={mdiDotsVertical} size="medium" title={$t('options')}>
                 {#if role === AlbumUserRole.Viewer}

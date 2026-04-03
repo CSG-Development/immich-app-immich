@@ -39,16 +39,16 @@
   };
 
   const colorClasses: Record<UserAvatarColor, string> = {
-    primary: 'bg-primary text-light dark:text-light',
-    pink: 'bg-pink-400 text-light dark:text-dark',
-    red: 'bg-red-500 text-light dark:text-dark',
-    yellow: 'bg-yellow-500 text-light dark:text-dark',
-    blue: 'bg-blue-500 text-light dark:text-dark',
-    green: 'bg-green-600 text-light dark:text-dark',
-    purple: 'bg-purple-600 text-light dark:text-dark',
-    orange: 'bg-orange-600 text-light dark:text-dark',
-    gray: 'bg-gray-600 text-light dark:text-dark',
-    amber: 'bg-amber-600 text-light dark:text-dark',
+    primary: 'bg-primary/20 dark:bg-primary/40 text-primary dark:text-dark',
+    pink: 'bg-pink-400/20 dark:bg-pink-400/40 text-pink-400 dark:text-dark',
+    red: 'bg-red-500/20 dark:bg-red-500/40 text-red-500 dark:text-dark',
+    yellow: 'bg-yellow-500/20 dark:bg-yellow-500/40 text-yellow-500 dark:text-dark',
+    blue: 'bg-blue-500/20 dark:bg-blue-500/40 text-blue-500 dark:text-dark',
+    green: 'bg-green-600/20 dark:bg-green-600/40 text-green-600 dark:text-dark',
+    purple: 'bg-purple-600/20 dark:bg-purple-600/40 text-purple-600 dark:text-dark',
+    orange: 'bg-orange-600/20 dark:bg-orange-600/40 text-orange-600 dark:text-dark',
+    gray: 'bg-gray-600/20 dark:bg-gray-600/40 text-gray-600 dark:text-dark',
+    amber: 'bg-amber-600/20 dark:bg-amber-600/40 text-amber-600 dark:text-dark',
   };
 
   const sizeClasses: Record<Size, string> = {
@@ -87,7 +87,7 @@
   {/if}
   {#if showFallback}
     <span
-      class="uppercase flex h-full w-full select-none items-center justify-center font-medium"
+      class="uppercase flex h-full w-full select-none items-center justify-center"
       class:text-xs={size === 'sm'}
       class:text-lg={size === 'lg'}
       class:text-xl={size === 'xl'}
