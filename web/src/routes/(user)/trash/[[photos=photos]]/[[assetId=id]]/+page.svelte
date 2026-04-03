@@ -56,6 +56,11 @@
 
     try {
       const { count } = await emptyTrash();
+      const assets = await timelineManager.getAssets();
+
+      const ids = assets.map((a) => a.id);
+      timelineManager.removeAssets(ids);
+      await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
 
       notificationController.show({
         message: $t('assets_permanently_deleted_count', { values: { count } }),
@@ -77,6 +82,12 @@
     }
     try {
       const { count } = await restoreTrash();
+      const assets = await timelineManager.getAssets();
+
+      const ids = assets.map((a) => a.id);
+      timelineManager.removeAssets(ids);
+      await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
+
       notificationController.show({
         message: $t('assets_restored_count', { values: { count } }),
         type: NotificationType.Success,
@@ -151,7 +162,24 @@
     clearSelect={() => assetInteraction.clearMultiselect()}
   >
     <SelectAllAssets {timelineManager} {assetInteraction} />
-    <DeleteAssets force onAssetDelete={(assetIds) => timelineManager.removeAssets(assetIds)} />
-    <RestoreAssets onRestore={(assetIds) => timelineManager.removeAssets(assetIds)} />
+    <DeleteAssets
+      force
+      onAssetDelete={async (assetIds) => {
+        timelineManager.removeAssets(assetIds);
+        const assets = await timelineManager.getAssets();
+        if (assetInteraction.selectedAssets.length === assets.length) {
+          await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
+        }
+      }}
+    />
+    <RestoreAssets
+      onRestore={async (assetIds) => {
+        timelineManager.removeAssets(assetIds);
+        const assets = await timelineManager.getAssets();
+        if (assetInteraction.selectedAssets.length === assets.length) {
+          await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
+        }
+      }}
+    />
   </AssetSelectControlBar>
 {/if}
