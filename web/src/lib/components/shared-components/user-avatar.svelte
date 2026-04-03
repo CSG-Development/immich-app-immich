@@ -47,7 +47,7 @@
     green: 'bg-green-600/12 dark:bg-green-600/24 text-green-600',
     purple: 'bg-purple-600/12 dark:bg-purple-600/24 text-purple-600',
     orange: 'bg-orange-600/12 dark:bg-orange-600/24 text-orange-600',
-    gray: 'bg-gray-600/12 dark:bg-gray-600/24 text-gray-600',
+    gray: 'bg-gray-600/12 dark:bg-gray-400/24 text-gray-600 dark:text-gray-400',
     amber: 'bg-amber-600/12 dark:bg-amber-600/24 text-amber-600',
   };
 
