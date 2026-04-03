@@ -37,7 +37,7 @@
 <Modal {title} onClose={() => onClose(false)} {size} {icon} {mdFullSize}>
   <ModalBody>
     {#if promptSnippet}{@render promptSnippet()}{:else}
-      <p>{prompt}</p>
+      <p style="white-space: pre-line;">{prompt}</p>
     {/if}
   </ModalBody>
 
