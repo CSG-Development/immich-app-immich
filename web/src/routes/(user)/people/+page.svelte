@@ -406,7 +406,7 @@
 
           <input
             type="text"
-            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white dark:hover:bg-immich-dark-gray-card focus:bg-white"
+            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white dark:hover:bg-immich-dark-gray-card focus:bg-white dark:focus:bg-immich-dark-gray-card"
             value={person.name}
             placeholder={$t('add_a_name')}
             use:shortcut={{ shortcut: { key: 'Enter' }, onShortcut: (e) => e.currentTarget.blur() }}
