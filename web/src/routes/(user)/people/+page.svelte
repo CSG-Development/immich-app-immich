@@ -313,11 +313,6 @@
       (person) => person.name.toLowerCase() === name.toLowerCase() && person.id !== personId && person.name,
     );
   };
-
-  const refreshPeople = async () => {
-    const result = await getAllPeople({ withHidden: true });
-    people = result.people;
-  };
 </script>
 
 <svelte:window bind:innerHeight />
