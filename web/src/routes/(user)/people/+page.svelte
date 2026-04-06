@@ -318,6 +318,7 @@
 <svelte:window bind:innerHeight />
 
 <UserPageLayout
+  hideSection={selectHidden}
   title={$t('people')}
   description={countVisiblePeople === 0 && !searchName
     ? undefined
@@ -425,7 +426,7 @@
   <dialog
     open
     transition:fly={{ y: innerHeight, duration: 150, easing: quintOut, opacity: 0 }}
-    class="absolute start-0 top-0 h-full w-full bg-bg"
+    class="absolute start-0 top-0 w-full h-full bg-bg"
     aria-modal="true"
     aria-labelledby="manage-visibility-title"
     use:focusTrap
