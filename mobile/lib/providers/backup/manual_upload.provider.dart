@@ -25,6 +25,7 @@ import 'package:immich_mobile/services/background.service.dart';
 import 'package:immich_mobile/services/backup.service.dart';
 import 'package:immich_mobile/services/backup_album.service.dart';
 import 'package:immich_mobile/services/local_notification.service.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:logging/logging.dart';
@@ -49,6 +50,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
   final BackupService _backupService;
   final BackupAlbumService _backupAlbumService;
   final Ref ref;
+  String? _runId;
 
   ManualUploadNotifier(
     this._localNotificationService,
@@ -185,8 +187,24 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
   }
 
   Future<bool> _startUpload(Iterable<Asset> allManualUploads) async {
+    _runId = BackupTrace.newRunId();
+    final sw = Stopwatch()..start();
     bool hasErrors = false;
     try {
+      logBackupTrace(
+        _log,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplStart,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_RECEIVED',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_manual_upload',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'MANUAL_UPLOAD_START',
+        runId: _runId,
+        extra: {'selectedAssets': allManualUploads.length},
+      );
       _backupProvider.updateBackupProgress(BackUpProgressEnum.manualInProgress);
 
       if (ref.read(galleryPermissionNotifier.notifier).hasPermission) {
@@ -199,6 +217,23 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
             '[_startUpload] Refreshed upload list -> ${allManualUploads.length - allAssetsFromDevice.length} asset will not be uploaded',
           );
         }
+        logBackupTrace(
+          _log,
+          level: Level.INFO,
+          event: BackupTraceEvent.uplQueueSummary,
+          phase: BackupTracePhase.queue,
+          step: 'QUEUE_CANDIDATES_READY',
+          source: 'MANUAL_SCREEN',
+          appState: 'ACTIVE',
+          trigger: 'user_manual_upload',
+          status: BackupTraceStatus.ok,
+          reasonCode: 'MANUAL_LOCAL_FILTER_APPLIED',
+          runId: _runId,
+          extra: {
+            'selectedAssets': allManualUploads.length,
+            'localOnlyAssets': allAssetsFromDevice.length,
+          },
+        );
 
         final selectedBackupAlbums = await _backupAlbumService.getAllBySelection(BackupSelection.select);
         final excludedBackupAlbums = await _backupAlbumService.getAllBySelection(BackupSelection.exclude);
@@ -219,6 +254,19 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         if (uploadAssets.isEmpty) {
           dPrint(() => "[_startUpload] No Assets to upload - Abort Process");
           _backupProvider.updateBackupProgress(BackUpProgressEnum.idle);
+          logBackupTrace(
+            _log,
+            level: Level.WARNING,
+            event: BackupTraceEvent.uplQueueSummary,
+            phase: BackupTracePhase.queue,
+            step: 'QUEUE_END',
+            source: 'MANUAL_SCREEN',
+            appState: 'ACTIVE',
+            trigger: 'user_manual_upload',
+            status: BackupTraceStatus.skip,
+            reasonCode: 'MANUAL_NO_UPLOADABLE_ASSETS',
+            runId: _runId,
+          );
           return false;
         }
 
@@ -262,6 +310,26 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
               onCurrentAsset: _onSetCurrentBackupAsset,
               onError: _onAssetUploadError,
             );
+        logBackupTrace(
+          _log,
+          level: ok ? Level.INFO : Level.WARNING,
+          event: BackupTraceEvent.runSummary,
+          phase: BackupTracePhase.summary,
+          step: 'RUN_SUMMARY',
+          source: 'MANUAL_SCREEN',
+          appState: 'ACTIVE',
+          trigger: 'user_manual_upload',
+          status: ok ? BackupTraceStatus.ok : BackupTraceStatus.partial,
+          reasonCode: ok ? 'MANUAL_UPLOAD_COMPLETE' : 'MANUAL_UPLOAD_PARTIAL',
+          runId: _runId,
+          elapsedMs: sw.elapsedMilliseconds,
+          extra: {
+            'total': state.totalAssetsToUpload,
+            'successful': state.successfulUploads,
+            'failed': state.totalAssetsToUpload - state.successfulUploads,
+            'cancelled': state.cancelToken.isCancelled,
+          },
+        );
 
         // Close detailed notification
         await _localNotificationService.closeNotification(LocalNotificationService.manualUploadDetailedNotificationID);
@@ -296,10 +364,38 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
       } else {
         openAppSettings();
         dPrint(() => "[_startUpload] Do not have permission to the gallery");
+        logBackupTrace(
+          _log,
+          level: Level.WARNING,
+          event: BackupTraceEvent.uplStart,
+          phase: BackupTracePhase.trigger,
+          step: 'TRIGGER_SKIPPED',
+          source: 'MANUAL_SCREEN',
+          appState: 'ACTIVE',
+          trigger: 'user_manual_upload',
+          status: BackupTraceStatus.skip,
+          reasonCode: 'GALLERY_PERMISSION_MISSING',
+          runId: _runId,
+        );
       }
     } catch (e) {
       dPrint(() => "ERROR _startUpload: ${e.toString()}");
       hasErrors = true;
+      logBackupTrace(
+        _log,
+        level: Level.SEVERE,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_manual_upload',
+        status: BackupTraceStatus.fail,
+        reasonCode: 'MANUAL_UPLOAD_EXCEPTION',
+        runId: _runId,
+        elapsedMs: sw.elapsedMilliseconds,
+        error: e,
+      );
     } finally {
       _backupProvider.updateBackupProgress(BackUpProgressEnum.idle);
       _handleAppInActivity();
@@ -348,6 +444,18 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         toastType: ToastType.info,
         gravity: ToastGravity.BOTTOM,
         durationInSecond: 3,
+      );
+      logBackupTrace(
+        _log,
+        level: Level.WARNING,
+        event: BackupTraceEvent.uplStart,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_SKIPPED',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_manual_upload',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'LOCK_ACQUIRE_FAILED',
       );
       return false;
     }

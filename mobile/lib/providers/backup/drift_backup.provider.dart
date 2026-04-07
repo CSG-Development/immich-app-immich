@@ -12,6 +12,7 @@ import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/services/upload.service.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
 
@@ -221,6 +222,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   StreamSubscription<TaskStatusUpdate>? _statusSubscription;
   StreamSubscription<TaskProgressUpdate>? _progressSubscription;
   final _logger = Logger("DriftBackupNotifier");
+  String? _runId;
 
   /// Remove upload item from state
   void _removeUploadItem(String taskId) {
@@ -279,6 +281,20 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
           },
         );
         _logger.fine("Upload failed for taskId: $taskId, exception: ${update.exception}");
+        logBackupTrace(
+          _logger,
+          level: Level.WARNING,
+          event: BackupTraceEvent.uplTaskFail,
+          phase: BackupTracePhase.upload,
+          step: 'UPLOAD_TASK_FAIL',
+          source: 'BG_WORKER',
+          appState: 'PAUSED',
+          trigger: 'background_task',
+          status: BackupTraceStatus.fail,
+          reasonCode: 'UPLOAD_TASK_FAILED',
+          runId: _runId,
+          extra: {'taskId': taskId, 'error': error},
+        );
         break;
 
       case TaskStatus.canceled:
@@ -352,6 +368,21 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
 
   Future<void> startBackup(String userId) {
     state = state.copyWith(error: BackupError.none);
+    _runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplStart,
+      phase: BackupTracePhase.queue,
+      step: 'QUEUE_START',
+      source: 'MANUAL_SCREEN',
+      appState: 'ACTIVE',
+      trigger: 'user_start_backup',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'BACKUP_START_REQUESTED',
+      runId: _runId,
+      extra: {'userId': userId},
+    );
     return _uploadService.startBackup(userId, _updateEnqueueCount);
   }
 
@@ -362,6 +393,19 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   Future<void> cancel() async {
     dPrint(() => "Canceling backup tasks...");
     state = state.copyWith(enqueueCount: 0, enqueueTotalCount: 0, isCanceling: true, error: BackupError.none);
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplCancel,
+      phase: BackupTracePhase.queue,
+      step: 'QUEUE_ABORTED',
+      source: 'MANUAL_SCREEN',
+      appState: 'ACTIVE',
+      trigger: 'user_cancel_backup',
+      status: BackupTraceStatus.retry,
+      reasonCode: 'BACKUP_CANCEL_REQUESTED',
+      runId: _runId,
+    );
 
     final activeTaskCount = await _uploadService.cancelBackup();
 
@@ -377,6 +421,21 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
 
   Future<void> handleBackupResume(String userId) async {
     _logger.info("Resuming backup tasks...");
+    _runId ??= BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplResume,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'lifecycle_resume',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'BACKUP_RESUME_REQUESTED',
+      runId: _runId,
+      extra: {'userId': userId},
+    );
     state = state.copyWith(error: BackupError.none);
     final tasks = await _uploadService.getActiveTasks(kBackupGroup);
     _logger.info("Found ${tasks.length} tasks");
@@ -384,6 +443,19 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     if (tasks.isEmpty) {
       // Start a new backup queue
       _logger.info("Start a new backup queue");
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResume,
+        phase: BackupTracePhase.queue,
+        step: 'QUEUE_START',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'lifecycle_resume',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'NO_ACTIVE_TASKS_NEW_QUEUE',
+        runId: _runId,
+      );
       return startBackup(userId);
     }
 

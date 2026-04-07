@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_api.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -24,14 +25,54 @@ class SyncStreamService {
   bool get isCancelled => _cancelChecker?.call() ?? false;
 
   Future<bool> sync() async {
+    final runId = BackupTrace.newRunId();
     _logger.info("Remote sync request for user");
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.syncStart,
+      phase: BackupTracePhase.sync,
+      step: 'SYNC_START',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'sync_request',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'SYNC_SERVICE_START',
+      runId: runId,
+    );
     // Start the sync stream and handle events
     bool shouldReset = false;
     await _syncApiRepository.streamChanges(_handleEvents, onReset: () => shouldReset = true);
     if (shouldReset) {
       _logger.info("Resetting sync state as requested by server");
+      logBackupTrace(
+        _logger,
+        level: Level.WARNING,
+        event: BackupTraceEvent.syncBatch,
+        phase: BackupTracePhase.sync,
+        step: 'SYNC_RESET_REQUESTED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'sync_server_reset',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'SYNC_RESET_RECEIVED',
+        runId: runId,
+      );
       await _syncApiRepository.streamChanges(_handleEvents);
     }
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.syncEnd,
+      phase: BackupTracePhase.sync,
+      step: 'SYNC_END',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'sync_request',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'SYNC_SERVICE_COMPLETE',
+      runId: runId,
+    );
     return true;
   }
 
@@ -175,6 +216,21 @@ class SyncStreamService {
     if (batchData.isEmpty) return;
 
     _logger.info('Processing batch of ${batchData.length} AssetUploadReadyV1 events');
+    final runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.syncWsBatch,
+      phase: BackupTracePhase.postSync,
+      step: 'POSTSYNC_WS_BATCH_START',
+      source: 'WEBSOCKET',
+      appState: 'ACTIVE',
+      trigger: 'asset_upload_ready',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'WS_BATCH_START',
+      runId: runId,
+      extra: {'batchSize': batchData.length},
+    );
 
     final List<SyncAssetV1> assets = [];
     final List<SyncAssetExifV1> exifs = [];
@@ -206,9 +262,38 @@ class SyncStreamService {
         await _syncStreamRepository.updateAssetsV1(assets, debugLabel: 'websocket-batch');
         await _syncStreamRepository.updateAssetsExifV1(exifs, debugLabel: 'websocket-batch');
         _logger.info('Successfully processed ${assets.length} assets in batch');
+        logBackupTrace(
+          _logger,
+          level: Level.INFO,
+          event: BackupTraceEvent.syncWsBatch,
+          phase: BackupTracePhase.postSync,
+          step: 'POSTSYNC_WS_BATCH_END',
+          source: 'WEBSOCKET',
+          appState: 'ACTIVE',
+          trigger: 'asset_upload_ready',
+          status: BackupTraceStatus.ok,
+          reasonCode: 'WS_BATCH_COMPLETE',
+          runId: runId,
+          extra: {'assets': assets.length},
+        );
       }
     } catch (error, stackTrace) {
       _logger.severe("Error processing AssetUploadReadyV1 websocket batch events", error, stackTrace);
+      logBackupTrace(
+        _logger,
+        level: Level.SEVERE,
+        event: BackupTraceEvent.syncWsBatch,
+        phase: BackupTracePhase.postSync,
+        step: 'POSTSYNC_WS_BATCH_END',
+        source: 'WEBSOCKET',
+        appState: 'ACTIVE',
+        trigger: 'asset_upload_ready',
+        status: BackupTraceStatus.fail,
+        reasonCode: 'WS_BATCH_ERROR',
+        runId: runId,
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 }

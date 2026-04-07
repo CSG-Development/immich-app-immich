@@ -5,6 +5,7 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/local_album.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/local_asset.repository.dart';
 import 'package:immich_mobile/platform/native_sync_api.g.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 
 const String _kHashCancelledCode = "HASH_CANCELLED";
@@ -34,6 +35,20 @@ class HashService {
   Future<void> hashAssets() async {
     _log.info("Starting hashing of assets");
     final Stopwatch stopwatch = Stopwatch()..start();
+    final runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.hashStart,
+      phase: BackupTracePhase.hash,
+      step: 'HASH_START',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'hash_request',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'HASH_JOB_START',
+      runId: runId,
+    );
     try {
       // Sorted by backupSelection followed by isCloud
       final localAlbums = await _localAlbumRepository.getBackupAlbums();
@@ -56,10 +71,40 @@ class HashService {
       }
     } catch (e, s) {
       _log.severe("Error during hashing", e, s);
+      logBackupTrace(
+        _log,
+        level: Level.SEVERE,
+        event: BackupTraceEvent.hashEnd,
+        phase: BackupTracePhase.hash,
+        step: 'HASH_FAIL',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'hash_request',
+        status: BackupTraceStatus.fail,
+        reasonCode: 'HASH_JOB_ERROR',
+        runId: runId,
+        elapsedMs: stopwatch.elapsedMilliseconds,
+        error: e,
+        stackTrace: s,
+      );
     }
 
     stopwatch.stop();
     _log.info("Hashing took - ${stopwatch.elapsedMilliseconds}ms");
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.hashEnd,
+      phase: BackupTracePhase.hash,
+      step: 'HASH_END',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'hash_request',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'HASH_JOB_COMPLETE',
+      runId: runId,
+      elapsedMs: stopwatch.elapsedMilliseconds,
+    );
   }
 
   /// Processes a list of [LocalAsset]s, storing their hash and updating the assets in the DB
@@ -115,6 +160,23 @@ class HashService {
         final asset = toHash[hashResult.assetId];
         _log.warning(
           "Failed to hash asset with id: ${hashResult.assetId}, name: ${asset?.name}, createdAt: ${asset?.createdAt}, from album: ${album.name}. Error: ${hashResult.error ?? "unknown"}",
+        );
+        logBackupTrace(
+          _log,
+          level: Level.WARNING,
+          event: BackupTraceEvent.hashAssetFail,
+          phase: BackupTracePhase.hash,
+          step: 'HASH_ASSET_FAIL',
+          source: 'APP_RESUME',
+          appState: 'RESUMED',
+          trigger: 'hash_batch',
+          status: BackupTraceStatus.fail,
+          reasonCode: 'HASH_ASSET_FAILURE',
+          extra: {
+            'assetId': hashResult.assetId,
+            'album': album.name,
+            'error': hashResult.error ?? 'unknown',
+          },
         );
       }
     }

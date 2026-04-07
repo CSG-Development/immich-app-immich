@@ -37,6 +37,7 @@ class AdvancedSettings extends HookConsumerWidget {
     final allowSelfSignedSSLCert = useAppSettingsState(AppSettingsEnum.allowSelfSignedSSLCert);
     final useAlternatePMFilter = useAppSettingsState(AppSettingsEnum.photoManagerCustomFilter);
     final readonlyModeEnabled = useAppSettingsState(AppSettingsEnum.readonlyModeEnabled);
+    final backupUploadTelemetry = useAppSettingsState(AppSettingsEnum.backupUploadTelemetry);
     final logLevelVisibility = ref.watch(protectedFeatureVisibilityProvider);
 
     final logLevel = Level.LEVELS[levelId.value].name;
@@ -91,6 +92,11 @@ class AdvancedSettings extends HookConsumerWidget {
           label: logLevel,
         ),
       SettingsSwitchListTile(
+        valueNotifier: backupUploadTelemetry,
+        title: "Backup/upload diagnostic logs",
+        subtitle: "Enable detailed backup and upload telemetry in app logs",
+      ),
+      SettingsSwitchListTile(
         valueNotifier: preferRemote,
         title: "advanced_settings_prefer_remote_title".tr(),
         subtitle: "advanced_settings_prefer_remote_subtitle".tr(),
@@ -104,7 +110,7 @@ class AdvancedSettings extends HookConsumerWidget {
         onChanged: HttpSSLOptions.applyFromSettings,
       ),
       const CustomeProxyHeaderSettings(),
-      SslClientCertSettings(isLoggedIn: ref.read(currentUserProvider) != null),
+      SslClientCertSettings(isLoggedIn: isLoggedIn),
       if (!Store.isBetaTimelineEnabled)
         SettingsSwitchListTile(
           valueNotifier: useAlternatePMFilter,

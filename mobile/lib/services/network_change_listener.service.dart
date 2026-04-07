@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 
 /// Service that listens to network connectivity changes and automatically
@@ -19,6 +20,7 @@ class NetworkChangeListenerService {
   ConnectivityResult? _previousConnectivity;
   String? _previousWifiName;
   String? _previousWifiIp;
+  String _runId = BackupTrace.newRunId();
 
   NetworkChangeListenerService(this._ref);
 
@@ -30,6 +32,7 @@ class NetworkChangeListenerService {
     }
 
     _log.info('Starting network change listener');
+    _runId = BackupTrace.newRunId();
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       _handleConnectivityChange,
       onError: (error, stackTrace) {
@@ -148,6 +151,19 @@ class NetworkChangeListenerService {
     } else if (mobileToWifi) {
       _log.info('Device switched from mobile to WiFi, triggering seamless local endpoint discovery');
     }
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.endpointSelected,
+      phase: BackupTracePhase.endpoint,
+      step: 'ENDPOINT_RESOLVE_START',
+      source: 'NETWORK_SWITCH',
+      appState: 'RESUMED',
+      trigger: 'wifi_mobile_switch',
+      status: BackupTraceStatus.retry,
+      reasonCode: wifiContextChanged ? 'WIFI_CONTEXT_CHANGED' : 'MOBILE_TO_WIFI',
+      runId: _runId,
+    );
 
     final discovery = _ref.read(deviceDiscoveryProvider);
     final devices = await discovery.startMdnsDiscovery();
@@ -183,6 +199,19 @@ class NetworkChangeListenerService {
 
   Future<void> _onWifiToMobile() async {
     _log.info('Device switched from WiFi to mobile, triggering seamless local endpoint discovery');
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.endpointSelected,
+      phase: BackupTracePhase.endpoint,
+      step: 'ENDPOINT_RESOLVE_START',
+      source: 'NETWORK_SWITCH',
+      appState: 'RESUMED',
+      trigger: 'wifi_mobile_switch',
+      status: BackupTraceStatus.retry,
+      reasonCode: 'WIFI_TO_MOBILE',
+      runId: _runId,
+    );
     unawaited(_ref.read(apiServiceProvider).setOpenApiServiceEndpoint());
   }
 
