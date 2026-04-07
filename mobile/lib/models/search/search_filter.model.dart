@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 
@@ -172,6 +173,54 @@ class SearchDisplayFilters {
   int get hashCode => isNotInAlbum.hashCode ^ isArchive.hashCode ^ isFavorite.hashCode;
 }
 
+class SearchExifFilterPair {
+  String? tag;
+  String? value;
+
+  SearchExifFilterPair({this.tag, this.value});
+
+  SearchExifFilterPair copyWith({String? tag, String? value}) {
+    return SearchExifFilterPair(
+      tag: tag ?? this.tag,
+      value: value ?? this.value,
+    );
+  }
+
+  bool get isComplete {
+    final tagValue = tag?.trim() ?? '';
+    final inputValue = value?.trim() ?? '';
+    return tagValue.isNotEmpty && inputValue.isNotEmpty;
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'tag': tag,
+      'value': value,
+    };
+  }
+
+  factory SearchExifFilterPair.fromMap(Map<String, dynamic> map) {
+    return SearchExifFilterPair(
+      tag: map['tag'] != null ? map['tag'] as String : null,
+      value: map['value'] != null ? map['value'] as String : null,
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory SearchExifFilterPair.fromJson(String source) =>
+      SearchExifFilterPair.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  bool operator ==(covariant SearchExifFilterPair other) {
+    if (identical(this, other)) return true;
+    return other.tag == tag && other.value == value;
+  }
+
+  @override
+  int get hashCode => tag.hashCode ^ value.hashCode;
+}
+
 class SearchFilter {
   String? context;
   String? filename;
@@ -182,6 +231,7 @@ class SearchFilter {
   SearchCameraFilter camera;
   SearchDateFilter date;
   SearchDisplayFilters display;
+  List<SearchExifFilterPair> exifFilters;
 
   // Enum
   AssetType mediaType;
@@ -196,8 +246,11 @@ class SearchFilter {
     required this.camera,
     required this.date,
     required this.display,
+    required this.exifFilters,
     required this.mediaType,
   });
+
+  List<SearchExifFilterPair> get completedExifFilters => exifFilters.where((pair) => pair.isComplete).toList();
 
   bool get isEmpty {
     return (context == null || (context != null && context!.isEmpty)) &&
@@ -214,6 +267,7 @@ class SearchFilter {
         display.isNotInAlbum == false &&
         display.isArchive == false &&
         display.isFavorite == false &&
+        completedExifFilters.isEmpty &&
         mediaType == AssetType.other;
   }
 
@@ -227,6 +281,7 @@ class SearchFilter {
     SearchCameraFilter? camera,
     SearchDateFilter? date,
     SearchDisplayFilters? display,
+    List<SearchExifFilterPair>? exifFilters,
     AssetType? mediaType,
   }) {
     return SearchFilter(
@@ -239,13 +294,14 @@ class SearchFilter {
       camera: camera ?? this.camera,
       date: date ?? this.date,
       display: display ?? this.display,
+      exifFilters: exifFilters ?? this.exifFilters,
       mediaType: mediaType ?? this.mediaType,
     );
   }
 
   @override
   String toString() {
-    return 'SearchFilter(context: $context, filename: $filename, description: $description, language: $language, people: $people, location: $location, camera: $camera, date: $date, display: $display, mediaType: $mediaType)';
+    return 'SearchFilter(context: $context, filename: $filename, description: $description, language: $language, people: $people, location: $location, camera: $camera, date: $date, display: $display, exifFilters: $exifFilters, mediaType: $mediaType)';
   }
 
   @override
@@ -256,11 +312,12 @@ class SearchFilter {
         other.filename == filename &&
         other.description == description &&
         other.language == language &&
-        other.people == people &&
+        setEquals(other.people, people) &&
         other.location == location &&
         other.camera == camera &&
         other.date == date &&
         other.display == display &&
+        listEquals(other.exifFilters, exifFilters) &&
         other.mediaType == mediaType;
   }
 
@@ -270,11 +327,12 @@ class SearchFilter {
         filename.hashCode ^
         description.hashCode ^
         language.hashCode ^
-        people.hashCode ^
+        Object.hashAllUnordered(people) ^
         location.hashCode ^
         camera.hashCode ^
         date.hashCode ^
         display.hashCode ^
+        Object.hashAll(exifFilters) ^
         mediaType.hashCode;
   }
 }
