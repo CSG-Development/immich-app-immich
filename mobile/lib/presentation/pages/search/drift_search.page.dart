@@ -16,13 +16,13 @@ import 'package:immich_mobile/presentation/pages/search/paginated_search.provide
 import 'package:immich_mobile/presentation/utils/use_scroll_notifier.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/general_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
-import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 import 'package:immich_mobile/widgets/search/search_filter/camera_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/display_option_picker.dart';
+import 'package:immich_mobile/widgets/search/search_filter/exif_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/filter_bottom_sheet_scaffold.dart';
 import 'package:immich_mobile/widgets/search/search_filter/location_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/media_type_picker.dart';
@@ -49,6 +49,7 @@ class DriftSearchPage extends HookConsumerWidget {
         camera: preFilter?.camera ?? SearchCameraFilter(),
         date: preFilter?.date ?? SearchDateFilter(),
         display: preFilter?.display ?? SearchDisplayFilters(isNotInAlbum: false, isArchive: false, isFavorite: false),
+        exifFilters: preFilter?.exifFilters ?? [],
         mediaType: preFilter?.mediaType ?? AssetType.other,
         language: "${context.locale.languageCode}-${context.locale.countryCode}",
       ),
@@ -62,6 +63,7 @@ class DriftSearchPage extends HookConsumerWidget {
     final locationCurrentFilterWidget = useState<Widget?>(null);
     final mediaTypeCurrentFilterWidget = useState<Widget?>(null);
     final displayOptionCurrentFilterWidget = useState<Widget?>(null);
+    final exifCurrentFilterWidget = useState<Widget?>(null);
 
     final isSearching = useState(false);
 
@@ -114,8 +116,26 @@ class DriftSearchPage extends HookConsumerWidget {
           if (preFilter!.location.city != null) {
             locationCurrentFilterWidget.value = Text(preFilter!.location.city!, style: context.textTheme.labelLarge);
           }
+          if (preFilter!.completedExifFilters.isNotEmpty) {
+            exifCurrentFilterWidget.value = Text(
+              _buildExifFilterSummary(preFilter!.completedExifFilters),
+              style: context.textTheme.labelLarge,
+            );
+          }
         });
       }
+    }
+
+    void updateExifCurrentFilterWidget(List<SearchExifFilterPair> exifFilters) {
+      final validPairs = exifFilters.where((pair) => pair.isComplete).toList();
+      if (validPairs.isEmpty) {
+        exifCurrentFilterWidget.value = null;
+        return;
+      }
+      exifCurrentFilterWidget.value = Text(
+        _buildExifFilterSummary(validPairs),
+        style: context.textTheme.labelLarge,
+      );
     }
 
     useEffect(() {
@@ -394,6 +414,36 @@ class DriftSearchPage extends HookConsumerWidget {
       );
     }
 
+    showExifPicker() {
+      handleOnSelect(List<SearchExifFilterPair> value) {
+        filter.value = filter.value.copyWith(exifFilters: value);
+        updateExifCurrentFilterWidget(value);
+      }
+
+      handleClear() {
+        filter.value = filter.value.copyWith(exifFilters: []);
+        exifCurrentFilterWidget.value = null;
+        search();
+      }
+
+      showFilterBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        child: FilterBottomSheetScaffold(
+          title: _trOrFallback(context, 'search_filter_exif_title', 'Advanced tag search'),
+          onSearch: search,
+          onClear: handleClear,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: ExifPicker(
+              onSelect: handleOnSelect,
+              filter: filter.value.exifFilters,
+            ),
+          ),
+        ),
+      );
+    }
+
     handleTextSubmitted(String value) {
       switch (textSearchType.value) {
         case TextSearchType.context:
@@ -587,6 +637,12 @@ class DriftSearchPage extends HookConsumerWidget {
                       label: 'search_filter_display_options'.t(context: context),
                       currentFilter: displayOptionCurrentFilterWidget.value,
                     ),
+                    SearchFilterChip(
+                      icon: Icons.tune_rounded,
+                      onTap: showExifPicker,
+                      label: _trOrFallback(context, 'search_filter_exif_chip', 'Advanced tag search'),
+                      currentFilter: exifCurrentFilterWidget.value,
+                    ),
                   ],
                 ),
               ),
@@ -600,6 +656,19 @@ class DriftSearchPage extends HookConsumerWidget {
       ),
     );
   }
+}
+
+String _buildExifFilterSummary(List<SearchExifFilterPair> pairs) {
+  return pairs
+      .where((pair) => pair.isComplete)
+      .map((pair) => '${pair.tag}: ${pair.value}')
+      .take(2)
+      .join(', ');
+}
+
+String _trOrFallback(BuildContext context, String key, String fallback) {
+  final translated = key.t(context: context);
+  return translated == key ? fallback : translated;
 }
 
 class _SearchResultGrid extends ConsumerWidget {
