@@ -22,6 +22,7 @@ import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/utils/action_button.utils.dart';
 import 'package:immich_mobile/utils/bytes_units.dart';
+import 'package:immich_mobile/widgets/asset_viewer/detail_panel/advanced_exif_tab.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 const _kSeparator = '  •  ';
@@ -62,7 +63,7 @@ class AssetDetailBottomSheet extends ConsumerWidget {
 
     return BaseBottomSheet(
       actions: actions,
-      slivers: const [_AssetDetailBottomSheet()],
+      slivers: [_AssetDetailBottomSheet()],
       controller: controller,
       initialChildSize: initialChildSize,
       minChildSize: 0.1,
@@ -75,8 +76,27 @@ class AssetDetailBottomSheet extends ConsumerWidget {
   }
 }
 
-class _AssetDetailBottomSheet extends ConsumerWidget {
-  const _AssetDetailBottomSheet();
+class _AssetDetailBottomSheet extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_AssetDetailBottomSheet> createState() => _AssetDetailBottomSheetState();
+}
+
+class _AssetDetailBottomSheetState extends ConsumerState<_AssetDetailBottomSheet>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   String _getDateTime(BuildContext ctx, BaseAsset asset) {
     final dateTime = asset.createdAt.toLocal();
@@ -132,63 +152,117 @@ class _AssetDetailBottomSheet extends ConsumerWidget {
     await ref.read(actionProvider.notifier).editDateTime(ActionSource.viewer, context);
   }
 
+  List<Widget> _buildBaseExifChildren(BuildContext context, BaseAsset asset, ExifInfo? exifInfo) {
+    final cameraTitle = _getCameraInfoTitle(exifInfo);
+
+    return [
+      _SheetTile(
+        title: _getDateTime(context, asset),
+        titleStyle: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+        trailing: asset.hasRemote ? const Icon(Icons.edit, size: 18) : null,
+        onTap: asset.hasRemote ? () async => await _editDateTime(context, ref) : null,
+      ),
+      if (exifInfo != null) _SheetAssetDescription(exif: exifInfo),
+      const SheetPeopleDetails(),
+      const SheetLocationDetails(),
+      const SheetTagsDetailsBeta(),
+      _SheetTile(
+        title: 'exif_bottom_sheet_details'.t(context: context),
+        titleStyle: context.textTheme.labelMedium?.copyWith(
+          color: context.textTheme.labelMedium?.color?.withAlpha(200),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      _SheetTile(
+        title: asset.name,
+        titleStyle: context.textTheme.labelLarge,
+        leading: Icon(
+          asset.isImage ? Icons.image_outlined : Icons.videocam_outlined,
+          size: 24,
+          color: context.textTheme.labelLarge?.color,
+        ),
+        subtitle: _getFileInfo(asset, exifInfo),
+        subtitleStyle: context.textTheme.bodyMedium?.copyWith(
+          color: context.textTheme.bodyMedium?.color?.withAlpha(155),
+        ),
+      ),
+      if (cameraTitle != null)
+        _SheetTile(
+          title: cameraTitle,
+          titleStyle: context.textTheme.labelLarge,
+          leading: Icon(Icons.camera_outlined, size: 24, color: context.textTheme.labelLarge?.color),
+          subtitle: _getCameraInfoSubtitle(exifInfo),
+          subtitleStyle: context.textTheme.bodyMedium?.copyWith(
+            color: context.textTheme.bodyMedium?.color?.withAlpha(155),
+          ),
+        ),
+      const SizedBox(height: 64),
+    ];
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final asset = ref.watch(currentAssetNotifier);
     if (asset == null) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     final exifInfo = ref.watch(currentAssetExifProvider).valueOrNull;
-    final cameraTitle = _getCameraInfoTitle(exifInfo);
+    final advancedAsync = ref.watch(timelineMergedAdvancedExifProvider);
+    final bool isBaseExifTab = _tabController.index == 0;
 
     return SliverList.list(
       children: [
-        // Asset Date and Time
-        _SheetTile(
-          title: _getDateTime(context, asset),
-          titleStyle: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-          trailing: asset.hasRemote ? const Icon(Icons.edit, size: 18) : null,
-          onTap: asset.hasRemote ? () async => await _editDateTime(context, ref) : null,
-        ),
-        if (exifInfo != null) _SheetAssetDescription(exif: exifInfo),
-        const SheetPeopleDetails(),
-        const SheetLocationDetails(),
-        const SheetTagsDetailsBeta(),
-        // Details header
-        _SheetTile(
-          title: 'exif_bottom_sheet_details'.t(context: context),
-          titleStyle: context.textTheme.labelMedium?.copyWith(
-            color: context.textTheme.labelMedium?.color?.withAlpha(200),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        // File info
-        _SheetTile(
-          title: asset.name,
-          titleStyle: context.textTheme.labelLarge,
-          leading: Icon(
-            asset.isImage ? Icons.image_outlined : Icons.videocam_outlined,
-            size: 24,
-            color: context.textTheme.labelLarge?.color,
-          ),
-          subtitle: _getFileInfo(asset, exifInfo),
-          subtitleStyle: context.textTheme.bodyMedium?.copyWith(
-            color: context.textTheme.bodyMedium?.color?.withAlpha(155),
-          ),
-        ),
-        // Camera info
-        if (cameraTitle != null)
-          _SheetTile(
-            title: cameraTitle,
-            titleStyle: context.textTheme.labelLarge,
-            leading: Icon(Icons.camera_outlined, size: 24, color: context.textTheme.labelLarge?.color),
-            subtitle: _getCameraInfoSubtitle(exifInfo),
-            subtitleStyle: context.textTheme.bodyMedium?.copyWith(
-              color: context.textTheme.bodyMedium?.color?.withAlpha(155),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: context.colorScheme.surfaceContainer,
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              dividerColor: Colors.transparent,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.all(4),
+              indicator: BoxDecoration(
+                color: context.colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+              ),
+              labelColor: context.colorScheme.onSurface,
+              unselectedLabelColor: context.colorScheme.onSurfaceVariant,
+              labelStyle: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              unselectedLabelStyle: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+              tabs: [
+                Tab(text: 'advanced_exif_tab_base'.t(context: context)),
+                Tab(text: 'advanced'.t(context: context)),
+              ],
             ),
           ),
-        const SizedBox(height: 64),
+        ),
+        const SizedBox(height: 12),
+        if (isBaseExifTab) ..._buildBaseExifChildren(context, asset, exifInfo),
+        if (!isBaseExifTab)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: advancedAsync.when(
+              data: (info) => AdvancedExifTab(info: info),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (Object error, StackTrace stackTrace) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'advanced_exif_load_error'.t(context: context),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: context.colorScheme.error,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (!isBaseExifTab) const SizedBox(height: 64),
       ],
     );
   }
