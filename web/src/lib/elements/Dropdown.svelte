@@ -101,7 +101,7 @@
     onclick={() => (showMenu = !showMenu)}
     fullWidth
     variant="ghost"
-    color="secondary"
+    color="primary"
     size="small"
     {title}
     class="gap-2"
@@ -109,7 +109,9 @@
     {#if renderedSelectedOption?.icon}
       <Icon path={renderedSelectedOption.icon} size="24" />
     {/if}
-    <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : ''}>{renderedSelectedOption.title}</Text>
+    <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : 'font-medium'}
+      >{renderedSelectedOption.title}</Text
+    >
   </Button>
 
   <!-- DROP DOWN MENU -->
