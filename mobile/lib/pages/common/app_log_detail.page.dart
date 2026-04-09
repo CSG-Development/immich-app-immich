@@ -78,7 +78,7 @@ class AppLogDetailPage extends HookConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
-                "FROM",
+                "from".tr().toUpperCase(),
                 style: TextStyle(fontSize: 12.0, color: context.primaryColor, fontWeight: FontWeight.bold),
               ),
             ),

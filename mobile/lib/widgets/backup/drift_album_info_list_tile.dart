@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -51,7 +52,7 @@ class DriftAlbumInfoListTile extends HookConsumerWidget {
           if (album.id == 'isAll' || album.name == 'Recents') {
             ImmichToast.show(
               context: context,
-              msg: 'Cannot exclude album contains all assets',
+              msg: 'album_info_card_cannot_exclude_all_assets'.tr(),
               toastType: ToastType.error,
               gravity: ToastGravity.BOTTOM,
             );

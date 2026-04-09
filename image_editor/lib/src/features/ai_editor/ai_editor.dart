@@ -17,6 +17,7 @@ import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_app
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_editor_bottombar.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 import 'package:image_editor/src/common/utils/async_error_runner.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
 import 'package:image_editor/src/features/ai_editor/object_removal/object_removal_overlay_host.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
@@ -55,6 +56,8 @@ class AiEditor extends StatefulWidget {
 }
 
 class AiEditorState extends State<AiEditor> {
+  String _t(String key, String fallback) => ImageEditorTranslationScope.text(context, key, fallback);
+
   static final Logger _log = Logger('AiEditor');
   late final StreamController<void> uiStream;
   Size editorBodySize = Size.zero;
@@ -188,7 +191,11 @@ class AiEditorState extends State<AiEditor> {
     }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('AI tools are currently unavailable on web.')),
+        SnackBar(
+          content: Text(
+            _t('image_editor.ai.tools_unavailable_web', 'AI tools are currently unavailable on web.'),
+          ),
+        ),
       );
     }
     return false;
@@ -285,7 +292,7 @@ class AiEditorState extends State<AiEditor> {
     final ok = await showModelDownloadDialog(
       context,
       modelPathOrUrl: _inpaintingModelPath,
-      modelName: 'Smart removal',
+      modelName: _t('image_editor.ai.smart_removal', 'Smart removal'),
     );
     if (!ok || !mounted) {
       closeObjectOverlayIfNeeded();
@@ -306,8 +313,13 @@ class AiEditorState extends State<AiEditor> {
       if (!mounted) return;
       if (listEquals(removed, bytes)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to remove object (check that lama_fp32.onnx is available).'),
+          SnackBar(
+            content: Text(
+              _t(
+                'image_editor.ai.failed_remove_object',
+                'Failed to remove object (check that lama_fp32.onnx is available).',
+              ),
+            ),
           ),
         );
         closeObjectOverlayIfNeeded();
@@ -346,21 +358,24 @@ class AiEditorState extends State<AiEditor> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Artifacts detected'),
-        content: const Text(
-          'Try to remove detected artifacts automatically?\n\n'
-          'Warning: automatic artifact cleanup can be unpredictable and may make '
-          'the result worse in some cases.',
+        title: Text(_t('image_editor.ai.artifacts_detected_title', 'Artifacts detected')),
+        content: Text(
+          _t(
+            'image_editor.ai.artifacts_detected_body',
+            'Try to remove detected artifacts automatically?\n\n'
+            'Warning: automatic artifact cleanup can be unpredictable and may make '
+            'the result worse in some cases.',
+          ),
           style: AiModalUi.contentStyle,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Skip'),
+            child: Text(_t('image_editor.skip', 'Skip')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
+            child: Text(_t('image_editor.remove', 'Remove')),
           ),
         ],
       ),

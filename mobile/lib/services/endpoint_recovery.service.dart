@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hc_device/hc_device.dart';
@@ -259,13 +260,13 @@ class EndpointRecoveryService {
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: Text('Connection lost', style: textTheme.titleMedium),
-            content: Text('Connection lost. Attempt to recover?', style: textTheme.bodyMedium),
+            title: Text('connection_lost'.tr(), style: textTheme.titleMedium),
+            content: Text('recover_connection_confirm'.tr(), style: textTheme.bodyMedium),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
                 style: TextButton.styleFrom(foregroundColor: colorScheme.onSurfaceVariant),
-                child: const Text('No'),
+                child: Text('no'.tr()),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
@@ -273,7 +274,7 @@ class EndpointRecoveryService {
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
                 ),
-                child: const Text('Yes'),
+                child: Text('yes'.tr()),
               ),
             ],
           ),

@@ -50,7 +50,7 @@ class CopyActionButton extends ConsumerWidget {
     } else {
       ImmichToast.show(
         context: context,
-        msg: result.error ?? 'errors.unable.to.copy.to.clipboard'.t(context: context),
+        msg: result.error ?? 'errors.unable_to_copy_to_clipboard'.t(context: context),
         gravity: ToastGravity.BOTTOM,
         toastType: ToastType.error,
       );

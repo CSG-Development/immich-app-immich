@@ -93,8 +93,8 @@ class AdvancedSettings extends HookConsumerWidget {
         ),
       SettingsSwitchListTile(
         valueNotifier: backupUploadTelemetry,
-        title: "Backup/upload diagnostic logs",
-        subtitle: "Enable detailed backup and upload telemetry in app logs",
+        title: "advanced_settings_backup_upload_diagnostic_logs".tr(),
+        subtitle: "advanced_settings_backup_upload_diagnostic_logs_subtitle".tr(),
       ),
       SettingsSwitchListTile(
         valueNotifier: preferRemote,

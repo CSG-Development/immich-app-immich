@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
@@ -27,7 +28,7 @@ class IcloudDownloadProgressBar extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 8.0),
       child: Row(
         children: [
-          SizedBox(width: 110, child: Text("iCloud Download", style: context.textTheme.labelSmall)),
+          SizedBox(width: 110, child: Text("icloud_download".tr(), style: context.textTheme.labelSmall)),
           Expanded(
             child: LinearProgressIndicator(
               minHeight: 10.0,

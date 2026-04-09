@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/ai_modal_ui.dart';
 
@@ -28,16 +29,26 @@ Future<bool> showModelDownloadDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => AlertDialog(
-        title: Text('$modelName model not found'),
+        title: Text(
+          ImageEditorTranslationScope.text(
+            context,
+            'image_editor.ai.model_not_found_title',
+            '$modelName model not found',
+          ),
+        ),
         content: Text(
-          'The required model was not found at:\n$modelPathOrUrl\n\n'
-          'Please provide a valid model asset/path and try again.',
+          ImageEditorTranslationScope.text(
+            context,
+            'image_editor.ai.model_not_found_body',
+            'The required model was not found at:\n$modelPathOrUrl\n\n'
+            'Please provide a valid model asset/path and try again.',
+          ),
           style: AiModalUi.contentStyle,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(ImageEditorTranslationScope.text(context, 'image_editor.close', 'Close')),
           ),
         ],
       ),
@@ -79,19 +90,29 @@ class _ModelDownloadDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Download $modelName model?'),
+      title: Text(
+        ImageEditorTranslationScope.text(
+          context,
+          'image_editor.ai.download_model_title',
+          'Download $modelName model?',
+        ),
+      ),
       content: Text(
-        'This model is required for $modelName. It will be downloaded and stored on your device. This may use mobile data.',
+        ImageEditorTranslationScope.text(
+          context,
+          'image_editor.ai.download_model_body',
+          'This model is required for $modelName. It will be downloaded and stored on your device. This may use mobile data.',
+        ),
         style: AiModalUi.contentStyle,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(ImageEditorTranslationScope.text(context, 'image_editor.cancel', 'Cancel')),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Download'),
+          child: Text(ImageEditorTranslationScope.text(context, 'image_editor.download', 'Download')),
         ),
       ],
     );
@@ -146,7 +167,13 @@ class _ModelDownloadProgressDialogState extends State<_ModelDownloadProgressDial
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: Text('Downloading ${widget.modelName} model'),
+      title: Text(
+        ImageEditorTranslationScope.text(
+          context,
+          'image_editor.ai.downloading_model_title',
+          'Downloading ${widget.modelName} model',
+        ),
+      ),
       content: _error != null
           ? Column(
               mainAxisSize: MainAxisSize.min,
@@ -170,7 +197,7 @@ class _ModelDownloadProgressDialogState extends State<_ModelDownloadProgressDial
                 Text(
                   _progress >= 0
                       ? '${(_progress * 100).toStringAsFixed(0)}%'
-                      : 'Downloading…',
+                      : ImageEditorTranslationScope.text(context, 'image_editor.downloading', 'Downloading…'),
                   style: AiModalUi.noteStyle,
                 ),
               ],
@@ -179,7 +206,7 @@ class _ModelDownloadProgressDialogState extends State<_ModelDownloadProgressDial
           ? [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Close'),
+                child: Text(ImageEditorTranslationScope.text(context, 'image_editor.close', 'Close')),
               ),
             ]
           : null,

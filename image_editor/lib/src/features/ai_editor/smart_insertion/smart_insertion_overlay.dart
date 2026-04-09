@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/features/ai_editor/common/utils/brush_strokes.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
@@ -43,6 +44,8 @@ class SmartInsertionOverlay extends StatefulWidget {
 }
 
 class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
+  String _t(String key, String fallback) => ImageEditorTranslationScope.text(context, key, fallback);
+
   final StrokeHistory _strokeHistory = StrokeHistory();
   img.Image? _initialMask;
   final List<img.Image?> _baseMaskHistory = [null];
@@ -123,7 +126,13 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
     if (targetRect.width < _minTargetSizeDisplayPx || targetRect.height < _minTargetSizeDisplayPx) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Selection is too small. Draw a larger target.')));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            _t('image_editor.ai.selection_too_small', 'Selection is too small. Draw a larger target.'),
+          ),
+        ),
+      );
       setState(() {
         _rectStart = null;
         _rectCurrent = null;
@@ -132,7 +141,11 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
       return;
     }
     if (_targetShape == SmartInsertionShape.lasso && _lassoPoints.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lasso needs at least 3 points.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('image_editor.ai.lasso_min_points', 'Lasso needs at least 3 points.')),
+        ),
+      );
       setState(() => _lassoPoints.clear());
       return;
     }
@@ -229,14 +242,17 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Select target shape', style: AiModalUi.sectionTitleStyle),
+                Text(
+                  _t('image_editor.ai.select_target_shape', 'Select target shape'),
+                  style: AiModalUi.sectionTitleStyle,
+                ),
                 const SizedBox(height: AiModalUi.itemSpacing),
                 Row(
                   children: [
                     Expanded(
                       child: AiModalSelectTile(
                         icon: Icons.crop_free,
-                        label: 'Rectangle',
+                        label: _t('image_editor.ai.shape.rectangle', 'Rectangle'),
                         isSelected: false,
                         onTap: () => Navigator.of(ctx).pop(SmartInsertionShape.rectangle),
                       ),
@@ -245,7 +261,7 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
                     Expanded(
                       child: AiModalSelectTile(
                         icon: Icons.circle_outlined,
-                        label: 'Ellipse',
+                        label: _t('image_editor.ai.shape.ellipse', 'Ellipse'),
                         isSelected: false,
                         onTap: () => Navigator.of(ctx).pop(SmartInsertionShape.ellipse),
                       ),
@@ -254,7 +270,7 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
                     Expanded(
                       child: AiModalSelectTile(
                         icon: Icons.gesture,
-                        label: 'Lasso',
+                        label: _t('image_editor.ai.shape.lasso', 'Lasso'),
                         isSelected: false,
                         onTap: () => Navigator.of(ctx).pop(SmartInsertionShape.lasso),
                       ),
@@ -543,13 +559,13 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildBottomActionButton(
-                    label: 'Target',
+                    label: _t('image_editor.ai.target', 'Target'),
                     icon: Icons.gesture,
                     isActive: _activeBottomAction == SmartInsertionBottomAction.target,
                     onPressed: _openShapePicker,
                   ),
                   _buildBottomActionButton(
-                    label: 'Brush',
+                    label: _t('image_editor.ai.brush', 'Brush'),
                     icon: Icons.brush,
                     isActive: _activeBottomAction == SmartInsertionBottomAction.brush,
                     onPressed: () {
@@ -561,7 +577,7 @@ class _SmartInsertionOverlayState extends State<SmartInsertionOverlay> {
                     },
                   ),
                   _buildBottomActionButton(
-                    label: 'Eraser',
+                    label: _t('image_editor.ai.eraser', 'Eraser'),
                     icon: Icons.auto_fix_off,
                     isActive: _activeBottomAction == SmartInsertionBottomAction.eraser,
                     onPressed: () {

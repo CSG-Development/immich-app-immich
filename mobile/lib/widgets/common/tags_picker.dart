@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
@@ -288,7 +289,7 @@ class _TagsPicker extends HookConsumerWidget {
       return [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('cancel'.tr()),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
@@ -308,7 +309,7 @@ class _TagsPicker extends HookConsumerWidget {
                   }
                   Navigator.pop(context, tagsToReturn);
                 },
-          child: const Text('Add Tags'),
+          child: Text('add_tag'.tr()),
         ),
       ];
     }
@@ -341,7 +342,7 @@ class _TagsPicker extends HookConsumerWidget {
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 title: Text(
-                  'Add Tags',
+                  'add_tag'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -373,7 +374,7 @@ class _TagsPicker extends HookConsumerWidget {
         onTap: () => FocusScope.of(context).unfocus(),
         child: AlertDialog(
           title: Text(
-            'Add Tags',
+            'add_tag'.tr(),
             style: context.textTheme.titleMedium?.copyWith(
               color: context.colorScheme.onSurface,
             ),

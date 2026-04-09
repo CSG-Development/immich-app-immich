@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 
 /// Web-safe placeholder used to avoid importing native ONNX bindings on web.
@@ -31,10 +32,16 @@ class AiEditor extends StatelessWidget {
     return Scaffold(
       backgroundColor: initConfigs.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('AI editor'),
+        title: Text(ImageEditorTranslationScope.text(context, 'image_editor.ai_editor_title', 'AI editor')),
       ),
-      body: const Center(
-        child: Text('AI tools are unavailable on web.'),
+      body: Center(
+        child: Text(
+          ImageEditorTranslationScope.text(
+            context,
+            'image_editor.ai_tools_unavailable_on_web',
+            'AI tools are unavailable on web.',
+          ),
+        ),
       ),
     );
   }

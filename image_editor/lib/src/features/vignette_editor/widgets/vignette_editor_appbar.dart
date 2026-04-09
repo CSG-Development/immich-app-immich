@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 
 /// App bar for the vignette editor, with undo/redo and done/close actions.
@@ -29,6 +30,7 @@ class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidge
 
   @override
   Widget build(BuildContext context) {
+    final tr = ImageEditorTranslationScope.of(context);
     return EditorActionAppBar(
       theme: theme,
       onBack: onClose,
@@ -38,7 +40,7 @@ class VignetteEditorAppBar extends StatelessWidget implements PreferredSizeWidge
       canUndo: canUndo,
       canRedo: canRedo,
       isBusy: isBusy,
-      confirmTooltip: 'Done',
+      confirmTooltip: tr.done,
     );
   }
 

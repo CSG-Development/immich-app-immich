@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:pro_image_editor/shared/widgets/flat_icon_text_button.dart';
 
 /// Bottom bar for AI tools.
@@ -24,7 +25,7 @@ class AiEditorBottomBar extends StatelessWidget {
 
     final items = <_AiToolItem>[
       _AiToolItem(
-        label: 'Smart removal',
+        label: ImageEditorTranslationScope.text(context, 'image_editor.ai.smart_removal', 'Smart removal'),
         icon: Icons.healing,
         onPressed: isBusy || onObjectRemoval == null
             ? null
@@ -33,7 +34,7 @@ class AiEditorBottomBar extends StatelessWidget {
               },
       ),
       _AiToolItem(
-        label: 'Enhance',
+        label: ImageEditorTranslationScope.text(context, 'image_editor.ai.enhance', 'Enhance'),
         icon: Icons.auto_fix_high,
         onPressed: isBusy || onEnhance == null
             ? null
@@ -42,7 +43,7 @@ class AiEditorBottomBar extends StatelessWidget {
               },
       ),
       _AiToolItem(
-        label: 'Smart insertion',
+        label: ImageEditorTranslationScope.text(context, 'image_editor.ai.smart_insertion', 'Smart insertion'),
         icon: Icons.add_photo_alternate_outlined,
         onPressed: isBusy || onSmartInsertion == null ? null : onSmartInsertion,
       ),

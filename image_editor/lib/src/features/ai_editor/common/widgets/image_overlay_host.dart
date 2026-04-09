@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 import 'package:image_editor/src/utils/image_decode_utils.dart';
@@ -42,7 +43,15 @@ class ImageOverlayHost extends StatelessWidget {
             }
             final dims = dimSnapshot.data;
             if (dims == null) {
-              return const Center(child: Text('Failed to decode image'));
+              return Center(
+                child: Text(
+                  ImageEditorTranslationScope.text(
+                    context,
+                    'image_editor.failed_to_decode_image',
+                    'Failed to decode image',
+                  ),
+                ),
+              );
             }
             return builder(bytes, dims.width, dims.height);
           },

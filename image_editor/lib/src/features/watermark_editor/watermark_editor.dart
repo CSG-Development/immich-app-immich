@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_editor/src/common/utils/async_error_runner.dart';
 import 'package:image_editor/src/common/utils/platform_tooltip.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/core/models/layers/layer_interaction.dart';
@@ -73,6 +74,8 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   WatermarkMode _mode = WatermarkMode.text;
   WatermarkPosition _position = WatermarkPosition.bottomRight;
   String _watermarkText = 'Your Name';
+  String _t(String key, String fallback) => ImageEditorTranslationScope.text(context, key, fallback);
+
   Uint8List? _watermarkLogoBytes;
   int _textColorRgb = 0xFFFFFF;
   double _opacity = 0.5;
@@ -81,6 +84,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
   WidgetLayer? _initialLayer;
   bool _isApplying = false;
+  bool _didInitLocalizedDefaults = false;
 
   void _onWatermarkTextControllerChanged() {
     final v = _textController.text;
@@ -106,6 +110,17 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
         widget.editor?.removeLayer(existing, blockCaptureScreenshot: true);
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitLocalizedDefaults) {
+      return;
+    }
+    _didInitLocalizedDefaults = true;
+    _watermarkText = _t('image_editor.watermark.default_text', 'Your Name');
+    _textController.text = _watermarkText;
   }
 
   @override
@@ -466,7 +481,7 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
             canRedo: false,
             isBusy: _isApplying,
             showUndoRedo: false,
-            confirmTooltip: 'Apply',
+            confirmTooltip: _t('image_editor.apply', 'Apply'),
           ),
           body: Column(
             children: [
@@ -558,8 +573,8 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                       child: TextField(
                         controller: _textController,
                         focusNode: _watermarkFocus,
-                        decoration: const InputDecoration(
-                          labelText: 'Watermark text',
+                        decoration: InputDecoration(
+                          labelText: _t('image_editor.watermark.text_label', 'Watermark text'),
                           labelStyle: TextStyle(color: Colors.white),
                           enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
                           focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
@@ -576,13 +591,16 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                   children: [
                     if (!kIsWeb)
                       IconButton(
-                        tooltip: tooltipForPlatform(context, 'Pick logo'),
+                        tooltip: tooltipForPlatform(context, _t('image_editor.watermark.pick_logo', 'Pick logo')),
                         onPressed: _pickLogo,
                         icon: const Icon(Icons.image, color: Colors.white),
                       ),
                     if (_watermarkLogoBytes != null)
                       IconButton(
-                        tooltip: tooltipForPlatform(context, 'Remove logo'),
+                        tooltip: tooltipForPlatform(
+                          context,
+                          _t('image_editor.watermark.remove_logo', 'Remove logo'),
+                        ),
                         onPressed: _removeLogo,
                         icon: const Icon(Icons.delete_outline, color: Colors.white),
                       ),
@@ -591,9 +609,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 62,
-                    child: Text('Opacity', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text(
+                      _t('image_editor.watermark.opacity', 'Opacity'),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                   Expanded(
                     child: Slider(
@@ -617,9 +638,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
               ),
               Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 62,
-                    child: Text('Angle', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text(
+                      _t('image_editor.watermark.angle', 'Angle'),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                   Expanded(
                     child: Slider(
@@ -640,9 +664,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
               ),
               Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 62,
-                    child: Text('Size', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text(
+                      _t('image_editor.watermark.size', 'Size'),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                   Expanded(
                     child: Slider(
@@ -674,28 +701,28 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
   String _positionLabel(WatermarkPosition position) {
     switch (position) {
       case WatermarkPosition.topLeft:
-        return 'Top Left';
+        return _t('image_editor.watermark.position.top_left', 'Top Left');
       case WatermarkPosition.topRight:
-        return 'Top Right';
+        return _t('image_editor.watermark.position.top_right', 'Top Right');
       case WatermarkPosition.bottomLeft:
-        return 'Bottom Left';
+        return _t('image_editor.watermark.position.bottom_left', 'Bottom Left');
       case WatermarkPosition.bottomRight:
-        return 'Bottom Right';
+        return _t('image_editor.watermark.position.bottom_right', 'Bottom Right');
       case WatermarkPosition.center:
-        return 'Center';
+        return _t('image_editor.watermark.position.center', 'Center');
       case WatermarkPosition.patternGrid:
-        return 'Pattern Grid';
+        return _t('image_editor.watermark.position.pattern_grid', 'Pattern Grid');
     }
   }
 
   String _modeLabel(WatermarkMode mode) {
     switch (mode) {
       case WatermarkMode.text:
-        return 'Text';
+        return _t('image_editor.watermark.mode.text', 'Text');
       case WatermarkMode.logo:
-        return 'Logo';
+        return _t('image_editor.watermark.mode.logo', 'Logo');
       case WatermarkMode.both:
-        return 'Text + Logo';
+        return _t('image_editor.watermark.mode.text_logo', 'Text + Logo');
     }
   }
 
@@ -709,12 +736,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Select position',
+                    _t('image_editor.watermark.select_position', 'Select position'),
                     style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -753,12 +780,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Select mode',
+                    _t('image_editor.watermark.select_mode', 'Select mode'),
                     style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -773,10 +800,10 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                   onTap: () => Navigator.of(modalContext).pop(option),
                 ),
               if (kIsWeb)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(
-                    'Logo modes are unavailable on web',
+                    _t('image_editor.watermark.logo_modes_unavailable_web', 'Logo modes are unavailable on web'),
                     style: TextStyle(color: Colors.white54, fontSize: 11),
                   ),
                 ),
@@ -806,9 +833,17 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
     return Row(
       children: [
-        button(label: 'Position', value: _positionLabel(_position), onTap: _openPositionPickerModal),
+        button(
+          label: _t('image_editor.watermark.position_label', 'Position'),
+          value: _positionLabel(_position),
+          onTap: _openPositionPickerModal,
+        ),
         const SizedBox(width: 8),
-        button(label: 'Mode', value: _modeLabel(_mode), onTap: _openModePickerModal),
+        button(
+          label: _t('image_editor.watermark.mode_label', 'Mode'),
+          value: _modeLabel(_mode),
+          onTap: _openModePickerModal,
+        ),
       ],
     );
   }

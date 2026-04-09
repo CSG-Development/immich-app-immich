@@ -700,7 +700,7 @@ class AddToAlbumHeader extends ConsumerWidget {
       final newAlbum = await ref
           .read(remoteAlbumProvider.notifier)
           .createAlbum(
-            title: "Untitled Album",
+            title: "untitled_album".tr(),
             assetIds: ref.read(multiSelectProvider).selectedAssets.map((e) => (e as RemoteAsset).id).toList(),
           );
 
