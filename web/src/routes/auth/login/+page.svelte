@@ -108,7 +108,7 @@
           ? $t('errors.incorrect_email_or_password')
           : serverMessage
             ? serverMessage.join(', ')
-            : $t('error_title');
+            : (error as ApiError)?.message;
       loading = false;
       return;
     }
