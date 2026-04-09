@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/log.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/log.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
 
@@ -14,6 +16,7 @@ import 'package:logging/logging.dart';
 /// writes them to a persistent [ILogRepository], and manages log levels
 /// via [IStoreRepository]
 class LogService {
+  static const String _uploadTelemetryTag = 'upload_telemetry';
   final LogRepository _logRepository;
   final IStoreRepository _storeRepository;
 
@@ -66,6 +69,10 @@ class LogService {
   }
 
   void _handleLogRecord(LogRecord r) {
+    if (_shouldDropBackupUploadTelemetry(r.message)) {
+      return;
+    }
+
     dPrint(
       () =>
           '[${r.level.name}] [${r.time}] [${r.loggerName}] ${r.message}'
@@ -128,6 +135,16 @@ class LogService {
     }
 
     await _logRepository.insertAll(buffer);
+  }
+
+  bool _shouldDropBackupUploadTelemetry(String message) {
+    final isBackupOrUploadTelemetry = message.startsWith(kBackupTraceTag) || message.startsWith(_uploadTelemetryTag);
+    if (!isBackupOrUploadTelemetry) {
+      return false;
+    }
+
+    final isEnabled = Store.tryGet(StoreKey.backupUploadTelemetry) ?? true;
+    return !isEnabled;
   }
 }
 

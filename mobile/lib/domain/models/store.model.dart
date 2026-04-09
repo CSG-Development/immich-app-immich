@@ -69,6 +69,7 @@ enum StoreKey<T> {
 
   // Read-only Mode settings
   readonlyModeEnabled<bool>._(138),
+  backupUploadTelemetry<bool>._(139),
 
   // Experimental stuff
   photoManagerCustomFilter<bool>._(1000),

@@ -12,6 +12,7 @@ import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/user_agent.dart';
@@ -247,18 +248,20 @@ class ApiService implements Authentication {
     return isValid;
   }
 
-  Future<String?> setOpenApiServiceEndpoint({List<String>? auxiliaryEndpoints}) async {
+  Future<String?> setOpenApiServiceEndpoint({List<String>? auxiliaryEndpoints, String? runId}) async {
     // Prevent connection state notifications during endpoint switching
     _isSetEndpoint = true;
 
     try {
+      final sw = Stopwatch()..start();
+      final traceRunId = runId ?? BackupTrace.newRunId();
       // Keep the currently configured endpoint as a fallback
       final previousEndpoint = Store.tryGet(StoreKey.serverEndpoint);
       String? endpoint;
 
       if (auxiliaryEndpoints != null && auxiliaryEndpoints.isNotEmpty) {
         for (final auxiliaryEndpoint in auxiliaryEndpoints) {
-          endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint);
+          endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint, runId: traceRunId);
           if (endpoint != null) {
             _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint');
             return endpoint;
@@ -267,17 +270,45 @@ class ApiService implements Authentication {
       }
 
       // Try local connection first
-      endpoint = await _setLocalConnection();
+      endpoint = await _setLocalConnection(runId: traceRunId);
       if (endpoint != null) {
         _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=local endpoint=$endpoint');
+        logBackupTrace(
+          _log,
+          level: Level.INFO,
+          event: BackupTraceEvent.endpointSelected,
+          phase: BackupTracePhase.endpoint,
+          step: 'ENDPOINT_LOCAL_OK',
+          source: 'NETWORK_SWITCH',
+          appState: 'RESUMED',
+          trigger: 'endpoint_resolve',
+          status: BackupTraceStatus.ok,
+          reasonCode: 'ENDPOINT_LOCAL_SELECTED',
+          runId: traceRunId,
+          elapsedMs: sw.elapsedMilliseconds,
+        );
         return endpoint;
       }
 
       try {
-        endpoint ??= await _setRemoteConnection();
+        endpoint ??= await _setRemoteConnection(runId: traceRunId);
         dPrint(() => endpoint ?? 'failed to set endpoint');
         if (endpoint != null) {
           _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=remote endpoint=$endpoint');
+          logBackupTrace(
+            _log,
+            level: Level.INFO,
+            event: BackupTraceEvent.endpointSelected,
+            phase: BackupTracePhase.endpoint,
+            step: 'ENDPOINT_REMOTE_OK',
+            source: 'NETWORK_SWITCH',
+            appState: 'RESUMED',
+            trigger: 'endpoint_resolve',
+            status: BackupTraceStatus.ok,
+            reasonCode: 'ENDPOINT_REMOTE_SELECTED',
+            runId: traceRunId,
+            elapsedMs: sw.elapsedMilliseconds,
+          );
         }
         return endpoint;
       } catch (error, stackTrace) {
@@ -290,6 +321,20 @@ class ApiService implements Authentication {
         await resolveAndSetEndpoint(previousEndpoint);
         endpoint = previousEndpoint;
         _log.warning('upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint');
+        logBackupTrace(
+          _log,
+          level: Level.WARNING,
+          event: BackupTraceEvent.endpointFallback,
+          phase: BackupTracePhase.endpoint,
+          step: 'ENDPOINT_FALLBACK_PREVIOUS',
+          source: 'NETWORK_SWITCH',
+          appState: 'RESUMED',
+          trigger: 'endpoint_resolve',
+          status: BackupTraceStatus.retry,
+          reasonCode: 'ENDPOINT_FALLBACK_PREVIOUS',
+          runId: traceRunId,
+          elapsedMs: sw.elapsedMilliseconds,
+        );
       }
 
       return endpoint;  
@@ -305,7 +350,7 @@ class ApiService implements Authentication {
 
   /// Attempts to connect to the local endpoint.
   /// Returns the endpoint URL if successful, null otherwise.
-  Future<String?> tryLocalEndpoint(String? endpoints) async {
+  Future<String?> tryLocalEndpoint(String? endpoints, {String? runId}) async {
     try {
       final localEndpoint = endpoints ?? _getLocalEndpoint();
       if (localEndpoint == null || localEndpoint.isEmpty) {
@@ -317,6 +362,22 @@ class ApiService implements Authentication {
       return localEndpoint;
     } catch (error, stackTrace) {
       _log.severe("Cannot set local endpoint", error, stackTrace);
+      logBackupTrace(
+        _log,
+        level: Level.SEVERE,
+        event: BackupTraceEvent.endpointLocalFail,
+        phase: BackupTracePhase.endpoint,
+        step: 'ENDPOINT_LOCAL_FAIL',
+        source: 'NETWORK_SWITCH',
+        appState: 'RESUMED',
+        trigger: 'endpoint_resolve',
+        status: BackupTraceStatus.fail,
+        reasonCode: 'ENDPOINT_LOCAL_CERT_FAIL',
+        runId: runId,
+        extra: {'endpoint': endpoints ?? _getLocalEndpoint() ?? '<null>'},
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
 
     return null;
@@ -324,7 +385,7 @@ class ApiService implements Authentication {
 
   /// Attempts to connect to remote endpoints from the external endpoint list.
   /// Returns the first successful endpoint URL, or null if all fail.
-  Future<String?> tryRemoteEndpoints() async {
+  Future<String?> tryRemoteEndpoints({String? runId}) async {
     List<AuxilaryEndpoint> endpointList;
 
     try {
@@ -350,12 +411,12 @@ class ApiService implements Authentication {
     return null;
   }
 
-  Future<String?> _setLocalConnection({String? endpoint}) async {
-    return await tryLocalEndpoint(endpoint);
+  Future<String?> _setLocalConnection({String? endpoint, String? runId}) async {
+    return await tryLocalEndpoint(endpoint, runId: runId);
   }
 
-  Future<String?> _setRemoteConnection() async {
-    return await tryRemoteEndpoints();
+  Future<String?> _setRemoteConnection({String? runId}) async {
+    return await tryRemoteEndpoints(runId: runId);
   }
 
   String? _getLocalEndpoint() {
