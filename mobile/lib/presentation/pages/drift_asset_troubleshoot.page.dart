@@ -48,12 +48,12 @@ class _AssetDetailsView extends ConsumerWidget {
           _RemoteAssetSection(asset: asset),
         ] else ...[
           _PropertySectionCard(
-            title: 'Local Assets',
+            title: 'local_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'no_checksum_local'.tr())],
           ),
           const SizedBox(height: 16),
           _PropertySectionCard(
-            title: 'Remote Assets',
+            title: 'remote_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'no_checksum_remote'.tr())],
           ),
         ],
@@ -203,15 +203,15 @@ class _LocalAssetsSection extends ConsumerWidget {
       future: assetService.getLocalAssetsByChecksum(asset.checksum!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _PropertySectionCard(
-            title: 'Local Assets',
+          return _PropertySectionCard(
+            title: 'local_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'Loading...')],
           );
         }
 
         if (snapshot.hasError) {
           return _PropertySectionCard(
-            title: 'Local Assets',
+            title: 'local_assets'.tr(),
             properties: [_PropertyItem(label: 'Error', value: snapshot.error.toString())],
           );
         }
@@ -227,7 +227,7 @@ class _LocalAssetsSection extends ConsumerWidget {
 
         if (localAssets.isEmpty) {
           return _PropertySectionCard(
-            title: 'Local Assets',
+            title: 'local_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'no_local_assets_found'.tr())],
           );
         }
@@ -236,7 +236,7 @@ class _LocalAssetsSection extends ConsumerWidget {
           children: [
             if (localAssets.length > 1)
               _PropertySectionCard(
-                title: 'Local Assets Summary',
+                title: 'local_assets_summary'.tr(),
                 properties: [_PropertyItem(label: 'Total Count', value: localAssets.length.toString())],
               ),
             ...localAssets.map((localAsset) {
@@ -269,15 +269,15 @@ class _RemoteAssetSection extends ConsumerWidget {
       future: assetService.getRemoteAssetByChecksum(asset.checksum!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _PropertySectionCard(
-            title: 'Remote Assets',
+          return _PropertySectionCard(
+            title: 'remote_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'Loading...')],
           );
         }
 
         if (snapshot.hasError) {
           return _PropertySectionCard(
-            title: 'Remote Assets',
+            title: 'remote_assets'.tr(),
             properties: [_PropertyItem(label: 'Error', value: snapshot.error.toString())],
           );
         }
@@ -286,7 +286,7 @@ class _RemoteAssetSection extends ConsumerWidget {
 
         if (remoteAsset == null) {
           return _PropertySectionCard(
-            title: 'Remote Assets',
+            title: 'remote_assets'.tr(),
             properties: [_PropertyItem(label: 'Status', value: 'no_remote_assets_found'.tr())],
           );
         }

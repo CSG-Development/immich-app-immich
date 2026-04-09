@@ -57,7 +57,7 @@ class AppLogPage extends HookConsumerWidget {
             icon: Icon(
               Icons.delete_outline_rounded,
               color: context.primaryColor,
-              semanticLabel: "Clear logs",
+              semanticLabel: "clear_logs".tr(),
               size: 20.0,
             ),
             onPressed: () {
@@ -68,7 +68,12 @@ class AppLogPage extends HookConsumerWidget {
           Builder(
             builder: (BuildContext iconContext) {
               return IconButton(
-                icon: Icon(Icons.share_rounded, color: context.primaryColor, semanticLabel: "Share logs", size: 20.0),
+                icon: Icon(
+                  Icons.share_rounded,
+                  color: context.primaryColor,
+                  semanticLabel: "share_logs".tr(),
+                  size: 20.0,
+                ),
                 onPressed: () {
                   ImmichLogger.shareLogs(iconContext);
                 },

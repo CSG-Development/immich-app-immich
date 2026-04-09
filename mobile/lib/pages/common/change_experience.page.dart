@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -143,7 +144,7 @@ class _ChangeExperiencePageState extends ConsumerState<ChangeExperiencePage> {
                 duration: Durations.long4,
                 child: hasMigrated.when(
                   data: (data) => Text(
-                    "Migration success!\nPlease close and reopen the app to apply changes",
+                    "migration_success_restart".tr(),
                     style: context.textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -153,7 +154,7 @@ class _ChangeExperiencePageState extends ConsumerState<ChangeExperiencePage> {
                     textAlign: TextAlign.center,
                   ),
                   loading: () => Text(
-                    "Data migration in progress...\nPlease wait and don't close this page",
+                    "migration_in_progress".tr(),
                     style: context.textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),

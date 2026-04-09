@@ -43,7 +43,7 @@ class _SelectionSliverAppBarState extends ConsumerState<SelectionSliverAppBar> {
         },
       ),
       centerTitle: true,
-      title: Text("Select {count}".t(context: context, args: {'count': filteredAssets.length.toString()})),
+      title: Text("select_count".t(context: context, args: {'count': filteredAssets.length.toString()})),
       actions: [
         TextButton(
           onPressed: () => onDone(filteredAssets),

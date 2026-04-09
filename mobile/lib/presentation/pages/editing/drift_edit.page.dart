@@ -68,7 +68,12 @@ class DriftEditImagePage extends ConsumerWidget {
 
       ref.read(backgroundSyncProvider).syncLocal(full: true);
       context.navigator.popUntil((route) => route.isFirst);
-      ImmichToast.show(durationInSecond: 3, context: context, msg: 'Image Saved!', gravity: ToastGravity.BOTTOM);
+      ImmichToast.show(
+        durationInSecond: 3,
+        context: context,
+        msg: 'image_saved_successfully'.tr(),
+        gravity: ToastGravity.BOTTOM,
+      );
 
       if (localAsset == null) {
         return;

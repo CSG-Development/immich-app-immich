@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
@@ -22,7 +23,7 @@ class AdvancedBottomSheet extends HookConsumerWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Align(child: Text("ADVANCED INFO", style: TextStyle(fontSize: 12.0))),
+                Align(child: Text("advanced".tr().toUpperCase(), style: const TextStyle(fontSize: 12.0))),
                 const SizedBox(height: 32.0),
                 Container(
                   decoration: BoxDecoration(
@@ -43,7 +44,7 @@ class AdvancedBottomSheet extends HookConsumerWidget {
                                 context.scaffoldMessenger.showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      "Copied to clipboard",
+                                      "copied_to_clipboard".tr(),
                                       style: context.textTheme.bodyLarge?.copyWith(color: context.primaryColor),
                                     ),
                                   ),

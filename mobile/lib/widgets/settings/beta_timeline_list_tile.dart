@@ -28,10 +28,12 @@ class BetaTimelineListTile extends ConsumerWidget {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: value ? const Text("Enable New Timeline") : const Text("Disable New Timeline"),
+            title: value
+                ? Text('enable_timeline'.t(context: context))
+                : Text('disable_timeline'.t(context: context)),
             content: value
-                ? const Text("Are you sure you want to enable the new timeline?")
-                : const Text("Are you sure you want to disable the new timeline?"),
+                ? Text('enable_timeline_confirm'.t(context: context))
+                : Text('disable_timeline_confirm'.t(context: context)),
             actions: [
               TextButton(
                 onPressed: () {

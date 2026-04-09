@@ -98,7 +98,7 @@ class DriftUploadDetailPage extends ConsumerWidget {
                             ),
                           ),
                         Text(
-                          'Tap for more details',
+                          'tap_for_more_details'.t(context: context),
                           style: context.textTheme.bodySmall?.copyWith(
                             color: context.colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
