@@ -476,6 +476,18 @@ export class TimelineManager {
       },
       { order: this.#options.order ?? AssetOrder.Desc },
     );
+
+    for (const month of this.months) {
+      for (const dayGroup of month.dayGroups) {
+        for (const viewerAsset of dayGroup.viewerAssets) {
+          const updatedAsset = lookup.get(viewerAsset.asset.id);
+          if (updatedAsset && viewerAsset.asset !== updatedAsset) {
+            viewerAsset.asset = updatedAsset;
+          }
+        }
+      }
+    }
+
     const result: TimelineAsset[] = [];
     for (const id of unprocessedIds.values()) {
       result.push(lookup.get(id)!);

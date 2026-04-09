@@ -51,7 +51,6 @@
           label={$t('tag')}
           bind:value={tagValue}
           required={true}
-          autofocus={true}
         />
       </div>
     </form>
