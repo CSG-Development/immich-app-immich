@@ -20,7 +20,7 @@ export function getServerErrorMessage(error: unknown) {
   return data?.message || error.message;
 }
 
-interface ApiError extends Error {
+export interface ApiError extends Error {
   status: number;
 }
 
