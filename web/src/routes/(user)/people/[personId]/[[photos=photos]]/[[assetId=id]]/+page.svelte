@@ -81,7 +81,7 @@
   let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
 
   const timelineManager = new TimelineManager();
-  $effect(() => void timelineManager.updateOptions({ visibility: AssetVisibility.Timeline, personId: data.person.id }));
+  $effect(() => void timelineManager.updateOptions({ visibility: AssetVisibility.Timeline, personId: person.id }));
   onDestroy(() => timelineManager.destroy());
 
   const assetInteraction = new AssetInteraction();
@@ -94,6 +94,7 @@
   let personMerge2: PersonResponseDto | undefined = $state();
   let potentialMergePeople: PersonResponseDto[] = $state([]);
   let isSuggestionSelectedByUser = $state(false);
+  let person = $state(data.person);
 
   let personName = '';
   let suggestedPeople: PersonResponseDto[] = $state([]);
@@ -201,11 +202,16 @@
     }
   };
 
-  const handleMerge = async (person: PersonResponseDto) => {
+  const handleMerge = async (mergedPerson: PersonResponseDto) => {
     await updateAssetCount();
     await handleGoBack();
 
-    data = { ...data, person };
+    person = mergedPerson;
+    await timelineManager.updateOptions({
+      deferInit: false,
+      visibility: AssetVisibility.Timeline,
+      personId: person.id,
+    });
   };
 
   const handleSelectFeaturePhoto = async (asset: TimelineAsset) => {
@@ -362,8 +368,6 @@
     timelineManager.addAssets(assets);
     await updateAssetCount();
   };
-
-  let person = $derived(data.person);
 
   let thumbnailData = $derived(getPeopleThumbnailUrl(person));
 
