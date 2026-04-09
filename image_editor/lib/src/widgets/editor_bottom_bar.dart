@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/core/models/init_configs/vignette_editor_init_configs.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
+import 'package:image_editor/src/models/image_editor_translations.dart';
 import 'package:image_editor/src/features/ai_editor/ai_editor_stub.dart'
     if (dart.library.io) 'package:image_editor/src/features/ai_editor/ai_editor.dart';
 import 'package:image_editor/src/features/vignette_editor/vignette_editor.dart';
@@ -22,8 +24,14 @@ class _EditorToolItem {
 class EditorBottomBar extends StatelessWidget {
   final ProImageEditorState editor;
   final Stream<void> rebuildStream;
+  final ImageEditorTranslations translations;
 
-  const EditorBottomBar({super.key, required this.editor, required this.rebuildStream});
+  const EditorBottomBar({
+    super.key,
+    required this.editor,
+    required this.rebuildStream,
+    required this.translations,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +43,7 @@ class EditorBottomBar extends StatelessWidget {
 
   /// Opens the vignette editor on top of the main editor.
   void openVignetteEditor({required BuildContext context}) async {
+    final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
     var currentBytes = await editor.editorImage?.safeByteArray();
     currentBytes ??= await editor.captureEditorImage();
@@ -42,7 +51,7 @@ class EditorBottomBar extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('No image to edit. Load an image first.')));
+        ).showSnackBar(SnackBar(content: Text(tr.noImageToEdit)));
       }
       return;
     }
@@ -82,6 +91,7 @@ class EditorBottomBar extends StatelessWidget {
 
   /// Opens the AI editor on top of the main editor.
   void openAiEditor({required BuildContext context}) async {
+    final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
     var currentBytes = await editor.editorImage?.safeByteArray();
     currentBytes ??= await editor.captureEditorImage();
@@ -89,7 +99,7 @@ class EditorBottomBar extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('No image to edit. Load an image first.')));
+        ).showSnackBar(SnackBar(content: Text(tr.noImageToEdit)));
       }
       return;
     }
@@ -129,6 +139,7 @@ class EditorBottomBar extends StatelessWidget {
 
   /// Opens the watermark editor on top of the main editor.
   void openWatermarkEditor({required BuildContext context}) async {
+    final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
     var currentBytes = await editor.editorImage?.safeByteArray();
     currentBytes ??= await editor.captureEditorImage();
@@ -136,7 +147,7 @@ class EditorBottomBar extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('No image to edit. Load an image first.')));
+        ).showSnackBar(SnackBar(content: Text(tr.noImageToEdit)));
       }
       return;
     }
@@ -159,30 +170,39 @@ class EditorBottomBar extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
+    final tr = ImageEditorTranslationScope.of(context);
     final tools = <_EditorToolItem>[
-      _EditorToolItem(label: 'Paint', icon: Icons.edit_rounded, onPressed: editor.openPaintEditor),
-      _EditorToolItem(label: 'Text', icon: Icons.text_fields, onPressed: editor.openTextEditor),
+      _EditorToolItem(label: tr.toolPaint, icon: Icons.edit_rounded, onPressed: editor.openPaintEditor),
+      _EditorToolItem(label: tr.toolText, icon: Icons.text_fields, onPressed: editor.openTextEditor),
       _EditorToolItem(
-        label: 'Watermark',
+        label: tr.toolWatermark,
         icon: Icons.star_rounded,
         onPressed: () => openWatermarkEditor(context: context),
       ),
       _EditorToolItem(
-        label: 'Vignette',
+        label: tr.toolVignette,
         icon: Icons.vignette_rounded,
         onPressed: () => openVignetteEditor(context: context),
       ),
       if (!kIsWeb)
         _EditorToolItem(
-          label: 'AI',
+          label: tr.toolAi,
           icon: Icons.auto_awesome,
           onPressed: () => openAiEditor(context: context),
         ),
-      _EditorToolItem(label: 'Crop/Rotate', icon: Icons.crop_rotate_rounded, onPressed: editor.openCropRotateEditor),
-      _EditorToolItem(label: 'Tune', icon: Icons.tune, onPressed: editor.openTuneEditor),
-      _EditorToolItem(label: 'Filter', icon: Icons.filter, onPressed: editor.openFilterEditor),
-      _EditorToolItem(label: 'Blur', icon: Icons.blur_on, onPressed: editor.openBlurEditor),
-      _EditorToolItem(label: 'Emoji', icon: Icons.sentiment_satisfied_alt_rounded, onPressed: editor.openEmojiEditor),
+      _EditorToolItem(
+        label: tr.toolCropRotate,
+        icon: Icons.crop_rotate_rounded,
+        onPressed: editor.openCropRotateEditor,
+      ),
+      _EditorToolItem(label: tr.toolTune, icon: Icons.tune, onPressed: editor.openTuneEditor),
+      _EditorToolItem(label: tr.toolFilter, icon: Icons.filter, onPressed: editor.openFilterEditor),
+      _EditorToolItem(label: tr.toolBlur, icon: Icons.blur_on, onPressed: editor.openBlurEditor),
+      _EditorToolItem(
+        label: tr.toolEmoji,
+        icon: Icons.sentiment_satisfied_alt_rounded,
+        onPressed: editor.openEmojiEditor,
+      ),
     ];
 
     return Scrollbar(

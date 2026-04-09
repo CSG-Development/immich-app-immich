@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 
 /// App bar for the AI editor, with undo/redo and done/close actions.
@@ -30,9 +31,10 @@ class AiEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = ImageEditorTranslationScope.of(context);
     return EditorActionAppBar(
       theme: theme,
-      title: 'AI Tools',
+      title: tr.aiToolsTitle,
       onBack: onClose,
       onUndo: onUndo,
       onRedo: onRedo,
@@ -40,7 +42,7 @@ class AiEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
       canUndo: canUndo,
       canRedo: canRedo,
       isBusy: isBusy,
-      confirmTooltip: 'Done',
+      confirmTooltip: tr.done,
     );
   }
 

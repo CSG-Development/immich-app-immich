@@ -117,6 +117,26 @@ class EditImagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    String trOr(
+      String primaryKey, {
+      String? fallbackKey,
+      String? fallbackText,
+    }) {
+      final primaryValue = primaryKey.tr();
+      if (primaryValue != primaryKey) {
+        return primaryValue;
+      }
+
+      if (fallbackKey != null) {
+        final fallbackValue = fallbackKey.tr();
+        if (fallbackValue != fallbackKey) {
+          return fallbackValue;
+        }
+      }
+
+      return fallbackText ?? primaryKey;
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: FutureBuilder<Uint8List>(
@@ -130,6 +150,198 @@ class EditImagePage extends ConsumerWidget {
                   _saveEditedImage(context, asset, bytes, ref);
                 },
                 onCloseEditor: () {},
+                translations: ImageEditorTranslations(
+                  back: trOr('image_editor.back', fallbackKey: 'back', fallbackText: 'Back'),
+                  undo: trOr('image_editor.undo', fallbackKey: 'undo', fallbackText: 'Undo'),
+                  redo: trOr('image_editor.redo', fallbackText: 'Redo'),
+                  done: trOr('image_editor.done', fallbackKey: 'done', fallbackText: 'Done'),
+                  apply: trOr('image_editor.apply', fallbackText: 'Apply'),
+                  noImageToEdit: trOr(
+                    'image_editor.no_image_to_edit',
+                    fallbackText: 'No image to edit. Load an image first.',
+                  ),
+                  toolPaint: trOr('image_editor.tools.paint', fallbackText: 'Paint'),
+                  toolText: trOr('image_editor.tools.text', fallbackText: 'Text'),
+                  toolWatermark: trOr('image_editor.tools.watermark', fallbackText: 'Watermark'),
+                  toolVignette: trOr('image_editor.tools.vignette', fallbackText: 'Vignette'),
+                  toolAi: trOr('image_editor.tools.ai', fallbackText: 'AI'),
+                  toolCropRotate: trOr('image_editor.tools.crop_rotate', fallbackText: 'Crop/Rotate'),
+                  toolTune: trOr('image_editor.tools.tune', fallbackText: 'Tune'),
+                  toolFilter: trOr('image_editor.tools.filter', fallbackKey: 'filter', fallbackText: 'Filter'),
+                  toolBlur: trOr('image_editor.tools.blur', fallbackText: 'Blur'),
+                  toolEmoji: trOr('image_editor.tools.emoji', fallbackText: 'Emoji'),
+                  tuneBrilliance: trOr('image_editor.tune.brilliance', fallbackText: 'Brilliance'),
+                  tuneVibrance: trOr('image_editor.tune.vibrance', fallbackText: 'Vibrance'),
+                  tuneTint: trOr('image_editor.tune.tint', fallbackText: 'Tint'),
+                  tuneHighlights: trOr('image_editor.tune.highlights', fallbackText: 'Highlights'),
+                  tuneShadows: trOr('image_editor.tune.shadows', fallbackText: 'Shadows'),
+                  aiToolsTitle: trOr('image_editor.ai_tools_title', fallbackText: 'AI Tools'),
+                  aiEditorTitle: trOr('image_editor.ai_editor_title', fallbackText: 'AI editor'),
+                  aiToolsUnavailableOnWeb: trOr(
+                    'image_editor.ai_tools_unavailable_on_web',
+                    fallbackText: 'AI tools are unavailable on web.',
+                  ),
+                  aiToolsCurrentlyUnavailableOnWeb: trOr(
+                    'image_editor.ai.tools_unavailable_web',
+                    fallbackText: 'AI tools are currently unavailable on web.',
+                  ),
+                  failedToDecodeImage: trOr(
+                    'image_editor.failed_to_decode_image',
+                    fallbackText: 'Failed to decode image.',
+                  ),
+                  close: trOr('image_editor.close', fallbackText: 'Close'),
+                  cancel: trOr('image_editor.cancel', fallbackKey: 'cancel', fallbackText: 'Cancel'),
+                  download: trOr('image_editor.download', fallbackText: 'Download'),
+                  downloading: trOr('image_editor.downloading', fallbackText: 'Downloading...'),
+                  skip: trOr('image_editor.skip', fallbackText: 'Skip'),
+                  remove: trOr('image_editor.remove', fallbackText: 'Remove'),
+                  aiSmartRemoval: trOr('image_editor.ai.smart_removal', fallbackText: 'Smart removal'),
+                  aiEnhance: trOr('image_editor.ai.enhance', fallbackText: 'Enhance'),
+                  aiSmartInsertion: trOr('image_editor.ai.smart_insertion', fallbackText: 'Smart insertion'),
+                  aiSmartInsertionInpaint: trOr(
+                    'image_editor.ai.smart_insertion_inpaint',
+                    fallbackText: 'Smart insertion inpaint',
+                  ),
+                  aiSelectionTooSmall: trOr(
+                    'image_editor.ai.selection_too_small',
+                    fallbackText: 'Selection is too small. Draw a larger target.',
+                  ),
+                  aiLassoMinPoints: trOr(
+                    'image_editor.ai.lasso_min_points',
+                    fallbackText: 'Lasso needs at least 3 points.',
+                  ),
+                  aiSelectTargetShape: trOr(
+                    'image_editor.ai.select_target_shape',
+                    fallbackText: 'Select target shape',
+                  ),
+                  aiShapeRectangle: trOr(
+                    'image_editor.ai.shape.rectangle',
+                    fallbackText: 'Rectangle',
+                  ),
+                  aiShapeEllipse: trOr(
+                    'image_editor.ai.shape.ellipse',
+                    fallbackText: 'Ellipse',
+                  ),
+                  aiShapeLasso: trOr('image_editor.ai.shape.lasso', fallbackText: 'Lasso'),
+                  aiSmart: trOr('image_editor.ai.smart', fallbackText: 'Smart'),
+                  aiTarget: trOr('image_editor.ai.target', fallbackText: 'Target'),
+                  aiBrush: trOr('image_editor.ai.brush', fallbackText: 'Brush'),
+                  aiEraser: trOr('image_editor.ai.eraser', fallbackText: 'Eraser'),
+                  aiFailedRemoveObject: trOr(
+                    'image_editor.ai.failed_remove_object',
+                    fallbackText: 'Failed to remove object (check that lama_fp32.onnx is available).',
+                  ),
+                  aiArtifactsDetectedTitle: trOr(
+                    'image_editor.ai.artifacts_detected_title',
+                    fallbackText: 'Artifacts detected',
+                  ),
+                  aiArtifactsDetectedBody: trOr(
+                    'image_editor.ai.artifacts_detected_body',
+                    fallbackText:
+                        'Try to remove detected artifacts automatically?\n\nWarning: automatic artifact cleanup can be unpredictable and may make the result worse in some cases.',
+                  ),
+                  aiModelNotFoundTitle: trOr(
+                    'image_editor.ai.model_not_found_title',
+                    fallbackText: 'Model not found',
+                  ),
+                  aiModelNotFoundBody: trOr(
+                    'image_editor.ai.model_not_found_body',
+                    fallbackText:
+                        'The required model was not found. Please provide a valid model asset/path and try again.',
+                  ),
+                  aiDownloadModelTitle: trOr(
+                    'image_editor.ai.download_model_title',
+                    fallbackText: 'Download model?',
+                  ),
+                  aiDownloadModelBody: trOr(
+                    'image_editor.ai.download_model_body',
+                    fallbackText:
+                        'This model is required for this feature. It will be downloaded and stored on your device. This may use mobile data.',
+                  ),
+                  aiDownloadingModelTitle: trOr(
+                    'image_editor.ai.downloading_model_title',
+                    fallbackText: 'Downloading model',
+                  ),
+                  aiFailedDetectSubject: trOr(
+                    'image_editor.ai.failed_detect_subject',
+                    fallbackText: 'Failed to detect subject',
+                  ),
+                  watermarkDefaultText: trOr(
+                    'image_editor.watermark.default_text',
+                    fallbackText: 'Your Name',
+                  ),
+                  watermarkTextLabel: trOr(
+                    'image_editor.watermark.text_label',
+                    fallbackText: 'Watermark text',
+                  ),
+                  watermarkPickLogo: trOr(
+                    'image_editor.watermark.pick_logo',
+                    fallbackText: 'Pick logo',
+                  ),
+                  watermarkRemoveLogo: trOr(
+                    'image_editor.watermark.remove_logo',
+                    fallbackText: 'Remove logo',
+                  ),
+                  watermarkOpacity: trOr('image_editor.watermark.opacity', fallbackText: 'Opacity'),
+                  watermarkAngle: trOr('image_editor.watermark.angle', fallbackText: 'Angle'),
+                  watermarkSize: trOr('image_editor.watermark.size', fallbackText: 'Size'),
+                  watermarkPositionLabel: trOr(
+                    'image_editor.watermark.position_label',
+                    fallbackText: 'Position',
+                  ),
+                  watermarkModeLabel: trOr(
+                    'image_editor.watermark.mode_label',
+                    fallbackText: 'Mode',
+                  ),
+                  watermarkSelectPosition: trOr(
+                    'image_editor.watermark.select_position',
+                    fallbackText: 'Select position',
+                  ),
+                  watermarkSelectMode: trOr(
+                    'image_editor.watermark.select_mode',
+                    fallbackText: 'Select mode',
+                  ),
+                  watermarkLogoModesUnavailableWeb: trOr(
+                    'image_editor.watermark.logo_modes_unavailable_web',
+                    fallbackText: 'Logo modes are unavailable on web',
+                  ),
+                  watermarkPositionTopLeft: trOr(
+                    'image_editor.watermark.position.top_left',
+                    fallbackText: 'Top Left',
+                  ),
+                  watermarkPositionTopRight: trOr(
+                    'image_editor.watermark.position.top_right',
+                    fallbackText: 'Top Right',
+                  ),
+                  watermarkPositionBottomLeft: trOr(
+                    'image_editor.watermark.position.bottom_left',
+                    fallbackText: 'Bottom Left',
+                  ),
+                  watermarkPositionBottomRight: trOr(
+                    'image_editor.watermark.position.bottom_right',
+                    fallbackText: 'Bottom Right',
+                  ),
+                  watermarkPositionCenter: trOr(
+                    'image_editor.watermark.position.center',
+                    fallbackText: 'Center',
+                  ),
+                  watermarkPositionPatternGrid: trOr(
+                    'image_editor.watermark.position.pattern_grid',
+                    fallbackText: 'Pattern Grid',
+                  ),
+                  watermarkModeText: trOr(
+                    'image_editor.watermark.mode.text',
+                    fallbackText: 'Text',
+                  ),
+                  watermarkModeLogo: trOr(
+                    'image_editor.watermark.mode.logo',
+                    fallbackText: 'Logo',
+                  ),
+                  watermarkModeTextLogo: trOr(
+                    'image_editor.watermark.mode.text_logo',
+                    fallbackText: 'Text + Logo',
+                  ),
+                ),
               ),
             );
           }

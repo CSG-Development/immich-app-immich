@@ -3,6 +3,7 @@ export 'package:image_editor/src/core/interfaces.dart';
 
 // Model exports
 export 'package:image_editor/src/models/image_editor_config.dart';
+export 'package:image_editor/src/models/image_editor_translations.dart';
 
 // Effect exports
 export 'package:image_editor/src/effects/monochrome_effect.dart';

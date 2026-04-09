@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
+import 'package:image_editor/src/models/image_editor_translations.dart';
 import 'package:image_editor/src/common/utils/platform_tooltip.dart';
 
 /// Reusable editor app bar with back/undo/redo/confirm actions.
@@ -14,11 +16,12 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
     required this.canUndo,
     required this.canRedo,
     this.isBusy = false,
-    this.confirmTooltip = 'Done',
+    this.confirmTooltip,
     this.confirmIcon = Icons.check,
     this.showLeadingBack = false,
     this.confirmEnabled = true,
     this.showUndoRedo = true,
+    this.translations = const ImageEditorTranslations(),
   });
 
   final ThemeData theme;
@@ -35,9 +38,11 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
   final bool showLeadingBack;
   final bool confirmEnabled;
   final bool showUndoRedo;
+  final ImageEditorTranslations translations;
 
   @override
   Widget build(BuildContext context) {
+    final tr = ImageEditorTranslationScope.of(context);
     final canRunActions = !isBusy;
     final foregroundColor = theme.appBarTheme.foregroundColor ?? Colors.white;
     final disabledColor = foregroundColor.withAlpha(80);
@@ -48,7 +53,7 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
       foregroundColor: foregroundColor,
       leading: showLeadingBack
           ? IconButton(
-              tooltip: tooltipForPlatform(context, 'Back'),
+              tooltip: tooltipForPlatform(context, tr.back),
               icon: const Icon(Icons.arrow_back),
               onPressed: canRunActions ? onBack : null,
             )
@@ -57,7 +62,7 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
       actions: [
         if (!showLeadingBack)
           IconButton(
-            tooltip: tooltipForPlatform(context, 'Back'),
+            tooltip: tooltipForPlatform(context, tr.back),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: const Icon(Icons.arrow_back),
             onPressed: canRunActions ? onBack : null,
@@ -65,20 +70,20 @@ class EditorActionAppBar extends StatelessWidget implements PreferredSizeWidget 
         if (!showLeadingBack) const Spacer(),
         if (showUndoRedo)
           IconButton(
-            tooltip: tooltipForPlatform(context, 'Undo'),
+            tooltip: tooltipForPlatform(context, tr.undo),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: Icon(Icons.undo, color: canUndo && canRunActions ? foregroundColor : disabledColor),
             onPressed: canUndo && canRunActions ? onUndo : null,
           ),
         if (showUndoRedo)
           IconButton(
-            tooltip: tooltipForPlatform(context, 'Redo'),
+            tooltip: tooltipForPlatform(context, tr.redo),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             icon: Icon(Icons.redo, color: canRedo && canRunActions ? foregroundColor : disabledColor),
             onPressed: canRedo && canRunActions ? onRedo : null,
           ),
         IconButton(
-          tooltip: tooltipForPlatform(context, confirmTooltip),
+          tooltip: tooltipForPlatform(context, confirmTooltip ?? tr.done),
           padding: const EdgeInsets.symmetric(horizontal: 8),
           iconSize: 28,
           icon: Icon(confirmIcon, color: canRunActions && confirmEnabled ? foregroundColor : disabledColor),

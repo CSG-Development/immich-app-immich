@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/mask_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/smart_selection_overlay.dart';
@@ -159,8 +160,12 @@ class _SmartInsertionCutoutOverlayState extends State<SmartInsertionCutoutOverla
       softSegmentationMask: false,
       segmentationFeatherRadius: 0,
       segmentationThreshold: 0.5,
-      title: 'Smart insertion',
-      failureMessage: 'Failed to detect subject',
+      title: ImageEditorTranslationScope.text(context, 'image_editor.ai.smart_insertion', 'Smart insertion'),
+      failureMessage: ImageEditorTranslationScope.text(
+        context,
+        'image_editor.ai.failed_detect_subject',
+        'Failed to detect subject',
+      ),
       onCancel: widget.onCancel,
       onApplyMask: (mask) async {
         final holeFreeMask = MaskUtils.fillHoles(mask.clone());

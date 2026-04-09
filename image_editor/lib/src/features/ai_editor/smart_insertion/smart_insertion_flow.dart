@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/features/ai_editor/ai_editor_actions.dart';
 import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/widgets/model_download_dialog.dart';
@@ -81,14 +82,18 @@ class _SmartInsertionFlowState extends State<SmartInsertionFlow> {
     final segmentationReady = await showModelDownloadDialog(
       context,
       modelPathOrUrl: _cutoutBackgroundRemovalService.modelPathOrUrl,
-      modelName: 'Smart insertion',
+      modelName: ImageEditorTranslationScope.text(context, 'image_editor.ai.smart_insertion', 'Smart insertion'),
     );
     if (!segmentationReady) return false;
 
     final inpaintingReady = await showModelDownloadDialog(
       context,
       modelPathOrUrl: widget.params.inpaintingModelPathOrUrl,
-      modelName: 'Smart insertion inpaint',
+      modelName: ImageEditorTranslationScope.text(
+        context,
+        'image_editor.ai.smart_insertion_inpaint',
+        'Smart insertion inpaint',
+      ),
     );
     return inpaintingReady;
   }
@@ -117,12 +122,18 @@ class _SmartInsertionFlowState extends State<SmartInsertionFlow> {
           return Scaffold(
             backgroundColor: Colors.black87,
             appBar: AppBar(
-              title: const Text('Smart insertion'),
+              title: Text(
+                ImageEditorTranslationScope.text(context, 'image_editor.ai.smart_insertion', 'Smart insertion'),
+              ),
               backgroundColor: Colors.black,
             ),
-            body: const Center(
+            body: Center(
               child: Text(
-                'Failed to decode image.',
+                ImageEditorTranslationScope.text(
+                  context,
+                  'image_editor.failed_to_decode_image',
+                  'Failed to decode image.',
+                ),
                 style: TextStyle(color: Colors.white70),
               ),
             ),
