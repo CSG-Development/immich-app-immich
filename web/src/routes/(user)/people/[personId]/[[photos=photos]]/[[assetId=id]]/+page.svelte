@@ -155,7 +155,8 @@
     }
   });
 
-  const handleUnmerge = () => {
+  const handleUnmerge = async () => {
+    await updateAssetCount();
     timelineManager.removeAssets(assetInteraction.selectedAssets.map((a) => a.id));
     assetInteraction.clearMultiselect();
     viewMode = PersonPageViewMode.VIEW_ASSETS;
