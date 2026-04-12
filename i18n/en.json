@@ -509,6 +509,7 @@
   "asset_skipped": "Skipped",
   "asset_skipped_in_trash": "In trash",
   "asset_trashed": "Asset moved to trash",
+  "asset_moved_to_another_place": "Asset moved to another place",
   "asset_troubleshoot": "Asset troubleshooting",
   "asset_uploaded": "Uploaded",
   "asset_uploading": "Uploading…",

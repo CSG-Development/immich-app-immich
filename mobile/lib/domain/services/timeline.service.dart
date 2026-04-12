@@ -189,6 +189,31 @@ class TimelineService {
     }
   }
 
+  Future<int?> findAssetIndexByHeroTag(String heroTag, {int? preferredIndex}) async {
+    if (preferredIndex != null) {
+      final preferred = await getAssetAsync(preferredIndex);
+      if (preferred?.heroTag == heroTag) {
+        return preferredIndex;
+      }
+    }
+
+    if (_totalAssets == 0) {
+      return null;
+    }
+
+    final chunkSize = kTimelineAssetLoadBatchSize;
+    for (int start = 0; start < _totalAssets; start += chunkSize) {
+      final count = math.min(chunkSize, _totalAssets - start);
+      final chunk = await loadAssets(start, count);
+      final indexInChunk = chunk.indexWhere((asset) => asset.heroTag == heroTag);
+      if (indexInChunk != -1) {
+        return start + indexInChunk;
+      }
+    }
+
+    return null;
+  }
+
   /// Safely gets an asset at the given index without throwing a RangeError.
   /// Returns null if the index is out of bounds or not currently in the buffer.
   /// For automatic buffer loading, use getAssetAsync instead.

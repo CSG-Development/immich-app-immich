@@ -1,9 +1,18 @@
+import 'package:collection/collection.dart';
 import 'package:immich_mobile/mixins/error_logger.mixin.dart';
 import 'package:immich_mobile/models/map/map_marker.model.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:immich_mobile/utils/user_agent.dart';
+
+class ReverseGeocodeLocation {
+  final String? city;
+  final String? state;
+  final String? country;
+
+  const ReverseGeocodeLocation({this.city, this.state, this.country});
+}
 
 class MapService with ErrorLoggerMixin {
   final ApiService _apiService;
@@ -40,6 +49,29 @@ class MapService with ErrorLoggerMixin {
       },
       defaultValue: [],
       errorMessage: "Failed to get map markers",
+    );
+  }
+
+  Future<ReverseGeocodeLocation?> reverseGeocode({
+    required double latitude,
+    required double longitude,
+  }) {
+    return logError(
+      () async {
+        final results = await _apiService.mapApi.reverseGeocode(latitude, longitude);
+        final location = results?.firstOrNull;
+        if (location == null) {
+          return null;
+        }
+
+        return ReverseGeocodeLocation(
+          city: location.city,
+          state: location.state,
+          country: location.country,
+        );
+      },
+      defaultValue: null,
+      errorMessage: "Failed to reverse geocode location",
     );
   }
 }

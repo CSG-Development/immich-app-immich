@@ -29,8 +29,10 @@ import 'package:immich_mobile/providers/asset_viewer/video_player_controls_provi
 import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/asset_viewer/viewer_scope.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/immich_loading_indicator.dart';
 import 'package:immich_mobile/widgets/photo_view/photo_view.dart';
 import 'package:immich_mobile/widgets/photo_view/photo_view_gallery.dart';
@@ -40,15 +42,25 @@ class AssetViewerPage extends StatelessWidget {
   final int initialIndex;
   final TimelineService timelineService;
   final int? heroOffset;
+  final bool closeViewerWhenAssetLeavesTimeline;
 
-  const AssetViewerPage({super.key, required this.initialIndex, required this.timelineService, this.heroOffset});
+  const AssetViewerPage({
+    super.key,
+    required this.initialIndex,
+    required this.timelineService,
+    this.heroOffset,
+    this.closeViewerWhenAssetLeavesTimeline = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     // This is necessary to ensure that the timeline service is available
     // since the Timeline and AssetViewer are on different routes / Widget subtrees.
     return ProviderScope(
-      overrides: [timelineServiceProvider.overrideWithValue(timelineService)],
+      overrides: [
+        timelineServiceProvider.overrideWithValue(timelineService),
+        assetViewerPlacesExitProvider.overrideWithValue(closeViewerWhenAssetLeavesTimeline),
+      ],
       child: AssetViewer(initialIndex: initialIndex, heroOffset: heroOffset),
     );
   }
@@ -110,8 +122,11 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   Offset dragDownPosition = Offset.zero;
   int totalAssets = 0;
   int stackIndex = 0;
+  BaseAsset? _fallbackAsset;
   BuildContext? scaffoldContext;
   Map<String, GlobalKey> videoPlayerKeys = {};
+  bool _pendingControllerResetAfterSheetClose = false;
+  bool _didShowMovedPlaceToast = false;
 
   // Delayed operations that should be cancelled on disposal
   final List<Timer> _delayedOperations = [];
@@ -120,6 +135,62 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   ImageStream? _nextPreCacheStream;
 
   KeepAliveLink? _stackChildrenKeepAlive;
+
+  bool _safeControllerCall(void Function(PhotoViewControllerBase controller) call) {
+    final controller = viewController;
+    if (!mounted || controller == null) {
+      return false;
+    }
+
+    try {
+      call(controller);
+      return true;
+    } catch (_) {
+      // Controller can be disposed during timeline/page transitions.
+      return false;
+    }
+  }
+
+  void _applyClosedSheetTransform() {
+    final didResetPosition = _safeControllerCall((controller) => controller.position = Offset.zero);
+    final didResetScale = _safeControllerCall((controller) => controller.updateMultiple(scale: initialScale));
+    _pendingControllerResetAfterSheetClose = !(didResetPosition && didResetScale);
+  }
+
+  void _showMovedPlaceNotice() {
+    if (_didShowMovedPlaceToast || !mounted) {
+      return;
+    }
+    _didShowMovedPlaceToast = true;
+    ImmichToast.show(
+      context: context,
+      msg: "asset_moved_to_another_place".tr(),
+      toastType: ToastType.info,
+    );
+  }
+
+  /// After a successful location edit from Library → Places, close the EXIF
+  /// bottom sheet (if open) and leave the viewer.
+  void _exitViewerAfterPlacesLocationEdit() {
+    if (!mounted) {
+      return;
+    }
+    _showMovedPlaceNotice();
+    final ctrl = sheetCloseController;
+    if (showingBottomSheet && ctrl != null) {
+      ctrl.closed.then((_) {
+        if (!mounted) {
+          return;
+        }
+        context.maybePop();
+      });
+      ctrl.close();
+    } else {
+      context.maybePop();
+    }
+  }
+
+  bool get _isPlacesScopedViewer => ref.read(assetViewerPlacesExitProvider);
 
   @override
   void initState() {
@@ -145,6 +216,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
     reloadSubscription?.cancel();
     _prevPreCacheStream?.removeListener(_dummyListener);
     _nextPreCacheStream?.removeListener(_dummyListener);
+    viewController = null;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _stackChildrenKeepAlive?.close();
     super.dispose();
@@ -221,6 +293,8 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       return;
     }
 
+    _fallbackAsset = null;
+    _didShowMovedPlaceToast = false;
     widget.changeAsset(ref, asset);
     _precacheAssets(index);
     _handleCasting();
@@ -262,6 +336,9 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
   void _onPageBuild(PhotoViewControllerBase controller) {
     viewController ??= controller;
+    if (!showingBottomSheet && _pendingControllerResetAfterSheetClose) {
+      _applyClosedSheetTransform();
+    }
     if (showingBottomSheet && bottomSheetController.isAttached) {
       final verticalOffset =
           (context.height * bottomSheetController.size) - (context.height * _kBottomSheetMinimumExtent);
@@ -317,11 +394,13 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
     shouldPopOnDrag = false;
     hasDraggedDown = null;
-    viewController?.animateMultiple(
-      position: initialPhotoViewState.position,
-      scale: initialPhotoViewState.scale,
-      rotation: initialPhotoViewState.rotation,
-    );
+    _safeControllerCall((controller) {
+      controller.animateMultiple(
+        position: initialPhotoViewState.position,
+        scale: initialPhotoViewState.scale,
+        rotation: initialPhotoViewState.rotation,
+      );
+    });
     ref.read(assetViewerProvider.notifier).setOpacity(255);
   }
 
@@ -347,7 +426,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
     final position = initialPhotoViewState.position + Offset(0, delta.dy);
     final distanceToOrigin = position.distance;
 
-    viewController?.updateMultiple(position: position);
+    _safeControllerCall((controller) => controller.updateMultiple(position: position));
     // Moves the bottom sheet when the asset is being dragged up
     if (showingBottomSheet && bottomSheetController.isAttached) {
       final centre = (ctx.height * _kBottomSheetMinimumExtent);
@@ -375,7 +454,9 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
     final backgroundOpacity = (255 * (1.0 - (scaleReduction / dragRatio))).round();
 
-    viewController?.updateMultiple(position: initialPhotoViewState.position + delta, scale: updatedScale);
+    _safeControllerCall(
+      (controller) => controller.updateMultiple(position: initialPhotoViewState.position + delta, scale: updatedScale),
+    );
     ref.read(assetViewerProvider.notifier).setOpacity(backgroundOpacity);
   }
 
@@ -419,7 +500,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
     final verticalOffset = _getVerticalOffsetForBottomSheet(delta.extent);
     // Moves the asset when the bottom sheet is being dragged
     if (verticalOffset > 0) {
-      viewController?.position = Offset(0, -verticalOffset);
+      _safeControllerCall((controller) => controller.position = Offset(0, -verticalOffset));
     }
   }
 
@@ -434,11 +515,16 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       return;
     }
 
+    if (event is ViewerExitAfterPlacesLocationEditEvent) {
+      _exitViewerAfterPlacesLocationEdit();
+      return;
+    }
+
     if (event is ViewerOpenBottomSheetEvent) {
       final extent = _kBottomSheetMinimumExtent + 0.3;
       _openBottomSheet(scaffoldContext!, extent: extent);
       final offset = _getVerticalOffsetForBottomSheet(extent);
-      viewController?.position = Offset(0, -offset);
+      _safeControllerCall((controller) => controller.position = Offset(0, -offset));
       return;
     }
   }
@@ -446,34 +532,90 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   void _onTimelineReloadEvent() {
     totalAssets = ref.read(timelineServiceProvider).totalAssets;
     if (totalAssets == 0) {
-      context.maybePop();
+      if (_isPlacesScopedViewer) {
+        _showMovedPlaceNotice();
+        context.maybePop();
+        return;
+      }
+
+      // Keep showing the current asset when it no longer belongs to this place.
+      _fallbackAsset ??= ref.read(currentAssetNotifier);
+      if (_fallbackAsset != null) {
+        _showMovedPlaceNotice();
+      }
+      if (_fallbackAsset == null) {
+        context.maybePop();
+      } else if (mounted) {
+        setState(() {});
+      }
       return;
     }
 
     if (assetReloadRequested) {
       assetReloadRequested = false;
-      _onAssetReloadEvent();
-      return;
     }
+
+    _onAssetReloadEvent();
   }
 
   void _onAssetReloadEvent() async {
-    final index = pageController.page?.round() ?? 0;
     final timelineService = ref.read(timelineServiceProvider);
-    final newAsset = await timelineService.getAssetAsync(index);
+    final currentAsset = ref.read(currentAssetNotifier);
+    final preferredIndex = pageController.page?.round() ?? 0;
+    int targetIndex = preferredIndex < 0
+        ? 0
+        : preferredIndex >= totalAssets
+        ? totalAssets - 1
+        : preferredIndex;
 
-    if (newAsset == null) {
+    if (currentAsset != null) {
+      final resolvedIndex = await timelineService.findAssetIndexByHeroTag(
+        currentAsset.heroTag,
+        preferredIndex: preferredIndex,
+      );
+      if (resolvedIndex != null) {
+        targetIndex = resolvedIndex;
+      }
+    }
+
+    final targetAsset = await timelineService.getAssetAsync(targetIndex);
+    if (targetAsset == null) {
+      if (_isPlacesScopedViewer) {
+        _showMovedPlaceNotice();
+        if (mounted) {
+          context.maybePop();
+        }
+        return;
+      }
+
+      // Keep current asset visible if timeline can't recover immediately.
+      _fallbackAsset ??= currentAsset;
+      if (_fallbackAsset != null) {
+        _showMovedPlaceNotice();
+      }
+      if (_fallbackAsset == null && mounted) {
+        context.maybePop();
+      } else if (mounted) {
+        setState(() {});
+      }
       return;
     }
 
-    final currentAsset = ref.read(currentAssetNotifier);
-    // Do not reload / close the bottom sheet if the asset has not changed
-    if (newAsset.heroTag == currentAsset?.heroTag) {
+    // Keep the same asset and index when possible.
+    if (currentAsset != null && targetAsset.heroTag == currentAsset.heroTag && targetIndex == preferredIndex) {
       return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (pageController.hasClients && (pageController.page?.round() != targetIndex)) {
+      pageController.jumpToPage(targetIndex);
     }
 
     setState(() {
-      _onAssetChanged(pageController.page!.round());
+      _onAssetChanged(targetIndex);
       sheetCloseController?.close();
     });
   }
@@ -496,12 +638,16 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
         );
       },
     );
-    sheetCloseController?.closed.then((_) => _handleSheetClose());
+    sheetCloseController?.closed.then((_) {
+      if (mounted) {
+        _handleSheetClose();
+      }
+    });
   }
 
   void _handleSheetClose() {
-    viewController?.animateMultiple(position: Offset.zero);
-    viewController?.updateMultiple(scale: initialScale);
+    _pendingControllerResetAfterSheetClose = true;
+    _applyClosedSheetTransform();
     ref.read(assetViewerProvider.notifier).setBottomSheet(false);
     sheetCloseController = null;
     shouldPopOnDrag = false;
@@ -535,7 +681,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   PhotoViewGalleryPageOptions _assetBuilder(BuildContext ctx, int index) {
     scaffoldContext ??= ctx;
     final timelineService = ref.read(timelineServiceProvider);
-    final asset = timelineService.getAssetSafe(index);
+    final asset = timelineService.getAssetSafe(index) ?? _fallbackAsset;
 
     // If asset is not available in buffer, return a placeholder
     if (asset == null) {
@@ -633,6 +779,8 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final galleryItemCount = totalAssets == 0 && _fallbackAsset != null ? 1 : totalAssets;
+
     // Rebuild the widget when the asset viewer state changes
     // Using multiple selectors to avoid unnecessary rebuilds for other state changes
     ref.watch(assetViewerProvider.select((s) => s.showingBottomSheet));
@@ -682,7 +830,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
               scrollPhysics: CurrentPlatform.isIOS
                   ? const FastScrollPhysics() // Use bouncing physics for iOS
                   : const FastClampingScrollPhysics(), // Use heavy physics for Android
-              itemCount: totalAssets,
+              itemCount: galleryItemCount,
               onPageChanged: _onPageChanged,
               onPageBuild: _onPageBuild,
               scaleStateChangedCallback: _onScaleStateChanged,

@@ -16,6 +16,7 @@ class TimelineArgs {
   final int columnCount;
   final bool showStorageIndicator;
   final bool withStack;
+  final bool closeViewerWhenAssetLeavesTimeline;
   final GroupAssetsBy? groupBy;
 
   const TimelineArgs({
@@ -25,6 +26,7 @@ class TimelineArgs {
     this.columnCount = kTimelineColumnCount,
     this.showStorageIndicator = false,
     this.withStack = false,
+    this.closeViewerWhenAssetLeavesTimeline = false,
     this.groupBy,
   });
 
@@ -36,6 +38,7 @@ class TimelineArgs {
         columnCount == other.columnCount &&
         showStorageIndicator == other.showStorageIndicator &&
         withStack == other.withStack &&
+        closeViewerWhenAssetLeavesTimeline == other.closeViewerWhenAssetLeavesTimeline &&
         groupBy == other.groupBy;
   }
 
@@ -47,6 +50,7 @@ class TimelineArgs {
       columnCount.hashCode ^
       showStorageIndicator.hashCode ^
       withStack.hashCode ^
+      closeViewerWhenAssetLeavesTimeline.hashCode ^
       groupBy.hashCode;
 }
 

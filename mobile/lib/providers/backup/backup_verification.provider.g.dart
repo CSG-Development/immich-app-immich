@@ -7,7 +7,7 @@ part of 'backup_verification.provider.dart';
 // **************************************************************************
 
 String _$backupVerificationHash() =>
-    r'0f0450ba7350734e7f16ee2d3dff84300bd7d326';
+    r'596dabc4b60775bf2ef9efaa6477aced6a165471';
 
 /// See also [BackupVerification].
 @ProviderFor(BackupVerification)
