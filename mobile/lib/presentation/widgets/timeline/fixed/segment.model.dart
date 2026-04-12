@@ -153,14 +153,25 @@ class _AssetTileWidget extends ConsumerWidget {
     if (multiSelectState.forceEnable || multiSelectState.isEnabled) {
       ref.read(multiSelectProvider.notifier).toggleAssetSelection(asset);
     } else {
-      await ref.read(timelineServiceProvider).loadAssets(assetIndex, 1);
+      final timelineService = ref.read(timelineServiceProvider);
+      final resolvedIndex =
+          await timelineService.findAssetIndexByHeroTag(asset.heroTag, preferredIndex: assetIndex) ?? assetIndex;
+      final assets = await timelineService.loadAssets(resolvedIndex, 1);
+      if (assets.isEmpty) {
+        return;
+      }
+      final resolvedAsset = assets.first;
       ref.read(isPlayingMotionVideoProvider.notifier).playing = false;
-      AssetViewer.setAsset(ref, asset);
+      AssetViewer.setAsset(ref, resolvedAsset);
+      // Thread place-detail UX into the viewer route (not under timeline ProviderScope).
+      final closeWhenAssetLeaves =
+          ref.read(timelineArgsProvider.select((a) => a.closeViewerWhenAssetLeavesTimeline));
       ctx.pushRoute(
         AssetViewerRoute(
-          initialIndex: assetIndex,
-          timelineService: ref.read(timelineServiceProvider),
+          initialIndex: resolvedIndex,
+          timelineService: timelineService,
           heroOffset: heroOffset,
+          closeViewerWhenAssetLeavesTimeline: closeWhenAssetLeaves,
         ),
       );
     }

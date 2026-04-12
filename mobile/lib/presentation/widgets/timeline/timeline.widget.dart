@@ -37,6 +37,7 @@ class Timeline extends StatelessWidget {
     this.topSliverWidgetHeight,
     this.showStorageIndicator = false,
     this.withStack = false,
+    this.closeViewerWhenAssetLeavesTimeline = false,
     this.appBar = const CuratorSliverAppBar(floating: true, pinned: false, snap: false),
     this.bottomSheet = const GeneralBottomSheet(minChildSize: 0.18),
     this.groupBy,
@@ -50,6 +51,7 @@ class Timeline extends StatelessWidget {
   final Widget? appBar;
   final Widget? bottomSheet;
   final bool withStack;
+  final bool closeViewerWhenAssetLeavesTimeline;
   final GroupAssetsBy? groupBy;
   final bool withScrubber;
   final bool snapToMonth;
@@ -72,6 +74,7 @@ class Timeline extends StatelessWidget {
                 columnCount: ref.watch(settingsProvider.select((s) => s.get(Setting.tilesPerRow))),
                 showStorageIndicator: showStorageIndicator,
                 withStack: withStack,
+                closeViewerWhenAssetLeavesTimeline: closeViewerWhenAssetLeavesTimeline,
                 groupBy: groupBy,
               ),
             ),

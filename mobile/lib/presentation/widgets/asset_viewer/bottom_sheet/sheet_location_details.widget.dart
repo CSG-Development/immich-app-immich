@@ -3,10 +3,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
+import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_viewer.state.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/sheet_tile.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/asset_viewer/viewer_scope.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/widgets/asset_viewer/detail_panel/exif_map.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -54,7 +57,11 @@ class _SheetLocationDetailsState extends ConsumerState<SheetLocationDetails> {
   }
 
   void editLocation() async {
-    await ref.read(actionProvider.notifier).editLocation(ActionSource.viewer, context);
+    final isPlacesScopedViewer = ref.read(assetViewerPlacesExitProvider);
+    final result = await ref.read(actionProvider.notifier).editLocation(ActionSource.viewer, context);
+    if (result != null && result.success && isPlacesScopedViewer) {
+      EventStream.shared.emit(const ViewerExitAfterPlacesLocationEditEvent());
+    }
   }
 
   @override

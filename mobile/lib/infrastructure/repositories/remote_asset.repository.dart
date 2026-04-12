@@ -167,12 +167,24 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
     });
   }
 
-  Future<void> updateLocation(List<String> ids, LatLng location) {
+  Future<void> updateLocation(
+    List<String> ids,
+    LatLng location, {
+    String? city,
+    String? state,
+    String? country,
+  }) {
     return _db.batch((batch) async {
       for (final id in ids) {
         batch.update(
           _db.remoteExifEntity,
-          RemoteExifEntityCompanion(latitude: Value(location.latitude), longitude: Value(location.longitude)),
+          RemoteExifEntityCompanion(
+            latitude: Value(location.latitude),
+            longitude: Value(location.longitude),
+            city: Value(city),
+            state: Value(state),
+            country: Value(country),
+          ),
           where: (e) => e.assetId.equals(id),
         );
       }

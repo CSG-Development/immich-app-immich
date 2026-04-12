@@ -8,11 +8,13 @@ import 'package:immich_mobile/infrastructure/repositories/remote_album.repositor
 import 'package:immich_mobile/infrastructure/repositories/remote_asset.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
+import 'package:immich_mobile/providers/map/map_service.provider.dart';
 import 'package:immich_mobile/repositories/asset_api.repository.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:immich_mobile/repositories/download.repository.dart';
 import 'package:immich_mobile/repositories/drift_album_api_repository.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/map.service.dart';
 import 'package:immich_mobile/widgets/common/date_time_picker.dart';
 import 'package:immich_mobile/widgets/common/location_picker.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' as maplibre;
@@ -27,6 +29,7 @@ final actionServiceProvider = Provider<ActionService>(
     ref.watch(remoteAlbumRepository),
     ref.watch(assetMediaRepositoryProvider),
     ref.watch(downloadRepositoryProvider),
+    ref.watch(mapServiceProvider),
   ),
 );
 
@@ -38,6 +41,7 @@ class ActionService {
   final DriftRemoteAlbumRepository _remoteAlbumRepository;
   final AssetMediaRepository _assetMediaRepository;
   final DownloadRepository _downloadRepository;
+  final MapService _mapService;
 
   const ActionService(
     this._assetApiRepository,
@@ -47,6 +51,7 @@ class ActionService {
     this._remoteAlbumRepository,
     this._assetMediaRepository,
     this._downloadRepository,
+    this._mapService,
   );
 
   Future<void> shareLink(List<String> remoteIds, BuildContext context) async {
@@ -155,7 +160,31 @@ class ActionService {
     }
 
     await _assetApiRepository.updateLocation(remoteIds, location);
-    await _remoteAssetRepository.updateLocation(remoteIds, location);
+    final reverseGeocoded = await _mapService.reverseGeocode(
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
+    await _remoteAssetRepository.updateLocation(
+      remoteIds,
+      location,
+      city: reverseGeocoded?.city,
+      state: reverseGeocoded?.state,
+      country: reverseGeocoded?.country,
+    );
+
+    if (remoteIds.length == 1) {
+      final updatedAsset = await _assetApiRepository.getAssetInfo(remoteIds.first);
+      final updatedExif = updatedAsset?.exifInfo;
+      if (updatedExif?.latitude != null && updatedExif?.longitude != null) {
+        await _remoteAssetRepository.updateLocation(
+          remoteIds,
+          maplibre.LatLng(updatedExif!.latitude!, updatedExif.longitude!),
+          city: updatedExif.city,
+          state: updatedExif.state,
+          country: updatedExif.country,
+        );
+      }
+    }
 
     return true;
   }
