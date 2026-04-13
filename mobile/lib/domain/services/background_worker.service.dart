@@ -33,6 +33,7 @@ import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -76,6 +77,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   final ApiService _apiService;
 
   bool _isCleanedUp = false;
+  String? _runId;
 
   BackgroundWorkerBgService({
     required Isar isar,
@@ -105,13 +107,27 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
   Future<void> init() async {
     try {
+      _runId = BackupTrace.newRunId();
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplStart,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_RECEIVED',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: 'background_worker_init',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'BG_WORKER_INIT_START',
+        runId: _runId,
+      );
       HttpSSLOptions.apply(applyNative: false);
 
       await Future.wait(
         [
           loadTranslations(),
           workerManager.init(dynamicSpawning: true),
-          _ref?.read(apiServiceProvider).setOpenApiServiceEndpoint(),
+          _ref?.read(apiServiceProvider).setOpenApiServiceEndpoint(runId: _runId),
           // Initialize the file downloader
           FileDownloader().configure(
             globalConfig: [
@@ -138,9 +154,37 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
       // Notify the host that the background worker service has been initialized and is ready to use
       _backgroundHostApi.onInitialized();
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplStart,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_DEDUPED',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: 'background_worker_init',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'BG_WORKER_INIT_COMPLETE',
+        runId: _runId,
+      );
     } catch (error, stack) {
       _logger.severe("Failed to initialize background worker", error, stack);
       _backgroundHostApi.close();
+      logBackupTrace(
+        _logger,
+        level: Level.SEVERE,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: 'background_worker_init',
+        status: BackupTraceStatus.fail,
+        reasonCode: 'BG_WORKER_INIT_FAILED',
+        runId: _runId,
+        error: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -148,9 +192,37 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   Future<void> onAndroidUpload() async {
     _logger.info('Android background processing started');
     final sw = Stopwatch()..start();
+    _runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplStart,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'BG_WORKER',
+      appState: 'PAUSED',
+      trigger: 'background_task',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'ANDROID_BG_UPLOAD_START',
+      runId: _runId,
+    );
     try {
       if (!await _syncAssets(hashTimeout: Duration(minutes: _isBackupEnabled ? 3 : 6))) {
         _logger.warning("Remote sync did not complete successfully, skipping backup");
+        logBackupTrace(
+          _logger,
+          level: Level.WARNING,
+          event: BackupTraceEvent.runSummary,
+          phase: BackupTracePhase.summary,
+          step: 'RUN_SUMMARY',
+          source: 'BG_WORKER',
+          appState: 'PAUSED',
+          trigger: 'background_task',
+          status: BackupTraceStatus.partial,
+          reasonCode: 'ANDROID_BG_SYNC_FAILED_SKIP_BACKUP',
+          runId: _runId,
+          elapsedMs: sw.elapsedMilliseconds,
+        );
         return;
       }
       await _handleBackup();
@@ -160,6 +232,20 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       sw.stop();
       _logger.info("Android background processing completed in ${sw.elapsed.inSeconds}s");
       await _cleanup();
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: 'background_task',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'ANDROID_BG_UPLOAD_END',
+        runId: _runId,
+        elapsedMs: sw.elapsedMilliseconds,
+      );
     }
   }
 
@@ -167,16 +253,58 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   Future<void> onIosUpload(bool isRefresh, int? maxSeconds) async {
     _logger.info('iOS background upload started with maxSeconds: ${maxSeconds}s');
     final sw = Stopwatch()..start();
+    _runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplStart,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'BG_WORKER',
+      appState: 'PAUSED',
+      trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'IOS_BG_UPLOAD_START',
+      runId: _runId,
+      extra: {'maxSeconds': maxSeconds ?? -1},
+    );
     try {
       final timeout = isRefresh ? const Duration(seconds: 5) : Duration(minutes: _isBackupEnabled ? 3 : 6);
       if (!await _syncAssets(hashTimeout: timeout)) {
         _logger.warning("Remote sync did not complete successfully, skipping backup");
+        logBackupTrace(
+          _logger,
+          level: Level.WARNING,
+          event: BackupTraceEvent.runSummary,
+          phase: BackupTracePhase.summary,
+          step: 'RUN_SUMMARY',
+          source: 'BG_WORKER',
+          appState: 'PAUSED',
+          trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
+          status: BackupTraceStatus.partial,
+          reasonCode: 'IOS_BG_SYNC_FAILED_SKIP_BACKUP',
+          runId: _runId,
+          elapsedMs: sw.elapsedMilliseconds,
+        );
         return;
       }
 
       final backupFuture = _handleBackup();
       if (maxSeconds != null) {
         await backupFuture.timeout(Duration(seconds: maxSeconds - 1), onTimeout: () {});
+        logBackupTrace(
+          _logger,
+          level: Level.WARNING,
+          event: BackupTraceEvent.runSummary,
+          phase: BackupTracePhase.summary,
+          step: 'RUN_SUMMARY',
+          source: 'BG_WORKER',
+          appState: 'PAUSED',
+          trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
+          status: BackupTraceStatus.partial,
+          reasonCode: 'IOS_BG_TIMEOUT_WINDOW',
+          runId: _runId,
+        );
       } else {
         await backupFuture;
       }
@@ -186,6 +314,20 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       sw.stop();
       _logger.info("iOS background upload completed in ${sw.elapsed.inSeconds}s");
       await _cleanup();
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'IOS_BG_UPLOAD_END',
+        runId: _runId,
+        elapsedMs: sw.elapsedMilliseconds,
+      );
     }
   }
 
@@ -194,6 +336,19 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     _logger.warning("Background worker cancelled");
     try {
       await _cleanup();
+      logBackupTrace(
+        _logger,
+        level: Level.WARNING,
+        event: BackupTraceEvent.uplCancel,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_SKIPPED',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: 'background_cancel',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'BG_WORKER_CANCELLED',
+        runId: _runId,
+      );
     } catch (error, stack) {
       dPrint(() => 'Failed to cleanup background worker: $error with stack: $stack');
     }
@@ -241,17 +396,56 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     await runZonedGuarded(
       () async {
         if (_isCleanedUp) {
+          logBackupTrace(
+            _logger,
+            level: Level.WARNING,
+            event: BackupTraceEvent.runSummary,
+            phase: BackupTracePhase.summary,
+            step: 'RUN_SUMMARY',
+            source: 'BG_WORKER',
+            appState: 'PAUSED',
+            trigger: 'background_task',
+            status: BackupTraceStatus.skip,
+            reasonCode: 'BG_WORKER_ALREADY_CLEANED',
+            runId: _runId,
+          );
           return;
         }
 
         if (!_isBackupEnabled) {
           _logger.info("Backup is disabled. Skipping backup routine");
+          logBackupTrace(
+            _logger,
+            level: Level.INFO,
+            event: BackupTraceEvent.runSummary,
+            phase: BackupTracePhase.summary,
+            step: 'RUN_SUMMARY',
+            source: 'BG_WORKER',
+            appState: 'PAUSED',
+            trigger: 'background_task',
+            status: BackupTraceStatus.skip,
+            reasonCode: 'BACKUP_DISABLED',
+            runId: _runId,
+          );
           return;
         }
 
         final currentUser = _ref?.read(currentUserProvider);
         if (currentUser == null) {
           _logger.warning("No current user found. Skipping backup from background");
+          logBackupTrace(
+            _logger,
+            level: Level.WARNING,
+            event: BackupTraceEvent.runSummary,
+            phase: BackupTracePhase.summary,
+            step: 'RUN_SUMMARY',
+            source: 'BG_WORKER',
+            appState: 'PAUSED',
+            trigger: 'background_task',
+            status: BackupTraceStatus.skip,
+            reasonCode: 'NO_CURRENT_USER',
+            runId: _runId,
+          );
           return;
         }
 
@@ -266,11 +460,27 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       },
       (error, stack) {
         dPrint(() => "Error in backup zone $error, $stack");
+        logBackupTrace(
+          _logger,
+          level: Level.SEVERE,
+          event: BackupTraceEvent.runSummary,
+          phase: BackupTracePhase.summary,
+          step: 'RUN_SUMMARY',
+          source: 'BG_WORKER',
+          appState: 'PAUSED',
+          trigger: 'background_task',
+          status: BackupTraceStatus.fail,
+          reasonCode: 'BG_BACKUP_ZONE_ERROR',
+          runId: _runId,
+          error: error,
+          stackTrace: stack,
+        );
       },
     );
   }
 
   Future<bool> _syncAssets({Duration? hashTimeout}) async {
+    final sw = Stopwatch()..start();
     await _ref?.read(backgroundSyncProvider).syncLocal();
     if (_isCleanedUp) {
       return false;
@@ -292,6 +502,20 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     }
 
     await hashFuture;
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.syncEnd,
+      phase: BackupTracePhase.sync,
+      step: 'SYNC_END',
+      source: 'BG_WORKER',
+      appState: 'PAUSED',
+      trigger: 'background_task',
+      status: isSuccess ? BackupTraceStatus.ok : BackupTraceStatus.partial,
+      reasonCode: isSuccess ? 'BG_SYNC_OK' : 'BG_SYNC_REMOTE_FAILED',
+      runId: _runId,
+      elapsedMs: sw.elapsedMilliseconds,
+    );
     return isSuccess;
   }
 }

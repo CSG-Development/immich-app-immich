@@ -6,6 +6,7 @@ import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/action_button_helpers.dart';
+import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -17,7 +18,12 @@ class CopyActionButton extends ConsumerWidget {
   const CopyActionButton({super.key, required this.source, this.menuItem = false});
 
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
-    final selection = ref.read(multiSelectProvider).selectedAssets;
+    final selection = source == ActionSource.timeline
+        ? ref.read(multiSelectProvider).selectedAssets
+        : switch (ref.read(currentAssetNotifier)) {
+            BaseAsset asset => {asset},
+            null => const <BaseAsset>{},
+          };
     if (!_isCopySupportedForSelection(selection)) {
       return;
     }
@@ -30,7 +36,9 @@ class CopyActionButton extends ConsumerWidget {
     final result = await ClipboardService.copyToClipboard(context, ref, resolved);
 
     if (!context.mounted) return;
-    ref.read(multiSelectProvider.notifier).reset();
+    if (source == ActionSource.timeline) {
+      ref.read(multiSelectProvider.notifier).reset();
+    }
 
     if (result.success) {
       ImmichToast.show(
@@ -42,7 +50,7 @@ class CopyActionButton extends ConsumerWidget {
     } else {
       ImmichToast.show(
         context: context,
-        msg: result.error ?? 'errors.unable.to.copy.to.clipboard'.t(context: context),
+        msg: result.error ?? 'errors.unable_to_copy_to_clipboard'.t(context: context),
         gravity: ToastGravity.BOTTOM,
         toastType: ToastType.error,
       );
@@ -51,12 +59,17 @@ class CopyActionButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selection = ref.watch(multiSelectProvider).selectedAssets;
+    final selection = source == ActionSource.timeline
+        ? ref.watch(multiSelectProvider).selectedAssets
+        : switch (ref.watch(currentAssetNotifier)) {
+            BaseAsset asset => {asset},
+            null => const <BaseAsset>{},
+          };
     final enabled = _isCopySupportedForSelection(selection);
 
     return BaseActionButton(
       iconData: Icons.copy_outlined,
-      label: 'copy_to_clipboard'.t(context: context),
+      label: 'Copy',
       menuItem: menuItem,
       onPressed: enabled ? () => _onTap(context, ref) : null,
     );

@@ -32,6 +32,7 @@ import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/services/background.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -239,6 +240,21 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     if (isEnableBackup) {
       final currentUser = Store.tryGet(StoreKey.currentUser);
       if (currentUser != null) {
+        final runId = BackupTrace.newRunId();
+        logBackupTrace(
+          _log,
+          level: Level.INFO,
+          event: BackupTraceEvent.uplResume,
+          phase: BackupTracePhase.trigger,
+          step: 'TRIGGER_RECEIVED',
+          source: 'APP_RESUME',
+          appState: 'RESUMED',
+          trigger: 'lifecycle_resume',
+          status: BackupTraceStatus.ok,
+          reasonCode: 'APP_RESUME_BACKUP_RESUME',
+          runId: runId,
+          extra: {'userId': currentUser.id},
+        );
         await _safeRun(
           _ref.read(driftBackupProvider.notifier).handleBackupResume(currentUser.id),
           "handleBackupResume",

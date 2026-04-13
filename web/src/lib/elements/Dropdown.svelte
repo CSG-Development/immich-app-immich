@@ -15,7 +15,6 @@
   import { Button, Text } from '@immich/ui';
   import { mdiCheck } from '@mdi/js';
   import { isEqual } from 'lodash-es';
-  import { fly } from 'svelte/transition';
   import Icon from '../components/elements/icon.svelte';
 
   interface Props {
@@ -29,7 +28,9 @@
     position?: 'bottom-left' | 'bottom-right';
     onSelect: (option: T) => void;
     onClickOutside?: () => void;
+    onShowMenuChange?: (show: boolean) => void;
     render?: (item: T) => string | RenderedOption;
+    isShareModal?: boolean;
   }
 
   let {
@@ -43,13 +44,16 @@
     title = undefined,
     onSelect,
     onClickOutside = () => {},
+    onShowMenuChange,
     render = String,
+    isShareModal = false,
   }: Props = $props();
 
   const handleClickOutside = () => {
     if (!controlable) {
       showMenu = false;
     }
+    onShowMenuChange?.(showMenu);
 
     onClickOutside();
   };
@@ -59,6 +63,7 @@
     selectedOption = option;
 
     showMenu = false;
+    onShowMenuChange?.(showMenu);
   };
 
   const renderOption = (option: T): RenderedOption => {
@@ -77,8 +82,6 @@
     }
   };
 
-  let renderedSelectedOption = $derived(renderOption(selectedOption));
-
   const getAlignClass = (position: 'bottom-left' | 'bottom-right') => {
     switch (position) {
       case 'bottom-left': {
@@ -93,15 +96,41 @@
       }
     }
   };
+
+  let button: HTMLDivElement | undefined = $state();
+
+  let menuStyle = $state('');
+
+  $effect(() => {
+    if (isShareModal) {
+      if (!button || !showMenu) {
+        menuStyle = '';
+      } else {
+        const rect = button.getBoundingClientRect();
+        const top = rect.top + window.scrollY;
+        const left = position === 'bottom-left' ? rect.left + window.scrollX : rect.right + window.scrollX - 320;
+        menuStyle = `position: fixed; top: ${top}px; left: ${left}px; z-index: 1000;`;
+      }
+    }
+  });
+
+  let renderedSelectedOption = $derived(renderOption(selectedOption));
 </script>
 
-<div use:clickOutside={{ onOutclick: handleClickOutside, onEscape: handleClickOutside }} class="relative">
+<div
+  bind:this={button}
+  use:clickOutside={{ onOutclick: handleClickOutside, onEscape: handleClickOutside }}
+  class="relative"
+>
   <!-- BUTTON TITLE -->
   <Button
-    onclick={() => (showMenu = !showMenu)}
+    onclick={() => {
+      showMenu = !showMenu;
+      onShowMenuChange?.(showMenu);
+    }}
     fullWidth
     variant="ghost"
-    color="secondary"
+    color="primary"
     size="small"
     {title}
     class="gap-2"
@@ -109,15 +138,19 @@
     {#if renderedSelectedOption?.icon}
       <Icon path={renderedSelectedOption.icon} size="24" />
     {/if}
-    <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : ''}>{renderedSelectedOption.title}</Text>
+    <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : 'font-medium'}
+      >{renderedSelectedOption.title}</Text
+    >
   </Button>
 
   <!-- DROP DOWN MENU -->
   {#if showMenu}
     <div
-      transition:fly={{ y: -30, duration: 250 }}
-      class="z-1 top-0 -right-4 absolute flex min-w-[250px] max-h-[70vh] overflow-y-auto immich-scrollbar flex-col rounded-2xl bg-immich-bg-gray-mt text-black shadow-lg
-      dark:bg-immich-dark-gray-card dark:text-white {className} {getAlignClass(position)}"
+      style={menuStyle}
+      class="flex min-w-[250px] max-h-[70vh] overflow-y-auto immich-scrollbar flex-col rounded-2xl bg-immich-bg-gray-mt text-black shadow-lg
+      dark:bg-immich-dark-gray-card dark:text-white {className} {isShareModal
+        ? ''
+        : `${getAlignClass(position)} z-1 top-0 -right-4 absolute`}"
     >
       {#each options as option (option)}
         {@const renderedOption = renderOption(option)}

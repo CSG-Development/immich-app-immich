@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/models/image_editor_translations.dart';
 
 /// Configuration for the image editor
 class ImageEditorConfig {
@@ -21,6 +22,9 @@ class ImageEditorConfig {
   /// Whether to enable tune adjustments
   final bool enableTuneAdjustments;
 
+  /// Localized labels/messages for image editor UI.
+  final ImageEditorTranslations translations;
+
   const ImageEditorConfig({
     required this.imageBytes,
     required this.onImageEditingComplete,
@@ -28,5 +32,6 @@ class ImageEditorConfig {
     this.theme,
     this.enableCustomEffects = true,
     this.enableTuneAdjustments = true,
+    this.translations = const ImageEditorTranslations(),
   });
 }

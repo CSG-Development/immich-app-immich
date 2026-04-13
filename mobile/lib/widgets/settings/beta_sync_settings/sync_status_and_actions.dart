@@ -31,7 +31,7 @@ class SyncStatusAndActions extends HookConsumerWidget {
         if (!await dbFile.exists()) {
           if (context.mounted) {
             context.scaffoldMessenger.showSnackBar(
-              SnackBar(content: Text("Database file not found".t(context: context))),
+              SnackBar(content: Text("database_file_not_found".t(context: context))),
             );
           }
           return;
@@ -57,7 +57,7 @@ class SyncStatusAndActions extends HookConsumerWidget {
 
         if (context.mounted) {
           context.scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text("Database exported successfully".t(context: context))),
+            SnackBar(content: Text("database_exported_successfully".t(context: context))),
           );
         }
       } catch (e) {
@@ -254,7 +254,7 @@ class _SyncStatsCounts extends ConsumerWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Center(
                   child: Text(
-                    "Error occur, reset the local database by tapping the button below",
+                    "reset_db_prompt".t(context: context),
                     style: context.textTheme.bodyLarge,
                   ),
                 ),

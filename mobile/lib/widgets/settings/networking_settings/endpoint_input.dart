@@ -122,7 +122,7 @@ class EndpointInputState extends ConsumerState<EndpointInput> {
             fontSize: 14,
           ),
           decoration: InputDecoration(
-            hintText: 'http(s)://immich.domain.com',
+            hintText: 'server_url_hint'.tr(),
             contentPadding: const EdgeInsets.all(16),
             filled: true,
             fillColor: context.colorScheme.surfaceContainer,

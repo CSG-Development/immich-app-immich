@@ -790,6 +790,14 @@ export class AssetRepository {
       .execute();
   }
 
+  @GenerateSql()
+  getAllAssetIds() {
+    return this.db
+      .selectFrom('asset')
+      .select('asset.id')
+      .execute();
+  }
+
   @GenerateSql({ params: [{ userIds: [DummyValue.UUID], updatedAfter: DummyValue.DATE, limit: 100 }] })
   async getChangedDeltaSync(options: AssetDeltaSyncOptions) {
     return this.db

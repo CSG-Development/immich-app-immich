@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
@@ -74,7 +75,7 @@ class _InfoBoxState extends ConsumerState<_InfoBox> {
         context: context,
         toastType: ToastType.error,
         durationInSecond: 1,
-        msg: "Failed to toggle the timeline setting",
+        msg: "failed_to_toggle_timeline_setting".tr(),
       );
       return;
     }
@@ -101,11 +102,11 @@ class _InfoBoxState extends ConsumerState<_InfoBox> {
               padding: const EdgeInsets.all(8.0),
               child: ListTile(
                 title: Text(
-                  "Show in timeline",
+                  'show_in_timeline'.tr(),
                   style: context.textTheme.titleSmall?.copyWith(color: context.colorScheme.primary),
                 ),
                 subtitle: Text(
-                  "Show photos and videos from this user in your timeline",
+                  'show_in_timeline_setting_description'.tr(),
                   style: context.textTheme.bodyMedium,
                 ),
                 trailing: Switch(value: _inTimeline, onChanged: (_) => _toggleInTimeline()),

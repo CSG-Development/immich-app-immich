@@ -45,7 +45,7 @@
   };
 </script>
 
-<Modal title={$t('edit_tag')} icon={mdiTag} {onClose}>
+<Modal title={$t('edit_tag')} size="small" icon={mdiTag} {onClose}>
   <ModalBody>
     <form onsubmit={handleEdit} autocomplete="off" id="edit-tag-form">
       <div class="my-4 flex flex-col gap-2">

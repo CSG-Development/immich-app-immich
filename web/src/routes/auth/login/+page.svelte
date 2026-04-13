@@ -6,7 +6,7 @@
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { featureFlags, serverConfig } from '$lib/stores/server-config.store';
   import { oauth } from '$lib/utils';
-  import { getServerErrorMessage, handleError } from '$lib/utils/handle-error';
+  import { getServerErrorMessage, handleError, type ApiError } from '$lib/utils/handle-error';
   import { login, type LoginResponseDto } from '@immich/sdk';
   import { Alert, Button, Field, Input, PasswordInput, Stack } from '@immich/ui';
   import { onMount } from 'svelte';
@@ -102,7 +102,13 @@
       await onSuccess(user);
       return;
     } catch (error) {
-      errorMessage = getServerErrorMessage(error) || $t('errors.incorrect_email_or_password');
+      let serverMessage = getServerErrorMessage(error);
+      errorMessage =
+        (error as ApiError)?.status === 401
+          ? $t('errors.incorrect_email_or_password')
+          : serverMessage
+            ? serverMessage.join(', ')
+            : (error as ApiError)?.message;
       loading = false;
       return;
     }
@@ -137,7 +143,7 @@
       {#if !oauthLoading && $featureFlags.passwordLogin}
         <form {onsubmit} class="flex flex-col gap-4">
           {#if errorMessage}
-            <Alert color="danger" title={errorMessage} closable />
+            <Alert color="danger" class="[&_p]:first-letter:uppercase" title={errorMessage} closable />
           {/if}
 
           <Field label={$t('email')}>

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/services/backup_verification.service.dart';
@@ -27,7 +28,7 @@ class BackupVerification extends _$BackupVerification {
         if (context.mounted) {
           ImmichToast.show(
             context: context,
-            msg: "Backup all assets before starting this check!",
+            msg: "backup_verification_all_assets_required".tr(),
             toastType: ToastType.error,
           );
         }
@@ -38,7 +39,7 @@ class BackupVerification extends _$BackupVerification {
         if (context.mounted) {
           ImmichToast.show(
             context: context,
-            msg: "Make sure to be connected to unmetered Wi-Fi",
+            msg: "backup_verification_wifi_required".tr(),
             toastType: ToastType.error,
           );
         }
@@ -52,7 +53,7 @@ class BackupVerification extends _$BackupVerification {
         if (context.mounted) {
           ImmichToast.show(
             context: context,
-            msg: "Did not find any corrupt asset backups!",
+            msg: "backup_verification_no_corrupt_assets".tr(),
             toastType: ToastType.success,
           );
         }
@@ -62,7 +63,7 @@ class BackupVerification extends _$BackupVerification {
             context: context,
             builder: (ctx) => ConfirmDialog(
               onOk: () => _performDeletion(context, toDelete),
-              title: "Corrupt backups!",
+              title: "corrupt_backups".tr(),
               ok: "Delete",
               content:
                   "Found ${toDelete.length} (max $limit at once) corrupt asset backups. "

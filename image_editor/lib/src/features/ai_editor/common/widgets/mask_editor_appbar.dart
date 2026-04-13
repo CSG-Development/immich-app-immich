@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_editor/src/common/widgets/image_editor_translation_scope.dart';
 import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 
 /// App bar for mask-editor overlays (people/object/animal removal), with
@@ -29,6 +30,7 @@ class MaskEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = ImageEditorTranslationScope.of(context);
     return EditorActionAppBar(
       theme: Theme.of(context),
       title: title,
@@ -41,7 +43,7 @@ class MaskEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
       canUndo: canUndo,
       canRedo: canRedo,
       confirmEnabled: applyEnabled,
-      confirmTooltip: 'Apply',
+      confirmTooltip: tr.apply,
     );
   }
 

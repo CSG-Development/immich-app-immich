@@ -17,7 +17,7 @@
     type UserResponseDto,
   } from '@immich/sdk';
   import { Modal, ModalBody } from '@immich/ui';
-  import { mdiArrowDownThin, mdiArrowUpThin, mdiDotsVertical, mdiPlus } from '@mdi/js';
+  import { mdiArrowDown, mdiArrowUp, mdiDotsVertical, mdiPlus } from '@mdi/js';
   import { findKey } from 'lodash-es';
   import { t } from 'svelte-i18n';
   import { notificationController, NotificationType } from '../components/shared-components/notification/notification';
@@ -35,8 +35,8 @@
   let { album, order, user, onClose }: Props = $props();
 
   const options: Record<AssetOrder, RenderedOption> = {
-    [AssetOrder.Asc]: { icon: mdiArrowUpThin, title: $t('oldest_first') },
-    [AssetOrder.Desc]: { icon: mdiArrowDownThin, title: $t('newest_first') },
+    [AssetOrder.Asc]: { icon: mdiArrowUp, title: $t('oldest_first') },
+    [AssetOrder.Desc]: { icon: mdiArrowDown, title: $t('newest_first') },
   };
 
   let selectedOption = $derived(order ? options[order] : options[AssetOrder.Desc]);
@@ -120,8 +120,8 @@
   <ModalBody>
     <div class="items-center justify-center">
       <div class="py-2">
-        <h2 class="text-gray text-sm mb-2">{$t('settings').toUpperCase()}</h2>
-        <div class="grid p-2 gap-y-2">
+        <h2 class="text-xs mb-2 font-medium">{$t('settings').toUpperCase()}</h2>
+        <div class="grid py-2 gap-y-2">
           {#if order}
             <SettingDropdown
               title={$t('display_order')}
@@ -141,10 +141,10 @@
         </div>
       </div>
       <div class="py-2">
-        <div class="uppercase text-gray text-sm mb-3">{$t('people')}</div>
-        <div class="p-2">
+        <div class="uppercase text-gray text-xs mb-3 font-medium">{$t('people')}</div>
+        <div class="py-2 px-1">
           <button type="button" class="flex items-center gap-2" onclick={() => onClose({ action: 'shareUser' })}>
-            <div class="rounded-full w-10 h-10 border border-gray-500 flex items-center justify-center">
+            <div class="rounded-full bg-primary text-light w-10 h-10 flex items-center justify-center">
               <div><Icon path={mdiPlus} size="25" /></div>
             </div>
             <div>{$t('invite_people')}</div>

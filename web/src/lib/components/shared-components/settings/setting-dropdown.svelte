@@ -33,7 +33,7 @@
 <div class="flex place-items-center justify-between">
   <div>
     <div class="flex h-[26px] place-items-center gap-1">
-      <label class="font-medium text-primary text-sm" for={title}>
+      <label for={title}>
         {title}
       </label>
       {#if isEdited}

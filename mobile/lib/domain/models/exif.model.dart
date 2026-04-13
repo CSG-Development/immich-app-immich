@@ -8,6 +8,9 @@ class ExifInfo {
   final String? orientation;
   final String? timeZone;
   final DateTime? dateTimeOriginal;
+  final DateTime? modifyDate;
+  final String? projectionType;
+  final int? rating;
 
   // GPS
   final double? latitude;
@@ -50,6 +53,9 @@ class ExifInfo {
     this.height,
     this.timeZone,
     this.dateTimeOriginal,
+    this.modifyDate,
+    this.projectionType,
+    this.rating,
     this.isFlipped = false,
     this.latitude,
     this.longitude,
@@ -77,6 +83,9 @@ class ExifInfo {
         other.orientation == orientation &&
         other.timeZone == timeZone &&
         other.dateTimeOriginal == dateTimeOriginal &&
+        other.modifyDate == modifyDate &&
+        other.projectionType == projectionType &&
+        other.rating == rating &&
         other.latitude == latitude &&
         other.longitude == longitude &&
         other.city == city &&
@@ -102,6 +111,9 @@ class ExifInfo {
         height.hashCode ^
         timeZone.hashCode ^
         dateTimeOriginal.hashCode ^
+        modifyDate.hashCode ^
+        projectionType.hashCode ^
+        rating.hashCode ^
         latitude.hashCode ^
         longitude.hashCode ^
         city.hashCode ^
@@ -128,6 +140,9 @@ height: ${height ?? 'NA'},
 isFlipped: $isFlipped,
 timeZone: ${timeZone ?? 'NA'},
 dateTimeOriginal: ${dateTimeOriginal ?? 'NA'},
+modifyDate: ${modifyDate ?? 'NA'},
+projectionType: ${projectionType ?? 'NA'},
+rating: ${rating ?? 'NA'},
 latitude: ${latitude ?? 'NA'},
 longitude: ${longitude ?? 'NA'},
 city: ${city ?? 'NA'},
@@ -150,6 +165,9 @@ exposureSeconds: ${exposureSeconds ?? 'NA'},
     String? orientation,
     String? timeZone,
     DateTime? dateTimeOriginal,
+    DateTime? modifyDate,
+    String? projectionType,
+    int? rating,
     double? latitude,
     double? longitude,
     String? city,
@@ -171,6 +189,9 @@ exposureSeconds: ${exposureSeconds ?? 'NA'},
       orientation: orientation ?? this.orientation,
       timeZone: timeZone ?? this.timeZone,
       dateTimeOriginal: dateTimeOriginal ?? this.dateTimeOriginal,
+      modifyDate: modifyDate ?? this.modifyDate,
+      projectionType: projectionType ?? this.projectionType,
+      rating: rating ?? this.rating,
       isFlipped: isFlipped ?? this.isFlipped,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,

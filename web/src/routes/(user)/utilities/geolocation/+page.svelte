@@ -49,9 +49,11 @@
       return;
     }
 
+    const selectedIds = assetInteraction.selectedAssets.map((asset) => asset.id);
+
     await updateAssets({
       assetBulkUpdateDto: {
-        ids: assetInteraction.selectedAssets.map((asset) => asset.id),
+        ids: selectedIds,
         latitude: location?.latitude ?? undefined,
         longitude: location?.longitude ?? undefined,
       },
@@ -185,7 +187,10 @@
         color="primary"
         shape="round"
         disabled={assetInteraction.selectedAssets.length === 0}
-        onclick={() => handleUpdate()}
+        onclick={async () =>
+          await handleUpdate().then(() => {
+            timelineManager.refreshLayout();
+          })}
       >
         <Text class="hidden sm:inline-block">
           {$t('apply_count', { values: { count: assetInteraction.selectedAssets.length } })}

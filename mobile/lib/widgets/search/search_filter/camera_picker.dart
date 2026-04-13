@@ -43,7 +43,7 @@ class CameraPicker extends HookConsumerWidget {
           makeErrorToastShown.value = true;
           ImmichToast.show(
             context: context,
-            msg: 'Failed to load camera makes',
+            msg: 'camera_picker_failed_to_load_makes'.tr(),
             toastType: ToastType.error,
             gravity: ToastGravity.BOTTOM,
           );
@@ -60,7 +60,7 @@ class CameraPicker extends HookConsumerWidget {
           modelErrorToastShown.value = true;
           ImmichToast.show(
             context: context,
-            msg: 'Failed to load camera models',
+            msg: 'camera_picker_failed_to_load_models'.tr(),
             toastType: ToastType.error,
             gravity: ToastGravity.BOTTOM,
           );

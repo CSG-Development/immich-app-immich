@@ -11,6 +11,12 @@ class ViewerReloadAssetEvent extends Event {
   const ViewerReloadAssetEvent();
 }
 
+/// Emitted after a successful location edit when the viewer was opened from
+/// Library → Places (see [TimelineArgs.closeViewerWhenAssetLeavesTimeline]).
+class ViewerExitAfterPlacesLocationEditEvent extends Event {
+  const ViewerExitAfterPlacesLocationEditEvent();
+}
+
 class AssetViewerState {
   final int backgroundOpacity;
   final bool showingBottomSheet;

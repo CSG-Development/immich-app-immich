@@ -35,9 +35,9 @@
 </script>
 
 <div class="flex justify-between items-center">
-  <div class="flex flex-col gap-1">
-    <Text size="small">{sharedLink.description || album.albumName}</Text>
-    <Text size="tiny" color="muted">{getShareProperties()}</Text>
+  <div class="flex flex-col gap-1 max-w-[220px]">
+    <Text size="small" class="truncate">{sharedLink.description || album.albumName}</Text>
+    <Text size="tiny" color="muted" class="truncate">{getShareProperties()}</Text>
   </div>
   <div class="flex">
     <IconButton

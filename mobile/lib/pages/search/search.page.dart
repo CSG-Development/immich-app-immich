@@ -45,6 +45,7 @@ class SearchPage extends HookConsumerWidget {
         camera: prefilter?.camera ?? SearchCameraFilter(),
         date: prefilter?.date ?? SearchDateFilter(),
         display: prefilter?.display ?? SearchDisplayFilters(isNotInAlbum: false, isArchive: false, isFavorite: false),
+        exifFilters: prefilter?.exifFilters ?? [],
         mediaType: prefilter?.mediaType ?? AssetType.other,
         language: "${context.locale.languageCode}-${context.locale.countryCode}",
       ),

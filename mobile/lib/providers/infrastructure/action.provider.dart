@@ -8,6 +8,7 @@ import 'package:immich_mobile/models/download/livephotos_medatada.model.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_viewer.state.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
+import 'package:immich_mobile/providers/map/map_marker.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -297,6 +298,8 @@ class ActionNotifier extends Notifier<void> {
       if (source == ActionSource.viewer) {
         ref.invalidate(currentAssetExifProvider);
       }
+      ref.invalidate(placesProvider);
+      ref.invalidate(mapMarkersProvider);
 
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {

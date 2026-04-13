@@ -39,16 +39,16 @@
   };
 
   const colorClasses: Record<UserAvatarColor, string> = {
-    primary: 'bg-primary text-light dark:text-light',
-    pink: 'bg-pink-400 text-light dark:text-dark',
-    red: 'bg-red-500 text-light dark:text-dark',
-    yellow: 'bg-yellow-500 text-light dark:text-dark',
-    blue: 'bg-blue-500 text-light dark:text-dark',
-    green: 'bg-green-600 text-light dark:text-dark',
-    purple: 'bg-purple-600 text-light dark:text-dark',
-    orange: 'bg-orange-600 text-light dark:text-dark',
-    gray: 'bg-gray-600 text-light dark:text-dark',
-    amber: 'bg-amber-600 text-light dark:text-dark',
+    primary: 'bg-primary/12 dark:bg-primary/24 text-primary',
+    pink: 'bg-pink-400/12 dark:bg-pink-400/24 text-pink-400',
+    red: 'bg-red-500/12 dark:bg-red-500/24 text-red-500',
+    yellow: 'bg-yellow-500/12 dark:bg-yellow-500/24 text-yellow-500',
+    blue: 'bg-blue-500/12 dark:bg-blue-500/24 text-blue-500',
+    green: 'bg-green-600/12 dark:bg-green-600/24 text-green-600',
+    purple: 'bg-purple-600/12 dark:bg-purple-600/24 text-purple-600',
+    orange: 'bg-orange-600/12 dark:bg-orange-600/24 text-orange-600',
+    gray: 'bg-gray-600/12 dark:bg-gray-400/24 text-gray-600 dark:text-gray-400',
+    amber: 'bg-amber-600/12 dark:bg-amber-600/24 text-amber-600',
   };
 
   const sizeClasses: Record<Size, string> = {
@@ -87,7 +87,7 @@
   {/if}
   {#if showFallback}
     <span
-      class="uppercase flex h-full w-full select-none items-center justify-center font-medium"
+      class="uppercase flex h-full w-full select-none items-center justify-center"
       class:text-xs={size === 'sm'}
       class:text-lg={size === 'lg'}
       class:text-xl={size === 'xl'}

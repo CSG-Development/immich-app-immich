@@ -117,6 +117,11 @@ export class AssetJobsDto extends AssetIdsDto {
   name!: AssetJobName;
 }
 
+export class AssetJobsAllDto {
+  @ValidateEnum({ enum: AssetJobName, name: 'AssetJobName' })
+  name!: AssetJobName;
+}
+
 export class AssetStatsDto {
   @ValidateEnum({ enum: AssetVisibility, name: 'AssetVisibility', optional: true })
   visibility?: AssetVisibility;

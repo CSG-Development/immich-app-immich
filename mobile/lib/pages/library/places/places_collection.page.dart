@@ -94,7 +94,7 @@ class PlacesCollectionPage extends HookConsumerWidget {
                   },
                 );
               },
-              error: (error, stask) => const Text('Error getting places'),
+              error: (error, stask) => Text('error_getting_places'.tr()),
               loading: () => const Center(child: CircularProgressIndicator()),
             ),
           ],
@@ -123,6 +123,7 @@ class PlaceTile extends StatelessWidget {
             camera: SearchCameraFilter(),
             date: SearchDateFilter(),
             display: SearchDisplayFilters(isNotInAlbum: false, isArchive: false, isFavorite: false),
+            exifFilters: const [],
             mediaType: AssetType.other,
           ),
         ),

@@ -313,16 +313,12 @@
       (person) => person.name.toLowerCase() === name.toLowerCase() && person.id !== personId && person.name,
     );
   };
-
-  const refreshPeople = async () => {
-    const result = await getAllPeople({ withHidden: true });
-    people = result.people;
-  };
 </script>
 
 <svelte:window bind:innerHeight />
 
 <UserPageLayout
+  hideSection={selectHidden}
   title={$t('people')}
   description={countVisiblePeople === 0 && !searchName
     ? undefined
@@ -406,7 +402,7 @@
 
           <input
             type="text"
-            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white dark:hover:bg-immich-dark-gray-card focus:bg-white"
+            class="placeholder-immich-gray-text dark:placeholder-immich-dark-gray-text text-center w-full md:w-39 mt-2 py-1 text-sm text-immich-primary dark:text-immich-dark-primary rounded-[28px] hover:bg-white dark:hover:bg-immich-dark-gray-card focus:bg-white dark:focus:bg-immich-dark-gray-card"
             value={person.name}
             placeholder={$t('add_a_name')}
             use:shortcut={{ shortcut: { key: 'Enter' }, onShortcut: (e) => e.currentTarget.blur() }}
@@ -430,7 +426,7 @@
   <dialog
     open
     transition:fly={{ y: innerHeight, duration: 150, easing: quintOut, opacity: 0 }}
-    class="absolute start-0 top-0 h-full w-full bg-bg"
+    class="absolute start-0 top-0 w-full h-full bg-bg"
     aria-modal="true"
     aria-labelledby="manage-visibility-title"
     use:focusTrap

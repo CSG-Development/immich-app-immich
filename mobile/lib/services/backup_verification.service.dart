@@ -17,8 +17,10 @@ import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/diff.dart';
+import 'package:logging/logging.dart';
 
 /// Finds duplicates originating from missing EXIF information
 class BackupVerificationService {
@@ -26,8 +28,9 @@ class BackupVerificationService {
   final FileMediaRepository _fileMediaRepository;
   final AssetRepository _assetRepository;
   final IsarExifRepository _exifInfoRepository;
+  final Logger _log = Logger('BackupVerificationService');
 
-  const BackupVerificationService(
+  BackupVerificationService(
     this._userService,
     this._fileMediaRepository,
     this._assetRepository,
@@ -36,6 +39,22 @@ class BackupVerificationService {
 
   /// Returns at most [limit] assets that were backed up without exif
   Future<List<Asset>> findWronglyBackedUpAssets({int limit = 100}) async {
+    final runId = BackupTrace.newRunId();
+    final sw = Stopwatch()..start();
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.runSummary,
+      phase: BackupTracePhase.postSync,
+      step: 'POSTSYNC_DB_APPLY_START',
+      source: 'MANUAL_SCREEN',
+      appState: 'ACTIVE',
+      trigger: 'backup_verification',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'VERIFICATION_START',
+      runId: runId,
+      extra: {'limit': limit},
+    );
     final owner = _userService.getMyUser().id;
     final List<Asset> onlyLocal = await _assetRepository.getAll(ownerId: owner, state: AssetState.local, limit: limit);
     final List<Asset> remoteMatches = await _assetRepository.getMatches(
@@ -98,6 +117,26 @@ class BackupVerificationService {
         fileMediaRepository: _fileMediaRepository,
       ));
     }
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.runSummary,
+      phase: BackupTracePhase.summary,
+      step: 'RUN_SUMMARY',
+      source: 'MANUAL_SCREEN',
+      appState: 'ACTIVE',
+      trigger: 'backup_verification',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'VERIFICATION_COMPLETE',
+      runId: runId,
+      elapsedMs: sw.elapsedMilliseconds,
+      extra: {
+        'owner': owner,
+        'localCandidates': onlyLocal.length,
+        'remoteMatches': remoteMatches.length,
+        'deleteCandidates': toDelete.length,
+      },
+    );
     return toDelete;
   }
 

@@ -448,6 +448,7 @@ class AssetViewerRoute extends PageRouteInfo<AssetViewerRouteArgs> {
     required int initialIndex,
     required TimelineService timelineService,
     int? heroOffset,
+    bool closeViewerWhenAssetLeavesTimeline = false,
     List<PageRouteInfo>? children,
   }) : super(
          AssetViewerRoute.name,
@@ -456,6 +457,8 @@ class AssetViewerRoute extends PageRouteInfo<AssetViewerRouteArgs> {
            initialIndex: initialIndex,
            timelineService: timelineService,
            heroOffset: heroOffset,
+           closeViewerWhenAssetLeavesTimeline:
+               closeViewerWhenAssetLeavesTimeline,
          ),
          initialChildren: children,
        );
@@ -471,6 +474,8 @@ class AssetViewerRoute extends PageRouteInfo<AssetViewerRouteArgs> {
         initialIndex: args.initialIndex,
         timelineService: args.timelineService,
         heroOffset: args.heroOffset,
+        closeViewerWhenAssetLeavesTimeline:
+            args.closeViewerWhenAssetLeavesTimeline,
       );
     },
   );
@@ -482,6 +487,7 @@ class AssetViewerRouteArgs {
     required this.initialIndex,
     required this.timelineService,
     this.heroOffset,
+    this.closeViewerWhenAssetLeavesTimeline = false,
   });
 
   final Key? key;
@@ -492,9 +498,11 @@ class AssetViewerRouteArgs {
 
   final int? heroOffset;
 
+  final bool closeViewerWhenAssetLeavesTimeline;
+
   @override
   String toString() {
-    return 'AssetViewerRouteArgs{key: $key, initialIndex: $initialIndex, timelineService: $timelineService, heroOffset: $heroOffset}';
+    return 'AssetViewerRouteArgs{key: $key, initialIndex: $initialIndex, timelineService: $timelineService, heroOffset: $heroOffset, closeViewerWhenAssetLeavesTimeline: $closeViewerWhenAssetLeavesTimeline}';
   }
 }
 

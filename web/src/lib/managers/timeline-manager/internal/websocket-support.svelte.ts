@@ -22,7 +22,7 @@ export class WebsocketSupport {
       this.#timelineManager.removeAssets(remove);
     }
     this.#pendingChanges = [];
-  }, 2500);
+  }, 400);
 
   constructor(timeineManager: TimelineManager) {
     this.#timelineManager = timeineManager;

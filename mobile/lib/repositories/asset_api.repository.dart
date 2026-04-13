@@ -96,6 +96,11 @@ class AssetApiRepository extends ApiRepository {
     return response.originalMimeType;
   }
 
+  Future<Asset?> getAssetInfo(String assetId) async {
+    final response = await checkNull(_api.getAssetInfo(assetId));
+    return Asset.remote(response);
+  }
+
   Future<void> updateDescription(String assetId, String description) {
     return _api.updateAsset(assetId, UpdateAssetDto(description: description));
   }

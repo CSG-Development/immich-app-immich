@@ -23,6 +23,7 @@ class DriftPlaceDetailPage extends StatelessWidget {
       ],
       child: Timeline(
         appBar: MesmerizingSliverAppBar(title: place, icon: Icons.location_on),
+        closeViewerWhenAssetLeavesTimeline: true,
       ),
     );
   }

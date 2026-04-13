@@ -12,6 +12,7 @@
 
   interface Props {
     hideNavbar?: boolean;
+    hideSection?: boolean;
     showUploadButton?: boolean;
     title?: string | undefined;
     description?: string | undefined;
@@ -25,6 +26,7 @@
 
   let {
     hideNavbar = false,
+    hideSection = false,
     showUploadButton = false,
     title = undefined,
     description = undefined,
@@ -52,7 +54,8 @@
   class="relative z-0 grid grid-cols-[--spacing(0)_auto] overflow-hidden sidebar:grid-cols-[--spacing(75)_auto]
     {hideNavbar ? 'h-dvh' : 'h-[calc(100dvh-var(--navbar-height))]'}
     {hideNavbar ? 'pt-(--navbar-height)' : ''}
-    {hideNavbar ? 'max-md:pt-(--navbar-height-md)' : ''}"
+    {hideNavbar ? 'max-md:pt-(--navbar-height-md)' : ''}
+    {hideSection ? 'invisible' : ''}"
 >
   {#if sidebar}
     {@render sidebar()}

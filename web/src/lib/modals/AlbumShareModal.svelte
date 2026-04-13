@@ -29,6 +29,7 @@
 
   let users: UserResponseDto[] = $state([]);
   let selectedUsers: Record<string, { user: UserResponseDto; role: AlbumUserRole }> = $state({});
+  let dropdownOpen = $state(false);
 
   const handleViewQrCode = async (sharedLink: SharedLinkResponseDto) => {
     await modalManager.show(QrCodeModal, {
@@ -73,14 +74,45 @@
       selectedUsers[user.id].role = role;
     }
   };
+
+  const disableScroll = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  };
+
+  const disableScrollWithButtons = (event: Event) => {
+    if (
+      ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(
+        (event as KeyboardEvent).code,
+      )
+    ) {
+      event.preventDefault();
+    }
+  };
+
+  $effect(() => {
+    const div = document.querySelector('#container');
+    if (dropdownOpen) {
+      div?.addEventListener('scroll', disableScroll, false);
+      div?.addEventListener('mousewheel', disableScroll, false);
+      div?.addEventListener('touchmove', disableScroll, false);
+      div?.addEventListener('keydown', disableScrollWithButtons, false);
+    } else {
+      div?.removeEventListener('scroll', disableScroll, false);
+      div?.removeEventListener('mousewheel', disableScroll, false);
+      div?.removeEventListener('touchmove', disableScroll, false);
+      div?.removeEventListener('keydown', disableScrollWithButtons, false);
+    }
+  });
 </script>
 
 <Modal size="small" title={$t('share')} {onClose} class="overflow-visible">
   <ModalBody>
     {#if Object.keys(selectedUsers).length > 0}
-      <div class="mb-2 py-2 sticky">
+      <div class="mb-2 py-2">
         <p class="text-xs font-medium">{$t('selected')}</p>
-        <div class="my-2">
+        <div id="container" class="my-2 max-h-[200px] overflow-y-auto">
           {#each Object.values(selectedUsers) as { user } (user.id)}
             {#key user.id}
               <div class="flex place-items-center gap-4 p-4">
@@ -91,11 +123,11 @@
                 </div>
 
                 <!-- <UserAvatar {user} size="md" /> -->
-                <div class="text-start grow">
-                  <p class="text-immich-fg dark:text-immich-dark-fg">
+                <div class="text-start grow max-w-[152px]">
+                  <p class="text-immich-fg dark:text-immich-dark-fg truncate">
                     {user.name}
                   </p>
-                  <p class="text-xs">
+                  <p class="text-xs truncate">
                     {user.email}
                   </p>
                 </div>
@@ -105,8 +137,10 @@
                   options={roleOptions}
                   render={({ title, icon }) => ({ title, icon })}
                   onSelect={({ value }) => handleChangeRole(user, value)}
+                  onShowMenuChange={(show) => (dropdownOpen = show)}
                   position="bottom-right"
                   class="!min-w-[240px]"
+                  isShareModal
                 />
               </div>
             {/key}
@@ -121,11 +155,11 @@
       </p>
     {/if}
 
-    <div class="immich-scrollbar max-h-[500px] overflow-y-auto">
+    <div class="immich-scrollbar">
       {#if users.length > 0 && users.length !== Object.keys(selectedUsers).length}
         <Text>{$t('users')}</Text>
 
-        <div class="my-2">
+        <div class="my-2 max-h-[200px] overflow-y-auto">
           {#each users as user (user.id)}
             {#if !Object.keys(selectedUsers).includes(user.id)}
               <div class="flex place-items-center transition-all hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl">
@@ -135,11 +169,11 @@
                   class="flex w-full place-items-center gap-4 p-4"
                 >
                   <UserAvatar {user} size="md" />
-                  <div class="text-start grow">
-                    <p class="text-immich-fg dark:text-immich-dark-fg">
+                  <div class="text-start grow max-w-[152px]">
+                    <p class="text-immich-fg dark:text-immich-dark-fg truncate">
                       {user.name}
                     </p>
-                    <p class="text-xs">
+                    <p class="text-xs truncate">
                       {user.email}
                     </p>
                   </div>
@@ -180,11 +214,13 @@
           <Link href={resolve(AppRoute.SHARED_LINKS)} onclick={() => onClose()} class="text-sm">{$t('view_all')}</Link>
         </div>
 
-        <Stack gap={4}>
-          {#each sharedLinks as sharedLink (sharedLink.id)}
-            <AlbumSharedLink {album} {sharedLink} onViewQrCode={() => handleViewQrCode(sharedLink)} />
-          {/each}
-        </Stack>
+        <div class="max-h-[40px] overflow-y-auto">
+          <Stack gap={4}>
+            {#each sharedLinks as sharedLink (sharedLink.id)}
+              <AlbumSharedLink {album} {sharedLink} onViewQrCode={() => handleViewQrCode(sharedLink)} />
+            {/each}
+          </Stack>
+        </div>
       {/if}
 
       <Button

@@ -1,6 +1,7 @@
 // DO NOT EDIT. This is code generated via generate_keys.dart
 
 abstract class IntlKeys {
+  static const OK = 'OK';
   static const about = 'about';
   static const account = 'account';
   static const account_settings = 'account_settings';
@@ -30,6 +31,7 @@ abstract class IntlKeys {
   static const add_to_album = 'add_to_album';
   static const add_to_album_bottom_sheet_added = 'add_to_album_bottom_sheet_added';
   static const add_to_album_bottom_sheet_already_exists = 'add_to_album_bottom_sheet_already_exists';
+  static const add_to_album_bottom_sheet_some_local_assets = 'add_to_album_bottom_sheet_some_local_assets';
   static const add_to_album_toggle = 'add_to_album_toggle';
   static const add_to_albums = 'add_to_albums';
   static const add_to_albums_count = 'add_to_albums_count';
@@ -419,6 +421,11 @@ abstract class IntlKeys {
   static const admin_password = 'admin_password';
   static const administration = 'administration';
   static const advanced = 'advanced';
+  static const advanced_exif_load_error = 'advanced_exif_load_error';
+  static const advanced_exif_tab_base = 'advanced_exif_tab_base';
+  static const advanced_settings_backup_upload_diagnostic_logs = 'advanced_settings_backup_upload_diagnostic_logs';
+  static const advanced_settings_backup_upload_diagnostic_logs_subtitle =
+      'advanced_settings_backup_upload_diagnostic_logs_subtitle';
   static const advanced_settings_beta_timeline_subtitle = 'advanced_settings_beta_timeline_subtitle';
   static const advanced_settings_beta_timeline_title = 'advanced_settings_beta_timeline_title';
   static const advanced_settings_enable_alternate_media_filter_subtitle =
@@ -450,21 +457,26 @@ abstract class IntlKeys {
   static const album_deleted = 'album_deleted';
   static const album_info_card_backup_album_excluded = 'album_info_card_backup_album_excluded';
   static const album_info_card_backup_album_included = 'album_info_card_backup_album_included';
+  static const album_info_card_cannot_exclude_all_assets = 'album_info_card_cannot_exclude_all_assets';
   static const album_info_updated = 'album_info_updated';
   static const album_leave = 'album_leave';
   static const album_leave_confirmation = 'album_leave_confirmation';
   static const album_name = 'album_name';
+  static const album_name_required = 'album_name_required';
   static const album_options = 'album_options';
   static const album_remove_user = 'album_remove_user';
   static const album_remove_user_confirmation = 'album_remove_user_confirmation';
   static const album_search_not_found = 'album_search_not_found';
   static const album_share_no_users = 'album_share_no_users';
+  static const album_summary = 'album_summary';
+  static const album_update_error = 'album_update_error';
   static const album_updated = 'album_updated';
   static const album_updated_setting_description = 'album_updated_setting_description';
   static const album_user_left = 'album_user_left';
   static const album_user_removed = 'album_user_removed';
   static const album_viewer_appbar_delete_confirm = 'album_viewer_appbar_delete_confirm';
   static const album_viewer_appbar_share_err_delete = 'album_viewer_appbar_share_err_delete';
+  static const album_viewer_appbar_share_err_description = 'album_viewer_appbar_share_err_description';
   static const album_viewer_appbar_share_err_leave = 'album_viewer_appbar_share_err_leave';
   static const album_viewer_appbar_share_err_remove = 'album_viewer_appbar_share_err_remove';
   static const album_viewer_appbar_share_err_title = 'album_viewer_appbar_share_err_title';
@@ -530,6 +542,8 @@ abstract class IntlKeys {
   static const asset_restored_successfully = 'asset_restored_successfully';
   static const asset_skipped = 'asset_skipped';
   static const asset_skipped_in_trash = 'asset_skipped_in_trash';
+  static const asset_trashed = 'asset_trashed';
+  static const asset_troubleshoot = 'asset_troubleshoot';
   static const asset_uploaded = 'asset_uploaded';
   static const asset_uploading = 'asset_uploading';
   static const asset_viewer_settings_subtitle = 'asset_viewer_settings_subtitle';
@@ -563,8 +577,10 @@ abstract class IntlKeys {
   static const autoplay_slideshow = 'autoplay_slideshow';
   static const back = 'back';
   static const back_close_deselect = 'back_close_deselect';
+  static const background_backup_running_error = 'background_backup_running_error';
   static const background_location_permission = 'background_location_permission';
   static const background_location_permission_content = 'background_location_permission_content';
+  static const background_options = 'background_options';
   static const backup = 'backup';
   static const backup_album_selection_page_albums_device = 'backup_album_selection_page_albums_device';
   static const backup_album_selection_page_albums_tap = 'backup_album_selection_page_albums_tap';
@@ -572,6 +588,7 @@ abstract class IntlKeys {
   static const backup_album_selection_page_select_albums = 'backup_album_selection_page_select_albums';
   static const backup_album_selection_page_selection_info = 'backup_album_selection_page_selection_info';
   static const backup_album_selection_page_total_assets = 'backup_album_selection_page_total_assets';
+  static const backup_albums_sync = 'backup_albums_sync';
   static const backup_all = 'backup_all';
   static const backup_background_service_backup_failed_message = 'backup_background_service_backup_failed_message';
   static const backup_background_service_connection_failed_message =
@@ -640,6 +657,9 @@ abstract class IntlKeys {
   static const backup_options_page_title = 'backup_options_page_title';
   static const backup_setting_subtitle = 'backup_setting_subtitle';
   static const backup_settings_subtitle = 'backup_settings_subtitle';
+  static const backup_verification_all_assets_required = 'backup_verification_all_assets_required';
+  static const backup_verification_no_corrupt_assets = 'backup_verification_no_corrupt_assets';
+  static const backup_verification_wifi_required = 'backup_verification_wifi_required';
   static const backward = 'backward';
   static const basic_details = 'basic_details';
   static const beta_sync = 'beta_sync';
@@ -679,6 +699,8 @@ abstract class IntlKeys {
   static const camera = 'camera';
   static const camera_brand = 'camera_brand';
   static const camera_model = 'camera_model';
+  static const camera_picker_failed_to_load_makes = 'camera_picker_failed_to_load_makes';
+  static const camera_picker_failed_to_load_models = 'camera_picker_failed_to_load_models';
   static const cancel = 'cancel';
   static const cancel_all = 'cancel_all';
   static const cancel_search = 'cancel_search';
@@ -717,6 +739,7 @@ abstract class IntlKeys {
   static const clear_all = 'clear_all';
   static const clear_all_recent_searches = 'clear_all_recent_searches';
   static const clear_file_cache = 'clear_file_cache';
+  static const clear_logs = 'clear_logs';
   static const clear_message = 'clear_message';
   static const clear_value = 'clear_value';
   static const client_cert_dialog_msg_confirm = 'client_cert_dialog_msg_confirm';
@@ -755,6 +778,7 @@ abstract class IntlKeys {
   static const confirm_tag_face_unnamed = 'confirm_tag_face_unnamed';
   static const connected_device = 'connected_device';
   static const connected_to = 'connected_to';
+  static const connection_lost = 'connection_lost';
   static const contain = 'contain';
   static const context = 'context';
   static const continue_ = 'continue';
@@ -775,12 +799,15 @@ abstract class IntlKeys {
   static const copy_link_to_clipboard = 'copy_link_to_clipboard';
   static const copy_password = 'copy_password';
   static const copy_to_clipboard = 'copy_to_clipboard';
+  static const copy_to_clipboard_success = 'copy_to_clipboard_success';
+  static const corrupt_backups = 'corrupt_backups';
   static const country = 'country';
   static const cover = 'cover';
   static const covers = 'covers';
   static const create = 'create';
   static const create_album = 'create_album';
   static const create_album_page_untitled = 'create_album_page_untitled';
+  static const create_album_title_required = 'create_album_title_required';
   static const create_library = 'create_library';
   static const create_link = 'create_link';
   static const create_link_to_share = 'create_link_to_share';
@@ -797,9 +824,11 @@ abstract class IntlKeys {
   static const create_user = 'create_user';
   static const created = 'created';
   static const created_at = 'created_at';
+  static const creating_linked_albums = 'creating_linked_albums';
   static const crop = 'crop';
   static const curated_object_page_title = 'curated_object_page_title';
   static const curator_button_action_retry = 'curator.button.action.retry';
+  static const curator_code = 'curator.code';
   static const curator_developer_options_developer_options_title = 'curator.developer.options.developer.options.title';
   static const curator_developer_options_show_settings = 'curator.developer.options.show.settings';
   static const curator_developer_options_static_device = 'curator.developer.options.static.device';
@@ -819,6 +848,7 @@ abstract class IntlKeys {
   static const curator_lock_application_5_minutes = 'curator.lock.application.5.minutes';
   static const curator_lock_application_immediately = 'curator.lock.application.immediately';
   static const curator_login_form_cant_find_device = 'curator.login.form.cant.find.device';
+  static const curator_login_form_code_hint = 'curator.login.form.code.hint';
   static const curator_login_form_email_hint = 'curator.login.form.email.hint';
   static const curator_login_form_endpoint_hint = 'curator.login.form.endpoint.hint';
   static const curator_login_form_endpoint_url = 'curator.login.form.endpoint.url';
@@ -926,6 +956,8 @@ abstract class IntlKeys {
   static const daily_title_text_date_year = 'daily_title_text_date_year';
   static const dark = 'dark';
   static const darkTheme = 'darkTheme';
+  static const database_exported_successfully = 'database_exported_successfully';
+  static const database_file_not_found = 'database_file_not_found';
   static const date_after = 'date_after';
   static const date_and_time = 'date_and_time';
   static const date_before = 'date_before';
@@ -976,6 +1008,8 @@ abstract class IntlKeys {
   static const deselect_all = 'deselect_all';
   static const details = 'details';
   static const direction = 'direction';
+  static const disable_timeline = 'disable_timeline';
+  static const disable_timeline_confirm = 'disable_timeline_confirm';
   static const disabled = 'disabled';
   static const disallow_edits = 'disallow_edits';
   static const discord = 'discord';
@@ -1017,6 +1051,7 @@ abstract class IntlKeys {
   static const duplicate_error = 'duplicate_error';
   static const duplicate_error_unsupported_type = 'duplicate_error_unsupported_type';
   static const duplicate_error_video = 'duplicate_error_video';
+  static const duplicate_success = 'duplicate_success';
   static const duplicates = 'duplicates';
   static const duplicates_description = 'duplicates_description';
   static const duration = 'duration';
@@ -1059,6 +1094,8 @@ abstract class IntlKeys {
   static const enable = 'enable';
   static const enable_backup = 'enable_backup';
   static const enable_biometric_auth_description = 'enable_biometric_auth_description';
+  static const enable_timeline = 'enable_timeline';
+  static const enable_timeline_confirm = 'enable_timeline_confirm';
   static const enabled = 'enabled';
   static const end_date = 'end_date';
   static const enqueued = 'enqueued';
@@ -1068,7 +1105,10 @@ abstract class IntlKeys {
   static const error = 'error';
   static const error_change_sort_album = 'error_change_sort_album';
   static const error_delete_face = 'error_delete_face';
+  static const error_getting_places = 'error_getting_places';
   static const error_loading_image = 'error_loading_image';
+  static const error_loading_partners = 'error_loading_partners';
+  static const error_loading_people = 'error_loading_people';
   static const error_saving_image = 'error_saving_image';
   static const error_tag_face_bounding_box = 'error_tag_face_bounding_box';
   static const error_title = 'error_title';
@@ -1195,6 +1235,7 @@ abstract class IntlKeys {
   static const errors_unable_to_upload_file = 'errors.unable.to.upload.file';
   static const errors_unable_to_upload_file_shared_album = 'errors.unable.to.upload.file.shared.album';
   static const errors_unable_to_upload_file_type = 'errors.unable.to.upload.file.type';
+  static const errors_undo_delete_failed = 'errors.undo.delete.failed';
   static const errors_unsupported_file_type_notification = 'errors.unsupported.file.type.notification';
   static const exif = 'exif';
   static const exif_bottom_sheet_description = 'exif_bottom_sheet_description';
@@ -1231,6 +1272,7 @@ abstract class IntlKeys {
   static const failed_to_authenticate = 'failed_to_authenticate';
   static const failed_to_load_assets = 'failed_to_load_assets';
   static const failed_to_load_folder = 'failed_to_load_folder';
+  static const failed_to_toggle_timeline_setting = 'failed_to_toggle_timeline_setting';
   static const favorite = 'favorite';
   static const favorite_action_prompt = 'favorite_action_prompt';
   static const favorite_or_unfavorite_photo = 'favorite_or_unfavorite_photo';
@@ -1238,6 +1280,7 @@ abstract class IntlKeys {
   static const favorites_page_no_favorites = 'favorites_page_no_favorites';
   static const feature_photo_updated = 'feature_photo_updated';
   static const features = 'features';
+  static const features_in_development = 'features_in_development';
   static const features_setting_description = 'features_setting_description';
   static const file_name = 'file_name';
   static const file_name_or_extension = 'file_name_or_extension';
@@ -1255,6 +1298,7 @@ abstract class IntlKeys {
   static const folders_feature_description = 'folders_feature_description';
   static const forgot_pin_code_question = 'forgot_pin_code_question';
   static const forward = 'forward';
+  static const from = 'from';
   static const gcast_enabled = 'gcast_enabled';
   static const gcast_enabled_description = 'gcast_enabled_description';
   static const general = 'general';
@@ -1267,6 +1311,7 @@ abstract class IntlKeys {
   static const getting_started = 'getting_started';
   static const go_back = 'go_back';
   static const go_to_folder = 'go_to_folder';
+  static const go_to_original_size = 'go_to_original_size';
   static const go_to_search = 'go_to_search';
   static const gps = 'gps';
   static const gps_missing = 'gps_missing';
@@ -1315,6 +1360,7 @@ abstract class IntlKeys {
   static const host = 'host';
   static const hour = 'hour';
   static const hours = 'hours';
+  static const icloud_download = 'icloud_download';
   static const id = 'id';
   static const idle = 'idle';
   static const ignore_icloud_photos = 'ignore_icloud_photos';
@@ -1330,6 +1376,82 @@ abstract class IntlKeys {
   static const image_alt_text_date_place_2_people = 'image_alt_text_date_place_2_people';
   static const image_alt_text_date_place_3_people = 'image_alt_text_date_place_3_people';
   static const image_alt_text_date_place_4_or_more_people = 'image_alt_text_date_place_4_or_more_people';
+  static const image_editor_ai_artifacts_detected_body = 'image.editor.ai.artifacts.detected.body';
+  static const image_editor_ai_artifacts_detected_title = 'image.editor.ai.artifacts.detected.title';
+  static const image_editor_ai_brush = 'image.editor.ai.brush';
+  static const image_editor_ai_download_model_body = 'image.editor.ai.download.model.body';
+  static const image_editor_ai_download_model_title = 'image.editor.ai.download.model.title';
+  static const image_editor_ai_downloading_model_title = 'image.editor.ai.downloading.model.title';
+  static const image_editor_ai_enhance = 'image.editor.ai.enhance';
+  static const image_editor_ai_eraser = 'image.editor.ai.eraser';
+  static const image_editor_ai_failed_detect_subject = 'image.editor.ai.failed.detect.subject';
+  static const image_editor_ai_failed_remove_object = 'image.editor.ai.failed.remove.object';
+  static const image_editor_ai_lasso_min_points = 'image.editor.ai.lasso.min.points';
+  static const image_editor_ai_model_not_found_body = 'image.editor.ai.model.not.found.body';
+  static const image_editor_ai_model_not_found_title = 'image.editor.ai.model.not.found.title';
+  static const image_editor_ai_select_target_shape = 'image.editor.ai.select.target.shape';
+  static const image_editor_ai_selection_too_small = 'image.editor.ai.selection.too.small';
+  static const image_editor_ai_shape_ellipse = 'image.editor.ai.shape.ellipse';
+  static const image_editor_ai_shape_lasso = 'image.editor.ai.shape.lasso';
+  static const image_editor_ai_shape_rectangle = 'image.editor.ai.shape.rectangle';
+  static const image_editor_ai_smart = 'image.editor.ai.smart';
+  static const image_editor_ai_smart_insertion = 'image.editor.ai.smart.insertion';
+  static const image_editor_ai_smart_insertion_inpaint = 'image.editor.ai.smart.insertion.inpaint';
+  static const image_editor_ai_smart_removal = 'image.editor.ai.smart.removal';
+  static const image_editor_ai_target = 'image.editor.ai.target';
+  static const image_editor_ai_tools_unavailable_web = 'image.editor.ai.tools.unavailable.web';
+  static const image_editor_ai_editor_title = 'image.editor.ai.editor.title';
+  static const image_editor_ai_tools_title = 'image.editor.ai.tools.title';
+  static const image_editor_ai_tools_unavailable_on_web = 'image.editor.ai.tools.unavailable.on.web';
+  static const image_editor_apply = 'image.editor.apply';
+  static const image_editor_back = 'image.editor.back';
+  static const image_editor_cancel = 'image.editor.cancel';
+  static const image_editor_close = 'image.editor.close';
+  static const image_editor_done = 'image.editor.done';
+  static const image_editor_download = 'image.editor.download';
+  static const image_editor_downloading = 'image.editor.downloading';
+  static const image_editor_failed_to_decode_image = 'image.editor.failed.to.decode.image';
+  static const image_editor_no_image_to_edit = 'image.editor.no.image.to.edit';
+  static const image_editor_redo = 'image.editor.redo';
+  static const image_editor_remove = 'image.editor.remove';
+  static const image_editor_skip = 'image.editor.skip';
+  static const image_editor_tools_ai = 'image.editor.tools.ai';
+  static const image_editor_tools_blur = 'image.editor.tools.blur';
+  static const image_editor_tools_crop_rotate = 'image.editor.tools.crop.rotate';
+  static const image_editor_tools_emoji = 'image.editor.tools.emoji';
+  static const image_editor_tools_filter = 'image.editor.tools.filter';
+  static const image_editor_tools_paint = 'image.editor.tools.paint';
+  static const image_editor_tools_text = 'image.editor.tools.text';
+  static const image_editor_tools_tune = 'image.editor.tools.tune';
+  static const image_editor_tools_vignette = 'image.editor.tools.vignette';
+  static const image_editor_tools_watermark = 'image.editor.tools.watermark';
+  static const image_editor_tune_brilliance = 'image.editor.tune.brilliance';
+  static const image_editor_tune_highlights = 'image.editor.tune.highlights';
+  static const image_editor_tune_shadows = 'image.editor.tune.shadows';
+  static const image_editor_tune_tint = 'image.editor.tune.tint';
+  static const image_editor_tune_vibrance = 'image.editor.tune.vibrance';
+  static const image_editor_undo = 'image.editor.undo';
+  static const image_editor_watermark_angle = 'image.editor.watermark.angle';
+  static const image_editor_watermark_default_text = 'image.editor.watermark.default.text';
+  static const image_editor_watermark_logo_modes_unavailable_web = 'image.editor.watermark.logo.modes.unavailable.web';
+  static const image_editor_watermark_mode_logo = 'image.editor.watermark.mode.logo';
+  static const image_editor_watermark_mode_text = 'image.editor.watermark.mode.text';
+  static const image_editor_watermark_mode_text_logo = 'image.editor.watermark.mode.text.logo';
+  static const image_editor_watermark_mode_label = 'image.editor.watermark.mode.label';
+  static const image_editor_watermark_opacity = 'image.editor.watermark.opacity';
+  static const image_editor_watermark_pick_logo = 'image.editor.watermark.pick.logo';
+  static const image_editor_watermark_position_bottom_left = 'image.editor.watermark.position.bottom.left';
+  static const image_editor_watermark_position_bottom_right = 'image.editor.watermark.position.bottom.right';
+  static const image_editor_watermark_position_center = 'image.editor.watermark.position.center';
+  static const image_editor_watermark_position_pattern_grid = 'image.editor.watermark.position.pattern.grid';
+  static const image_editor_watermark_position_top_left = 'image.editor.watermark.position.top.left';
+  static const image_editor_watermark_position_top_right = 'image.editor.watermark.position.top.right';
+  static const image_editor_watermark_position_label = 'image.editor.watermark.position.label';
+  static const image_editor_watermark_remove_logo = 'image.editor.watermark.remove.logo';
+  static const image_editor_watermark_select_mode = 'image.editor.watermark.select.mode';
+  static const image_editor_watermark_select_position = 'image.editor.watermark.select.position';
+  static const image_editor_watermark_size = 'image.editor.watermark.size';
+  static const image_editor_watermark_text_label = 'image.editor.watermark.text.label';
   static const image_saved_successfully = 'image_saved_successfully';
   static const image_viewer_page_state_provider_download_started = 'image_viewer_page_state_provider_download_started';
   static const image_viewer_page_state_provider_download_success = 'image_viewer_page_state_provider_download_success';
@@ -1404,8 +1526,11 @@ abstract class IntlKeys {
   static const local = 'local';
   static const local_asset_cast_failed = 'local_asset_cast_failed';
   static const local_assets = 'local_assets';
+  static const local_assets_summary = 'local_assets_summary';
+  static const local_media_summary = 'local_media_summary';
   static const local_network = 'local_network';
   static const local_network_sheet_info = 'local_network_sheet_info';
+  static const location = 'location';
   static const location_permission = 'location_permission';
   static const location_permission_content = 'location_permission_content';
   static const location_picker_choose_on_map = 'location_picker_choose_on_map';
@@ -1415,6 +1540,7 @@ abstract class IntlKeys {
   static const location_picker_longitude_hint = 'location_picker_longitude_hint';
   static const lock = 'lock';
   static const locked_folder = 'locked_folder';
+  static const log_detail_title = 'log_detail_title';
   static const log_out = 'log_out';
   static const log_out_all_devices = 'log_out_all_devices';
   static const logged_in_as = 'logged_in_as';
@@ -1438,6 +1564,7 @@ abstract class IntlKeys {
   static const login_form_failed_get_oauth_server_disable = 'login_form_failed_get_oauth_server_disable';
   static const login_form_failed_login = 'login_form_failed_login';
   static const login_form_handshake_exception = 'login_form_handshake_exception';
+  static const login_form_no_device_selected = 'login_form_no_device_selected';
   static const login_form_not_now = 'login_form_not_now';
   static const login_form_password_hint = 'login_form_password_hint';
   static const login_form_save_login = 'login_form_save_login';
@@ -1448,6 +1575,7 @@ abstract class IntlKeys {
   static const login_password_changed_success = 'login_password_changed_success';
   static const logout_all_device_confirmation = 'logout_all_device_confirmation';
   static const logout_this_device_confirmation = 'logout_this_device_confirmation';
+  static const logs = 'logs';
   static const longitude = 'longitude';
   static const look = 'look';
   static const loop_videos = 'loop_videos';
@@ -1493,6 +1621,7 @@ abstract class IntlKeys {
   static const mark_as_read = 'mark_as_read';
   static const marked_all_as_read = 'marked_all_as_read';
   static const matches = 'matches';
+  static const matching_assets = 'matching_assets';
   static const media_type = 'media_type';
   static const memories = 'memories';
   static const memories_all_caught_up = 'memories_all_caught_up';
@@ -1616,6 +1745,8 @@ abstract class IntlKeys {
   static const metadata_orientaton_flipped_vertically = 'metadata.orientaton.flipped.vertically';
   static const metadata_orientaton_horizontal = 'metadata.orientaton.horizontal';
   static const metadata_orientaton_rotated_180 = 'metadata.orientaton.rotated.180';
+  static const migration_in_progress = 'migration_in_progress';
+  static const migration_success_restart = 'migration_success_restart';
   static const minimize = 'minimize';
   static const minute = 'minute';
   static const minutes = 'minutes';
@@ -1640,6 +1771,7 @@ abstract class IntlKeys {
   static const name_or_nickname = 'name_or_nickname';
   static const network_requirement_photos_upload = 'network_requirement_photos_upload';
   static const network_requirement_videos_upload = 'network_requirement_videos_upload';
+  static const network_requirements = 'network_requirements';
   static const network_requirements_updated = 'network_requirements_updated';
   static const networking_settings = 'networking_settings';
   static const networking_subtitle = 'networking_subtitle';
@@ -1650,6 +1782,7 @@ abstract class IntlKeys {
   static const new_person = 'new_person';
   static const new_pin_code = 'new_pin_code';
   static const new_pin_code_subtitle = 'new_pin_code_subtitle';
+  static const new_timeline = 'new_timeline';
   static const new_user_created = 'new_user_created';
   static const new_version_available = 'new_version_available';
   static const newest_first = 'newest_first';
@@ -1663,21 +1796,27 @@ abstract class IntlKeys {
   static const no_assets_message = 'no_assets_message';
   static const no_assets_to_show = 'no_assets_to_show';
   static const no_cast_devices_found = 'no_cast_devices_found';
+  static const no_checksum_local = 'no_checksum_local';
+  static const no_checksum_remote = 'no_checksum_remote';
   static const no_duplicates_found = 'no_duplicates_found';
   static const no_exif_info_available = 'no_exif_info_available';
   static const no_explore_results_message = 'no_explore_results_message';
   static const no_favorites_message = 'no_favorites_message';
   static const no_libraries_message = 'no_libraries_message';
+  static const no_local_assets_found = 'no_local_assets_found';
   static const no_location_assets = 'no_location_assets';
   static const no_locked_photos_message = 'no_locked_photos_message';
   static const no_name = 'no_name';
   static const no_notifications = 'no_notifications';
   static const no_people_found = 'no_people_found';
   static const no_places = 'no_places';
+  static const no_remote_assets_found = 'no_remote_assets_found';
   static const no_results = 'no_results';
   static const no_results_description = 'no_results_description';
   static const no_shared_albums_message = 'no_shared_albums_message';
+  static const no_tags = 'no_tags';
   static const no_uploads_in_progress = 'no_uploads_in_progress';
+  static const not_available = 'not_available';
   static const not_in_any_album = 'not_in_any_album';
   static const not_selected = 'not_selected';
   static const note_apply_storage_label_to_previously_uploaded_assets =
@@ -1725,6 +1864,8 @@ abstract class IntlKeys {
   static const open_the_search_filters = 'open_the_search_filters';
   static const options = 'options';
   static const or = 'or';
+  static const organize_into_albums = 'organize_into_albums';
+  static const organize_into_albums_description = 'organize_into_albums_description';
   static const organize_your_library = 'organize_your_library';
   static const original = 'original';
   static const other = 'other';
@@ -1758,6 +1899,10 @@ abstract class IntlKeys {
   static const pasting = 'pasting';
   static const path = 'path';
   static const pattern = 'pattern';
+  static const pattern_error_incorrect = 'pattern_error_incorrect';
+  static const pattern_error_mismatch = 'pattern_error_mismatch';
+  static const pattern_error_missing = 'pattern_error_missing';
+  static const pattern_error_short = 'pattern_error_short';
   static const pause = 'pause';
   static const pause_memories = 'pause_memories';
   static const paused = 'paused';
@@ -1811,6 +1956,7 @@ abstract class IntlKeys {
   static const port = 'port';
   static const preferences_settings_subtitle = 'preferences_settings_subtitle';
   static const preferences_settings_title = 'preferences_settings_title';
+  static const preparing = 'preparing';
   static const preset = 'preset';
   static const preview = 'preview';
   static const previous = 'previous';
@@ -1875,6 +2021,7 @@ abstract class IntlKeys {
   static const read_changelog = 'read_changelog';
   static const readonly_mode_disabled = 'readonly_mode_disabled';
   static const readonly_mode_enabled = 'readonly_mode_enabled';
+  static const ready_for_upload = 'ready_for_upload';
   static const reassign = 'reassign';
   static const reassigned_assets_to_existing_person = 'reassigned_assets_to_existing_person';
   static const reassigned_assets_to_new_person = 'reassigned_assets_to_new_person';
@@ -1886,6 +2033,7 @@ abstract class IntlKeys {
   static const recently_added_page_title = 'recently_added_page_title';
   static const recently_taken = 'recently_taken';
   static const recently_taken_page_title = 'recently_taken_page_title';
+  static const recover_connection_confirm = 'recover_connection_confirm';
   static const refresh = 'refresh';
   static const refresh_encoded_videos = 'refresh_encoded_videos';
   static const refresh_faces = 'refresh_faces';
@@ -1899,6 +2047,7 @@ abstract class IntlKeys {
   static const regenerating_thumbnails = 'regenerating_thumbnails';
   static const remote = 'remote';
   static const remote_assets = 'remote_assets';
+  static const remote_media_summary = 'remote_media_summary';
   static const remove = 'remove';
   static const remove_assets_album_confirmation = 'remove_assets_album_confirmation';
   static const remove_assets_shared_link_confirmation = 'remove_assets_shared_link_confirmation';
@@ -1933,6 +2082,7 @@ abstract class IntlKeys {
   static const require_user_to_change_password_on_first_login = 'require_user_to_change_password_on_first_login';
   static const rescan = 'rescan';
   static const reset = 'reset';
+  static const reset_db_prompt = 'reset_db_prompt';
   static const reset_password = 'reset_password';
   static const reset_people_visibility = 'reset_people_visibility';
   static const reset_pin_code = 'reset_pin_code';
@@ -1951,6 +2101,7 @@ abstract class IntlKeys {
   static const restore_user = 'restore_user';
   static const restored_asset = 'restored_asset';
   static const resume = 'resume';
+  static const retry = 'retry';
   static const retry_upload = 'retry_upload';
   static const review_duplicates = 'review_duplicates';
   static const review_large_files = 'review_large_files';
@@ -1987,6 +2138,11 @@ abstract class IntlKeys {
   static const search_filter_date_title = 'search_filter_date_title';
   static const search_filter_display_option_not_in_album = 'search_filter_display_option_not_in_album';
   static const search_filter_display_options = 'search_filter_display_options';
+  static const search_filter_exif_add_new = 'search_filter_exif_add_new';
+  static const search_filter_exif_chip = 'search_filter_exif_chip';
+  static const search_filter_exif_tag = 'search_filter_exif_tag';
+  static const search_filter_exif_title = 'search_filter_exif_title';
+  static const search_filter_exif_value = 'search_filter_exif_value';
   static const search_filter_filename = 'search_filter_filename';
   static const search_filter_location = 'search_filter_location';
   static const search_filter_location_title = 'search_filter_location_title';
@@ -1998,6 +2154,7 @@ abstract class IntlKeys {
   static const search_no_more_result = 'search_no_more_result';
   static const search_no_people = 'search_no_people';
   static const search_no_people_named = 'search_no_people_named';
+  static const search_no_places = 'search_no_places';
   static const search_no_result = 'search_no_result';
   static const search_no_result_description = 'search_no_result_description';
   static const search_no_result_text = 'search_no_result_text';
@@ -2037,6 +2194,7 @@ abstract class IntlKeys {
   static const select_all_duplicates = 'select_all_duplicates';
   static const select_all_in = 'select_all_in';
   static const select_avatar_color = 'select_avatar_color';
+  static const select_count = 'select_count';
   static const select_face = 'select_face';
   static const select_featured_photo = 'select_featured_photo';
   static const select_from_computer = 'select_from_computer';
@@ -2059,6 +2217,7 @@ abstract class IntlKeys {
   static const server_online = 'server_online';
   static const server_privacy = 'server_privacy';
   static const server_stats = 'server_stats';
+  static const server_url_hint = 'server_url_hint';
   static const server_version = 'server_version';
   static const set = 'set';
   static const set_as_album_cover = 'set_as_album_cover';
@@ -2101,6 +2260,7 @@ abstract class IntlKeys {
   static const share_assets_selected = 'share_assets_selected';
   static const share_dialog_preparing = 'share_dialog_preparing';
   static const share_link = 'share_link';
+  static const share_logs = 'share_logs';
   static const shared = 'shared';
   static const shared_album_activities_input_disable = 'shared_album_activities_input_disable';
   static const shared_album_activity_remove_content = 'shared_album_activity_remove_content';
@@ -2182,6 +2342,7 @@ abstract class IntlKeys {
   static const show_slideshow_transition = 'show_slideshow_transition';
   static const show_supporter_badge = 'show_supporter_badge';
   static const show_supporter_badge_description = 'show_supporter_badge_description';
+  static const show_text_search_menu = 'show_text_search_menu';
   static const shuffle = 'shuffle';
   static const sidebar = 'sidebar';
   static const sidebar_display_description = 'sidebar_display_description';
@@ -2237,6 +2398,8 @@ abstract class IntlKeys {
   static const sync_albums_manual_subtitle = 'sync_albums_manual_subtitle';
   static const sync_local = 'sync_local';
   static const sync_remote = 'sync_remote';
+  static const sync_status = 'sync_status';
+  static const sync_status_subtitle = 'sync_status_subtitle';
   static const sync_upload_album_setting_subtitle = 'sync_upload_album_setting_subtitle';
   static const tag = 'tag';
   static const tag_assets = 'tag_assets';
@@ -2247,6 +2410,7 @@ abstract class IntlKeys {
   static const tag_updated = 'tag_updated';
   static const tagged_assets = 'tagged_assets';
   static const tags = 'tags';
+  static const tap_for_more_details = 'tap_for_more_details';
   static const tap_to_run_job = 'tap_to_run_job';
   static const template = 'template';
   static const theme = 'theme';
@@ -2296,6 +2460,7 @@ abstract class IntlKeys {
   static const trash_page_select_assets_btn = 'trash_page_select_assets_btn';
   static const trash_page_title = 'trash_page_title';
   static const trashed_items_will_be_permanently_deleted_after = 'trashed_items_will_be_permanently_deleted_after';
+  static const troubleshoot = 'troubleshoot';
   static const type = 'type';
   static const unable_to_change_pin_code = 'unable_to_change_pin_code';
   static const unable_to_setup_pin_code = 'unable_to_setup_pin_code';
@@ -2325,6 +2490,7 @@ abstract class IntlKeys {
   static const unstack_action_prompt = 'unstack_action_prompt';
   static const unstacked_assets_count = 'unstacked_assets_count';
   static const untagged = 'untagged';
+  static const untitled_album = 'untitled_album';
   static const up_next = 'up_next';
   static const update_location_action_prompt = 'update_location_action_prompt';
   static const updated_at = 'updated_at';
@@ -2414,4 +2580,5 @@ abstract class IntlKeys {
   static const you_dont_have_any_shared_links = 'you_dont_have_any_shared_links';
   static const your_wifi_name = 'your_wifi_name';
   static const zoom_image = 'zoom_image';
+  static const zoom_to_bounds = 'zoom_to_bounds';
 }

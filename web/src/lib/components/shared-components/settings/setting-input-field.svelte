@@ -111,7 +111,7 @@
       {#if inputType === SettingInputFieldType.COLOR}
         <input
           bind:this={input}
-          class="immich-form-input h-13 w-full pb-2 me-1"
+          class="immich-form-input w-full pb-2 me-1"
           aria-describedby={description ? `${label}-desc` : undefined}
           aria-labelledby="{label}-label"
           id={label}
@@ -130,7 +130,10 @@
 
       <input
         bind:this={input}
-        class="w-full immich-form-input"
+        class="w-full {inputType === SettingInputFieldType.COLOR ? 'h-15' : ''} {inputType ===
+        SettingInputFieldType.COLOR
+          ? ''
+          : 'immich-form-input'}"
         class:color-picker={inputType === SettingInputFieldType.COLOR}
         aria-describedby={description ? `${label}-desc` : undefined}
         aria-labelledby="{label}-label"

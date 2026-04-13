@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
 import 'package:immich_mobile/domain/models/tag.model.dart';
@@ -40,7 +41,7 @@ class AssetTags extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "TAGS",
+            'tags'.tr().toUpperCase(),
             style: context.textTheme.labelMedium?.copyWith(
               color: context.textTheme.labelMedium?.color?.withAlpha(200),
               fontWeight: FontWeight.w600,
@@ -80,7 +81,7 @@ class AssetTags extends HookConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Add',
+                      'add'.tr(),
                       style: context.textTheme.labelLarge?.copyWith(
                         color: context.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
