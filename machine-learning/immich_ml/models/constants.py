@@ -2,6 +2,7 @@ from immich_ml.config import clean_name
 from immich_ml.schemas import ModelSource
 
 _OPENCLIP_MODELS = {
+    "EVA02-B-16__merged2b_s8b_b131k", # Non-native model, can't be downloaded automatically
     "RN101__openai",
     "RN101__yfcc15m",
     "RN50__cc12m",
