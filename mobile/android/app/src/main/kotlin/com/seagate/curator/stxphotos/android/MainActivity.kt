@@ -19,6 +19,8 @@ import com.seagate.curator.stxphotos.android.clipboard.NativeClipboardApi
 import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
 import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApi
 import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApiImpl
+import com.seagate.curator.stxphotos.android.share.ShareExternalApi
+import com.seagate.curator.stxphotos.android.share.ShareExternalApiImpl
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import com.seagate.curator.stxphotos.android.update.UpdateApi
@@ -50,6 +52,7 @@ class MainActivity : FlutterFragmentActivity() {
       NativeClipboardApi.setUp(messenger, ClipboardMessagesImpl(ctx))
       UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
       CertificateFetcherApi.setUp(messenger, CertificateFetcherApiImpl())
+      ShareExternalApi.setUp(messenger, ShareExternalApiImpl(ctx))
 
       flutterEngine.plugins.add(BackgroundServicePlugin())
       flutterEngine.plugins.add(HttpSSLOptionsPlugin())

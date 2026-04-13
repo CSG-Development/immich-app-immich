@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
+import 'package:immich_mobile/services/external_share.service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -42,10 +43,10 @@ abstract final class ImmichLogger {
     final box = context.findRenderObject() as RenderBox?;
 
     // Share file
-    await Share.shareXFiles(
+    await const ExternalShareService().shareXFiles(
       [XFile(filePath)],
       subject: "Personal Cloud Photos logs $dateTime",
       sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
-    ).then((value) => logFile.delete());
+    ).whenComplete(() => logFile.delete());
   }
 }

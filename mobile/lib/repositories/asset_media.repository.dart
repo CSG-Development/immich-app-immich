@@ -10,19 +10,23 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/response_extensions.dart';
 import 'package:immich_mobile/repositories/asset_api.repository.dart';
+import 'package:immich_mobile/services/external_share.service.dart';
 import 'package:immich_mobile/utils/hash.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:share_plus/share_plus.dart';
 
-final assetMediaRepositoryProvider = Provider((ref) => AssetMediaRepository(ref.watch(assetApiRepositoryProvider)));
+final assetMediaRepositoryProvider = Provider(
+  (ref) => AssetMediaRepository(ref.watch(assetApiRepositoryProvider), ref.watch(externalShareServiceProvider)),
+);
 
 class AssetMediaRepository {
   final AssetApiRepository _assetApiRepository;
+  final ExternalShareService _externalShareService;
   static final Logger _log = Logger("AssetMediaRepository");
 
-  const AssetMediaRepository(this._assetApiRepository);
+  const AssetMediaRepository(this._assetApiRepository, this._externalShareService);
 
   Future<List<String>> deleteAll(List<String> ids) => PhotoManager.editor.deleteWithIds(ids);
 
@@ -109,10 +113,10 @@ class AssetMediaRepository {
     // we dont want to await the share result since the
     // "preparing" dialog will not disappear until
     final size = context.sizeData;
-    Share.shareXFiles(
+    _externalShareService.shareXFiles(
       downloadedXFiles,
       sharePositionOrigin: Rect.fromPoints(Offset.zero, Offset(size.width / 3, size.height)),
-    ).then((result) async {
+    ).whenComplete(() async {
       for (var file in downloadedXFiles) {
         try {
           await File(file.path).delete();
