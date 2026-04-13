@@ -61,31 +61,31 @@
           </div></SettingAccordion
         >
 
-        <SettingAccordion key="reverse-geocoding" title={$t('admin.map_reverse_geocoding_settings')}>
-          {#snippet subtitleSnippet()}
-            <p class="text-sm dark:text-immich-dark-fg">
-              <FormatMessage key="admin.map_manage_reverse_geocoding_settings">
-                {#snippet children({ message })}
-                  <a
-                    href="https://immich.app/docs/features/reverse-geocoding"
-                    class="underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {message}
-                  </a>
-                {/snippet}
-              </FormatMessage>
-            </p>
-          {/snippet}
-          <div class="ms-4 mt-4 flex flex-col gap-4">
-            <SettingSwitch
-              title={$t('admin.map_reverse_geocoding_enable_description')}
-              {disabled}
-              bind:checked={config.reverseGeocoding.enabled}
-            />
-          </div></SettingAccordion
-        >
+<!--        <SettingAccordion key="reverse-geocoding" title={$t('admin.map_reverse_geocoding_settings')}>-->
+<!--          {#snippet subtitleSnippet()}-->
+<!--            <p class="text-sm dark:text-immich-dark-fg">-->
+<!--              <FormatMessage key="admin.map_manage_reverse_geocoding_settings">-->
+<!--                {#snippet children({ message })}-->
+<!--                  <a-->
+<!--                    href="https://immich.app/docs/features/reverse-geocoding"-->
+<!--                    class="underline"-->
+<!--                    target="_blank"-->
+<!--                    rel="noreferrer"-->
+<!--                  >-->
+<!--                    {message}-->
+<!--                  </a>-->
+<!--                {/snippet}-->
+<!--              </FormatMessage>-->
+<!--            </p>-->
+<!--          {/snippet}-->
+<!--          <div class="ms-4 mt-4 flex flex-col gap-4">-->
+<!--            <SettingSwitch-->
+<!--              title={$t('admin.map_reverse_geocoding_enable_description')}-->
+<!--              {disabled}-->
+<!--              bind:checked={config.reverseGeocoding.enabled}-->
+<!--            />-->
+<!--          </div></SettingAccordion-->
+<!--        >-->
 
         <SettingButtonsRow
           onReset={(options) => onReset({ ...options, configKeys: ['map', 'reverseGeocoding'] })}
