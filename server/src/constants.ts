@@ -63,6 +63,7 @@ export const FACE_THUMBNAIL_SIZE = 250;
 
 type ModelInfo = { dimSize: number };
 export const CLIP_MODEL_INFO: Record<string, ModelInfo> = {
+  EVA02-B-16__merged2b_s8b_b131kL: { dimSize: 224 },
   RN101__openai: { dimSize: 512 },
   RN101__yfcc15m: { dimSize: 512 },
   'ViT-B-16__laion400m_e31': { dimSize: 512 },
