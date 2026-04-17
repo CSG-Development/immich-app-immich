@@ -1,6 +1,7 @@
 <script lang="ts">
   import DeleteAssetDialog from '$lib/components/photos-page/delete-asset-dialog.svelte';
   import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import { showDeleteModal } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { type OnDelete, type OnUndoDelete, deleteAssets } from '$lib/utils/actions';
   import { IconButton } from '@immich/ui';
@@ -25,7 +26,7 @@
   let label = $derived(force ? $t('permanently_delete') : $t('delete'));
 
   const handleTrash = async () => {
-    if (force) {
+    if (force || $showDeleteModal) {
       isShowConfirmation = true;
       return;
     }

@@ -31,6 +31,7 @@
   import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { featureFlags } from '$lib/stores/server-config.store';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -351,11 +352,15 @@
     </div>
   {:else}
     <div class="fixed top-0 start-0 w-full">
-      <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
-        <div class="absolute bg-light"></div>
-        <div class="w-full flex-1 px-4">
+      <ControlAppBar isSearch onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
+        <div class="max-w-256 m-auto flex-1 px-4">
           <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
         </div>
+        {#snippet trailing()}
+          {#if !mobileDevice.maxMd}
+            <div class="w-18"></div>
+          {/if}
+        {/snippet}
       </ControlAppBar>
     </div>
   {/if}
@@ -499,11 +504,15 @@
       </div>
     {:else}
       <div class="fixed top-0 start-0 w-full">
-        <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
-          <div class="absolute bg-light"></div>
-          <div class="w-full flex-1 px-4">
+        <ControlAppBar isSearch onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
+          <div class="max-w-256 m-auto flex-1 px-4">
             <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
           </div>
+          {#snippet trailing()}
+            {#if !mobileDevice.maxMd}
+              <div class="w-18"></div>
+            {/if}
+          {/snippet}
         </ControlAppBar>
       </div>
     {/if}
