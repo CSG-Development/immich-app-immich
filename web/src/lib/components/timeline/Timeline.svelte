@@ -491,12 +491,7 @@
   };
 
   $effect(() => {
-    if (
-      $viewingAsset &&
-      $slideshowState === SlideshowState.PlaySlideshow &&
-      page.url.pathname.includes(AppRoute.ALBUMS) &&
-      !$isShuffled
-    ) {
+    if ($viewingAsset && $slideshowState === SlideshowState.PlaySlideshow && !$isShuffled) {
       shuffleTimelineAssets()
         .then(() => {
           $isShuffled = true;
