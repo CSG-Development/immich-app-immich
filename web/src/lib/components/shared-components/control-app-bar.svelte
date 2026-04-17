@@ -18,6 +18,7 @@
     leading?: Snippet;
     children?: Snippet;
     trailing?: Snippet;
+    isSearch?: boolean;
   }
 
   let {
@@ -30,6 +31,7 @@
     leading,
     children,
     trailing,
+    isSearch = false,
   }: Props = $props();
 
   let appBarBorder = $state('bg-light border border-transparent');
@@ -76,9 +78,9 @@
     ]}
   >
     <div
-      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium w-full {forceDark
-        ? 'dark'
-        : ''}"
+      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {isSearch
+        ? ''
+        : 'w-full'} {forceDark ? 'dark' : ''}"
     >
       {#if showBackButton}
         <IconButton
@@ -91,7 +93,7 @@
           size="large"
         />
       {/if}
-      <span class="w-full">{@render leading?.()}</span>
+      <span class={isSearch ? '' : 'w-full'}>{@render leading?.()}</span>
     </div>
 
     <div class="w-full">
