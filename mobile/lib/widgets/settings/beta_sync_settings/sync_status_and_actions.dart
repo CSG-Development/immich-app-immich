@@ -11,7 +11,6 @@ import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/memory.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/storage.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
-import 'package:immich_mobile/services/external_share.service.dart';
 import 'package:immich_mobile/widgets/settings/beta_sync_settings/entity_count_tile.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -44,7 +43,7 @@ class SyncStatusAndActions extends HookConsumerWidget {
         await dbFile.copy(exportFile.path);
 
         final size = MediaQuery.of(context).size;
-        await ref.read(externalShareServiceProvider).shareXFiles(
+        await Share.shareXFiles(
           [XFile(exportFile.path)],
           text: 'Personal Cloud Photos Database Export',
           sharePositionOrigin: Rect.fromPoints(Offset.zero, Offset(size.width / 3, size.height)),

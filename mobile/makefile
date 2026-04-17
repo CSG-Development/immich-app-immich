@@ -12,7 +12,6 @@ pigeon:
 	dart run pigeon --input pigeon/background_worker_lock_api.dart
 	dart run pigeon --input pigeon/connectivity_api.dart
 	dart run pigeon --input pigeon/native_clipboard_api.dart
-	dart run pigeon --input pigeon/share_external_api.dart
 	dart run pigeon --input pigeon/update_api.dart
 	dart run pigeon --input pigeon/certificate_fetcher_api.dart
 	dart format lib/platform/native_sync_api.g.dart
@@ -21,7 +20,6 @@ pigeon:
 	dart format lib/platform/background_worker_lock_api.g.dart
 	dart format lib/platform/connectivity_api.g.dart
 	dart format lib/platform/native_clipboard_api.g.dart
-	dart format lib/platform/share_external_api.g.dart
 	dart format lib/platform/update_api.g.dart
 	dart format lib/platform/certificate_fetcher_api.g.dart
 
