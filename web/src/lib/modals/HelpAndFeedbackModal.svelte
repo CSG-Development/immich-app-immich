@@ -19,8 +19,13 @@
     <p>{$t('official_immich_resources')}</p>
     <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2 mt-5">
       <div>
-        <a href="https://{info.version}.archive.immich.app/docs/overview/introduction" target="_blank" rel="noreferrer">
-          <Icon path={mdiInformationOutline} size="1.5em" class="inline-block" />
+        <a
+          href="https://{info.version}.archive.immich.app/docs/overview/introduction"
+          target="_blank"
+          rel="noreferrer"
+          class="flex gap-0.5"
+        >
+          <Icon path={mdiInformationOutline} size="24" class="inline-block" />
           <p
             class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
             id="documentation-label"
@@ -31,8 +36,8 @@
       </div>
 
       <div>
-        <a href="https://github.com/immich-app/immich/" target="_blank" rel="noreferrer">
-          <Icon path={mdiGithub} size="1.5em" class="inline-block" />
+        <a href="https://github.com/immich-app/immich/" target="_blank" rel="noreferrer" class="flex gap-0.5">
+          <Icon path={mdiGithub} size="24" class="inline-block" />
           <p
             class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
             id="github-label"
@@ -43,8 +48,8 @@
       </div>
 
       <div>
-        <a href="https://discord.immich.app" target="_blank" rel="noreferrer">
-          <Icon path={discordPath} viewBox={discordViewBox} class="inline-block" size="1.5em" />
+        <a href="https://discord.immich.app" target="_blank" rel="noreferrer" class="flex gap-0.5">
+          <Icon path={discordPath} viewBox={discordViewBox} class="inline-block p-0.5" size="24" />
           <p
             class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
             id="github-label"
@@ -55,8 +60,13 @@
       </div>
 
       <div>
-        <a href="https://github.com/immich-app/immich/issues/new/choose" target="_blank" rel="noreferrer">
-          <Icon path={mdiBugOutline} size="1.5em" class="inline-block" />
+        <a
+          href="https://github.com/immich-app/immich/issues/new/choose"
+          target="_blank"
+          rel="noreferrer"
+          class="flex gap-0.5"
+        >
+          <Icon path={mdiBugOutline} size="24" class="inline-block" />
           <p
             class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
             id="github-label"
@@ -74,8 +84,8 @@
       <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2 mt-5">
         {#if info.thirdPartyDocumentationUrl}
           <div>
-            <a href={info.thirdPartyDocumentationUrl} target="_blank" rel="noreferrer">
-              <Icon path={mdiInformationOutline} size="1.5em" class="inline-block" />
+            <a href={info.thirdPartyDocumentationUrl} target="_blank" rel="noreferrer" class="flex gap-0.5">
+              <Icon path={mdiInformationOutline} size="24" class="inline-block" />
               <p
                 class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
                 id="documentation-label"
@@ -88,8 +98,8 @@
 
         {#if info.thirdPartySourceUrl}
           <div>
-            <a href={info.thirdPartySourceUrl} target="_blank" rel="noreferrer">
-              <Icon path={mdiGit} size="1.5em" class="inline-block" />
+            <a href={info.thirdPartySourceUrl} target="_blank" rel="noreferrer" class="flex gap-0.5">
+              <Icon path={mdiGit} size="24" class="inline-block" />
               <p
                 class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
                 id="github-label"
@@ -102,8 +112,8 @@
 
         {#if info.thirdPartySupportUrl}
           <div>
-            <a href={info.thirdPartySupportUrl} target="_blank" rel="noreferrer">
-              <Icon path={mdiFaceAgent} class="inline-block" size="1.5em" />
+            <a href={info.thirdPartySupportUrl} target="_blank" rel="noreferrer" class="flex gap-0.5">
+              <Icon path={mdiFaceAgent} class="inline-block" size="24" />
               <p
                 class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
                 id="github-label"
@@ -116,8 +126,8 @@
 
         {#if info.thirdPartyBugFeatureUrl}
           <div>
-            <a href={info.thirdPartyBugFeatureUrl} target="_blank" rel="noreferrer">
-              <Icon path={mdiBugOutline} size="1.5em" class="inline-block" />
+            <a href={info.thirdPartyBugFeatureUrl} target="_blank" rel="noreferrer" class="flex gap-0.5">
+              <Icon path={mdiBugOutline} size="24" class="inline-block" />
               <p
                 class="font-medium text-immich-primary dark:text-immich-dark-primary text-sm underline inline-block"
                 id="github-label"
