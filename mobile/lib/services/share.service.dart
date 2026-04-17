@@ -9,17 +9,14 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'api.service.dart';
-import 'external_share.service.dart';
 
-final shareServiceProvider =
-    Provider((ref) => ShareService(ref.watch(apiServiceProvider), ref.watch(externalShareServiceProvider)));
+final shareServiceProvider = Provider((ref) => ShareService(ref.watch(apiServiceProvider)));
 
 class ShareService {
   final ApiService _apiService;
-  final ExternalShareService _externalShareService;
   final Logger _log = Logger("ShareService");
 
-  ShareService(this._apiService, this._externalShareService);
+  ShareService(this._apiService);
 
   Future<bool> shareAsset(Asset asset, BuildContext context) async {
     return await shareAssets([asset], context);
@@ -61,7 +58,7 @@ class ShareService {
       }
 
       final size = MediaQuery.of(context).size;
-      await _externalShareService.shareXFiles(
+      await Share.shareXFiles(
         downloadedXFiles,
         sharePositionOrigin: Rect.fromPoints(Offset.zero, Offset(size.width / 3, size.height)),
       );
