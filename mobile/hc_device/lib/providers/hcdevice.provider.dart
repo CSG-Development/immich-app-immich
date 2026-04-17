@@ -41,5 +41,10 @@ final deviceProvider = ChangeNotifierProvider<DeviceProvider>((ref) {
 // Main RemoteProvider as ChangeNotifierProvider
 final remoteProvider = ChangeNotifierProvider<RemoteProvider>((ref) {
   final deps = ref.watch(remoteAccessDependenciesProvider);
-  return RemoteProvider(deps.storageData, deps.secureStorage, deps.secureData);
+  return RemoteProvider(
+    deps.storageData,
+    deps.secureStorage,
+    deps.secureData,
+    deps.registerHostTrustedChain,
+  );
 });

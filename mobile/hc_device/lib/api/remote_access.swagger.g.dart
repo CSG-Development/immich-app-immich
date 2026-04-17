@@ -50,14 +50,14 @@ Map<String, dynamic> _$DevicePathsToJson(DevicePaths instance) =>
 
 Error _$ErrorFromJson(Map<String, dynamic> json) => Error(
   name: json['name'] as String,
-  stacktrace: json['stacktrace'] as String,
   reason: json['reason'] as String?,
+  stacktrace: json['stacktrace'] as String,
 );
 
 Map<String, dynamic> _$ErrorToJson(Error instance) => <String, dynamic>{
   'name': instance.name,
-  'stacktrace': instance.stacktrace,
   'reason': instance.reason,
+  'stacktrace': instance.stacktrace,
 };
 
 InitiateResponse$Response _$InitiateResponse$ResponseFromJson(

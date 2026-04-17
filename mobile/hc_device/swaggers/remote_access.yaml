@@ -54,6 +54,8 @@ paths:
           $ref: '#/components/responses/InitiateResponse'
         '400':
           description: Bad request parameters
+        '401':
+          description: Not allowed because the user identity is not associated with a device.
         '500':
           $ref: '#/components/responses/Error'
       security: []
@@ -257,20 +259,20 @@ components:
         - paths
       type: object
     Error:
-      type: object
+      properties:
+        name:
+          description: The error name
+          type: string
+        reason:
+          description: the error name can be raised for multiple reasons
+          type: string
+        stacktrace:
+          description: The stacktrace
+          type: string
       required:
         - name
         - stacktrace
-      properties:
-        name:
-          type: string
-          description: The error name
-        stacktrace:
-          type: string
-          description: The stacktrace
-        reason:
-          type: string
-          description: the error name can be raised for multiple reasons
+      type: object
   parameters: {}
   responses:
     DeviceIDResponse:

@@ -52,7 +52,7 @@ class RemoteAccessForm extends HookConsumerWidget {
         ref.read(remoteProvider).logout();
       }
 
-      ref.read(deviceProvider).setHost(login: email);
+      await ref.read(deviceProvider).setHost(login: email);
       switchToCuratorLogin();
     }
 

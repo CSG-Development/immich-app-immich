@@ -6,7 +6,7 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:cancellation_token_http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
-import 'package:hc_device/utils.dart';
+import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
@@ -122,6 +122,10 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         runId: _runId,
       );
       HttpSSLOptions.apply(applyNative: false);
+      final certs = await HttpCertPinningManager.loadRootCertsBytes([
+        'assets/tdci.pem',
+        'assets/fake-device-noveo.cer',
+      ]);
 
       await Future.wait(
         [
@@ -136,6 +140,8 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
               // On Android, if files are larger than 256MB, run in foreground service
               (Config.runInForegroundIfFileLargerThan, 256),
             ],
+            iOSConfig: [(Config.configCertificatePinning, certs)],
+            androidConfig: [(Config.configCertificatePinning, certs)],
           ),
           FileDownloader().trackTasksInGroup(kDownloadGroupLivePhoto, markDownloadedComplete: false),
           FileDownloader().trackTasks(),

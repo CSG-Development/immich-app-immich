@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
@@ -26,6 +27,10 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final isDarkTheme = context.isDarkTheme;
     const widgetSize = 30.0;
     final isCasting = ref.watch(castProvider.select((c) => c.isCasting));
+    final curatorDevice = ref.watch(deviceProvider);
+    final connectionInfo = curatorDevice.deviceFound
+        ? ConnectionInfo.fromDebugHostType(curatorDevice.debugHostType, curatorDevice.baseUrl)
+        : null;
 
     getBackupBadgeIcon() {
       final iconColor = isDarkTheme ? Colors.white : Colors.black;
@@ -109,11 +114,27 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
           );
         },
       ),
-      title: SvgPicture.asset(
-        context.isDarkTheme
-            ? 'assets/curator-photos-logo-dark.svg'
-            : 'assets/curator-photos-logo-light.svg',
-        height: 14,
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            context.isDarkTheme
+                ? 'assets/curator-photos-logo-dark.svg'
+                : 'assets/curator-photos-logo-light.svg',
+            height: 14,
+          ),
+          if (connectionInfo != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                connectionInfo.defaultLabel,
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
       ),
       actions: [
         if (actions != null)

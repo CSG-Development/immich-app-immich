@@ -9,6 +9,7 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+import 'package:immich_mobile/services/auxiliary_endpoint_store.service.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
@@ -139,6 +140,10 @@ class ApiService implements Authentication {
 
   bool _isSetEndpoint = false;
 
+  /// Optional hook (set from main tab shell): run Curator device re-detection after
+  /// [ConnectionStatus.reconnecting] is published.
+  void Function()? curatorNetworkForceReconnectHandler;
+
   final HttpCertPinningManager certPinning;
 
   ApiService({required this.certPinning}) {
@@ -209,6 +214,12 @@ class ApiService implements Authentication {
       lastErrorTime: DateTime.now(),
       connectionType: ConnectionType.api,
     ));
+
+    try {
+      curatorNetworkForceReconnectHandler?.call();
+    } catch (error, stackTrace) {
+      _log.warning('curatorNetworkForceReconnectHandler failed', error, stackTrace);
+    }
   }
 
   void notifyConnectionState(ConnectionState state) {
@@ -383,6 +394,10 @@ class ApiService implements Authentication {
     return null;
   }
 
+  /// Compatibility wrapper with singular argument naming.
+  Future<String?> tryLocalEndpointCandidate(String? endpoint, {String? runId}) =>
+      tryLocalEndpoint(endpoint, runId: runId);
+
   /// Attempts to connect to remote endpoints from the external endpoint list.
   /// Returns the first successful endpoint URL, or null if all fail.
   Future<String?> tryRemoteEndpoints({String? runId}) async {
@@ -425,18 +440,13 @@ class ApiService implements Authentication {
 
   /// Gets the list of external endpoints from storage.
   /// Returns an empty list if none are configured.
-  List<AuxilaryEndpoint> getExternalEndpointList() {
-    final jsonString = Store.tryGet(StoreKey.externalEndpointList);
+  List<AuxilaryEndpoint> getExternalEndpointList() => AuxiliaryEndpointStoreService.loadAll();
 
-    if (jsonString == null) {
-      return [];
-    }
-
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-    final endpointList = jsonList.map((e) => AuxilaryEndpoint.fromJson(e)).toList();
-
-    return endpointList;
-  }
+  /// Compatibility wrapper for clearer naming.
+  Future<String?> resolveAndActivateOpenApiEndpoint({
+    List<String>? auxiliaryEndpoints,
+    String? runId,
+  }) => setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints, runId: runId);
 
   void setEndpoint(String endpoint) {
     // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
