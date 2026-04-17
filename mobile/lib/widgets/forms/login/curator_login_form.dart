@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
@@ -32,8 +33,8 @@ import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/utils/env_config.dart';
 
-import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hc_device/hc_device.dart';
+import 'package:hc_device/services/device_detection_service.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');
@@ -62,7 +63,6 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     final serverInfo = ref.watch(serverInfoProvider);
 
-    final discovery = ref.read(deviceDiscoveryProvider);
     final devices = useState<List<DeviceItem>>([]);
     final staticDevice = useState<DeviceItem?>(null);
     final selectedDevice = useState<DeviceItem?>(null);
@@ -91,57 +91,17 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    bool areRequiredFieldsFilled() =>
-        email.value.isNotEmpty && passwordController.text.isNotEmpty && selectedDevice.value?.baseUrl != null;
-
-    List<DeviceItem> mergeDevices(List<DeviceItem> existing, List<DeviceItem> incoming) {
-      final merged = <String, DeviceItem>{};
-
-      void addDevice(DeviceItem device) {
-        final key = device.about?.certificateCommonName ?? device.baseUrl?.toString() ?? device.name;
-        final existing = merged[key];
-        if (existing == null) {
-          merged[key] = device;
-        } else {
-          // Merge paths: prefer non-null/non-empty paths, combine if both have values
-          final List<DevicePath>? mergedPaths;
-          final existingPaths = existing.paths;
-          final devicePaths = device.paths;
-
-          if (existingPaths != null && existingPaths.isNotEmpty) {
-            if (devicePaths != null && devicePaths.isNotEmpty) {
-              // Both have paths - merge them
-              mergedPaths = [...existingPaths, ...devicePaths];
-            } else {
-              // Only existing has paths
-              mergedPaths = existingPaths;
-            }
-          } else if (devicePaths != null && devicePaths.isNotEmpty) {
-            // Only device has paths
-            mergedPaths = devicePaths;
-          } else {
-            // Both are null or empty - preserve null
-            mergedPaths = null;
-          }
-
-          merged[key] = DeviceItem(
-            baseUrl: existing.baseUrl,
-            about: existing.about,
-            status: existing.status,
-            paths: mergedPaths,
-          );
-        }
-      }
-
-      for (final device in existing) {
-        addDevice(device);
-      }
-      for (final device in incoming) {
-        addDevice(device);
-      }
-
-      return merged.values.toList();
+    bool isDeviceSelectionValid(DeviceItem? d) {
+      if (d == null) return false;
+      if (d.baseUrl != null) return true;
+      if (d.about != null) return true;
+      return d.remoteDevice != null;
     }
+
+    bool areRequiredFieldsFilled() =>
+        email.value.isNotEmpty &&
+        passwordController.text.isNotEmpty &&
+        isDeviceSelectionValid(selectedDevice.value);
 
     void handleCantFindDevice({required Future<void> Function() onStartDiscovery}) async {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
@@ -177,7 +137,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     preselectFavoriteDevice() {
       if (devices.value.isEmpty) return;
 
-      final favoriteDeviceId = discovery.connectedDeviceID;
+      final favoriteDeviceId = ref.read(deviceProvider).deviceID;
 
       DeviceItem? candidateDevice;
       if (favoriteDeviceId?.isNotEmpty == true) {
@@ -196,39 +156,44 @@ class CuratorLoginForm extends HookConsumerWidget {
       devices.value = [];
 
       try {
-        final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
-
-        List<DeviceItem> mdnsDevices = [];
-        List<DeviceItem> remoteDevices = [];
-
-        if (isAuthenticated) {
-          final result = await discovery.startDeviceDiscovery();
-          mdnsDevices = result['mdnsDevices'] ?? <DeviceItem>[];
-          log.info('[MDNS discovery]: devices found ${mdnsDevices.length}');
-          if (mdnsDevices.isNotEmpty) {
-            for (var d in mdnsDevices) {
-              log.info('[MDNS discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
+        final dp = ref.read(deviceProvider);
+        final rp = ref.read(remoteProvider);
+        final completer = Completer<void>();
+        final found = <DeviceItem>[];
+        late DeviceDetectionService detection;
+        detection = DeviceDetectionService(
+          deviceProvider: dp,
+          remoteProvider: rp,
+          onDeviceFound: (d) => found.add(d),
+          onDetectionComplete: (_) {
+            if (!completer.isCompleted) {
+              completer.complete();
             }
-          }
-          remoteDevices = result['remoteDevices'] ?? <DeviceItem>[];
-          log.info('[Remote discovery]: devices found ${remoteDevices.length}');
-          if (remoteDevices.isNotEmpty) {
-            for (var d in remoteDevices) {
-              log.info('[Remote discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
+          },
+          onError: (_, __) {
+            if (!completer.isCompleted) {
+              completer.complete();
             }
-          }
-        } else {
-          final result = await discovery.startMdnsDiscovery();
-          log.info('[MDNS discovery]: devices found ${result?.length}');
-          if (result != null) {
-            for (var d in result) {
-              log.info('[MDNS discovery]: name ${d.about?.certificateCommonName}, paths ${d.paths.toString()}');
-            }
-          }
-          mdnsDevices = result ?? [];
+          },
+        );
+        await detection.startDetection();
+        try {
+          await completer.future.timeout(const Duration(seconds: 45));
+        } on TimeoutException {
+          await detection.cancelDetection();
         }
 
-        devices.value = mergeDevices(devices.value, [...mdnsDevices, ...remoteDevices]);
+        final mdnsDevices =
+            found.where((d) => d.debugHostType == 'mDNS').toList();
+        final remoteDevices =
+            found.where((d) => d.debugHostType != 'mDNS').toList();
+        log.info('[MDNS discovery]: devices found ${mdnsDevices.length}');
+        log.info('[Remote discovery]: devices found ${remoteDevices.length}');
+
+        devices.value = mergeDiscoveredDevices(
+          devices.value,
+          [...mdnsDevices, ...remoteDevices],
+        );
 
         if (devices.value.isNotEmpty) {
           preselectFavoriteDevice();
@@ -250,10 +215,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       if (devStaticDeviceUrl != null) {
         final baseUrl = Uri.tryParse(devStaticDeviceUrl);
         staticDevice.value = DeviceItem(
+          hostname: devStaticDeviceUrl,
           baseUrl: baseUrl,
-          paths: [
-            DevicePath(address: baseUrl?.host ?? devStaticDeviceUrl, port: baseUrl?.port, type: DevicePathType.local),
-          ],
+          debugHostType: 'static',
         );
         selectedDevice.value = staticDevice.value;
       }
@@ -430,13 +394,40 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         final device = selectedDevice.value;
         if (device != null) {
-          if (device.about != null) {
-            discovery.connectToDevice(device);
+          final dp = ref.read(deviceProvider);
+          final rp = ref.read(remoteProvider);
+          final detection = DeviceDetectionService(
+            deviceProvider: dp,
+            remoteProvider: rp,
+          );
+          if (device.about != null && device.baseUrl != null) {
+            await dp.setHost(
+              baseUrl: device.baseUrl,
+              deviceID: device.id,
+              seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+              debugHostType: device.debugHostType,
+            );
+          } else if (device.remoteDevice != null) {
+            final ping = await detection.findOptimalDeviceConnection(
+              device: device,
+              seagateDeviceID: device.remoteDevice!.seagateDeviceID,
+            );
+            if (ping.success && ping.baseUrl != null) {
+              await dp.setHost(
+                baseUrl: ping.baseUrl,
+                deviceID: device.id,
+                seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+                debugHostType: ping.debugHostType,
+                devicePaths: dp.getCachedDevicePaths()?.paths,
+              );
+            } else {
+              dp.clearDevice(save: true);
+            }
           } else {
-            discovery.disconnectDevice();
+            dp.clearDevice(save: true);
           }
 
-          final paths = device.paths;
+          final paths = dp.devicePaths ?? dp.getCachedDevicePaths()?.paths;
           if (paths != null && paths.isNotEmpty) {
             await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
           }

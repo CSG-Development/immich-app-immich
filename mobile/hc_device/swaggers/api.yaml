@@ -1,18 +1,20 @@
-#   Do NOT modify or remove this copyright and confidentiality notice
+#   Copyright (c) 2026 Seagate Technology LLC. All rights reserved.
 #
-#   Copyright (c) 2025 Seagate Technology LLC or one of its affiliates.
-#
-#   This code is classified as SEAGATE CONFIDENTIAL
-#   and may be covered under one or more Non-Disclosure Agreements.
-#   Any use, modification, duplication, derivation, distribution or disclosure
-#   of this code, for any reason, not expressly authorized is prohibited.
-#   All other rights are expressly reserved by Seagate Technology LLC.
-#
+#   Complying with all applicable copyright laws is the responsibility of the user.
+#   All coded instruction and program statements contained herein are, and remain,
+#   copyrighted works, and are confidential proprietary information of Seagate Technology LLC or its affiliates.
+#   Any use, derivation, dissemination, reproduction, or any attempt to modify, reproduce, distribute,
+#   disclose copyrighted material of Seagate Technology LLC, for any reason, in any manner, medium, or form,
+#   in whole or in part, if not expressly authorized, is strictly prohibited.
 
 components:
     schemas:
         About:
             properties:
+                board_name:
+                    type: string
+                board_version:
+                    type: string
                 certificate_common_name:
                     type: string
                 date:
@@ -64,6 +66,8 @@ components:
                 - network_interfaces
                 - date
                 - certificate_common_name
+                - board_name
+                - board_version
             type: object
         AboutHardware:
             properties:
@@ -111,17 +115,48 @@ components:
                 - type
                 - mac_address
             type: object
+        AdvancedConfig:
+            properties:
+                ssh_enabled:
+                    type: boolean
+                swagger_ui_enabled:
+                    type: boolean
+                update_labels:
+                    items:
+                        $ref: '#/components/schemas/UpdateLabel'
+                    type: array
+            required:
+                - ssh_enabled
+                - swagger_ui_enabled
+                - update_labels
+            type: object
         AppStatus:
             properties:
                 files:
+                    $ref: '#/components/schemas/State'
                     description: The status of the Files app
                     type: string
                 photos:
+                    $ref: '#/components/schemas/State'
                     description: The status of the Photos app
-                    type: string
             required:
                 - photos
                 - files
+            type: object
+        ApplicationUsage:
+            properties:
+                name:
+                    description: Application identifier
+                    example: immich
+                    type: string
+                used_bytes:
+                    description: Disk space used by this application in bytes
+                    example: 500000000000
+                    format: int64
+                    type: integer
+            required:
+                - name
+                - used_bytes
             type: object
         AuthResponse:
             description: |
@@ -147,6 +182,201 @@ components:
                 - expires_in
                 - refresh_token
             type: object
+        AuthorizeRequest:
+            properties:
+                client_id:
+                    type: string
+                code_challenge:
+                    type: string
+                code_challenge_method:
+                    type: string
+                redirect_uri:
+                    type: string
+                response_type:
+                    type: string
+                scope:
+                    type: string
+                state:
+                    type: string
+            required:
+                - response_type
+                - client_id
+                - redirect_uri
+                - scope
+                - state
+                - code_challenge
+                - code_challenge_method
+            type: object
+        AuthorizeResponse:
+            properties:
+                redirect_uri:
+                    description: The URI to redirect the user to, including the authorization code and state as query parameters
+                    type: string
+            required:
+                - redirect_uri
+            type: object
+        ButtonAction:
+            properties:
+                code:
+                    type: string
+            required:
+                - code
+            type: object
+        ButtonStatus:
+            properties:
+                status:
+                    $ref: '#/components/schemas/ButtonStatusType'
+            required:
+                - status
+            type: object
+        ButtonStatusType:
+            description: Indicates if the button is waiting to be pressed
+            enum:
+                - idle
+                - waiting
+                - locked
+            type: string
+        DeviceConfiguration:
+            properties:
+                bios_password_set:
+                    type: boolean
+                device_certificate_signed_by:
+                    $ref: '#/components/schemas/DeviceConfigurationCertificate'
+                prod_failure_reasons:
+                    description: when the prod_ready field is set to false there will be the reasons written here
+                    items:
+                        type: string
+                    type: array
+                prod_ready:
+                    type: boolean
+                provisioning_vault:
+                    $ref: '#/components/schemas/DeviceConfigurationProvisioningVault'
+                psid_set:
+                    type: boolean
+                secure_boot_enabled:
+                    type: boolean
+            required:
+                - provisioning_vault
+                - prod_ready
+                - secure_boot_enabled
+                - prod_failure_reasons
+                - bios_password_set
+                - psid_set
+            type: object
+        DeviceConfigurationCertificate:
+            properties:
+                name:
+                    type: string
+                value:
+                    description: certificate in pem format
+                    type: string
+            required:
+                - name
+                - value
+            type: object
+        DeviceConfigurationProvisioningVault:
+            properties:
+                SSID:
+                    type: string
+                certificates:
+                    items:
+                        $ref: '#/components/schemas/DeviceConfigurationCertificate'
+                    type: array
+                creation_date:
+                    format: date-time
+                    type: string
+                signed_by:
+                    $ref: '#/components/schemas/DeviceConfigurationCertificate'
+            required:
+                - creation_date
+                - signed_by
+            type: object
+        DiskHealth:
+            properties:
+                status:
+                    $ref: '#/components/schemas/DiskHealthStatus'
+                summary:
+                    description: Human-readable health summary (populated on warning/critical)
+                    example: null
+                    nullable: true
+                    type: string
+                temperature_celsius:
+                    description: Current disk temperature in degrees Celsius, null if unavailable
+                    example: 38
+                    nullable: true
+                    type: integer
+            required:
+                - status
+            type: object
+        DiskHealthStatus:
+            description: Overall SMART health assessment
+            enum:
+                - healthy
+                - warning
+                - critical
+                - unavailable
+            example: healthy
+            type: string
+        DiskStats:
+            properties:
+                free_bytes:
+                    description: Free disk space in bytes
+                    example: 1150398934016
+                    format: int64
+                    type: integer
+                total_bytes:
+                    description: Total disk capacity in bytes
+                    example: 2000398934016
+                    format: int64
+                    type: integer
+                usage_percent:
+                    description: Used space as a percentage of total (0.0–100.0)
+                    example: 42.5
+                    format: double
+                    type: number
+                used_bytes:
+                    description: Used disk space in bytes
+                    example: 850000000000
+                    format: int64
+                    type: integer
+            required:
+                - total_bytes
+                - used_bytes
+                - free_bytes
+                - usage_percent
+            type: object
+        DuplexType:
+            enum:
+                - full
+                - half
+            type: string
+        EmailChangeRequest:
+            properties:
+                creation_date:
+                    description: When the change request was created
+                    format: date-time
+                    type: string
+                expiration_date:
+                    description: When the change request expires
+                    format: date-time
+                    type: string
+                is_expired:
+                    description: Whether the change request has expired
+                    type: boolean
+                new_email:
+                    description: The new email address requested
+                    format: email
+                    type: string
+                user_id:
+                    description: The ID of the user requesting the email change
+                    type: string
+            required:
+                - user_id
+                - new_email
+                - creation_date
+                - expiration_date
+                - is_expired
+            type: object
         Error:
             type: object
             required:
@@ -162,6 +392,217 @@ components:
                 reason:
                     type: string
                     description: the error name can be raised for multiple reasons
+        HardwareInfo:
+            properties:
+                auto_negotiation:
+                    type: boolean
+                is_active:
+                    type: boolean
+                is_loopback:
+                    type: boolean
+                mac_address:
+                    type: string
+                max_speed:
+                    type: integer
+                max_speed_duplex:
+                    $ref: '#/components/schemas/DuplexType'
+                maximum_mtu:
+                    type: integer
+                minimum_mtu:
+                    type: integer
+                model:
+                    type: string
+                mtu:
+                    type: integer
+                vendor:
+                    type: string
+            required:
+                - mac_address
+                - mtu
+                - minimum_mtu
+                - maximum_mtu
+                - is_active
+                - is_loopback
+                - max_speed
+                - max_speed_duplex
+                - auto_negotiation
+                - vendor
+                - model
+            type: object
+        IPv4Config:
+            properties:
+                gateway:
+                    type: string
+                    x-go-type: chomboapi.IPv4Address
+                    x-go-type-import:
+                        name: chomboapi
+                        path: git.lacie.com/dev/chombo/api
+                ipv4:
+                    type: string
+                    x-go-type: chomboapi.IPv4Address
+                    x-go-type-import:
+                        name: chomboapi
+                        path: git.lacie.com/dev/chombo/api
+                name_servers:
+                    items:
+                        type: string
+                        x-go-type: chomboapi.IPv4Address
+                        x-go-type-import:
+                            name: chomboapi
+                            path: git.lacie.com/dev/chombo/api
+                    type: array
+                netmask:
+                    type: string
+                    x-go-type: chomboapi.IPv4Netmask
+                    x-go-type-import:
+                        name: chomboapi
+                        path: git.lacie.com/dev/chombo/api
+            required:
+                - ipv4
+                - netmask
+            type: object
+        IPv4Info:
+            properties:
+                broadcast:
+                    type: string
+                    x-go-type: net.IP
+                    x-go-type-import:
+                        path: net
+                dhcp:
+                    type: boolean
+                gateway:
+                    type: string
+                    x-go-type: net.IP
+                    x-go-type-import:
+                        path: net
+                ipv4:
+                    type: string
+                    x-go-type: net.IP
+                    x-go-type-import:
+                        path: net
+                name_servers:
+                    items:
+                        type: string
+                        x-go-type: net.IP
+                        x-go-type-import:
+                            path: net
+                    type: array
+                netmask:
+                    type: string
+                    x-go-type: chomboapi.IPv4Netmask
+                    x-go-type-import:
+                        name: chomboapi
+                        path: git.lacie.com/dev/chombo/api
+            required:
+                - ipv4
+                - netmask
+                - broadcast
+                - dhcp
+                - gateway
+                - name_servers
+            type: object
+        InterfaceConfig:
+            properties:
+                dhcp:
+                    type: boolean
+                ipv4_config:
+                    $ref: '#/components/schemas/IPv4Config'
+                mtu:
+                    type: integer
+            required:
+                - dhcp
+            type: object
+        Invite:
+            properties:
+                creation_date:
+                    format: date-time
+                    type: string
+                email:
+                    format: email
+                    type: string
+                expiration_date:
+                    format: date-time
+                    type: string
+                is_admin:
+                    type: boolean
+                is_expired:
+                    type: boolean
+            required:
+                - email
+                - is_admin
+                - creation_date
+                - expiration_date
+                - is_expired
+            type: object
+        JwksResponse:
+            properties:
+                keys:
+                    description: Array of JSON Web Keys
+                    items:
+                        type: object
+                        x-go-type: jose.JSONWebKey
+                        x-go-type-import:
+                            name: jose
+                            path: github.com/go-jose/go-jose/v4
+                    type: array
+            required:
+                - keys
+            type: object
+        LinkInfo:
+            properties:
+                duplex:
+                    $ref: '#/components/schemas/DuplexType'
+                link:
+                    $ref: '#/components/schemas/LinkStatus'
+                speed:
+                    type: integer
+            required:
+                - link
+                - duplex
+                - speed
+            type: object
+        LinkStatus:
+            enum:
+                - up
+                - down
+            type: string
+        NTPConfig:
+            properties:
+                enabled:
+                    type: boolean
+                servers:
+                    items:
+                        type: string
+                    type: array
+                synchronized:
+                    type: boolean
+            required:
+                - enabled
+                - synchronized
+                - servers
+            type: object
+        NetworkInterface:
+            properties:
+                hardware_info:
+                    $ref: '#/components/schemas/HardwareInfo'
+                ipv4_info:
+                    $ref: '#/components/schemas/IPv4Info'
+                link_info:
+                    $ref: '#/components/schemas/LinkInfo'
+                name:
+                    type: string
+                type:
+                    enum:
+                        - wired
+                        - wireless
+                    type: string
+                wireless_info:
+                    $ref: '#/components/schemas/WifiNetwork'
+            required:
+                - name
+                - type
+                - hardware_info
+            type: object
         OOBE:
             properties:
                 done:
@@ -169,24 +610,352 @@ components:
             required:
                 - done
             type: object
+        OpenIDConfigurationResponse:
+            properties:
+                authorization_endpoint:
+                    description: URL of the authorization endpoint
+                    format: uri
+                    type: string
+                id_token_signing_alg_values_supported:
+                    description: Supported ID token signing algorithms
+                    items:
+                        type: string
+                    type: array
+                issuer:
+                    description: URL of the issuer
+                    format: uri
+                    type: string
+                jwks_uri:
+                    description: URL of the JSON Web Key Set endpoint
+                    format: uri
+                    type: string
+                response_types_supported:
+                    description: Supported response types
+                    items:
+                        type: string
+                    type: array
+                subject_types_supported:
+                    description: Supported subject types
+                    items:
+                        type: string
+                    type: array
+                token_endpoint:
+                    description: URL of the token endpoint
+                    format: uri
+                    type: string
+            required:
+                - issuer
+                - authorization_endpoint
+                - token_endpoint
+                - jwks_uri
+                - response_types_supported
+                - subject_types_supported
+                - id_token_signing_alg_values_supported
+            type: object
+        PowerOffType:
+            description: |
+                type:
+                  * `shutdown` - Will shutdown device.
+                  * `reboot` - Will reboot device.
+            enum:
+                - shutdown
+                - reboot
+            type: string
+        ResetType:
+            description: |
+                type:
+                  * `reset_settings` - It reverts the device settings to their OOBE state: IP configuration, Device Name, Services enabled, etc.
+                  * `reset_device` - It erases also the "Device" and "User Data" partitions.
+                  * `reset_provisioning` - It erases also the "Provisioning" partition.
+            enum:
+                - reset_settings
+                - reset_device
+                - reset_provisioning
+            type: string
+        SMTPConfig:
+            properties:
+                password:
+                    type: string
+                port:
+                    type: integer
+                server:
+                    type: string
+                tls:
+                    type: boolean
+                user:
+                    type: string
+            required:
+                - server
+                - port
+                - user
+                - password
+                - tls
+            type: object
+        SetupState:
+            enum:
+                - not_done
+                - in_progress
+                - done
+                - error
+            type: string
+        State:
+            enum:
+                - not_started
+                - starting
+                - ready
+                - error
+            type: string
         Status:
             properties:
                 OOBE:
                     $ref: '#/components/schemas/OOBE'
                 apps:
                     $ref: '#/components/schemas/AppStatus'
+                setup:
+                    $ref: '#/components/schemas/SetupState'
+                    description: The state of the drive setup
                 state:
+                    $ref: '#/components/schemas/State'
                     description: The overall state of the device
-                    enum:
-                        - starting
-                        - ready
-                        - unknown
-                        - error
-                    type: string
+                system_state:
+                    $ref: '#/components/schemas/State'
+                    description: The state of the base system
             required:
+                - system_state
                 - state
+                - setup
                 - apps
                 - OOBE
+            type: object
+        StorageStats:
+            properties:
+                applications:
+                    description: Per-application storage breakdown
+                    items:
+                        $ref: '#/components/schemas/ApplicationUsage'
+                    type: array
+                disk:
+                    $ref: '#/components/schemas/DiskStats'
+                health:
+                    $ref: '#/components/schemas/DiskHealth'
+                system_bytes:
+                    description: Unattributable disk usage (OS, Docker, caches) = disk.used_bytes - sum(applications[*].used_bytes)
+                    example: 150000000000
+                    format: int64
+                    type: integer
+                users:
+                    description: Per-user storage breakdown (includes per-app per-user)
+                    items:
+                        $ref: '#/components/schemas/UserUsage'
+                    type: array
+            required:
+                - disk
+                - health
+                - applications
+                - users
+                - system_bytes
+            type: object
+        TimeConfig:
+            properties:
+                date:
+                    format: date-time
+                    type: string
+                ntp:
+                    $ref: '#/components/schemas/NTPConfig'
+                timezone:
+                    type: string
+            required:
+                - ntp
+                - timezone
+                - date
+            type: object
+        Update:
+            properties:
+                type:
+                    $ref: '#/components/schemas/UpdateType'
+                version:
+                    type: string
+            required:
+                - version
+                - type
+            type: object
+        UpdateInfo:
+            properties:
+                current_version:
+                    type: string
+                target_version:
+                    type: string
+            required:
+                - current_version
+                - target_version
+            type: object
+        UpdateLabel:
+            properties:
+                enabled:
+                    type: boolean
+                name:
+                    type: string
+            required:
+                - name
+                - enabled
+            type: object
+        UpdateProgress:
+            properties:
+                progress:
+                    type: integer
+            required:
+                - progress
+            type: object
+        UpdateType:
+            enum:
+                - online
+                - offline
+                - all
+                - unknown
+            type: string
+        User:
+            properties:
+                email:
+                    format: email
+                    type: string
+                error:
+                    type: string
+                is_admin:
+                    type: boolean
+                is_owner:
+                    type: boolean
+                name:
+                    type: string
+                user_id:
+                    type: string
+                    x-go-name: UserID
+            required:
+                - user_id
+                - email
+                - name
+                - is_admin
+                - is_owner
+                - error
+            type: object
+        UserStorageStats:
+            properties:
+                disk:
+                    $ref: '#/components/schemas/DiskStats'
+                usage_percent:
+                    description: User's usage as a percentage of total disk capacity (0.0–100.0)
+                    example: 6
+                    format: double
+                    type: number
+                user:
+                    $ref: '#/components/schemas/UserUsage'
+            required:
+                - disk
+                - user
+                - usage_percent
+            type: object
+        UserUsage:
+            properties:
+                applications:
+                    description: Per-application breakdown of this user's usage
+                    items:
+                        $ref: '#/components/schemas/ApplicationUsage'
+                    type: array
+                email:
+                    description: User email address
+                    example: alice@example.com
+                    format: email
+                    type: string
+                used_bytes:
+                    description: Total disk space used by this user across all apps in bytes
+                    example: 120000000000
+                    format: int64
+                    type: integer
+                user_id:
+                    description: User identifier (UUID)
+                    example: 550e8400-e29b-41d4-a716-446655440000
+                    format: uuid
+                    type: string
+            required:
+                - user_id
+                - email
+                - used_bytes
+                - applications
+            type: object
+        WifiAuthentication:
+            description: Type of Wi-Fi authentication/security. We'll try to match the best that we can.
+            enum:
+                - Open
+                - WEP
+                - WPA-Personal
+                - WPA2-Personal
+                - WPA3-Personal
+                - WPA-Enterprise
+                - WPA2-Enterprise
+                - WPA3-Enterprise
+                - WPA
+                - WPA2
+                - WPA3
+                - Unknown
+            type: string
+        WifiConfig:
+            properties:
+                hidden_ssid:
+                    description: Indicates if the SSID is hidden.
+                    type: boolean
+                    x-go-name: HiddenSSID
+                password:
+                    description: Password for the Wi-Fi network. Can only be set.
+                    type: string
+                ssid:
+                    type: string
+                    x-go-name: SSID
+            required:
+                - ssid
+                - password
+                - hidden_ssid
+            type: object
+        WifiNetwork:
+            properties:
+                bssid:
+                    type: string
+                    x-go-name: BSSID
+                frequency:
+                    description: Frequency in MHz
+                    type: integer
+                security:
+                    description: List of Security type (e.g., WPA2, WPA3, Open)
+                    items:
+                        $ref: '#/components/schemas/WifiAuthentication'
+                    type: array
+                signal:
+                    description: Signal strength in dBm
+                    type: integer
+                ssid:
+                    type: string
+                    x-go-name: SSID
+                state:
+                    description: Connection state (e.g., connected, disconnected, connecting)
+                    enum:
+                        - ASSOCIATED
+                        - ASSOCIATING
+                        - AUTHENTICATING
+                        - COMPLETED
+                        - DISCONNECTED
+                        - FOUR_WAY_HANDSHAKE
+                        - GROUP_HANDSHAKE
+                        - INACTIVE
+                        - INTERFACE_DISABLED
+                        - SCANNING
+                        - UNINITIALIZED
+                        - UNKNOWN
+                    type: string
+            required:
+                - ssid
+                - bssid
+                - signal
+                - frequency
+                - security
+                - state
             type: object
     securitySchemes:
         BearerAuth:
@@ -195,30 +964,9 @@ components:
 info:
     contact:
         email: softnas@seagate.com
-    description: |
-        Homecloud Backend API exposes endpoints for user management, authentication, device status, and onboarding flows.
-
-        ## Main Features
-        - **Authentication**: Secure login and token refresh endpoints.
-        - **User Management**: Create, update, delete, and list users and invites.
-        - **Owner & OOBE**: Special endpoints for device owner creation and Out-Of-Box Experience (OOBE) tracking.
-        - **Status Monitoring**: Retrieve overall device and application status.
-
-        ## Security
-        - Most endpoints require Bearer authentication with appropriate scopes (`admin`, `user`).
-        - Owner and onboarding endpoints are public during initial setup.
-
-        ## Data Validation
-        - Email, username, and password fields are strictly validated (see schema patterns).
-        - Error responses are standardized.
-
-        ## Usage
-        - All endpoints are available under `/api/v1` and `/configuration/api/v1`.
-        - See individual path and schema documentation for details on request/response formats.
-
-        For support or questions, contact softnas@seagate.com.
-    title: Homecloud Backend API
-    version: 1.1.0
+    description: The LyveOS API
+    title: Lyve OS API
+    version: 1.0.0
 openapi: 3.0.3
 paths:
     /about:
@@ -240,6 +988,82 @@ paths:
             summary: Return information about the system
             tags:
                 - System
+    /about/certificate:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/x-x509-ca-cert:
+                            schema:
+                                format: binary
+                                type: string
+                    description: Return the device certfificate file
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: Return the device certfificate
+            tags:
+                - System
+    /advanced/{passkey}/config:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AdvancedConfig'
+                    description: Return the current configuration
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: return the current configuration and reboot
+            tags:
+                - Advanced
+        parameters:
+            - description: The passkey that needs to be used
+              in: path
+              name: passkey
+              required: true
+              schema:
+                type: string
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AdvancedConfig'
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AdvancedConfig'
+                    description: Return the current configuration
+                "202":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AdvancedConfig'
+                    description: Return the current configuration, no reboot
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: Update the current configuration
+            tags:
+                - Advanced
     /auth/login:
         post:
             requestBody:
@@ -304,9 +1128,6 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                     description: The request failed and returned an error
-            security:
-                - BearerAuth:
-                    - user
             summary: Logout from a session, given the latest refresh token
             tags:
                 - auth
@@ -349,6 +1170,470 @@ paths:
             summary: Retrieve a new access token using the refresh token
             tags:
                 - auth
+    /diag:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/zip:
+                            schema:
+                                format: binary
+                                type: string
+                    description: The diagnostic protected by the PassKey
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: Return the diagnostic
+            tags:
+                - Support
+    /network/interfaces:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/NetworkInterface'
+                                type: array
+                    description: The list of network interfaces
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Allows listing network interfaces
+            tags:
+                - Network
+    /network/interfaces/{interface}:
+        parameters:
+            - in: path
+              name: interface
+              required: true
+              schema:
+                type: string
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InterfaceConfig'
+                description: The requested interface configuration
+                required: true
+            responses:
+                "202":
+                    description: The interface will be configured
+                "400":
+                    description: Invalid configuration
+                "403":
+                    description: The interface cannot be configured (only interfaces of role 'data' can be configure)
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Allows configuring a network interface
+            tags:
+                - Network
+    /oauth/.well-known/openid-configuration:
+        get:
+            operationId: openidConfiguration
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OpenIDConfigurationResponse'
+                    description: OpenID Configuration API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: OpenID Configuration
+            tags:
+                - auth
+    /oauth/authorize:
+        post:
+            operationId: oauthAuthorize
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AuthorizeRequest'
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AuthorizeResponse'
+                    description: OAuth Authorize API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: OAuth Authorize
+            tags:
+                - auth
+    /oauth/jwks:
+        get:
+            operationId: oauthJwks
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/JwksResponse'
+                    description: OAuth JWKS API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security: []
+            summary: OAuth JWKS
+            tags:
+                - auth
+    /button:
+        delete:
+            operationId: DeleteButton
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ButtonAction'
+                required: true
+            responses:
+                "204":
+                    description: Button status cleared
+                "403":
+                    description: OOBE done, button API disabled
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Clear button status during OOBE
+            tags:
+                - OOBE
+    /oobe/button:        
+        get:
+            operationId: GetOOBEButton
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ButtonStatus'
+                    description: Button status
+                "403":
+                    description: OOBE done, button API disabled
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Check if button is pressed during OOBE
+            tags:
+                - OOBE
+        post:
+            operationId: PostOOBEButton
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ButtonAction'
+                required: true
+            responses:
+                "202":
+                    description: The device turns off or reboot
+                "400":
+                    description: Bad Input Parameter
+                "403":
+                    description: OOBE done, button API disabled
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Wait for button to be pressed during OOBE
+            tags:
+                - OOBE
+    /oobe/owner:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                code:
+                                    description: The OOBE code sent by app before confirming with the button press
+                                    type: string
+                                email:
+                                    format: email
+                                    type: string
+                                name:
+                                    type: string
+                                password:
+                                    type: string
+                            required:
+                                - email
+                                - name
+                                - password
+                                - code
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Owner user creation was successful
+                "400":
+                    description: Bad input parameter
+                "401":
+                    description: Can only create one owner user
+                "409":
+                    description: Username already used
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Create the owner user
+            tags:
+                - OOBE
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                confirmation_code:
+                                    type: string
+                            required:
+                                - confirmation_code
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Owner user was successfully confirmed and created
+                "400":
+                    description: Bad input parameter
+                "401":
+                    description: Confirmation error
+                "404":
+                    description: Owner user not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Confirm and create the owner user
+            tags:
+                - OOBE
+    /oobe/power:
+        post:
+            operationId: PostOOBEPower
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                action:
+                                    $ref: '#/components/schemas/PowerOffType'
+                            required:
+                                - action
+                            type: object
+                required: true
+            responses:
+                "202":
+                    description: The device turns off or reboot
+                "400":
+                    description: Bad Input Parameter
+                "403":
+                    description: OOBE done, power API disabled
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Power off or reboot the device
+            tags:
+                - OOBE
+    /power:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                action:
+                                    $ref: '#/components/schemas/PowerOffType'
+                            required:
+                                - action
+                            type: object
+                required: true
+            responses:
+                "202":
+                    description: The device turns off or reboot
+                "400":
+                    description: Bad Input Parameter
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security:
+                - BearerAuth:
+                    - admin
+                    - provisioning
+            summary: To power off or reboot the device
+            tags:
+                - Support
+    /prod/configuration:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeviceConfiguration'
+                    description: Production Configuration API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: Production Configuration
+            tags:
+                - System
+    /reset:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                provisioning_password:
+                                    description: Only required when calling with type=reset_provisioning
+                                    type: string
+                                type:
+                                    $ref: '#/components/schemas/ResetType'
+                            required:
+                                - type
+                            type: object
+                required: true
+            responses:
+                "202":
+                    description: The device restarts into recovery to perform the reset
+                "400":
+                    description: Bad Input Parameter
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security:
+                - BearerAuth:
+                    - admin
+                    - provisioning
+            summary: To reset the device
+            tags:
+                - Support
+    /setup:
+        post:
+            responses:
+                "202":
+                    description: System is going to perform the setup
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Start the system initial setup
+            tags:
+                - System
+    /smtp:
+        delete:
+            operationId: DeleteSMTP
+            responses:
+                "204":
+                    description: Custom SMTP configuration was successfully removed
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Delete custom SMTP configuration and revert to Seagate mail service
+            tags:
+                - System
+        get:
+            operationId: GetSMTP
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SMTPConfig'
+                    description: The current SMTP relay configuration
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Get the SMTP relay current configuration
+            tags:
+                - System
+        post:
+            operationId: PostSMTP
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SMTPConfig'
+                description: The SMTP relay configuration to set
+                required: true
+            responses:
+                "204":
+                    description: The SMTP relay configuration was successfully set
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Set the current SMTP relay configuration
+            tags:
+                - System
     /status:
         get:
             responses:
@@ -388,10 +1673,762 @@ paths:
             summary: Get the OOBE status
             tags:
                 - status
+    /storage:
+        get:
+            description: |
+                Returns a comprehensive storage snapshot including global disk usage,
+                SMART health data, per-application breakdown, and per-user breakdown.
+                Requires admin scope.
+            operationId: GetStorage
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/StorageStats'
+                    description: Storage statistics
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Internal server error
+                "503":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Service unavailable (disk unmounted or apps not ready)
+            security:
+                - BearerAuth:
+                    - admin
+            summary: Get full storage statistics (admin only)
+            tags:
+                - storage
+    /storage/me:
+        get:
+            description: |
+                Returns global disk capacity information and the requesting user's
+                personal storage usage across all applications.
+                Requires user or admin scope.
+            operationId: GetStorageMe
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserStorageStats'
+                    description: User's personal storage statistics
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Internal server error
+                "503":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: Service unavailable (disk unmounted or apps not ready)
+            security:
+                - BearerAuth:
+                    - user
+            summary: Get personal storage usage (authenticated user)
+            tags:
+                - storage
+    /time:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TimeConfig'
+                    description: The system's current time configuration
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Returns the system's current time configuration
+            tags:
+                - System
+        post:
+            description: Configures the system's time
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TimeConfig'
+                description: The time configuration to apply
+                required: true
+            responses:
+                "202":
+                    description: The request has been accepted
+                "400":
+                    description: Bad input parameter
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            tags:
+                - System
+    /update:
+        get:
+            parameters:
+                - description: Type of update we want to allow
+                  in: query
+                  name: type
+                  required: false
+                  schema:
+                    $ref: '#/components/schemas/UpdateType'
+                - description: Force the check of the available versions
+                  in: query
+                  name: force
+                  required: false
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/Update'
+                                type: array
+                    description: Returns the list of available updates
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security:
+                - BearerAuth:
+                    - mayday
+                    - admin
+            summary: Return available updates
+            tags:
+                - Support
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Update'
+                description: The version we want to apply
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateInfo'
+                    description: Update successful
+                "400":
+                    description: Bad input parameter
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Apply update
+            tags:
+                - Support
+    /update/progress:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateProgress'
+                    description: Returns the list of available updates
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security:
+                - BearerAuth:
+                    - mayday
+                    - admin
+            summary: Return the progress of the current update
+            tags:
+                - Support
+    /update/upload:
+        post:
+            requestBody:
+                content:
+                    application/octet-stream:
+                        schema:
+                            format: binary
+                            type: string
+                description: The update file
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateInfo'
+                    description: Upload successful
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            security:
+                - BearerAuth:
+                    - admin
+                    - provisioning
+            summary: Start an update using the uploaded file
+            tags:
+                - Support
+    /users:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/User'
+                                type: array
+                    description: The list of users
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: List users
+            tags:
+                - users
+    /users/{id}:
+        delete:
+            operationId: deleteUsersID
+            responses:
+                "204":
+                    description: User has been deleted
+                "400":
+                    description: Bad input parameter
+                "404":
+                    description: User not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Delete the user
+            tags:
+                - users
+        get:
+            operationId: getUsersID
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/User'
+                    description: The user's information
+                "404":
+                    description: User not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Get the user's information
+            tags:
+                - users
+        parameters:
+            - description: The user's ID
+              in: path
+              name: id
+              required: true
+              schema:
+                type: string
+        put:
+            operationId: putUsersID
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                is_admin:
+                                    type: boolean
+                                name:
+                                    type: string
+                                old_password:
+                                    type: string
+                                password:
+                                    type: string
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: User was successfully updated
+                "400":
+                    description: Bad input parameter
+                "404":
+                    description: User not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Update the user's information
+            tags:
+                - users
+    /users/change_email/{id}:
+        parameters:
+            - description: The user's ID
+              in: path
+              name: id
+              required: true
+              schema:
+                type: string
+        post:
+            description: Initiates an email change request and sends a confirmation code to the new email address
+            operationId: PostUsersChangeEmailID
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                new_email:
+                                    description: The new email address
+                                    format: email
+                                    type: string
+                            required:
+                                - new_email
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Email change request created successfully, confirmation code sent
+                "400":
+                    description: Bad input parameter (invalid email format)
+                "404":
+                    description: User not found
+                "409":
+                    description: Email already in use by another user
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Request an email change for a user
+            tags:
+                - users
+        put:
+            description: Validates the confirmation code and updates the user's email address
+            operationId: PutUsersChangeEmailID
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                confirmation_code:
+                                    description: The confirmation code sent to the new email address
+                                    type: string
+                            required:
+                                - confirmation_code
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Email change confirmed and applied successfully
+                "400":
+                    description: Bad input parameter (missing or empty confirmation code)
+                "401":
+                    description: Invalid or expired confirmation code
+                "404":
+                    description: User or email change request not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Confirm an email change with confirmation code
+            tags:
+                - users
+    /users/invites:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/Invite'
+                                type: array
+                    description: The list of pending user invites
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: List pending user invites
+            tags:
+                - users
+    /users/invites/{email}:
+        delete:
+            responses:
+                "204":
+                    description: User invite has been removed
+                "400":
+                    description: Bad input parameter
+                "404":
+                    description: User invite not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Remove the invite for the given email
+            tags:
+                - users
+        parameters:
+            - description: The invite's email address
+              in: path
+              name: email
+              required: true
+              schema:
+                format: email
+                type: string
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                is_admin:
+                                    type: boolean
+                            required:
+                                - is_admin
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: User invite creation was successful
+                "400":
+                    description: Bad input parameter
+                "409":
+                    description: Username already used
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Create a new user invite
+            tags:
+                - users
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                confirmation_code:
+                                    type: string
+                                name:
+                                    type: string
+                                password:
+                                    type: string
+                            required:
+                                - name
+                                - password
+                                - confirmation_code
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: User was successfully confirmed and created
+                "400":
+                    description: Bad input parameter
+                "401":
+                    description: Confirmation error
+                "404":
+                    description: User invite not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Confirm an invite and create the user
+            tags:
+                - users
+    /users/me:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/User'
+                    description: The user information
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security:
+                - BearerAuth:
+                    - user
+            summary: Get my own user information
+            tags:
+                - users
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                name:
+                                    type: string
+                                old_password:
+                                    type: string
+                                password:
+                                    type: string
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: User was successfully updated
+                "400":
+                    description: Bad input parameter
+                "404":
+                    description: User not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security:
+                - BearerAuth:
+                    - user
+            summary: Update my own user information
+            tags:
+                - users
+    /users/reset_password/{email}:
+        parameters:
+            - description: The user's email address
+              in: path
+              name: email
+              required: true
+              schema:
+                format: email
+                type: string
+        post:
+            responses:
+                "204":
+                    description: Reset password email was sent successfully
+                "400":
+                    description: Bad input parameter
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Send a reset password request
+            tags:
+                - users
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                confirmation_code:
+                                    type: string
+                                password:
+                                    type: string
+                            required:
+                                - password
+                                - confirmation_code
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Password was reset successfully
+                "400":
+                    description: Bad input parameter
+                "401":
+                    description: Confirmation error
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            security: []
+            summary: Confirm the password reset
+            tags:
+                - users
+    /users/transfer_owner:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                user_id:
+                                    type: string
+                                    x-go-name: UserID
+                            required:
+                                - user_id
+                            type: object
+                required: true
+            responses:
+                "204":
+                    description: Ownership was transferred successfully
+                "400":
+                    description: Bad input parameter
+                "404":
+                    description: User not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and returned an error
+            summary: Give ownership to another user
+            tags:
+                - users
+    /wifi:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WifiConfig'
+                    description: Wifi Configuration API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: Get the current Wi-Fi configuration
+            tags:
+                - System
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/WifiConfig'
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WifiConfig'
+                    description: Wifi Configuration API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: Set the current Wi-Fi configuration
+            tags:
+                - System
+    /wifi/scan:
+        post:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/WifiNetwork'
+                                type: array
+                    description: Wifi Configuration API
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: Set the current Wi-Fi configuration
+            tags:
+                - System
+    /wifi/scan/{ssid}:
+        get:
+            operationId: GetWifiScanSSID
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WifiNetwork'
+                    description: Wifi Configuration API
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: SSID not found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                    description: The request failed and return an error
+            summary: Search for Wi-Fi networks with the specified SSID
+            tags:
+                - System
+        parameters:
+            - in: path
+              name: ssid
+              required: true
+              schema:
+                type: string
 security:
     - BearerAuth:
         - admin
+        - user
 servers:
     - url: /api/v1
 tags:
+    - name: System
     - name: Not implemented

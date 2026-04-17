@@ -9,9 +9,16 @@
 //   All other rights are expressly reserved by Seagate Technology LLC.
 //
 
+export 'package:hc_device/device_item.dart';
 export 'package:hc_device/providers/device.provider.dart';
 export 'package:hc_device/providers/remote.provider.dart';
 export 'package:hc_device/providers/hcdevice.provider.dart';
-export 'package:hc_device/device_discovery.provider.dart';
-export 'package:hc_device/remote_auth.provider.dart';
-export 'package:hc_device/utils.dart';
+export 'package:hc_device/providers/remote_auth.provider.dart';
+export 'package:hc_device/utils/device_merge.dart';
+export 'package:hc_device/utils/device_path_resolution.dart';
+export 'package:hc_device/utils/reconnect_policy.dart';
+export 'package:hc_device/utils/cache_policy.dart';
+export 'package:hc_device/utils/core.dart';
+export 'package:hc_device/services/logger_service.dart';
+export 'package:hc_device/services/connection_info.dart';
+export 'package:hc_device/services/device_detection_service.dart';

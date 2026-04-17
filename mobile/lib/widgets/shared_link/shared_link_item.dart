@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hc_device/api/remote_access.enums.swagger.dart';
-import 'package:hc_device/device_discovery.provider.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/shared_link/shared_link.model.dart';
@@ -65,7 +65,8 @@ class SharedLinkItem extends ConsumerWidget {
     final imageSize = math.min(context.width / 4, 100.0);
 
     void copyShareLinkToClipboard() {
-      final connectedDevicePaths = ref.read(deviceDiscoveryProvider).connectedDevicePaths;
+      final dp = ref.read(deviceProvider);
+      final connectedDevicePaths = dp.devicePaths ?? dp.getCachedDevicePaths()?.paths;
       final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
 
       var serverUrl = remoteUrl != null

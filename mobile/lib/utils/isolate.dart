@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/services.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
-import 'package:hc_device/utils.dart';
+import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';

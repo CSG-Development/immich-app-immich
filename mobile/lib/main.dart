@@ -185,6 +185,9 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       case AppLifecycleState.resumed:
         dPrint(() => "[APP STATE] resumed");
         ref.read(appStateProvider.notifier).handleAppResume();
+        unawaited(
+          ref.read(networkChangeListenerServiceProvider).processPendingOnResume(),
+        );
         break;
       case AppLifecycleState.inactive:
         dPrint(() => "[APP STATE] inactive");
@@ -274,9 +277,6 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
 
     // Initialize endpoint recovery service to start listening to connection state changes
     ref.read(endpointRecoveryServiceProvider);
-
-    // Initialize network change listener to handle WiFi connectivity changes
-    ref.read(networkChangeListenerServiceProvider).startListening();
   }
 
   @override

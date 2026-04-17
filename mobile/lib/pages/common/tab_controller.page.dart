@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
@@ -9,6 +10,9 @@ import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.da
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
+import 'package:immich_mobile/providers/network_change_listener.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
@@ -19,6 +23,21 @@ class TabControllerPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(() {
+      final listener = ref.read(networkChangeListenerServiceProvider);
+      listener.startListening();
+      final api = ref.read(apiServiceProvider);
+      void onForceReconnect() {
+        ref.read(curatorNetworkMonitorProvider).forceNetworkChangeHandling();
+      }
+
+      api.curatorNetworkForceReconnectHandler = onForceReconnect;
+      return () {
+        api.curatorNetworkForceReconnectHandler = null;
+        listener.stopListening();
+      };
+    }, const []);
+
     final isRefreshingAssets = ref.watch(assetProvider);
     final isRefreshingRemoteAlbums = ref.watch(isRefreshingRemoteAlbumProvider);
     final isScreenLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
