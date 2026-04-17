@@ -161,8 +161,6 @@ RUN echo "hard core 0" >> /etc/security/limits.conf && \
 COPY --from=builder /opt/venv /opt/venv
 COPY scripts/healthcheck.py .
 COPY immich_ml immich_ml
-COPY facial-recognition /cache/facial-recognition
-COPY clip /cache/clip
 
 RUN python -m ensurepip --upgrade
 RUN python -m pip install -r immich_ml/search/requirements.txt
