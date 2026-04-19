@@ -242,7 +242,7 @@ export const defaults = Object.freeze<SystemConfig>({
       interval: 30_000,
     },
     clip: {
-      enabled: true,
+      enabled: false,
       modelName: 'EVA02-B-16__merged2b_s8b_b131k',
       probabilityThreshold: 0.15,
     },
