@@ -169,7 +169,9 @@ export interface GetCameraMakesOptions {
 
 @Injectable()
 export class SearchRepository {
-  constructor(@InjectKysely() private db: Kysely<DB>) {}
+  constructor(@InjectKysely() private db: Kysely<DB>) {
+    console.log('SearchRepository INIT');
+  }
 
   @GenerateSql({
     params: [
