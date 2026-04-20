@@ -75,8 +75,7 @@ class WebsocketState {
 }
 
 class WebsocketNotifier extends StateNotifier<WebsocketState> {
-  WebsocketNotifier(this._ref)
-      : super(const WebsocketState(socket: null, isConnected: false, pendingChanges: []));
+  WebsocketNotifier(this._ref) : super(const WebsocketState(socket: null, isConnected: false, pendingChanges: []));
 
   final _log = Logger('WebsocketNotifier');
   final Ref _ref;
@@ -94,13 +93,18 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
     try {
       final serverEndpoint = Store.get(StoreKey.serverEndpoint);
       final apiService = _ref.read(apiServiceProvider);
-      
-      apiService.notifyConnectionState(ConnectionState(
-        status: ConnectionStatus.reconnecting,
-        lastErrorUrl: serverEndpoint.isNotEmpty ? serverEndpoint : null,
-        lastErrorTime: DateTime.now(),
-        connectionType: ConnectionType.websocket,
-      ));
+
+      apiService.notifyConnectionState(
+        ConnectionState(
+          status: ConnectionStatus.reconnecting,
+          lastErrorUrl: serverEndpoint.isNotEmpty ? serverEndpoint : null,
+          lastErrorTime: DateTime.now(),
+          connectionType: ConnectionType.websocket,
+        ),
+      );
+
+      // Also ask Curator monitor to re-check paths when WebSocket fails.
+      apiService.curatorNetworkForceReconnectHandler?.call();
     } catch (error, stackTrace) {
       _log.warning("Failed to notify endpoint recovery service (non-critical)", error, stackTrace);
     }
@@ -118,7 +122,7 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
   Future<void> disposeSocket() async {
     if (_isDisposing) return; // Prevent concurrent disposal
     _isDisposing = true;
-    
+
     try {
       final socket = state.socket;
       if (socket != null) {
@@ -141,13 +145,13 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
           ..off('reconnect_failed')
           ..off('disconnect')
           ..off('connect');
-        
+
         // Disconnect and dispose
         socket.disconnect();
-        
+
         // Wait a bit to ensure disconnect completes and reconnection attempts stop
         await Future.delayed(const Duration(milliseconds: 150));
-        
+
         try {
           socket.dispose();
         } catch (_) {
@@ -157,7 +161,7 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
     } catch (_) {
       // Best-effort cleanup; ignore any errors from socket disposal.
     }
-    
+
     state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
     _isDisposing = false;
   }
@@ -165,14 +169,14 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
   /// Connects websocket to server unless already connected, or if [force] is true.
   Future<void> connect({bool force = false}) async {
     if (state.isConnected && !force) return;
-    
+
     // If forcing a reconnection, dispose any existing socket first to prevent
     // old socket reconnection attempts from interfering with the new connection.
     if (force && state.socket != null) {
       dPrint(() => 'Force reconnect: disposing existing socket first');
       await disposeSocket();
     }
-    
+
     _doConnect();
   }
 
@@ -272,10 +276,10 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
         socket.on('on_config_update', _handleOnConfigUpdate);
         socket.on('on_new_release', _handleReleaseUpdates);
-        
+
         // Update state with the new socket before connecting
         state = WebsocketState(isConnected: false, socket: socket, pendingChanges: state.pendingChanges);
-        
+
         // Manually connect after all event handlers are registered
         socket.connect();
       } catch (e) {

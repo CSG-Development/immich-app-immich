@@ -32339,6 +32339,7 @@ class CodegenLoader extends AssetLoader {
           "title": "Find your photos smarter",
         },
       },
+      "network_finding": "Finding network...",
       "oobe_welcome_dropdown_detecting": "Detecting device...",
       "passcode_confirm_error": "The passcodes are not the same",
       "passcode_confirm_subtitle": "Confirm your passcode",

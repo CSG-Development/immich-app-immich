@@ -144,7 +144,16 @@ class HttpCertPinningManager {
       // Register trusted chain (excluding leaf/server certificate).
       final trustedChain = certificates.skip(1).toList(); // Skip server certificate.
       _httpOverrides.registerTrustedChain(host, trustedChain);
-    } on CertificateChainFetchException {
+    } on CertificateChainFetchException catch (e) {
+      // If we already have a previously validated chain for this host, keep using it.
+      // This avoids transient fetch failures (airplane toggles/network flaps) from
+      // breaking already working endpoints.
+      if (_httpOverrides.hasTrustedChain(host)) {
+        _log.warning(
+          'Reusing existing trusted chain for $host:$targetPort after fetch failure: $e',
+        );
+        return;
+      }
       rethrow;
     } on CertificateValidationException {
       rethrow;
@@ -164,21 +173,44 @@ class HttpCertPinningManager {
 
   /// Fetches certificate chain from platform-specific implementation.
   Future<List<String>> _fetchCertificateChain({required String host, required int port}) async {
-    try {
-      final request = CertificateChainRequest(host: host, port: port);
+    final request = CertificateChainRequest(host: host, port: port);
+    Object? lastError;
 
-      final response = await _certificateApi.fetchCertificateChain(request);
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        final response = await _certificateApi.fetchCertificateChain(request);
 
-      if (response.certificates.isEmpty) {
-        throw CertificateChainFetchException('Empty certificate chain from server', host: host, port: port);
+        if (response.certificates.isEmpty) {
+          throw CertificateChainFetchException(
+            'Empty certificate chain from server',
+            host: host,
+            port: port,
+          );
+        }
+
+        return response.certificates;
+      } on PlatformException catch (e) {
+        lastError = e;
+        _log.warning(
+          'Platform certificate fetch failure (attempt $attempt/2) for $host:$port: ${e.message}',
+        );
+      } catch (e) {
+        lastError = e;
+        _log.warning(
+          'Certificate fetch failure (attempt $attempt/2) for $host:$port: $e',
+        );
       }
 
-      return response.certificates;
-    } on PlatformException catch (e) {
-      throw CertificateChainFetchException('Platform error while fetching chain: ${e.message}', host: host, port: port);
-    } catch (e) {
-      throw CertificateChainFetchException('Failed to fetch certificate chain: $e', host: host, port: port);
+      if (attempt < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
     }
+
+    throw CertificateChainFetchException(
+      'Failed to fetch certificate chain after retry: $lastError',
+      host: host,
+      port: port,
+    );
   }
 
   /// Clears the certificate cache completely.

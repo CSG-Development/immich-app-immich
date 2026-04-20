@@ -31,7 +31,6 @@ class RemoteCodeModal extends HookConsumerWidget {
     final remoteCodeErrorText = useState<String?>(null);
     final emailNotAllowed = useState<bool?>(false);
     final tooManyRequests = useState<bool?>(false);
-    final unableToConnect = useState<bool?>(false);
     final isValidating = useState<bool>(false);
     final codeLength = useState<int>(0);
 
@@ -41,19 +40,20 @@ class RemoteCodeModal extends HookConsumerWidget {
       final state = remoteAuth.state;
       if (state.error != null) {
         remoteCodeInitiateError.value = true;
-        switch (state.error) {
-          case RemoteAuthError.server:
-            remoteCodeErrorText.value = 'curator.remote_access_connection_error'.tr();
-            unableToConnect.value = true;
-          case RemoteAuthError.notAllowed:
-            remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
-            emailNotAllowed.value = true;
-          case RemoteAuthError.tooManyRequests:
-            remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
-            tooManyRequests.value = true;
-          default:
-            remoteCodeErrorText.value = state.errorMessage ?? 'curator.remote_access_connection_error'.tr();
-            break;
+        // For connectivity-related failures (airplane mode, DNS, TLS/cert fetch issues, timeouts),
+        // show a user-friendly "unreachable" error instead of low-level exception text.
+        if (state.error == RemoteAuthError.server ||
+            state.error == RemoteAuthError.network ||
+            state.error == RemoteAuthError.unknown) {
+          remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
+        } else if (state.error == RemoteAuthError.notAllowed) {
+          remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+          emailNotAllowed.value = true;
+        } else if (state.error == RemoteAuthError.tooManyRequests) {
+          remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
+          tooManyRequests.value = true;
+        } else {
+          remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
         }
       }
     }
@@ -73,7 +73,6 @@ class RemoteCodeModal extends HookConsumerWidget {
       remoteCodeErrorText.value = null;
       emailNotAllowed.value = false;
       tooManyRequests.value = false;
-      unableToConnect.value = false;
 
       await sendCode();
 
@@ -222,17 +221,6 @@ class RemoteCodeModal extends HookConsumerWidget {
         actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('OK'.tr()))],
       );
     }
-    if (unableToConnect.value == true) {
-      return AlertDialog(
-        title: Text('curator.email_unable_to_connect_title'.tr()),
-        content: Text('curator.email_unable_to_connect_description'.tr()),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('cancel'.tr())),
-          TextButton(onPressed: () => sendRemoteCode(), child: Text('retry'.tr())),
-        ],
-      );
-    }
-
     return AlertDialog(
       title: Text('curator.sign_in_screen_remote_code_title'.tr()),
       content: ConstrainedBox(
@@ -347,13 +335,18 @@ Future<void> showRemoteCodeModal({
   required String email,
   Future<void> Function()? onSuccess,
   VoidCallback? onEmailNotAllowed,
+  /// When true, skips the automatic [sendCode] before the dialog (e.g. Remote Access
+  /// session already present — [RemoteAuthController.initiate] would otherwise log out).
+  bool skipInitialCodeSend = false,
 }) async {
   sendCode() async {
     final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
     await initiate(email: email, clientFriendlyName: clientFriendlyName);
   }
 
-  await sendCode();
+  if (!skipInitialCodeSend) {
+    await sendCode();
+  }
 
   return showDialog(
     context: context,

@@ -38,11 +38,18 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   @override
   void initState() {
     super.initState();
-    ref
-        .read(apiServiceProvider)
-        .setOpenApiServiceEndpoint()
-        .then(logConnectionInfo)
-        .whenComplete(() => resumeSession());
+    unawaited(_warmupEndpointResolution());
+    resumeSession();
+  }
+
+  Future<void> _warmupEndpointResolution() async {
+    try {
+      final endpoint = await ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+      logConnectionInfo(endpoint);
+    } catch (error) {
+      // Startup must remain non-blocking even if endpoint probing fails.
+      log.warning('Background endpoint warmup failed: $error');
+    }
   }
 
   void logConnectionInfo(String? endpoint) {

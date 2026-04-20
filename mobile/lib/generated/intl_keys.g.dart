@@ -865,6 +865,7 @@ abstract class IntlKeys {
   static const curator_onboarding_slide3_title = 'curator.onboarding.slide3.title';
   static const curator_onboarding_slide4_description = 'curator.onboarding.slide4.description';
   static const curator_onboarding_slide4_title = 'curator.onboarding.slide4.title';
+  static const curator_network_finding = 'curator.network.finding';
   static const curator_oobe_welcome_dropdown_detecting = 'curator.oobe.welcome.dropdown.detecting';
   static const curator_passcode_confirm_error = 'curator.passcode.confirm.error';
   static const curator_passcode_confirm_subtitle = 'curator.passcode.confirm.subtitle';

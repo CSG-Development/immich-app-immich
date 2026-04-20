@@ -41,6 +41,15 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
   final FlutterSecureStorage _secureStorage;
   final Future<void> Function({required String host, int? port}) _registerHostTrustedChain;
 
+  bool _shouldLogoutAfterRefreshFailure(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('401') ||
+        message.contains('403') ||
+        message.contains('unauthorized') ||
+        message.contains('forbidden') ||
+        (message.contains('refresh') && message.contains('invalid'));
+  }
+
   RemoteProvider(
     this._storageData,
     this._secureStorage,
@@ -67,11 +76,16 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
         '[Provider] Remote provider initialized with existing auth data',
       );
       refreshAccessToken().catchError((Object e) {
+        final shouldLogout = _shouldLogoutAfterRefreshFailure(e);
         logger.error(
           '[Provider] Failed to refresh remote access token on initialization',
           e,
         );
-        logOut();
+        // Keep existing refresh token on transient network failures (airplane mode/offline),
+        // so reconnect flows don't immediately fall into OTP due to forced logout.
+        if (shouldLogout) {
+          logOut();
+        }
         return '';
       });
     } else {
@@ -150,9 +164,6 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
   @override
   Future<String> refreshAccessToken() async {
     try {
-      if (kDebugMode) {
-        print('[RemoteProvider] Attempting to refresh access token...');
-      }
       final pinnedApi = await getPinnedApi();
       final response = await pinnedApi.clientV1AuthRefreshPost(
         body: Refresh$RequestBody(
