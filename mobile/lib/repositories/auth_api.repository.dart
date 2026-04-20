@@ -1,16 +1,22 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/repositories/api.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
-final authApiRepositoryProvider = Provider((ref) => AuthApiRepository(ref.watch(apiServiceProvider)));
+final authApiRepositoryProvider = Provider(
+  (ref) => AuthApiRepository(ref.watch(apiServiceProvider), ref.watch(deviceProvider)),
+);
 
 class AuthApiRepository extends ApiRepository {
   final ApiService _apiService;
+  final DeviceProvider _deviceProvider;
+  final _log = Logger("AuthApiRepository");
 
-  AuthApiRepository(this._apiService);
+  AuthApiRepository(this._apiService, this._deviceProvider);
 
   Future<void> changePassword(String newPassword) async {
     await _apiService.usersApi.updateMyUser(UserUpdateMeDto(password: newPassword));
@@ -28,6 +34,22 @@ class AuthApiRepository extends ApiRepository {
     if (_apiService.apiClient.basePath.isEmpty) return;
 
     await _apiService.authenticationApi.logout().timeout(const Duration(seconds: 7));
+  }
+
+  Future<void> requestPasswordReset(String email) async {
+    final trimmedEmail = email.trim();
+    final encodedEmail = Uri.encodeComponent(trimmedEmail);
+    _log.info(
+      "[ResetPassword] Calling device API usersResetPasswordEmailPost "
+      "(deviceID=${_deviceProvider.deviceID}, debugHostType=${_deviceProvider.debugHostType})",
+    );
+    final response = await _deviceProvider.api.usersResetPasswordEmailPost(email: encodedEmail);
+    final isSuccessful = response.isSuccessful;
+    if (!isSuccessful) {
+      _log.warning("[ResetPassword] Device API failed: status=${response.statusCode}, error=${response.error}");
+      throw ApiException(response.statusCode, 'Unable to reset password');
+    }
+    _log.info("[ResetPassword] Device API accepted reset request");
   }
 
   _mapLoginReponse(LoginResponseDto dto) {

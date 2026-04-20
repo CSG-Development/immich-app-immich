@@ -60,6 +60,10 @@ class AuthService {
     return _authApiRepository.login(email, password);
   }
 
+  Future<void> requestPasswordReset(String email) {
+    return _authApiRepository.requestPasswordReset(email);
+  }
+
   /// Performs user logout operation by making a server request and clearing local data.
   ///
   /// This method attempts to log out the user through the authentication API repository.
