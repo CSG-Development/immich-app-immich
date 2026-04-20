@@ -28,10 +28,12 @@ import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
+import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/utils/env_config.dart';
+import 'package:hc_device/api/api.enums.swagger.dart' as hc_api_enums;
 
 import 'package:hc_device/hc_device.dart';
 
@@ -52,6 +54,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     final email = useState<String>('');
 
     final isLoading = useState<bool>(false);
+    final isResetPasswordLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
 
     final warningMessage = useState<String?>(null);
@@ -97,9 +100,15 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     bool areRequiredFieldsFilled() =>
-        email.value.isNotEmpty &&
-        passwordController.text.isNotEmpty &&
-        isDeviceSelectionValid(selectedDevice.value);
+        email.value.isNotEmpty && passwordController.text.isNotEmpty && isDeviceSelectionValid(selectedDevice.value);
+
+    String? validateEmail(String emailAddress) {
+      final simpleEmailPattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+      if (!simpleEmailPattern.hasMatch(emailAddress)) {
+        return 'login_form_err_invalid_email'.tr();
+      }
+      return null;
+    }
 
     void handleCantFindDeviceManually({required Future<void> Function() onStartDiscovery}) async {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
@@ -211,25 +220,17 @@ class CuratorLoginForm extends HookConsumerWidget {
           await detection.cancelDetection();
         }
 
-        final mdnsDevices =
-            found.where((d) => d.debugHostType == 'mDNS').toList();
-        final remoteDevices =
-            found.where((d) => d.debugHostType != 'mDNS').toList();
+        final mdnsDevices = found.where((d) => d.debugHostType == 'mDNS').toList();
+        final remoteDevices = found.where((d) => d.debugHostType != 'mDNS').toList();
         log.info('[MDNS discovery]: devices found ${mdnsDevices.length}');
         log.info('[Remote discovery]: devices found ${remoteDevices.length}');
 
-        devices.value = mergeDiscoveredDevices(
-          devices.value,
-          [...mdnsDevices, ...remoteDevices],
-        );
+        devices.value = mergeDiscoveredDevices(devices.value, [...mdnsDevices, ...remoteDevices]);
 
         if (devices.value.isNotEmpty) {
           preselectFavoriteDevice();
         } else {
-          await handleAutoOtpAfterMdnsFailure(
-            onStartDiscovery: startDiscovery,
-            hasMdnsDevices: mdnsDevices.isNotEmpty,
-          );
+          await handleAutoOtpAfterMdnsFailure(onStartDiscovery: startDiscovery, hasMdnsDevices: mdnsDevices.isNotEmpty);
           return;
         }
       } catch (error, stackTrace) {
@@ -245,11 +246,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       final devStaticDeviceUrl = ref.read(developerOptionsProvider).devStaticDeviceUrl;
       if (devStaticDeviceUrl != null) {
         final baseUrl = Uri.tryParse(devStaticDeviceUrl);
-        staticDevice.value = DeviceItem(
-          hostname: devStaticDeviceUrl,
-          baseUrl: baseUrl,
-          debugHostType: 'static',
-        );
+        staticDevice.value = DeviceItem(hostname: devStaticDeviceUrl, baseUrl: baseUrl, debugHostType: 'static');
         selectedDevice.value = staticDevice.value;
       }
       return null;
@@ -336,13 +333,19 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     Future<bool> fetchServerAuthSettings() async {
       final device = selectedDevice.value;
+      log.info(
+        '[ResetPassword] Validating server settings for selected device: '
+        'id=${device?.id}, host=${device?.baseUrl}, pathType=${device?.debugHostType}',
+      );
       if (device == null) {
         warningMessage.value = "login_form_no_device_selected".tr();
+        log.warning('[ResetPassword] Aborted: no selected device');
         return false;
       }
       final baseUrl = device.baseUrl;
       if (baseUrl == null) {
         warningMessage.value = "login_form_server_empty".tr();
+        log.warning('[ResetPassword] Aborted: selected device has no baseUrl');
         return false;
       }
       final normalizedBaseUrl =
@@ -354,6 +357,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       if (normalizedServerUrl.isEmpty) {
         warningMessage.value = "login_form_server_empty".tr();
+        log.warning('[ResetPassword] Aborted: normalized server url is empty');
         return false;
       }
 
@@ -363,15 +367,19 @@ class CuratorLoginForm extends HookConsumerWidget {
         await ref.read(serverInfoProvider.notifier).getServerInfo();
         await updateVersionCompatibilityWarning();
 
+        log.info('[ResetPassword] Server validation succeeded: $normalizedServerUrl');
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
+        log.warning('[ResetPassword] Server validation failed with ApiException: code=${e.code}, message=${e.message}');
         return false;
       } on HandshakeException {
         warningMessage.value = 'login_form_handshake_exception'.tr();
+        log.warning('[ResetPassword] Server validation failed with TLS/handshake exception');
         return false;
       } catch (e) {
         warningMessage.value = 'login_form_server_error'.tr();
+        log.warning('[ResetPassword] Server validation failed with unexpected error: $e');
         return false;
       }
     }
@@ -385,6 +393,158 @@ class CuratorLoginForm extends HookConsumerWidget {
 
       if (Store.get(StoreKey.syncAlbums, false)) {
         await backgroundManager.syncLinkedAlbum();
+      }
+    }
+
+    Future<bool> prepareDeviceHostForResetPassword() async {
+      final device = selectedDevice.value;
+      if (device == null || !isDeviceSelectionValid(device)) {
+        warningMessage.value = "login_form_no_device_selected".tr();
+        log.warning('[ResetPassword] Aborted: invalid device selection');
+        return false;
+      }
+      log.info(
+        '[ResetPassword] Preparing device host: '
+        'id=${device.id}, baseUrl=${device.baseUrl}, pathType=${device.debugHostType}',
+      );
+
+      final dp = ref.read(deviceProvider);
+      final rp = ref.read(remoteProvider);
+      final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
+
+      if (device.about != null && device.baseUrl != null) {
+        await dp.setHost(
+          baseUrl: device.baseUrl,
+          deviceID: device.id,
+          seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+          debugHostType: device.debugHostType,
+        );
+        log.info('[ResetPassword] Using direct device host: ${device.baseUrl}');
+        return true;
+      }
+
+      final seagateDeviceID = device.remoteDevice?.seagateDeviceID;
+      if (seagateDeviceID == null || seagateDeviceID.isEmpty) {
+        warningMessage.value = "login_form_server_error".tr();
+        log.warning('[ResetPassword] Aborted: missing seagateDeviceID for remote-only device');
+        return false;
+      }
+
+      final ping = await detection.findOptimalDeviceConnection(device: device, seagateDeviceID: seagateDeviceID);
+      if (!ping.success || ping.baseUrl == null) {
+        warningMessage.value = "login_form_server_error".tr();
+        log.warning(
+          '[ResetPassword] Failed to resolve optimal device path: '
+          'success=${ping.success}, baseUrl=${ping.baseUrl}, debugHostType=${ping.debugHostType}',
+        );
+        return false;
+      }
+
+      await dp.setHost(
+        baseUrl: ping.baseUrl,
+        deviceID: device.id,
+        seagateDeviceID: seagateDeviceID,
+        debugHostType: ping.debugHostType,
+        devicePaths: dp.getCachedDevicePaths()?.paths,
+      );
+      log.info('[ResetPassword] Device host prepared via optimal path: ${ping.baseUrl}');
+      return true;
+    }
+
+    Future<bool> checkDeviceReadyForResetPassword() async {
+      try {
+        final response = await ref.read(deviceProvider).api.statusGet();
+        if (!response.isSuccessful) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning(
+            '[ResetPassword] Device readiness check failed: '
+            'status=${response.statusCode}, error=${response.error}',
+          );
+          return false;
+        }
+        final status = response.body;
+        if (status == null) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning('[ResetPassword] Device readiness check failed: empty status payload');
+          return false;
+        }
+        if (status.oobe.done == false || status.systemState != hc_api_enums.State.ready) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning(
+            '[ResetPassword] Device not ready: oobeDone=${status.oobe.done}, systemState=${status.systemState}',
+          );
+          return false;
+        }
+        log.info('[ResetPassword] Device readiness check succeeded');
+        return true;
+      } catch (error, stackTrace) {
+        log.warning('Failed to validate device readiness before reset', error, stackTrace);
+        warningMessage.value = 'login_form_server_error'.tr();
+        return false;
+      }
+    }
+
+    bool isResetPasswordEnabled() =>
+        !isLoading.value &&
+        !isResetPasswordLoading.value &&
+        email.value.isNotEmpty &&
+        validateEmail(email.value) == null &&
+        isDeviceSelectionValid(selectedDevice.value);
+
+    Future<void> handleResetPassword() async {
+      log.info('[ResetPassword] Triggered from login form');
+      if (!isResetPasswordEnabled()) {
+        if (email.value.isNotEmpty && validateEmail(email.value) != null) {
+          warningMessage.value = 'login_form_err_invalid_email'.tr();
+        } else if (!isDeviceSelectionValid(selectedDevice.value)) {
+          warningMessage.value = "login_form_no_device_selected".tr();
+        }
+        return;
+      }
+
+      clearAllErrors();
+      isResetPasswordLoading.value = true;
+
+      try {
+        final canPrepareDeviceHost = await prepareDeviceHostForResetPassword();
+        if (!canPrepareDeviceHost) {
+          return;
+        }
+
+        final isDeviceReady = await checkDeviceReadyForResetPassword();
+        if (!isDeviceReady) {
+          return;
+        }
+
+        await ref.read(authProvider.notifier).requestPasswordReset(email.value);
+        log.info('[ResetPassword] Request sent successfully for email=${email.value.trim()}');
+        if (context.mounted) {
+          final trimmedEmail = email.value.trim();
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              padding: EdgeInsets.zero,
+              duration: const Duration(seconds: 4),
+              content: NetworkStatusSnackBar(
+                message: '${'password_reset_success'.tr()}: $trimmedEmail',
+                onClose: messenger.hideCurrentSnackBar,
+              ),
+            ),
+          );
+        }
+      } on ApiException catch (error) {
+        warningMessage.value = 'errors.unable.to.reset.password'.tr();
+        log.warning('[ResetPassword] API failed: code=${error.code}, message=${error.message}');
+      } catch (error, stackTrace) {
+        log.warning('Failed to reset password', error, stackTrace);
+        warningMessage.value = 'errors.unable.to.reset.password'.tr();
+      } finally {
+        isResetPasswordLoading.value = false;
       }
     }
 
@@ -427,10 +587,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (device != null) {
           final dp = ref.read(deviceProvider);
           final rp = ref.read(remoteProvider);
-          final detection = DeviceDetectionService(
-            deviceProvider: dp,
-            remoteProvider: rp,
-          );
+          final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
           if (device.about != null && device.baseUrl != null) {
             await dp.setHost(
               baseUrl: device.baseUrl,
@@ -590,19 +747,34 @@ class CuratorLoginForm extends HookConsumerWidget {
                               hasExternalError: hasPasswordError.value,
                             ),
                             const SizedBox(height: 4.0),
-                            GestureDetector(
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  'reset_password'.tr(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontSize: 14.0,
-                                    fontWeight: FontWeight.w500,
+                            isResetPasswordLoading.value
+                                ? const Padding(
+                                    padding: EdgeInsets.all(10.0),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: SizedBox(
+                                        height: 20.0,
+                                        width: 20.0,
+                                        child: CircularProgressIndicator.adaptive(strokeWidth: 2.0),
+                                      ),
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: isResetPasswordEnabled() ? handleResetPassword : null,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Text(
+                                        'reset_password'.tr(),
+                                        style: TextStyle(
+                                          color: isResetPasswordEnabled()
+                                              ? Theme.of(context).primaryColor
+                                              : Theme.of(context).disabledColor,
+                                          fontSize: 14.0,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
                             const SizedBox(height: 24.0),
                             warningMessage.value == null
                                 ? const SizedBox.shrink()
