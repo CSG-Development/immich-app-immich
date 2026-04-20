@@ -26,8 +26,8 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
         delegateQueue.maxConcurrentOperationCount = 1
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 5.0
-        configuration.timeoutIntervalForResource = 5.0
+        configuration.timeoutIntervalForRequest = 12.0
+        configuration.timeoutIntervalForResource = 12.0
         configuration.waitsForConnectivity = false
 
         let session = URLSession(
@@ -79,7 +79,7 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
                     userInfo: [
                         NSLocalizedDescriptionKey:
                             isTimeout
-                                ? "Connection timeout after 5 seconds"
+                                ? "Connection timeout after 12 seconds"
                                 : "TLS handshake failed: \(error.localizedDescription)"
                     ]
                 )))

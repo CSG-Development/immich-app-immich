@@ -15,7 +15,7 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
     },
     callbacks: CuratorAppNetworkMonitorCallbacks(
       ref,
-      retryReconnect: () => monitor.reconnectDeviceEndpoint(),
+      onFindingNetworkToastDismissed: () => monitor.noteUserDismissedFindingToast(),
     ),
   );
   return monitor;

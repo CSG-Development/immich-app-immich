@@ -32,8 +32,7 @@ class ConnectionRecoveryInterceptor extends BaseClient {
         error is TlsException ||
         error is HandshakeException ||
         error is HttpException ||
-        (error is ClientException &&
-            error.message.contains('Connection') == true);
+        (error is ClientException && error.message.contains('Connection') == true);
   }
 
   @override
@@ -69,7 +68,7 @@ class PerformanceHttpClient extends BaseClient {
         orElse: () => HttpMethod.Get,
       ),
     );
-    
+
     // Use no-op trace if Firebase is not available
     final httpMetric = trace ?? NoOpHttpMetric();
     await httpMetric.start();
@@ -134,7 +133,6 @@ class ApiService implements Authentication {
   late TagsApi tagsApi;
 
   final _log = Logger("ApiService");
-
   final StreamController<ConnectionState> _connectionStateController = StreamController<ConnectionState>.broadcast();
   Stream<ConnectionState> get connectionStateChanges => _connectionStateController.stream;
 
@@ -158,10 +156,7 @@ class ApiService implements Authentication {
 
   static instantiate() async {
     final certPinning = HttpCertPinningManager(
-      config: const CertPinningConfig(
-        allowFallback: false,
-        installRootsInSecurityContext: true
-      ),
+      config: const CertPinningConfig(allowFallback: false, installRootsInSecurityContext: true),
     );
 
     await certPinning.initialize();
@@ -186,7 +181,7 @@ class ApiService implements Authentication {
 
   Future<void> _handleConnectionError(String failedUrl) async {
     dPrint(() => '_handleConnectionError: Connection error detected for $failedUrl');
-    
+
     // Do not notify connection state while endpoint switching is in progress
     if (_isSetEndpoint) {
       dPrint(() => '_handleConnectionError: Skipping notification - endpoint switching in progress');
@@ -195,10 +190,11 @@ class ApiService implements Authentication {
 
     // Ignore errors from requests that targeted an endpoint that is no longer active
     final activeEndpoint = Store.tryGet(StoreKey.serverEndpoint);
-    if (activeEndpoint != null &&
-        activeEndpoint.isNotEmpty &&
-        !failedUrl.startsWith(activeEndpoint)) {
-      dPrint(() => '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint');
+    if (activeEndpoint != null && activeEndpoint.isNotEmpty && !failedUrl.startsWith(activeEndpoint)) {
+      dPrint(
+        () =>
+            '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint',
+      );
       return;
     }
 
@@ -207,13 +203,15 @@ class ApiService implements Authentication {
       dPrint(() => '_handleConnectionError: Skipping notification - not authenticated');
       return;
     }
-    
-    notifyConnectionState(ConnectionState(
-      status: ConnectionStatus.reconnecting,
-      lastErrorUrl: failedUrl,
-      lastErrorTime: DateTime.now(),
-      connectionType: ConnectionType.api,
-    ));
+
+    notifyConnectionState(
+      ConnectionState(
+        status: ConnectionStatus.reconnecting,
+        lastErrorUrl: failedUrl,
+        lastErrorTime: DateTime.now(),
+        connectionType: ConnectionType.api,
+      ),
+    );
 
     try {
       curatorNetworkForceReconnectHandler?.call();
@@ -274,7 +272,9 @@ class ApiService implements Authentication {
         for (final auxiliaryEndpoint in auxiliaryEndpoints) {
           endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint, runId: traceRunId);
           if (endpoint != null) {
-            _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint');
+            _log.info(
+              'upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint',
+            );
             return endpoint;
           }
         }
@@ -283,6 +283,9 @@ class ApiService implements Authentication {
       // Try local connection first
       endpoint = await _setLocalConnection(runId: traceRunId);
       if (endpoint != null) {
+        // Keep reconnect latency low: as soon as local is available we return it.
+        // Any remote endpoint checks continue in the background for diagnostics only.
+        unawaited(_probeRemoteCandidatesInBackground(runId: traceRunId));
         _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=local endpoint=$endpoint');
         logBackupTrace(
           _log,
@@ -320,7 +323,7 @@ class ApiService implements Authentication {
             runId: traceRunId,
             elapsedMs: sw.elapsedMilliseconds,
           );
-        }
+        } else {}
         return endpoint;
       } catch (error, stackTrace) {
         _log.severe("Cannot set remote endpoint", error, stackTrace);
@@ -331,7 +334,9 @@ class ApiService implements Authentication {
         dPrint(() => 'Falling back to previous endpoint: $previousEndpoint');
         await resolveAndSetEndpoint(previousEndpoint);
         endpoint = previousEndpoint;
-        _log.warning('upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint');
+        _log.warning(
+          'upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint',
+        );
         logBackupTrace(
           _log,
           level: Level.WARNING,
@@ -348,7 +353,9 @@ class ApiService implements Authentication {
         );
       }
 
-      return endpoint;  
+      if (endpoint == null) {
+      } else {}
+      return endpoint;
     } catch (error) {
       rethrow;
     } finally {
@@ -369,8 +376,8 @@ class ApiService implements Authentication {
         return null;
       }
 
-      await resolveAndSetEndpoint(localEndpoint);
-      return localEndpoint;
+      final resolvedEndpoint = await resolveAndSetEndpoint(localEndpoint);
+      return resolvedEndpoint;
     } catch (error, stackTrace) {
       _log.severe("Cannot set local endpoint", error, stackTrace);
       logBackupTrace(
@@ -394,6 +401,21 @@ class ApiService implements Authentication {
     return null;
   }
 
+  Future<void> _probeRemoteCandidatesInBackground({required String runId}) async {
+    List<AuxilaryEndpoint> endpoints;
+    try {
+      endpoints = getExternalEndpointList();
+    } catch (error) {
+      return;
+    }
+
+    for (final endpoint in endpoints) {
+      try {
+        await resolveEndpoint(endpoint.url);
+      } catch (error) {}
+    }
+  }
+
   /// Compatibility wrapper with singular argument naming.
   Future<String?> tryLocalEndpointCandidate(String? endpoint, {String? runId}) =>
       tryLocalEndpoint(endpoint, runId: runId);
@@ -410,7 +432,8 @@ class ApiService implements Authentication {
       return null;
     }
 
-    for (final endpoint in endpointList) {
+    final sortedEndpoints = _sortRemoteCandidatesForPriority(endpointList);
+    for (final endpoint in sortedEndpoints) {
       try {
         final resolvedEndpoint = await resolveAndSetEndpoint(endpoint.url);
         return resolvedEndpoint;
@@ -434,6 +457,37 @@ class ApiService implements Authentication {
     return await tryRemoteEndpoints(runId: runId);
   }
 
+  List<AuxilaryEndpoint> _sortRemoteCandidatesForPriority(List<AuxilaryEndpoint> endpoints) {
+    final directLike = <AuxilaryEndpoint>[];
+    final relayLike = <AuxilaryEndpoint>[];
+
+    for (final endpoint in endpoints) {
+      if (_isRelayLikeEndpoint(endpoint.url)) {
+        relayLike.add(endpoint);
+      } else {
+        directLike.add(endpoint);
+      }
+    }
+
+    return <AuxilaryEndpoint>[...directLike, ...relayLike];
+  }
+
+  bool _isRelayLikeEndpoint(String endpoint) {
+    final uri = Uri.tryParse(endpoint);
+    if (uri == null) {
+      return false;
+    }
+
+    final host = uri.host.toLowerCase();
+    final path = uri.path.toLowerCase();
+    return host.contains('relay') ||
+        host.contains('proxy') ||
+        host.contains('tunnel') ||
+        path.contains('relay') ||
+        path.contains('proxy') ||
+        path.contains('tunnel');
+  }
+
   String? _getLocalEndpoint() {
     return Store.tryGet(StoreKey.localEndpoint);
   }
@@ -443,10 +497,8 @@ class ApiService implements Authentication {
   List<AuxilaryEndpoint> getExternalEndpointList() => AuxiliaryEndpointStoreService.loadAll();
 
   /// Compatibility wrapper for clearer naming.
-  Future<String?> resolveAndActivateOpenApiEndpoint({
-    List<String>? auxiliaryEndpoints,
-    String? runId,
-  }) => setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints, runId: runId);
+  Future<String?> resolveAndActivateOpenApiEndpoint({List<String>? auxiliaryEndpoints, String? runId}) =>
+      setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints, runId: runId);
 
   void setEndpoint(String endpoint) {
     // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
@@ -541,7 +593,7 @@ class ApiService implements Authentication {
       final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = _httpClient;
       final tempServerApi = ServerApi(tempClient);
 
-      await tempServerApi.pingServer().timeout(const Duration(seconds: 5));
+      await tempServerApi.pingServer().timeout(const Duration(seconds: 45));
       await trace.stop();
     } on TimeoutException catch (_) {
       await trace.stop();

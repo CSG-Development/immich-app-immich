@@ -101,6 +101,29 @@ class RemoteAuthController extends ChangeNotifier {
   }) async {
     if (_state.isInitiating) return;
 
+    // Do not clear an existing Remote Access session. logOut() would drop refresh
+    // tokens and make the app think RA is required again while the user is
+    // already authorized (e.g. reconnect / showRemoteCodeModal pre-send).
+    if (_remoteProvider.isAuthenticated) {
+      if (kDebugMode) {
+        debugPrint(
+          '[RemoteAuth] initiate skipped: remote session already present',
+        );
+      }
+      await _deviceProvider.setHost(login: email);
+      _lastEmail = email;
+      _lastClientFriendlyName = clientFriendlyName;
+      _setState(
+        _state.copyWith(
+          isInitiating: false,
+          error: null,
+          errorMessage: null,
+          codeExpired: false,
+        ),
+      );
+      return;
+    }
+
     // Clear any previous authentication of remote access server.
     _remoteProvider.logOut();
 
@@ -130,7 +153,6 @@ class RemoteAuthController extends ChangeNotifier {
       );
 
       if (response.isSuccessful) {
-
         if (kDebugMode) {
           debugPrint(
             "[RemoteAuth] Remote access initiated for email: "

@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
+import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/curator_network_monitor.service.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
@@ -14,11 +15,8 @@ import 'package:logging/logging.dart';
 /// Debounce delay for connectivity-driven reconnect (see [curatorNetworkDebounceDelay]).
 const Duration networkDebounceDelay = curatorNetworkDebounceDelay;
 
-bool shouldDeferNetworkChange({
-  required AppLifeCycleEnum appState,
-}) {
-  return !(appState == AppLifeCycleEnum.resumed ||
-      appState == AppLifeCycleEnum.active);
+bool shouldDeferNetworkChange({required AppLifeCycleEnum appState}) {
+  return !(appState == AppLifeCycleEnum.resumed || appState == AppLifeCycleEnum.active);
 }
 
 /// Listens to connectivity changes, debounces, then delegates Curator re-detection to
@@ -35,7 +33,6 @@ class NetworkChangeListenerService {
   bool _pendingNetworkChange = false;
   bool _isHandlingNetworkChange = false;
   Timer? _debounceTimer;
-
   NetworkChangeListenerService(this._ref);
 
   /// Starts listening to network connectivity changes.
@@ -119,15 +116,12 @@ class NetworkChangeListenerService {
     final reasonCode = wifiContextChanged
         ? 'WIFI_CONTEXT_CHANGED'
         : mobileToWifi
-            ? 'MOBILE_TO_WIFI'
-            : wifiToMobile
-                ? 'WIFI_TO_MOBILE'
-                : 'CONNECTIVITY_CHANGED';
+        ? 'MOBILE_TO_WIFI'
+        : wifiToMobile
+        ? 'WIFI_TO_MOBILE'
+        : 'CONNECTIVITY_CHANGED';
 
-    _scheduleConnectivityReconnect(
-      backupReasonCode: reasonCode,
-      resetOpenApiForMobile: wifiToMobile,
-    );
+    _scheduleConnectivityReconnect(backupReasonCode: reasonCode, resetOpenApiForMobile: wifiToMobile);
   }
 
   Future<void> processPendingOnResume() async {
@@ -135,16 +129,10 @@ class NetworkChangeListenerService {
       return;
     }
     _pendingNetworkChange = false;
-    _scheduleConnectivityReconnect(
-      backupReasonCode: 'DEFERRED_RESUME',
-      resetOpenApiForMobile: false,
-    );
+    _scheduleConnectivityReconnect(backupReasonCode: 'DEFERRED_RESUME', resetOpenApiForMobile: false);
   }
 
-  void _scheduleConnectivityReconnect({
-    required String backupReasonCode,
-    required bool resetOpenApiForMobile,
-  }) {
+  void _scheduleConnectivityReconnect({required String backupReasonCode, required bool resetOpenApiForMobile}) {
     final appState = _ref.read(appStateProvider);
     if (shouldDeferNetworkChange(appState: appState)) {
       _pendingNetworkChange = true;
@@ -221,7 +209,15 @@ class NetworkChangeListenerService {
     try {
       final curatorDevice = _ref.read(deviceProvider);
       if (!curatorDevice.isAuthenticated) {
-        _log.finer('Skipping network reconnect: Curator device session not authenticated');
+        _log.finer('Curator device session not authenticated; routing reconnect event to EndpointRecovery');
+        final api = _ref.read(apiServiceProvider);
+        api.notifyConnectionState(
+          conn.ConnectionState(
+            status: conn.ConnectionStatus.reconnecting,
+            lastErrorTime: DateTime.now(),
+            connectionType: conn.ConnectionType.api,
+          ),
+        );
         return;
       }
 
@@ -246,7 +242,7 @@ class NetworkChangeListenerService {
         runId: _runId,
       );
 
-      await _ref.read(curatorNetworkMonitorProvider).reconnectDeviceEndpoint();
+      await _ref.read(curatorNetworkMonitorProvider).reconnectDeviceEndpoint(fromConnectivityChange: true);
     } finally {
       _isHandlingNetworkChange = false;
     }

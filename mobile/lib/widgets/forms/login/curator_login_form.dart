@@ -34,7 +34,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/utils/env_config.dart';
 
 import 'package:hc_device/hc_device.dart';
-import 'package:hc_device/services/device_detection_service.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');
@@ -67,7 +66,6 @@ class CuratorLoginForm extends HookConsumerWidget {
     final staticDevice = useState<DeviceItem?>(null);
     final selectedDevice = useState<DeviceItem?>(null);
     final isDiscovering = useState<bool>(false);
-
     final isRemoteCodeModalActive = useRef(false);
 
     /// Change focus from one field to another
@@ -103,7 +101,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         passwordController.text.isNotEmpty &&
         isDeviceSelectionValid(selectedDevice.value);
 
-    void handleCantFindDevice({required Future<void> Function() onStartDiscovery}) async {
+    void handleCantFindDeviceManually({required Future<void> Function() onStartDiscovery}) async {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
       if (isAuthenticated) {
         context.pushRoute(
@@ -128,10 +126,40 @@ class CuratorLoginForm extends HookConsumerWidget {
           context: context,
           initiate: ref.read(remoteAuthProvider).initiate,
           email: emailAddress,
+          skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
           onSuccess: () async => onStartDiscovery(),
         );
         isRemoteCodeModalActive.value = false;
       }
+    }
+
+    Future<void> handleAutoOtpAfterMdnsFailure({
+      required Future<void> Function() onStartDiscovery,
+      required bool hasMdnsDevices,
+    }) async {
+      final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
+      // Auto OTP is allowed only when mDNS did not find any device and
+      // Remote Access is not authenticated yet.
+      if (hasMdnsDevices || isAuthenticated) {
+        return;
+      }
+
+      final emailAddress = email.value;
+      if (emailAddress.isEmpty) {
+        warningMessage.value = 'login_form_err_invalid_email'.tr();
+        return;
+      }
+
+      if (isRemoteCodeModalActive.value == true) return;
+      isRemoteCodeModalActive.value = true;
+      await showRemoteCodeModal(
+        context: context,
+        initiate: ref.read(remoteAuthProvider).initiate,
+        email: emailAddress,
+        skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
+        onSuccess: () async => onStartDiscovery(),
+      );
+      isRemoteCodeModalActive.value = false;
     }
 
     preselectFavoriteDevice() {
@@ -198,7 +226,10 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (devices.value.isNotEmpty) {
           preselectFavoriteDevice();
         } else {
-          handleCantFindDevice(onStartDiscovery: startDiscovery);
+          await handleAutoOtpAfterMdnsFailure(
+            onStartDiscovery: startDiscovery,
+            hasMdnsDevices: mdnsDevices.isNotEmpty,
+          );
           return;
         }
       } catch (error, stackTrace) {
@@ -538,7 +569,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                             ),
                             const SizedBox(height: 4.0),
                             GestureDetector(
-                              onTap: () => handleCantFindDevice(onStartDiscovery: startDiscovery),
+                              onTap: () => handleCantFindDeviceManually(onStartDiscovery: startDiscovery),
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Text(

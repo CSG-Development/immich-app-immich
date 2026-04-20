@@ -1,18 +1,22 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/services/device_detection.service.dart';
 import 'package:logging/logging.dart';
 
-/// Cooldown between re-detection attempts.
-/// Debounce for connectivity is owned by [NetworkChangeListenerService].
+/// Debounce delay for connectivity-driven reconnect (see [curatorNetworkDebounceDelay]).
 const Duration curatorNetworkDebounceDelay = Duration(seconds: 3);
 const Duration curatorNetworkCooldownDelay = Duration(seconds: 30);
 
+/// Delay before showing the "Finding network…" UI while endpoint probing runs.
+const Duration curatorFindingNetworkToastDelay = Duration(seconds: 30);
+const Duration curatorFindingNetworkToastDelayNoNetwork = Duration(seconds: 5);
+
 /// Host UI hooks (snackbars, remote-access prompts) for [CuratorNetworkMonitor].
 abstract class CuratorNetworkMonitorCallbacks {
-  void onShowReconnecting();
+  bool onShowReconnecting();
 
   void onHideReconnecting();
 
@@ -40,24 +44,136 @@ class CuratorNetworkMonitor {
   final CuratorNetworkMonitorCallbacks callbacks;
 
   final _log = Logger('CuratorNetworkMonitor');
-
   DateTime? _lastDetectionTime;
-  bool _isReconnecting = false;
+  int _reconnectDepth = 0;
+
+  Timer? _findingNetworkTimer;
+  DateTime? _outageStartedAt;
+  bool _outageActive = false;
+  Duration _findingToastDelayForOutage = curatorFindingNetworkToastDelay;
+  bool _findingToastVisible = false;
+  bool _userDismissedFindingToast = false;
+
+  /// Clears user dismissal so the finding-network toast may show again after connectivity changes.
+  void noteConnectivityDrivenReconnect() {
+    _userDismissedFindingToast = false;
+  }
+
+  /// Called when the user dismisses the finding-network snackbar ('x').
+  void noteUserDismissedFindingToast() {
+    _userDismissedFindingToast = true;
+    _findingToastVisible = false;
+    _cancelFindingNetworkTimer();
+  }
+
+  /// If probing started before the app went to background, show the toast on resume when the
+  /// no-success interval has already exceeded [curatorFindingNetworkToastDelay].
+  void onAppLifecycleResumed() {
+    _emitFindingNetworkToastIfEligible();
+  }
+
+  void _emitFindingNetworkToastIfEligible() {
+    if (_userDismissedFindingToast || _findingToastVisible || !_outageActive) {
+      return;
+    }
+    final started = _outageStartedAt;
+    if (started == null) {
+      return;
+    }
+    if (DateTime.now().difference(started) < _findingToastDelayForOutage) {
+      return;
+    }
+    final shown = callbacks.onShowReconnecting();
+    _findingToastVisible = shown;
+    if (shown) {
+    } else {
+      _cancelFindingNetworkTimer();
+      _findingNetworkTimer = Timer(const Duration(seconds: 1), _emitFindingNetworkToastIfEligible);
+    }
+  }
+
+  void _cancelFindingNetworkTimer() {
+    _findingNetworkTimer?.cancel();
+    _findingNetworkTimer = null;
+  }
+
+  void _markOutageStartedIfNeeded() {
+    if (_outageActive) {
+      return;
+    }
+    _outageActive = true;
+    _outageStartedAt = DateTime.now();
+  }
+
+  void _scheduleFindingToastForCurrentOutage() {
+    if (_findingNetworkTimer != null || _findingToastVisible) {
+      return;
+    }
+    if (_userDismissedFindingToast) {
+      return;
+    }
+    final started = _outageStartedAt;
+    if (started == null) {
+      return;
+    }
+    final elapsed = DateTime.now().difference(started);
+    final remaining = _findingToastDelayForOutage - elapsed;
+    final delay = remaining.isNegative ? Duration.zero : remaining;
+    _findingNetworkTimer = Timer(delay, _emitFindingNetworkToastIfEligible);
+  }
+
+  void _markOutageResolved() {
+    _outageActive = false;
+    _outageStartedAt = null;
+    _cancelFindingNetworkTimer();
+    if (_findingToastVisible) {
+      callbacks.onHideReconnecting();
+    }
+    _findingToastVisible = false;
+    _clearUserDismissOnSuccessfulConnection();
+  }
+
+  /// Called when API/WebSocket emits a confirmed connected state.
+  /// Ensures any in-flight outage UI is cleared only on real reconnect success.
+  void onConnectionRestored() {
+    if (!_outageActive && !_findingToastVisible && _findingNetworkTimer == null) {
+      return;
+    }
+    _markOutageResolved();
+  }
+
+  void _beginProbingPhase() {
+    _markOutageStartedIfNeeded();
+    _scheduleFindingToastForCurrentOutage();
+  }
+
+  void _clearUserDismissOnSuccessfulConnection() {
+    _userDismissedFindingToast = false;
+  }
 
   /// Re-run device discovery / optimal path selection after a network change.
   ///
-  /// Called from [NetworkChangeListenerService] (debounced) or from UI retry.
-  Future<void> reconnectDeviceEndpoint() async {
+  /// [fromConnectivityChange] should be true when this call is triggered by
+  /// [NetworkChangeListenerService] so a previously dismissed finding-network toast may show again.
+  ///
+  /// [fromRemoteAuthRetry] allows a nested reconnect after Remote Access auth while the outer
+  /// attempt is still logically in progress.
+  Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false}) async {
     if (!deviceProvider.isAuthenticated) {
       _log.info('[Network] User not authenticated to device, skipping re-detection');
       return;
     }
-    if (_isReconnecting) {
+    if (_reconnectDepth > 0 && !fromRemoteAuthRetry) {
       _log.info('[Network] Already reconnecting, skipping');
       return;
     }
-    _isReconnecting = true;
-    callbacks.onShowReconnecting();
+    if (fromConnectivityChange) {
+      noteConnectivityDrivenReconnect();
+    }
+
+    _reconnectDepth++;
+    _markOutageStartedIfNeeded();
+    _findingToastDelayForOutage = await _resolveFindingToastDelayForCurrentConnectivity();
 
     try {
       if (_lastDetectionTime != null) {
@@ -74,9 +190,12 @@ class CuratorNetworkMonitor {
       final deviceID = deviceProvider.deviceID;
       if (deviceID == null || deviceID.isEmpty) {
         _log.warning('[Network] No device ID stored, cannot re-detect');
+        _scheduleFindingToastForCurrentOutage();
         await callbacks.onReconnectionFailed();
         return;
       }
+
+      _beginProbingPhase();
 
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
         await _pingWithSeagateDeviceID(seagateDeviceID);
@@ -84,8 +203,18 @@ class CuratorNetworkMonitor {
         await _doFullDiscovery(deviceID);
       }
     } finally {
-      _isReconnecting = false;
-      callbacks.onHideReconnecting();
+      _reconnectDepth--;
+    }
+  }
+
+  Future<Duration> _resolveFindingToastDelayForCurrentConnectivity() async {
+    try {
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isOffline = connectivityResults.contains(ConnectivityResult.none);
+      final delay = isOffline ? curatorFindingNetworkToastDelayNoNetwork : curatorFindingNetworkToastDelay;
+      return delay;
+    } catch (error) {
+      return curatorFindingNetworkToastDelay;
     }
   }
 
@@ -97,19 +226,12 @@ class CuratorNetworkMonitor {
 
   Future<void> _pingWithSeagateDeviceID(String seagateDeviceID) async {
     _log.info('[Network] Pinging device (remote identifier available)');
-    final detection = DeviceDetectionService(
-      deviceProvider: deviceProvider,
-      remoteProvider: remoteProvider,
-    );
+    final detection = DeviceDetectionService(deviceProvider: deviceProvider, remoteProvider: remoteProvider);
     try {
-      final result = await detection.findOptimalDeviceConnection(
-        seagateDeviceID: seagateDeviceID,
-      );
+      final result = await detection.findOptimalDeviceConnection(seagateDeviceID: seagateDeviceID);
       if (result.success && result.baseUrl != null) {
-        await deviceProvider.setHost(
-          baseUrl: result.baseUrl,
-          debugHostType: result.debugHostType,
-        );
+        _markOutageResolved();
+        await deviceProvider.setHost(baseUrl: result.baseUrl, debugHostType: result.debugHostType);
         await _activateEndpointFromCurrentPaths();
         await callbacks.onReconnected(result);
         _log.info('[Network] Reconnected via ${result.pathType}');
@@ -139,15 +261,10 @@ class CuratorNetworkMonitor {
         _log.info('[Network] Device found during full detection: ${device.name}');
         await detection.cancelDetection();
         if (seagate != null && seagate.isNotEmpty) {
-          final detection2 = DeviceDetectionService(
-            deviceProvider: deviceProvider,
-            remoteProvider: remoteProvider,
-          );
-          final ping = await detection2.findOptimalDeviceConnection(
-            device: device,
-            seagateDeviceID: seagate,
-          );
+          final detection2 = DeviceDetectionService(deviceProvider: deviceProvider, remoteProvider: remoteProvider);
+          final ping = await detection2.findOptimalDeviceConnection(device: device, seagateDeviceID: seagate);
           if (ping.success && ping.baseUrl != null) {
+            _markOutageResolved();
             await deviceProvider.setHost(
               baseUrl: ping.baseUrl,
               deviceID: device.id,
@@ -161,6 +278,7 @@ class CuratorNetworkMonitor {
             await _handleReconnectionFailure();
           }
         } else if (device.baseUrl != null && device.about != null) {
+          _markOutageResolved();
           await _activateEndpointFromCurrentPaths();
           await callbacks.onReconnected(
             PingResult(
@@ -190,20 +308,22 @@ class CuratorNetworkMonitor {
       },
     );
     await detection.startDetection();
-    await DeviceDetection.awaitOrCancel(
-      completer: done,
-      discovery: detection,
-      timeout: const Duration(seconds: 45),
-    );
+    await DeviceDetection.awaitOrCancel(completer: done, discovery: detection, timeout: const Duration(seconds: 45));
     if (!deviceFound) {
       await _handleReconnectionFailure();
     }
   }
 
   Future<void> _handleReconnectionFailure() async {
+    _scheduleFindingToastForCurrentOutage();
+
     if (!remoteProvider.isAuthenticated) {
       _log.info('[Network] Prompting for Remote Access authentication (host callback)');
-      await callbacks.onNeedRemoteAccessAuth(reconnectDeviceEndpoint);
+      try {
+        await callbacks.onNeedRemoteAccessAuth(
+          () => reconnectDeviceEndpoint(fromConnectivityChange: false, fromRemoteAuthRetry: true),
+        );
+      } finally {}
       return;
     }
     await callbacks.onReconnectionFailed();

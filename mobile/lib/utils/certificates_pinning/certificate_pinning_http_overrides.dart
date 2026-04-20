@@ -43,6 +43,12 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
     _log.fine('Removed chain for $host');
   }
 
+  /// Returns true when a trusted chain is already registered for [host].
+  bool hasTrustedChain(String host) {
+    final chain = _hostTrustedChains[host];
+    return chain != null && chain.isNotEmpty;
+  }
+
   /// Clears all registered trusted chains.
   void clearAllTrustedChains() {
     _hostTrustedChains.clear();
@@ -66,7 +72,7 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
           if (pem == null) {
             continue;
           }
-          effectiveContext!.setTrustedCertificatesBytes(Uint8List.fromList(pem.codeUnits));
+          effectiveContext.setTrustedCertificatesBytes(Uint8List.fromList(pem.codeUnits));
         } catch (_) {
           _log.warning('Failed to add root certificate to SecurityContext');
         }
