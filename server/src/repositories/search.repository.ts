@@ -277,6 +277,8 @@ export class SearchRepository {
     ],
   })
   searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions, probabilityThreshold: number) {
+    console.log(`searchSmart LOGGING TEST`);
+
     if (!isValidInteger(pagination.size, { min: 1, max: 1000 })) {
       throw new Error(`Invalid value for 'size': ${pagination.size}`);
     }
