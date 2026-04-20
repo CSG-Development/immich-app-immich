@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hc_device/hc_device.dart';
@@ -12,18 +13,19 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
+import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/sync_status.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/providers/recovery_status.provider.dart';
 import 'package:immich_mobile/services/device_detection.service.dart';
+import 'package:immich_mobile/services/curator_network_monitor.service.dart';
+import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
-enum RecoveryDecisionOutcome {
-  resolvedAutomatically,
-  promptUserToTryConnect,
-  terminalFailure,
-}
+enum RecoveryDecisionOutcome { resolvedAutomatically, promptUserToTryConnect, terminalFailure }
 
 RecoveryDecisionOutcome decideRecoveryScenario({
   required bool autoResolved,
@@ -50,7 +52,14 @@ class EndpointRecoveryService {
   final Logger _log = Logger('EndpointRecoveryService');
   StreamSubscription<ConnectionState>? _connectionStateSubscription;
   bool _isRecovering = false;
-
+  Timer? _findingNetworkDuringRecoveryTimer;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _findingNetworkSnackController;
+  bool _recoveryOutageActive = false;
+  DateTime? _recoveryOutageStartedAt;
+  bool _isResumingSyncAfterReconnect = false;
+  Duration _findingToastDelayForRecovery = curatorFindingNetworkToastDelay;
+  static const Duration _realConnectionLostThreshold = Duration(seconds: 30);
+  static const Duration _noNetworkFindingToastDelay = Duration(seconds: 5);
   EndpointRecoveryService(this._apiService, this._ref) {
     _initializeConnectionStateListener();
   }
@@ -66,6 +75,29 @@ class EndpointRecoveryService {
   }
 
   Future<void> _handleConnectionStateChange(ConnectionState state) async {
+    final hasCuratorMonitorHandler = _ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler != null;
+    final curatorCanHandleReconnect = _ref.read(deviceProvider).isAuthenticated;
+
+    if (hasCuratorMonitorHandler && curatorCanHandleReconnect && state.status == ConnectionStatus.reconnecting) {
+      return;
+    }
+
+    // If connectivity is reported as restored, always clear any pending
+    // finding-network UI/timers, even when recovery completed via another path.
+    if (state.status == ConnectionStatus.connected) {
+      _ref.read(curatorNetworkMonitorProvider).onConnectionRestored();
+      unawaited(_resumeSyncIfInterruptedAfterReconnect());
+      _recoveryOutageActive = false;
+      _recoveryOutageStartedAt = null;
+      _cancelFindingNetworkDuringRecoveryTimer();
+      _forceHideFindingNetworkSnackBar();
+      if (_isRecovering) {
+        _isRecovering = false;
+        _ref.read(recoveryStatusProvider.notifier).stopRecovery();
+      }
+      return;
+    }
+
     _log.fine(
       'Connection state update received in EndpointRecoveryService: '
       'status=${state.status}, '
@@ -90,44 +122,167 @@ class EndpointRecoveryService {
       return;
     }
 
+    var recoveredOk = false;
     try {
       _isRecovering = true;
+      if (!_recoveryOutageActive) {
+        _recoveryOutageActive = true;
+        _recoveryOutageStartedAt = DateTime.now();
+      }
+      _findingToastDelayForRecovery = await _resolveFindingToastDelayForCurrentConnectivity();
 
       final currentEndpoint = Store.tryGet(StoreKey.serverEndpoint);
       _log.fine('Starting full recovery from current endpoint: $currentEndpoint');
       _ref.read(recoveryStatusProvider.notifier).startRecovery(currentEndpoint);
+      _scheduleFindingNetworkDuringRecovery();
 
       final decision = await _attemptAutomaticRecovery(state);
       if (decision == RecoveryDecisionOutcome.resolvedAutomatically) {
+        recoveredOk = true;
         return;
       }
 
       if (decision == RecoveryDecisionOutcome.terminalFailure) {
-        _notifyDisconnected(state);
+        _notifyDisconnectedIfRealLoss(state);
         return;
       }
 
       // Continue with OTP / path refresh / resolution without a blocking yes/no dialog.
       final promptedDecision = await _attemptPromptedRecovery(dialogContext, state);
       if (promptedDecision == RecoveryDecisionOutcome.resolvedAutomatically) {
+        recoveredOk = true;
         return;
       }
 
       _log.warning('Endpoint recovery failed after prompted flow: No alternative endpoint available');
-      _notifyDisconnected(state);
+      _notifyDisconnectedIfRealLoss(state);
     } catch (error, stackTrace) {
       _log.severe('Error during endpoint recovery', error, stackTrace);
-      _notifyDisconnected(state);
+      _notifyDisconnectedIfRealLoss(state);
     } finally {
       _log.fine('Endpoint recovery workflow finished, resetting flags');
       _isRecovering = false;
+      if (recoveredOk) {
+        _recoveryOutageActive = false;
+        _recoveryOutageStartedAt = null;
+        _cancelFindingNetworkDuringRecoveryTimer();
+        _forceHideFindingNetworkSnackBar();
+      }
       _ref.read(recoveryStatusProvider.notifier).stopRecovery();
     }
   }
 
-  Future<RecoveryDecisionOutcome> _attemptAutomaticRecovery(
-    ConnectionState state,
-  ) async {
+  Future<void> _resumeSyncIfInterruptedAfterReconnect() async {
+    if (_isResumingSyncAfterReconnect) {
+      return;
+    }
+
+    final syncState = _ref.read(syncStatusProvider);
+    final shouldResumeRemote =
+        syncState.remoteSyncStatus == SyncStatus.syncing || syncState.remoteSyncStatus == SyncStatus.error;
+    final shouldResumeLocal =
+        syncState.localSyncStatus == SyncStatus.syncing || syncState.localSyncStatus == SyncStatus.error;
+    final shouldResumeHash =
+        syncState.hashJobStatus == SyncStatus.syncing || syncState.hashJobStatus == SyncStatus.error;
+
+    if (!shouldResumeRemote && !shouldResumeLocal && !shouldResumeHash) {
+      return;
+    }
+
+    _isResumingSyncAfterReconnect = true;
+    final backgroundSync = _ref.read(backgroundSyncProvider);
+
+    try {
+      if (shouldResumeLocal) {
+        await backgroundSync.syncLocal();
+      }
+      if (shouldResumeHash) {
+        await backgroundSync.hashAssets();
+      }
+      if (shouldResumeRemote) {
+        final remoteOk = await backgroundSync.syncRemote();
+        if (remoteOk && Store.get(StoreKey.syncAlbums, false)) {
+          await backgroundSync.syncLinkedAlbum();
+        }
+      }
+    } catch (error) {
+    } finally {
+      _isResumingSyncAfterReconnect = false;
+    }
+  }
+
+  void _cancelFindingNetworkDuringRecoveryTimer() {
+    _findingNetworkDuringRecoveryTimer?.cancel();
+    _findingNetworkDuringRecoveryTimer = null;
+  }
+
+  void _scheduleFindingNetworkDuringRecovery() {
+    if (_findingNetworkDuringRecoveryTimer != null) {
+      return;
+    }
+
+    final startedAt = _recoveryOutageStartedAt ?? DateTime.now();
+    _recoveryOutageStartedAt = startedAt;
+    final elapsed = DateTime.now().difference(startedAt);
+    final remaining = _findingToastDelayForRecovery - elapsed;
+    final delay = remaining.isNegative ? Duration.zero : remaining;
+
+    _findingNetworkDuringRecoveryTimer = Timer(delay, () {
+      if (!_recoveryOutageActive) {
+        return;
+      }
+      _showFindingNetworkSnackBarDuringRecovery();
+    });
+  }
+
+  Future<Duration> _resolveFindingToastDelayForCurrentConnectivity() async {
+    try {
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isOffline = connectivityResults.contains(ConnectivityResult.none);
+      final delay = isOffline ? _noNetworkFindingToastDelay : curatorFindingNetworkToastDelay;
+      return delay;
+    } catch (error) {
+      return curatorFindingNetworkToastDelay;
+    }
+  }
+
+  void _showFindingNetworkSnackBarDuringRecovery() {
+    final context = _ref.read(appRouterProvider).navigatorKey.currentContext;
+    if (context == null || !context.mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    _findingNetworkSnackController = messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        dismissDirection: DismissDirection.none,
+        duration: const Duration(days: 30),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        padding: EdgeInsets.zero,
+        content: NetworkStatusSnackBar(
+          message: 'curator.network_finding'.tr(),
+          onClose: () {
+            messenger.hideCurrentSnackBar();
+            _findingNetworkSnackController = null;
+          },
+        ),
+      ),
+    );
+  }
+
+  void _forceHideFindingNetworkSnackBar() {
+    final context = _ref.read(appRouterProvider).navigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
+    _findingNetworkSnackController?.close();
+    _findingNetworkSnackController = null;
+  }
+
+  Future<RecoveryDecisionOutcome> _attemptAutomaticRecovery(ConnectionState state) async {
     final mdnsEndpoint = await _tryRecoverUsingCurrentDeviceOnWifi(state);
     if (mdnsEndpoint != null) {
       _log.info('Fast WiFi/device-based recovery succeeded, endpoint=$mdnsEndpoint');
@@ -147,12 +302,9 @@ class EndpointRecoveryService {
     return RecoveryDecisionOutcome.promptUserToTryConnect;
   }
 
-  Future<RecoveryDecisionOutcome> _attemptPromptedRecovery(
-    BuildContext context,
-    ConnectionState state,
-  ) async {
-    final isAuthenticated = _ref.read(remoteProvider).isAuthenticated;
-    if (!isAuthenticated) {
+  Future<RecoveryDecisionOutcome> _attemptPromptedRecovery(BuildContext context, ConnectionState state) async {
+    final wasRemoteAuthenticated = _ref.read(remoteProvider).isAuthenticated;
+    if (!wasRemoteAuthenticated) {
       _log.fine('Remote provider not authenticated, starting unauthenticated recovery flow');
       await _recoverUnauthenticatedUser(context, state);
     }
@@ -171,6 +323,28 @@ class EndpointRecoveryService {
       return RecoveryDecisionOutcome.resolvedAutomatically;
     }
 
+    // Remote session can expire during endpoint probing (e.g. 401/403 from RA API).
+    // If it was initially authenticated but became unauthenticated, allow OTP and retry once.
+    final isRemoteAuthenticatedNow = _ref.read(remoteProvider).isAuthenticated;
+    if (wasRemoteAuthenticated && !isRemoteAuthenticatedNow) {
+      _log.info('Remote session appears expired during recovery, starting OTP flow and retrying resolution');
+      await _recoverUnauthenticatedUser(context, state);
+
+      final endpointAfterOtp = await _resolveEndpoint();
+      if (endpointAfterOtp != null) {
+        _log.info('Endpoint resolved after remote OTP re-auth: $endpointAfterOtp');
+        await _handleRecoveredEndpoint(endpointAfterOtp, state);
+        return RecoveryDecisionOutcome.resolvedAutomatically;
+      }
+
+      final refreshedAfterOtp = await _refreshAndResolveEndpoint();
+      if (refreshedAfterOtp != null) {
+        _log.info('Endpoint resolved after remote OTP re-auth + path refresh: $refreshedAfterOtp');
+        await _handleRecoveredEndpoint(refreshedAfterOtp, state);
+        return RecoveryDecisionOutcome.resolvedAutomatically;
+      }
+    }
+
     return RecoveryDecisionOutcome.terminalFailure;
   }
 
@@ -186,6 +360,11 @@ class EndpointRecoveryService {
   ///    the rest of the recovery flow.
   Future<String?> _tryRecoverUsingCurrentDeviceOnWifi(ConnectionState state) async {
     try {
+      if (!_ref.read(deviceProvider).isAuthenticated) {
+        _log.finer('Fast recovery skipped: device provider not authenticated');
+        return null;
+      }
+
       final connectivityResults = await Connectivity().checkConnectivity();
       if (!connectivityResults.contains(ConnectivityResult.wifi)) {
         _log.finer('Fast recovery skipped: current connectivity is not WiFi: $connectivityResults');
@@ -201,8 +380,7 @@ class EndpointRecoveryService {
         remoteProvider: rp,
         timeout: const Duration(seconds: 45),
       );
-      final mdnsDevices =
-          found.where((d) => d.debugHostType == 'mDNS').toList();
+      final mdnsDevices = found.where((d) => d.debugHostType == 'mDNS').toList();
 
       if (connectedDeviceID == null || mdnsDevices.isEmpty) {
         _log.fine(
@@ -306,8 +484,29 @@ class EndpointRecoveryService {
     );
   }
 
+  bool _isRealConnectionLost() {
+    final startedAt = _recoveryOutageStartedAt;
+    if (startedAt == null) {
+      return true;
+    }
+    final elapsed = DateTime.now().difference(startedAt);
+    return elapsed >= _realConnectionLostThreshold;
+  }
+
+  void _notifyDisconnectedIfRealLoss(ConnectionState state) {
+    final isRealLoss = _isRealConnectionLost();
+    if (isRealLoss) {
+      _notifyDisconnected(state);
+      return;
+    }
+  }
+
   /// Show remote access connection dialog (OTP login)
   Future<void> _recoverUnauthenticatedUser(BuildContext context, ConnectionState state) async {
+    if (_ref.read(remoteProvider).isAuthenticated) {
+      _log.fine('Remote already authenticated; skipping remote OTP recovery dialog');
+      return;
+    }
     _log.info('Recovering connection for unauthenticated user');
 
     final email = _ref.read(deviceProvider).login;
@@ -332,6 +531,7 @@ class EndpointRecoveryService {
       context: context,
       initiate: _ref.read(remoteAuthProvider).initiate,
       email: email,
+      skipInitialCodeSend: _ref.read(remoteProvider).isAuthenticated,
       onSuccess: () async {
         loginSucceeded = true;
       },
@@ -354,6 +554,7 @@ class EndpointRecoveryService {
 
   void dispose() {
     _log.info('Disposing EndpointRecoveryService and cancelling connection state subscription');
+    _cancelFindingNetworkDuringRecoveryTimer();
     _connectionStateSubscription?.cancel();
   }
 }

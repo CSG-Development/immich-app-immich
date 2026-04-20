@@ -10,8 +10,6 @@ import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.da
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/providers/multiselect.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
-import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
 import 'package:immich_mobile/providers/network_change_listener.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -26,14 +24,7 @@ class TabControllerPage extends HookConsumerWidget {
     useEffect(() {
       final listener = ref.read(networkChangeListenerServiceProvider);
       listener.startListening();
-      final api = ref.read(apiServiceProvider);
-      void onForceReconnect() {
-        ref.read(curatorNetworkMonitorProvider).forceNetworkChangeHandling();
-      }
-
-      api.curatorNetworkForceReconnectHandler = onForceReconnect;
       return () {
-        api.curatorNetworkForceReconnectHandler = null;
         listener.stopListening();
       };
     }, const []);

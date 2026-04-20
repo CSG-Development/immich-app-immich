@@ -291,7 +291,10 @@ class DeviceDetectionService {
         } else {
           if (responseList.statusCode == 401 ||
               responseList.statusCode == 403) {
-            remoteProvider.logOut();
+            logger.warning(
+              '[Auth][DeviceDetection] remote_auth_invalidated '
+              'statusCode=${responseList.statusCode} action=DEFER_TO_AUTHENTICATOR',
+            );
           }
           onError?.call('Failed to fetch device list', responseList);
         }
