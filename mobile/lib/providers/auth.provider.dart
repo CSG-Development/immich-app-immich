@@ -83,6 +83,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return response;
   }
 
+  Future<void> requestPasswordReset(String email) {
+    return _authService.requestPasswordReset(email);
+  }
+
   Future<void> logout() async {
     try {
       try {
