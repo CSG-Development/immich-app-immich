@@ -70,6 +70,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     final selectedDevice = useState<DeviceItem?>(null);
     final isDiscovering = useState<bool>(false);
     final isRemoteCodeModalActive = useRef(false);
+    final shouldRetryDiscoveryAfterOtp = useState<bool>(false);
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -166,7 +167,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         initiate: ref.read(remoteAuthProvider).initiate,
         email: emailAddress,
         skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
-        onSuccess: () async => onStartDiscovery(),
+        onSuccess: () async {
+          // If discovery is already running, defer restart until it fully completes.
+          if (isDiscovering.value) {
+            shouldRetryDiscoveryAfterOtp.value = true;
+            return;
+          }
+          await onStartDiscovery();
+        },
       );
       isRemoteCodeModalActive.value = false;
     }
@@ -238,6 +246,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       } finally {
         if (context.mounted) {
           isDiscovering.value = false;
+          if (shouldRetryDiscoveryAfterOtp.value) {
+            shouldRetryDiscoveryAfterOtp.value = false;
+            // Run a fresh discovery pass after OTP success once the previous run is done.
+            unawaited(startDiscovery());
+          }
         }
       }
     }
