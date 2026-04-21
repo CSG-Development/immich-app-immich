@@ -302,7 +302,9 @@ export class SearchRepository {
             )
           `.as('prob')
         );
-        console.log(`[!!!] searchSmart: baseQuery = ${baseQuery}`);
+        const compiledBaseQuery = baseQuery.compile();
+        console.log(`[!!!] searchSmart: baseQuery SQL =`, compiledBaseQuery.sql);
+        console.log(`[!!!] searchSmart: baseQuery PARAMS =`, compiledBaseQuery.parameters);
 
       const items = await trx
         .selectFrom(baseQuery.as('scored'))
