@@ -322,7 +322,7 @@ export class SearchRepository {
           return `'${String(val)}'`;
         }
 
-        function interpolate(sql: string, params: unknown[]) {
+        function interpolate(sql: string, params: readonly unknown[]) {
           let i = 0;
 
           return sql.replace(/\$\d+/g, () => formatParam(params[i++]));
