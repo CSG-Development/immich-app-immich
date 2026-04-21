@@ -95,9 +95,11 @@ class NativeVideoViewer extends HookConsumerWidget {
 
       final videoAsset = await ref.read(assetServiceProvider).getAsset(asset) ?? asset;
       try {
-        if (videoAsset.hasLocal && videoAsset.livePhotoVideoId == null && videoAsset.isVideo) {
+        if (videoAsset.hasLocal && (videoAsset.isVideo || videoAsset.isMotionPhoto)) {
           final id = videoAsset is LocalAsset ? videoAsset.id : (videoAsset as RemoteAsset).localId!;
-          final file = await const StorageRepository().getFileForAsset(id);
+          final file = videoAsset.isMotionPhoto
+              ? await const StorageRepository().getMotionFileById(id)
+              : await const StorageRepository().getFileForAsset(id);
           if (file == null) {
             throw Exception('No file found for the video');
           }
@@ -283,8 +285,9 @@ class NativeVideoViewer extends HookConsumerWidget {
         isVideoReady.value = true;
         isSourceReady.value = true;
         isPreparingAirPlay.value = false;
-        // For photos, pause immediately to show static frame
-        if (!asset.isVideo) {
+        // For still photos, pause immediately to show static frame.
+        // Motion photos should keep playing when playback is triggered.
+        if (!asset.isVideo && !asset.isMotionPhoto) {
           Timer(const Duration(milliseconds: 400), () async {
             if (context.mounted) {
               try {
