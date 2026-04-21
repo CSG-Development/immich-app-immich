@@ -104,6 +104,8 @@ export class SearchService extends BaseService {
   }
 
   async searchSmart(auth: AuthDto, dto: SmartSearchDto): Promise<SearchResponseDto> {
+    console.log(`searchSmart SERVICE LOGGING TEST`);
+
     const config = await this.getConfig({ withCache: false });
     if (dto.visibility === AssetVisibility.Locked) {
       requireElevatedPermission(auth);
