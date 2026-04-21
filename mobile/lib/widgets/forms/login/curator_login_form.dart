@@ -504,12 +504,53 @@ class CuratorLoginForm extends HookConsumerWidget {
         validateEmail(email.value) == null &&
         isDeviceSelectionValid(selectedDevice.value);
 
+    DeviceItem? resolveSelectedDeviceForAction() {
+      final selected = selectedDevice.value;
+      final selectedId = selected?.id;
+      if (selectedId != null && selectedId != 'unknown_id') {
+        final matchedById = devices.value.firstWhereOrNull((device) => device.id == selectedId);
+        if (matchedById != null && matchedById != selected) {
+          log.info(
+            '[ResetPassword] Syncing selected device by stable id: '
+            'id=$selectedId, previous=${selected?.baseUrl}, resolved=${matchedById.baseUrl}',
+          );
+          selectedDevice.value = matchedById;
+        }
+        if (matchedById != null) {
+          return selectedDevice.value;
+        }
+      }
+
+      final inputName = deviceController.text.trim();
+      if (inputName.isEmpty) {
+        return selected;
+      }
+
+      final matchedByName = devices.value.where(
+        (device) => device.name.trim().toLowerCase() == inputName.toLowerCase(),
+      ).toList();
+      if (matchedByName.length != 1) {
+        return selected;
+      }
+      final resolvedByName = matchedByName.first;
+
+      if (selected != resolvedByName) {
+        log.info(
+          '[ResetPassword] Syncing selected device from input: '
+          'input="$inputName", previous=${selected?.id}, resolved=${resolvedByName.id}',
+        );
+        selectedDevice.value = resolvedByName;
+      }
+      return selectedDevice.value;
+    }
+
     Future<void> handleResetPassword() async {
       log.info('[ResetPassword] Triggered from login form');
+      final effectiveSelectedDevice = resolveSelectedDeviceForAction();
       if (!isResetPasswordEnabled()) {
         if (email.value.isNotEmpty && validateEmail(email.value) != null) {
           warningMessage.value = 'login_form_err_invalid_email'.tr();
-        } else if (!isDeviceSelectionValid(selectedDevice.value)) {
+        } else if (!isDeviceSelectionValid(effectiveSelectedDevice)) {
           warningMessage.value = "login_form_no_device_selected".tr();
         }
         return;
