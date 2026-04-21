@@ -122,7 +122,7 @@ export class SearchService extends BaseService {
     // So, we decided to use the following magic word - 'other'
     let counterEmbedding;
     if (dto.query) {
-      console.log(`searchSmart (service): query = `, query);
+      console.log(`searchSmart (service): query = `, dto.query);
 
       const key = machineLearning.clip.modelName + dto.query + dto.language;
       const counterKey = machineLearning.clip.modelName + 'other_default' + dto.language;
