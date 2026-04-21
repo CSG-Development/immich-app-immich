@@ -614,7 +614,7 @@ export enum DatabaseLock {
   SystemFileMounts = 300,
   StorageTemplateMigration = 420,
   VersionHistory = 500,
-  CLIPDimSize = 512,
+  CLIPDimSize = 224, // Original value: 512
   Library = 1337,
   NightlyJobs = 600,
   MediaLocation = 700,

@@ -187,7 +187,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     db,
   );
   await sql`CREATE TABLE "shared_link__asset" ("assetsId" uuid NOT NULL, "sharedLinksId" uuid NOT NULL);`.execute(db);
-  await sql`CREATE TABLE "smart_search" ("assetId" uuid NOT NULL, "embedding" vector(512) NOT NULL);`.execute(db);
+  await sql`CREATE TABLE "smart_search" ("assetId" uuid NOT NULL, "embedding" vector(224) NOT NULL);`.execute(db); // Original value: 512
   await sql`ALTER TABLE "smart_search" ALTER COLUMN "embedding" SET STORAGE EXTERNAL;`.execute(db);
   await sql`CREATE TABLE "session_sync_checkpoints" ("sessionId" uuid NOT NULL, "type" character varying NOT NULL, "createdAt" timestamp with time zone NOT NULL DEFAULT now(), "updatedAt" timestamp with time zone NOT NULL DEFAULT now(), "ack" character varying NOT NULL, "updateId" uuid NOT NULL DEFAULT immich_uuid_v7());`.execute(
     db,

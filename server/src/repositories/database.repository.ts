@@ -294,8 +294,8 @@ export class DatabaseRepository {
 
     const dimSize = rows[0]?.dimsize;
     if (!isValidInteger(dimSize, { min: 1, max: 2 ** 16 })) {
-      this.logger.warn(`Could not retrieve dimension size of column '${column}' in table '${table}', assuming 512`);
-      return 512;
+      this.logger.warn(`Could not retrieve dimension size of column '${column}' in table '${table}', assuming 224`); // Original value: 512
+      return 224; // Original value: 512
     }
     return dimSize;
   }
