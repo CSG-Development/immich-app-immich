@@ -303,8 +303,33 @@ export class SearchRepository {
           `.as('prob')
         );
         const compiledBaseQuery = baseQuery.compile();
-        console.log(`[!!!] searchSmart: baseQuery SQL =`, compiledBaseQuery.sql);
-        console.log(`[!!!] searchSmart: baseQuery PARAMS =`, compiledBaseQuery.parameters);
+
+        function formatParam(val: unknown): string {
+          if (val === null) return 'null';
+          if (typeof val === 'number') return val.toString();
+          if (typeof val === 'boolean') return val ? 'true' : 'false';
+          if (val instanceof Date) return `'${val.toISOString()}'`;
+
+          if (typeof val === 'string') {
+            return `'${val.replace(/'/g, "''")}'`;
+          }
+
+          if (Array.isArray(val)) {
+            return `(${val.map(formatParam).join(', ')})`;
+          }
+
+          // fallback
+          return `'${String(val)}'`;
+        }
+
+        function interpolate(sql: string, params: unknown[]) {
+          let i = 0;
+
+          return sql.replace(/\$\d+/g, () => formatParam(params[i++]));
+        }
+
+        const fullSql = interpolate(compiledBaseQuery.sql, compiledBaseQuery.parameters);
+        console.log(`[!!!] searchSmart: baseQuery SQL =`, fullSql);
 
       const items = await trx
         .selectFrom(baseQuery.as('scored'))
