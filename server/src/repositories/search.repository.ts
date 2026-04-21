@@ -279,7 +279,7 @@ export class SearchRepository {
     ],
   })
   searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions, probabilityThreshold: number) {
-    console.log(`searchSmart LOGGING TEST`);
+    console.log(`[!!!] searchSmart: START`);
 
     if (!isValidInteger(pagination.size, { min: 1, max: 1000 })) {
       throw new Error(`Invalid value for 'size': ${pagination.size}`);
@@ -302,6 +302,8 @@ export class SearchRepository {
             )
           `.as('prob')
         );
+        console.log(`[!!!] searchSmart: baseQuery = ${baseQuery}`);
+
       const items = await trx
         .selectFrom(baseQuery.as('scored'))
         .selectAll()
@@ -310,6 +312,9 @@ export class SearchRepository {
         .limit(pagination.size + 1)
         .offset((pagination.page - 1) * pagination.size)
         .execute();
+
+      console.log(`[!!!] searchSmart: items = ${items}`);
+
       return paginationHelper(items, pagination.size);
     });
   }
