@@ -344,21 +344,63 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+    Future<PingResult?> resolveRemoteDeviceConnection({
+      required DeviceItem device,
+      required String flowTag,
+    }) async {
+      final seagateDeviceID = device.remoteDevice?.seagateDeviceID;
+      if (seagateDeviceID == null || seagateDeviceID.isEmpty) {
+        warningMessage.value = "login_form_server_error".tr();
+        log.warning('[$flowTag] Aborted: missing seagateDeviceID for remote-only selected device');
+        return null;
+      }
+
+      final detection = DeviceDetectionService(
+        deviceProvider: ref.read(deviceProvider),
+        remoteProvider: ref.read(remoteProvider),
+      );
+      final ping = await detection.findOptimalDeviceConnection(
+        device: device,
+        seagateDeviceID: seagateDeviceID,
+      );
+      if (!ping.success || ping.baseUrl == null) {
+        warningMessage.value = "login_form_server_error".tr();
+        log.warning(
+          '[$flowTag] Failed to resolve selected remote device path: '
+          'success=${ping.success}, baseUrl=${ping.baseUrl}, debugHostType=${ping.debugHostType}',
+        );
+        return null;
+      }
+
+      return ping;
+    }
+
     Future<bool> fetchServerAuthSettings() async {
       final device = selectedDevice.value;
       log.info(
-        '[ResetPassword] Validating server settings for selected device: '
+        '[Login] Validating server settings for selected device: '
         'id=${device?.id}, host=${device?.baseUrl}, pathType=${device?.debugHostType}',
       );
       if (device == null) {
         warningMessage.value = "login_form_no_device_selected".tr();
-        log.warning('[ResetPassword] Aborted: no selected device');
+        log.warning('[Login] Aborted: no selected device');
         return false;
       }
-      final baseUrl = device.baseUrl;
+      var baseUrl = device.baseUrl;
+      if (baseUrl == null && device.remoteDevice != null) {
+        final ping = await resolveRemoteDeviceConnection(
+          device: device,
+          flowTag: 'Login',
+        );
+        if (ping == null) {
+          return false;
+        }
+        baseUrl = ping.baseUrl;
+      }
+
       if (baseUrl == null) {
         warningMessage.value = "login_form_server_empty".tr();
-        log.warning('[ResetPassword] Aborted: selected device has no baseUrl');
+        log.warning('[Login] Aborted: selected device has no baseUrl');
         return false;
       }
       final normalizedBaseUrl =
@@ -380,19 +422,19 @@ class CuratorLoginForm extends HookConsumerWidget {
         await ref.read(serverInfoProvider.notifier).getServerInfo();
         await updateVersionCompatibilityWarning();
 
-        log.info('[ResetPassword] Server validation succeeded: $normalizedServerUrl');
+        log.info('[Login] Server validation succeeded: $normalizedServerUrl');
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
-        log.warning('[ResetPassword] Server validation failed with ApiException: code=${e.code}, message=${e.message}');
+        log.warning('[Login] Server validation failed with ApiException: code=${e.code}, message=${e.message}');
         return false;
       } on HandshakeException {
         warningMessage.value = 'login_form_handshake_exception'.tr();
-        log.warning('[ResetPassword] Server validation failed with TLS/handshake exception');
+        log.warning('[Login] Server validation failed with TLS/handshake exception');
         return false;
       } catch (e) {
         warningMessage.value = 'login_form_server_error'.tr();
-        log.warning('[ResetPassword] Server validation failed with unexpected error: $e');
+        log.warning('[Login] Server validation failed with unexpected error: $e');
         return false;
       }
     }
@@ -422,8 +464,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       );
 
       final dp = ref.read(deviceProvider);
-      final rp = ref.read(remoteProvider);
-      final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
 
       if (device.about != null && device.baseUrl != null) {
         await dp.setHost(
@@ -436,27 +476,18 @@ class CuratorLoginForm extends HookConsumerWidget {
         return true;
       }
 
-      final seagateDeviceID = device.remoteDevice?.seagateDeviceID;
-      if (seagateDeviceID == null || seagateDeviceID.isEmpty) {
-        warningMessage.value = "login_form_server_error".tr();
-        log.warning('[ResetPassword] Aborted: missing seagateDeviceID for remote-only device');
-        return false;
-      }
-
-      final ping = await detection.findOptimalDeviceConnection(device: device, seagateDeviceID: seagateDeviceID);
-      if (!ping.success || ping.baseUrl == null) {
-        warningMessage.value = "login_form_server_error".tr();
-        log.warning(
-          '[ResetPassword] Failed to resolve optimal device path: '
-          'success=${ping.success}, baseUrl=${ping.baseUrl}, debugHostType=${ping.debugHostType}',
-        );
+      final ping = await resolveRemoteDeviceConnection(
+        device: device,
+        flowTag: 'ResetPassword',
+      );
+      if (ping == null || ping.baseUrl == null) {
         return false;
       }
 
       await dp.setHost(
         baseUrl: ping.baseUrl,
         deviceID: device.id,
-        seagateDeviceID: seagateDeviceID,
+        seagateDeviceID: device.remoteDevice?.seagateDeviceID,
         debugHostType: ping.debugHostType,
         devicePaths: dp.getCachedDevicePaths()?.paths,
       );
