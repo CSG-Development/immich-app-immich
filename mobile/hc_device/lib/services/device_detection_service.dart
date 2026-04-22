@@ -68,6 +68,9 @@ class DeviceDetectionService {
   bool _isCancelled = false;
   bool _remoteDetectionDone = false;
   int _detectionCounter = 0;
+  int _sessionId = 0;
+  bool _isStoppingDiscovery = false;
+  bool _didEmitDetectionComplete = false;
   final Map<String, DeviceItem> _devices = {};
 
   DeviceDetectionService({
@@ -89,18 +92,24 @@ class DeviceDetectionService {
       await cancelDetection();
     }
 
+    _sessionId++;
     _isDetecting = true;
     _isCancelled = false;
     _remoteDetectionDone = false;
+    _didEmitDetectionComplete = false;
+    _isStoppingDiscovery = false;
     _devices.clear();
 
     logger.info('[Network] Starting detection');
 
-    await _startLocalDetection();
+    await _startLocalDetection(_sessionId);
   }
 
   /// Cancel the current detection
   Future<void> cancelDetection() async {
+    if (_isCancelled && !_isDetecting) {
+      return;
+    }
     logger.info('[Network] Cancelling detection');
     _isCancelled = true;
     _detectionTimer?.cancel();
@@ -134,7 +143,11 @@ class DeviceDetectionService {
     }
   }
 
-  Future<void> _startLocalDetection() async {
+  bool _isSessionActive(int sessionId) {
+    return !_isCancelled && _isDetecting && sessionId == _sessionId;
+  }
+
+  Future<void> _startLocalDetection(int sessionId) async {
     if (_discovery != null || _isCancelled) {
       logger.info(
         '[Network] Discovery already in progress or detection cancelled, skipping local detection',
@@ -152,13 +165,13 @@ class DeviceDetectionService {
       return;
     }
 
-    if (_isCancelled) return;
+    if (!_isSessionActive(sessionId)) return;
 
     logger.info('[Network] Starting local mDNS detection');
     _discovery = await _startNsdDiscovery();
     if (_discovery != null) {
       _discovery?.addServiceListener((service, status) {
-        if (_isCancelled) return;
+        if (!_isSessionActive(sessionId)) return;
 
         if (status == nsd.ServiceStatus.found &&
             service.name!.contains(serviceNameDiscover)) {
@@ -168,7 +181,7 @@ class DeviceDetectionService {
           _getAbout(
             DeviceProvider.createBaseUrl(service.host!, service.port),
           ).then((about) {
-            if (about != null && !_isCancelled) {
+            if (about != null && _isSessionActive(sessionId)) {
               final device = DeviceItem(
                 hostname: service.name,
                 baseUrl: DeviceProvider.createBaseUrl(
@@ -189,7 +202,9 @@ class DeviceDetectionService {
       });
 
       _detectionTimer = Timer(durationDetection, () {
-        _stopDiscovery();
+        if (_isSessionActive(sessionId)) {
+          _stopDiscovery();
+        }
       });
     } else {
       logger.error('[Network] Failed to start mDNS discovery');
@@ -198,13 +213,21 @@ class DeviceDetectionService {
   }
 
   Future<void> _stopDiscovery() async {
-    if (_discovery != null) {
-      try {
-        await nsd.stopDiscovery(_discovery!);
-      } catch (e) {
-        logger.error('[Network] Error stopping network discovery', e);
-      }
-      _discovery = null;
+    if (_isStoppingDiscovery) {
+      return;
+    }
+    final discovery = _discovery;
+    if (discovery == null) {
+      return;
+    }
+    _isStoppingDiscovery = true;
+    _discovery = null;
+    try {
+      await nsd.stopDiscovery(discovery);
+    } catch (e) {
+      logger.error('[Network] Error stopping network discovery', e);
+    } finally {
+      _isStoppingDiscovery = false;
       _updateDetectionCounter(-1);
     }
   }
@@ -224,11 +247,18 @@ class DeviceDetectionService {
 
   void _updateDetectionCounter(int delta) {
     _detectionCounter += delta;
+    if (_detectionCounter < 0) {
+      _detectionCounter = 0;
+    }
     if (_detectionCounter == 0 && !_isCancelled) {
       if (!_remoteDetectionDone) {
         _startRemoteDetection();
         return;
       }
+      if (_didEmitDetectionComplete) {
+        return;
+      }
+      _didEmitDetectionComplete = true;
       logger.info(
         '[Network] Detection finished, found ${_devices.length} devices',
       );
@@ -371,7 +401,7 @@ class DeviceDetectionService {
 
     DevicePaths? devicePaths;
     if (useCachedPaths) {
-      devicePaths = deviceProvider.getCachedDevicePaths();
+      devicePaths = deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID);
     }
 
     if (devicePaths == null) {
@@ -603,6 +633,6 @@ class DeviceDetectionService {
   }
 
   void dispose() {
-    cancelDetection();
+    unawaited(cancelDetection());
   }
 }
