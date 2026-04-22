@@ -55,7 +55,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     _showNetworkStatusSnackBar(
       context,
       messenger,
-      message: 'curator.network_finding'.tr(),
+      message: 'curator.network.finding'.tr(),
       onDismissed: () {
         _onFindingNetworkToastDismissed();
       },
@@ -106,12 +106,5 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   }
 
   @override
-  Future<void> onReconnectionFailed() async {
-    final context = _navigatorContext;
-    if (context == null || !context.mounted) {
-      return;
-    }
-    final messenger = ScaffoldMessenger.of(context);
-    _showNetworkStatusSnackBar(context, messenger, message: 'offline'.tr());
-  }
+  Future<void> onReconnectionFailed() async {}
 }
