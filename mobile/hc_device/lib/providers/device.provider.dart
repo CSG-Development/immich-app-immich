@@ -187,13 +187,18 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     return _cachedDevicePaths;
   }
 
-  /// When [seagateDeviceID] is set, returns cache only if it matches that device.
-  DevicePaths? getCachedDevicePathsForSeagate(String seagateDeviceID) {
+  /// When [deviceRemoteId] is set, returns cache only if it matches that device.
+  DevicePaths? getCachedDevicePathsForDevice(String deviceRemoteId) {
     final cached = getCachedDevicePaths();
     if (cached == null) return null;
     if (cached.seagateDeviceID.isEmpty) return null;
-    if (cached.seagateDeviceID != seagateDeviceID) return null;
+    if (cached.seagateDeviceID != deviceRemoteId) return null;
     return cached;
+  }
+
+  @Deprecated('Use getCachedDevicePathsForDevice')
+  DevicePaths? getCachedDevicePathsForSeagate(String seagateDeviceID) {
+    return getCachedDevicePathsForDevice(seagateDeviceID);
   }
 
   bool isCachedPathsExpired({
@@ -207,6 +212,15 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
 
   /// Name for TTL check on cached Remote Access paths.
   bool isCacheExpired() => isCachedPathsExpired();
+
+  /// Returns active in-memory device paths only when they belong to the
+  /// provided remote device identity (if any).
+  List<DevicePath>? getActiveDevicePaths({String? deviceRemoteId}) {
+    if (deviceRemoteId != null && _seagateDeviceID != null && _seagateDeviceID != deviceRemoteId) {
+      return null;
+    }
+    return _devicePaths;
+  }
 
   void setCachedDevicePaths(
     DevicePaths paths, {
@@ -284,6 +298,8 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     String? productName,
     bool save = true,
   }) async {
+    final previousDeviceId = _deviceID;
+    final previousRemoteDeviceId = _seagateDeviceID;
     if (debugHostType != null) {
       _debugHostType = debugHostType;
     }
@@ -320,6 +336,11 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     }
     if (devicePaths != null) {
       _devicePaths = devicePaths;
+    } else if (deviceID != null &&
+        (deviceID != previousDeviceId || seagateDeviceID != previousRemoteDeviceId)) {
+      // Guard against path leakage between devices when switching host identity
+      // without explicitly providing device paths for the new device.
+      _devicePaths = null;
     }
     if (save) {
       _saveAuthentication(
@@ -438,7 +459,7 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     }
     _accessToken = null;
     _refreshToken = null;
-    clearDevice();
+    clearDevice(save: true);
     if (notify) {
       notifyListeners();
     }
@@ -450,6 +471,8 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
       asyncPrefs.remove(favoriteDeviceKey);
       asyncPrefs.remove(favoriteDevicePathsKey);
       asyncPrefs.remove(seagateDeviceIDKey);
+      asyncPrefs.remove(cachedDevicePathsKey);
+      asyncPrefs.remove(cachedDevicePathsTimestampKey);
     }
     _baseUrl = null;
     _api = null;

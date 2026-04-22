@@ -270,7 +270,7 @@ class CuratorNetworkMonitor {
               deviceID: device.id,
               seagateDeviceID: seagate,
               debugHostType: ping.debugHostType,
-              devicePaths: deviceProvider.getCachedDevicePaths()?.paths,
+              devicePaths: deviceProvider.getCachedDevicePathsForDevice(seagate)?.paths,
             );
             await _activateEndpointFromCurrentPaths();
             await callbacks.onReconnected(ping);
@@ -330,7 +330,13 @@ class CuratorNetworkMonitor {
   }
 
   Future<void> _activateEndpointFromCurrentPaths() async {
-    final paths = deviceProvider.devicePaths ?? deviceProvider.getCachedDevicePaths()?.paths;
+    final cachedPathsForConnectedDevice = deviceProvider.seagateDeviceID == null
+        ? null
+        : deviceProvider.getCachedDevicePathsForDevice(deviceProvider.seagateDeviceID!)?.paths;
+    final paths = deviceProvider.getActiveDevicePaths(
+          deviceRemoteId: deviceProvider.seagateDeviceID,
+        ) ??
+        cachedPathsForConnectedDevice;
     if (paths == null || paths.isEmpty) {
       return;
     }

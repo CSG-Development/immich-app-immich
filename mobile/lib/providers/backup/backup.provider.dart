@@ -165,6 +165,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     required void Function(String msg) onError,
     required void Function() onBatteryInfo,
   }) async {
+    if (!mounted) {
+      return;
+    }
     assert(enabled != null || requireWifi != null || requireCharging != null || triggerDelay != null);
     final bool wasEnabled = state.backgroundBackup;
     final bool wasWifi = state.backupRequireWifi;
@@ -199,6 +202,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
         await Store.put(StoreKey.backupTriggerDelay, state.backupTriggerDelay);
         await Store.put(StoreKey.backgroundBackup, state.backgroundBackup);
       } else {
+        if (!mounted) {
+          return;
+        }
         state = state.copyWith(
           backgroundBackup: wasEnabled,
           backupRequireWifi: wasWifi,
@@ -210,6 +216,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     } else {
       final bool success = await _backgroundService.disableService();
       if (!success) {
+        if (!mounted) {
+          return;
+        }
         state = state.copyWith(backgroundBackup: wasEnabled);
         onError("backup_controller_page_background_configure_error");
       }
@@ -540,6 +549,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   }
 
   void _onUploadProgress(int sent, int total) {
+    if (!mounted) {
+      return;
+    }
     double lastUploadSpeed = state.progressInFileSpeed;
     List<double> lastUploadSpeeds = state.progressInFileSpeeds.toList();
     DateTime lastUpdateTime = state.progressInFileSpeedUpdateTime;
@@ -575,6 +587,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     final diskInfo = await _serverInfoService.getDiskInfo();
 
     // Update server info
+    if (!mounted) {
+      return;
+    }
     if (diskInfo != null) {
       state = state.copyWith(serverInfo: diskInfo);
     }
@@ -616,8 +631,14 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   }
 
   Future<void> resumeBackup() async {
+    if (!mounted) {
+      return;
+    }
     final List<BackupAlbum> selectedBackupAlbums = await _backupAlbumService.getAllBySelection(BackupSelection.select);
     final List<BackupAlbum> excludedBackupAlbums = await _backupAlbumService.getAllBySelection(BackupSelection.exclude);
+    if (!mounted) {
+      return;
+    }
     Set<AvailableAlbum> selectedAlbums = state.selectedBackupAlbums;
     Set<AvailableAlbum> excludedAlbums = state.excludedBackupAlbums;
     if (selectedAlbums.isNotEmpty) {
@@ -636,6 +657,9 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     // assumes the background service is currently running
     // if true, waits until it has stopped to start the backup
     final bool hasLock = await _backgroundService.acquireLock();
+    if (!mounted) {
+      return;
+    }
     if (hasLock) {
       state = state.copyWith(backupProgress: previous);
     }
