@@ -31,7 +31,6 @@ class DeviceSelector extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final manualInputDevice = useState<DeviceItem?>(null);
     final isDropdownOpen = useState<bool>(false);
 
     // Use useEffect to handle controller text updates
@@ -56,13 +55,7 @@ class DeviceSelector extends HookWidget {
       if (focusNode == null) return null;
 
       void onFocusChange() {
-        controller.text = '${controller.text} ';
-        Future.microtask(() {
-          controller.text = controller.text.trim();
-        });
-        if (!focusNode!.hasFocus) {
-          isDropdownOpen.value = false;
-        }
+        isDropdownOpen.value = focusNode!.hasFocus;
       }
 
       focusNode!.addListener(onFocusChange);
@@ -88,37 +81,6 @@ class DeviceSelector extends HookWidget {
           : null;
     }
 
-    List<DeviceItem> getFilteredOptions(String input) {
-      final List<DeviceItem> items = devices.cast<DeviceItem>();
-      final filteredItems = input.isEmpty
-          ? items
-          : items.where((device) => device.name.toLowerCase().contains(input.toLowerCase())).toList();
-
-      // Check if manual input should be added
-      if (input.isNotEmpty) {
-        final exists = items.any((device) => device.name.toLowerCase() == input.toLowerCase());
-        if (!exists) {
-          // Create temporary device for manual input
-          final manualDevice = DeviceItem(baseUrl: Uri.tryParse(input));
-          // Defer state update to avoid setState during build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            manualInputDevice.value = manualDevice;
-          });
-          return [...filteredItems, manualDevice];
-        } else {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            manualInputDevice.value = null;
-          });
-        }
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          manualInputDevice.value = null;
-        });
-      }
-
-      return filteredItems;
-    }
-
     void onOptionSelected(DeviceItem value) {
       controller.text = value.name;
       onDeviceSelected(value);
@@ -134,17 +96,16 @@ class DeviceSelector extends HookWidget {
             textEditingController: controller,
             focusNode: focusNode,
             optionsBuilder: (value) {
-              // final input = value.text.trim();
-              // final options = getFilteredOptions(input);
-              // Update dropdown state based on whether options are available and field has focus
-              // WidgetsBinding.instance.addPostFrameCallback((_) {
-              //   isDropdownOpen.value = options.isNotEmpty && (focusNode?.hasFocus ?? false);
-              // });
               final List<DeviceItem> items = devices.cast<DeviceItem>();
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                isDropdownOpen.value = items.isNotEmpty && (focusNode?.hasFocus ?? false);
-              });
-              return items;
+              final query = value.text.trim().toLowerCase();
+              if (query.isEmpty) {
+                return items;
+              }
+              final hasExactMatch = items.any((device) => device.name.trim().toLowerCase() == query);
+              if (hasExactMatch) {
+                return items;
+              }
+              return items.where((device) => device.name.toLowerCase().contains(query));
             },
             displayStringForOption: (value) => value.name,
             onSelected: (option) {

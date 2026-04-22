@@ -136,7 +136,7 @@ class DevicePathRefreshService {
         deviceID: device.id,
         seagateDeviceID: seagate,
         debugHostType: ping.debugHostType,
-        devicePaths: dp.getCachedDevicePaths()?.paths,
+        devicePaths: dp.getCachedDevicePathsForDevice(seagate)?.paths,
       );
       if (ping.pathType == DevicePathType.local.value || (ping.debugHostType ?? '').contains('mDNS')) {
         preferredLocalEndpoint = _toPhotosEndpoint(ping.baseUrl!);
@@ -154,7 +154,11 @@ class DevicePathRefreshService {
       }
     }
 
-    final paths = dp.devicePaths ?? dp.getCachedDevicePaths()?.paths;
+    final cachedPathsForConnectedDevice = dp.seagateDeviceID == null
+        ? null
+        : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;
+    final paths =
+        dp.getActiveDevicePaths(deviceRemoteId: dp.seagateDeviceID) ?? cachedPathsForConnectedDevice;
     if (paths == null) {
       return null;
     }

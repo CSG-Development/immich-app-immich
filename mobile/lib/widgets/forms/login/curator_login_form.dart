@@ -71,6 +71,8 @@ class CuratorLoginForm extends HookConsumerWidget {
     final isDiscovering = useState<bool>(false);
     final isRemoteCodeModalActive = useRef(false);
     final shouldRetryDiscoveryAfterOtp = useState<bool>(false);
+    final activeDetection = useRef<DeviceDetectionService?>(null);
+    final isFormActive = useRef(true);
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -193,6 +195,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Future<void> startDiscovery() async {
+      if (!isFormActive.value) {
+        return;
+      }
       if (isDiscovering.value) {
         return;
       }
@@ -205,8 +210,8 @@ class CuratorLoginForm extends HookConsumerWidget {
         final rp = ref.read(remoteProvider);
         final completer = Completer<void>();
         final found = <DeviceItem>[];
-        late DeviceDetectionService detection;
-        detection = DeviceDetectionService(
+        await activeDetection.value?.cancelDetection();
+        final detection = DeviceDetectionService(
           deviceProvider: dp,
           remoteProvider: rp,
           onDeviceFound: (d) => found.add(d),
@@ -221,6 +226,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             }
           },
         );
+        activeDetection.value = detection;
         await detection.startDetection();
         try {
           await completer.future.timeout(const Duration(seconds: 45));
@@ -244,6 +250,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       } catch (error, stackTrace) {
         log.warning('Failed to discover devices', error, stackTrace);
       } finally {
+        activeDetection.value = null;
         if (context.mounted) {
           isDiscovering.value = false;
           if (shouldRetryDiscoveryAfterOtp.value) {
@@ -299,6 +306,12 @@ class CuratorLoginForm extends HookConsumerWidget {
       passwordFocusNode.addListener(onFocusChange);
 
       return () {
+        isFormActive.value = false;
+        final detection = activeDetection.value;
+        activeDetection.value = null;
+        if (detection != null) {
+          unawaited(detection.cancelDetection());
+        }
         passwordFocusNode.removeListener(onFocusChange);
       };
     }, []);
@@ -347,6 +360,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     Future<PingResult?> resolveRemoteDeviceConnection({
       required DeviceItem device,
       required String flowTag,
+      bool requireFreshPaths = false,
     }) async {
       final seagateDeviceID = device.remoteDevice?.seagateDeviceID;
       if (seagateDeviceID == null || seagateDeviceID.isEmpty) {
@@ -362,6 +376,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       final ping = await detection.findOptimalDeviceConnection(
         device: device,
         seagateDeviceID: seagateDeviceID,
+        useCachedPaths: !requireFreshPaths,
       );
       if (!ping.success || ping.baseUrl == null) {
         warningMessage.value = "login_form_server_error".tr();
@@ -375,8 +390,48 @@ class CuratorLoginForm extends HookConsumerWidget {
       return ping;
     }
 
+    DeviceItem? resolveSelectedDeviceForAction() {
+      final selected = selectedDevice.value;
+      final selectedId = selected?.id;
+      if (selectedId != null && selectedId != 'unknown_id') {
+        final matchedById = devices.value.firstWhereOrNull((device) => device.id == selectedId);
+        if (matchedById != null && matchedById != selected) {
+          log.info(
+            '[LoginForm] Syncing selected device by stable id: '
+            'id=$selectedId, previous=${selected?.baseUrl}, resolved=${matchedById.baseUrl}',
+          );
+          selectedDevice.value = matchedById;
+        }
+        if (matchedById != null) {
+          return selectedDevice.value;
+        }
+      }
+
+      final inputName = deviceController.text.trim();
+      if (inputName.isEmpty) {
+        return selected;
+      }
+
+      final matchedByName = devices.value.where(
+        (device) => device.name.trim().toLowerCase() == inputName.toLowerCase(),
+      ).toList();
+      if (matchedByName.length != 1) {
+        return selected;
+      }
+      final resolvedByName = matchedByName.first;
+
+      if (selected != resolvedByName) {
+        log.info(
+          '[LoginForm] Syncing selected device from input: '
+          'input="$inputName", previous=${selected?.id}, resolved=${resolvedByName.id}',
+        );
+        selectedDevice.value = resolvedByName;
+      }
+      return selectedDevice.value;
+    }
+
     Future<bool> fetchServerAuthSettings() async {
-      final device = selectedDevice.value;
+      final device = resolveSelectedDeviceForAction();
       log.info(
         '[Login] Validating server settings for selected device: '
         'id=${device?.id}, host=${device?.baseUrl}, pathType=${device?.debugHostType}',
@@ -391,6 +446,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         final ping = await resolveRemoteDeviceConnection(
           device: device,
           flowTag: 'Login',
+          requireFreshPaths: true,
         );
         if (ping == null) {
           return false;
@@ -452,7 +508,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     Future<bool> prepareDeviceHostForResetPassword() async {
-      final device = selectedDevice.value;
+      final device = resolveSelectedDeviceForAction();
       if (device == null || !isDeviceSelectionValid(device)) {
         warningMessage.value = "login_form_no_device_selected".tr();
         log.warning('[ResetPassword] Aborted: invalid device selection');
@@ -479,6 +535,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       final ping = await resolveRemoteDeviceConnection(
         device: device,
         flowTag: 'ResetPassword',
+        requireFreshPaths: true,
       );
       if (ping == null || ping.baseUrl == null) {
         return false;
@@ -489,7 +546,9 @@ class CuratorLoginForm extends HookConsumerWidget {
         deviceID: device.id,
         seagateDeviceID: device.remoteDevice?.seagateDeviceID,
         debugHostType: ping.debugHostType,
-        devicePaths: dp.getCachedDevicePaths()?.paths,
+        devicePaths: device.remoteDevice?.seagateDeviceID == null
+            ? null
+            : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
       );
       log.info('[ResetPassword] Device host prepared via optimal path: ${ping.baseUrl}');
       return true;
@@ -534,46 +593,6 @@ class CuratorLoginForm extends HookConsumerWidget {
         email.value.isNotEmpty &&
         validateEmail(email.value) == null &&
         isDeviceSelectionValid(selectedDevice.value);
-
-    DeviceItem? resolveSelectedDeviceForAction() {
-      final selected = selectedDevice.value;
-      final selectedId = selected?.id;
-      if (selectedId != null && selectedId != 'unknown_id') {
-        final matchedById = devices.value.firstWhereOrNull((device) => device.id == selectedId);
-        if (matchedById != null && matchedById != selected) {
-          log.info(
-            '[ResetPassword] Syncing selected device by stable id: '
-            'id=$selectedId, previous=${selected?.baseUrl}, resolved=${matchedById.baseUrl}',
-          );
-          selectedDevice.value = matchedById;
-        }
-        if (matchedById != null) {
-          return selectedDevice.value;
-        }
-      }
-
-      final inputName = deviceController.text.trim();
-      if (inputName.isEmpty) {
-        return selected;
-      }
-
-      final matchedByName = devices.value.where(
-        (device) => device.name.trim().toLowerCase() == inputName.toLowerCase(),
-      ).toList();
-      if (matchedByName.length != 1) {
-        return selected;
-      }
-      final resolvedByName = matchedByName.first;
-
-      if (selected != resolvedByName) {
-        log.info(
-          '[ResetPassword] Syncing selected device from input: '
-          'input="$inputName", previous=${selected?.id}, resolved=${resolvedByName.id}',
-        );
-        selectedDevice.value = resolvedByName;
-      }
-      return selectedDevice.value;
-    }
 
     Future<void> handleResetPassword() async {
       log.info('[ResetPassword] Triggered from login form');
@@ -647,6 +666,12 @@ class CuratorLoginForm extends HookConsumerWidget {
         return;
       }
 
+      final effectiveSelectedDevice = resolveSelectedDeviceForAction();
+      if (!isDeviceSelectionValid(effectiveSelectedDevice)) {
+        warningMessage.value = "login_form_no_device_selected".tr();
+        return;
+      }
+
       isLoading.value = true;
 
       try {
@@ -668,7 +693,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
         final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
-        final device = selectedDevice.value;
+        final device = resolveSelectedDeviceForAction();
         if (device != null) {
           final dp = ref.read(deviceProvider);
           final rp = ref.read(remoteProvider);
@@ -684,6 +709,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             final ping = await detection.findOptimalDeviceConnection(
               device: device,
               seagateDeviceID: device.remoteDevice!.seagateDeviceID,
+              useCachedPaths: false,
             );
             if (ping.success && ping.baseUrl != null) {
               await dp.setHost(
@@ -691,7 +717,9 @@ class CuratorLoginForm extends HookConsumerWidget {
                 deviceID: device.id,
                 seagateDeviceID: device.remoteDevice?.seagateDeviceID,
                 debugHostType: ping.debugHostType,
-                devicePaths: dp.getCachedDevicePaths()?.paths,
+                devicePaths: device.remoteDevice?.seagateDeviceID == null
+                    ? null
+                    : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
               );
             } else {
               dp.clearDevice(save: true);
@@ -700,7 +728,11 @@ class CuratorLoginForm extends HookConsumerWidget {
             dp.clearDevice(save: true);
           }
 
-          final paths = dp.devicePaths ?? dp.getCachedDevicePaths()?.paths;
+          final seagateDeviceId = device.remoteDevice?.seagateDeviceID;
+          final cachedPathsForSelectedDevice = seagateDeviceId == null
+              ? null
+              : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths;
+          final paths = dp.getActiveDevicePaths(deviceRemoteId: seagateDeviceId) ?? cachedPathsForSelectedDevice;
           if (paths != null && paths.isNotEmpty) {
             await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
           }
