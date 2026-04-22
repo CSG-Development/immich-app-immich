@@ -163,6 +163,7 @@
   >
     <SelectAllAssets {timelineManager} {assetInteraction} />
     <DeleteAssets
+      force
       onAssetDelete={async (assetIds) => {
         timelineManager.removeAssets(assetIds);
         const assets = await timelineManager.getAssets();

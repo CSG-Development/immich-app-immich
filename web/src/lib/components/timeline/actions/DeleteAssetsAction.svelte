@@ -26,7 +26,7 @@
   let label = $derived(force ? $t('permanently_delete') : $t('delete'));
 
   const handleTrash = async () => {
-    if (force || $showDeleteModal) {
+    if ($showDeleteModal) {
       isShowConfirmation = true;
       return;
     }
