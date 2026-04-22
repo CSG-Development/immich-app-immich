@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/services/device_detection.service.dart';
@@ -12,7 +11,6 @@ const Duration curatorNetworkCooldownDelay = Duration(seconds: 30);
 
 /// Delay before showing the "Finding network…" UI while endpoint probing runs.
 const Duration curatorFindingNetworkToastDelay = Duration(seconds: 30);
-const Duration curatorFindingNetworkToastDelayNoNetwork = Duration(seconds: 5);
 
 /// Host UI hooks (snackbars, remote-access prompts) for [CuratorNetworkMonitor].
 abstract class CuratorNetworkMonitorCallbacks {
@@ -36,12 +34,14 @@ class CuratorNetworkMonitor {
     required this.remoteProvider,
     required this.activateAuxiliaryEndpoints,
     required this.callbacks,
+    required this.notifyConnected,
   });
 
   final DeviceProvider deviceProvider;
   final RemoteProvider remoteProvider;
   final Future<void> Function(List<String> auxiliaryEndpoints) activateAuxiliaryEndpoints;
   final CuratorNetworkMonitorCallbacks callbacks;
+  final void Function() notifyConnected;
 
   final _log = Logger('CuratorNetworkMonitor');
   DateTime? _lastDetectionTime;
@@ -103,6 +103,8 @@ class CuratorNetworkMonitor {
     }
     _outageActive = true;
     _outageStartedAt = DateTime.now();
+    // A new outage epoch starts here, so previously dismissed toast can be shown again.
+    _userDismissedFindingToast = false;
   }
 
   void _scheduleFindingToastForCurrentOutage() {
@@ -208,14 +210,7 @@ class CuratorNetworkMonitor {
   }
 
   Future<Duration> _resolveFindingToastDelayForCurrentConnectivity() async {
-    try {
-      final connectivityResults = await Connectivity().checkConnectivity();
-      final isOffline = connectivityResults.contains(ConnectivityResult.none);
-      final delay = isOffline ? curatorFindingNetworkToastDelayNoNetwork : curatorFindingNetworkToastDelay;
-      return delay;
-    } catch (error) {
-      return curatorFindingNetworkToastDelay;
-    }
+    return curatorFindingNetworkToastDelay;
   }
 
   /// Same as [reconnectDeviceEndpoint] but does not block the caller.
@@ -231,6 +226,7 @@ class CuratorNetworkMonitor {
       final result = await detection.findOptimalDeviceConnection(seagateDeviceID: seagateDeviceID);
       if (result.success && result.baseUrl != null) {
         _markOutageResolved();
+        notifyConnected();
         await deviceProvider.setHost(baseUrl: result.baseUrl, debugHostType: result.debugHostType);
         await _activateEndpointFromCurrentPaths();
         await callbacks.onReconnected(result);
@@ -265,6 +261,7 @@ class CuratorNetworkMonitor {
           final ping = await detection2.findOptimalDeviceConnection(device: device, seagateDeviceID: seagate);
           if (ping.success && ping.baseUrl != null) {
             _markOutageResolved();
+            notifyConnected();
             await deviceProvider.setHost(
               baseUrl: ping.baseUrl,
               deviceID: device.id,
@@ -279,6 +276,7 @@ class CuratorNetworkMonitor {
           }
         } else if (device.baseUrl != null && device.about != null) {
           _markOutageResolved();
+          notifyConnected();
           await _activateEndpointFromCurrentPaths();
           await callbacks.onReconnected(
             PingResult(

@@ -59,7 +59,6 @@ class EndpointRecoveryService {
   bool _isResumingSyncAfterReconnect = false;
   Duration _findingToastDelayForRecovery = curatorFindingNetworkToastDelay;
   static const Duration _realConnectionLostThreshold = Duration(seconds: 30);
-  static const Duration _noNetworkFindingToastDelay = Duration(seconds: 5);
   EndpointRecoveryService(this._apiService, this._ref) {
     _initializeConnectionStateListener();
   }
@@ -236,14 +235,7 @@ class EndpointRecoveryService {
   }
 
   Future<Duration> _resolveFindingToastDelayForCurrentConnectivity() async {
-    try {
-      final connectivityResults = await Connectivity().checkConnectivity();
-      final isOffline = connectivityResults.contains(ConnectivityResult.none);
-      final delay = isOffline ? _noNetworkFindingToastDelay : curatorFindingNetworkToastDelay;
-      return delay;
-    } catch (error) {
-      return curatorFindingNetworkToastDelay;
-    }
+    return curatorFindingNetworkToastDelay;
   }
 
   void _showFindingNetworkSnackBarDuringRecovery() {
@@ -263,7 +255,7 @@ class EndpointRecoveryService {
         margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         padding: EdgeInsets.zero,
         content: NetworkStatusSnackBar(
-          message: 'curator.network_finding'.tr(),
+          message: 'curator.network.finding'.tr(),
           onClose: () {
             messenger.hideCurrentSnackBar();
             _findingNetworkSnackController = null;
