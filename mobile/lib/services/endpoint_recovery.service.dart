@@ -25,24 +25,7 @@ import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
-enum RecoveryDecisionOutcome { resolvedAutomatically, promptUserToTryConnect, terminalFailure }
-
-RecoveryDecisionOutcome decideRecoveryScenario({
-  required bool autoResolved,
-  required bool promptAccepted,
-  required bool promptedResolved,
-}) {
-  if (autoResolved) {
-    return RecoveryDecisionOutcome.resolvedAutomatically;
-  }
-  if (!promptAccepted) {
-    return RecoveryDecisionOutcome.terminalFailure;
-  }
-  if (promptedResolved) {
-    return RecoveryDecisionOutcome.resolvedAutomatically;
-  }
-  return RecoveryDecisionOutcome.terminalFailure;
-}
+enum RecoveryDecisionOutcome { resolvedAutomatically, continueOtpAndPathRefreshFlow, terminalFailure }
 
 /// Service that handles network connection recovery when connection is lost.
 /// Shows recovery alert and handles different user authentication states.
@@ -146,14 +129,14 @@ class EndpointRecoveryService {
         return;
       }
 
-      // Continue with OTP / path refresh / resolution without a blocking yes/no dialog.
-      final promptedDecision = await _attemptPromptedRecovery(dialogContext, state);
-      if (promptedDecision == RecoveryDecisionOutcome.resolvedAutomatically) {
+      // Continue with optional OTP modal, path refresh, and endpoint resolution.
+      final otpRecoveryDecision = await _attemptOtpAndPathRefreshRecovery(dialogContext, state);
+      if (otpRecoveryDecision == RecoveryDecisionOutcome.resolvedAutomatically) {
         recoveredOk = true;
         return;
       }
 
-      _log.warning('Endpoint recovery failed after prompted flow: No alternative endpoint available');
+      _log.warning('Endpoint recovery failed after OTP/path-refresh flow: no reachable endpoint');
       _notifyDisconnectedIfRealLoss(state);
     } catch (error, stackTrace) {
       _log.severe('Error during endpoint recovery', error, stackTrace);
@@ -283,35 +266,37 @@ class EndpointRecoveryService {
     }
 
     _log.fine('Fast WiFi/device-based recovery did not resolve endpoint');
-
-    final endpoint = await _resolveEndpoint();
-    if (endpoint != null) {
-      _log.info('Endpoint resolved automatically: $endpoint');
-      await _handleRecoveredEndpoint(endpoint, state);
+    if (await _resolveAndApplyRecovery(
+      state,
+      resolve: _resolveEndpoint,
+      successLogMessage: 'Endpoint resolved automatically',
+    )) {
       return RecoveryDecisionOutcome.resolvedAutomatically;
     }
 
-    return RecoveryDecisionOutcome.promptUserToTryConnect;
+    return RecoveryDecisionOutcome.continueOtpAndPathRefreshFlow;
   }
 
-  Future<RecoveryDecisionOutcome> _attemptPromptedRecovery(BuildContext context, ConnectionState state) async {
+  Future<RecoveryDecisionOutcome> _attemptOtpAndPathRefreshRecovery(BuildContext context, ConnectionState state) async {
     final wasRemoteAuthenticated = _ref.read(remoteProvider).isAuthenticated;
     if (!wasRemoteAuthenticated) {
       _log.fine('Remote provider not authenticated, starting unauthenticated recovery flow');
-      await _recoverUnauthenticatedUser(context, state);
+      await _runOtpRecoveryIfNeeded(context, state);
     }
 
-    final endpoint = await _resolveEndpoint();
-    if (endpoint != null) {
-      _log.info('Endpoint resolved after prompted flow: $endpoint');
-      await _handleRecoveredEndpoint(endpoint, state);
+    if (await _resolveAndApplyRecovery(
+      state,
+      resolve: _resolveEndpoint,
+      successLogMessage: 'Endpoint resolved in OTP/path-refresh flow',
+    )) {
       return RecoveryDecisionOutcome.resolvedAutomatically;
     }
 
-    final refreshedEndpoint = await _refreshAndResolveEndpoint();
-    if (refreshedEndpoint != null) {
-      _log.info('Endpoint resolved after refreshing device paths: $refreshedEndpoint');
-      await _handleRecoveredEndpoint(refreshedEndpoint, state);
+    if (await _resolveAndApplyRecovery(
+      state,
+      resolve: _refreshAndResolveEndpoint,
+      successLogMessage: 'Endpoint resolved after refreshing device paths',
+    )) {
       return RecoveryDecisionOutcome.resolvedAutomatically;
     }
 
@@ -320,19 +305,21 @@ class EndpointRecoveryService {
     final isRemoteAuthenticatedNow = _ref.read(remoteProvider).isAuthenticated;
     if (wasRemoteAuthenticated && !isRemoteAuthenticatedNow) {
       _log.info('Remote session appears expired during recovery, starting OTP flow and retrying resolution');
-      await _recoverUnauthenticatedUser(context, state);
+      await _runOtpRecoveryIfNeeded(context, state);
 
-      final endpointAfterOtp = await _resolveEndpoint();
-      if (endpointAfterOtp != null) {
-        _log.info('Endpoint resolved after remote OTP re-auth: $endpointAfterOtp');
-        await _handleRecoveredEndpoint(endpointAfterOtp, state);
+      if (await _resolveAndApplyRecovery(
+        state,
+        resolve: _resolveEndpoint,
+        successLogMessage: 'Endpoint resolved after remote OTP re-auth',
+      )) {
         return RecoveryDecisionOutcome.resolvedAutomatically;
       }
 
-      final refreshedAfterOtp = await _refreshAndResolveEndpoint();
-      if (refreshedAfterOtp != null) {
-        _log.info('Endpoint resolved after remote OTP re-auth + path refresh: $refreshedAfterOtp');
-        await _handleRecoveredEndpoint(refreshedAfterOtp, state);
+      if (await _resolveAndApplyRecovery(
+        state,
+        resolve: _refreshAndResolveEndpoint,
+        successLogMessage: 'Endpoint resolved after remote OTP re-auth + path refresh',
+      )) {
         return RecoveryDecisionOutcome.resolvedAutomatically;
       }
     }
@@ -429,7 +416,11 @@ class EndpointRecoveryService {
     }
   }
 
-  Future<String?> _resolveEndpoint() => _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+  Future<String?> _resolveEndpoint() async {
+    final connectivityResults = await Connectivity().checkConnectivity();
+    final hasWifi = connectivityResults.contains(ConnectivityResult.wifi);
+    return _ref.read(apiServiceProvider).setOpenApiServiceEndpoint(allowLocalProbe: hasWifi);
+  }
 
   Future<String?> _refreshAndResolveEndpoint() async {
     _log.fine('Refreshing device paths before attempting endpoint resolution');
@@ -437,6 +428,20 @@ class EndpointRecoveryService {
     final endpoint = await _resolveEndpoint();
     _log.fine('Endpoint resolution after path refresh: $endpoint');
     return endpoint;
+  }
+
+  Future<bool> _resolveAndApplyRecovery(
+    ConnectionState state, {
+    required Future<String?> Function() resolve,
+    required String successLogMessage,
+  }) async {
+    final endpoint = await resolve();
+    if (endpoint == null) {
+      return false;
+    }
+    _log.info('$successLogMessage: $endpoint');
+    await _handleRecoveredEndpoint(endpoint, state);
+    return true;
   }
 
   Future<void> _handleRecoveredEndpoint(String endpoint, ConnectionState state) async {
@@ -494,7 +499,7 @@ class EndpointRecoveryService {
   }
 
   /// Show remote access connection dialog (OTP login)
-  Future<void> _recoverUnauthenticatedUser(BuildContext context, ConnectionState state) async {
+  Future<void> _runOtpRecoveryIfNeeded(BuildContext context, ConnectionState state) async {
     if (_ref.read(remoteProvider).isAuthenticated) {
       _log.fine('Remote already authenticated; skipping remote OTP recovery dialog');
       return;
@@ -508,14 +513,14 @@ class EndpointRecoveryService {
     }
 
     _log.fine('Starting remote OTP login flow for email=$email');
-    final loginSucceeded = await _startRemoteOtpFlow(context, email);
+    final loginSucceeded = await _showRemoteOtpModal(context, email);
     if (!loginSucceeded) {
       _log.warning('Remote OTP login failed or was cancelled');
       return;
     }
   }
 
-  Future<bool> _startRemoteOtpFlow(BuildContext context, String email) async {
+  Future<bool> _showRemoteOtpModal(BuildContext context, String email) async {
     var loginSucceeded = false;
 
     _log.fine('Showing remote code modal for OTP verification');

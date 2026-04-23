@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
@@ -23,8 +24,10 @@ import 'package:openapi/api.dart';
 class ConnectionRecoveryInterceptor extends BaseClient {
   final Client _inner;
   final Function(String) _onConnectionError;
+  final void Function(String, int)? _onRequestSuccess;
 
-  ConnectionRecoveryInterceptor(this._inner, this._onConnectionError);
+  ConnectionRecoveryInterceptor(this._inner, this._onConnectionError, {void Function(String, int)? onRequestSuccess})
+    : _onRequestSuccess = onRequestSuccess;
 
   bool _isConnectionError(dynamic error) {
     return error is SocketException ||
@@ -38,7 +41,9 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
     try {
-      return await _inner.send(request);
+      final response = await _inner.send(request);
+      _onRequestSuccess?.call(request.url.toString(), response.statusCode);
+      return response;
     } catch (e) {
       if (_isConnectionError(e)) {
         _onConnectionError(request.url.toString());
@@ -103,6 +108,20 @@ class PerformanceHttpClient extends BaseClient {
   }
 }
 
+enum _EndpointProbeKind { local, remote }
+
+class _EndpointProbeResult {
+  final String endpoint;
+  final String host;
+  final _EndpointProbeKind kind;
+
+  const _EndpointProbeResult({
+    required this.endpoint,
+    required this.host,
+    required this.kind,
+  });
+}
+
 class ApiService implements Authentication {
   late ApiClient _apiClient;
   late PerformanceHttpClient _httpClient;
@@ -137,6 +156,9 @@ class ApiService implements Authentication {
   Stream<ConnectionState> get connectionStateChanges => _connectionStateController.stream;
 
   bool _isSetEndpoint = false;
+  Future<void> _endpointResolutionQueue = Future<void>.value();
+  DateTime? _lastConnectedStateSignalAt;
+  static const Duration _connectedStateSignalDebounce = Duration(seconds: 3);
 
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
@@ -172,7 +194,11 @@ class ApiService implements Authentication {
     }
 
     _baseClient = Client();
-    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(_baseClient, _handleConnectionError);
+    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(
+      _baseClient,
+      _handleConnectionError,
+      onRequestSuccess: _handleConnectionSuccess,
+    );
     _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
     _httpClientInitialized = true;
   }
@@ -220,6 +246,37 @@ class ApiService implements Authentication {
     }
   }
 
+  void _handleConnectionSuccess(String succeededUrl, int statusCode) {
+    // Any successful response from the active endpoint can clear reconnect UI.
+    final isConnectivitySuccess = (statusCode >= 200 && statusCode < 300) || statusCode == 304;
+    if (!isConnectivitySuccess || _isSetEndpoint) {
+      return;
+    }
+
+    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    if (!isAuthenticated) {
+      return;
+    }
+
+    final activeEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (activeEndpoint != null && activeEndpoint.isNotEmpty && !succeededUrl.startsWith(activeEndpoint)) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final lastSignalAt = _lastConnectedStateSignalAt;
+    if (lastSignalAt != null && now.difference(lastSignalAt) < _connectedStateSignalDebounce) {
+      return;
+    }
+    _lastConnectedStateSignalAt = now;
+    notifyConnectionState(
+      const ConnectionState(
+        status: ConnectionStatus.connected,
+        connectionType: ConnectionType.api,
+      ),
+    );
+  }
+
   void notifyConnectionState(ConnectionState state) {
     try {
       if (!_connectionStateController.isClosed) {
@@ -257,7 +314,37 @@ class ApiService implements Authentication {
     return isValid;
   }
 
-  Future<String?> setOpenApiServiceEndpoint({List<String>? auxiliaryEndpoints, String? runId}) async {
+  Future<T> _enqueueEndpointResolution<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _endpointResolutionQueue = _endpointResolutionQueue.catchError((_) {}).then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<String?> setOpenApiServiceEndpoint({
+    List<String>? auxiliaryEndpoints,
+    String? runId,
+    bool allowLocalProbe = true,
+  }) {
+    return _enqueueEndpointResolution(
+      () => _setOpenApiServiceEndpointInternal(
+        auxiliaryEndpoints: auxiliaryEndpoints,
+        runId: runId,
+        allowLocalProbe: allowLocalProbe,
+      ),
+    );
+  }
+
+  Future<String?> _setOpenApiServiceEndpointInternal({
+    List<String>? auxiliaryEndpoints,
+    String? runId,
+    bool allowLocalProbe = true,
+  }) async {
     // Prevent connection state notifications during endpoint switching
     _isSetEndpoint = true;
 
@@ -267,73 +354,107 @@ class ApiService implements Authentication {
       // Keep the currently configured endpoint as a fallback
       final previousEndpoint = Store.tryGet(StoreKey.serverEndpoint);
       String? endpoint;
+      var resolutionPath = 'failed';
+      final hasWifi = await _hasWifiConnectivity();
+      final effectiveAllowLocalProbe = allowLocalProbe && hasWifi;
 
-      if (auxiliaryEndpoints != null && auxiliaryEndpoints.isNotEmpty) {
-        for (final auxiliaryEndpoint in auxiliaryEndpoints) {
-          endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint, runId: traceRunId);
-          if (endpoint != null) {
-            _log.info(
-              'upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint',
-            );
-            return endpoint;
-          }
-        }
-      }
-
-      // Try local connection first
-      endpoint = await _setLocalConnection(runId: traceRunId);
-      if (endpoint != null) {
-        // Keep reconnect latency low: as soon as local is available we return it.
-        // Any remote endpoint checks continue in the background for diagnostics only.
-        unawaited(_probeRemoteCandidatesInBackground(runId: traceRunId));
-        _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=local endpoint=$endpoint');
+      if (!effectiveAllowLocalProbe) {
+        final skipReason = allowLocalProbe ? 'no_wifi' : 'caller_disabled';
+        _log.info(
+          'upload_telemetry source=api_service stage=local_probe decision=skipped reason=$skipReason '
+          'allowLocalProbe=$allowLocalProbe hasWifi=$hasWifi',
+        );
         logBackupTrace(
           _log,
           level: Level.INFO,
           event: BackupTraceEvent.endpointSelected,
           phase: BackupTracePhase.endpoint,
-          step: 'ENDPOINT_LOCAL_OK',
+          step: 'ENDPOINT_LOCAL_SKIPPED',
           source: 'NETWORK_SWITCH',
           appState: 'RESUMED',
           trigger: 'endpoint_resolve',
-          status: BackupTraceStatus.ok,
-          reasonCode: 'ENDPOINT_LOCAL_SELECTED',
+          status: BackupTraceStatus.retry,
+          reasonCode: allowLocalProbe ? 'NO_WIFI_SKIP_LOCAL' : 'LOCAL_PROBE_DISABLED',
           runId: traceRunId,
           elapsedMs: sw.elapsedMilliseconds,
         );
-        return endpoint;
       }
 
       try {
-        endpoint ??= await _setRemoteConnection(runId: traceRunId);
-        dPrint(() => endpoint ?? 'failed to set endpoint');
-        if (endpoint != null) {
-          _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=remote endpoint=$endpoint');
+        final localCandidates = <String>[
+          if (effectiveAllowLocalProbe && auxiliaryEndpoints != null) ...auxiliaryEndpoints,
+        ];
+        if (effectiveAllowLocalProbe) {
+          final local = _getLocalEndpoint();
+          if (local != null && local.isNotEmpty) {
+            localCandidates.add(local);
+          }
+        }
+
+        List<String> remoteCandidates = const [];
+        try {
+          final endpointList = getExternalEndpointList();
+          remoteCandidates = _sortRemoteCandidatesForPriority(endpointList).map((e) => e.url).toList(growable: false);
+        } catch (error, stackTrace) {
+          _log.severe("Cannot get external endpoint", error, stackTrace);
+        }
+        if (previousEndpoint != null && previousEndpoint.isNotEmpty && !remoteCandidates.contains(previousEndpoint)) {
+          // Keep the currently active/stored endpoint as a recovery candidate.
+          // This avoids "no candidates" dead-ends after transient network flips.
+          remoteCandidates = <String>[...remoteCandidates, previousEndpoint];
+        }
+
+        _log.info(
+          'upload_telemetry source=api_service stage=endpoint_probe '
+          'localCandidates=${localCandidates.length} remoteCandidates=${remoteCandidates.length} '
+          'allowLocalProbe=$allowLocalProbe hasWifi=$hasWifi effectiveAllowLocalProbe=$effectiveAllowLocalProbe',
+        );
+
+        final winner = await _probeEndpointCandidates(
+          localCandidates: localCandidates,
+          remoteCandidates: remoteCandidates,
+          runId: traceRunId,
+        );
+
+        if (winner != null) {
+          endpoint = await _activateResolvedEndpoint(winner.endpoint, host: winner.host, stopwatch: sw);
+          resolutionPath = winner.kind == _EndpointProbeKind.local ? 'local' : 'remote';
+        }
+
+        if (endpoint != null && winner != null) {
+          final selectedKind = winner.kind == _EndpointProbeKind.local ? 'local' : 'remote';
+          final selectedReasonCode = winner.kind == _EndpointProbeKind.local
+              ? 'ENDPOINT_LOCAL_SELECTED'
+              : 'ENDPOINT_REMOTE_SELECTED';
+          final selectedStep = winner.kind == _EndpointProbeKind.local ? 'ENDPOINT_LOCAL_OK' : 'ENDPOINT_REMOTE_OK';
+
+          _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=$selectedKind endpoint=$endpoint');
           logBackupTrace(
             _log,
             level: Level.INFO,
             event: BackupTraceEvent.endpointSelected,
             phase: BackupTracePhase.endpoint,
-            step: 'ENDPOINT_REMOTE_OK',
+            step: selectedStep,
             source: 'NETWORK_SWITCH',
             appState: 'RESUMED',
             trigger: 'endpoint_resolve',
             status: BackupTraceStatus.ok,
-            reasonCode: 'ENDPOINT_REMOTE_SELECTED',
+            reasonCode: selectedReasonCode,
             runId: traceRunId,
             elapsedMs: sw.elapsedMilliseconds,
           );
         } else {}
         return endpoint;
       } catch (error, stackTrace) {
-        _log.severe("Cannot set remote endpoint", error, stackTrace);
+        _log.severe("Endpoint candidate probing failed", error, stackTrace);
       }
 
       // If everything failed, fall back to the previously used endpoint (if any)
       if (endpoint == null && previousEndpoint != null && previousEndpoint.isNotEmpty) {
         dPrint(() => 'Falling back to previous endpoint: $previousEndpoint');
-        await resolveAndSetEndpoint(previousEndpoint);
+        await _resolveAndSetEndpointInternal(previousEndpoint);
         endpoint = previousEndpoint;
+        resolutionPath = 'fallback_previous';
         _log.warning(
           'upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint',
         );
@@ -354,7 +475,25 @@ class ApiService implements Authentication {
       }
 
       if (endpoint == null) {
-      } else {}
+        _log.warning(
+          'upload_telemetry source=api_service stage=endpoint_resolution_final '
+          'outcome=failed resolutionPath=$resolutionPath previousEndpoint=$previousEndpoint',
+        );
+      } else {
+        _log.info(
+          'upload_telemetry source=api_service stage=endpoint_resolution_final '
+          'outcome=success resolutionPath=$resolutionPath endpoint=$endpoint previousEndpoint=$previousEndpoint',
+        );
+        final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+        if (isAuthenticated) {
+          notifyConnectionState(
+            const ConnectionState(
+              status: ConnectionStatus.connected,
+              connectionType: ConnectionType.api,
+            ),
+          );
+        }
+      }
       return endpoint;
     } catch (error) {
       rethrow;
@@ -363,6 +502,139 @@ class ApiService implements Authentication {
       await Future.delayed(const Duration(milliseconds: 1500));
       // Allow connection state notifications again
       _isSetEndpoint = false;
+    }
+  }
+
+  Future<_EndpointProbeResult?> _probeEndpointCandidates({
+    required List<String> localCandidates,
+    required List<String> remoteCandidates,
+    required String runId,
+  }) async {
+    final probeTasks = <Future<_EndpointProbeResult?>>[
+      if (localCandidates.isNotEmpty)
+        _probeCandidateList(localCandidates, kind: _EndpointProbeKind.local, runId: runId),
+      if (remoteCandidates.isNotEmpty)
+        _probeCandidateList(remoteCandidates, kind: _EndpointProbeKind.remote, runId: runId),
+    ];
+
+    if (probeTasks.isEmpty) {
+      return null;
+    }
+
+    final completer = Completer<_EndpointProbeResult?>();
+    var pending = probeTasks.length;
+
+    for (final task in probeTasks) {
+      task
+          .then((result) {
+            if (!completer.isCompleted && result != null) {
+              completer.complete(result);
+              return;
+            }
+            pending--;
+            if (pending == 0 && !completer.isCompleted) {
+              completer.complete(null);
+            }
+          })
+          .catchError((_) {
+            pending--;
+            if (pending == 0 && !completer.isCompleted) {
+              completer.complete(null);
+            }
+          });
+    }
+
+    return completer.future;
+  }
+
+  Future<_EndpointProbeResult?> _probeCandidateList(
+    List<String> candidates, {
+    required _EndpointProbeKind kind,
+    required String runId,
+  }) async {
+    for (final candidate in candidates) {
+      if (candidate.isEmpty) {
+        continue;
+      }
+      final result = await _probeSingleCandidate(candidate, kind: kind, runId: runId);
+      if (result != null) {
+        return result;
+      }
+    }
+    return null;
+  }
+
+  Future<_EndpointProbeResult?> _probeSingleCandidate(
+    String candidate, {
+    required _EndpointProbeKind kind,
+    required String runId,
+  }) async {
+    final candidateKind = kind == _EndpointProbeKind.local ? 'local' : 'remote';
+    _log.fine(
+      'upload_telemetry source=api_service stage=endpoint_probe_candidate '
+      'decision=attempt kind=$candidateKind candidate=$candidate',
+    );
+    try {
+      final uri = Uri.parse(candidate);
+      await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
+      final endpoint = await resolveEndpoint(candidate, suppressConnectionRecoveryNotifications: true);
+      return _EndpointProbeResult(endpoint: endpoint, host: uri.host, kind: kind);
+    } catch (error, stackTrace) {
+      _log.warning(
+        'upload_telemetry source=api_service stage=endpoint_probe_candidate '
+        'decision=failed kind=$candidateKind candidate=$candidate errorType=${error.runtimeType}',
+      );
+      if (kind == _EndpointProbeKind.local) {
+        _log.severe("Cannot set local endpoint", error, stackTrace);
+        logBackupTrace(
+          _log,
+          level: Level.SEVERE,
+          event: BackupTraceEvent.endpointLocalFail,
+          phase: BackupTracePhase.endpoint,
+          step: 'ENDPOINT_LOCAL_FAIL',
+          source: 'NETWORK_SWITCH',
+          appState: 'RESUMED',
+          trigger: 'endpoint_resolve',
+          status: BackupTraceStatus.fail,
+          reasonCode: 'ENDPOINT_LOCAL_CERT_FAIL',
+          runId: runId,
+          extra: {'endpoint': candidate},
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } else {
+        _log.severe("Cannot resolve endpoint $candidate", error, stackTrace);
+      }
+      return null;
+    }
+  }
+
+  Future<String> _activateResolvedEndpoint(
+    String endpoint, {
+    required String host,
+    required Stopwatch stopwatch,
+  }) async {
+    setEndpoint(endpoint);
+    Store.put(StoreKey.serverEndpoint, endpoint);
+    _log.info(
+      'upload_telemetry source=api_service stage=resolve_and_set endpoint=$endpoint '
+      'host=$host elapsedMs=${stopwatch.elapsedMilliseconds}',
+    );
+    return endpoint;
+  }
+
+  Future<bool> _hasWifiConnectivity() async {
+    try {
+      final connectivity = await Connectivity().checkConnectivity();
+      return connectivity.contains(ConnectivityResult.wifi);
+    } catch (error, stackTrace) {
+      _log.warning(
+        'Unable to determine connectivity while resolving endpoint. '
+        'Disabling local probe for safety.',
+        error,
+        stackTrace,
+      );
+      return false;
     }
   }
 
@@ -401,21 +673,6 @@ class ApiService implements Authentication {
     return null;
   }
 
-  Future<void> _probeRemoteCandidatesInBackground({required String runId}) async {
-    List<AuxilaryEndpoint> endpoints;
-    try {
-      endpoints = getExternalEndpointList();
-    } catch (error) {
-      return;
-    }
-
-    for (final endpoint in endpoints) {
-      try {
-        await resolveEndpoint(endpoint.url);
-      } catch (error) {}
-    }
-  }
-
   /// Compatibility wrapper with singular argument naming.
   Future<String?> tryLocalEndpointCandidate(String? endpoint, {String? runId}) =>
       tryLocalEndpoint(endpoint, runId: runId);
@@ -447,14 +704,6 @@ class ApiService implements Authentication {
     }
 
     return null;
-  }
-
-  Future<String?> _setLocalConnection({String? endpoint, String? runId}) async {
-    return await tryLocalEndpoint(endpoint, runId: runId);
-  }
-
-  Future<String?> _setRemoteConnection({String? runId}) async {
-    return await tryRemoteEndpoints(runId: runId);
   }
 
   List<AuxilaryEndpoint> _sortRemoteCandidatesForPriority(List<AuxilaryEndpoint> endpoints) {
@@ -540,6 +789,10 @@ class ApiService implements Authentication {
   }
 
   Future<String> resolveAndSetEndpoint(String serverUrl) async {
+    return _enqueueEndpointResolution(() => _resolveAndSetEndpointInternal(serverUrl));
+  }
+
+  Future<String> _resolveAndSetEndpointInternal(String serverUrl) async {
     final stopwatch = Stopwatch()..start();
     final uri = Uri.parse(serverUrl);
     await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
@@ -553,6 +806,15 @@ class ApiService implements Authentication {
       'upload_telemetry source=api_service stage=resolve_and_set endpoint=$endpoint '
       'host=${uri.host} elapsedMs=${stopwatch.elapsedMilliseconds}',
     );
+    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    if (isAuthenticated) {
+      notifyConnectionState(
+        const ConnectionState(
+          status: ConnectionStatus.connected,
+          connectionType: ConnectionType.api,
+        ),
+      );
+    }
     return endpoint;
   }
 
@@ -563,7 +825,7 @@ class ApiService implements Authentication {
   ///  host   - required
   ///  port   - optional (default: based on schema)
   ///  path   - optional
-  Future<String> resolveEndpoint(String serverUrl) async {
+  Future<String> resolveEndpoint(String serverUrl, {bool suppressConnectionRecoveryNotifications = false}) async {
     String url = sanitizeUrl(serverUrl);
 
     // Check for /.well-known/immich
@@ -572,7 +834,7 @@ class ApiService implements Authentication {
       url = sanitizeUrl(wellKnownEndpoint);
     }
 
-    if (!await _isEndpointAvailable(url)) {
+    if (!await _isEndpointAvailable(url, suppressConnectionRecoveryNotifications: suppressConnectionRecoveryNotifications)) {
       throw ApiException(503, "Server is not reachable");
     }
 
@@ -580,9 +842,13 @@ class ApiService implements Authentication {
     return url;
   }
 
-  Future<bool> _isEndpointAvailable(String serverUrl) async {
+  Future<bool> _isEndpointAvailable(
+    String serverUrl, {
+    bool suppressConnectionRecoveryNotifications = false,
+  }) async {
     final trace = FirebasePerformanceWrapper.newTrace('endpoint_availability') ?? NoOpTrace();
     await trace.start();
+    Client? plainProbeClient;
 
     if (!serverUrl.endsWith('/api')) {
       serverUrl += '/api';
@@ -590,10 +856,14 @@ class ApiService implements Authentication {
 
     try {
       // Use a temporary ApiClient to avoid mutating the global client while probing availability.
-      final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = _httpClient;
+      // When probing in parallel, use a plain client so failed probes do not publish reconnecting
+      // state via ConnectionRecoveryInterceptor and inadvertently keep reconnect UI visible.
+      final probeHttpClient = suppressConnectionRecoveryNotifications ? (plainProbeClient = Client()) : _httpClient;
+      final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = probeHttpClient;
       final tempServerApi = ServerApi(tempClient);
 
-      await tempServerApi.pingServer().timeout(const Duration(seconds: 45));
+      // Keep probe timeout bounded to avoid long queue stalls under poor networks.
+      await tempServerApi.pingServer().timeout(const Duration(seconds: 12));
       await trace.stop();
     } on TimeoutException catch (_) {
       await trace.stop();
@@ -605,13 +875,43 @@ class ApiService implements Authentication {
       await trace.stop();
       _log.severe("Error while checking server availability", error, stackTrace);
       return false;
+    } finally {
+      plainProbeClient?.close();
     }
     return true;
   }
 
   // Temporary
   Future<String> _getWellKnownEndpoint(String baseUrl) async {
-    return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
+    final normalized = sanitizeUrl(baseUrl);
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) {
+      return normalized;
+    }
+
+    final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList(growable: false);
+    if (segments.isEmpty) {
+      // Host-only URL: use the legacy photos API location.
+      return '$normalized/photos/api';
+    }
+
+    if (segments.length >= 2 &&
+        segments[segments.length - 2].toLowerCase() == 'photos' &&
+        segments.last.toLowerCase() == 'api') {
+      // Already points to /photos/api.
+      return normalized;
+    }
+
+    if (segments.last.toLowerCase() == 'api') {
+      // Already points to an API endpoint.
+      return normalized;
+    }
+
+    if (segments.last.toLowerCase() == 'photos') {
+      return '$normalized/api';
+    }
+
+    return '$normalized/photos/api';
   }
 
   Future<void> setAccessToken(String accessToken) async {
