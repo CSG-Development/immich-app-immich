@@ -225,6 +225,13 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
         socket.onConnect((_) {
           dPrint(() => "Established Websocket Connection");
           state = WebsocketState(isConnected: true, socket: socket, pendingChanges: state.pendingChanges);
+          // Notify recovery flow that connectivity is restored so reconnect UI can dismiss.
+          _ref.read(apiServiceProvider).notifyConnectionState(
+            const ConnectionState(
+              status: ConnectionStatus.connected,
+              connectionType: ConnectionType.websocket,
+            ),
+          );
         });
 
         socket.onDisconnect((_) {
