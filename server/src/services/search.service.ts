@@ -127,8 +127,9 @@ export class SearchService extends BaseService {
       const key = machineLearning.clip.modelName + dto.query + dto.language;
       const counterKey = machineLearning.clip.modelName + 'other_default' + dto.language;
 
-      embedding = this.embeddingCache.get(key);
-      if (!embedding) {
+      //embedding = this.embeddingCache.get(key);
+      //if (!embedding) {
+      if (true) {
         console.log(`searchSmart (service): No embedding for key `, key);
         embedding = await this.machineLearningRepository.encodeText(dto.query, {
           modelName: machineLearning.clip.modelName,
@@ -138,8 +139,9 @@ export class SearchService extends BaseService {
         this.embeddingCache.set(key, embedding);
       }
       console.log(`searchSmart (service): embedding =`, embedding);
-      counterEmbedding = this.counterEmbeddingCache.get(counterKey);
-      if (!counterEmbedding) {
+      //counterEmbedding = this.counterEmbeddingCache.get(counterKey);
+      //if (!counterEmbedding) {
+      if (true) {
         console.log(`searchSmart (service): No counter embedding for key `, counterKey);
         counterEmbedding = await this.machineLearningRepository.encodeText('other', {
           modelName: machineLearning.clip.modelName,
