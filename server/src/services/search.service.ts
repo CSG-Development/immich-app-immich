@@ -104,6 +104,8 @@ export class SearchService extends BaseService {
   }
 
   async searchSmart(auth: AuthDto, dto: SmartSearchDto): Promise<SearchResponseDto> {
+    console.log(`searchSmart (service): START`);
+
     const config = await this.getConfig({ withCache: false });
     if (dto.visibility === AssetVisibility.Locked) {
       requireElevatedPermission(auth);
@@ -120,33 +122,45 @@ export class SearchService extends BaseService {
     // So, we decided to use the following magic word - 'other'
     let counterEmbedding;
     if (dto.query) {
+      console.log(`searchSmart (service): query = `, dto.query);
+
       const key = machineLearning.clip.modelName + dto.query + dto.language;
       const counterKey = machineLearning.clip.modelName + 'other_default' + dto.language;
 
       embedding = this.embeddingCache.get(key);
       if (!embedding) {
+        console.log(`searchSmart (service): No embedding for key `, key);
         embedding = await this.machineLearningRepository.encodeText(dto.query, {
           modelName: machineLearning.clip.modelName,
           language: dto.language,
         });
+        console.log(`searchSmart (service): Embedding has been calculated`);
         this.embeddingCache.set(key, embedding);
       }
+      console.log(`searchSmart (service): embedding =`, embedding);
       counterEmbedding = this.counterEmbeddingCache.get(counterKey);
       if (!counterEmbedding) {
+        console.log(`searchSmart (service): No counter embedding for key `, counterKey);
         counterEmbedding = await this.machineLearningRepository.encodeText('other', {
           modelName: machineLearning.clip.modelName,
           language: dto.language,
         });
         this.embeddingCache.set(key, counterEmbedding);
+        console.log(`searchSmart (service): Counter embedding has been calculated`);
       }
+      console.log(`searchSmart (service): counter embedding =`, counterEmbedding);
     } else if (dto.queryAssetId) {
+      console.log(`searchSmart (service): query asset Id `, dto.queryAssetId);
+
       await this.requireAccess({ auth, permission: Permission.AssetRead, ids: [dto.queryAssetId] });
       const getEmbeddingResponse = await this.searchRepository.getEmbedding(dto.queryAssetId);
       const assetEmbedding = getEmbeddingResponse?.embedding;
       if (!assetEmbedding) {
+        console.log(`searchSmart (service): Asset ${dto.queryAssetId} has no embedding`);
         throw new BadRequestException(`Asset ${dto.queryAssetId} has no embedding`);
       }
       embedding = assetEmbedding;
+      console.log(`searchSmart (service): asset embedding =`, assetEmbedding);
     } else {
       throw new BadRequestException('Either `query` or `queryAssetId` must be set');
     }
