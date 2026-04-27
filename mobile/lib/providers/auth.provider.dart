@@ -20,9 +20,11 @@ import 'package:immich_mobile/utils/hash.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
+    ref,
     ref.watch(authServiceProvider),
     ref.watch(apiServiceProvider),
     ref.watch(userServiceProvider),
@@ -33,6 +35,7 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final Ref _ref;
   final AuthService _authService;
   final ApiService _apiService;
   final UserService _userService;
@@ -44,6 +47,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const Duration _timeoutDuration = Duration(seconds: 7);
 
   AuthNotifier(
+    this._ref,
     this._authService,
     this._apiService,
     this._userService,
@@ -83,8 +87,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return response;
   }
 
+  Future<void> requestPasswordReset(String email) {
+    return _authService.requestPasswordReset(email);
+  }
+
   Future<void> logout() async {
     try {
+      // Keep Remote Access session intact. Device cache/state must still be
+      // cleared to avoid stale paths leaking into a subsequent photos session.
+      try {
+        _ref.read(deviceProvider).clearDevice(save: true);
+      } catch (error, stackTrace) {
+        _log.warning("Failed to clear hc_device state during logout", error, stackTrace);
+      }
+
       try {
         await Future.wait([
           _secureStorageService.delete(kSecuredPinCode),
@@ -117,6 +133,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _cleanUp() async {
+    if (!mounted) {
+      return;
+    }
     state = const AuthState(
       deviceId: "",
       userId: "",
@@ -129,6 +148,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void updateUserProfileImagePath(String path) {
+    if (!mounted) {
+      return;
+    }
     state = state.copyWith(profileImagePath: path);
   }
 
@@ -179,6 +201,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // If the user is null, the login was not successful
     // and we don't have a local copy of the user from a prior successful login
     if (user == null) {
+      return false;
+    }
+
+    if (!mounted) {
       return false;
     }
 

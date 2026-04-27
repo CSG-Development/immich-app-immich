@@ -537,6 +537,7 @@ abstract class IntlKeys {
   static const asset_list_layout_sub_title = 'asset_list_layout_sub_title';
   static const asset_list_settings_subtitle = 'asset_list_settings_subtitle';
   static const asset_list_settings_title = 'asset_list_settings_title';
+  static const asset_moved_to_another_place = 'asset_moved_to_another_place';
   static const asset_offline = 'asset_offline';
   static const asset_offline_description = 'asset_offline_description';
   static const asset_restored_successfully = 'asset_restored_successfully';
@@ -855,6 +856,7 @@ abstract class IntlKeys {
   static const curator_login_form_loading_text = 'curator.login.form.loading.text';
   static const curator_login_form_password_hint = 'curator.login.form.password.hint';
   static const curator_login_form_version_check_error = 'curator.login.form.version.check.error';
+  static const curator_network_finding = 'curator.network.finding';
   static const curator_onboarding_done = 'curator.onboarding.done';
   static const curator_onboarding_skip = 'curator.onboarding.skip';
   static const curator_onboarding_slide1_description = 'curator.onboarding.slide1.description';

@@ -1,18 +1,26 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:hc_device/device_discovery.provider.dart';
-import 'package:hc_device/api/remote_access.swagger.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
+import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
+import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/services/network.service.dart';
-import 'package:immich_mobile/services/device_endpoint_utils.dart';
+import 'package:immich_mobile/services/curator_network_monitor.service.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 
-/// Service that listens to network connectivity changes and automatically
-/// switches to local endpoint when device connects to WiFi.
+/// Debounce delay for connectivity-driven reconnect (see [curatorNetworkDebounceDelay]).
+const Duration networkDebounceDelay = curatorNetworkDebounceDelay;
+
+bool shouldDeferNetworkChange({required AppLifeCycleEnum appState}) {
+  return !(appState == AppLifeCycleEnum.resumed || appState == AppLifeCycleEnum.active);
+}
+
+/// Listens to connectivity changes, debounces, then delegates Curator re-detection to
+/// [CuratorNetworkMonitor]. Wi‑Fi SSID/IP is tracked to skip duplicate no-op events.
 class NetworkChangeListenerService {
   final Ref _ref;
   final Logger _log = Logger('NetworkChangeListenerService');
@@ -21,7 +29,10 @@ class NetworkChangeListenerService {
   String? _previousWifiName;
   String? _previousWifiIp;
   String _runId = BackupTrace.newRunId();
-
+  bool _hasSeenConnectivityEvent = false;
+  bool _pendingNetworkChange = false;
+  bool _isHandlingNetworkChange = false;
+  Timer? _debounceTimer;
   NetworkChangeListenerService(this._ref);
 
   /// Starts listening to network connectivity changes.
@@ -49,11 +60,22 @@ class NetworkChangeListenerService {
     _previousConnectivity = null;
     _previousWifiName = null;
     _previousWifiIp = null;
+    _hasSeenConnectivityEvent = false;
+    _pendingNetworkChange = false;
+    _isHandlingNetworkChange = false;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
   }
 
   /// Handles connectivity changes, particularly when switching from mobile to WiFi.
   Future<void> _handleConnectivityChange(List<ConnectivityResult> results) async {
     _log.fine('Raw connectivity change received: $results');
+
+    if (shouldIgnoreFirstConnectivityEvent(hasSeenConnectivityEvent: _hasSeenConnectivityEvent)) {
+      _hasSeenConnectivityEvent = true;
+      _log.finer('Ignoring first connectivity event: $results');
+      return;
+    }
 
     // Get the primary connectivity result (prefer WiFi over mobile)
     final currentConnectivity = _getPrimaryConnectivity(results);
@@ -91,11 +113,41 @@ class NetworkChangeListenerService {
     final mobileToWifi = wasMobile && isWifi;
     final wifiToMobile = wasWifi && isMobile;
 
-    if (mobileToWifi || wifiContextChanged) {
-      await _onWifiAvailableOrChanged(mobileToWifi: mobileToWifi, wifiContextChanged: wifiContextChanged);
-    } else if (wifiToMobile) {
-      await _onWifiToMobile();
+    final reasonCode = wifiContextChanged
+        ? 'WIFI_CONTEXT_CHANGED'
+        : mobileToWifi
+        ? 'MOBILE_TO_WIFI'
+        : wifiToMobile
+        ? 'WIFI_TO_MOBILE'
+        : 'CONNECTIVITY_CHANGED';
+
+    _scheduleConnectivityReconnect(backupReasonCode: reasonCode, resetOpenApiForMobile: wifiToMobile);
+  }
+
+  Future<void> processPendingOnResume() async {
+    if (!_pendingNetworkChange) {
+      return;
     }
+    _pendingNetworkChange = false;
+    _scheduleConnectivityReconnect(backupReasonCode: 'DEFERRED_RESUME', resetOpenApiForMobile: false);
+  }
+
+  void _scheduleConnectivityReconnect({required String backupReasonCode, required bool resetOpenApiForMobile}) {
+    final appState = _ref.read(appStateProvider);
+    if (shouldDeferNetworkChange(appState: appState)) {
+      _pendingNetworkChange = true;
+      _log.fine('App in background, deferring network-change reconnect until resume');
+      return;
+    }
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(
+      networkDebounceDelay,
+      () => _runDebouncedConnectivityHandling(
+        backupReasonCode: backupReasonCode,
+        resetOpenApiForMobile: resetOpenApiForMobile,
+      ),
+    );
   }
 
   Future<_WifiContext?> _readWifiContextIfNeeded(ConnectivityResult? currentConnectivity) async {
@@ -138,81 +190,62 @@ class NetworkChangeListenerService {
     if (changed) {
       _log.fine(
         'WiFi context changed detected: '
-        'ssid: ${_previousWifiName} -> ${wifiContext.ssid}, '
-        'ip: ${_previousWifiIp} -> ${wifiContext.ip}',
+        'ssid: $_previousWifiName -> ${wifiContext.ssid}, '
+        'ip: $_previousWifiIp -> ${wifiContext.ip}',
       );
     }
     return changed;
   }
 
-  Future<void> _onWifiAvailableOrChanged({required bool mobileToWifi, required bool wifiContextChanged}) async {
-    if (wifiContextChanged) {
-      _log.info('WiFi context changed (SSID/IP), triggering local endpoint discovery');
-    } else if (mobileToWifi) {
-      _log.info('Device switched from mobile to WiFi, triggering seamless local endpoint discovery');
-    }
-    logBackupTrace(
-      _log,
-      level: Level.INFO,
-      event: BackupTraceEvent.endpointSelected,
-      phase: BackupTracePhase.endpoint,
-      step: 'ENDPOINT_RESOLVE_START',
-      source: 'NETWORK_SWITCH',
-      appState: 'RESUMED',
-      trigger: 'wifi_mobile_switch',
-      status: BackupTraceStatus.retry,
-      reasonCode: wifiContextChanged ? 'WIFI_CONTEXT_CHANGED' : 'MOBILE_TO_WIFI',
-      runId: _runId,
-    );
-
-    final discovery = _ref.read(deviceDiscoveryProvider);
-    final devices = await discovery.startMdnsDiscovery();
-    final connectedDeviceID = discovery.connectedDeviceID;
-
-    if (connectedDeviceID == null || devices == null || devices.isEmpty) {
-      _log.fine(
-        'Local endpoint discovery aborted: '
-        'connectedDeviceID=$connectedDeviceID, '
-        'devicesCount=${devices?.length ?? 0}',
-      );
+  Future<void> _runDebouncedConnectivityHandling({
+    required String backupReasonCode,
+    required bool resetOpenApiForMobile,
+  }) async {
+    if (_isHandlingNetworkChange) {
+      _log.finer('Reconnect already in progress, skipping');
       return;
     }
+    _isHandlingNetworkChange = true;
+    try {
+      final curatorDevice = _ref.read(deviceProvider);
+      if (!curatorDevice.isAuthenticated) {
+        _log.finer('Curator device session not authenticated; routing reconnect event to EndpointRecovery');
+        final api = _ref.read(apiServiceProvider);
+        api.notifyConnectionState(
+          conn.ConnectionState(
+            status: conn.ConnectionStatus.reconnecting,
+            lastErrorTime: DateTime.now(),
+            connectionType: conn.ConnectionType.api,
+          ),
+        );
+        return;
+      }
 
-    final device = devices.firstWhereOrNull((d) => d.about?.certificateCommonName == connectedDeviceID);
+      if (resetOpenApiForMobile) {
+        _log.info('Connectivity: Wi‑Fi to mobile — resetting OpenAPI base before Curator re-detection');
+        await _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+      } else {
+        _log.info('Connectivity changed ($backupReasonCode), scheduling Curator endpoint re-detection');
+      }
 
-    if (device == null || device.paths == null || device.paths!.isEmpty) {
-      _log.fine(
-        'Local endpoint discovery: no matching device or paths found for connectedDeviceID=$connectedDeviceID '
-        '(deviceFound=${device != null}, pathsCount=${device?.paths?.length ?? 0})',
+      logBackupTrace(
+        _log,
+        level: Level.INFO,
+        event: BackupTraceEvent.endpointSelected,
+        phase: BackupTracePhase.endpoint,
+        step: 'ENDPOINT_RESOLVE_START',
+        source: 'NETWORK_SWITCH',
+        appState: 'RESUMED',
+        trigger: 'wifi_mobile_switch',
+        status: BackupTraceStatus.retry,
+        reasonCode: backupReasonCode,
+        runId: _runId,
       );
-      return;
+
+      await _ref.read(curatorNetworkMonitorProvider).reconnectDeviceEndpoint(fromConnectivityChange: true);
+    } finally {
+      _isHandlingNetworkChange = false;
     }
-
-    final endpoints = device.paths!
-        .map((dynamic p) => DeviceEndpointUtils.buildDevicePathUrl(p as DevicePath))
-        .toList(growable: false);
-
-    _log.fine('Attempting to set local OpenAPI endpoint from WiFi-connected device: '
-        'deviceId=$connectedDeviceID, endpointsCount=${endpoints.length}');
-    unawaited(_ref.read(apiServiceProvider).setOpenApiServiceEndpoint(auxiliaryEndpoints: endpoints));
-  }
-
-  Future<void> _onWifiToMobile() async {
-    _log.info('Device switched from WiFi to mobile, triggering seamless local endpoint discovery');
-    logBackupTrace(
-      _log,
-      level: Level.INFO,
-      event: BackupTraceEvent.endpointSelected,
-      phase: BackupTracePhase.endpoint,
-      step: 'ENDPOINT_RESOLVE_START',
-      source: 'NETWORK_SWITCH',
-      appState: 'RESUMED',
-      trigger: 'wifi_mobile_switch',
-      status: BackupTraceStatus.retry,
-      reasonCode: 'WIFI_TO_MOBILE',
-      runId: _runId,
-    );
-    unawaited(_ref.read(apiServiceProvider).setOpenApiServiceEndpoint());
   }
 
   /// Gets the primary connectivity result, preferring WiFi over mobile.

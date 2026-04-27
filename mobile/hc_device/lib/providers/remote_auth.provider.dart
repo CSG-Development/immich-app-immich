@@ -12,11 +12,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'api/remote_access.swagger.dart';
-import 'providers/device.provider.dart';
-import 'providers/hcdevice.provider.dart';
-import 'providers/remote.provider.dart';
-import 'utils.dart' as hc_utils;
+import 'package:hc_device/api/remote_access.swagger.dart';
+import 'package:hc_device/providers/device.provider.dart';
+import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/providers/remote.provider.dart';
+import 'package:hc_device/utils/core.dart' as hc_utils;
 
 /// High-level error types for the remote authentication flow.
 enum RemoteAuthError {
@@ -101,11 +101,34 @@ class RemoteAuthController extends ChangeNotifier {
   }) async {
     if (_state.isInitiating) return;
 
+    // Do not clear an existing Remote Access session. logOut() would drop refresh
+    // tokens and make the app think RA is required again while the user is
+    // already authorized (e.g. reconnect / showRemoteCodeModal pre-send).
+    if (_remoteProvider.isAuthenticated) {
+      if (kDebugMode) {
+        debugPrint(
+          '[RemoteAuth] initiate skipped: remote session already present',
+        );
+      }
+      await _deviceProvider.setHost(login: email);
+      _lastEmail = email;
+      _lastClientFriendlyName = clientFriendlyName;
+      _setState(
+        _state.copyWith(
+          isInitiating: false,
+          error: null,
+          errorMessage: null,
+          codeExpired: false,
+        ),
+      );
+      return;
+    }
+
     // Clear any previous authentication of remote access server.
-    _remoteProvider.logout();
+    _remoteProvider.logOut();
 
     // Save email in device provider to pre-fill next time.
-    _deviceProvider.setHost(login: email);
+    await _deviceProvider.setHost(login: email);
 
     _lastEmail = email;
     _lastClientFriendlyName = clientFriendlyName;
@@ -119,7 +142,8 @@ class RemoteAuthController extends ChangeNotifier {
     );
 
     try {
-      final response = await _remoteProvider.api.clientV1AuthInitiatePost(
+      final remoteApi = await _remoteProvider.getPinnedApi();
+      final response = await remoteApi.clientV1AuthInitiatePost(
         type: ClientV1AuthInitiatePostType.email,
         body: Code$RequestBody(
           email: email,
@@ -129,7 +153,6 @@ class RemoteAuthController extends ChangeNotifier {
       );
 
       if (response.isSuccessful) {
-
         if (kDebugMode) {
           debugPrint(
             "[RemoteAuth] Remote access initiated for email: "
@@ -224,7 +247,8 @@ class RemoteAuthController extends ChangeNotifier {
     );
 
     try {
-      final response = await _remoteProvider.api.clientV1AuthTokenPost(
+      final remoteApi = await _remoteProvider.getPinnedApi();
+      final response = await remoteApi.clientV1AuthTokenPost(
         type: ClientV1AuthTokenPostType.email,
         body: Validate$RequestBody(
           clientId: _remoteProvider.clientId,

@@ -24,6 +24,7 @@ import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provide
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/endpoint_recovery.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
+import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
 import 'package:immich_mobile/providers/network_change_listener.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
@@ -185,6 +186,12 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       case AppLifecycleState.resumed:
         dPrint(() => "[APP STATE] resumed");
         ref.read(appStateProvider.notifier).handleAppResume();
+        unawaited(
+          ref.read(networkChangeListenerServiceProvider).processPendingOnResume(),
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(curatorNetworkMonitorProvider).onAppLifecycleResumed();
+        });
         break;
       case AppLifecycleState.inactive:
         dPrint(() => "[APP STATE] inactive");
@@ -272,15 +279,18 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
 
     ref.read(shareIntentUploadProvider.notifier).init();
 
+    final api = ref.read(apiServiceProvider);
+    api.curatorNetworkForceReconnectHandler = () {
+      ref.read(curatorNetworkMonitorProvider).forceNetworkChangeHandling();
+    };
+
     // Initialize endpoint recovery service to start listening to connection state changes
     ref.read(endpointRecoveryServiceProvider);
-
-    // Initialize network change listener to handle WiFi connectivity changes
-    ref.read(networkChangeListenerServiceProvider).startListening();
   }
 
   @override
   void dispose() {
+    ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

@@ -20,6 +20,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'
 import 'package:hc_device/api/remote_access.swagger.dart'
     show RemoteAccess, TokenResponse$Response, Refresh$RequestBody;
 import 'package:hc_device/providers/auth.api.dart';
+import 'package:hc_device/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferencesAsync;
 
@@ -30,6 +31,7 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
       'https://hc-remote-access-env-https.eba-a2nvhpbm.us-west-2.elasticbeanstalk.com:443/api';
   static const String refreshKey = 'curator_remote_refresh_token';
   static const String clientIdKey = 'curator_remote_client_id';
+  static const String referenceKey = 'curator_remote_reference';
 
   String? _accessToken, _refreshToken, _reference;
   late String _clientId;
@@ -37,32 +39,74 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
 
   final Map<String, dynamic> _storageData;
   final FlutterSecureStorage _secureStorage;
+  final Future<void> Function({required String host, int? port}) _registerHostTrustedChain;
+
+  bool _shouldLogoutAfterRefreshFailure(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('401') ||
+        message.contains('403') ||
+        message.contains('unauthorized') ||
+        message.contains('forbidden') ||
+        (message.contains('refresh') && message.contains('invalid'));
+  }
 
   RemoteProvider(
     this._storageData,
     this._secureStorage,
     Map<String, String> secureData,
-  ) {
+    Future<void> Function({required String host, int? port}) registerHostTrustedChain,
+  ) : _registerHostTrustedChain = registerHostTrustedChain {
     _refreshToken = secureData[refreshKey];
+    _reference = secureData[referenceKey];
     _initClientId();
 
-    HttpClient client = HttpClient(context: SecurityContext.defaultContext);
+    final HttpClient client = HttpClient(context: SecurityContext.defaultContext);
 
     _api = RemoteAccess.create(
       baseUrl: Uri.parse(baseUrl),
       httpClient: IOClient(client),
       authenticator: CuratorAuthenticator(this),
-      interceptors: [CuratorInterceptor(this)],
+      interceptors: [
+        CuratorInterceptor(this),
+        ...hcDeviceHttpLogInterceptors(),
+      ],
     );
+    if (isAuthenticated) {
+      logger.debug(
+        '[Provider] Remote provider initialized with existing auth data',
+      );
+      refreshAccessToken().catchError((Object e) {
+        final shouldLogout = _shouldLogoutAfterRefreshFailure(e);
+        logger.error(
+          '[Provider] Failed to refresh remote access token on initialization',
+          e,
+        );
+        // Keep existing refresh token on transient network failures (airplane mode/offline),
+        // so reconnect flows don't immediately fall into OTP due to forced logout.
+        if (shouldLogout) {
+          logOut();
+        }
+        return '';
+      });
+    } else {
+      logger.debug('[Provider] Remote provider initialized without auth data');
+    }
   }
 
   @override
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
   String get clientId => _clientId;
+  @override
   bool get isAuthenticated => _accessToken != null || _refreshToken != null;
   String? get reference => _reference;
   RemoteAccess get api => _api;
+
+  Future<RemoteAccess> getPinnedApi() async {
+    final uri = Uri.parse(baseUrl);
+    await _registerHostTrustedChain(host: uri.host, port: uri.port);
+    return _api;
+  }
 
   /// Initialize clientId with a unique, persistent identifier per device/app install
   void _initClientId() {
@@ -91,6 +135,9 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
 
   set reference(String? ref) {
     _reference = ref;
+    if (_reference != null) {
+      _secureStorage.write(key: referenceKey, value: _reference);
+    }
     notifyListeners();
   }
 
@@ -101,6 +148,9 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
     _accessToken = auth.accessToken;
     _refreshToken = auth.refreshToken;
     _saveRefreshToken(refreshToken: auth.refreshToken);
+    try {
+      _secureStorage.delete(key: referenceKey);
+    } catch (_) {}
     if (notify) {
       notifyListeners();
     }
@@ -114,10 +164,8 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
   @override
   Future<String> refreshAccessToken() async {
     try {
-      if (kDebugMode) {
-        print('[RemoteProvider] Attempting to refresh access token...');
-      }
-      final response = await api.clientV1AuthRefreshPost(
+      final pinnedApi = await getPinnedApi();
+      final response = await pinnedApi.clientV1AuthRefreshPost(
         body: Refresh$RequestBody(
           clientId: _clientId,
           refreshToken: _refreshToken!,
@@ -157,18 +205,20 @@ class RemoteProvider with ChangeNotifier implements CuratorAuthProvider {
   }
 
   @override
-  void logout() {
+  void logOut({bool notify = true}) {
     _accessToken = null;
     _refreshToken = null;
     try {
       _secureStorage.delete(key: refreshKey);
     } catch (e) {
-      if (kDebugMode) {
-        print(
-          "[RemoteProvider] Error clearing secure storage: ${e.toString()}",
-        );
-      }
+      logger.error('[Security] Failed to clear remote authentication data', e);
     }
-    notifyListeners();
+    logger.debug('[Provider] Remote logged out');
+    if (notify) {
+      notifyListeners();
+    }
   }
+
+  /// Backward-compatible alias.
+  void logout() => logOut();
 }

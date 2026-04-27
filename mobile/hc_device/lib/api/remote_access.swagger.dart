@@ -507,7 +507,7 @@ extension $DevicePathsExtension on DevicePaths {
 
 @JsonSerializable(explicitToJson: true)
 class Error {
-  const Error({required this.name, required this.stacktrace, this.reason});
+  const Error({required this.name, this.reason, required this.stacktrace});
 
   factory Error.fromJson(Map<String, dynamic> json) => _$ErrorFromJson(json);
 
@@ -516,10 +516,10 @@ class Error {
 
   @JsonKey(name: 'name')
   final String name;
-  @JsonKey(name: 'stacktrace')
-  final String stacktrace;
   @JsonKey(name: 'reason')
   final String? reason;
+  @JsonKey(name: 'stacktrace')
+  final String stacktrace;
   static const fromJsonFactory = _$ErrorFromJson;
 
   @override
@@ -528,13 +528,13 @@ class Error {
         (other is Error &&
             (identical(other.name, name) ||
                 const DeepCollectionEquality().equals(other.name, name)) &&
+            (identical(other.reason, reason) ||
+                const DeepCollectionEquality().equals(other.reason, reason)) &&
             (identical(other.stacktrace, stacktrace) ||
                 const DeepCollectionEquality().equals(
                   other.stacktrace,
                   stacktrace,
-                )) &&
-            (identical(other.reason, reason) ||
-                const DeepCollectionEquality().equals(other.reason, reason)));
+                )));
   }
 
   @override
@@ -543,29 +543,29 @@ class Error {
   @override
   int get hashCode =>
       const DeepCollectionEquality().hash(name) ^
-      const DeepCollectionEquality().hash(stacktrace) ^
       const DeepCollectionEquality().hash(reason) ^
+      const DeepCollectionEquality().hash(stacktrace) ^
       runtimeType.hashCode;
 }
 
 extension $ErrorExtension on Error {
-  Error copyWith({String? name, String? stacktrace, String? reason}) {
+  Error copyWith({String? name, String? reason, String? stacktrace}) {
     return Error(
       name: name ?? this.name,
-      stacktrace: stacktrace ?? this.stacktrace,
       reason: reason ?? this.reason,
+      stacktrace: stacktrace ?? this.stacktrace,
     );
   }
 
   Error copyWithWrapped({
     Wrapped<String>? name,
-    Wrapped<String>? stacktrace,
     Wrapped<String?>? reason,
+    Wrapped<String>? stacktrace,
   }) {
     return Error(
       name: (name != null ? name.value : this.name),
-      stacktrace: (stacktrace != null ? stacktrace.value : this.stacktrace),
       reason: (reason != null ? reason.value : this.reason),
+      stacktrace: (stacktrace != null ? stacktrace.value : this.stacktrace),
     );
   }
 }

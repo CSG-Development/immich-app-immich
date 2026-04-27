@@ -31976,6 +31976,7 @@ class CodegenLoader extends AssetLoader {
     "asset_list_layout_sub_title": "Layout",
     "asset_list_settings_subtitle": "Photo grid layout settings",
     "asset_list_settings_title": "Photo Grid",
+    "asset_moved_to_another_place": "Asset moved to another place",
     "asset_offline": "Asset Offline",
     "asset_offline_description":
         "This external asset is no longer found on disk. Please contact your Personal Cloud Photos administrator for help.",
@@ -32315,6 +32316,7 @@ class CodegenLoader extends AssetLoader {
       "login_form_loading_text": "Logging in to your account",
       "login_form_password_hint": "Enter password",
       "login_form_version_check_error": "Error checking version compatibility",
+      "network": {"finding": "Finding network..."},
       "onboarding": {
         "done": "Done",
         "skip": "Skip",

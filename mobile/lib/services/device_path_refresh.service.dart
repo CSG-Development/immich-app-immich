@@ -1,12 +1,10 @@
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
+import 'package:immich_mobile/services/auxiliary_endpoint_store.service.dart';
+import 'package:immich_mobile/services/device_detection.service.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
@@ -26,7 +24,6 @@ class DevicePathRefreshService {
   Future<void> refreshPaths() async {
     _log.fine('Requested device path refresh');
 
-    // Prevent concurrent refresh operations
     if (_isRefreshing) {
       _log.fine('Path refresh already in progress, skipping concurrent request');
       return;
@@ -41,9 +38,7 @@ class DevicePathRefreshService {
     }
   }
 
-  /// Internal method that performs the actual path refresh.
   Future<void> _refreshPathsInternal() async {
-    // 1. Check host app authorization
     if (!_isHostAppAuthenticated()) {
       _log.fine('Aborting path refresh: host app is not authenticated');
       return;
@@ -55,33 +50,26 @@ class DevicePathRefreshService {
     }
 
     try {
-      _log.fine('Starting device discovery for path refresh');
-      final device = await _discoverDevice();
-      if (device == null) {
-        _log.fine('Device discovery returned null device, skipping path refresh');
-        return;
-      }
-
-      _log.fine(
-        'Discovered device for path refresh: '
-        'id=${device.about?.certificateCommonName}, '
-        'pathsCount=${device.paths?.length ?? 0}',
-      );
-
-      final paths = device.paths;
+      _log.fine('Starting device path refresh');
+      final resolved = await _resolvePathsForRefresh();
+      final paths = resolved?.paths;
       if (paths == null || paths.isEmpty) {
         _log.fine('No paths available from device after refresh');
         return;
       }
 
-      await processAndSavePaths(paths);
+      final existingLocalEndpoint = _ref.read(authProvider.notifier).getSavedLocalEndpoint();
+      await processAndSavePaths(
+        paths,
+        preferredLocalEndpoint: resolved?.preferredLocalEndpoint,
+        existingLocalEndpoint: existingLocalEndpoint,
+      );
       _log.info('Successfully refreshed ${paths.length} device paths');
     } catch (e, stackTrace) {
       _log.warning('Failed to refresh device paths', e, stackTrace);
     }
   }
 
-  /// Checks if user is authenticated in the host app.
   bool _isHostAppAuthenticated() {
     final isAuthenticated = _ref.read(authProvider).isAuthenticated;
     if (!isAuthenticated) {
@@ -92,7 +80,6 @@ class DevicePathRefreshService {
     return isAuthenticated;
   }
 
-  /// Checks if user is authenticated in hc_device.
   bool _isRemoteAuthenticated() {
     final isAuthenticated = _ref.read(remoteProvider).isAuthenticated;
     if (!isAuthenticated) {
@@ -103,119 +90,151 @@ class DevicePathRefreshService {
     return isAuthenticated;
   }
 
-  /// Discovers devices (via mDNS and remote access) and connects to one.
-  /// Returns the connected device or null if discovery/connection fails.
-  /// Safely accesses deviceDiscoveryProvider to avoid initialization conflicts.
-  Future<DeviceItem?> _discoverDevice() async {
-    // Safely access deviceDiscoveryProvider by deferring to next event loop tick
-    // This ensures it's not accessed during provider initialization phase
-    DeviceDiscoveryController discovery;
-    try {
-      // Use Future.microtask to defer provider access until after current build phase
-      // This prevents initialization conflicts when deviceDiscoveryProvider modifies DeviceProvider
-      discovery = await Future.microtask(() => _ref.read(deviceDiscoveryProvider));
-      _log.finer('Successfully obtained deviceDiscoveryProvider instance');
-    } catch (e, stackTrace) {
-      // If provider access fails due to initialization conflict, log and return null
-      _log.warning('Failed to access deviceDiscoveryProvider, may be initialization conflict', e, stackTrace);
-      return null;
-    }
-
-    // Check if we already have a connected device
-    final connectedDeviceID = discovery.connectedDeviceID;
+  Future<_ResolvedPaths?> _resolvePathsForRefresh() async {
+    final dp = await Future.microtask(() => _ref.read(deviceProvider));
+    final rp = await Future.microtask(() => _ref.read(remoteProvider));
+    final connectedDeviceID = dp.deviceID;
     if (connectedDeviceID == null) {
-      _log.fine('Skipping path refresh: no device discovered via mDNS or remote access');
+      _log.fine('Skipping path refresh: no connected device id');
       return null;
     }
 
-    try {
-      // Start device discovery (mDNS for local devices and remote device fetching)
-      final result = await discovery.startRemoteDiscovery();
-      _log.fine(
-        'Remote discovery completed: devicesFound=${result?.length ?? 0}, '
-        'devices=${result?.map((e) => e.about?.certificateCommonName).join(', ')}, '
-        'connectedDeviceID=$connectedDeviceID',
-      );
+    final found = await DeviceDetection.discoverDevices(
+      deviceProvider: dp,
+      remoteProvider: rp,
+      timeout: const Duration(seconds: 45),
+    );
 
-      DeviceItem? refreshedDevice = result?.firstWhereOrNull(
-        (device) => device.about?.certificateCommonName == connectedDeviceID,
-      );
+    final device = DeviceDetection.findByConnectedDeviceId(
+      devices: found,
+      connectedDeviceId: connectedDeviceID,
+    );
 
-      if (refreshedDevice == null) {
-        _log.fine('Skipping path refresh: no matching device found in discovered devices');
+    if (device == null) {
+      _log.fine('Skipping path refresh: no matching device found in discovered devices');
+      return null;
+    }
+
+    final probe = DeviceDetectionService(
+      deviceProvider: dp,
+      remoteProvider: rp,
+    );
+
+    final seagate = device.remoteDevice?.seagateDeviceID;
+    String? preferredLocalEndpoint;
+    if (device.about == null && seagate != null && seagate.isNotEmpty) {
+      final ping = await probe.findOptimalDeviceConnection(
+        device: device,
+        seagateDeviceID: seagate,
+      );
+      if (!ping.success || ping.baseUrl == null) {
+        _log.fine('Skipping path refresh: remote-only device could not be resolved');
         return null;
       }
-
-      discovery.connectToDevice(refreshedDevice);
-      _log.fine(
-        'Connected to device ${refreshedDevice.about?.certificateCommonName} '
-        'for path refresh, pathsCount=${refreshedDevice.paths?.length ?? 0}',
+      await dp.setHost(
+        baseUrl: ping.baseUrl,
+        deviceID: device.id,
+        seagateDeviceID: seagate,
+        debugHostType: ping.debugHostType,
+        devicePaths: dp.getCachedDevicePathsForDevice(seagate)?.paths,
       );
-      return refreshedDevice;
-    } catch (e, stackTrace) {
-      _log.warning('Failed to discover and connect to device', e, stackTrace);
+      if (ping.pathType == DevicePathType.local.value || (ping.debugHostType ?? '').contains('mDNS')) {
+        preferredLocalEndpoint = _toPhotosEndpoint(ping.baseUrl!);
+      }
+    } else if (device.about != null) {
+      await dp.setHost(
+        baseUrl: device.baseUrl,
+        deviceID: device.id,
+        seagateDeviceID: seagate,
+        debugHostType: device.debugHostType,
+      );
+      if (device.baseUrl != null) {
+        // mDNS-discovered endpoint is the highest-priority local candidate.
+        preferredLocalEndpoint = _toPhotosEndpoint(device.baseUrl!);
+      }
+    }
+
+    final cachedPathsForConnectedDevice = dp.seagateDeviceID == null
+        ? null
+        : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;
+    final paths =
+        dp.getActiveDevicePaths(deviceRemoteId: dp.seagateDeviceID) ?? cachedPathsForConnectedDevice;
+    if (paths == null) {
       return null;
     }
+    return _ResolvedPaths(paths: paths, preferredLocalEndpoint: preferredLocalEndpoint);
   }
 
-  /// Processes device paths and saves them to appropriate stores.
-  /// Can be called directly when paths are already available (e.g., after login).
-  Future<void> processAndSavePaths(List<dynamic> paths) async {
+  Future<void> processAndSavePaths(
+    List<dynamic> paths, {
+    String? preferredLocalEndpoint,
+    String? existingLocalEndpoint,
+  }) async {
     _log.fine('Processing ${paths.length} device paths for saving');
+    final localPaths = <String>[];
 
     for (final dynamic item in paths) {
       final devicePath = item as DevicePath;
       final path = DeviceEndpointUtils.buildDevicePathUrl(devicePath);
 
       if (devicePath.type == DevicePathType.local) {
-        _log.finer('Saving local endpoint from device path: $path');
-        await _ref.read(authProvider.notifier).saveLocalEndpoint(path);
+        localPaths.add(path);
       } else if (devicePath.type != DevicePathType.swaggerGeneratedUnknown) {
         _log.finer(
           'Saving external endpoint from device path: $path '
-          '(type=${devicePath.type?.value})',
+          '(type=${devicePath.type.value})',
         );
         await _saveToExternalEndpointList(path);
       }
     }
+
+    if (preferredLocalEndpoint != null && preferredLocalEndpoint.isNotEmpty) {
+      _log.finer('Saving local endpoint from mDNS/verified probe: $preferredLocalEndpoint');
+      await _ref.read(authProvider.notifier).saveLocalEndpoint(preferredLocalEndpoint);
+      return;
+    }
+
+    if (localPaths.isNotEmpty) {
+      // Fallback to RA-provided local path only when no verified mDNS path is available.
+      final fallbackLocal = localPaths.first;
+      _log.finer('Saving local endpoint from RA local path fallback: $fallbackLocal');
+      await _ref.read(authProvider.notifier).saveLocalEndpoint(fallbackLocal);
+      return;
+    }
+
+    if (existingLocalEndpoint != null && existingLocalEndpoint.isNotEmpty) {
+      _log.finer('Keeping existing local endpoint as temporary fallback: $existingLocalEndpoint');
+    }
   }
 
-  /// Saves external endpoint to the external endpoint list in store.
-  /// Mirrors the logic from curator_login_form.dart
+  String _toPhotosEndpoint(Uri baseUrl) {
+    final host = baseUrl.host;
+    final authority = (baseUrl.hasPort && baseUrl.port > 0) ? '$host:${baseUrl.port}' : host;
+    return 'https://$authority/photos';
+  }
+
   Future<void> _saveToExternalEndpointList(String path) async {
     try {
       _log.fine('Attempting to save external endpoint: $path');
-
-      // Get existing endpoints
-      final jsonString = Store.tryGet(StoreKey.externalEndpointList);
-      List<AuxilaryEndpoint> endpointList = [];
-
-      if (jsonString != null) {
-        final List<dynamic> jsonList = jsonDecode(jsonString);
-        endpointList = jsonList.map((e) => AuxilaryEndpoint.fromJson(e)).toList();
-      }
-
-      // Check if path already exists
-      final exists = endpointList.any((e) => e.url == path);
-      if (!exists) {
-        // Add new endpoint with valid status (assuming it's valid since we just connected)
-        endpointList.add(AuxilaryEndpoint(url: path, status: AuxCheckStatus.valid));
-
-        // Filter to only valid endpoints and encode, mirroring external_network_preference.dart logic
-        final validEndpoints = endpointList.where((e) => e.status == AuxCheckStatus.valid).toList();
-        final updatedJsonString = jsonEncode(validEndpoints);
-
-        // Save back to store
-        await Store.put(StoreKey.externalEndpointList, updatedJsonString);
+      final added = await AuxiliaryEndpointStoreService.addValidIfMissing(path);
+      if (added) {
+        final validEndpointsCount = AuxiliaryEndpointStoreService.loadValid().length;
         _log.info(
           'Added new external endpoint and updated list, '
-          'totalValidEndpoints=${validEndpoints.length}',
+          'totalValidEndpoints=$validEndpointsCount',
         );
       } else {
         _log.fine('External endpoint already present in list, skipping save: $path');
       }
     } catch (error, stackTrace) {
-      _log.severe("Error saving external endpoint", error, stackTrace);
+      _log.severe('Error saving external endpoint', error, stackTrace);
     }
   }
+}
+
+class _ResolvedPaths {
+  final List<DevicePath> paths;
+  final String? preferredLocalEndpoint;
+
+  const _ResolvedPaths({required this.paths, this.preferredLocalEndpoint});
 }

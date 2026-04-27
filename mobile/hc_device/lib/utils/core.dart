@@ -15,7 +15,9 @@ enum ApiErrorMessage { aboutGet, statusGet, remoteApi }
 
 const String serviceTypeDiscover = '_https._tcp';
 const String serviceNameDiscover = 'HomeCloud';
-const Duration durationDetection = Duration(seconds: 4);
+const Duration durationDetection = Duration(seconds: 5);
+const Duration timeoutLocalApiCall = Duration(seconds: 4);
+const Duration timeoutRemoteApiCall = Duration(seconds: 9);
 
 String extractErrorMessage(dynamic e) {
   late String? message = "";

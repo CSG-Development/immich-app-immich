@@ -210,7 +210,6 @@ class _AssetTypeIcons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasStack = asset is RemoteAsset && (asset as RemoteAsset).stackId != null;
-    final isLivePhoto = asset is RemoteAsset && asset.livePhotoVideoId != null;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -223,7 +222,7 @@ class _AssetTypeIcons extends StatelessWidget {
             padding: EdgeInsets.only(right: 10.0, top: 6.0),
             child: _TileOverlayIcon(Icons.burst_mode_rounded),
           ),
-        if (isLivePhoto)
+        if (asset.isMotionPhoto)
           const Padding(
             padding: EdgeInsets.only(right: 10.0, top: 6.0),
             child: _TileOverlayIcon(Icons.motion_photos_on_rounded),

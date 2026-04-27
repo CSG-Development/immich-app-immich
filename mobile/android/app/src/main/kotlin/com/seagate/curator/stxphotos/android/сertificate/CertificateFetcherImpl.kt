@@ -33,8 +33,9 @@ class CertificateFetcherApiImpl : CertificateFetcherApi {
         val socket = sslContext.socketFactory.createSocket() as SSLSocket
 
         socket.use { sslSocket ->
-          sslSocket.soTimeout = 5_000
-          sslSocket.connect(InetSocketAddress(host, port), 5_000)
+          val timeoutMs = 12_000
+          sslSocket.soTimeout = timeoutMs
+          sslSocket.connect(InetSocketAddress(host, port), timeoutMs)
 
           try {
             sslSocket.startHandshake()
