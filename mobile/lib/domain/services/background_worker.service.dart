@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:cancellation_token_http/http.dart';
 import 'package:flutter/material.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -30,6 +31,7 @@ import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
@@ -37,7 +39,6 @@ import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:worker_manager/worker_manager.dart';
@@ -78,6 +79,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
   bool _isCleanedUp = false;
   String? _runId;
+  String? _resolvedEndpoint;
 
   BackgroundWorkerBgService({
     required Isar isar,
@@ -121,7 +123,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         reasonCode: 'BG_WORKER_INIT_START',
         runId: _runId,
       );
-      HttpSSLOptions.apply(applyNative: false);
       final certs = await HttpCertPinningManager.loadRootCertsBytes([
         'assets/tdci.pem',
         'assets/fake-device-noveo.cer',
@@ -131,7 +132,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         [
           loadTranslations(),
           workerManager.init(dynamicSpawning: true),
-          _ref?.read(apiServiceProvider).setOpenApiServiceEndpoint(runId: _runId),
           // Initialize the file downloader
           FileDownloader().configure(
             globalConfig: [
@@ -148,6 +148,13 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
           _ref?.read(fileMediaRepositoryProvider).enableBackgroundAccess(),
         ].nonNulls,
       );
+      _resolvedEndpoint = await _ref
+          ?.read(hcDeviceEndpointResolverProvider)
+          .resolveAndActivateWinner(
+            runId: _runId,
+            trigger: 'background_worker_init',
+            mode: ResolveMode.terminatedBgTask,
+          );
 
       configureFileDownloaderNotifications();
 
@@ -213,6 +220,9 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       runId: _runId,
     );
     try {
+      if (!_isEndpointReady('background_task')) {
+        return;
+      }
       if (!await _syncAssets(hashTimeout: Duration(minutes: _isBackupEnabled ? 3 : 6))) {
         _logger.warning("Remote sync did not complete successfully, skipping backup");
         logBackupTrace(
@@ -260,6 +270,8 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     _logger.info('iOS background upload started with maxSeconds: ${maxSeconds}s');
     final sw = Stopwatch()..start();
     _runId = BackupTrace.newRunId();
+    var finalStatus = BackupTraceStatus.ok;
+    var finalReasonCode = 'IOS_BG_UPLOAD_END';
     logBackupTrace(
       _logger,
       level: Level.INFO,
@@ -275,6 +287,11 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       extra: {'maxSeconds': maxSeconds ?? -1},
     );
     try {
+      if (!_isEndpointReady(isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing')) {
+        finalStatus = BackupTraceStatus.skip;
+        finalReasonCode = 'BG_ENDPOINT_UNRESOLVED';
+        return;
+      }
       final timeout = isRefresh ? const Duration(seconds: 5) : Duration(minutes: _isBackupEnabled ? 3 : 6);
       if (!await _syncAssets(hashTimeout: timeout)) {
         _logger.warning("Remote sync did not complete successfully, skipping backup");
@@ -292,30 +309,23 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
           runId: _runId,
           elapsedMs: sw.elapsedMilliseconds,
         );
+        finalStatus = BackupTraceStatus.partial;
+        finalReasonCode = 'IOS_BG_SYNC_FAILED_SKIP_BACKUP';
         return;
       }
 
       final backupFuture = _handleBackup();
       if (maxSeconds != null) {
         await backupFuture.timeout(Duration(seconds: maxSeconds - 1), onTimeout: () {});
-        logBackupTrace(
-          _logger,
-          level: Level.WARNING,
-          event: BackupTraceEvent.runSummary,
-          phase: BackupTracePhase.summary,
-          step: 'RUN_SUMMARY',
-          source: 'BG_WORKER',
-          appState: 'PAUSED',
-          trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
-          status: BackupTraceStatus.partial,
-          reasonCode: 'IOS_BG_TIMEOUT_WINDOW',
-          runId: _runId,
-        );
+        finalStatus = BackupTraceStatus.partial;
+        finalReasonCode = 'IOS_BG_TIMEOUT_WINDOW';
       } else {
         await backupFuture;
       }
     } catch (error, stack) {
       _logger.severe("Failed to complete iOS background upload", error, stack);
+      finalStatus = BackupTraceStatus.fail;
+      finalReasonCode = 'IOS_BG_UPLOAD_EXCEPTION';
     } finally {
       sw.stop();
       _logger.info("iOS background upload completed in ${sw.elapsed.inSeconds}s");
@@ -329,12 +339,34 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         source: 'BG_WORKER',
         appState: 'PAUSED',
         trigger: isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing',
-        status: BackupTraceStatus.ok,
-        reasonCode: 'IOS_BG_UPLOAD_END',
+        status: finalStatus,
+        reasonCode: finalReasonCode,
         runId: _runId,
         elapsedMs: sw.elapsedMilliseconds,
       );
     }
+  }
+
+  bool _isEndpointReady(String trigger) {
+    final endpoint = _resolvedEndpoint ?? _ref?.read(apiServiceProvider).apiClient.basePath;
+    if (endpoint == null || endpoint.isEmpty) {
+      _logger.warning("Skipping background worker run: endpoint unresolved");
+      logBackupTrace(
+        _logger,
+        level: Level.WARNING,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'BG_WORKER',
+        appState: 'PAUSED',
+        trigger: trigger,
+        status: BackupTraceStatus.skip,
+        reasonCode: 'BG_ENDPOINT_UNRESOLVED',
+        runId: _runId,
+      );
+      return false;
+    }
+    return true;
   }
 
   @override
@@ -370,13 +402,19 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       _isCleanedUp = true;
       final backgroundSyncManager = _ref?.read(backgroundSyncProvider);
       final nativeSyncApi = _ref?.read(nativeSyncApiProvider);
+      _logger.info("Cleaning up background worker");
+      _cancellationToken.cancel();
+
+      // Cancel outstanding background sync tasks before disposing workerManager.
+      // Running both in parallel can race in worker_manager internals and produce
+      // null-check exceptions during worker initialization/disposal.
+      await nativeSyncApi?.cancelHashing();
+      await backgroundSyncManager?.cancel();
+
       _ref?.dispose();
       _ref = null;
 
-      _cancellationToken.cancel();
-      _logger.info("Cleaning up background worker");
       final cleanupFutures = [
-        nativeSyncApi?.cancelHashing(),
         workerManager.dispose().catchError((_) async {
           // Discard any errors on the dispose call
           return;
@@ -385,7 +423,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         Store.dispose(),
         _drift.close(),
         _driftLogger.close(),
-        backgroundSyncManager?.cancel(),
       ];
 
       if (_isar.isOpen) {

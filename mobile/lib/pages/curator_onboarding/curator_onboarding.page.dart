@@ -9,9 +9,7 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
-import 'package:immich_mobile/providers/websocket.provider.dart';
 
 final _onboardingSteps = kCuratorOnboardingSlidesData;
 
@@ -71,26 +69,13 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
 
   void _skip() => _finishOnboarding();
 
-  Future<void> handleSyncFlow() async {
-    final backgroundManager = ref.read(backgroundSyncProvider);
-    await backgroundManager.syncLocal(full: true);
-    await backgroundManager.syncRemote();
-    await backgroundManager.hashAssets();
-
-    if (Store.get(StoreKey.syncAlbums, false)) {
-      await backgroundManager.syncLinkedAlbum();
-    }
-  }
-
   void _finishOnboarding() async {
     await Store.put(StoreKey.onboardingWasShown, true);
     await Store.delete(StoreKey.onboardingViewedCount);
     final isBeta = Store.isBetaTimelineEnabled;
     if (isBeta) {
       await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-      handleSyncFlow();
-      ref.read(websocketProvider.notifier).connect();
-      context.replaceRoute(const TabShellRoute());
+      context.replaceRoute(const SplashScreenRoute());
       return;
     }
     context.replaceRoute(const TabControllerRoute());

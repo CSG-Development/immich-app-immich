@@ -9,8 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:hc_device/providers/hcdevice.provider.dart';
-import 'package:hc_device/utils/core.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
@@ -26,6 +25,7 @@ import 'package:immich_mobile/repositories/backup.repository.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/backup.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
@@ -34,7 +34,6 @@ import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dar
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/diff.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:path_provider_foundation/path_provider_foundation.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
 
@@ -360,57 +359,68 @@ class BackgroundService {
         apiServiceProvider.overrideWithValue(apiservice),
       ],
     );
-
-    HttpSSLOptions.apply();
-    ref.read(apiServiceProvider).setAccessToken(Store.get(StoreKey.accessToken));
-    await ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
-    dPrint(() => "[BG UPLOAD] Using endpoint: ${ref.read(apiServiceProvider).apiClient.basePath}");
-
-    final selectedAlbums = await ref.read(backupAlbumRepositoryProvider).getAllBySelection(BackupSelection.select);
-    final excludedAlbums = await ref.read(backupAlbumRepositoryProvider).getAllBySelection(BackupSelection.exclude);
-    if (selectedAlbums.isEmpty) {
-      return true;
-    }
-
-    await ref.read(fileMediaRepositoryProvider).enableBackgroundAccess();
-
-    do {
-      final bool backupOk = await _runBackup(
-        ref.read(backupServiceProvider),
-        ref.read(appSettingsServiceProvider),
-        selectedAlbums,
-        excludedAlbums,
-      );
-      if (backupOk) {
-        await Store.delete(StoreKey.backupFailedSince);
-        final backupAlbums = [...selectedAlbums, ...excludedAlbums];
-        backupAlbums.sortBy((e) => e.id);
-
-        final dbAlbums = await ref.read(backupAlbumRepositoryProvider).getAll(sort: BackupAlbumSort.id);
-        final List<int> toDelete = [];
-        final List<BackupAlbum> toUpsert = [];
-        // stores the most recent `lastBackup` per album but always keeps the `selection` from the most recent DB state
-        diffSortedListsSync(
-          dbAlbums,
-          backupAlbums,
-          compare: (BackupAlbum a, BackupAlbum b) => a.id.compareTo(b.id),
-          both: (BackupAlbum a, BackupAlbum b) {
-            a.lastBackup = a.lastBackup.isAfter(b.lastBackup) ? a.lastBackup : b.lastBackup;
-            toUpsert.add(a);
-            return true;
-          },
-          onlyFirst: (BackupAlbum a) => toUpsert.add(a),
-          onlySecond: (BackupAlbum b) => toDelete.add(b.isarId),
-        );
-        await ref.read(backupAlbumRepositoryProvider).deleteAll(toDelete);
-        await ref.read(backupAlbumRepositoryProvider).updateAll(toUpsert);
-      } else if (Store.tryGet(StoreKey.backupFailedSince) == null) {
-        Store.put(StoreKey.backupFailedSince, DateTime.now());
+    try {
+      ref.read(apiServiceProvider).setAccessToken(Store.get(StoreKey.accessToken));
+      final resolvedEndpoint = await ref
+          .read(hcDeviceEndpointResolverProvider)
+          .resolveAndActivateWinner(
+            trigger: 'legacy_background_service',
+            mode: ResolveMode.terminatedBgTask,
+          );
+      if (resolvedEndpoint == null || resolvedEndpoint.isEmpty) {
+        dPrint(() => '[BG UPLOAD] Skipping run: endpoint unresolved (BG_ENDPOINT_UNRESOLVED)');
         return false;
       }
-      // Android should check for new assets added while performing backup
-    } while (Platform.isAndroid && true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
-    return true;
+      dPrint(() => "[BG UPLOAD] Using endpoint: ${ref.read(apiServiceProvider).apiClient.basePath}");
+
+      final selectedAlbums = await ref.read(backupAlbumRepositoryProvider).getAllBySelection(BackupSelection.select);
+      final excludedAlbums = await ref.read(backupAlbumRepositoryProvider).getAllBySelection(BackupSelection.exclude);
+      if (selectedAlbums.isEmpty) {
+        return true;
+      }
+
+      await ref.read(fileMediaRepositoryProvider).enableBackgroundAccess();
+
+      do {
+        final bool backupOk = await _runBackup(
+          ref.read(backupServiceProvider),
+          ref.read(appSettingsServiceProvider),
+          selectedAlbums,
+          excludedAlbums,
+        );
+        if (backupOk) {
+          await Store.delete(StoreKey.backupFailedSince);
+          final backupAlbums = [...selectedAlbums, ...excludedAlbums];
+          backupAlbums.sortBy((e) => e.id);
+
+          final dbAlbums = await ref.read(backupAlbumRepositoryProvider).getAll(sort: BackupAlbumSort.id);
+          final List<int> toDelete = [];
+          final List<BackupAlbum> toUpsert = [];
+          // stores the most recent `lastBackup` per album but always keeps the `selection` from the most recent DB state
+          diffSortedListsSync(
+            dbAlbums,
+            backupAlbums,
+            compare: (BackupAlbum a, BackupAlbum b) => a.id.compareTo(b.id),
+            both: (BackupAlbum a, BackupAlbum b) {
+              a.lastBackup = a.lastBackup.isAfter(b.lastBackup) ? a.lastBackup : b.lastBackup;
+              toUpsert.add(a);
+              return true;
+            },
+            onlyFirst: (BackupAlbum a) => toUpsert.add(a),
+            onlySecond: (BackupAlbum b) => toDelete.add(b.isarId),
+          );
+          await ref.read(backupAlbumRepositoryProvider).deleteAll(toDelete);
+          await ref.read(backupAlbumRepositoryProvider).updateAll(toUpsert);
+        } else if (Store.tryGet(StoreKey.backupFailedSince) == null) {
+          Store.put(StoreKey.backupFailedSince, DateTime.now());
+          return false;
+        }
+        // Android should check for new assets added while performing backup
+      } while (Platform.isAndroid && true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
+      return true;
+    } finally {
+      ref.dispose();
+    }
   }
 
   Future<bool> _runBackup(

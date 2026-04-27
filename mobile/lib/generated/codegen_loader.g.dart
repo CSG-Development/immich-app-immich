@@ -32374,6 +32374,7 @@ class CodegenLoader extends AssetLoader {
       "settings_pattern_lock": "Pattern lock",
       "shared_link_create_public_error": "Sharing is not possible because the public link is unavailable",
       "sign_in_screen_button_request_new_code": "Request new code",
+      "sign_in_screen_button_valid_remote_access": "Allow access",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
       "sign_in_screen_enable_biometric": "Enable biometric sign-in",
@@ -32381,6 +32382,9 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
       "sign_in_screen_field_remote_code_label": "Confirmation Code",
+      "sign_in_screen_field_remote_code_message":
+          "We have sent a one-time code to authorize this device to access your Personal Cloud Photos. Check your email for the code and enter it here. If you do not see it in your inbox, please check your spam folder.",
+      "sign_in_screen_field_remote_code_title": "Allow remote access",
       "sign_in_screen_remote_code_allow_access": "Allow access",
       "sign_in_screen_remote_code_cancel": "Cancel",
       "sign_in_screen_remote_code_description":

@@ -6,35 +6,7 @@
 //   and may be covered under one or more Non-Disclosure Agreements.
 //
 
-import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hc_device/device_item.dart';
-
-String devicePathDedupKey(DevicePath path) =>
-    '${path.type.value}|${path.address}|${path.port}';
-
-List<DevicePath>? dedupeDevicePathList(List<DevicePath>? paths) {
-  if (paths == null || paths.isEmpty) {
-    return null;
-  }
-
-  final unique = <String, DevicePath>{};
-  for (final path in paths) {
-    unique.putIfAbsent(devicePathDedupKey(path), () => path);
-  }
-  return unique.values.toList();
-}
-
-bool areDevicePathsEquivalent(DevicePaths a, DevicePaths b) {
-  if (a.seagateDeviceID != b.seagateDeviceID) {
-    return false;
-  }
-
-  final left =
-      dedupeDevicePathList(a.paths)?.map(devicePathDedupKey).toSet() ?? <String>{};
-  final right =
-      dedupeDevicePathList(b.paths)?.map(devicePathDedupKey).toSet() ?? <String>{};
-  return left.length == right.length && left.containsAll(right);
-}
 
 List<DeviceItem> mergeDiscoveredDevices(
   List<DeviceItem> existing,

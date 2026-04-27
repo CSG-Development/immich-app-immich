@@ -94,7 +94,6 @@ class UploadRepository {
 
   Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
     final httpClient = Client();
-    final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
     final stopwatch = Stopwatch()..start();
     final totalTasks = tasks.length;
     int succeeded = 0;
@@ -103,7 +102,8 @@ class UploadRepository {
 
     Logger logger = Logger('UploadRepository');
     logger.info(
-      'upload_telemetry source=dart_http stage=batch_start endpoint=$savedEndpoint taskCount=$totalTasks',
+      'upload_telemetry source=dart_http stage=batch_start '
+      'endpoint=${Store.get(StoreKey.serverEndpoint)} taskCount=$totalTasks',
     );
     for (final candidate in tasks) {
       if (cancelToken.isCancelled) {
@@ -120,7 +120,10 @@ class UploadRepository {
           filename: candidate.task.filename,
         );
 
-        final baseRequest = MultipartRequest('POST', Uri.parse('$savedEndpoint/assets'));
+        // Read current endpoint at request boundary so endpoint reselection
+        // (local/public winner changes) is reflected during long upload batches.
+        final currentEndpoint = Store.get(StoreKey.serverEndpoint);
+        final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
 
         baseRequest.headers.addAll(candidate.task.headers);
         baseRequest.fields.addAll(candidate.task.fields);
@@ -140,7 +143,7 @@ class UploadRepository {
           );
           logger.info(
             'upload_telemetry source=dart_http stage=item_error index=$processed status=${response.statusCode} '
-            'taskId=${candidate.task.taskId}',
+            'taskId=${candidate.task.taskId} endpoint=$currentEndpoint',
           );
 
           continue;
@@ -148,7 +151,7 @@ class UploadRepository {
         succeeded++;
         logger.info(
           'upload_telemetry source=dart_http stage=item_success index=$processed taskId=${candidate.task.taskId} '
-          'status=${response.statusCode}',
+          'status=${response.statusCode} endpoint=$currentEndpoint',
         );
       } on CancelledException {
         logger.warning("Backup was cancelled by the user");
@@ -159,7 +162,7 @@ class UploadRepository {
         logger.warning("Error backup asset: ${error.toString()}: $stackTrace");
         logger.info(
           'upload_telemetry source=dart_http stage=item_exception index=$processed taskId=${candidate.task.taskId} '
-          'error=${error.runtimeType}',
+          'error=${error.runtimeType} endpoint=${Store.get(StoreKey.serverEndpoint)}',
         );
         continue;
       }

@@ -13,12 +13,9 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
-import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
-import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
-import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
@@ -28,12 +25,11 @@ import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:immich_mobile/utils/env_config.dart';
-import 'package:hc_device/api/api.enums.swagger.dart' as hc_api_enums;
 
 import 'package:hc_device/hc_device.dart';
 
@@ -55,6 +51,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     final isLoading = useState<bool>(false);
     final isResetPasswordLoading = useState<bool>(false);
+    final isCantFindDeviceLoading = useState<bool>(false);
     final hasPreviousLoginFailed = useState<bool>(false);
 
     final warningMessage = useState<String?>(null);
@@ -134,14 +131,35 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (isRemoteCodeModalActive.value == true) return;
 
         isRemoteCodeModalActive.value = true;
-        await showRemoteCodeModal(
-          context: context,
-          initiate: ref.read(remoteAuthProvider).initiate,
-          email: emailAddress,
-          skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
-          onSuccess: () async => onStartDiscovery(),
-        );
-        isRemoteCodeModalActive.value = false;
+        isCantFindDeviceLoading.value = true;
+        try {
+          await showRemoteCodeModal(
+            context: context,
+            remoteProvider: ref.read(remoteProvider.notifier),
+            email: emailAddress,
+            skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
+            onDialogPresented: () {
+              isCantFindDeviceLoading.value = false;
+            },
+            onEmailNotAllowed: () {
+              hasEmailError.value = true;
+              warningMessage.value = 'curator.email_not_registered_error'.tr();
+              switchToRemoteAccessForm();
+            },
+            onSuccess: () async {
+              // Always refresh discovery after OTP succeeds.
+              // If detection is active, queue exactly one restart.
+              if (isDiscovering.value) {
+                shouldRetryDiscoveryAfterOtp.value = true;
+                return;
+              }
+              await onStartDiscovery();
+            },
+          );
+        } finally {
+          isCantFindDeviceLoading.value = false;
+          isRemoteCodeModalActive.value = false;
+        }
       }
     }
 
@@ -166,9 +184,14 @@ class CuratorLoginForm extends HookConsumerWidget {
       isRemoteCodeModalActive.value = true;
       await showRemoteCodeModal(
         context: context,
-        initiate: ref.read(remoteAuthProvider).initiate,
+        remoteProvider: ref.read(remoteProvider.notifier),
         email: emailAddress,
         skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
+        onEmailNotAllowed: () {
+          hasEmailError.value = true;
+          warningMessage.value = 'curator.email_not_registered_error'.tr();
+          switchToRemoteAccessForm();
+        },
         onSuccess: () async {
           // If discovery is already running, defer restart until it fully completes.
           if (isDiscovering.value) {
@@ -206,8 +229,8 @@ class CuratorLoginForm extends HookConsumerWidget {
       devices.value = [];
 
       try {
-        final dp = ref.read(deviceProvider);
-        final rp = ref.read(remoteProvider);
+        final dp = ref.read(deviceProvider.notifier);
+        final rp = ref.read(remoteProvider.notifier);
         final completer = Completer<void>();
         final found = <DeviceItem>[];
         await activeDetection.value?.cancelDetection();
@@ -275,7 +298,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     useEffect(() {
       // Defer provider access until after build phase to avoid initialization conflicts
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        email.value = ref.read(deviceProvider).login;
+        email.value = ref.read(deviceProvider).login ?? '';
 
         if (staticDevice.value != null) return;
         preselectFavoriteDevice();
@@ -370,8 +393,8 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       final detection = DeviceDetectionService(
-        deviceProvider: ref.read(deviceProvider),
-        remoteProvider: ref.read(remoteProvider),
+        deviceProvider: ref.read(deviceProvider.notifier),
+        remoteProvider: ref.read(remoteProvider.notifier),
       );
       final ping = await detection.findOptimalDeviceConnection(
         device: device,
@@ -412,9 +435,9 @@ class CuratorLoginForm extends HookConsumerWidget {
         return selected;
       }
 
-      final matchedByName = devices.value.where(
-        (device) => device.name.trim().toLowerCase() == inputName.toLowerCase(),
-      ).toList();
+      final matchedByName = devices.value
+          .where((device) => device.name.trim().toLowerCase() == inputName.toLowerCase())
+          .toList();
       if (matchedByName.length != 1) {
         return selected;
       }
@@ -443,11 +466,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
       var baseUrl = device.baseUrl;
       if (baseUrl == null && device.remoteDevice != null) {
-        final ping = await resolveRemoteDeviceConnection(
-          device: device,
-          flowTag: 'Login',
-          requireFreshPaths: true,
-        );
+        final ping = await resolveRemoteDeviceConnection(device: device, flowTag: 'Login', requireFreshPaths: true);
         if (ping == null) {
           return false;
         }
@@ -495,18 +514,6 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    Future<void> handleSyncFlow() async {
-      final backgroundManager = ref.read(backgroundSyncProvider);
-
-      await backgroundManager.syncLocal(full: true);
-      await backgroundManager.syncRemote();
-      await backgroundManager.hashAssets();
-
-      if (Store.get(StoreKey.syncAlbums, false)) {
-        await backgroundManager.syncLinkedAlbum();
-      }
-    }
-
     Future<bool> prepareDeviceHostForResetPassword() async {
       final device = resolveSelectedDeviceForAction();
       if (device == null || !isDeviceSelectionValid(device)) {
@@ -519,7 +526,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         'id=${device.id}, baseUrl=${device.baseUrl}, pathType=${device.debugHostType}',
       );
 
-      final dp = ref.read(deviceProvider);
+      final dp = ref.read(deviceProvider.notifier);
 
       if (device.about != null && device.baseUrl != null) {
         await dp.setHost(
@@ -527,6 +534,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           deviceID: device.id,
           seagateDeviceID: device.remoteDevice?.seagateDeviceID,
           debugHostType: device.debugHostType,
+          login: email.value.trim(),
         );
         log.info('[ResetPassword] Using direct device host: ${device.baseUrl}');
         return true;
@@ -546,6 +554,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         deviceID: device.id,
         seagateDeviceID: device.remoteDevice?.seagateDeviceID,
         debugHostType: ping.debugHostType,
+        login: email.value.trim(),
         devicePaths: device.remoteDevice?.seagateDeviceID == null
             ? null
             : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
@@ -556,7 +565,7 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     Future<bool> checkDeviceReadyForResetPassword() async {
       try {
-        final response = await ref.read(deviceProvider).api.statusGet();
+        final response = await ref.read(deviceProvider.notifier).fetchStatus().timeout(const Duration(seconds: 30));
         if (!response.isSuccessful) {
           warningMessage.value = 'login_form_server_error'.tr();
           log.warning(
@@ -571,10 +580,14 @@ class CuratorLoginForm extends HookConsumerWidget {
           log.warning('[ResetPassword] Device readiness check failed: empty status payload');
           return false;
         }
-        if (status.oobe.done == false || status.systemState != hc_api_enums.State.ready) {
+        final isOobeDone = status.oobe.done != false;
+        final systemState = status.systemState.value;
+        final isSystemReady = systemState == null || systemState == 'ready';
+        if (!isOobeDone || !isSystemReady) {
           warningMessage.value = 'login_form_server_error'.tr();
           log.warning(
-            '[ResetPassword] Device not ready: oobeDone=${status.oobe.done}, systemState=${status.systemState}',
+            '[ResetPassword] Device not ready: '
+            'oobeDone=${status.oobe.done}, systemStateEnum=${status.systemState}, systemStateValue=$systemState',
           );
           return false;
         }
@@ -585,6 +598,84 @@ class CuratorLoginForm extends HookConsumerWidget {
         warningMessage.value = 'login_form_server_error'.tr();
         return false;
       }
+    }
+
+    Future<bool> checkDeviceReadyForLogin() async {
+      try {
+        final response = await ref.read(deviceProvider.notifier).fetchStatus();
+        if (!response.isSuccessful) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning(
+            '[Login] Device readiness check failed: '
+            'status=${response.statusCode}, error=${response.error}',
+          );
+          return false;
+        }
+        final status = response.body;
+        if (status == null) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning('[Login] Device readiness check failed: empty status payload');
+          return false;
+        }
+        final isOobeDone = status.oobe.done != false;
+        final systemState = status.systemState.value;
+        final isSystemReady = systemState == null || systemState == 'ready';
+        if (!isOobeDone || !isSystemReady) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning(
+            '[Login] Device not ready: '
+            'oobeDone=${status.oobe.done}, systemStateEnum=${status.systemState}, systemStateValue=$systemState',
+          );
+          return false;
+        }
+        log.info('[Login] Device readiness check succeeded');
+        return true;
+      } catch (error, stackTrace) {
+        log.warning('Failed to validate device readiness before login', error, stackTrace);
+        warningMessage.value = 'login_form_server_error'.tr();
+        return false;
+      }
+    }
+
+    Future<bool> prepareDeviceHostForLogin(DeviceItem device) async {
+      final dp = ref.read(deviceProvider.notifier);
+      final rp = ref.read(remoteProvider.notifier);
+      final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
+
+      if (device.about != null && device.baseUrl != null) {
+        await dp.setHost(
+          baseUrl: device.baseUrl,
+          deviceID: device.id,
+          seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+          debugHostType: device.debugHostType,
+          login: email.value.trim(),
+        );
+        return true;
+      }
+
+      if (device.remoteDevice != null) {
+        final ping = await detection.findOptimalDeviceConnection(
+          device: device,
+          seagateDeviceID: device.remoteDevice!.seagateDeviceID,
+          useCachedPaths: false,
+        );
+        if (ping.success && ping.baseUrl != null) {
+          await dp.setHost(
+            baseUrl: ping.baseUrl,
+            deviceID: device.id,
+            seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+            debugHostType: ping.debugHostType,
+            login: email.value.trim(),
+            devicePaths: device.remoteDevice?.seagateDeviceID == null
+                ? null
+                : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
+          );
+          return true;
+        }
+      }
+
+      dp.clearDevice(save: true);
+      return false;
     }
 
     bool isResetPasswordEnabled() =>
@@ -609,6 +700,20 @@ class CuratorLoginForm extends HookConsumerWidget {
       clearAllErrors();
       isResetPasswordLoading.value = true;
 
+      Future<void> showResetPasswordDialog({required String title, required String content}) async {
+        if (!context.mounted) {
+          return;
+        }
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text('OK'.tr()))],
+          ),
+        );
+      }
+
       try {
         final canPrepareDeviceHost = await prepareDeviceHostForResetPassword();
         if (!canPrepareDeviceHost) {
@@ -624,29 +729,42 @@ class CuratorLoginForm extends HookConsumerWidget {
         log.info('[ResetPassword] Request sent successfully for email=${email.value.trim()}');
         if (context.mounted) {
           final trimmedEmail = email.value.trim();
-          final messenger = ScaffoldMessenger.of(context);
-          messenger.hideCurrentSnackBar();
-          messenger.showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              padding: EdgeInsets.zero,
-              duration: const Duration(seconds: 4),
-              content: NetworkStatusSnackBar(
-                message: '${'password_reset_success'.tr()}: $trimmedEmail',
-                onClose: messenger.hideCurrentSnackBar,
-              ),
-            ),
+          ImmichToast.show(
+            context: context,
+            msg: 'password_reset_email_sent_to'.tr(namedArgs: {'email': trimmedEmail}),
+            toastType: ToastType.success,
+            durationInSecond: 4,
           );
         }
       } on ApiException catch (error) {
-        warningMessage.value = 'errors.unable.to.reset.password'.tr();
         log.warning('[ResetPassword] API failed: code=${error.code}, message=${error.message}');
+        if (error.code == 401) {
+          await showResetPasswordDialog(
+            title: 'curator.email_not_registered_title'.tr(),
+            content: 'curator.email_not_registered_description'.tr(),
+          );
+        } else if (error.code == 429) {
+          await showResetPasswordDialog(
+            title: 'curator.email_too_many_requests_title'.tr(),
+            content: 'curator.email_too_many_requests_description'.tr(),
+          );
+        } else if (error.code >= 500) {
+          await showResetPasswordDialog(
+            title: 'common_server_error'.tr(),
+            content: 'errors.unable_to_reset_password'.tr(),
+          );
+        } else {
+          warningMessage.value = 'errors.unable_to_reset_password'.tr();
+        }
+      } on TimeoutException catch (error, stackTrace) {
+        log.warning('Reset password request timed out', error, stackTrace);
+        await showResetPasswordDialog(
+          title: 'curator.email_unable_to_connect_title'.tr(),
+          content: 'curator.email_unable_to_connect_description'.tr(),
+        );
       } catch (error, stackTrace) {
         log.warning('Failed to reset password', error, stackTrace);
-        warningMessage.value = 'errors.unable.to.reset.password'.tr();
+        warningMessage.value = 'errors.unable_to_reset_password'.tr();
       } finally {
         isResetPasswordLoading.value = false;
       }
@@ -689,53 +807,35 @@ class CuratorLoginForm extends HookConsumerWidget {
           return;
         }
 
+        final selected = resolveSelectedDeviceForAction();
+        if (selected == null || !isDeviceSelectionValid(selected)) {
+          warningMessage.value = "login_form_no_device_selected".tr();
+          return;
+        }
+
+        final preparedBeforeLogin = await prepareDeviceHostForLogin(selected);
+        if (!preparedBeforeLogin) {
+          warningMessage.value = "login_form_server_error".tr();
+          return;
+        }
+
+        final isDeviceReady = await checkDeviceReadyForLogin();
+        if (!isDeviceReady) {
+          return;
+        }
+
         invalidateAllApiRepositoryProviders(ref);
 
         final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
-        final device = resolveSelectedDeviceForAction();
-        if (device != null) {
-          final dp = ref.read(deviceProvider);
-          final rp = ref.read(remoteProvider);
-          final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
-          if (device.about != null && device.baseUrl != null) {
-            await dp.setHost(
-              baseUrl: device.baseUrl,
-              deviceID: device.id,
-              seagateDeviceID: device.remoteDevice?.seagateDeviceID,
-              debugHostType: device.debugHostType,
-            );
-          } else if (device.remoteDevice != null) {
-            final ping = await detection.findOptimalDeviceConnection(
-              device: device,
-              seagateDeviceID: device.remoteDevice!.seagateDeviceID,
-              useCachedPaths: false,
-            );
-            if (ping.success && ping.baseUrl != null) {
-              await dp.setHost(
-                baseUrl: ping.baseUrl,
-                deviceID: device.id,
-                seagateDeviceID: device.remoteDevice?.seagateDeviceID,
-                debugHostType: ping.debugHostType,
-                devicePaths: device.remoteDevice?.seagateDeviceID == null
-                    ? null
-                    : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
-              );
-            } else {
-              dp.clearDevice(save: true);
-            }
-          } else {
-            dp.clearDevice(save: true);
-          }
-
-          final seagateDeviceId = device.remoteDevice?.seagateDeviceID;
-          final cachedPathsForSelectedDevice = seagateDeviceId == null
-              ? null
-              : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths;
-          final paths = dp.getActiveDevicePaths(deviceRemoteId: seagateDeviceId) ?? cachedPathsForSelectedDevice;
-          if (paths != null && paths.isNotEmpty) {
-            await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
-          }
+        final dp = ref.read(deviceProvider.notifier);
+        final seagateDeviceId = selected.remoteDevice?.seagateDeviceID;
+        final cachedPathsForSelectedDevice = seagateDeviceId == null
+            ? null
+            : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths;
+        final paths = dp.getActiveDevicePaths(deviceRemoteId: seagateDeviceId) ?? cachedPathsForSelectedDevice;
+        if (paths != null && paths.isNotEmpty) {
+          await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
         }
 
         if (result.shouldChangePassword && !result.isAdmin) {
@@ -743,19 +843,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         } else {
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (onboardingWasShown) {
-            if (onboardingWasShown) {
-              final isBeta = Store.isBetaTimelineEnabled;
-              if (isBeta) {
-                await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-                handleSyncFlow();
-                ref.read(websocketProvider.notifier).connect();
-                context.replaceRoute(const TabShellRoute());
-                return;
-              }
-              context.replaceRoute(const TabControllerRoute());
-            } else {
-              context.replaceRoute(const CuratorOnboardingRoute());
-            }
+            context.replaceRoute(const SplashScreenRoute());
           } else {
             context.replaceRoute(const CuratorOnboardingRoute());
           }
@@ -842,20 +930,32 @@ class CuratorLoginForm extends HookConsumerWidget {
                               onRefresh: startDiscovery,
                             ),
                             const SizedBox(height: 4.0),
-                            GestureDetector(
-                              onTap: () => handleCantFindDeviceManually(onStartDiscovery: startDiscovery),
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  "curator.login_form_cant_find_device".tr(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontSize: 14.0,
-                                    fontWeight: FontWeight.w500,
+                            isCantFindDeviceLoading.value
+                                ? const Padding(
+                                    padding: EdgeInsets.all(10.0),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: SizedBox(
+                                        height: 20.0,
+                                        width: 20.0,
+                                        child: CircularProgressIndicator.adaptive(strokeWidth: 2.0),
+                                      ),
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: () => handleCantFindDeviceManually(onStartDiscovery: startDiscovery),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Text(
+                                        "curator.login_form_cant_find_device".tr(),
+                                        style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontSize: 14.0,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
                             const SizedBox(height: 24.0),
                             PasswordInput(
                               controller: passwordController,

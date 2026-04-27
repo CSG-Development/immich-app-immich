@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
@@ -10,7 +8,6 @@ import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/repositories/database.repository.dart';
@@ -48,22 +45,5 @@ class AuthRepository extends DatabaseRepository {
 
   String? getPreferredWifiName() {
     return Store.tryGet(StoreKey.preferredWifiName);
-  }
-
-  String? getLocalEndpoint() {
-    return Store.tryGet(StoreKey.localEndpoint);
-  }
-
-  List<AuxilaryEndpoint> getExternalEndpointList() {
-    final jsonString = Store.tryGet(StoreKey.externalEndpointList);
-
-    if (jsonString == null) {
-      return [];
-    }
-
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-    final endpointList = jsonList.map((e) => AuxilaryEndpoint.fromJson(e)).toList();
-
-    return endpointList;
   }
 }
