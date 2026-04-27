@@ -223,7 +223,7 @@ class NetworkChangeListenerService {
 
       if (resetOpenApiForMobile) {
         _log.info('Connectivity: Wi‑Fi to mobile — resetting OpenAPI base before Curator re-detection');
-        await _ref.read(apiServiceProvider).setOpenApiServiceEndpoint(allowLocalProbe: false);
+        await _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
       } else {
         _log.info('Connectivity changed ($backupReasonCode), scheduling Curator endpoint re-detection');
       }
