@@ -244,7 +244,7 @@ export const defaults = Object.freeze<SystemConfig>({
     clip: {
       enabled: true,
       modelName: 'EVA02-B-16__merged2b_s8b_b131k',
-      probabilityThreshold: 0.97,
+      probabilityThreshold: 0.95,
     },
     duplicateDetection: {
       enabled: true,
