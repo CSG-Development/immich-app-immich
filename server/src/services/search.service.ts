@@ -137,7 +137,7 @@ export class SearchService extends BaseService {
           modelName: machineLearning.clip.modelName,
           language: dto.language,
         });
-        this.embeddingCache.set(key, counterEmbedding);
+        this.embeddingCache.set(counterKey, counterEmbedding);
       }
     } else if (dto.queryAssetId) {
       await this.requireAccess({ auth, permission: Permission.AssetRead, ids: [dto.queryAssetId] });
