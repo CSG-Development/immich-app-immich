@@ -112,6 +112,14 @@ export class PersonRepository {
     await this.db.deleteFrom('asset_face').where('asset_face.sourceType', '=', sourceType).execute();
   }
 
+  async deleteAllFaceRecognitionData(): Promise<void> {
+    await this.db.transaction().execute(async (trx: Kysely<DB>) => {
+      await trx.schema.dropTable('person').ifExists().execute();
+      await trx.schema.dropTable('face_search').ifExists().execute();
+      await trx.schema.dropTable('asset_face').ifExists().execute();
+    });
+  }
+
   getAllFaces(options: GetAllFacesOptions = {}) {
     return this.db
       .selectFrom('asset_face')
