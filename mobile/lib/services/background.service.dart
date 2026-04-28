@@ -50,6 +50,7 @@ class BackgroundService {
   bool _isBackgroundInitialized = false;
   CancellationToken? _cancellationToken;
   bool _canceledBySystem = false;
+  bool _isShuttingDown = false;
   int _wantsLockTime = 0;
   bool _hasLock = false;
   SendPort? _waitingIsolate;
@@ -158,7 +159,7 @@ class BackgroundService {
     bool onlyIfFG = false,
   }) async {
     try {
-      if (_isBackgroundInitialized) {
+      if (_isBackgroundInitialized && !_isShuttingDown) {
         return _backgroundChannel.invokeMethod<bool>('updateNotification', [
           title,
           content,
@@ -178,7 +179,7 @@ class BackgroundService {
   /// Shows a new priority notification
   Future<bool> _showErrorNotification({required String title, String? content, String? individualTag}) async {
     try {
-      if (_isBackgroundInitialized && _errorGracePeriodExceeded) {
+      if (_isBackgroundInitialized && _errorGracePeriodExceeded && !_isShuttingDown) {
         return await _backgroundChannel.invokeMethod('showError', [title, content, individualTag]);
       }
     } catch (error) {
@@ -189,7 +190,7 @@ class BackgroundService {
 
   Future<bool> _clearErrorNotifications() async {
     try {
-      if (_isBackgroundInitialized) {
+      if (_isBackgroundInitialized && !_isShuttingDown) {
         return await _backgroundChannel.invokeMethod('clearErrorNotifications');
       }
     } catch (error) {
@@ -279,6 +280,8 @@ class BackgroundService {
   }
 
   void _setupBackgroundCallHandler() {
+    _canceledBySystem = false;
+    _isShuttingDown = false;
     _backgroundChannel.setMethodCallHandler(_callHandler);
     _isBackgroundInitialized = true;
     _backgroundChannel.invokeMethod('initialized');
@@ -296,6 +299,8 @@ class BackgroundService {
       case "backgroundProcessing":
       case "onAssetsChanged":
         try {
+          _isShuttingDown = false;
+          _canceledBySystem = false;
           _clearErrorNotifications();
 
           // iOS should time out after some threshold so it doesn't wait
@@ -325,6 +330,7 @@ class BackgroundService {
           releaseLock();
         }
       case "systemStop":
+        _isShuttingDown = true;
         _canceledBySystem = true;
         _cancellationToken?.cancel();
         return true;
@@ -416,7 +422,10 @@ class BackgroundService {
           return false;
         }
         // Android should check for new assets added while performing backup
-      } while (Platform.isAndroid && true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
+      } while (
+          Platform.isAndroid &&
+          !_isShuttingDown &&
+          true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
       return true;
     } finally {
       ref.dispose();
