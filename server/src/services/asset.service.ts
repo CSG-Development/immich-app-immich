@@ -351,8 +351,6 @@ export class AssetService extends BaseService {
       throw new UnauthorizedException();
     }
 
-    await this.personRepository.deleteAllFaceRecognitionData();
-
     const assetIds: string[] = (
       await this.assetRepository.getAllAssetIds()
     ).map((row: { id: string }) => row.id);
