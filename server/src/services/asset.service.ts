@@ -3,23 +3,23 @@ import _ from 'lodash';
 import { DateTime, Duration } from 'luxon';
 import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
 import { OnJob } from 'src/decorators';
-import { AssetResponseDto, MapAsset, SanitizedAssetResponseDto, mapAsset } from 'src/dtos/asset-response.dto';
+import { AssetResponseDto, MapAsset, mapAsset, SanitizedAssetResponseDto } from 'src/dtos/asset-response.dto';
 import {
   AssetBulkDeleteDto,
   AssetBulkUpdateDto,
   AssetJobName,
+  AssetJobsAllDto,
   AssetJobsDto,
   AssetMetadataResponseDto,
   AssetMetadataUpsertDto,
   AssetStatsDto,
-  UpdateAssetDto,
   mapStats,
-  AssetJobsAllDto,
+  UpdateAssetDto,
 } from 'src/dtos/asset.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
-import { ISidecarWriteJob, JobItem, JobOf } from 'src/types';
+import { IBaseJob, ISidecarWriteJob, JobItem, JobOf } from 'src/types';
 import { requireElevatedPermission } from 'src/utils/access';
 import { getAssetFiles, getMyPartnerIds, onAfterUnlink, onBeforeLink, onBeforeUnlink } from 'src/utils/asset.util';
 
@@ -351,37 +351,61 @@ export class AssetService extends BaseService {
       throw new UnauthorizedException();
     }
 
+    const name = this.mapJobName(dto.name);
+
     const assetIds: string[] = (
       await this.assetRepository.getAllAssetIds()
     ).map((row: { id: string }) => row.id);
 
-    const jobs: JobItem[] = [];
+    const BATCH_SIZE = 25;
 
-    for (const id of assetIds) {
-      switch (dto.name) {
-        case AssetJobName.REFRESH_FACES: {
-          jobs.push({ name: JobName.AssetDetectFaces, data: { id } });
-          break;
-        }
+    let offset = 0;
+    let batchStartingIndex;
+    let currentBatch;
 
-        case AssetJobName.REFRESH_METADATA: {
-          jobs.push({ name: JobName.AssetExtractMetadata, data: { id } });
-          break;
-        }
+    while (true) {
+      batchStartingIndex = offset * BATCH_SIZE;
+      currentBatch = assetIds.slice(batchStartingIndex, batchStartingIndex + BATCH_SIZE);
 
-        case AssetJobName.REGENERATE_THUMBNAIL: {
-          jobs.push({ name: JobName.AssetGenerateThumbnails, data: { id } });
-          break;
-        }
-
-        case AssetJobName.TRANSCODE_VIDEO: {
-          jobs.push({ name: JobName.AssetEncodeVideo, data: { id } });
-          break;
-        }
+      if (currentBatch.length === 0) {
+        break;
       }
-    }
+      this.logger.log(`Handling batch on indexes ${batchStartingIndex} - ${batchStartingIndex + currentBatch.length}`);
 
-    await this.jobRepository.queueAll(jobs);
+      const jobs: JobItem[] = currentBatch.map((id) => ({
+        name,
+        data: {id} as IBaseJob,
+      }));
+
+      await this.jobRepository.queueAll(jobs);
+
+      offset += 1;
+
+      // Let the event loop breathe (important under load)
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  private mapJobName(name: AssetJobName): JobName.VersionCheck {
+    let mappedName;
+    switch (name) {
+      case AssetJobName.REFRESH_FACES:
+        mappedName = JobName.AssetDetectFaces;
+        break;
+      case AssetJobName.REFRESH_METADATA:
+        mappedName = JobName.AssetExtractMetadata;
+        break;
+      case AssetJobName.REGENERATE_THUMBNAIL:
+        mappedName = JobName.AssetGenerateThumbnails;
+        break;
+      case AssetJobName.TRANSCODE_VIDEO:
+        mappedName = JobName.AssetEncodeVideo;
+        break;
+      case AssetJobName.SMART_SEARCH:
+        mappedName = JobName.SmartSearch;
+        break;
+    }
+    return mappedName as JobName.VersionCheck;
   }
 
   private async findOrFail(id: string) {
