@@ -1,9 +1,9 @@
-import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import _ from 'lodash';
-import {DateTime, Duration} from 'luxon';
-import {JOBS_ASSET_PAGINATION_SIZE} from 'src/constants';
-import {OnJob} from 'src/decorators';
-import {AssetResponseDto, MapAsset, mapAsset, SanitizedAssetResponseDto} from 'src/dtos/asset-response.dto';
+import { DateTime, Duration } from 'luxon';
+import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
+import { OnJob } from 'src/decorators';
+import { AssetResponseDto, MapAsset, mapAsset, SanitizedAssetResponseDto } from 'src/dtos/asset-response.dto';
 import {
   AssetBulkDeleteDto,
   AssetBulkUpdateDto,
@@ -16,12 +16,12 @@ import {
   mapStats,
   UpdateAssetDto,
 } from 'src/dtos/asset.dto';
-import {AuthDto} from 'src/dtos/auth.dto';
-import {AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName} from 'src/enum';
-import {BaseService} from 'src/services/base.service';
-import {IBaseJob, ISidecarWriteJob, JobItem, JobOf} from 'src/types';
-import {requireElevatedPermission} from 'src/utils/access';
-import {getAssetFiles, getMyPartnerIds, onAfterUnlink, onBeforeLink, onBeforeUnlink} from 'src/utils/asset.util';
+import { AuthDto } from 'src/dtos/auth.dto';
+import { AssetMetadataKey, AssetStatus, AssetVisibility, JobName, JobStatus, Permission, QueueName } from 'src/enum';
+import { BaseService } from 'src/services/base.service';
+import { IBaseJob, ISidecarWriteJob, JobItem, JobOf } from 'src/types';
+import { requireElevatedPermission } from 'src/utils/access';
+import { getAssetFiles, getMyPartnerIds, onAfterUnlink, onBeforeLink, onBeforeUnlink } from 'src/utils/asset.util';
 
 @Injectable()
 export class AssetService extends BaseService {
