@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/settings/networking_settings/external_network_preference.dart';
 import 'package:immich_mobile/widgets/settings/networking_settings/local_network_preference.dart';
@@ -89,40 +88,4 @@ class NetworkPreferenceTitle extends StatelessWidget {
       ],
     );
   }
-}
-
-class NetworkStatusIcon extends StatelessWidget {
-  const NetworkStatusIcon({super.key, required this.status, this.enabled = true}) : super();
-
-  final AuxCheckStatus status;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(duration: const Duration(milliseconds: 200), child: _buildIcon(context));
-  }
-
-  Widget _buildIcon(BuildContext context) => switch (status) {
-    AuxCheckStatus.loading => Padding(
-      padding: const EdgeInsets.only(left: 4.0),
-      child: SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(color: context.primaryColor, strokeWidth: 2, key: const ValueKey('loading')),
-      ),
-    ),
-    AuxCheckStatus.valid =>
-      enabled
-          ? const Icon(Icons.check_circle_rounded, color: Colors.green, key: ValueKey('success'))
-          : Icon(
-              Icons.check_circle_rounded,
-              color: context.colorScheme.onSurface.withAlpha(100),
-              key: const ValueKey('success'),
-            ),
-    AuxCheckStatus.error =>
-      enabled
-          ? const Icon(Icons.error_rounded, color: Colors.red, key: ValueKey('error'))
-          : const Icon(Icons.error_rounded, color: Colors.grey, key: ValueKey('error')),
-    _ => const Icon(Icons.circle_outlined, key: ValueKey('unknown')),
-  };
 }

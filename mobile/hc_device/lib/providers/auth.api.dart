@@ -11,8 +11,9 @@
 
 import 'dart:async';
 import 'dart:io';
+
 import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:hc_device/services/logger_service.dart';
 
 /// Interface for refresh logic and logout
 abstract class CuratorAuthProvider {
@@ -20,7 +21,7 @@ abstract class CuratorAuthProvider {
   bool get isAuthenticated;
   bool isRefreshRequest(Request? request);
   Future<String> refreshAccessToken();
-  void logOut({bool notify});
+  Future<void> logOut({bool notify});
 }
 
 /// Generic interceptor for adding the Authorization header
@@ -53,8 +54,6 @@ class CuratorInterceptor implements Interceptor {
 class CuratorAuthenticator implements Authenticator {
   final CuratorAuthProvider _provider;
   Completer<String>? _completer;
-  static const String _replayAttemptMarkerHeader = "accept-language";
-  static const String _replayAttemptMarkerValue = "42";
 
   CuratorAuthenticator(this._provider);
 
@@ -65,52 +64,30 @@ class CuratorAuthenticator implements Authenticator {
     Request? originalRequest,
   ]) async {
     // Catch if the response is unauthorized (401) or forbidden (403)
-    // Only try to refresh if the user has an active access token
-    if (_provider.accessToken != null &&
+    // Only try to refresh if the user is authenticated and if we haven't already tried to refresh for this request
+    if (_provider.isAuthenticated &&
         (response.statusCode == HttpStatus.unauthorized ||
             response.statusCode == HttpStatus.forbidden)) {
       // Trying to update token only 1 time
       // TODO use a better way to identify if it's a refresh request, like a custom header
-      final isReplayAttempted =
-          request.headers[_replayAttemptMarkerHeader] ==
-          _replayAttemptMarkerValue;
-      final isRefreshFlowRequest =
-          _provider.isRefreshRequest(request) ||
-          _provider.isRefreshRequest(originalRequest);
-
-      if (!isReplayAttempted && !isRefreshFlowRequest) {
-        // AUTH_REFRESH_ATTEMPT - Trace log for auth recovery
-        if (kDebugMode) {
-          print('[Auth] AUTH_REFRESH_ATTEMPT - Attempting to refresh access token');
-        }
+      if (request.headers["accept-language"] != "42" &&
+          !(_provider.isRefreshRequest(originalRequest))) {
         // Use "accept-language" to avoid to be blocked by Access-Control-Allow-Headers
         try {
           final newAccessToken = await _refreshToken();
-          // AUTH_REPLAY_ATTEMPT - Trace log for auth replay
-          if (kDebugMode) {
-            print('[Auth] AUTH_REPLAY_ATTEMPT - Replay request with refreshed token');
-          }
           return applyHeaders(request, {
             HttpHeaders.authorizationHeader: 'Bearer $newAccessToken',
             // Setting a parameter to not end up in an infinite loop...
-            _replayAttemptMarkerHeader: _replayAttemptMarkerValue,
+            "accept-language": '42',
           });
         } catch (e) {
-          // AUTH_RECOVERY_FAILED - Trace log for auth recovery failure
-          if (kDebugMode) {
-            print('[Auth] AUTH_RECOVERY_FAILED - Token refresh failed: $e');
-          }
+          logger.error('[Auth] Unable to refresh token', e);
         }
-      } else if (kDebugMode) {
-        print(
-          '[Auth] AUTH_RECOVERY_FAILED - Already attempted refresh or refresh request detected',
-        );
+      } else {
+        logger.warning('[Auth] Unable to refresh token (already attempted or failed)');
       }
       // If the token cannot be refreshed, logout
-      if (kDebugMode) {
-        print('[Auth] AUTH_RECOVERY_FAILED - Session invalid, logging out');
-      }
-      _provider.logOut(notify: true);
+      await _provider.logOut(notify: true);
       return null;
     }
     return null;
@@ -119,22 +96,15 @@ class CuratorAuthenticator implements Authenticator {
   Future<String> _refreshToken() async {
     // Completer to prevent multiple token refreshes at the same time
     if (_completer != null && !_completer!.isCompleted) {
-      if (kDebugMode) {
-        print('[Auth] Token refresh already in progress, waiting for completion');
-      }
+      logger.debug('[Auth] Token refresh already in progress');
       return _completer!.future;
     }
     _completer = Completer<String>();
     try {
       final token = await _provider.refreshAccessToken();
-      if (kDebugMode) {
-        print('[Auth] Token refresh successful');
-      }
       _completer!.complete(token);
     } catch (e) {
-      if (kDebugMode) {
-        print('[Auth] Token refresh failed: $e');
-      }
+      logger.error('[Auth] Automatic token refresh failed', e);
       _completer!.completeError(e);
     }
     return _completer!.future;

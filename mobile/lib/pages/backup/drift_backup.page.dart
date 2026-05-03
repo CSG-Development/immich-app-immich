@@ -10,7 +10,6 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
-import 'package:immich_mobile/generated/intl_keys.g.dart';
 import 'package:immich_mobile/presentation/widgets/backup/backup_toggle_button.widget.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup_album.provider.dart';
@@ -40,22 +39,31 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
     WakelockPlus.enable();
 
     final currentUser = ref.read(currentUserProvider);
+    final backupNotifier = ref.read(driftBackupProvider.notifier);
+    final backupSyncManager = ref.read(backgroundSyncProvider);
     if (currentUser == null) {
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref.read(driftBackupProvider.notifier).getBackupStatus(currentUser.id);
+      if (!mounted) {
+        return;
+      }
+      await backupNotifier.getBackupStatus(currentUser.id);
+      if (!mounted) {
+        return;
+      }
 
-      ref.read(driftBackupProvider.notifier).updateSyncing(true);
-      syncSuccess = await ref.read(backgroundSyncProvider).syncRemote();
-      ref
-          .read(driftBackupProvider.notifier)
-          .updateError(syncSuccess == true ? BackupError.none : BackupError.syncFailed);
-      ref.read(driftBackupProvider.notifier).updateSyncing(false);
+      backupNotifier.updateSyncing(true);
+      syncSuccess = await backupSyncManager.syncRemote();
+      if (!mounted) {
+        return;
+      }
+      backupNotifier.updateError(syncSuccess == true ? BackupError.none : BackupError.syncFailed);
+      backupNotifier.updateSyncing(false);
 
       if (mounted) {
-        await ref.read(driftBackupProvider.notifier).getBackupStatus(currentUser.id);
+        await backupNotifier.getBackupStatus(currentUser.id);
       }
     });
   }

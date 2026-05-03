@@ -1,28 +1,18 @@
-//   Do NOT modify or remove this copyright and confidentiality notice
+//   Copyright (c) 2026 Seagate Technology LLC. All rights reserved.
 //
-//   Copyright (c) 2026 Seagate Technology LLC or one of its affiliates.
-//
-//   This code is classified as SEAGATE CONFIDENTIAL
-//   and may not be used, modified, duplicated, derived, distributed, or disclosed
-//   except as expressly authorized.
+//   Complying with all applicable copyright laws is the responsibility of the user.
+//   All coded instruction and program statements contained herein are, and remain,
+//   copyrighted works, and are confidential proprietary information of Seagate Technology LLC or its affiliates.
+//   Any use, derivation, dissemination, reproduction, or any attempt to modify, reproduce, distribute,
+//   disclose copyrighted material of Seagate Technology LLC, for any reason, in any manner, medium, or form,
+//   in whole or in part, if not expressly authorized, is strictly prohibited.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show IconData, Icons;
 
-/// High-level connection category.
 enum ConnectionType { local, internet }
 
 enum NetworkMethod { ip, deviceName, direct, relay }
 
-/// Stable key for host-app localization.
-enum ConnectionLabelKind {
-  localIp,
-  localDeviceName,
-  internetDirect,
-  internetRelay,
-  unknown,
-}
-
-/// UI metadata for the active Curator connection path.
 class ConnectionInfo {
   final IconData icon;
   final ConnectionType connectionType;
@@ -36,22 +26,20 @@ class ConnectionInfo {
     required this.address,
   });
 
-  ConnectionLabelKind get labelKind => switch ((connectionType, networkMethod)) {
-        (ConnectionType.local, NetworkMethod.ip) => ConnectionLabelKind.localIp,
-        (ConnectionType.local, NetworkMethod.deviceName) => ConnectionLabelKind.localDeviceName,
-        (ConnectionType.internet, NetworkMethod.direct) => ConnectionLabelKind.internetDirect,
-        (ConnectionType.internet, NetworkMethod.relay) => ConnectionLabelKind.internetRelay,
-        _ => ConnectionLabelKind.unknown,
-      };
-
-  /// English fallback when the host has no i18n mapping for [labelKind].
-  String get defaultLabel => switch (labelKind) {
-        ConnectionLabelKind.localIp => 'Local network (IP)',
-        ConnectionLabelKind.localDeviceName => 'Local network (device name)',
-        ConnectionLabelKind.internetDirect => 'Internet (direct)',
-        ConnectionLabelKind.internetRelay => 'Internet (relay)',
-        ConnectionLabelKind.unknown => 'Connected',
-      };
+  String get defaultLabel {
+    switch ((connectionType, networkMethod)) {
+      case (ConnectionType.local, NetworkMethod.ip):
+        return 'Local network (IP)';
+      case (ConnectionType.local, NetworkMethod.deviceName):
+        return 'Local network (device name)';
+      case (ConnectionType.internet, NetworkMethod.direct):
+        return 'Internet (direct)';
+      case (ConnectionType.internet, NetworkMethod.relay):
+        return 'Internet (relay)';
+      default:
+        return 'Connected';
+    }
+  }
 
   static ConnectionInfo? fromDebugHostType(
     String? debugHostType,
@@ -60,8 +48,10 @@ class ConnectionInfo {
     if (debugHostType == null || baseUrl == null) return null;
 
     final address =
-        '${baseUrl.host}${baseUrl.hasPort ? ':${baseUrl.port}' : ''}';
+        "${baseUrl.host}${baseUrl.hasPort ? ":${baseUrl.port}" : ""}";
 
+    // TODO: Refactor to avoid hardcoding debugHostType values and instead use a more robust way to determine connection type and method,
+    // possibly by encoding this information in the baseUrl or through additional metadata from the API.
     switch (debugHostType) {
       case 'Remote Access > local':
       case 'Development':

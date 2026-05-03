@@ -250,7 +250,6 @@ class BackupService {
     final bool isIgnoreIcloudAssets = _appSetting.getSetting(AppSettingsEnum.ignoreIcloudAssets);
     final shouldSyncAlbums = _appSetting.getSetting(AppSettingsEnum.syncAlbums);
     final String deviceId = Store.get(StoreKey.deviceId);
-    final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
     final List<String> duplicatedAssetIds = [];
     bool anyErrors = false;
 
@@ -333,7 +332,7 @@ class BackupService {
 
           final baseRequest = MultipartRequest(
             'POST',
-            Uri.parse('$savedEndpoint/assets'),
+            Uri.parse('${Store.get(StoreKey.serverEndpoint)}/assets'),
             onProgress: ((bytes, totalBytes) => onProgress(bytes, totalBytes)),
           );
 

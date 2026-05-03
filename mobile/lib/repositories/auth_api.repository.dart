@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
 final authApiRepositoryProvider = Provider(
-  (ref) => AuthApiRepository(ref.watch(apiServiceProvider), ref.watch(deviceProvider)),
+  (ref) => AuthApiRepository(ref.watch(apiServiceProvider), ref.watch(deviceProvider.notifier)),
 );
 
 class AuthApiRepository extends ApiRepository {
@@ -43,7 +43,7 @@ class AuthApiRepository extends ApiRepository {
       "[ResetPassword] Calling device API usersResetPasswordEmailPost "
       "(deviceID=${_deviceProvider.deviceID}, debugHostType=${_deviceProvider.debugHostType})",
     );
-    final response = await _deviceProvider.api.usersResetPasswordEmailPost(email: encodedEmail);
+    final response = await _deviceProvider.sendResetPasswordEmail(email: encodedEmail).timeout(const Duration(seconds: 30));
     final isSuccessful = response.isSuccessful;
     if (!isSuccessful) {
       _log.warning("[ResetPassword] Device API failed: status=${response.statusCode}, error=${response.error}");

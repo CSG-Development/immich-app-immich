@@ -20,6 +20,7 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/backup/ios_background_settings.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/memory.provider.dart';
@@ -50,6 +51,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   Completer<void>? _pauseOperation;
 
   final _log = Logger("AppLifeCycleNotifier");
+  static const Duration _resumeReconnectTimeout = Duration(seconds: 5);
 
   AppLifeCycleNotifier(this._ref) : super(AppLifeCycleEnum.active);
 
@@ -143,8 +145,20 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
     // Needs to be logged in
     if (isAuthenticated) {
-      // switch endpoint if needed
-      final endpoint = await _ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+      // In hc_device-driven resolver mode, trigger winner selection on resume.
+      // This allows switching public->local when local becomes available again.
+      await _ref
+          .read(curatorNetworkMonitorProvider)
+          .reconnectDeviceEndpoint()
+          .timeout(
+            _resumeReconnectTimeout,
+            onTimeout: () {
+              _log.warning(
+                "Resume reconnect exceeded ${_resumeReconnectTimeout.inSeconds}s; continuing resume pipeline",
+              );
+            },
+          );
+      final endpoint = _ref.read(apiServiceProvider).apiClient.basePath;
       _log.info("Using server URL: $endpoint");
 
       if (!Store.isBetaTimelineEnabled) {
@@ -214,7 +228,17 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
         _safeRun(backgroundManager.syncLocal(), "syncLocal"),
         _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemote"),
       ]);
+      if (!syncSuccess) {
+        // On app restart/resume reconnect can still be settling.
+        // Retry once before surfacing syncFailed in the app bar badge.
+        await Future<void>.delayed(const Duration(seconds: 2));
+        await _safeRun(
+          backgroundManager.syncRemote().then((success) => syncSuccess = success),
+          "syncRemoteRetry",
+        );
+      }
       if (syncSuccess) {
+        _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
         await Future.wait([
           _safeRun(backgroundManager.hashAssets(), "hashAssets").then((_) {
             _resumeBackup();

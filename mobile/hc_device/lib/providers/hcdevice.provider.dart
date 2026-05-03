@@ -2,7 +2,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'
     show FlutterSecureStorage;
 import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show Provider, ChangeNotifierProvider;
+    show Provider, NotifierProvider;
 import 'package:hc_device/providers/device.provider.dart';
 import 'package:hc_device/providers/remote.provider.dart';
 
@@ -27,24 +27,10 @@ class RemoteAccessDependencies {
   });
 }
 
-// Main DeviceProvider as ChangeNotifierProvider
-final deviceProvider = ChangeNotifierProvider<DeviceProvider>((ref) {
-  final deps = ref.watch(remoteAccessDependenciesProvider);
-  return DeviceProvider(
-    deps.storageData,
-    deps.secureStorage,
-    deps.secureData,
-    deps.registerHostTrustedChain
-  );
-});
+final deviceProvider = NotifierProvider<DeviceProvider, DeviceState>(
+  DeviceProvider.new,
+);
 
-// Main RemoteProvider as ChangeNotifierProvider
-final remoteProvider = ChangeNotifierProvider<RemoteProvider>((ref) {
-  final deps = ref.watch(remoteAccessDependenciesProvider);
-  return RemoteProvider(
-    deps.storageData,
-    deps.secureStorage,
-    deps.secureData,
-    deps.registerHostTrustedChain,
-  );
-});
+final remoteProvider = NotifierProvider<RemoteProvider, RemoteState>(
+  RemoteProvider.new,
+);

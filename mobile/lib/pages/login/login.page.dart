@@ -17,7 +17,7 @@ class LoginPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authenticatedEmail = ref.read(deviceProvider).login;
+    final authenticatedEmail = ref.read(deviceProvider).login ?? '';
     final devEnableSettingsOnLogin = ref.watch(developerOptionsProvider).devEnableSettingsOnLogin;
 
     final appVersion = useState('0.0.0');

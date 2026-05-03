@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/debug/network_debug_overlay_visibility.provider.dart';
 import 'package:immich_mobile/providers/protected_feature_visibility.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/settings/advanced_settings.dart';
@@ -122,14 +123,15 @@ class _MobileLayout extends StatelessWidget {
   }
 }
 
-class _TabletLayout extends HookWidget {
+class _TabletLayout extends HookConsumerWidget {
   const _TabletLayout();
-  
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final availableSections = SettingSection.values
         .toList();
     final selectedSection = useState<SettingSection>(availableSections.first);
+    final networkingTitleTapTimes = useRef<List<DateTime>>(<DateTime>[]);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -146,7 +148,13 @@ class _TabletLayout extends HookWidget {
                     selected: s.index == selectedSection.value.index,
                     selectedColor: context.primaryColor,
                     selectedTileColor: context.themeData.highlightColor,
-                    onTap: () => selectedSection.value = s,
+                    onTap: () {
+                      selectedSection.value = s;
+                      if (s == SettingSection.networking &&
+                          tryConsumeNetworkDebugOverlaySecretTap(networkingTitleTapTimes.value)) {
+                        ref.read(networkDebugOverlayVisibleProvider.notifier).update((v) => !v);
+                      }
+                    },
                   ),
                 ),
               ),
@@ -161,20 +169,35 @@ class _TabletLayout extends HookWidget {
 }
 
 @RoutePage()
-class SettingsSubPage extends StatelessWidget {
+class SettingsSubPage extends HookConsumerWidget {
   const SettingsSubPage(this.section, {super.key});
 
   final SettingSection section;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     context.locale;
+    final networkingTitleTapTimes = useRef<List<DateTime>>(<DateTime>[]);
+
+    final Widget titleWidget = Text(section.title).tr();
+    final Widget appBarTitle = section == SettingSection.networking
+        ? GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              if (tryConsumeNetworkDebugOverlaySecretTap(networkingTitleTapTimes.value)) {
+                ref.read(networkDebugOverlayVisibleProvider.notifier).update((v) => !v);
+              }
+            },
+            child: titleWidget,
+          )
+        : titleWidget;
+
     return SafeArea(
       bottom: true,
       top: false,
       right: true,
       child: Scaffold(
-        appBar: AppBar(centerTitle: false, title: Text(section.title).tr()),
+        appBar: AppBar(centerTitle: false, title: appBarTitle),
         body: section.widget,
       ),
     );

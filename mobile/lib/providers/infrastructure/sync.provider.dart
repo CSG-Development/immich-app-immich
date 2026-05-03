@@ -10,6 +10,7 @@ import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/cancel.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 
 final syncStreamServiceProvider = Provider(
   (ref) => SyncStreamService(
@@ -19,7 +20,12 @@ final syncStreamServiceProvider = Provider(
   ),
 );
 
-final syncApiRepositoryProvider = Provider((ref) => SyncApiRepository(ref.watch(apiServiceProvider)));
+final syncApiRepositoryProvider = Provider(
+  (ref) => SyncApiRepository(
+    ref.watch(apiServiceProvider),
+    ref.watch(hcDeviceEndpointResolverProvider),
+  ),
+);
 
 final syncStreamRepositoryProvider = Provider((ref) => SyncStreamRepository(ref.watch(driftProvider)));
 

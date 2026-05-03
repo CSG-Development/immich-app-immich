@@ -9,29 +9,196 @@
 //   All other rights are expressly reserved by Seagate Technology LLC.
 //
 
-import 'dart:convert' show jsonEncode, jsonDecode;
+import 'dart:async' show unawaited;
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'
     show FlutterSecureStorage;
-import 'package:hc_device/api/api.enums.swagger.dart'
-    show AuthRefreshPost$RequestBodyGrantType;
 import 'package:hc_device/api/api.swagger.dart'
     show
+        About,
         Api,
-        AuthRefreshPost$RequestBody,
         AuthResponse,
         Status,
-        AuthLogoutPost$RequestBody;
+        User;
+import 'package:hc_device/api/remote_access.enums.swagger.dart'
+    show DevicePathType;
 import 'package:hc_device/api/remote_access.swagger.dart'
     show DevicePath, DevicePaths;
+import 'package:hc_device/data/api/device_api_client.dart';
+import 'package:hc_device/data/repositories/auth_repository.dart';
+import 'package:hc_device/data/repositories/device_repository.dart';
 import 'package:hc_device/providers/auth.api.dart';
+import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
 import 'package:hc_device/services/logger_service.dart';
 import 'package:http/io_client.dart' show IOClient;
+import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferencesAsync;
 
-class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
+/// Backend may return duplicate entries for the same endpoint. Deduplicate by
+/// address + port, preferring [DevicePathType.local] over public over remote.
+List<DevicePath> dedupeDevicePathList(List<DevicePath> paths) {
+  if (paths.isEmpty) {
+    return paths;
+  }
+  int typeRank(DevicePathType t) {
+    switch (t) {
+      case DevicePathType.local:
+        return 0;
+      case DevicePathType.public:
+        return 1;
+      case DevicePathType.remote:
+        return 2;
+      case DevicePathType.swaggerGeneratedUnknown:
+        return 3;
+    }
+  }
+
+  String endpointKey(DevicePath p) {
+    final addr = p.address.trim().toLowerCase();
+    final port = p.port ?? -1;
+    return '$addr\u0000$port';
+  }
+
+  final byKey = <String, DevicePath>{};
+  final keyOrder = <String>[];
+  var changed = false;
+
+  for (final p in paths) {
+    final key = endpointKey(p);
+    final existing = byKey[key];
+    if (existing == null) {
+      byKey[key] = p;
+      keyOrder.add(key);
+      continue;
+    }
+    final rankP = typeRank(p.type);
+    final rankExisting = typeRank(existing.type);
+    if (rankP < rankExisting) {
+      byKey[key] = p;
+      changed = true;
+    } else {
+      changed = true;
+    }
+  }
+
+  if (!changed && keyOrder.length == paths.length) {
+    return paths;
+  }
+
+  return keyOrder.map((k) => byKey[k]!).toList(growable: false);
+}
+
+bool _sameDevicePath(DevicePath a, DevicePath b) =>
+    a.address == b.address && a.port == b.port && a.type == b.type;
+
+DevicePaths dedupeDevicePaths(DevicePaths paths) {
+  final deduped = dedupeDevicePathList(paths.paths);
+  if (identical(deduped, paths.paths)) {
+    return paths;
+  }
+  if (deduped.length == paths.paths.length) {
+    var allEqual = true;
+    for (var i = 0; i < deduped.length; i++) {
+      if (!_sameDevicePath(deduped[i], paths.paths[i])) {
+        allEqual = false;
+        break;
+      }
+    }
+    if (allEqual) {
+      return paths;
+    }
+  }
+  return DevicePaths(paths: deduped, seagateDeviceID: paths.seagateDeviceID);
+}
+
+class DeviceState {
+  final Uri? baseUrl;
+  final Api? api;
+  final String? debugHostType;
+  final String? accessToken;
+  final String? refreshToken;
+  final String? login;
+  final String? deviceID;
+  final String? seagateDeviceID;
+  final Status? deviceStatus;
+  final List<DevicePath>? devicePaths;
+  final DevicePaths? cachedDevicePaths;
+  final DateTime? cachedDevicePathsTimestamp;
+  final bool forceDetectFavoriteDevice;
+
+  const DeviceState({
+    this.baseUrl,
+    this.api,
+    this.debugHostType,
+    this.accessToken,
+    this.refreshToken,
+    this.login,
+    this.deviceID,
+    this.seagateDeviceID,
+    this.deviceStatus,
+    this.devicePaths,
+    this.cachedDevicePaths,
+    this.cachedDevicePathsTimestamp,
+    this.forceDetectFavoriteDevice = false,
+  });
+
+  bool get deviceFound => baseUrl != null;
+  bool get isAuthenticated => accessToken != null || refreshToken != null;
+
+  DeviceState copyWith({
+    Uri? baseUrl,
+    Api? api,
+    String? debugHostType,
+    String? accessToken,
+    String? refreshToken,
+    String? login,
+    String? deviceID,
+    String? seagateDeviceID,
+    Status? deviceStatus,
+    List<DevicePath>? devicePaths,
+    DevicePaths? cachedDevicePaths,
+    DateTime? cachedDevicePathsTimestamp,
+    bool? forceDetectFavoriteDevice,
+    bool clearBaseUrl = false,
+    bool clearApi = false,
+    bool clearAccessToken = false,
+    bool clearRefreshToken = false,
+    bool clearCachedDevicePaths = false,
+    bool clearCachedDevicePathsTimestamp = false,
+    bool clearDeviceStatus = false,
+    bool clearDeviceId = false,
+    bool clearSeagateDeviceId = false,
+    bool clearDevicePaths = false,
+    bool clearDebugHostType = false,
+  }) {
+    return DeviceState(
+      baseUrl: clearBaseUrl ? null : (baseUrl ?? this.baseUrl),
+      api: clearApi ? null : (api ?? this.api),
+      debugHostType: clearDebugHostType ? null : (debugHostType ?? this.debugHostType),
+      accessToken: clearAccessToken ? null : (accessToken ?? this.accessToken),
+      refreshToken: clearRefreshToken ? null : (refreshToken ?? this.refreshToken),
+      login: login ?? this.login,
+      deviceID: clearDeviceId ? null : (deviceID ?? this.deviceID),
+      seagateDeviceID:
+          clearSeagateDeviceId ? null : (seagateDeviceID ?? this.seagateDeviceID),
+      deviceStatus: clearDeviceStatus ? null : (deviceStatus ?? this.deviceStatus),
+      devicePaths: clearDevicePaths ? null : (devicePaths ?? this.devicePaths),
+      cachedDevicePaths:
+          clearCachedDevicePaths ? null : (cachedDevicePaths ?? this.cachedDevicePaths),
+      cachedDevicePathsTimestamp: clearCachedDevicePathsTimestamp
+          ? null
+          : (cachedDevicePathsTimestamp ?? this.cachedDevicePathsTimestamp),
+      forceDetectFavoriteDevice:
+          forceDetectFavoriteDevice ?? this.forceDetectFavoriteDevice,
+    );
+  }
+}
+
+class DeviceProvider extends Notifier<DeviceState>
+    implements CuratorAuthProvider, DeviceConnectivitySource {
   static const String basePath = '/api/v1';
   static const String loginKey = "curator_login";
   static const String favoriteDeviceKey = "curator_favorite";
@@ -48,143 +215,92 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     defaultValue: 'Curator',
   );
 
-  /// To store non-critical info (like login, favorite device id, etc)
-  final Map<String, dynamic> storageData;
+  late final Map<String, dynamic> _storageData;
+  late final FlutterSecureStorage _secureStorage;
+  late final Future<void> Function({required String host, int? port})
+      _registerHostTrustedChain;
+  late final DeviceRepository _repo;
+  late final AuthRepository _authRepo;
+  final DeviceApiClientFactory _apiClientFactory = const DeviceApiClientFactory();
 
-  /// To store sensitive info about the device (like refresh token)
-  final FlutterSecureStorage secureStorage;
+  @override
+  DeviceState build() {
+    final deps = ref.read(remoteAccessDependenciesProvider);
+    _storageData = deps.storageData;
+    _secureStorage = deps.secureStorage;
+    _registerHostTrustedChain = deps.registerHostTrustedChain;
+    _authRepo = AuthRepository(_secureStorage);
+    _repo = DeviceRepository(() => api);
 
-  final Future<void> Function({required String host, int? port}) registerHostTrustedChain;
-
-  /// The base URL for the device API
-  Uri? _baseUrl;
-  Api? _api;
-
-  /// The tokens for authentication
-  String? _accessToken, _refreshToken;
-
-  /// The email identifier for the user
-  String? _login;
-
-  /// The device ID, corresponds to the certificate common name
-  String? _deviceID;
-
-  /// Seagate hardware id for Remote Access path APIs and fast reconnect.
-  String? _seagateDeviceID;
-
-  /// The status of the device to manage routing
-  Status? _deviceStatus;
-
-  /// The paths of the device to connect to
-  List<DevicePath>? _devicePaths;
-  DevicePaths? _cachedDevicePaths;
-  DateTime? _cachedDevicePathsTimestamp;
-
-  /// Diagnostic label for the active path (e.g. `mDNS`, `Remote Access > local`).
-  String? _debugHostType;
-
-  /// Flag to force re-detection of the device (with the Sign In screen)
-  bool forceDetectFavoriteDevice = false;
-
-  DeviceProvider(
-    this.storageData,
-    this.secureStorage,
-    Map<String, String> secureData,
-    this.registerHostTrustedChain
-  ) {
-    // Retrieve info from Storage...
-    _login = storageData[loginKey];
-    _deviceID = storageData[favoriteDeviceKey] as String?;
-    final seagateRaw = storageData[seagateDeviceIDKey];
-    if (seagateRaw is String) {
-      _seagateDeviceID = seagateRaw;
-    }
-    _refreshToken = secureData[refreshTokenKey];
-    
-    // Load device paths from storage
-    final pathsJson = storageData[favoriteDevicePathsKey];
-    if (pathsJson != null && pathsJson is String) {
+    List<DevicePath>? initialDevicePaths;
+    final pathsJson = _storageData[favoriteDevicePathsKey];
+    if (pathsJson is String) {
       try {
         final List<dynamic> pathsList = jsonDecode(pathsJson);
-        _devicePaths = pathsList
-            .map((e) => DevicePath.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } catch (e) {
-        if (kDebugMode) {
-          print("[DeviceProvider] Error loading device paths: ${e.toString()}");
-        }
-        _devicePaths = null;
-      }
+        initialDevicePaths = dedupeDevicePathList(
+          pathsList
+              .map((e) => DevicePath.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        );
+      } catch (_) {}
     }
 
-    final cachedPathsJson = storageData[cachedDevicePathsKey];
-    if (cachedPathsJson != null && cachedPathsJson is String) {
+    DevicePaths? initialCachedDevicePaths;
+    final cachedPathsJson = _storageData[cachedDevicePathsKey];
+    if (cachedPathsJson is String) {
       try {
         final decoded = jsonDecode(cachedPathsJson);
-        if (decoded is Map<String, dynamic> &&
-            decoded['paths'] is Map<String, dynamic>) {
-          _cachedDevicePaths =
-              DevicePaths.fromJson(decoded['paths'] as Map<String, dynamic>);
-        } else if (decoded is List<dynamic>) {
-          // Backward compatibility with paths-only cache payload.
-          _cachedDevicePaths = DevicePaths(
-            paths: decoded
-                .map((e) => DevicePath.fromJson(e as Map<String, dynamic>))
-                .toList(),
-            seagateDeviceID: '',
+        if (decoded is Map<String, dynamic> && decoded['paths'] is Map<String, dynamic>) {
+          initialCachedDevicePaths = dedupeDevicePaths(
+            DevicePaths.fromJson(decoded['paths'] as Map<String, dynamic>),
           );
         }
-      } catch (_) {
-        _cachedDevicePaths = null;
-      }
+      } catch (_) {}
     }
 
-    final cachedPathsTimestamp = storageData[cachedDevicePathsTimestampKey];
+    DateTime? initialCachedTimestamp;
+    final cachedPathsTimestamp = _storageData[cachedDevicePathsTimestampKey];
     if (cachedPathsTimestamp is int) {
-      _cachedDevicePathsTimestamp =
-          DateTime.fromMillisecondsSinceEpoch(cachedPathsTimestamp);
+      initialCachedTimestamp = DateTime.fromMillisecondsSinceEpoch(cachedPathsTimestamp);
     } else if (cachedPathsTimestamp is String) {
       final parsed = int.tryParse(cachedPathsTimestamp);
       if (parsed != null) {
-        _cachedDevicePathsTimestamp =
-            DateTime.fromMillisecondsSinceEpoch(parsed);
+        initialCachedTimestamp = DateTime.fromMillisecondsSinceEpoch(parsed);
       }
     }
+
+    return DeviceState(
+      login: _storageData[loginKey] as String?,
+      deviceID: _storageData[favoriteDeviceKey] as String?,
+      seagateDeviceID: _storageData[seagateDeviceIDKey] as String?,
+      refreshToken: deps.secureData[refreshTokenKey],
+      devicePaths: initialDevicePaths,
+      cachedDevicePaths: initialCachedDevicePaths,
+      cachedDevicePathsTimestamp: initialCachedTimestamp,
+    );
   }
 
-  Uri get baseUrl => _baseUrl!;
-  Api get api => _api!;
-  bool get deviceFound => _baseUrl != null;
+  Uri get baseUrl => state.baseUrl!;
+  Api get api => state.api!;
+  bool get deviceFound => state.deviceFound;
   @override
-  bool get isAuthenticated => _accessToken != null || _refreshToken != null;
-  String get login => _login ?? '';
+  bool get isAuthenticated => state.isAuthenticated;
+  String get login => state.login ?? '';
   @override
-  String? get accessToken => _accessToken;
-
-  /// The device ID, corresponds to the certificate common name
-  String? get deviceID => _deviceID;
-
-  /// Seagate hardware id persisted for Remote Access.
-  String? get seagateDeviceID => _seagateDeviceID;
-
-  Status? get deviceStatus => _deviceStatus;
-  
-  /// The device paths (local, public, relay) for connecting to the device.
-  /// Available for remote devices.
-  List<DevicePath>? get devicePaths => _devicePaths;
-  DevicePaths? get cachedDevicePaths => _cachedDevicePaths;
-  DateTime? get cachedDevicePathsTimestamp => _cachedDevicePathsTimestamp;
-
-  String? get debugHostType => _debugHostType;
+  String? get accessToken => state.accessToken;
+  String? get deviceID => state.deviceID;
+  String? get seagateDeviceID => state.seagateDeviceID;
+  Status? get deviceStatus => state.deviceStatus;
+  List<DevicePath>? get devicePaths => state.devicePaths;
+  DevicePaths? get cachedDevicePaths => state.cachedDevicePaths;
+  DateTime? get cachedDevicePathsTimestamp => state.cachedDevicePathsTimestamp;
+  String? get debugHostType => state.debugHostType;
+  bool get forceDetectFavoriteDevice => state.forceDetectFavoriteDevice;
 
   /// Returns in-memory cached paths when present.
+  @override
   DevicePaths? getCachedDevicePaths() {
-    if (_cachedDevicePaths != null) {
-      hcDeviceLogger.fine(
-        '[Cache] Using cached device paths (${_cachedDevicePaths!.paths.length} paths)',
-      );
-    }
-    return _cachedDevicePaths;
+    return state.cachedDevicePaths;
   }
 
   /// When [deviceRemoteId] is set, returns cache only if it matches that device.
@@ -204,65 +320,72 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
   bool isCachedPathsExpired({
     Duration ttl = cachedDevicePathsTtl,
   }) {
-    if (_cachedDevicePathsTimestamp == null) {
+    if (state.cachedDevicePathsTimestamp == null) {
       return true;
     }
-    return DateTime.now().difference(_cachedDevicePathsTimestamp!) > ttl;
+    return DateTime.now().difference(state.cachedDevicePathsTimestamp!) > ttl;
   }
 
   /// Name for TTL check on cached Remote Access paths.
+  @override
   bool isCacheExpired() => isCachedPathsExpired();
 
   /// Returns active in-memory device paths only when they belong to the
   /// provided remote device identity (if any).
   List<DevicePath>? getActiveDevicePaths({String? deviceRemoteId}) {
-    if (deviceRemoteId != null && _seagateDeviceID != null && _seagateDeviceID != deviceRemoteId) {
+    if (deviceRemoteId != null &&
+        state.seagateDeviceID != null &&
+        state.seagateDeviceID != deviceRemoteId) {
       return null;
     }
-    return _devicePaths;
+    return state.devicePaths;
   }
 
+  @override
   void setCachedDevicePaths(
     DevicePaths paths, {
     DateTime? cachedAt,
   }) {
-    _cachedDevicePaths = paths;
-    _cachedDevicePathsTimestamp = cachedAt ?? DateTime.now();
+    final sanitized = dedupeDevicePaths(paths);
+    state = state.copyWith(
+      cachedDevicePaths: sanitized,
+      cachedDevicePathsTimestamp: cachedAt ?? DateTime.now(),
+    );
 
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     asyncPrefs.setString(
       cachedDevicePathsKey,
       jsonEncode(
         <String, dynamic>{
-          'paths': paths.toJson(),
+          'paths': sanitized.toJson(),
         },
       ),
     );
     asyncPrefs.setInt(
       cachedDevicePathsTimestampKey,
-      _cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
+      state.cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
     );
   }
 
+  @override
   void touchCachedDevicePathsTimestamp() {
-    if (_cachedDevicePaths == null) {
+    if (state.cachedDevicePaths == null) {
       return;
     }
-    _cachedDevicePathsTimestamp = DateTime.now();
+    state = state.copyWith(cachedDevicePathsTimestamp: DateTime.now());
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     asyncPrefs.setInt(
       cachedDevicePathsTimestampKey,
-      _cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
+      state.cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
     );
   }
 
   /// Clears Remote Access path cache only.
   void clearCachedDevicePaths() {
-    if (_cachedDevicePaths != null) {
-      hcDeviceLogger.fine('[Cache] Device paths cache cleared');
-    }
-    _cachedDevicePaths = null;
-    _cachedDevicePathsTimestamp = null;
+    state = state.copyWith(
+      clearCachedDevicePaths: true,
+      clearCachedDevicePathsTimestamp: true,
+    );
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     asyncPrefs.remove(cachedDevicePathsKey);
     asyncPrefs.remove(cachedDevicePathsTimestampKey);
@@ -298,77 +421,71 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     String? productName,
     bool save = true,
   }) async {
-    final previousDeviceId = _deviceID;
-    final previousRemoteDeviceId = _seagateDeviceID;
-    if (debugHostType != null) {
-      _debugHostType = debugHostType;
-    }
+    final previousDeviceId = state.deviceID;
+    final previousRemoteDeviceId = state.seagateDeviceID;
     if (baseUrl != null || host != null) {
-      forceDetectFavoriteDevice = false;
-      _baseUrl = baseUrl ?? createBaseUrl(host!, port);
-      _api = await createApi(
-        baseUrl: _baseUrl!,
+      final resolvedBaseUrl = baseUrl ?? createBaseUrl(host!, port);
+      final resolvedApi = await createApi(
+        baseUrl: resolvedBaseUrl,
         authenticator: CuratorAuthenticator(this),
         interceptors: [
           CuratorInterceptor(this),
           ...hcDeviceHttpLogInterceptors(),
         ],
       );
+      state = state.copyWith(
+        baseUrl: resolvedBaseUrl,
+        api: resolvedApi,
+        forceDetectFavoriteDevice: false,
+      );
     }
-    if (auth?.accessToken != null) {
-      _accessToken = auth?.accessToken;
-    }
-    if (auth?.refreshToken != null) {
-      _refreshToken = auth?.refreshToken;
-    }
-    if (login != null) {
-      _login = login;
-    }
-    if (status != null) {
-      _deviceStatus = status;
-    }
-    if (deviceID != null) {
-      _deviceID = deviceID;
-      _seagateDeviceID = seagateDeviceID;
-    }
+    state = state.copyWith(
+      debugHostType: debugHostType,
+      accessToken: auth?.accessToken ?? state.accessToken,
+      refreshToken: auth?.refreshToken ?? state.refreshToken,
+      login: login ?? state.login,
+      deviceStatus: status ?? state.deviceStatus,
+      deviceID: deviceID ?? state.deviceID,
+      seagateDeviceID: seagateDeviceID ?? state.seagateDeviceID,
+    );
     if (productName != null) {
       DeviceProvider.productName = productName;
     }
-    if (devicePaths != null) {
-      _devicePaths = devicePaths;
+    final List<DevicePath>? pathsForState = devicePaths != null
+        ? dedupeDevicePathList(devicePaths)
+        : null;
+    if (pathsForState != null) {
+      state = state.copyWith(devicePaths: pathsForState);
     } else if (deviceID != null &&
         (deviceID != previousDeviceId || seagateDeviceID != previousRemoteDeviceId)) {
-      // Guard against path leakage between devices when switching host identity
-      // without explicitly providing device paths for the new device.
-      _devicePaths = null;
+      state = state.copyWith(devicePaths: const <DevicePath>[]);
     }
     if (save) {
-      _saveAuthentication(
+      unawaited(_saveAuthentication(
         deviceID: deviceID,
         seagateDeviceID: seagateDeviceID,
         auth: auth,
         login: login,
-        devicePaths: devicePaths,
-      );
+        devicePaths: pathsForState,
+      ));
     }
-    // Warning: Do not notify listeners here to avoid multiple redirects with GoRouter
   }
 
-  void _saveAuthentication({
+  Future<void> _saveAuthentication({
     String? deviceID,
     String? seagateDeviceID,
     AuthResponse? auth,
     String? login,
     List<DevicePath>? devicePaths,
-  }) {
+  }) async {
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     // Save favorite device in shared preferences
     if (deviceID != null) {
-      asyncPrefs.setString(favoriteDeviceKey, deviceID);
+      await asyncPrefs.setString(favoriteDeviceKey, deviceID);
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
-        asyncPrefs.setString(seagateDeviceIDKey, seagateDeviceID);
+        await asyncPrefs.setString(seagateDeviceIDKey, seagateDeviceID);
       } else {
-        asyncPrefs.remove(seagateDeviceIDKey);
+        await asyncPrefs.remove(seagateDeviceIDKey);
       }
     }
     // Save/Clear device paths in shared preferences
@@ -378,30 +495,20 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
           final pathsJson = jsonEncode(
             devicePaths.map((path) => path.toJson()).toList(),
           );
-          asyncPrefs.setString(favoriteDevicePathsKey, pathsJson);
-        } catch (e) {
-          if (kDebugMode) {
-            print("[DeviceProvider] Error saving device paths: ${e.toString()}");
-          }
-        }
+          await asyncPrefs.setString(favoriteDevicePathsKey, pathsJson);
+        } catch (_) {}
       } else {
-        // Clear paths if explicitly set to empty list
-        asyncPrefs.remove(favoriteDevicePathsKey);
+        await asyncPrefs.remove(favoriteDevicePathsKey);
       }
     }
     // Save refresh token in secure storage
-    if (auth?.refreshToken != null) {
-      try {
-        secureStorage.write(key: refreshTokenKey, value: auth?.refreshToken);
-      } catch (e) {
-        if (kDebugMode) {
-          print("[DeviceProvider] Error saving refresh token: ${e.toString()}");
-        }
-      }
+    final refreshToken = auth?.refreshToken;
+    if (refreshToken != null) {
+      await _authRepo.writeSecureString(refreshTokenKey, refreshToken);
     }
     // Save login in shared preferences
     if (login != null) {
-      asyncPrefs.setString(loginKey, login);
+      await asyncPrefs.setString(loginKey, login);
     }
   }
 
@@ -410,59 +517,44 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     return request?.url.path.contains('/auth/refresh') ?? false;
   }
 
-  void setDeviceStatus(Status status) {
-    _deviceStatus = status;
-    notifyListeners();
-  }
+  void setDeviceStatus(Status status) => state = state.copyWith(deviceStatus: status);
 
   @override
   Future<String> refreshAccessToken() async {
     try {
-      final response = await api.authRefreshPost(
-        body: AuthRefreshPost$RequestBody(
-          grantType: AuthRefreshPost$RequestBodyGrantType.refreshToken,
-          refreshToken: _refreshToken!,
-        ),
-      );
+      final refreshToken = state.refreshToken;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        throw StateError('Refresh token is missing');
+      }
+      final response = await _repo.refreshToken(refreshToken: refreshToken);
       if (response.isSuccessful) {
-        _accessToken = response.body?.accessToken;
-        _refreshToken = response.body?.refreshToken;
-        _saveAuthentication(auth: response.body);
-        return _accessToken ?? '';
+        state = state.copyWith(
+          accessToken: response.body?.accessToken,
+          refreshToken: response.body?.refreshToken,
+        );
+        unawaited(_saveAuthentication(auth: response.body));
+        return state.accessToken ?? '';
       } else {
         throw response.error ?? 'Refresh token error';
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("[DeviceProvider] Error refreshing token: ${e.toString()}");
-      }
       rethrow;
     }
   }
 
   @override
-  void logOut({bool notify = true}) {
+  Future<void> logOut({bool notify = true}) async {
+    await _authRepo.deleteSecureString(refreshTokenKey);
     try {
-      secureStorage.delete(key: refreshTokenKey);
-    } catch (e) {
-      hcDeviceLogger.warning('[Security] Failed to clear device refresh token', e);
-    }
-    try {
-      if (_refreshToken != null && _api != null) {
-        final AuthLogoutPost$RequestBody data = AuthLogoutPost$RequestBody(
-          refreshToken: _refreshToken!,
-        );
-        api.authLogoutPost(body: data);
+      final token = state.refreshToken;
+      if (token != null && token.isNotEmpty && state.api != null) {
+        await _repo.logout(refreshToken: token);
       }
     } catch (e) {
       hcDeviceLogger.warning('[Auth] Error during logout API call', e);
     }
-    _accessToken = null;
-    _refreshToken = null;
+    state = state.copyWith(clearAccessToken: true, clearRefreshToken: true);
     clearDevice(save: true);
-    if (notify) {
-      notifyListeners();
-    }
   }
 
   void clearDevice({bool save = false}) {
@@ -474,26 +566,24 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
       asyncPrefs.remove(cachedDevicePathsKey);
       asyncPrefs.remove(cachedDevicePathsTimestampKey);
     }
-    _baseUrl = null;
-    _api = null;
-    _deviceStatus = null;
-    _deviceID = null;
-    _seagateDeviceID = null;
-    _devicePaths = null;
-    _debugHostType = null;
-    _cachedDevicePaths = null;
-    _cachedDevicePathsTimestamp = null;
-    if (save) {
-      notifyListeners();
-    }
+    state = state.copyWith(
+      clearBaseUrl: true,
+      clearApi: true,
+      clearDeviceStatus: true,
+      clearDeviceId: true,
+      clearSeagateDeviceId: true,
+      clearDevicePaths: true,
+      clearDebugHostType: true,
+      clearCachedDevicePaths: true,
+      clearCachedDevicePathsTimestamp: true,
+    );
   }
 
   void forceToReDetectDevice() => forceToRedetectDevice();
 
   void forceToRedetectDevice() {
     clearDevice();
-    forceDetectFavoriteDevice = true;
-    notifyListeners();
+    state = state.copyWith(forceDetectFavoriteDevice: true);
   }
 
   static Uri createBaseUrl(String host, int? port) {
@@ -513,12 +603,36 @@ class DeviceProvider with ChangeNotifier implements CuratorAuthProvider {
     Authenticator? authenticator,
     List<Interceptor>? interceptors,
   }) async {
-    await registerHostTrustedChain(host: baseUrl.host, port: baseUrl.port);
-    return Api.create(
-      httpClient: IOClient(),
+    await _registerHostTrustedChain(host: baseUrl.host, port: baseUrl.port);
+    return _apiClientFactory.create(
       baseUrl: baseUrl,
+      authProvider: this,
+      httpClient: IOClient(),
       authenticator: authenticator,
       interceptors: interceptors,
     );
+  }
+
+  Future<Response<AuthResponse>> signInWithPassword({
+    required String email,
+    required String password,
+  }) {
+    return _repo.loginWithPassword(email: email, password: password);
+  }
+
+  Future<Response> sendResetPasswordEmail({required String email}) {
+    return _repo.sendResetPasswordEmail(email: email);
+  }
+
+  Future<Response<Status>> fetchStatus() {
+    return _repo.getStatus();
+  }
+
+  Future<Response<About>> fetchAbout() {
+    return _repo.getAbout();
+  }
+
+  Future<Response<User>> fetchCurrentUser() {
+    return _repo.getCurrentUser();
   }
 }

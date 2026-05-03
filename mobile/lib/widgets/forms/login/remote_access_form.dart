@@ -41,7 +41,7 @@ class RemoteAccessForm extends HookConsumerWidget {
       if (isDisabled) return;
 
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
-      final authenticatedEmail = ref.read(deviceProvider).login;
+      final authenticatedEmail = ref.read(deviceProvider).login ?? '';
 
       if (isAuthenticated && authenticatedEmail == email) {
         switchToCuratorLogin();
@@ -49,16 +49,16 @@ class RemoteAccessForm extends HookConsumerWidget {
       }
 
       if (authenticatedEmail != email) {
-        ref.read(remoteProvider).logout();
-        ref.read(deviceProvider).clearDevice(save: true);
+        ref.read(remoteProvider.notifier).logout();
+        ref.read(deviceProvider.notifier).clearDevice(save: true);
       }
 
-      await ref.read(deviceProvider).setHost(login: email);
+      await ref.read(deviceProvider.notifier).setHost(login: email);
       switchToCuratorLogin();
     }
 
     useEffect(() {
-      emailController.text = ref.read(deviceProvider).login;
+      emailController.text = ref.read(deviceProvider).login ?? '';
 
       void onFocusChange() {
         debugPrint("emailError: $emailController.text");

@@ -1,10 +1,8 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/services/asset.service.dart';
-import 'package:immich_mobile/models/download/livephotos_medatada.model.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_viewer.state.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
@@ -39,7 +37,6 @@ class ActionNotifier extends Notifier<void> {
   final Logger _logger = Logger('ActionNotifier');
   late ActionService _service;
   late UploadService _uploadService;
-  late DownloadService _downloadService;
   late AssetService _assetService;
 
   ActionNotifier() : super();
@@ -49,29 +46,7 @@ class ActionNotifier extends Notifier<void> {
     _uploadService = ref.watch(uploadServiceProvider);
     _service = ref.watch(actionServiceProvider);
     _assetService = ref.watch(assetServiceProvider);
-    _downloadService = ref.watch(downloadServiceProvider);
-    _downloadService.onImageDownloadStatus = _downloadImageCallback;
-    _downloadService.onVideoDownloadStatus = _downloadVideoCallback;
-    _downloadService.onLivePhotoDownloadStatus = _downloadLivePhotoCallback;
-  }
-
-  void _downloadImageCallback(TaskStatusUpdate update) {
-    if (update.status == TaskStatus.complete) {
-      _downloadService.saveImageWithPath(update.task);
-    }
-  }
-
-  void _downloadVideoCallback(TaskStatusUpdate update) {
-    if (update.status == TaskStatus.complete) {
-      _downloadService.saveVideo(update.task);
-    }
-  }
-
-  void _downloadLivePhotoCallback(TaskStatusUpdate update) async {
-    if (update.status == TaskStatus.complete) {
-      final livePhotosId = LivePhotosMetadata.fromJson(update.task.metaData).id;
-      _downloadService.saveLivePhotos(update.task, livePhotosId);
-    }
+    ref.watch(downloadServiceProvider);
   }
 
   List<String> _getRemoteIdsForSource(ActionSource source) {

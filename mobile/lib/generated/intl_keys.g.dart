@@ -900,6 +900,7 @@ abstract class IntlKeys {
   static const curator_settings_pattern_lock = 'curator.settings.pattern.lock';
   static const curator_shared_link_create_public_error = 'curator.shared.link.create.public.error';
   static const curator_sign_in_screen_button_request_new_code = 'curator.sign.in.screen.button.request.new.code';
+  static const curator_sign_in_screen_button_valid_remote_access = 'curator.sign.in.screen.button.valid.remote.access';
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';
   static const curator_sign_in_screen_dropdown_device_label = 'curator.sign.in.screen.dropdown.device.label';
@@ -910,6 +911,8 @@ abstract class IntlKeys {
       'curator.sign.in.screen.field.remote.code.error.invalid';
   static const curator_sign_in_screen_field_remote_code_hint = 'curator.sign.in.screen.field.remote.code.hint';
   static const curator_sign_in_screen_field_remote_code_label = 'curator.sign.in.screen.field.remote.code.label';
+  static const curator_sign_in_screen_field_remote_code_message = 'curator.sign.in.screen.field.remote.code.message';
+  static const curator_sign_in_screen_field_remote_code_title = 'curator.sign.in.screen.field.remote.code.title';
   static const curator_sign_in_screen_remote_code_allow_access = 'curator.sign.in.screen.remote.code.allow.access';
   static const curator_sign_in_screen_remote_code_cancel = 'curator.sign.in.screen.remote.code.cancel';
   static const curator_sign_in_screen_remote_code_description = 'curator.sign.in.screen.remote.code.description';
