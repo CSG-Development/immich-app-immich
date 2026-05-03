@@ -389,17 +389,25 @@ class BackgroundServicePlugin: NSObject, FlutterPlugin {
     static func runBackgroundSync(_ task: BGTask, maxSeconds: Int?) {
 
         let semaphore = DispatchSemaphore(value: 0)
+        var didCompleteTask = false
+        func completeTaskIfNeeded(_ success: Bool) {
+            if didCompleteTask {
+                return
+            }
+            didCompleteTask = true
+            task.setTaskCompleted(success: success)
+        }
         DispatchQueue.main.async {
-            let backgroundWorker = BackgroundSyncWorker { _ in
+            let backgroundWorker = BackgroundSyncWorker { result in
+                completeTaskIfNeeded(result != .failed)
                 semaphore.signal()
             }
             task.expirationHandler = {
                 backgroundWorker.cancel()
-                task.setTaskCompleted(success: true)
+                completeTaskIfNeeded(true)
             }
             
             backgroundWorker.run(maxSeconds: maxSeconds)
-            task.setTaskCompleted(success: true)
         }
         semaphore.wait()
     }
