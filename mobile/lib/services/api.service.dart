@@ -114,10 +114,7 @@ class PerformanceHttpClient extends BaseClient {
       return response;
     } on TlsException catch (e) {
       await httpMetric.stop();
-      _log.warning(
-        '[HTTP] TLS failure ${request.method} ${request.url}',
-        e,
-      );
+      _log.warning('[HTTP] TLS failure ${request.method} ${request.url}', e);
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'TLS/SSL communication failed: ${request.method} ${request.url}',
@@ -126,10 +123,7 @@ class PerformanceHttpClient extends BaseClient {
       );
     } on SocketException catch (e) {
       await httpMetric.stop();
-      _log.warning(
-        '[HTTP] Socket failure ${request.method} ${request.url}',
-        e,
-      );
+      _log.warning('[HTTP] Socket failure ${request.method} ${request.url}', e);
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'Socket operation failed: ${request.method} ${request.url}',
@@ -138,10 +132,7 @@ class PerformanceHttpClient extends BaseClient {
       );
     } catch (e) {
       await httpMetric.stop();
-      _log.warning(
-        '[HTTP] Unhandled transport failure ${request.method} ${request.url}',
-        e,
-      );
+      _log.warning('[HTTP] Unhandled transport failure ${request.method} ${request.url}', e);
       rethrow;
     }
   }
@@ -182,7 +173,6 @@ class ApiService implements Authentication {
   ConnectionStatus _lastConnectionStatus = ConnectionStatus.connected;
 
   static const Duration _endpointAvailabilityPingTimeout = Duration(seconds: 15);
-  static const Duration _endpointSwitchSettleDelay = Duration(milliseconds: 1500);
 
   bool _isSetEndpoint = false;
   Future<void> _endpointSwitchQueue = Future<void>.value();
@@ -292,10 +282,7 @@ class ApiService implements Authentication {
 
     _log.info('Publishing connected state after successful request: $requestUrl');
     notifyConnectionState(
-      const ConnectionState(
-        status: ConnectionStatus.connected,
-        connectionType: ConnectionType.api,
-      ),
+      const ConnectionState(status: ConnectionStatus.connected, connectionType: ConnectionType.api),
     );
   }
 
@@ -351,14 +338,23 @@ class ApiService implements Authentication {
     tagsApi = TagsApi(_apiClient);
   }
 
-  Future<String> resolveAndSetEndpoint(String serverUrl) async {
+  Future<String> resolveAndSetEndpoint(
+    String serverUrl, {
+    EndpointResolvePolicy policy = EndpointResolvePolicy.conservative,
+  }) async {
     return _enqueueEndpointSwitch(() async {
       _isSetEndpoint = true;
       try {
         final stopwatch = Stopwatch()..start();
         final uri = Uri.parse(serverUrl);
+        _log.info(
+          'endpoint_switch start '
+          'host=${uri.host} '
+          'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${policy.settleDelay.inMilliseconds}',
+        );
         await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
-        final endpoint = await resolveEndpoint(serverUrl);
+        final endpoint = await resolveEndpoint(serverUrl, availabilityTimeout: policy.availabilityTimeout);
         setEndpoint(endpoint);
         try {
           await Store.put(StoreKey.serverEndpoint, endpoint);
@@ -369,13 +365,18 @@ class ApiService implements Authentication {
 
         stopwatch.stop();
         _log.info(
-          'upload_telemetry source=api_service stage=resolve_and_set endpoint=$endpoint '
-          'host=${uri.host} elapsedMs=${stopwatch.elapsedMilliseconds}',
+          'endpoint_switch success '
+          'endpoint=$endpoint '
+          'host=${uri.host} '
+          'elapsedMs=${stopwatch.elapsedMilliseconds} '
+          'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${policy.settleDelay.inMilliseconds}',
         );
         return endpoint;
       } finally {
-        await Future.delayed(_endpointSwitchSettleDelay);
+        await Future.delayed(policy.settleDelay);
         _isSetEndpoint = false;
+        _log.fine('endpoint_switch unlocked');
       }
     });
   }
@@ -399,10 +400,13 @@ class ApiService implements Authentication {
   ///  host   - required
   ///  port   - optional (default: based on schema)
   ///  path   - optional
-  Future<String> resolveEndpoint(String serverUrl) async {
+  Future<String> resolveEndpoint(
+    String serverUrl, {
+    Duration availabilityTimeout = _endpointAvailabilityPingTimeout,
+  }) async {
     String url = _normalizeEndpoint(serverUrl);
 
-    if (!await _isEndpointAvailable(url)) {
+    if (!await _isEndpointAvailable(url, timeout: availabilityTimeout)) {
       throw ApiException(503, "Server is not reachable");
     }
 
@@ -416,7 +420,7 @@ class ApiService implements Authentication {
     return normalized;
   }
 
-  Future<bool> _isEndpointAvailable(String serverUrl) async {
+  Future<bool> _isEndpointAvailable(String serverUrl, {required Duration timeout}) async {
     final trace = FirebasePerformanceWrapper.newTrace('endpoint_availability') ?? NoOpTrace();
     await trace.start();
 
@@ -429,17 +433,38 @@ class ApiService implements Authentication {
       final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = _httpClient;
       final tempServerApi = ServerApi(tempClient);
 
-      await tempServerApi.pingServer().timeout(_endpointAvailabilityPingTimeout);
+      await tempServerApi.pingServer().timeout(timeout);
       await trace.stop();
+      _log.fine(
+        'endpoint_availability ok '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
     } on TimeoutException catch (_) {
       await trace.stop();
+      _log.info(
+        'endpoint_availability timeout '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
       return false;
     } on SocketException catch (_) {
       await trace.stop();
+      _log.info(
+        'endpoint_availability socket_error '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
       return false;
     } catch (error, stackTrace) {
       await trace.stop();
-      _log.severe("Error while checking server availability", error, stackTrace);
+      _log.severe(
+        'endpoint_availability failed '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+        error,
+        stackTrace,
+      );
       return false;
     }
     return true;
@@ -508,4 +533,16 @@ class ApiService implements Authentication {
   }
 
   ApiClient get apiClient => _apiClient;
+}
+
+class EndpointResolvePolicy {
+  const EndpointResolvePolicy({
+    this.availabilityTimeout = const Duration(seconds: 15),
+    this.settleDelay = const Duration(milliseconds: 1500),
+  });
+
+  final Duration availabilityTimeout;
+  final Duration settleDelay;
+
+  static const EndpointResolvePolicy conservative = EndpointResolvePolicy();
 }

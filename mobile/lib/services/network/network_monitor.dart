@@ -5,12 +5,14 @@ import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/network.service.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:logging/logging.dart';
 
-const Duration curatorNetworkDebounceDelay = Duration(seconds: 3);
-const Duration curatorNetworkCooldownDelay = Duration(seconds: 30);
 const Duration curatorFindingNetworkToastDelay = Duration(seconds: 30);
+const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
+const Duration curatorFastReconnectCooldownDelay = Duration.zero;
+const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
 
 abstract class CuratorNetworkMonitorCallbacks {
   bool onShowReconnecting();
@@ -38,8 +40,10 @@ class CuratorNetworkMonitor {
   final PathResolveTriggerService pathResolveTriggerService;
   final CuratorNetworkMonitorCallbacks callbacks;
   final void Function() notifyConnected;
+
   /// Latest OS-level transport (Wi‑Fi/mobile/ethernet vs none). Used for UI truth.
   final void Function(bool hasUsableTransport)? onTransportUsableChanged;
+
   /// Fires once when transport goes from usable to unusable (e.g. airplane mode).
   final void Function()? onTransportLost;
   late final _ReconnectEpisodeController _reconnectEpisodeService = _ReconnectEpisodeController(
@@ -61,6 +65,8 @@ class CuratorNetworkMonitor {
   String? _lastConnectivitySignature;
   String? _lastNetworkIdentitySignature;
   bool? _lastTransportUsable;
+  String? _lastReconnectFailureSignature;
+  DateTime? _activeReconnectStartedAt;
 
   void startMonitoring() {
     if (_isStarted) {
@@ -91,6 +97,7 @@ class CuratorNetworkMonitor {
     _pendingReconnectRetry = false;
     _isAppInForeground = true;
     _reconnectEpisodeService.reset();
+    _lastReconnectFailureSignature = null;
     _log.info('[Network] Stopped monitoring network changes');
   }
 
@@ -121,12 +128,7 @@ class CuratorNetworkMonitor {
       _scheduleConnectivityReconnect(reason: 'transport changed: $results');
     }
 
-    unawaited(
-      _refreshNetworkIdentity(
-        source: 'event',
-        triggerReconnectOnChange: hadPrevious,
-      ),
-    );
+    unawaited(_refreshNetworkIdentity(source: 'event', triggerReconnectOnChange: hadPrevious));
   }
 
   Future<void> onSlowForegroundRequest({
@@ -139,9 +141,7 @@ class CuratorNetworkMonitor {
     }
 
     if (!isHard) {
-      _log.fine(
-        '[Network] Soft slow-request signal (${elapsed.inSeconds}s) on $requestUrl',
-      );
+      _log.fine('[Network] Soft slow-request signal (${elapsed.inSeconds}s) on $requestUrl');
       return;
     }
 
@@ -154,14 +154,9 @@ class CuratorNetworkMonitor {
       return;
     }
 
-    _log.info(
-      '[Network] Slow request observed (${elapsed.inSeconds}s) on $requestUrl, checking wifi identity',
-    );
+    _log.info('[Network] Slow request observed (${elapsed.inSeconds}s) on $requestUrl, checking wifi identity');
 
-    await _refreshNetworkIdentity(
-      source: 'slow_request',
-      triggerReconnectOnChange: true,
-    );
+    await _refreshNetworkIdentity(source: 'slow_request', triggerReconnectOnChange: true);
   }
 
   Future<void> processPendingOnResume() async {
@@ -200,17 +195,17 @@ class CuratorNetworkMonitor {
   bool _isPhotosAuthenticated() => Store.get(StoreKey.accessToken, "").isNotEmpty;
 
   Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false}) async {
+    final trigger = _deriveTrigger(
+      fromConnectivityChange: fromConnectivityChange,
+      fromRemoteAuthRetry: fromRemoteAuthRetry,
+    );
     final photosAuth = _isPhotosAuthenticated();
     _log.info(
-      '[Network] reconnectDeviceEndpoint start '
-      'fromConnectivityChange=$fromConnectivityChange '
-      'fromRemoteAuthRetry=$fromRemoteAuthRetry '
-      'deviceAuth=${deviceProvider.isAuthenticated} '
-      'photosAuth=$photosAuth '
-      'remoteAuth=${remoteProvider.isAuthenticated} '
-      'deviceID=${deviceProvider.deviceID} '
-      'seagateDeviceID=${deviceProvider.seagateDeviceID} '
-      'login=${deviceProvider.login}',
+      '[Network] reconnect start '
+      'trigger=${trigger.name} '
+      'flags(connectivity=$fromConnectivityChange,remoteRetry=$fromRemoteAuthRetry) '
+      'auth(device=${deviceProvider.isAuthenticated},photos=$photosAuth,remote=${remoteProvider.isAuthenticated}) '
+      'device(deviceID=${deviceProvider.deviceID},seagateID=${deviceProvider.seagateDeviceID},login=${deviceProvider.login})',
     );
     if (!deviceProvider.isAuthenticated && !photosAuth) {
       _log.info('[Network] User not authenticated in photos/hc_device, skipping re-detection');
@@ -237,15 +232,21 @@ class CuratorNetworkMonitor {
     }
 
     _isReconnecting = true;
+    _activeReconnectStartedAt = DateTime.now();
     _pendingNetworkChange = false;
     _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
 
     try {
       if (_lastDetectionTime != null) {
         final elapsed = DateTime.now().difference(_lastDetectionTime!);
-        if (elapsed < curatorNetworkCooldownDelay) {
-          final remaining = curatorNetworkCooldownDelay - elapsed;
-          _log.info('[Network] Cooldown active, waiting ${remaining.inSeconds}s');
+        final cooldown = _cooldownForTrigger(trigger);
+        if (elapsed < cooldown) {
+          final remaining = cooldown - elapsed;
+          _log.info(
+            '[Network] reconnect cooldown '
+            'trigger=${trigger.name} '
+            'remainingMs=${remaining.inMilliseconds}',
+          );
           await Future<void>.delayed(remaining);
         }
       }
@@ -258,16 +259,30 @@ class CuratorNetworkMonitor {
         return;
       }
       final mode = _deriveMode();
-      final resolved = fromConnectivityChange
-          ? await pathResolveTriggerService.onNetworkChanged(
-              mode: mode,
-              trigger: 'connectivity_change',
-            )
-          : await pathResolveTriggerService.onApiTransportError(
-              mode: mode,
-              trigger: 'api_error',
-            );
+      final resolved = switch (trigger) {
+        _ReconnectTrigger.connectivityChange => await pathResolveTriggerService.onNetworkChanged(
+          mode: mode,
+          trigger: 'connectivity_change',
+        ),
+        _ReconnectTrigger.remoteAuthRetry => await pathResolveTriggerService.onNetworkChanged(
+          mode: mode,
+          trigger: 'remote_auth_retry',
+        ),
+        _ReconnectTrigger.apiError => await pathResolveTriggerService.onApiTransportError(
+          mode: mode,
+          trigger: 'api_error',
+        ),
+      };
+      _log.info(
+        '[Network] reconnect resolve result '
+        'trigger=${trigger.name} '
+        'success=${resolved.success} '
+        'reason=${resolved.reason} '
+        'source=${resolved.selectionSource} '
+        'endpoint=${resolved.endpoint}',
+      );
       if (resolved.success && resolved.endpoint != null) {
+        _lastReconnectFailureSignature = null;
         notifyConnected();
         onConnectionRestored();
         if (resolved.pingResult != null) {
@@ -283,45 +298,94 @@ class CuratorNetworkMonitor {
           );
         }
       } else {
-        await _handleReconnectionFailure();
+        await _handleReconnectionFailure(trigger: trigger, resolved: resolved);
       }
     } finally {
+      final reconnectElapsed = _activeReconnectStartedAt == null
+          ? null
+          : DateTime.now().difference(_activeReconnectStartedAt!);
+      if (reconnectElapsed != null) {
+        _log.info('[Network] reconnect end elapsedMs=${reconnectElapsed.inMilliseconds}');
+      }
+      _activeReconnectStartedAt = null;
       _isReconnecting = false;
-      _log.info('[Network] reconnectDeviceEndpoint end');
       final shouldRunQueuedConnectivityReconnect = _pendingNetworkChange;
       if (_pendingReconnectRetry) {
         _pendingReconnectRetry = false;
-        unawaited(
-          reconnectDeviceEndpoint(fromConnectivityChange: false, fromRemoteAuthRetry: true),
-        );
+        _log.info('[Network] reconnect run queued remote-auth retry');
+        unawaited(reconnectDeviceEndpoint(fromConnectivityChange: false, fromRemoteAuthRetry: true));
       } else if (shouldRunQueuedConnectivityReconnect) {
         _pendingNetworkChange = false;
-        unawaited(
-          reconnectDeviceEndpoint(fromConnectivityChange: true),
-        );
+        _log.info('[Network] reconnect run queued connectivity change');
+        unawaited(reconnectDeviceEndpoint(fromConnectivityChange: true));
       }
     }
   }
 
-  Future<void> _handleReconnectionFailure() async {
+  Future<void> _handleReconnectionFailure({
+    required _ReconnectTrigger trigger,
+    required EndpointResolutionResult resolved,
+  }) async {
+    final failureSignature = [
+      trigger.name,
+      resolved.reason ?? 'unknown',
+      remoteProvider.isAuthenticated.toString(),
+      deviceProvider.deviceID ?? '-',
+      deviceProvider.seagateDeviceID ?? '-',
+    ].join('|');
+    final shouldSuppressDuplicate = trigger == _ReconnectTrigger.connectivityChange;
+    if (_lastReconnectFailureSignature == failureSignature && shouldSuppressDuplicate) {
+      _log.info('[Network] reconnect duplicate failure ignored trigger=${trigger.name} signature=$failureSignature');
+      return;
+    }
+    _lastReconnectFailureSignature = failureSignature;
     _log.warning(
-      '[Network] Reconnection failure: remoteAuth=${remoteProvider.isAuthenticated}, '
-      'deviceID=${deviceProvider.deviceID}, seagateDeviceID=${deviceProvider.seagateDeviceID}, '
-      'login=${deviceProvider.login}',
+      '[Network] reconnect failure '
+      'trigger=${trigger.name} '
+      'remoteAuth=${remoteProvider.isAuthenticated} '
+      'deviceID=${deviceProvider.deviceID} '
+      'seagateDeviceID=${deviceProvider.seagateDeviceID} '
+      'login=${deviceProvider.login} '
+      'reason=${resolved.reason}',
     );
     if (!remoteProvider.isAuthenticated) {
-      _log.info('[Network] Prompting for Remote Access authentication');
+      final otpLatencyMs = _activeReconnectStartedAt == null
+          ? null
+          : DateTime.now().difference(_activeReconnectStartedAt!).inMilliseconds;
+      if (otpLatencyMs != null) {
+        _log.info('[Network] reconnect otp prompt latencyMs=$otpLatencyMs');
+      }
+      _log.info('[Network] reconnect prompting remote access authentication');
       await callbacks.onNeedRemoteAccessAuth(
         () => reconnectDeviceEndpoint(fromConnectivityChange: false, fromRemoteAuthRetry: true),
       );
       return;
     }
-    await _reconnectEpisodeService.handleReconnectionFailure(
-      onReconnectionFailed: callbacks.onReconnectionFailed,
-    );
+    await _reconnectEpisodeService.handleReconnectionFailure(onReconnectionFailed: callbacks.onReconnectionFailed);
   }
 
   ResolveMode _deriveMode() => _isStarted ? ResolveMode.foreground : ResolveMode.background;
+
+  _ReconnectTrigger _deriveTrigger({required bool fromConnectivityChange, required bool fromRemoteAuthRetry}) {
+    if (fromRemoteAuthRetry) {
+      return _ReconnectTrigger.remoteAuthRetry;
+    }
+    if (fromConnectivityChange) {
+      return _ReconnectTrigger.connectivityChange;
+    }
+    return _ReconnectTrigger.apiError;
+  }
+
+  Duration _cooldownForTrigger(_ReconnectTrigger trigger) {
+    switch (trigger) {
+      case _ReconnectTrigger.connectivityChange:
+        return curatorFastReconnectCooldownDelay;
+      case _ReconnectTrigger.remoteAuthRetry:
+        return curatorFastReconnectCooldownDelay;
+      case _ReconnectTrigger.apiError:
+        return curatorApiErrorReconnectCooldownDelay;
+    }
+  }
 
   Future<void> _bootstrapNetworkState() async {
     try {
@@ -338,28 +402,19 @@ class CuratorNetworkMonitor {
     }
   }
 
-  Future<void> _refreshNetworkIdentity({
-    required String source,
-    required bool triggerReconnectOnChange,
-  }) async {
+  Future<void> _refreshNetworkIdentity({required String source, required bool triggerReconnectOnChange}) async {
     try {
       final wifiName = (await networkService.getWifiName())?.trim();
       final wifiIp = (await networkService.getWifiIp())?.trim();
       final connectivity = await Connectivity().checkConnectivity();
       final connectivityKey = _connectivitySignature(connectivity);
-      final identity = [
-        'c:$connectivityKey',
-        'ssid:${wifiName ?? '-'}',
-        'ip:${wifiIp ?? '-'}',
-      ].join('|');
+      final identity = ['c:$connectivityKey', 'ssid:${wifiName ?? '-'}', 'ip:${wifiIp ?? '-'}'].join('|');
 
       final previous = _lastNetworkIdentitySignature;
       _lastNetworkIdentitySignature = identity;
 
       if (previous != null && previous != identity && triggerReconnectOnChange) {
-        _scheduleConnectivityReconnect(
-          reason: 'identity changed source=$source from=[$previous] to=[$identity]',
-        );
+        _scheduleConnectivityReconnect(reason: 'identity changed source=$source from=[$previous] to=[$identity]');
       }
     } catch (error, stackTrace) {
       _log.warning('[Network] Failed to refresh network identity source=$source', error, stackTrace);
@@ -369,12 +424,17 @@ class CuratorNetworkMonitor {
   void _scheduleConnectivityReconnect({required String reason}) {
     _pendingNetworkChange = true;
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(
-      curatorNetworkDebounceDelay,
-      () => reconnectDeviceEndpoint(fromConnectivityChange: true),
+    final debounce = _debounceForConnectivity();
+    _debounceTimer = Timer(debounce, () => reconnectDeviceEndpoint(fromConnectivityChange: true));
+    _log.info(
+      '[Network] reconnect scheduled '
+      'trigger=connectivity_change '
+      'debounceMs=${debounce.inMilliseconds} '
+      'reason=$reason',
     );
-    _log.info('[Network] Connectivity change scheduled ($reason)');
   }
+
+  Duration _debounceForConnectivity() => curatorFastReconnectDebounceDelay;
 
   String _connectivitySignature(List<ConnectivityResult> results) {
     final names = results.map((r) => r.name).toList()..sort();
@@ -388,6 +448,8 @@ class CuratorNetworkMonitor {
     return results.any((r) => r != ConnectivityResult.none);
   }
 }
+
+enum _ReconnectTrigger { connectivityChange, remoteAuthRetry, apiError }
 
 class _ReconnectEpisodeController {
   _ReconnectEpisodeController({
@@ -483,9 +545,7 @@ class _ReconnectEpisodeController {
     });
   }
 
-  Future<void> handleReconnectionFailure({
-    required Future<void> Function() onReconnectionFailed,
-  }) async {
+  Future<void> handleReconnectionFailure({required Future<void> Function() onReconnectionFailed}) async {
     if (_hasShownFailureToastInActiveEpisode) {
       _log.info('[Network] Failure toast already shown for current failure episode');
       return;

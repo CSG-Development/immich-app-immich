@@ -9,10 +9,7 @@ import 'package:immich_mobile/utils/async_mutex.dart';
 import 'package:logging/logging.dart';
 
 final hcDeviceEndpointResolverProvider = Provider<HcDeviceEndpointResolver>(
-  (ref) => HcDeviceEndpointResolver(
-    ref.watch(apiServiceProvider),
-    ref.watch(hcPathResolverProvider),
-  ),
+  (ref) => HcDeviceEndpointResolver(ref.watch(apiServiceProvider), ref.watch(hcPathResolverProvider)),
 );
 
 class EndpointResolutionResult {
@@ -101,22 +98,25 @@ class HcDeviceEndpointResolver {
     bool localOnly = false,
     ExternalEndpointValidator? validateExternal,
   }) async {
+    final triggerConfig = _buildTriggerConfig(trigger);
     final result = await _resolver.resolvePath(
       mode: mode,
-      trigger: _mapTrigger(trigger),
+      trigger: triggerConfig.resolveTrigger,
       localOnly: localOnly,
       validateExternal: validateExternal,
     );
 
     if (result.success && result.endpoint != null && result.endpoint!.isNotEmpty) {
       try {
-        final resolved = await _apiService.resolveAndSetEndpoint(result.endpoint!);
+        final resolved = await _apiService.resolveAndSetEndpoint(result.endpoint!, policy: triggerConfig.policy);
         await _resolver.setAvailablePath(resolved);
         _log.info(
-          '[Resolver] endpoint_selection '
+          '[Resolver] endpoint selection '
           'selectionSource=${result.selectionSource ?? 'hc_device_resolver'} '
           'pathType=${result.pingResult?.pathType ?? 'unknown'} '
           'trigger=$trigger '
+          'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${triggerConfig.policy.settleDelay.inMilliseconds} '
           'runId=$runId '
           'endpoint=$resolved',
         );
@@ -128,7 +128,14 @@ class HcDeviceEndpointResolver {
           selectionSource: result.selectionSource,
         );
       } catch (error, stackTrace) {
-        _log.warning('[Resolver] resolveAndSetEndpoint failed trigger=$trigger', error, stackTrace);
+        _log.warning(
+          '[Resolver] endpoint activation failed '
+          'trigger=$trigger '
+          'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${triggerConfig.policy.settleDelay.inMilliseconds}',
+          error,
+          stackTrace,
+        );
       }
     }
 
@@ -140,14 +147,22 @@ class HcDeviceEndpointResolver {
           _log.fine('[Resolver] Skipping fallback activation; same endpoint as failed primary');
         } else {
           try {
-            final resolved = await _apiService.resolveAndSetEndpoint(fallback);
-            return EndpointResolutionResult(
-              success: true,
-              endpoint: resolved,
-              selectionSource: 'fallback_available',
+            final resolved = await _apiService.resolveAndSetEndpoint(fallback, policy: triggerConfig.policy);
+            _log.info(
+              '[Resolver] endpoint fallback activated '
+              'trigger=$trigger '
+              'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds} '
+              'endpoint=$resolved',
             );
+            return EndpointResolutionResult(success: true, endpoint: resolved, selectionSource: 'fallback_available');
           } catch (error, stackTrace) {
-            _log.warning('[Resolver] fallback endpoint activation failed', error, stackTrace);
+            _log.warning(
+              '[Resolver] endpoint fallback activation failed '
+              'trigger=$trigger '
+              'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds}',
+              error,
+              stackTrace,
+            );
           }
         }
       }
@@ -159,28 +174,56 @@ class HcDeviceEndpointResolver {
     );
   }
 
-  ResolveTrigger _mapTrigger(String trigger) {
+  _ResolvedTriggerConfig _buildTriggerConfig(String trigger) {
     switch (trigger) {
       case 'connectivity_change':
       case 'connectivity':
-        return ResolveTrigger.connectivityChange;
+      case 'remote_auth_retry':
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.connectivityChange,
+          policy: EndpointResolvePolicy(
+            availabilityTimeout: Duration(seconds: 5),
+            settleDelay: Duration(milliseconds: 400),
+          ),
+        );
       case 'app_resume':
       case 'resume':
-        return ResolveTrigger.appResume;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.appResume,
+          policy: EndpointResolvePolicy.conservative,
+        );
       case 'websocket_error':
       case 'websocket':
-        return ResolveTrigger.websocketError;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.websocketError,
+          policy: EndpointResolvePolicy.conservative,
+        );
       case 'api_error':
       case 'api':
-        return ResolveTrigger.apiError;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.apiError,
+          policy: EndpointResolvePolicy(
+            availabilityTimeout: Duration(seconds: 7),
+            settleDelay: Duration(milliseconds: 700),
+          ),
+        );
       case 'splash_warmup':
-        return ResolveTrigger.splashWarmup;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.splashWarmup,
+          policy: EndpointResolvePolicy.conservative,
+        );
       case 'background_task':
       case 'legacy_background_service':
       case 'background_worker_init':
-        return ResolveTrigger.backgroundTask;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.backgroundTask,
+          policy: EndpointResolvePolicy.conservative,
+        );
       default:
-        return ResolveTrigger.unknown;
+        return const _ResolvedTriggerConfig(
+          resolveTrigger: ResolveTrigger.unknown,
+          policy: EndpointResolvePolicy.conservative,
+        );
     }
   }
 
@@ -188,4 +231,11 @@ class HcDeviceEndpointResolver {
   static String winnerEndpointFromBaseUrl(Uri baseUrl) {
     return HcPathResolver.winnerEndpointFromBaseUrl(baseUrl);
   }
+}
+
+class _ResolvedTriggerConfig {
+  const _ResolvedTriggerConfig({required this.resolveTrigger, required this.policy});
+
+  final ResolveTrigger resolveTrigger;
+  final EndpointResolvePolicy policy;
 }
