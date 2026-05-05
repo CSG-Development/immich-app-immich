@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:hc_device/hc_device.dart';
+import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/constants/locales.dart';
@@ -56,6 +57,7 @@ import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+import 'package:shared_preferences/shared_preferences.dart' show SharedPreferencesAsync;
 
 void main() async {
   ImmichWidgetsBinding();
@@ -87,6 +89,7 @@ void main() async {
 
   await certPinning.initialize();
 
+  await _startRemoteAccessSession();
   final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
 
   final apiservice = ApiService(certPinning: certPinning);
@@ -103,6 +106,12 @@ void main() async {
       child: const MainWidget(),
     ),
   );
+}
+
+Future<void> _startRemoteAccessSession() async {
+  final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
+  final sessionId = DateTime.now().microsecondsSinceEpoch.toString();
+  await asyncPrefs.setString(remoteCurrentSessionIdKey, sessionId);
 }
 
 Future<void> initApp() async {

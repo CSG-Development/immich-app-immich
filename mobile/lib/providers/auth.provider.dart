@@ -12,6 +12,7 @@ import 'package:immich_mobile/models/auth/auth_state.model.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
+import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/auth.service.dart';
@@ -231,6 +232,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       name: user.name,
       isAdmin: user.isAdmin,
     );
+
+    // Ensure resolver has at least one fallback
+    // endpoint even before the first successful discovery cycle.
+    final currentEndpoint = _apiService.apiClient.basePath;
+    if (currentEndpoint.isNotEmpty) {
+      await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);
+    }
 
     return true;
   }

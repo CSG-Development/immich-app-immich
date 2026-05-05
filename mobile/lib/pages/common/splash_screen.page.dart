@@ -49,6 +49,33 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     await resumeSession();
   }
 
+  Future<void> _waitForEndpointBeforeStartupRequests() async {
+    // Keep startup responsive: wait briefly for endpoint settle, then continue.
+    Future<String?> resolve() {
+      return ref
+          .read(hcDeviceEndpointResolverProvider)
+          .resolveAndActivateWinner(
+            trigger: 'splash_warmup',
+            mode: ResolveMode.foreground,
+          )
+          .timeout(const Duration(seconds: 4));
+    }
+
+    try {
+      await resolve();
+      return;
+    } catch (error) {
+      log.warning('Startup endpoint wait attempt failed, retrying once: $error');
+    }
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await resolve();
+    } catch (error) {
+      log.warning('Startup endpoint wait failed after retry, continuing: $error');
+    }
+  }
+
   Future<void> _warmupEndpointResolution() async {
     try {
       await ref
@@ -96,6 +123,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     if (accessToken != null &&
         // serverUrl != null &&
         endpoint != null) {
+      final endpointWarmupFuture = _waitForEndpointBeforeStartupRequests();
       final infoProvider = ref.read(serverInfoProvider.notifier);
       final wsProvider = ref.read(websocketProvider.notifier);
       final backgroundManager = ref.read(backgroundSyncProvider);
@@ -104,6 +132,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       ref.read(authProvider.notifier).saveAuthInfo(accessToken: accessToken).then(
         (_) async {
           try {
+            await endpointWarmupFuture;
             wsProvider.connect();
             infoProvider.getServerInfo();
 
