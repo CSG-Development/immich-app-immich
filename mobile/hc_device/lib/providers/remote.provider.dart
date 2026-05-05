@@ -26,6 +26,7 @@ import 'package:hc_device/api/remote_access.swagger.dart'
     show Device, DevicePaths, InitiateResponse$Response, RemoteAccess, TokenResponse$Response;
 import 'package:hc_device/providers/auth.api.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/services/auth/refresh_failure_classifier.dart';
 import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
 import 'package:hc_device/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'
@@ -34,6 +35,7 @@ import 'package:shared_preferences/shared_preferences.dart'
 RemoteCodeFailureType mapRemoteCodeFailureType(int? statusCode) {
   switch (statusCode) {
     case 401:
+      return RemoteCodeFailureType.invalidCode;
     case 403:
       return RemoteCodeFailureType.unauthorized;
     case 410:
@@ -88,13 +90,15 @@ class RemoteProvider extends Notifier<RemoteState>
   late final Future<void> Function({required String host, int? port})
       _registerHostTrustedChain;
 
+  /// Determines whether a refresh failure is a hard authentication error
+  /// (token expired/revoked) versus a transient failure (network, timeout, 5xx).
+  /// Only hard auth errors should trigger logout.
+  @override
+  bool shouldLogoutOnRefreshFailure(Object error) =>
+      RefreshFailureClassifier.shouldLogoutOnRefreshFailure(error);
+
   bool _shouldLogoutAfterRefreshFailure(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('401') ||
-        message.contains('403') ||
-        message.contains('unauthorized') ||
-        message.contains('forbidden') ||
-        (message.contains('refresh') && message.contains('invalid'));
+    return shouldLogoutOnRefreshFailure(error);
   }
 
   @override
@@ -194,13 +198,31 @@ class RemoteProvider extends Notifier<RemoteState>
     required TokenResponse$Response auth,
     bool notify = true,
   }) async {
-    state = state.copyWith(
+    _applyAuthenticatedState(
       accessToken: auth.accessToken,
       refreshToken: auth.refreshToken,
-      clearReference: true,
     );
     await _saveRefreshToken(refreshToken: auth.refreshToken);
     await _authRepo.deleteSecureString(referenceKey);
+  }
+
+  void _applyAuthenticatedState({
+    required String? accessToken,
+    required String? refreshToken,
+  }) {
+    state = state.copyWith(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      clearReference: true,
+    );
+  }
+
+  void _clearAuthState() {
+    state = state.copyWith(
+      clearAccessToken: true,
+      clearRefreshToken: true,
+      clearReference: true,
+    );
   }
 
   @override
@@ -242,11 +264,7 @@ class RemoteProvider extends Notifier<RemoteState>
 
   @override
   Future<void> logOut({bool notify = true}) async {
-    state = state.copyWith(
-      clearAccessToken: true,
-      clearRefreshToken: true,
-      clearReference: true,
-    );
+    _clearAuthState();
     await _authRepo.deleteSecureString(refreshKey);
     await _authRepo.deleteSecureString(referenceKey);
     logger.debug('[Provider] Remote logged out');

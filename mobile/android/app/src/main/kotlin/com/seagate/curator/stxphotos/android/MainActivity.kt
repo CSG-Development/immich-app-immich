@@ -23,6 +23,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import com.seagate.curator.stxphotos.android.update.UpdateApi
 import com.seagate.curator.stxphotos.android.update.UpdateApiImpl
+import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity : FlutterFragmentActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -31,7 +32,10 @@ class MainActivity : FlutterFragmentActivity() {
   }
 
   companion object {
+    private val certificateFetchers = ConcurrentHashMap<Int, CertificateFetcherApiImpl>()
+
     fun registerPlugins(ctx: Context, flutterEngine: FlutterEngine) {
+      val engineId = flutterEngine.hashCode()
       flutterEngine.plugins.add(TelemetryWrapperPlugin())
 
       val messenger = flutterEngine.dartExecutor.binaryMessenger
@@ -49,7 +53,9 @@ class MainActivity : FlutterFragmentActivity() {
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
       NativeClipboardApi.setUp(messenger, ClipboardMessagesImpl(ctx))
       UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
-      CertificateFetcherApi.setUp(messenger, CertificateFetcherApiImpl())
+      val certificateFetcher = CertificateFetcherApiImpl()
+      certificateFetchers[engineId] = certificateFetcher
+      CertificateFetcherApi.setUp(messenger, certificateFetcher)
 
       flutterEngine.plugins.add(BackgroundServicePlugin())
       flutterEngine.plugins.add(HttpSSLOptionsPlugin())
@@ -58,6 +64,12 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     fun cancelPlugins(flutterEngine: FlutterEngine) {
+      val engineId = flutterEngine.hashCode()
+      val messenger = flutterEngine.dartExecutor.binaryMessenger
+      val certificateFetcher = certificateFetchers.remove(engineId)
+      certificateFetcher?.close()
+      CertificateFetcherApi.setUp(messenger, null)
+
       val nativeApi =
         flutterEngine.plugins.get(NativeSyncApiImpl26::class.java) as ImmichPlugin?
           ?: flutterEngine.plugins.get(NativeSyncApiImpl30::class.java) as ImmichPlugin?

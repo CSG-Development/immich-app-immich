@@ -78,17 +78,37 @@ class FlutterError (
   val details: Any? = null
 ) : Throwable()
 
-/** Generated class from Pigeon that represents data sent in messages. */
-data class CertificateChainRequest (
+/** Result of a synchronous snapshot read; Dart polls until [success] or [failed]. */
+enum class CertificateChainSnapshotStatus(val raw: Int) {
+  /** Native fetch in flight or not yet started for this key. */
+  PENDING(0),
+  /** Terminal success; [certificates] is non-empty (DER base64). */
+  SUCCESS(1),
+  /** Terminal failure (timeout, empty chain, etc.); [certificates] is empty. */
+  FAILED(2);
+
+  companion object {
+    fun ofRaw(raw: Int): CertificateChainSnapshotStatus? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+/**
+ * Cache / single-flight key (no per-call id).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class CertificateChainKey (
   val host: String,
   val port: Long
 )
  {
   companion object {
-    fun fromList(pigeonVar_list: List<Any?>): CertificateChainRequest {
+    fun fromList(pigeonVar_list: List<Any?>): CertificateChainKey {
       val host = pigeonVar_list[0] as String
       val port = pigeonVar_list[1] as Long
-      return CertificateChainRequest(host, port)
+      return CertificateChainKey(host, port)
     }
   }
   fun toList(): List<Any?> {
@@ -98,7 +118,7 @@ data class CertificateChainRequest (
     )
   }
   override fun equals(other: Any?): Boolean {
-    if (other !is CertificateChainRequest) {
+    if (other !is CertificateChainKey) {
       return false
     }
     if (this === other) {
@@ -110,24 +130,27 @@ data class CertificateChainRequest (
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
-data class CertificateChainResponse (
-  /** DER, base64 */
+data class CertificateChainSnapshot (
+  val status: CertificateChainSnapshotStatus,
+  /** DER, base64. Non-empty only when [status] == [CertificateChainSnapshotStatus.success]. */
   val certificates: List<String>
 )
  {
   companion object {
-    fun fromList(pigeonVar_list: List<Any?>): CertificateChainResponse {
-      val certificates = pigeonVar_list[0] as List<String>
-      return CertificateChainResponse(certificates)
+    fun fromList(pigeonVar_list: List<Any?>): CertificateChainSnapshot {
+      val status = pigeonVar_list[0] as CertificateChainSnapshotStatus
+      val certificates = pigeonVar_list[1] as List<String>
+      return CertificateChainSnapshot(status, certificates)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
+      status,
       certificates,
     )
   }
   override fun equals(other: Any?): Boolean {
-    if (other !is CertificateChainResponse) {
+    if (other !is CertificateChainSnapshot) {
       return false
     }
     if (this === other) {
@@ -141,13 +164,18 @@ private open class CertificateFetcherPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       129.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          CertificateChainRequest.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          CertificateChainSnapshotStatus.ofRaw(it.toInt())
         }
       }
       130.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          CertificateChainResponse.fromList(it)
+          CertificateChainKey.fromList(it)
+        }
+      }
+      131.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          CertificateChainSnapshot.fromList(it)
         }
       }
       else -> super.readValueOfType(type, buffer)
@@ -155,12 +183,16 @@ private open class CertificateFetcherPigeonCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is CertificateChainRequest -> {
+      is CertificateChainSnapshotStatus -> {
         stream.write(129)
+        writeValue(stream, value.raw)
+      }
+      is CertificateChainKey -> {
+        stream.write(130)
         writeValue(stream, value.toList())
       }
-      is CertificateChainResponse -> {
-        stream.write(130)
+      is CertificateChainSnapshot -> {
+        stream.write(131)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -168,10 +200,12 @@ private open class CertificateFetcherPigeonCodec : StandardMessageCodec() {
   }
 }
 
-
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface CertificateFetcherApi {
-  fun fetchCertificateChain(request: CertificateChainRequest, callback: (Result<CertificateChainResponse>) -> Unit)
+  /** Fast path: returns cached terminal state, [pending], or starts background fetch and returns [pending]. */
+  fun getCertificateChainSnapshot(key: CertificateChainKey): CertificateChainSnapshot
+  /** Aborts in-flight fetch for [key] (e.g. when Dart stops polling early). */
+  fun cancelCertificateChainForHost(key: CertificateChainKey)
 
   companion object {
     /** The codec used by CertificateFetcherApi. */
@@ -183,20 +217,35 @@ interface CertificateFetcherApi {
     fun setUp(binaryMessenger: BinaryMessenger, api: CertificateFetcherApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.fetchCertificateChain$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.getCertificateChainSnapshot$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val requestArg = args[0] as CertificateChainRequest
-            api.fetchCertificateChain(requestArg) { result: Result<CertificateChainResponse> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(CertificateFetcherPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(CertificateFetcherPigeonUtils.wrapResult(data))
-              }
+            val keyArg = args[0] as CertificateChainKey
+            val wrapped: List<Any?> = try {
+              listOf(api.getCertificateChainSnapshot(keyArg))
+            } catch (exception: Throwable) {
+              CertificateFetcherPigeonUtils.wrapError(exception)
             }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.cancelCertificateChainForHost$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keyArg = args[0] as CertificateChainKey
+            val wrapped: List<Any?> = try {
+              api.cancelCertificateChainForHost(keyArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              CertificateFetcherPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

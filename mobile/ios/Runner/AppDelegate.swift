@@ -8,9 +8,14 @@ import photo_manager
 import shared_preferences_foundation
 import UIKit
 import AVFoundation
+import Foundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+    /// One fetcher per `FlutterEngine` (main UI + background isolate). Matches Android
+    /// `MainActivity.certificateFetchers` so background registration does not overwrite the main engine's fetcher.
+    private static let certificateFetchersLock = NSLock()
+    private static var certificateFetchers: [ObjectIdentifier: CertificateFetcherApiImplSimple] = [:]
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -85,11 +90,20 @@ import AVFoundation
     ThumbnailApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ThumbnailApiImpl())
     BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: BackgroundWorkerApiImpl())
     NativeClipboardApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ClipboardApiImpl())
-    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: CertificateFetcherApiImplSimple())
+    let fetcher = CertificateFetcherApiImplSimple()
+    certificateFetchersLock.lock()
+    certificateFetchers[ObjectIdentifier(engine)] = fetcher
+    certificateFetchersLock.unlock()
+    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: fetcher)
   }
 
   public static func cancelPlugins(with engine: FlutterEngine) {
     (engine.valuePublished(byPlugin: NativeSyncApiImpl.name) as? NativeSyncApiImpl)?.detachFromEngine()
+    certificateFetchersLock.lock()
+    let fetcher = certificateFetchers.removeValue(forKey: ObjectIdentifier(engine))
+    certificateFetchersLock.unlock()
+    fetcher?.close()
+    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: nil)
   }
 }
 

@@ -1,7 +1,6 @@
 import 'package:basic_utils/basic_utils.dart' as cert_utils;
 import 'package:immich_mobile/utils/certificates_pinning/certificate_pinning_exceptions.dart';
 import 'package:immich_mobile/utils/certificates_pinning/x509_certificate_wrapper.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 
 /// Validator for X.509 certificate chains.
 class CertificateChainValidator {
@@ -105,8 +104,7 @@ class CertificateChainValidator {
       }
 
       return false;
-    } catch (e) {
-      dPrint(() => '[CertificateChainValidator] Chain verification error: $e');
+    } catch (_) {
       return false;
     }
   }

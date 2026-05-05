@@ -29,8 +29,21 @@ bool _deepEquals(Object? a, Object? b) {
   return a == b;
 }
 
-class CertificateChainRequest {
-  CertificateChainRequest({required this.host, required this.port});
+/// Result of a synchronous snapshot read; Dart polls until [success] or [failed].
+enum CertificateChainSnapshotStatus {
+  /// Native fetch in flight or not yet started for this key.
+  pending,
+
+  /// Terminal success; [certificates] is non-empty (DER base64).
+  success,
+
+  /// Terminal failure (timeout, empty chain, etc.); [certificates] is empty.
+  failed,
+}
+
+/// Cache / single-flight key (no per-call id).
+class CertificateChainKey {
+  CertificateChainKey({required this.host, required this.port});
 
   String host;
 
@@ -44,15 +57,15 @@ class CertificateChainRequest {
     return _toList();
   }
 
-  static CertificateChainRequest decode(Object result) {
+  static CertificateChainKey decode(Object result) {
     result as List<Object?>;
-    return CertificateChainRequest(host: result[0]! as String, port: result[1]! as int);
+    return CertificateChainKey(host: result[0]! as String, port: result[1]! as int);
   }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) {
-    if (other is! CertificateChainRequest || other.runtimeType != runtimeType) {
+    if (other is! CertificateChainKey || other.runtimeType != runtimeType) {
       return false;
     }
     if (identical(this, other)) {
@@ -66,29 +79,34 @@ class CertificateChainRequest {
   int get hashCode => Object.hashAll(_toList());
 }
 
-class CertificateChainResponse {
-  CertificateChainResponse({required this.certificates});
+class CertificateChainSnapshot {
+  CertificateChainSnapshot({required this.status, required this.certificates});
 
-  /// DER, base64
+  CertificateChainSnapshotStatus status;
+
+  /// DER, base64. Non-empty only when [status] == [CertificateChainSnapshotStatus.success].
   List<String> certificates;
 
   List<Object?> _toList() {
-    return <Object?>[certificates];
+    return <Object?>[status, certificates];
   }
 
   Object encode() {
     return _toList();
   }
 
-  static CertificateChainResponse decode(Object result) {
+  static CertificateChainSnapshot decode(Object result) {
     result as List<Object?>;
-    return CertificateChainResponse(certificates: (result[0] as List<Object?>?)!.cast<String>());
+    return CertificateChainSnapshot(
+      status: result[0]! as CertificateChainSnapshotStatus,
+      certificates: (result[1] as List<Object?>?)!.cast<String>(),
+    );
   }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) {
-    if (other is! CertificateChainResponse || other.runtimeType != runtimeType) {
+    if (other is! CertificateChainSnapshot || other.runtimeType != runtimeType) {
       return false;
     }
     if (identical(this, other)) {
@@ -109,11 +127,14 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    } else if (value is CertificateChainRequest) {
+    } else if (value is CertificateChainSnapshotStatus) {
       buffer.putUint8(129);
-      writeValue(buffer, value.encode());
-    } else if (value is CertificateChainResponse) {
+      writeValue(buffer, value.index);
+    } else if (value is CertificateChainKey) {
       buffer.putUint8(130);
+      writeValue(buffer, value.encode());
+    } else if (value is CertificateChainSnapshot) {
+      buffer.putUint8(131);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -124,9 +145,12 @@ class _PigeonCodec extends StandardMessageCodec {
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
       case 129:
-        return CertificateChainRequest.decode(readValue(buffer)!);
+        final int? value = readValue(buffer) as int?;
+        return value == null ? null : CertificateChainSnapshotStatus.values[value];
       case 130:
-        return CertificateChainResponse.decode(readValue(buffer)!);
+        return CertificateChainKey.decode(readValue(buffer)!);
+      case 131:
+        return CertificateChainSnapshot.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -146,15 +170,16 @@ class CertificateFetcherApi {
 
   final String pigeonVar_messageChannelSuffix;
 
-  Future<CertificateChainResponse> fetchCertificateChain(CertificateChainRequest request) async {
+  /// Fast path: returns cached terminal state, [pending], or starts background fetch and returns [pending].
+  Future<CertificateChainSnapshot> getCertificateChainSnapshot(CertificateChainKey key) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.fetchCertificateChain$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.getCertificateChainSnapshot$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[key]);
     final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
@@ -170,7 +195,31 @@ class CertificateFetcherApi {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (pigeonVar_replyList[0] as CertificateChainResponse?)!;
+      return (pigeonVar_replyList[0] as CertificateChainSnapshot?)!;
+    }
+  }
+
+  /// Aborts in-flight fetch for [key] (e.g. when Dart stops polling early).
+  Future<void> cancelCertificateChainForHost(CertificateChainKey key) async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.cancelCertificateChainForHost$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[key]);
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else {
+      return;
     }
   }
 }

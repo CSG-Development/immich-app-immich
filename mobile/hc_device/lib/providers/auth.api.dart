@@ -22,6 +22,9 @@ abstract class CuratorAuthProvider {
   bool isRefreshRequest(Request? request);
   Future<String> refreshAccessToken();
   Future<void> logOut({bool notify});
+
+  /// Override when refresh failures should force logout.
+  bool shouldLogoutOnRefreshFailure(Object error) => false;
 }
 
 /// Generic interceptor for adding the Authorization header
@@ -52,6 +55,9 @@ class CuratorInterceptor implements Interceptor {
 
 /// Generic Authenticator for handling 401 and token refresh
 class CuratorAuthenticator implements Authenticator {
+  static const String _refreshRetryMarkerHeader = 'accept-language';
+  static const String _refreshRetryMarkerValue = '42';
+
   final CuratorAuthProvider _provider;
   Completer<String>? _completer;
 
@@ -70,24 +76,26 @@ class CuratorAuthenticator implements Authenticator {
             response.statusCode == HttpStatus.forbidden)) {
       // Trying to update token only 1 time
       // TODO use a better way to identify if it's a refresh request, like a custom header
-      if (request.headers["accept-language"] != "42" &&
+      if (request.headers[_refreshRetryMarkerHeader] != _refreshRetryMarkerValue &&
           !(_provider.isRefreshRequest(originalRequest))) {
-        // Use "accept-language" to avoid to be blocked by Access-Control-Allow-Headers
+        // Use accept-language to avoid being blocked by Access-Control-Allow-Headers.
         try {
           final newAccessToken = await _refreshToken();
           return applyHeaders(request, {
             HttpHeaders.authorizationHeader: 'Bearer $newAccessToken',
-            // Setting a parameter to not end up in an infinite loop...
-            "accept-language": '42',
+            // Retry marker to avoid infinite refresh/retry loops.
+            _refreshRetryMarkerHeader: _refreshRetryMarkerValue,
           });
         } catch (e) {
           logger.error('[Auth] Unable to refresh token', e);
+          if (_provider.shouldLogoutOnRefreshFailure(e)) {
+            await _provider.logOut(notify: true);
+          }
         }
       } else {
         logger.warning('[Auth] Unable to refresh token (already attempted or failed)');
+        await _provider.logOut(notify: true);
       }
-      // If the token cannot be refreshed, logout
-      await _provider.logOut(notify: true);
       return null;
     }
     return null;
@@ -103,11 +111,14 @@ class CuratorAuthenticator implements Authenticator {
     try {
       final token = await _provider.refreshAccessToken();
       _completer!.complete(token);
+      _completer = null; // Reset for next refresh cycle
+      return token;
     } catch (e) {
       logger.error('[Auth] Automatic token refresh failed', e);
       _completer!.completeError(e);
+      _completer = null; // Reset so next request can retry
+      rethrow;
     }
-    return _completer!.future;
   }
 
   @override

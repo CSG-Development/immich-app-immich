@@ -7,6 +7,7 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/platform/certificate_fetcher_api.g.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/certificate_cache.dart';
+import 'package:immich_mobile/utils/certificates_pinning/certificate_native_poller.dart';
 import 'package:immich_mobile/utils/certificates_pinning/certificate_chain_validator.dart';
 import 'package:immich_mobile/utils/certificates_pinning/certificate_pinning_exceptions.dart';
 import 'package:immich_mobile/utils/certificates_pinning/certificate_pinning_http_overrides.dart';
@@ -20,6 +21,9 @@ class HttpCertPinningManager {
   final _log = Logger("HttpCertPinningManager");
   final CertPinningConfig _config;
   final CertificateFetcherApi _certificateApi;
+
+  /// Platform cert fetch uses ~3.2s socket/session timeouts on Android/iOS; keep those
+  /// values aligned in native code when tuning fetch behavior.
 
   late final CertificateCache _cache;
   late List<X509CertificateWrapper> _rootCertificates;
@@ -75,14 +79,6 @@ class HttpCertPinningManager {
       }
       _rootCertificates = rootCertificatesPems;
 
-      _log.fine('Root certificates loaded');
-      for (var i = 0; i < _rootCertificates.length; i++) {
-        final root = _rootCertificates[i];
-        _log.fine('Root #$i subject: ${root.subject}');
-        _log.fine('Root #$i issuer: ${root.issuer}');
-      }
-      _log.fine('Total root certificates: ${_rootCertificates.length}');
-
       // Create validator.
       final validator = CertificateChainValidator(_rootCertificates);
 
@@ -95,8 +91,6 @@ class HttpCertPinningManager {
       );
 
       HttpOverrides.global = _httpOverrides;
-
-      _log.fine('Global HttpOverrides installed');
 
       _isInitialized = true;
     } on CertificateLoadException {
@@ -114,8 +108,6 @@ class HttpCertPinningManager {
 
     // Use default HTTPS port if not provided.
     final targetPort = port ?? CertPinningConfig.defaultHttpsPort;
-
-    _log.fine('Registering certificate chain for $host:$targetPort');
 
     try {
       // Fetch certificate chain from the server.
@@ -135,12 +127,6 @@ class HttpCertPinningManager {
         return;
       }
 
-      _log.fine('Certificate chain is valid for $host:$targetPort');
-      _log.fine('Chain length: ${certificates.length}');
-      for (var i = 0; i < certificates.length; i++) {
-        _log.fine('Certificate $i: ${certificates[i].subject}');
-      }
-
       // Register trusted chain (excluding leaf/server certificate).
       final trustedChain = certificates.skip(1).toList(); // Skip server certificate.
       _httpOverrides.registerTrustedChain(host, trustedChain);
@@ -149,9 +135,7 @@ class HttpCertPinningManager {
       // This avoids transient fetch failures (airplane toggles/network flaps) from
       // breaking already working endpoints.
       if (_httpOverrides.hasTrustedChain(host)) {
-        _log.warning(
-          'Reusing existing trusted chain for $host:$targetPort after fetch failure: $e',
-        );
+        _log.warning('Reusing existing trusted chain for $host:$targetPort after fetch failure: $e');
         return;
       }
       rethrow;
@@ -171,34 +155,24 @@ class HttpCertPinningManager {
     }
   }
 
-  /// Fetches certificate chain from platform-specific implementation.
+  /// Fetches certificate chain from platform-specific implementation via fast snapshot polling.
   Future<List<String>> _fetchCertificateChain({required String host, required int port}) async {
-    final request = CertificateChainRequest(host: host, port: port);
     Object? lastError;
 
     for (var attempt = 1; attempt <= 2; attempt++) {
       try {
-        final response = await _certificateApi.fetchCertificateChain(request);
-
-        if (response.certificates.isEmpty) {
-          throw CertificateChainFetchException(
-            'Empty certificate chain from server',
-            host: host,
-            port: port,
-          );
-        }
-
-        return response.certificates;
+        return await pollNativeCertificateChain(
+          api: _certificateApi,
+          host: host,
+          port: port,
+          gapMilliseconds: _config.certificatePollGapMilliseconds,
+        );
       } on PlatformException catch (e) {
         lastError = e;
-        _log.warning(
-          'Platform certificate fetch failure (attempt $attempt/2) for $host:$port: ${e.message}',
-        );
+        _log.warning('Platform certificate snapshot failure (attempt $attempt/2) for $host:$port: ${e.message}');
       } catch (e) {
         lastError = e;
-        _log.warning(
-          'Certificate fetch failure (attempt $attempt/2) for $host:$port: $e',
-        );
+        rethrow;
       }
 
       if (attempt < 2) {

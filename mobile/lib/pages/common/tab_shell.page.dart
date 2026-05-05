@@ -13,6 +13,7 @@ import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/memory.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
+import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
@@ -29,15 +30,18 @@ class TabShellPage extends ConsumerStatefulWidget {
 }
 
 class _TabShellPageState extends ConsumerState<TabShellPage> {
+  late final CuratorNetworkMonitor _networkMonitor;
+
   @override
   void initState() {
     super.initState();
-    ref.read(curatorNetworkMonitorProvider).startMonitoring();
+    _networkMonitor = ref.read(curatorNetworkMonitorProvider);
+    _networkMonitor.startMonitoring();
   }
 
   @override
   void dispose() {
-    ref.read(curatorNetworkMonitorProvider).stopMonitoring();
+    _networkMonitor.stopMonitoring();
     super.dispose();
   }
 

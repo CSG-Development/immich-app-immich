@@ -14,13 +14,21 @@ class CertPinningConfig {
   /// Lifetime of cached certificate validation results.
   final Duration certificateCacheDuration;
 
+  /// Milliseconds to wait after each [CertificateChainSnapshotStatus.pending] before
+  /// the next native snapshot. Length N allows N+1 snapshot attempts total.
+  /// Keep the sum comfortably above the ~3.2s native socket/session timeout on iOS/Android.
+  final List<int> certificatePollGapMilliseconds;
+
   /// Default HTTPS port.
   static const int defaultHttpsPort = 443;
+
+  /// Default gaps after an initial immediate snapshot: ~5s total horizon before timeout.
+  static const List<int> defaultCertificatePollGapMilliseconds = [500, 1000, 3500];
 
   const CertPinningConfig({
     this.installRootsInSecurityContext = false,
     this.allowFallback = false,
     this.certificateCacheDuration = const Duration(minutes: 10),
+    this.certificatePollGapMilliseconds = defaultCertificatePollGapMilliseconds,
   });
 }
-
