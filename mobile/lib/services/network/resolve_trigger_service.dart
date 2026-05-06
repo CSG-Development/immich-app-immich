@@ -30,6 +30,7 @@ class PathResolveTriggerService {
   _PendingResolveRequest? _activeRequest;
   DateTime? _activeResolveStartedAt;
   _PendingResolveRequest? _pendingRequest;
+  Future<EndpointResolutionResult>? _activeRunFuture;
   DateTime? _lastResolveAt;
   Duration? _lastResolveDuration;
   PathResolveTriggerType? _lastTriggerType;
@@ -56,40 +57,36 @@ class PathResolveTriggerService {
   Future<EndpointResolutionResult> onNetworkChanged({
     required ResolveMode mode,
     String trigger = 'connectivity_change',
-  }) => _trigger(
-    _PendingResolveRequest(
-      type: PathResolveTriggerType.networkChanged,
-      mode: mode,
-      trigger: trigger,
-    ),
-  );
+  }) => _trigger(_PendingResolveRequest(type: PathResolveTriggerType.networkChanged, mode: mode, trigger: trigger));
 
-  Future<EndpointResolutionResult> onApiTransportError({
-    required ResolveMode mode,
-    String trigger = 'api_error',
-  }) => _trigger(
-    _PendingResolveRequest(
-      type: PathResolveTriggerType.apiTransportError,
-      mode: mode,
-      trigger: trigger,
-    ),
-  );
+  Future<EndpointResolutionResult> onApiTransportError({required ResolveMode mode, String trigger = 'api_error'}) =>
+      _trigger(_PendingResolveRequest(type: PathResolveTriggerType.apiTransportError, mode: mode, trigger: trigger));
 
-  Future<EndpointResolutionResult> onManualRetry({
-    required ResolveMode mode,
-    String trigger = 'manual_retry',
-  }) => _trigger(
-    _PendingResolveRequest(
-      type: PathResolveTriggerType.manualRetry,
-      mode: mode,
-      trigger: trigger,
-    ),
-  );
+  Future<EndpointResolutionResult> onManualRetry({required ResolveMode mode, String trigger = 'manual_retry'}) =>
+      _trigger(_PendingResolveRequest(type: PathResolveTriggerType.manualRetry, mode: mode, trigger: trigger));
 
   Future<EndpointResolutionResult> _trigger(_PendingResolveRequest request) async {
     if (_isResolving) {
+      final active = _activeRequest;
+      if (active != null && _priority(request.type) <= _priority(active.type)) {
+        _log.info(
+          '[Trigger] resolve join '
+          'active=${active.type.name}:${active.trigger} '
+          'incoming=${request.type.name}:${request.trigger}',
+        );
+        return _activeRunFuture ??
+            const EndpointResolutionResult(
+              success: false,
+              reason: 'resolve_join_active_missing_future',
+              selectionSource: 'trigger_service_join_fallback',
+            );
+      }
       _pendingRequest = _coalesce(_pendingRequest, request);
-      _log.info('[Trigger] Resolve in flight; queued ${request.type.name} trigger=${request.trigger}');
+      _log.info(
+        '[Trigger] resolve queued '
+        'incoming=${request.type.name}:${request.trigger} '
+        'queued=${_pendingRequest?.type.name}:${_pendingRequest?.trigger}',
+      );
       return const EndpointResolutionResult(
         success: false,
         reason: 'resolve_queued',
@@ -101,6 +98,18 @@ class PathResolveTriggerService {
   }
 
   Future<EndpointResolutionResult> _run(_PendingResolveRequest request) async {
+    final runFuture = _runInternal(request);
+    _activeRunFuture = runFuture;
+    try {
+      return await runFuture;
+    } finally {
+      if (identical(_activeRunFuture, runFuture)) {
+        _activeRunFuture = null;
+      }
+    }
+  }
+
+  Future<EndpointResolutionResult> _runInternal(_PendingResolveRequest request) async {
     _isResolving = true;
     _activeRequest = request;
     _activeResolveStartedAt = DateTime.now();
@@ -109,17 +118,22 @@ class PathResolveTriggerService {
     }
     _lastResolveAt = DateTime.now();
     _lastTriggerType = request.type;
-    _log.info('[Trigger] Starting resolve type=${request.type.name} trigger=${request.trigger}');
+    _log.info('[Trigger] resolve start type=${request.type.name} trigger=${request.trigger}');
 
     try {
-      final result = await _endpointResolver.resolveWithDetails(
-        trigger: request.trigger,
-        mode: request.mode,
-      );
+      final result = await _endpointResolver.resolveWithDetails(trigger: request.trigger, mode: request.mode);
       if (result.success) {
         _lastResolvedEndpoint = result.endpoint;
         _lastSelectionSource = result.selectionSource;
       }
+      _log.info(
+        '[Trigger] resolve result '
+        'type=${request.type.name} '
+        'trigger=${request.trigger} '
+        'success=${result.success} '
+        'reason=${result.reason} '
+        'selection=${result.selectionSource}',
+      );
       return result;
     } finally {
       final startedAt = _activeResolveStartedAt;
@@ -128,6 +142,12 @@ class PathResolveTriggerService {
       _activeResolveStartedAt = null;
       if (startedAt != null) {
         _lastResolveDuration = DateTime.now().difference(startedAt);
+        _log.info(
+          '[Trigger] resolve end '
+          'type=${request.type.name} '
+          'trigger=${request.trigger} '
+          'elapsedMs=${_lastResolveDuration!.inMilliseconds}',
+        );
       }
       if (!_resolveStateController.isClosed) {
         _resolveStateController.add(false);
@@ -135,16 +155,13 @@ class PathResolveTriggerService {
       final next = _pendingRequest;
       _pendingRequest = null;
       if (next != null) {
-        _log.info('[Trigger] Running queued resolve type=${next.type.name} trigger=${next.trigger}');
+        _log.info('[Trigger] resolve run queued type=${next.type.name} trigger=${next.trigger}');
         unawaited(_run(next));
       }
     }
   }
 
-  _PendingResolveRequest _coalesce(
-    _PendingResolveRequest? current,
-    _PendingResolveRequest incoming,
-  ) {
+  _PendingResolveRequest _coalesce(_PendingResolveRequest? current, _PendingResolveRequest incoming) {
     if (current == null) {
       return incoming;
     }
@@ -167,11 +184,7 @@ class PathResolveTriggerService {
 }
 
 class _PendingResolveRequest {
-  const _PendingResolveRequest({
-    required this.type,
-    required this.mode,
-    required this.trigger,
-  });
+  const _PendingResolveRequest({required this.type, required this.mode, required this.trigger});
 
   final PathResolveTriggerType type;
   final ResolveMode mode;

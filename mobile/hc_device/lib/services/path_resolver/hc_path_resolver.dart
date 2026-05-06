@@ -236,6 +236,12 @@ class HcPathResolver {
           remoteProvider: _remoteProvider,
         ).findOptimalDeviceConnection(
           seagateDeviceID: seagateDeviceID,
+          onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
+            ping: betterPing,
+            context: context,
+            validateExternal: validateExternal,
+            remoteDeviceID: seagateDeviceID,
+          ),
         );
         final fromSeagate = await _tryCompleteFromPing(
           ping: ping,
@@ -277,6 +283,13 @@ class HcPathResolver {
         ).findOptimalDeviceConnection(
           device: selected,
           seagateDeviceID: remoteDeviceID,
+          onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
+            ping: betterPing,
+            context: context,
+            validateExternal: validateExternal,
+            selected: selected,
+            remoteDeviceID: remoteDeviceID,
+          ),
         );
         final fromRemote = await _tryCompleteFromPing(
           ping: ping,
@@ -371,6 +384,49 @@ class HcPathResolver {
       baseUrl: ping.baseUrl,
       pingResult: ping,
       selectionSource: selectionSource,
+    );
+  }
+
+  Future<void> _onHigherPriorityPingResolved({
+    required PingResult ping,
+    required ResolveContext context,
+    required ExternalEndpointValidator? validateExternal,
+    DeviceItem? selected,
+    String? remoteDeviceID,
+  }) async {
+    if (!ping.success || ping.baseUrl == null) {
+      return;
+    }
+
+    final endpoint = winnerEndpointFromBaseUrl(ping.baseUrl!);
+    if (context.localOnly && endpoint.contains('remote')) {
+      return;
+    }
+
+    final isValid = await _validate(endpoint, context, validateExternal);
+    if (!isValid) {
+      return;
+    }
+
+    await _deviceProvider.setHost(
+      baseUrl: ping.baseUrl!,
+      deviceID: selected?.id,
+      seagateDeviceID: remoteDeviceID,
+      debugHostType: ping.debugHostType,
+      devicePaths: remoteDeviceID != null
+          ? _deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID)?.paths
+          : null,
+    );
+    await setAvailablePath(endpoint);
+
+    _resolveEventsController.add(
+      HcPathResolveResult(
+        success: true,
+        endpoint: endpoint,
+        baseUrl: ping.baseUrl,
+        pingResult: ping,
+        selectionSource: 'path_upgrade',
+      ),
     );
   }
 

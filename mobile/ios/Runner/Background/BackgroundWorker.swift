@@ -98,7 +98,8 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     AppDelegate.registerPlugins(with: engine)
     flutterApi = BackgroundWorkerFlutterApi(binaryMessenger: engine.binaryMessenger)
     BackgroundWorkerBgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: self)
-    CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: CertificateFetcherApiImplSimple())
+    // Note: CertificateFetcherApiSetup is already set up by AppDelegate.registerPlugins
+    // and will be cancelled by AppDelegate.cancelPlugins below
     
     // Set up a timeout timer if maxSeconds was specified to prevent runaway background tasks
     if maxSeconds != nil {
@@ -173,6 +174,8 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     }
     
     isComplete = true
+    // Cancel any in-flight certificate fetch operations before destroying engine context
+    // to prevent platform message response crashes
     AppDelegate.cancelPlugins(with: engine)
     engine.destroyContext()
     flutterApi = nil

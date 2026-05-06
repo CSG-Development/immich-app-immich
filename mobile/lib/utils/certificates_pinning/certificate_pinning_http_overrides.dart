@@ -32,15 +32,11 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
   /// Registers a trusted chain for the given [host].
   void registerTrustedChain(String host, List<X509CertificateWrapper> trustedChain) {
     _hostTrustedChains[host] = trustedChain;
-
-    _log.fine('Registered chain for $host: ${trustedChain.length} certificates');
   }
 
   /// Removes a trusted chain for the given [host].
   void unregisterTrustedChain(String host) {
     _hostTrustedChains.remove(host);
-
-    _log.fine('Removed chain for $host');
   }
 
   /// Returns true when a trusted chain is already registered for [host].
@@ -52,8 +48,6 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
   /// Clears all registered trusted chains.
   void clearAllTrustedChains() {
     _hostTrustedChains.clear();
-
-    _log.fine('All trusted chains cleared');
   }
 
   @override
@@ -105,15 +99,8 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
       // Try cache.
       final cachedResult = _cache.getCachedValidation(cacheKey);
       if (cachedResult != null) {
-        _log.fine('Using cached validation result for $host:$port');
         return cachedResult;
       }
-
-      _log.fine('Validating certificate for $host:$port');
-      _log.fine('Subject: ${serverCert.subject}');
-      _log.fine('Issuer: ${serverCert.issuer}');
-      _log.fine('Valid now: ${serverCert.isValidNow ? "Yes" : "No"}');
-      _log.fine('Trusted chain length: ${trustedChain.length}');
 
       // Validate certificate against trusted chain.
       final isValid = _validator.validateCertificateWithChain(serverCert, trustedChain);
@@ -122,11 +109,7 @@ class CertificatePinningHttpOverrides extends HttpOverrides {
       _cache.cacheValidation(cacheKey, isValid);
 
       if (!isValid) {
-        _log.warning('Certificate validation failed for $host:$port');
-
-        if (_config.allowFallback) {
-          _log.fine('Fallback is allowed for $host:$port');
-        }
+        _log.fine('Certificate validation failed for $host:$port');
       }
 
       // Allow connection on failure if fallback is enabled.

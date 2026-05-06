@@ -388,6 +388,7 @@ class DeviceDetectionService {
     DeviceItem? device,
     String? seagateDeviceID,
     bool useCachedPaths = true,
+    FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
   }) async {
     // If local device (no remoteDevice),
     // try to connect directly using baseUrl first before fetching paths from server
@@ -457,22 +458,23 @@ class DeviceDetectionService {
       }
     }
 
-    // Try paths by priority: local > public > remote (fallback)
+    // Try paths in parallel: local has priority, then public, then remote.
+    // Remote is still treated as fallback for final selection.
     if (devicePaths.paths.isNotEmpty) {
       logger.info('[Network] Testing ${devicePaths.paths.length} paths');
 
       // Check WiFi connectivity once for local paths
       final hasWiFi = await _checkWiFiConnectivity();
 
-      // Separate priority paths (local + public) from remote fallback
-      final priorityPaths = <DevicePath>[];
-      DevicePath? remotePath;
+      final localPaths = <DevicePath>[];
+      final publicPaths = <DevicePath>[];
+      final remotePaths = <DevicePath>[];
 
       for (final path in devicePaths.paths) {
         switch (path.type) {
           case DevicePathType.local:
             if (hasWiFi) {
-              priorityPaths.add(path);
+              localPaths.add(path);
             } else {
               logger.warning(
                 '[Network] Skipping local path due to no WiFi: ${path.address}:${path.port}',
@@ -480,10 +482,10 @@ class DeviceDetectionService {
             }
             break;
           case DevicePathType.public:
-            priorityPaths.add(path);
+            publicPaths.add(path);
             break;
           case DevicePathType.remote:
-            remotePath = path;
+            remotePaths.add(path);
             break;
           default:
             break;
@@ -491,13 +493,25 @@ class DeviceDetectionService {
       }
 
       logger.info(
-        '[Network] Priority paths: ${priorityPaths.length}, remote: ${remotePath != null ? 1 : 0}',
+        '[Network] Paths by type local=${localPaths.length} public=${publicPaths.length} remote=${remotePaths.length}',
       );
 
-      // Test local and public paths in parallel, then remote as fallback
+      // Launch all available paths in parallel:
+      // - Return local immediately when one succeeds
+      // - Otherwise wait for all local checks to finish, then prefer public over remote
       PingResult? result;
-      if (priorityPaths.isNotEmpty) {
-        result = await _testPriorityPaths(priorityPaths);
+      final allCandidatePaths = <DevicePath>[
+        ...localPaths,
+        ...publicPaths,
+        ...remotePaths,
+      ];
+      if (allCandidatePaths.isNotEmpty) {
+        result = await _testAllPathsInParallel(
+          localPaths: localPaths,
+          publicPaths: publicPaths,
+          remotePaths: remotePaths,
+          onHigherPriorityPathResolved: onHigherPriorityPathResolved,
+        );
       }
 
       // All priority paths failed — only refresh from server if cache is expired (older than 1 hour)
@@ -545,14 +559,6 @@ class DeviceDetectionService {
             '[Network] All cached paths failed but cache is still fresh, skipping refresh',
           );
         }
-      }
-
-      // If still no result and we have a remote path, try it as last resort
-      if (result == null && remotePath != null) {
-        logger.info(
-          '[Network] Testing remote fallback path: ${remotePath.address}:${remotePath.port}',
-        );
-        result = await _testPath(remotePath);
       }
 
       if (result != null) {
@@ -608,76 +614,81 @@ class DeviceDetectionService {
     }
   }
 
-  /// Test local and public paths in parallel
-  /// Returns immediately if a local path succeeds, otherwise returns first public
-  Future<PingResult?> _testPriorityPaths(List<DevicePath> paths) async {
-    if (paths.isEmpty) return null;
+  /// Test all known paths in parallel.
+  /// Selection strategy:
+  /// - Return immediately on the first successful path (fast connect).
+  /// - Keep running remaining probes in background.
+  /// - If a higher-priority path resolves later, invoke upgrade callback.
+  Future<PingResult?> _testAllPathsInParallel({
+    required List<DevicePath> localPaths,
+    required List<DevicePath> publicPaths,
+    required List<DevicePath> remotePaths,
+    FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
+  }) async {
+    final paths = <DevicePath>[...localPaths, ...publicPaths, ...remotePaths];
+    if (paths.isEmpty) {
+      return null;
+    }
 
-    // Count local paths to enable early return once all locals are tested
-    int localPendingCount = paths
-        .where((p) => p.type == DevicePathType.local)
-        .length;
+    var pendingCount = paths.length;
+    PingResult? selectedResult;
+    var selectedRank = 999;
+    final completer = Completer<PingResult?>();
 
     logger.info(
-      '[Network] Testing ${paths.length} priority paths in parallel ($localPendingCount local, ${paths.length - localPendingCount} public)',
+      '[Network] Testing all paths in parallel: total=${paths.length} local=${localPaths.length} public=${publicPaths.length} remote=${remotePaths.length}',
     );
 
-    final completer = Completer<PingResult?>();
-    int pendingCount = paths.length;
-    PingResult? bestResult;
+    int pathRank(DevicePathType type) {
+      switch (type) {
+        case DevicePathType.local:
+          return 0;
+        case DevicePathType.public:
+          return 1;
+        case DevicePathType.remote:
+          return 2;
+        case DevicePathType.swaggerGeneratedUnknown:
+          return 3;
+      }
+    }
+
+    void markDone(DevicePath path) {
+      pendingCount--;
+      if (pendingCount == 0 && !completer.isCompleted) {
+        completer.complete(selectedResult);
+      }
+    }
 
     for (final path in paths) {
       _testPath(path)
           .then((result) {
-            if (result != null && !completer.isCompleted) {
-              // Local has highest priority, return immediately
-              if (path.type == DevicePathType.local) {
+            if (result != null) {
+              final rank = pathRank(path.type);
+              if (selectedResult == null) {
+                selectedResult = result;
+                selectedRank = rank;
                 logger.info(
-                  '[Network] Local path succeeded, returning immediately: ${result.debugHostType} at ${result.baseUrl}',
+                  '[Network] First reachable path selected immediately: ${result.debugHostType} at ${result.baseUrl}',
                 );
-                completer.complete(result);
-              } else {
-                bestResult ??= result;
-                // If all local paths are done and we have a public result, return immediately
-                if (localPendingCount == 0 && !completer.isCompleted) {
-                  logger.info(
-                    '[Network] All local paths tested, returning public path immediately: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-                  );
-                  completer.complete(bestResult);
+                if (!completer.isCompleted) {
+                  completer.complete(result);
+                }
+              } else if (rank < selectedRank) {
+                selectedResult = result;
+                selectedRank = rank;
+                logger.info(
+                  '[Network] Higher-priority path resolved, requesting switch: ${result.debugHostType} at ${result.baseUrl}',
+                );
+                final callback = onHigherPriorityPathResolved;
+                if (callback != null) {
+                  unawaited(Future.sync(() => callback(result)));
                 }
               }
             }
-
-            // Decrement counters
-            if (path.type == DevicePathType.local) {
-              logger.debug(
-                '[Network] Local path tested and failed: ${path.address}:${path.port} (remaining local: ${localPendingCount - 1})',
-              );
-              localPendingCount--;
-            }
-            pendingCount--;
-            if (pendingCount == 0 && !completer.isCompleted) {
-              logger.info(
-                '[Network] All priority paths tested, returning best result: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-              );
-              completer.complete(bestResult);
-            }
+            markDone(path);
           })
           .catchError((_) {
-            // Decrement counters
-            if (path.type == DevicePathType.local) {
-              logger.debug(
-                '[Network] Local path tested and failed: ${path.address}:${path.port} (remaining local: ${localPendingCount - 1})',
-              );
-              localPendingCount--;
-            }
-            pendingCount--;
-            if (pendingCount == 0 && !completer.isCompleted) {
-              logger.info(
-                '[Network] All priority paths tested, returning best result: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-              );
-              completer.complete(bestResult);
-            }
+            markDone(path);
           });
     }
 

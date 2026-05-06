@@ -517,6 +517,9 @@ class DeviceProvider extends Notifier<DeviceState>
     return request?.url.path.contains('/auth/refresh') ?? false;
   }
 
+  @override
+  bool shouldLogoutOnRefreshFailure(Object error) => false;
+
   void setDeviceStatus(Status status) => state = state.copyWith(deviceStatus: status);
 
   @override
@@ -528,7 +531,7 @@ class DeviceProvider extends Notifier<DeviceState>
       }
       final response = await _repo.refreshToken(refreshToken: refreshToken);
       if (response.isSuccessful) {
-        state = state.copyWith(
+        _applyAuthenticatedState(
           accessToken: response.body?.accessToken,
           refreshToken: response.body?.refreshToken,
         );
@@ -553,8 +556,22 @@ class DeviceProvider extends Notifier<DeviceState>
     } catch (e) {
       hcDeviceLogger.warning('[Auth] Error during logout API call', e);
     }
-    state = state.copyWith(clearAccessToken: true, clearRefreshToken: true);
+    _clearAuthState();
     clearDevice(save: true);
+  }
+
+  void _applyAuthenticatedState({
+    required String? accessToken,
+    required String? refreshToken,
+  }) {
+    state = state.copyWith(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+  }
+
+  void _clearAuthState() {
+    state = state.copyWith(clearAccessToken: true, clearRefreshToken: true);
   }
 
   void clearDevice({bool save = false}) {

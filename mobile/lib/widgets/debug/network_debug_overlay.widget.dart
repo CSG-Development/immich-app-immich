@@ -57,9 +57,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     final device = ref.watch(deviceProvider);
     final remoteDeviceId = (device.seagateDeviceID ?? device.deviceID ?? '').trim();
     final possiblePaths = remoteDeviceId.isEmpty ? const [] : endpointResolver.getDevicePaths(remoteDeviceId);
-    final resolveLabel = triggerService.lastResolveAt == null
-        ? 'never'
-        : _formatTime(triggerService.lastResolveAt!);
+    final resolveLabel = triggerService.lastResolveAt == null ? 'never' : _formatTime(triggerService.lastResolveAt!);
     final triggerLabel = triggerService.lastTriggerType?.name ?? 'n/a';
     final activeTriggerLabel = triggerService.activeTriggerType?.name ?? '-';
     final queuedTriggerLabel = triggerService.queuedTriggerType?.name ?? '-';
@@ -99,9 +97,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     _syncElapsedUpdates(_isExpanded && resolverInProgress);
 
     return DefaultTextStyle.merge(
-      style: const TextStyle(
-        decoration: TextDecoration.none,
-      ),
+      style: const TextStyle(decoration: TextDecoration.none),
       child: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -120,134 +116,79 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: _isExpanded ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                 children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _PulsingIndicatorDot(
-                      primaryColor: indicatorColors.$1,
-                      secondaryColor: indicatorColors.$2,
-                      isPulsing: resolverInProgress,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _PulsingIndicatorDot(
+                        primaryColor: indicatorColors.$1,
+                        secondaryColor: indicatorColors.$2,
+                        isPulsing: resolverInProgress,
                       ),
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.white70, size: 16),
+                    ],
+                  ),
+                  if (_isExpanded) ...[
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Connection'),
+                    _DebugSection(
+                      children: [
+                        const _DebugInfoLine(label: 'Mode', value: 'WIFI'),
+                        _DebugInfoLine(label: 'Status', value: resolverInProgress ? 'resolving' : 'stable'),
+                        _DebugInfoLine(label: 'Err URL', value: state.lastErrorUrl ?? '-'),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.white70,
-                      size: 16,
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Resolver'),
+                    _DebugSection(
+                      children: [
+                        _DebugInfoLine(label: 'Last trig', value: triggerLabel),
+                        _DebugInfoLine(label: 'Active', value: activeTriggerLabel),
+                        _DebugInfoLine(label: 'Queued', value: queuedTriggerLabel),
+                        _DebugInfoLine(label: 'Last run', value: resolveLabel),
+                        _DebugInfoLine(label: 'Elapsed', value: activeElapsed),
+                        _DebugInfoLine(label: 'Last dur', value: lastDuration),
+                        _DebugInfoLine(label: 'Reason', value: resolveReason),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Resolve timeline'),
+                    _DebugSection(
+                      children: resolveTimeline.map((step) => _DebugInfoLine(label: step.$1, value: step.$2)).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Endpoint'),
+                    _DebugSection(
+                      children: [
+                        _DebugInfoLine(label: 'Device ID', value: remoteDeviceId.isEmpty ? '-' : remoteDeviceId),
+                        _DebugInfoLine(label: 'Path', value: connectedEndpoint.isEmpty ? '-' : connectedEndpoint),
+                        _DebugInfoLine(label: 'Type', value: connectedType),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _buildLogConsole(),
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Possible paths'),
+                    _DebugSection(
+                      children: [
+                        if (possiblePaths.isEmpty)
+                          const Text('-', style: TextStyle(color: Colors.white54, fontSize: 10))
+                        else
+                          ...possiblePaths.map(
+                            (path) => Text(
+                              _pathLabel(path),
+                              style: const TextStyle(color: Colors.white, fontSize: 10),
+                              softWrap: true,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
-                ),
-                if (_isExpanded) ...[
-                  const SizedBox(height: 8),
-                  const _DebugSectionHeader(title: 'Connection'),
-                  _DebugSection(
-                    children: [
-                      const _DebugInfoLine(
-                        label: 'Mode',
-                        value: 'WIFI',
-                      ),
-                      _DebugInfoLine(
-                        label: 'Status',
-                        value: resolverInProgress ? 'resolving' : 'stable',
-                      ),
-                      _DebugInfoLine(
-                        label: 'Err URL',
-                        value: state.lastErrorUrl ?? '-',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const _DebugSectionHeader(title: 'Resolver'),
-                  _DebugSection(
-                    children: [
-                      _DebugInfoLine(
-                        label: 'Last trig',
-                        value: triggerLabel,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Active',
-                        value: activeTriggerLabel,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Queued',
-                        value: queuedTriggerLabel,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Last run',
-                        value: resolveLabel,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Elapsed',
-                        value: activeElapsed,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Last dur',
-                        value: lastDuration,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Reason',
-                        value: resolveReason,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const _DebugSectionHeader(title: 'Resolve timeline'),
-                  _DebugSection(
-                    children: resolveTimeline
-                        .map(
-                          (step) => _DebugInfoLine(
-                            label: step.$1,
-                            value: step.$2,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  const _DebugSectionHeader(title: 'Endpoint'),
-                  _DebugSection(
-                    children: [
-                      _DebugInfoLine(
-                        label: 'Device ID',
-                        value: remoteDeviceId.isEmpty ? '-' : remoteDeviceId,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Path',
-                        value: connectedEndpoint.isEmpty ? '-' : connectedEndpoint,
-                      ),
-                      _DebugInfoLine(
-                        label: 'Type',
-                        value: connectedType,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  _buildLogConsole(),
-                  const SizedBox(height: 8),
-                  const _DebugSectionHeader(title: 'Possible paths'),
-                  _DebugSection(
-                    children: [
-                      if (possiblePaths.isEmpty)
-                        const Text(
-                          '-',
-                          style: TextStyle(color: Colors.white54, fontSize: 10),
-                        )
-                      else
-                        ...possiblePaths.map((path) => Text(
-                          _pathLabel(path),
-                          style: const TextStyle(color: Colors.white, fontSize: 10),
-                          softWrap: true,
-                        )),
-                    ],
-                  ),
-                ],
                 ],
               ),
             ),
@@ -408,9 +349,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
   }
 
   Widget _buildLogConsole() {
-    final rows = _logLines.isEmpty
-        ? const <String>['(no relevant logs yet)']
-        : _logLines;
+    final rows = _logLines.isEmpty ? const <String>['(no relevant logs yet)'] : _logLines;
 
     return Container(
       width: double.infinity,
@@ -427,11 +366,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
             children: [
               const Text(
                 'Realtime logs',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               TextButton(
@@ -443,11 +378,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                 ),
                 child: const Text(
                   'Copy',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10,
-                    decoration: TextDecoration.none,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 10, decoration: TextDecoration.none),
                 ),
               ),
               TextButton(
@@ -459,11 +390,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                 ),
                 child: const Text(
                   'Clear',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10,
-                    decoration: TextDecoration.none,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 10, decoration: TextDecoration.none),
                 ),
               ),
             ],
@@ -478,11 +405,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                   rows[index],
                   softWrap: false,
                   overflow: TextOverflow.fade,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace'),
                 );
               },
             ),
@@ -507,11 +430,9 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     final message = record.message;
     final current = _resolveTiming;
 
-    if (record.loggerName == 'PathResolveTriggerService' && message.contains('[Trigger] Starting resolve')) {
-      _resolveTiming = _ResolveTimingState(
-        startedAt: record.time,
-        triggerLabel: _extractTriggerLabel(message),
-      );
+    if (record.loggerName == 'PathResolveTriggerService' &&
+        (message.contains('[Trigger] Starting resolve') || message.contains('[Trigger] resolve start'))) {
+      _resolveTiming = _ResolveTimingState(startedAt: record.time, triggerLabel: _extractTriggerLabel(message));
       return;
     }
 
@@ -523,16 +444,20 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     if (record.loggerName == 'HcDevice' && message.contains('Path reachable:')) {
       next = next.copyWith(firstReachableAt: next.firstReachableAt ?? record.time);
     } else if (record.loggerName == 'HcDevice' &&
-        (message.contains('Path not reachable: local') || message.contains('Path reachable:') && message.contains('local'))) {
+        (message.contains('Path not reachable: local') ||
+            message.contains('Path reachable:') && message.contains('local'))) {
       next = next.copyWith(localProbeDoneAt: next.localProbeDoneAt ?? record.time);
     } else if (record.loggerName == 'HcDevice' &&
-        (message.contains('Path not reachable: public') || message.contains('Path reachable:') && message.contains('public'))) {
+        (message.contains('Path not reachable: public') ||
+            message.contains('Path reachable:') && message.contains('public'))) {
       next = next.copyWith(publicProbeDoneAt: next.publicProbeDoneAt ?? record.time);
     } else if (record.loggerName == 'HcDevice' && message.contains('All priority paths tested')) {
       next = next.copyWith(priorityPhaseDoneAt: next.priorityPhaseDoneAt ?? record.time);
-    } else if (record.loggerName == 'HcDeviceEndpointResolver' && message.contains('endpoint_selection')) {
+    } else if (record.loggerName == 'HcDeviceEndpointResolver' &&
+        (message.contains('endpoint_selection') || message.contains('[Resolver] endpoint selection'))) {
       next = next.copyWith(selectedAt: next.selectedAt ?? record.time, selectedEndpoint: _extractEndpoint(message));
-    } else if (record.loggerName == 'PathResolveTriggerService' && message.contains('[Trigger] Running queued resolve')) {
+    } else if (record.loggerName == 'PathResolveTriggerService' &&
+        (message.contains('[Trigger] Running queued resolve') || message.contains('[Trigger] resolve run queued'))) {
       next = next.copyWith(hasQueuedFollowup: true);
     }
 
@@ -600,18 +525,18 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
       return true;
     }
     final msg = record.message;
-    return msg.contains('[Network]') || msg.contains('[Resolver]') || msg.contains('endpoint_selection');
+    return msg.contains('[Network]') ||
+        msg.contains('[Resolver]') ||
+        msg.contains('endpoint_selection') ||
+        msg.contains('endpoint selection');
   }
 
   void _copyLogs() {
     final text = _logLines.join('\n');
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Debug logs copied'),
-        duration: Duration(milliseconds: 900),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Debug logs copied'), duration: Duration(milliseconds: 900)));
   }
 
   void _clearLogs() {
@@ -711,11 +636,7 @@ class _ResolveTimingState {
 }
 
 class _PulsingIndicatorDot extends StatefulWidget {
-  const _PulsingIndicatorDot({
-    required this.primaryColor,
-    required this.secondaryColor,
-    required this.isPulsing,
-  });
+  const _PulsingIndicatorDot({required this.primaryColor, required this.secondaryColor, required this.isPulsing});
 
   final Color primaryColor;
   final Color? secondaryColor;
@@ -725,8 +646,7 @@ class _PulsingIndicatorDot extends StatefulWidget {
   State<_PulsingIndicatorDot> createState() => _PulsingIndicatorDotState();
 }
 
-class _PulsingIndicatorDotState extends State<_PulsingIndicatorDot>
-    with SingleTickerProviderStateMixin {
+class _PulsingIndicatorDotState extends State<_PulsingIndicatorDot> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 700),
@@ -761,10 +681,7 @@ class _PulsingIndicatorDotState extends State<_PulsingIndicatorDot>
 
   @override
   Widget build(BuildContext context) {
-    final colorTween = ColorTween(
-      begin: widget.primaryColor,
-      end: widget.secondaryColor ?? widget.primaryColor,
-    );
+    final colorTween = ColorTween(begin: widget.primaryColor, end: widget.secondaryColor ?? widget.primaryColor);
 
     return FadeTransition(
       opacity: Tween<double>(begin: 0.35, end: 1.0).animate(_controller),
@@ -776,10 +693,7 @@ class _PulsingIndicatorDotState extends State<_PulsingIndicatorDot>
             child: Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(
-                color: colorTween.evaluate(_controller),
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: colorTween.evaluate(_controller), shape: BoxShape.circle),
             ),
           );
         },
@@ -789,10 +703,7 @@ class _PulsingIndicatorDotState extends State<_PulsingIndicatorDot>
 }
 
 class _DebugInfoLine extends StatelessWidget {
-  const _DebugInfoLine({
-    required this.label,
-    required this.value,
-  });
+  const _DebugInfoLine({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -806,23 +717,12 @@ class _DebugInfoLine extends StatelessWidget {
           width: 64,
           child: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(
-            value,
-            softWrap: true,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-            ),
-          ),
+          child: Text(value, softWrap: true, style: const TextStyle(color: Colors.white, fontSize: 10)),
         ),
       ],
     );
@@ -830,9 +730,7 @@ class _DebugInfoLine extends StatelessWidget {
 }
 
 class _DebugSectionHeader extends StatelessWidget {
-  const _DebugSectionHeader({
-    required this.title,
-  });
+  const _DebugSectionHeader({required this.title});
 
   final String title;
 
@@ -842,21 +740,14 @@ class _DebugSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
+        style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5),
       ),
     );
   }
 }
 
 class _DebugSection extends StatelessWidget {
-  const _DebugSection({
-    required this.children,
-  });
+  const _DebugSection({required this.children});
 
   final List<Widget> children;
 
@@ -870,11 +761,7 @@ class _DebugSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

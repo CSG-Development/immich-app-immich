@@ -11,6 +11,12 @@ import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:nsd/nsd.dart' as nsd;
 import 'package:shared_preferences/shared_preferences.dart' show SharedPreferencesAsync;
 
+/// Session and token-expiry markers shared by foreground/background runtimes.
+const String remoteCurrentSessionIdKey = 'remote_current_session_id';
+const String remoteLastProactiveRefreshSessionIdKey =
+    'remote_last_proactive_refresh_session_id';
+const String remoteAccessExpiryEpochMsKey = 'remote_access_expiry_epoch_ms';
+
 enum ApiErrorMessage { aboutGet, statusGet, remoteApi }
 
 const String serviceTypeDiscover = '_https._tcp';
