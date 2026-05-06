@@ -66,10 +66,20 @@ class OrtSession:
             device_ids: list[str] = ort.capi._pybind_state.get_available_openvino_device_ids()
             log.debug(f"Available OpenVINO devices: {device_ids}")
 
-            gpu_devices = [device_id for device_id in device_ids if device_id.startswith("GPU")]
-            if not gpu_devices:
-                log.warning("No GPU device found in OpenVINO. Falling back to CPU.")
-                available_providers.remove(openvino)
+            gpu_devices = sorted([d for d in device_ids if d.startswith("GPU")])
+
+            if gpu_devices:
+                try:
+                    device_id = int(settings.device_id)
+                except (TypeError, ValueError):
+                    log.warning(f"Invalid device_id '{settings.device_id}', defaulting to 0")
+                    device_id = 0
+
+                index = device_id if device_id < len(gpu_devices) else 0
+                self._openvino_device = gpu_devices[index]
+            else:
+                log.warning("No GPU device found in OpenVINO. Using CPU via OpenVINO.")
+                self._openvino_device = "CPU"
         return [provider for provider in SUPPORTED_PROVIDERS if provider in available_providers]
 
     @property
@@ -91,8 +101,10 @@ class OrtSession:
                 case "CUDAExecutionProvider" | "ROCMExecutionProvider":
                     options = {"arena_extend_strategy": "kSameAsRequested", "device_id": settings.device_id}
                 case "OpenVINOExecutionProvider":
+                    device = getattr(self, "_openvino_device", "CPU")
+                    log.info(f"Using OpenVINO device: {device}")
                     options = {
-                        "device_type": f"GPU.{settings.device_id}",
+                        "device_type": device,
                         "precision": "FP32",
                         "cache_dir": (self.model_path.parent / "openvino").as_posix(),
                     }
