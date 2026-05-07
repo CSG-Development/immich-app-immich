@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -10,11 +9,14 @@ import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/network/network_banner_controller.dart';
 import 'package:immich_mobile/services/network/network_monitor.dart';
-import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart';
+import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
@@ -26,66 +28,29 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   final VoidCallback _onFindingNetworkToastDismissed;
   final _log = Logger('CuratorAppNetworkMonitorCallbacks');
   bool _isResumingSyncAfterReconnect = false;
+  StreamSubscription<bool>? _resolveStateSubscription;
   BuildContext? get _navigatorContext => _ref.read(appRouterProvider).navigatorKey.currentContext;
-
-  void _showNetworkStatusSnackBar(
-    BuildContext context,
-    ScaffoldMessengerState messenger, {
-    required String message,
-    VoidCallback? onDismissed,
-  }) {
-    messenger.removeCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        dismissDirection: DismissDirection.none,
-        duration: const Duration(days: 30),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-        padding: EdgeInsets.zero,
-        content: NetworkStatusSnackBar(
-          message: message,
-          onClose: () {
-            messenger.removeCurrentSnackBar();
-            onDismissed?.call();
-          },
-        ),
-      ),
-    );
-  }
+  late final NetworkBannerController _bannerController = NetworkBannerController(
+    contextGetter: () => _navigatorContext,
+    onFindingDismissed: _onFindingNetworkToastDismissed,
+    onRetry: () => _ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler?.call(),
+  );
 
   @override
   bool onShowReconnecting() {
-    final context = _navigatorContext;
-    if (context == null || !context.mounted) {
-      return false;
-    }
-    final messenger = ScaffoldMessenger.of(context);
-    _showNetworkStatusSnackBar(
-      context,
-      messenger,
-      message: 'curator.network.finding'.tr(),
-      onDismissed: _onFindingNetworkToastDismissed,
-    );
-    return true;
+    _ensureResolveStateSubscription();
+    _syncNetworkToast(forceDesired: NetworkBannerKind.finding);
+    return _bannerController.activeKind == NetworkBannerKind.finding;
   }
 
   @override
   void onHideReconnecting() {
-    final context = _navigatorContext;
-    if (context == null || !context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    _bannerController.transitionTo(NetworkBannerKind.hidden);
   }
 
   @override
   Future<void> onReconnected(PingResult result) async {
-    final context = _navigatorContext;
-    if (context != null && context.mounted) {
-      ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    }
+    _bannerController.transitionTo(NetworkBannerKind.hidden);
     _ref.read(websocketProvider.notifier).disconnect();
     await Future<void>.delayed(const Duration(milliseconds: 500));
     await _ref.read(websocketProvider.notifier).connect(force: true);
@@ -144,17 +109,48 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
         connectionType: conn.ConnectionType.api,
       ),
     );
-    final context = _navigatorContext;
-    if (context == null || !context.mounted) {
-      return;
+    if (_ref.read(pathResolveTriggerServiceProvider).isResolving) {
+      _ensureResolveStateSubscription();
     }
-    final messenger = ScaffoldMessenger.of(context);
-    _showNetworkStatusSnackBar(
-      context,
-      messenger,
-      message: 'errors.unable_to_connect'.tr(),
-      onDismissed: () => _ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler?.call(),
-    );
+    _syncNetworkToast();
+  }
+
+  void _syncNetworkToast({NetworkBannerKind? forceDesired}) {
+    final desired = forceDesired ?? _desiredNetworkToast();
+    _bannerController.transitionTo(desired);
+  }
+
+  NetworkBannerKind _desiredNetworkToast() {
+    final isResolving = _ref.read(pathResolveTriggerServiceProvider).isResolving;
+    if (isResolving) {
+      return NetworkBannerKind.finding;
+    }
+    final hasUsableTransport = _ref.read(curatorOsTransportUsableProvider);
+    if (!hasUsableTransport) {
+      return NetworkBannerKind.unable;
+    }
+    final status = _ref.read(connectionStateProvider).status;
+    if (status == conn.ConnectionStatus.disconnected) {
+      return NetworkBannerKind.unable;
+    }
+    return NetworkBannerKind.hidden;
+  }
+
+  void _ensureResolveStateSubscription() {
+    _resolveStateSubscription ??= _ref
+        .read(pathResolveTriggerServiceProvider)
+        .resolveStateChanges
+        .listen((isResolving) {
+          if (!isResolving) {
+            _syncNetworkToast();
+          }
+        });
+  }
+
+  void dispose() {
+    _resolveStateSubscription?.cancel();
+    _resolveStateSubscription = null;
+    _bannerController.dispose();
   }
 
   Future<void> _resumeSyncIfInterruptedAfterReconnect() async {

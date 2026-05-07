@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
@@ -12,6 +14,10 @@ final curatorOsTransportUsableProvider = StateProvider<bool>((ref) => true);
 
 final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
   late final CuratorNetworkMonitor monitor;
+  final callbacks = CuratorAppNetworkMonitorCallbacks(
+    ref,
+    onFindingNetworkToastDismissed: () => monitor.noteUserDismissedFindingToast(),
+  );
   monitor = CuratorNetworkMonitor(
     deviceProvider: ref.read(deviceProvider.notifier),
     remoteProvider: ref.read(remoteProvider.notifier),
@@ -35,12 +41,14 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
           connectionType: conn.ConnectionType.api,
         ),
       );
+      // Show "unable to connect" immediately when transport is lost.
+      unawaited(callbacks.onReconnectionFailed());
     },
-    callbacks: CuratorAppNetworkMonitorCallbacks(
-      ref,
-      onFindingNetworkToastDismissed: () => monitor.noteUserDismissedFindingToast(),
-    ),
+    callbacks: callbacks,
   );
-  ref.onDispose(monitor.stopMonitoring);
+  ref.onDispose(() {
+    monitor.stopMonitoring();
+    callbacks.dispose();
+  });
   return monitor;
 });
