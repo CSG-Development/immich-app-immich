@@ -35,7 +35,7 @@ import 'package:hc_device/hc_device.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
   final log = Logger('LoginForm');
-  final VoidCallback switchToRemoteAccessForm;
+  final void Function(String? initialEmailErrorMessage) switchToRemoteAccessForm;
 
   CuratorLoginForm({super.key, required this.switchToRemoteAccessForm});
 
@@ -143,8 +143,9 @@ class CuratorLoginForm extends HookConsumerWidget {
             },
             onEmailNotAllowed: () {
               hasEmailError.value = true;
-              warningMessage.value = 'curator.email_not_registered_error'.tr();
-              switchToRemoteAccessForm();
+              final errorMessage = 'curator.email_not_registered_error'.tr();
+              warningMessage.value = errorMessage;
+              switchToRemoteAccessForm(errorMessage);
             },
             onSuccess: () async {
               // Always refresh discovery after OTP succeeds.
@@ -189,8 +190,9 @@ class CuratorLoginForm extends HookConsumerWidget {
         skipInitialCodeSend: ref.read(remoteProvider).isAuthenticated,
         onEmailNotAllowed: () {
           hasEmailError.value = true;
-          warningMessage.value = 'curator.email_not_registered_error'.tr();
-          switchToRemoteAccessForm();
+          final errorMessage = 'curator.email_not_registered_error'.tr();
+          warningMessage.value = errorMessage;
+          switchToRemoteAccessForm(errorMessage);
         },
         onSuccess: () async {
           // If discovery is already running, defer restart until it fully completes.

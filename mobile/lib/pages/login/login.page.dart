@@ -22,6 +22,7 @@ class LoginPage extends HookConsumerWidget {
 
     final appVersion = useState('0.0.0');
     final isRemoteAccessForm = useState<bool>(authenticatedEmail.isEmpty);
+    final remoteAccessInitialEmailError = useState<String?>(null);
 
     getAppInfo() async {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -68,8 +69,19 @@ class LoginPage extends HookConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
                       child: isRemoteAccessForm.value
-                          ? RemoteAccessForm(switchToCuratorLogin: () => isRemoteAccessForm.value = false)
-                          : CuratorLoginForm(switchToRemoteAccessForm: () => isRemoteAccessForm.value = true),
+                          ? RemoteAccessForm(
+                              switchToCuratorLogin: () => isRemoteAccessForm.value = false,
+                              initialEmailErrorMessage: remoteAccessInitialEmailError.value,
+                              onInitialEmailErrorConsumed: () {
+                                remoteAccessInitialEmailError.value = null;
+                              },
+                            )
+                          : CuratorLoginForm(
+                              switchToRemoteAccessForm: (initialEmailErrorMessage) {
+                                remoteAccessInitialEmailError.value = initialEmailErrorMessage;
+                                isRemoteAccessForm.value = true;
+                              },
+                            ),
                     ),
                   ),
                 ),
