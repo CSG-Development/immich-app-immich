@@ -13,8 +13,15 @@ import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
   final VoidCallback switchToCuratorLogin;
+  final String? initialEmailErrorMessage;
+  final VoidCallback? onInitialEmailErrorConsumed;
 
-  const RemoteAccessForm({super.key, required this.switchToCuratorLogin});
+  const RemoteAccessForm({
+    super.key,
+    required this.switchToCuratorLogin,
+    this.initialEmailErrorMessage,
+    this.onInitialEmailErrorConsumed,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,9 +66,15 @@ class RemoteAccessForm extends HookConsumerWidget {
 
     useEffect(() {
       emailController.text = ref.read(deviceProvider).login ?? '';
+      if (initialEmailErrorMessage != null && initialEmailErrorMessage!.isNotEmpty) {
+        hasEmailError.value = true;
+        warningMessage.value = initialEmailErrorMessage;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onInitialEmailErrorConsumed?.call();
+        });
+      }
 
       void onFocusChange() {
-        debugPrint("emailError: $emailController.text");
         if (emailFocusNode.hasFocus) {
           hasEmailError.value = false;
           warningMessage.value = null;
