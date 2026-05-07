@@ -32,12 +32,23 @@ import 'package:hc_device/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferencesAsync;
 
-RemoteCodeFailureType mapRemoteCodeFailureType(int? statusCode) {
+RemoteCodeFailureType mapRemoteCodeFailureType(
+  int? statusCode, {
+  String? message,
+}) {
+  final normalizedMessage = (message ?? '').toLowerCase();
   switch (statusCode) {
     case 401:
       return RemoteCodeFailureType.invalidCode;
     case 403:
-      return RemoteCodeFailureType.unauthorized;
+      // Some environments return 403 for an incorrect remote code.
+      // Preserve explicit authorization failures and classify all other
+      // validation rejections as invalid code for correct UI messaging.
+      if (normalizedMessage.contains('not allowed') ||
+          normalizedMessage.contains('email') && normalizedMessage.contains('allowed')) {
+        return RemoteCodeFailureType.unauthorized;
+      }
+      return RemoteCodeFailureType.invalidCode;
     case 410:
       return RemoteCodeFailureType.expiredCode;
     case 400:
@@ -372,7 +383,10 @@ class RemoteProvider extends Notifier<RemoteState>
   RemoteCodeValidationError classifyCodeFailure(Response<dynamic> response) {
     final status = response.statusCode;
     final message = (response.error ?? '').toString();
-    return RemoteCodeValidationError(mapRemoteCodeFailureType(status), message);
+    return RemoteCodeValidationError(
+      mapRemoteCodeFailureType(status, message: message),
+      message,
+    );
   }
 
   String? _readStorageString(String key) {
