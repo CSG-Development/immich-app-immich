@@ -850,6 +850,8 @@
     "passcode_enter_title": "Please enter your passcode",
     "passcode_remove_title": "Remove your passcode",
     "passcode_title": "Passcode",
+    "password_reset_too_many_requests_description": "Too many password reset requests. Please wait and try again or contact the owner.",
+    "password_reset_too_many_requests_title": "Too many requests",
     "pattern_confirm_error": "The patterns are not the same",
     "pattern_confirm_subtitle": "Confirm your pattern",
     "pattern_confirm_title": "Please reenter your passcode",
@@ -1883,7 +1885,7 @@
   "password": "Password",
   "password_does_not_match": "Password does not match",
   "password_required": "Password Required",
-  "password_reset_email_sent_to": "Password reset email sent to\n{email}\n",
+  "password_reset_email_sent_to": "Password reset email sent to\n{email}.",
   "password_reset_success": "Password reset success",
   "past_durations": {
     "days": "Past {days, plural, one {day} other {# days}}",

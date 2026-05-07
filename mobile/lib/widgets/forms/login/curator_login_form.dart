@@ -25,7 +25,6 @@ import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
-import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -702,19 +701,41 @@ class CuratorLoginForm extends HookConsumerWidget {
       clearAllErrors();
       isResetPasswordLoading.value = true;
 
-      Future<void> showResetPasswordDialog({required String title, required String content}) async {
+      // Returns `true` when the user taps Retry. We avoid invoking the retry
+      // callback from inside the dialog button so the outer `finally` can
+      // reset `isResetPasswordLoading` before the next call enters
+      // `isResetPasswordEnabled()` (otherwise the recursive call would bail).
+      Future<bool> showResetPasswordDialog({
+        required String title,
+        required String content,
+        bool withRetryAction = false,
+      }) async {
         if (!context.mounted) {
-          return;
+          return false;
         }
-        await showDialog<void>(
+        final result = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(title),
             content: Text(content),
-            actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text('OK'.tr()))],
+            actions: !withRetryAction
+                ? [TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text('OK'.tr()))]
+                : [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text('cancel'.tr()),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: Text('retry'.tr()),
+                    ),
+                  ],
           ),
         );
+        return result == true;
       }
+
+      var shouldRetry = false;
 
       try {
         final canPrepareDeviceHost = await prepareDeviceHostForResetPassword();
@@ -731,11 +752,24 @@ class CuratorLoginForm extends HookConsumerWidget {
         log.info('[ResetPassword] Request sent successfully for email=${email.value.trim()}');
         if (context.mounted) {
           final trimmedEmail = email.value.trim();
-          ImmichToast.show(
-            context: context,
-            msg: 'password_reset_email_sent_to'.tr(namedArgs: {'email': trimmedEmail}),
-            toastType: ToastType.success,
-            durationInSecond: 4,
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'password_reset_email_sent_to'.tr(namedArgs: {'email': trimmedEmail}),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14),
+              ),
+              backgroundColor: const Color(0xFF333333),
+              behavior: SnackBarBehavior.floating,
+              showCloseIcon: true,
+              closeIconColor: Colors.white,
+              duration: const Duration(seconds: 6),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
           );
         }
       } on ApiException catch (error) {
@@ -747,28 +781,35 @@ class CuratorLoginForm extends HookConsumerWidget {
           );
         } else if (error.code == 429) {
           await showResetPasswordDialog(
-            title: 'curator.email_too_many_requests_title'.tr(),
-            content: 'curator.email_too_many_requests_description'.tr(),
+            title: 'curator.password_reset_too_many_requests_title'.tr(),
+            content: 'curator.password_reset_too_many_requests_description'.tr(),
           );
         } else if (error.code >= 500) {
-          await showResetPasswordDialog(
-            title: 'common_server_error'.tr(),
-            content: 'errors.unable_to_reset_password'.tr(),
+          shouldRetry = await showResetPasswordDialog(
+            title: 'curator.email_unable_to_connect_title'.tr(),
+            content: 'curator.email_unable_to_connect_description'.tr(),
+            withRetryAction: true,
           );
         } else {
           warningMessage.value = 'errors.unable_to_reset_password'.tr();
         }
       } on TimeoutException catch (error, stackTrace) {
         log.warning('Reset password request timed out', error, stackTrace);
-        await showResetPasswordDialog(
+        shouldRetry = await showResetPasswordDialog(
           title: 'curator.email_unable_to_connect_title'.tr(),
           content: 'curator.email_unable_to_connect_description'.tr(),
+          withRetryAction: true,
         );
       } catch (error, stackTrace) {
         log.warning('Failed to reset password', error, stackTrace);
         warningMessage.value = 'errors.unable_to_reset_password'.tr();
       } finally {
         isResetPasswordLoading.value = false;
+      }
+
+      if (shouldRetry && context.mounted) {
+        log.info('[ResetPassword] Retry requested by user after error dialog');
+        unawaited(handleResetPassword());
       }
     }
 

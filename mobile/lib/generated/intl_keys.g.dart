@@ -879,6 +879,9 @@ abstract class IntlKeys {
   static const curator_passcode_enter_title = 'curator.passcode.enter.title';
   static const curator_passcode_remove_title = 'curator.passcode.remove.title';
   static const curator_passcode_title = 'curator.passcode.title';
+  static const curator_password_reset_too_many_requests_description =
+      'curator.password.reset.too.many.requests.description';
+  static const curator_password_reset_too_many_requests_title = 'curator.password.reset.too.many.requests.title';
   static const curator_pattern_confirm_error = 'curator.pattern.confirm.error';
   static const curator_pattern_confirm_subtitle = 'curator.pattern.confirm.subtitle';
   static const curator_pattern_confirm_title = 'curator.pattern.confirm.title';
@@ -1896,6 +1899,7 @@ abstract class IntlKeys {
   static const password = 'password';
   static const password_does_not_match = 'password_does_not_match';
   static const password_required = 'password_required';
+  static const password_reset_email_sent_to = 'password_reset_email_sent_to';
   static const password_reset_success = 'password_reset_success';
   static const past_durations_days = 'past.durations.days';
   static const past_durations_hours = 'past.durations.hours';
