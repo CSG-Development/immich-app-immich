@@ -7,8 +7,10 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
@@ -17,6 +19,7 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/network/network_banner_controller.dart';
 import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
+import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
@@ -28,7 +31,24 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   final VoidCallback _onFindingNetworkToastDismissed;
   final _log = Logger('CuratorAppNetworkMonitorCallbacks');
   bool _isResumingSyncAfterReconnect = false;
+  bool _lastReconnectionFailureWasNetwork = false;
   StreamSubscription<bool>? _resolveStateSubscription;
+  static const List<String> _networkErrorHints = <String>[
+    'socketexception',
+    'failed host lookup',
+    'connection refused',
+    'connection closed',
+    'connection reset',
+    'network is unreachable',
+    'network unreachable',
+    'no route to host',
+    'timeout',
+    'timed out',
+    'handshakeexception',
+    'dns',
+    'http exception',
+    'clientexception',
+  ];
   BuildContext? get _navigatorContext => _ref.read(appRouterProvider).navigatorKey.currentContext;
   late final NetworkBannerController _bannerController = NetworkBannerController(
     contextGetter: () => _navigatorContext,
@@ -55,6 +75,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     await Future<void>.delayed(const Duration(milliseconds: 500));
     await _ref.read(websocketProvider.notifier).connect(force: true);
     await _resumeSyncIfInterruptedAfterReconnect();
+    _lastReconnectionFailureWasNetwork = false;
   }
 
   @override
@@ -101,6 +122,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
 
   @override
   Future<void> onReconnectionFailed() async {
+    _lastReconnectionFailureWasNetwork = true;
     _ref.read(apiServiceProvider).notifyConnectionState(
       conn.ConnectionState(
         status: conn.ConnectionStatus.disconnected,
@@ -159,19 +181,27 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     }
 
     final syncState = _ref.read(syncStatusProvider);
-    final shouldResumeRemote =
-        syncState.remoteSyncStatus == SyncStatus.syncing || syncState.remoteSyncStatus == SyncStatus.error;
-    final shouldResumeLocal =
-        syncState.localSyncStatus == SyncStatus.syncing || syncState.localSyncStatus == SyncStatus.error;
-    final shouldResumeHash =
-        syncState.hashJobStatus == SyncStatus.syncing || syncState.hashJobStatus == SyncStatus.error;
+    final backupState = _ref.read(driftBackupProvider);
+    final shouldResumeRemote = syncState.remoteSyncStatus == SyncStatus.error;
+    final shouldResumeLocal = syncState.localSyncStatus == SyncStatus.error;
+    final shouldResumeHash = syncState.hashJobStatus == SyncStatus.error;
+    final shouldRecoverBackupPipeline = backupState.error == BackupError.syncFailed;
+    final isNetworkRecovery = _lastReconnectionFailureWasNetwork || _isNetworkSyncError(syncState.errorMessage);
+    final shouldRunRemoteRecovery = shouldResumeRemote || (shouldRecoverBackupPipeline && isNetworkRecovery);
 
-    if (!shouldResumeRemote && !shouldResumeLocal && !shouldResumeHash) {
+    if (!shouldResumeLocal && !shouldResumeHash && !shouldRunRemoteRecovery) {
+      return;
+    }
+    if (!isNetworkRecovery) {
+      _log.fine(
+        '[Network/Callback] Skip sync resume after reconnect: last sync error is not network-related',
+      );
       return;
     }
 
     _isResumingSyncAfterReconnect = true;
     final backgroundSync = _ref.read(backgroundSyncProvider);
+    var remoteSyncSucceeded = false;
 
     try {
       if (shouldResumeLocal) {
@@ -180,14 +210,41 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
       if (shouldResumeHash) {
         await backgroundSync.hashAssets();
       }
-      if (shouldResumeRemote) {
+      if (shouldRunRemoteRecovery) {
         final remoteOk = await backgroundSync.syncRemote();
+        remoteSyncSucceeded = remoteOk;
         if (remoteOk && Store.get(StoreKey.syncAlbums, false)) {
           await backgroundSync.syncLinkedAlbum();
         }
       }
+      if (remoteSyncSucceeded) {
+        _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
+        await _resumeBackupQueueIfEnabled();
+      } else if (shouldRunRemoteRecovery) {
+        _ref.read(driftBackupProvider.notifier).updateError(BackupError.syncFailed);
+      }
     } finally {
       _isResumingSyncAfterReconnect = false;
     }
+  }
+
+  bool _isNetworkSyncError(String? message) {
+    final normalized = message?.toLowerCase().trim();
+    if (normalized == null || normalized.isEmpty) {
+      return false;
+    }
+    return _networkErrorHints.any(normalized.contains);
+  }
+
+  Future<void> _resumeBackupQueueIfEnabled() async {
+    final isBackupEnabled = _ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup);
+    if (!isBackupEnabled) {
+      return;
+    }
+    final currentUser = Store.tryGet(StoreKey.currentUser);
+    if (currentUser == null) {
+      return;
+    }
+    await _ref.read(driftBackupProvider.notifier).handleBackupResume(currentUser.id);
   }
 }

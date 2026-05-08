@@ -12,6 +12,7 @@ import 'package:logging/logging.dart';
 const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
 const Duration curatorFastReconnectCooldownDelay = Duration.zero;
 const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
+const Duration curatorLocalUpgradeRetryDelay = Duration(seconds: 3);
 
 abstract class CuratorNetworkMonitorCallbacks {
   bool onShowReconnecting();
@@ -53,6 +54,7 @@ class CuratorNetworkMonitor {
   final _log = Logger('CuratorNetworkMonitor');
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _debounceTimer;
+  Timer? _localUpgradeRetryTimer;
   DateTime? _lastDetectionTime;
   bool _pendingNetworkChange = false;
   bool _isReconnecting = false;
@@ -66,6 +68,7 @@ class CuratorNetworkMonitor {
   String? _lastReconnectFailureSignature;
   DateTime? _activeReconnectStartedAt;
   bool _hasEstablishedConnectionSinceStart = false;
+  bool _localUpgradeRetryScheduledForIdentity = false;
 
   void startMonitoring() {
     if (_isStarted) {
@@ -84,6 +87,8 @@ class CuratorNetworkMonitor {
     _isStarted = false;
     _debounceTimer?.cancel();
     _debounceTimer = null;
+    _localUpgradeRetryTimer?.cancel();
+    _localUpgradeRetryTimer = null;
     _lastDetectionTime = null;
     _lastConnectivitySignature = null;
     _lastNetworkIdentitySignature = null;
@@ -98,6 +103,7 @@ class CuratorNetworkMonitor {
     _reconnectEpisodeService.reset();
     _lastReconnectFailureSignature = null;
     _hasEstablishedConnectionSinceStart = false;
+    _localUpgradeRetryScheduledForIdentity = false;
     _log.info('[Network] Stopped monitoring network changes');
   }
 
@@ -282,11 +288,17 @@ class CuratorNetworkMonitor {
         'success=${resolved.success} '
         'reason=${resolved.reason} '
         'source=${resolved.selectionSource} '
+        'pathType=${resolved.resolvedPathType} '
         'endpoint=${resolved.endpoint}',
       );
       if (resolved.success && resolved.endpoint != null) {
         _hasEstablishedConnectionSinceStart = true;
         _lastReconnectFailureSignature = null;
+        _maybeScheduleLocalUpgradeRetry(
+          trigger: trigger,
+          endpoint: resolved.endpoint!,
+          resolvedPathType: resolved.resolvedPathType,
+        );
         notifyConnected();
         onConnectionRestored();
         if (resolved.pingResult != null) {
@@ -421,6 +433,9 @@ class CuratorNetworkMonitor {
       _lastNetworkIdentitySignature = identity;
 
       if (previous != null && previous != identity && triggerReconnectOnChange) {
+        _localUpgradeRetryScheduledForIdentity = false;
+        _localUpgradeRetryTimer?.cancel();
+        _localUpgradeRetryTimer = null;
         _scheduleConnectivityReconnect(reason: 'identity changed source=$source from=[$previous] to=[$identity]');
       }
     } catch (error, stackTrace) {
@@ -442,6 +457,53 @@ class CuratorNetworkMonitor {
   }
 
   Duration _debounceForConnectivity() => curatorFastReconnectDebounceDelay;
+
+  void _maybeScheduleLocalUpgradeRetry({
+    required _ReconnectTrigger trigger,
+    required String endpoint,
+    String? resolvedPathType,
+  }) {
+    if (trigger != _ReconnectTrigger.connectivityChange) {
+      return;
+    }
+    if (_localUpgradeRetryScheduledForIdentity) {
+      return;
+    }
+    final normalizedPathType = resolvedPathType?.toLowerCase().trim();
+    if (normalizedPathType == 'local') {
+      return;
+    }
+
+    _localUpgradeRetryScheduledForIdentity = true;
+    _localUpgradeRetryTimer?.cancel();
+    _localUpgradeRetryTimer = Timer(curatorLocalUpgradeRetryDelay, () async {
+      _localUpgradeRetryTimer = null;
+      final connectivity = await Connectivity().checkConnectivity();
+      if (!connectivity.contains(ConnectivityResult.wifi)) {
+        _log.info('[Network] local-upgrade retry skipped: wifi no longer available');
+        return;
+      }
+      _log.info(
+        '[Network] local-upgrade retry start '
+        'delayMs=${curatorLocalUpgradeRetryDelay.inMilliseconds} '
+        'currentEndpoint=$endpoint',
+      );
+      final mode = _deriveMode();
+      final upgraded = await pathResolveTriggerService.probeLocalUpgrade(mode: mode);
+      if (!upgraded.success || upgraded.endpoint == null) {
+        _log.info('[Network] local-upgrade retry no local endpoint available');
+        return;
+      }
+      _log.info(
+        '[Network] local-upgrade retry success endpoint=${upgraded.endpoint}',
+      );
+    });
+    _log.info(
+      '[Network] local-upgrade retry scheduled '
+      'delayMs=${curatorLocalUpgradeRetryDelay.inMilliseconds} '
+      'currentEndpoint=$endpoint',
+    );
+  }
 
   String _connectivitySignature(List<ConnectivityResult> results) {
     final names = results.map((r) => r.name).toList()..sort();

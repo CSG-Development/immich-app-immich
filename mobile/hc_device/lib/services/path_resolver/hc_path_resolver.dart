@@ -62,6 +62,7 @@ class HcPathResolveResult {
     this.baseUrl,
     this.pingResult,
     this.selectionSource,
+    this.resolvedPathType,
     this.reason,
     this.elapsed,
   });
@@ -71,6 +72,7 @@ class HcPathResolveResult {
   final Uri? baseUrl;
   final PingResult? pingResult;
   final String? selectionSource;
+  final String? resolvedPathType;
   final String? reason;
   final Duration? elapsed;
 
@@ -169,6 +171,7 @@ class HcPathResolver {
       baseUrl: result.baseUrl,
       pingResult: result.pingResult,
       selectionSource: result.selectionSource,
+      resolvedPathType: result.resolvedPathType,
       reason: result.reason,
       elapsed: stopwatch.elapsed,
     );
@@ -339,6 +342,10 @@ class HcPathResolver {
             debugHostType: selected.debugHostType,
           ),
           selectionSource: 'discovery_selected_base_url',
+          resolvedPathType: _normalizePathType(
+            selected.debugHostType,
+            fallbackEndpoint: endpoint,
+          ),
         );
       }
     } catch (_) {}
@@ -384,6 +391,10 @@ class HcPathResolver {
       baseUrl: ping.baseUrl,
       pingResult: ping,
       selectionSource: selectionSource,
+      resolvedPathType: _normalizePathType(
+        ping.pathType ?? ping.debugHostType,
+        fallbackEndpoint: endpoint,
+      ),
     );
   }
 
@@ -426,6 +437,10 @@ class HcPathResolver {
         baseUrl: ping.baseUrl,
         pingResult: ping,
         selectionSource: 'path_upgrade',
+        resolvedPathType: _normalizePathType(
+          ping.pathType ?? ping.debugHostType,
+          fallbackEndpoint: endpoint,
+        ),
       ),
     );
   }
@@ -446,7 +461,34 @@ class HcPathResolver {
       success: true,
       endpoint: endpoint,
       selectionSource: 'fallback_available',
+      resolvedPathType: _normalizePathType(
+        null,
+        fallbackEndpoint: endpoint,
+      ),
     );
+  }
+
+  String _normalizePathType(String? rawPathType, {String? fallbackEndpoint}) {
+    final normalized = rawPathType?.toLowerCase().trim();
+    if (normalized != null && normalized.isNotEmpty) {
+      if (normalized == 'local' || normalized.endsWith('> local') || normalized.contains('mdns')) {
+        return 'local';
+      }
+      if (normalized == 'public' || normalized.endsWith('> public')) {
+        return 'public';
+      }
+      if (normalized == 'remote' || normalized.endsWith('> remote')) {
+        return 'remote';
+      }
+    }
+    if (fallbackEndpoint == null || fallbackEndpoint.isEmpty) {
+      return 'unknown';
+    }
+    final endpoint = fallbackEndpoint.toLowerCase();
+    if (endpoint.contains('.remote.')) {
+      return 'remote';
+    }
+    return 'unknown';
   }
 
   Future<bool> _validate(
