@@ -50,7 +50,15 @@ class ActionNotifier extends Notifier<void> {
   }
 
   List<String> _getRemoteIdsForSource(ActionSource source) {
-    return _getAssets(source).whereType<RemoteAsset>().toIds().toList(growable: false);
+    final ids = <String>{};
+    for (final asset in _getAssets(source)) {
+      if (asset is RemoteAsset) {
+        ids.add(asset.id);
+      } else if (asset is LocalAsset && asset.remoteId != null) {
+        ids.add(asset.remoteId!);
+      }
+    }
+    return ids.toList(growable: false);
   }
 
   List<String> _getLocalIdsForSource(ActionSource source) {
@@ -114,6 +122,13 @@ class ActionNotifier extends Notifier<void> {
 
   Future<ActionResult> shareLink(ActionSource source, BuildContext context) async {
     final ids = _getRemoteIdsForSource(source);
+    if (ids.isEmpty) {
+      return const ActionResult(
+        count: 0,
+        success: false,
+        error: 'No remote assets selected for share link',
+      );
+    }
     try {
       await _service.shareLink(ids, context);
       return ActionResult(count: ids.length, success: true);

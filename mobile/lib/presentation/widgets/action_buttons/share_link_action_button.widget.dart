@@ -4,6 +4,7 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 class ShareLinkActionButton extends ConsumerWidget {
   final ActionSource source;
@@ -15,7 +16,14 @@ class ShareLinkActionButton extends ConsumerWidget {
       return;
     }
 
-    await ref.read(actionProvider.notifier).shareLink(source, context);
+    final result = await ref.read(actionProvider.notifier).shareLink(source, context);
+    if (!result.success && context.mounted) {
+      ImmichToast.show(
+        context: context,
+        toastType: ToastType.error,
+        msg: "shared_link_create_error".t(context: context),
+      );
+    }
   }
 
   @override
