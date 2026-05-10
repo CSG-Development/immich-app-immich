@@ -65,6 +65,28 @@ class PathResolveTriggerService {
   Future<EndpointResolutionResult> onManualRetry({required ResolveMode mode, String trigger = 'manual_retry'}) =>
       _trigger(_PendingResolveRequest(type: PathResolveTriggerType.manualRetry, mode: mode, trigger: trigger));
 
+  Future<EndpointResolutionResult> probeLocalUpgrade({
+    required ResolveMode mode,
+    String trigger = 'connectivity_change_local_upgrade',
+  }) async {
+    _log.info('[Trigger] local-upgrade probe start trigger=$trigger');
+    final result = await _endpointResolver.resolveWithDetails(
+      mode: mode,
+      trigger: trigger,
+      localOnly: true,
+      allowFallbackToPreviousEndpoint: false,
+    );
+    _log.info(
+      '[Trigger] local-upgrade probe result '
+      'trigger=$trigger '
+      'success=${result.success} '
+      'reason=${result.reason} '
+      'selection=${result.selectionSource} '
+      'endpoint=${result.endpoint}',
+    );
+    return result;
+  }
+
   Future<EndpointResolutionResult> _trigger(_PendingResolveRequest request) async {
     if (_isResolving) {
       final active = _activeRequest;

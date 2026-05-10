@@ -19,6 +19,7 @@ class EndpointResolutionResult {
     this.baseUrl,
     this.pingResult,
     this.selectionSource,
+    this.resolvedPathType,
     this.reason,
   });
 
@@ -27,6 +28,7 @@ class EndpointResolutionResult {
   final Uri? baseUrl;
   final PingResult? pingResult;
   final String? selectionSource;
+  final String? resolvedPathType;
   final String? reason;
 }
 
@@ -114,6 +116,7 @@ class HcDeviceEndpointResolver {
           '[Resolver] endpoint selection '
           'selectionSource=${result.selectionSource ?? 'hc_device_resolver'} '
           'pathType=${result.pingResult?.pathType ?? 'unknown'} '
+          'resolvedPathType=${result.resolvedPathType ?? 'unknown'} '
           'trigger=$trigger '
           'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds} '
           'settleMs=${triggerConfig.policy.settleDelay.inMilliseconds} '
@@ -126,6 +129,7 @@ class HcDeviceEndpointResolver {
           baseUrl: result.baseUrl,
           pingResult: result.pingResult,
           selectionSource: result.selectionSource,
+          resolvedPathType: result.resolvedPathType,
         );
       } catch (error, stackTrace) {
         _log.warning(
@@ -154,7 +158,12 @@ class HcDeviceEndpointResolver {
               'timeoutMs=${triggerConfig.policy.availabilityTimeout.inMilliseconds} '
               'endpoint=$resolved',
             );
-            return EndpointResolutionResult(success: true, endpoint: resolved, selectionSource: 'fallback_available');
+            return EndpointResolutionResult(
+              success: true,
+              endpoint: resolved,
+              selectionSource: 'fallback_available',
+              resolvedPathType: result.resolvedPathType ?? 'unknown',
+            );
           } catch (error, stackTrace) {
             _log.warning(
               '[Resolver] endpoint fallback activation failed '
@@ -171,6 +180,7 @@ class HcDeviceEndpointResolver {
       success: false,
       reason: result.reason ?? 'unresolved',
       selectionSource: result.selectionSource,
+      resolvedPathType: result.resolvedPathType,
     );
   }
 
@@ -182,8 +192,8 @@ class HcDeviceEndpointResolver {
         return const _ResolvedTriggerConfig(
           resolveTrigger: ResolveTrigger.connectivityChange,
           policy: EndpointResolvePolicy(
-            availabilityTimeout: Duration(seconds: 5),
-            settleDelay: Duration(milliseconds: 400),
+            availabilityTimeout: Duration(seconds: 7),
+            settleDelay: Duration(milliseconds: 500),
           ),
         );
       case 'app_resume':

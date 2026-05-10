@@ -9,10 +9,10 @@ import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:logging/logging.dart';
 
-const Duration curatorFindingNetworkToastDelay = Duration(seconds: 30);
 const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
 const Duration curatorFastReconnectCooldownDelay = Duration.zero;
 const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
+const Duration curatorLocalUpgradeRetryDelay = Duration(seconds: 3);
 
 abstract class CuratorNetworkMonitorCallbacks {
   bool onShowReconnecting();
@@ -47,7 +47,6 @@ class CuratorNetworkMonitor {
   /// Fires once when transport goes from usable to unusable (e.g. airplane mode).
   final void Function()? onTransportLost;
   late final _ReconnectEpisodeController _reconnectEpisodeService = _ReconnectEpisodeController(
-    findingToastDelay: curatorFindingNetworkToastDelay,
     onShowReconnecting: callbacks.onShowReconnecting,
     onHideReconnecting: callbacks.onHideReconnecting,
   );
@@ -55,6 +54,7 @@ class CuratorNetworkMonitor {
   final _log = Logger('CuratorNetworkMonitor');
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _debounceTimer;
+  Timer? _localUpgradeRetryTimer;
   DateTime? _lastDetectionTime;
   bool _pendingNetworkChange = false;
   bool _isReconnecting = false;
@@ -67,6 +67,8 @@ class CuratorNetworkMonitor {
   bool? _lastTransportUsable;
   String? _lastReconnectFailureSignature;
   DateTime? _activeReconnectStartedAt;
+  bool _hasEstablishedConnectionSinceStart = false;
+  bool _localUpgradeRetryScheduledForIdentity = false;
 
   void startMonitoring() {
     if (_isStarted) {
@@ -85,6 +87,8 @@ class CuratorNetworkMonitor {
     _isStarted = false;
     _debounceTimer?.cancel();
     _debounceTimer = null;
+    _localUpgradeRetryTimer?.cancel();
+    _localUpgradeRetryTimer = null;
     _lastDetectionTime = null;
     _lastConnectivitySignature = null;
     _lastNetworkIdentitySignature = null;
@@ -98,6 +102,8 @@ class CuratorNetworkMonitor {
     _isAppInForeground = true;
     _reconnectEpisodeService.reset();
     _lastReconnectFailureSignature = null;
+    _hasEstablishedConnectionSinceStart = false;
+    _localUpgradeRetryScheduledForIdentity = false;
     _log.info('[Network] Stopped monitoring network changes');
   }
 
@@ -225,16 +231,19 @@ class CuratorNetworkMonitor {
       }
       return;
     }
+    final shouldSurfaceFindingToast = _shouldSurfaceFindingToast(trigger);
     if (fromConnectivityChange) {
       noteConnectivityDrivenReconnect();
-    } else if (!_reconnectEpisodeService.hasActiveFailureEpisode) {
+    } else if (shouldSurfaceFindingToast && !_reconnectEpisodeService.hasActiveFailureEpisode) {
       _reconnectEpisodeService.startFailureEpisode(resetDismissedFindingToast: false);
     }
 
     _isReconnecting = true;
     _activeReconnectStartedAt = DateTime.now();
     _pendingNetworkChange = false;
-    _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
+    if (shouldSurfaceFindingToast) {
+      _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
+    }
 
     try {
       if (_lastDetectionTime != null) {
@@ -279,10 +288,17 @@ class CuratorNetworkMonitor {
         'success=${resolved.success} '
         'reason=${resolved.reason} '
         'source=${resolved.selectionSource} '
+        'pathType=${resolved.resolvedPathType} '
         'endpoint=${resolved.endpoint}',
       );
       if (resolved.success && resolved.endpoint != null) {
+        _hasEstablishedConnectionSinceStart = true;
         _lastReconnectFailureSignature = null;
+        _maybeScheduleLocalUpgradeRetry(
+          trigger: trigger,
+          endpoint: resolved.endpoint!,
+          resolvedPathType: resolved.resolvedPathType,
+        );
         notifyConnected();
         onConnectionRestored();
         if (resolved.pingResult != null) {
@@ -376,6 +392,9 @@ class CuratorNetworkMonitor {
     return _ReconnectTrigger.apiError;
   }
 
+  bool _shouldSurfaceFindingToast(_ReconnectTrigger trigger) =>
+      trigger == _ReconnectTrigger.connectivityChange || _hasEstablishedConnectionSinceStart;
+
   Duration _cooldownForTrigger(_ReconnectTrigger trigger) {
     switch (trigger) {
       case _ReconnectTrigger.connectivityChange:
@@ -414,6 +433,9 @@ class CuratorNetworkMonitor {
       _lastNetworkIdentitySignature = identity;
 
       if (previous != null && previous != identity && triggerReconnectOnChange) {
+        _localUpgradeRetryScheduledForIdentity = false;
+        _localUpgradeRetryTimer?.cancel();
+        _localUpgradeRetryTimer = null;
         _scheduleConnectivityReconnect(reason: 'identity changed source=$source from=[$previous] to=[$identity]');
       }
     } catch (error, stackTrace) {
@@ -436,6 +458,53 @@ class CuratorNetworkMonitor {
 
   Duration _debounceForConnectivity() => curatorFastReconnectDebounceDelay;
 
+  void _maybeScheduleLocalUpgradeRetry({
+    required _ReconnectTrigger trigger,
+    required String endpoint,
+    String? resolvedPathType,
+  }) {
+    if (trigger != _ReconnectTrigger.connectivityChange) {
+      return;
+    }
+    if (_localUpgradeRetryScheduledForIdentity) {
+      return;
+    }
+    final normalizedPathType = resolvedPathType?.toLowerCase().trim();
+    if (normalizedPathType == 'local') {
+      return;
+    }
+
+    _localUpgradeRetryScheduledForIdentity = true;
+    _localUpgradeRetryTimer?.cancel();
+    _localUpgradeRetryTimer = Timer(curatorLocalUpgradeRetryDelay, () async {
+      _localUpgradeRetryTimer = null;
+      final connectivity = await Connectivity().checkConnectivity();
+      if (!connectivity.contains(ConnectivityResult.wifi)) {
+        _log.info('[Network] local-upgrade retry skipped: wifi no longer available');
+        return;
+      }
+      _log.info(
+        '[Network] local-upgrade retry start '
+        'delayMs=${curatorLocalUpgradeRetryDelay.inMilliseconds} '
+        'currentEndpoint=$endpoint',
+      );
+      final mode = _deriveMode();
+      final upgraded = await pathResolveTriggerService.probeLocalUpgrade(mode: mode);
+      if (!upgraded.success || upgraded.endpoint == null) {
+        _log.info('[Network] local-upgrade retry no local endpoint available');
+        return;
+      }
+      _log.info(
+        '[Network] local-upgrade retry success endpoint=${upgraded.endpoint}',
+      );
+    });
+    _log.info(
+      '[Network] local-upgrade retry scheduled '
+      'delayMs=${curatorLocalUpgradeRetryDelay.inMilliseconds} '
+      'currentEndpoint=$endpoint',
+    );
+  }
+
   String _connectivitySignature(List<ConnectivityResult> results) {
     final names = results.map((r) => r.name).toList()..sort();
     return names.join(',');
@@ -453,43 +522,30 @@ enum _ReconnectTrigger { connectivityChange, remoteAuthRetry, apiError }
 
 class _ReconnectEpisodeController {
   _ReconnectEpisodeController({
-    required Duration findingToastDelay,
     required this.onShowReconnecting,
     required this.onHideReconnecting,
-  }) : _findingToastDelay = findingToastDelay;
+  });
 
-  final Duration _findingToastDelay;
   final bool Function() onShowReconnecting;
   final void Function() onHideReconnecting;
   final _log = Logger('CuratorReconnectEpisodeService');
 
-  Timer? _findingToastTimer;
-  Timer? _failureToastTimer;
   bool _hasActiveFailureEpisode = false;
   bool _hasShownFailureToastInActiveEpisode = false;
-  DateTime? _failureEpisodeStartedAt;
   bool _userDismissedFindingToast = false;
   bool _findingToastVisible = false;
 
   bool get hasActiveFailureEpisode => _hasActiveFailureEpisode;
 
   void reset() {
-    _findingToastTimer?.cancel();
-    _findingToastTimer = null;
-    _failureToastTimer?.cancel();
-    _failureToastTimer = null;
     _hasActiveFailureEpisode = false;
     _hasShownFailureToastInActiveEpisode = false;
-    _failureEpisodeStartedAt = null;
     _userDismissedFindingToast = false;
     _hideReconnectingToast();
   }
 
   void onAppLifecycleResumed() {
-    if (_hasActiveFailureEpisode &&
-        !_findingToastVisible &&
-        !_userDismissedFindingToast &&
-        _isFindingToastDelayElapsed()) {
+    if (_hasActiveFailureEpisode && !_findingToastVisible && !_userDismissedFindingToast) {
       _showReconnectingToast();
     }
   }
@@ -497,7 +553,6 @@ class _ReconnectEpisodeController {
   void startFailureEpisode({required bool resetDismissedFindingToast}) {
     _hasActiveFailureEpisode = true;
     _hasShownFailureToastInActiveEpisode = false;
-    _failureEpisodeStartedAt = DateTime.now();
     if (resetDismissedFindingToast) {
       _userDismissedFindingToast = false;
     }
@@ -506,20 +561,13 @@ class _ReconnectEpisodeController {
   void noteUserDismissedFindingToast() {
     _userDismissedFindingToast = true;
     _findingToastVisible = false;
-    _findingToastTimer?.cancel();
-    _findingToastTimer = null;
     onHideReconnecting();
   }
 
   void onConnectionRestored() {
     _hasActiveFailureEpisode = false;
     _hasShownFailureToastInActiveEpisode = false;
-    _failureEpisodeStartedAt = null;
     _userDismissedFindingToast = false;
-    _findingToastTimer?.cancel();
-    _findingToastTimer = null;
-    _failureToastTimer?.cancel();
-    _failureToastTimer = null;
     _hideReconnectingToast();
   }
 
@@ -527,22 +575,7 @@ class _ReconnectEpisodeController {
     if (!_hasActiveFailureEpisode || _userDismissedFindingToast || _findingToastVisible) {
       return;
     }
-    _findingToastTimer?.cancel();
-    _failureToastTimer?.cancel();
-    final elapsed = _failureEpisodeStartedAt == null
-        ? Duration.zero
-        : DateTime.now().difference(_failureEpisodeStartedAt!);
-    final remaining = _findingToastDelay - elapsed;
-    if (remaining <= Duration.zero) {
-      _showReconnectingToast();
-      return;
-    }
-    _findingToastTimer = Timer(remaining, () {
-      if (!_hasActiveFailureEpisode || _userDismissedFindingToast || _findingToastVisible) {
-        return;
-      }
-      _showReconnectingToast();
-    });
+    _showReconnectingToast();
   }
 
   Future<void> handleReconnectionFailure({required Future<void> Function() onReconnectionFailed}) async {
@@ -552,33 +585,13 @@ class _ReconnectEpisodeController {
     }
     _hasShownFailureToastInActiveEpisode = true;
 
-    _findingToastTimer?.cancel();
-    _findingToastTimer = null;
     if (_findingToastVisible) {
       _hideReconnectingToast();
       await onReconnectionFailed();
       return;
     }
 
-    _userDismissedFindingToast = true;
-    final elapsed = _failureEpisodeStartedAt == null
-        ? Duration.zero
-        : DateTime.now().difference(_failureEpisodeStartedAt!);
-    final remaining = _findingToastDelay - elapsed;
-    if (remaining <= Duration.zero) {
-      await onReconnectionFailed();
-      return;
-    }
-
-    _failureToastTimer?.cancel();
-    _failureToastTimer = Timer(remaining, () {
-      if (!_hasActiveFailureEpisode) {
-        _failureToastTimer = null;
-        return;
-      }
-      unawaited(onReconnectionFailed());
-      _failureToastTimer = null;
-    });
+    await onReconnectionFailed();
   }
 
   void _showReconnectingToast() {
@@ -591,13 +604,5 @@ class _ReconnectEpisodeController {
   void _hideReconnectingToast() {
     onHideReconnecting();
     _findingToastVisible = false;
-  }
-
-  bool _isFindingToastDelayElapsed() {
-    final startedAt = _failureEpisodeStartedAt;
-    if (startedAt == null) {
-      return false;
-    }
-    return DateTime.now().difference(startedAt) >= _findingToastDelay;
   }
 }
