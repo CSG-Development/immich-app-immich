@@ -21,6 +21,7 @@ class DownloadService {
   final DownloadRepository _downloadRepository;
   final FileMediaRepository _fileMediaRepository;
   final Logger _log = Logger("DownloadService");
+  final Set<String> _completedTaskIds = <String>{};
   void Function(TaskStatusUpdate)? onImageDownloadStatus;
   void Function(TaskStatusUpdate)? onVideoDownloadStatus;
   void Function(TaskStatusUpdate)? onLivePhotoDownloadStatus;
@@ -37,15 +38,40 @@ class DownloadService {
     onTaskProgress?.call(update);
   }
 
-  void _onImageDownloadCallback(TaskStatusUpdate update) {
+  void _onImageDownloadCallback(TaskStatusUpdate update) async {
+    if (update.status == TaskStatus.complete) {
+      if (_completedTaskIds.contains(update.task.taskId)) {
+        onImageDownloadStatus?.call(update);
+        return;
+      }
+      await saveImageWithPath(update.task);
+      _completedTaskIds.add(update.task.taskId);
+    }
     onImageDownloadStatus?.call(update);
   }
 
-  void _onVideoDownloadCallback(TaskStatusUpdate update) {
+  void _onVideoDownloadCallback(TaskStatusUpdate update) async {
+    if (update.status == TaskStatus.complete) {
+      if (_completedTaskIds.contains(update.task.taskId)) {
+        onVideoDownloadStatus?.call(update);
+        return;
+      }
+      await saveVideo(update.task);
+      _completedTaskIds.add(update.task.taskId);
+    }
     onVideoDownloadStatus?.call(update);
   }
 
-  void _onLivePhotoDownloadCallback(TaskStatusUpdate update) {
+  void _onLivePhotoDownloadCallback(TaskStatusUpdate update) async {
+    if (update.status == TaskStatus.complete && update.task.metaData.isNotEmpty) {
+      final livePhotosId = LivePhotosMetadata.fromJson(update.task.metaData).id;
+      if (_completedTaskIds.contains(update.task.taskId)) {
+        onLivePhotoDownloadStatus?.call(update);
+        return;
+      }
+      await saveLivePhotos(update.task, livePhotosId);
+      _completedTaskIds.add(update.task.taskId);
+    }
     onLivePhotoDownloadStatus?.call(update);
   }
 
@@ -138,11 +164,18 @@ class DownloadService {
   }
 
   Future<List<bool>> downloadAll(List<Asset> assets) async {
-    return await _downloadRepository.downloadAll(assets.expand(_createDownloadTasks).toList());
+    final tasks = assets.expand(_createDownloadTasks).toList();
+    for (final task in tasks) {
+      _completedTaskIds.remove(task.taskId);
+    }
+    return await _downloadRepository.downloadAll(tasks);
   }
 
   Future<void> download(Asset asset) async {
     final tasks = _createDownloadTasks(asset);
+    for (final task in tasks) {
+      _completedTaskIds.remove(task.taskId);
+    }
     await _downloadRepository.downloadAll(tasks);
   }
 

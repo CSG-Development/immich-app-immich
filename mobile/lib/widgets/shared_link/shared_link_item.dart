@@ -65,7 +65,7 @@ class SharedLinkItem extends ConsumerWidget {
     final imageSize = math.min(context.width / 4, 100.0);
 
     void copyShareLinkToClipboard() {
-      final dp = ref.read(deviceProvider);
+      final dp = ref.read(deviceProvider.notifier);
       final cachedPathsForConnectedDevice = dp.seagateDeviceID == null
           ? null
           : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;

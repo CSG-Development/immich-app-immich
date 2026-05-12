@@ -1,14 +1,10 @@
-import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath, DevicePathType;
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
-import 'package:immich_mobile/widgets/settings/networking_settings/endpoint_input.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
+import 'package:hc_device/hc_device.dart';
 
 class ExternalNetworkPreference extends HookConsumerWidget {
   const ExternalNetworkPreference({super.key, required this.enabled});
@@ -17,68 +13,21 @@ class ExternalNetworkPreference extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries = useState([const AuxilaryEndpoint(url: '', status: AuxCheckStatus.unknown)]);
-    final canSave = useState(false);
-
-    saveEndpointList() {
-      canSave.value = entries.value.every((e) => e.status == AuxCheckStatus.valid);
-
-      final endpointList = entries.value.where((url) => url.status == AuxCheckStatus.valid).toList();
-
-      final jsonString = jsonEncode(endpointList);
-
-      Store.put(StoreKey.externalEndpointList, jsonString);
-    }
-
-    updateValidationStatus(String url, int index, AuxCheckStatus status) {
-      entries.value[index] = entries.value[index].copyWith(url: url, status: status);
-
-      saveEndpointList();
-    }
-
-    handleReorder(int oldIndex, int newIndex) {
-      if (oldIndex < newIndex) {
-        newIndex -= 1;
-      }
-
-      final entry = entries.value.removeAt(oldIndex);
-      entries.value.insert(newIndex, entry);
-      entries.value = [...entries.value];
-
-      saveEndpointList();
-    }
-
-    handleDismiss(int index) {
-      entries.value = [...entries.value..removeAt(index)];
-
-      saveEndpointList();
-    }
-
-    Widget proxyDecorator(Widget child, int index, Animation<double> animation) {
-      return AnimatedBuilder(
-        animation: animation,
-        builder: (BuildContext context, Widget? child) {
-          return Material(
-            color: context.colorScheme.surfaceContainerHighest,
-            shadowColor: context.colorScheme.primary.withValues(alpha: 0.2),
-            child: child,
-          );
-        },
-        child: child,
-      );
-    }
-
-    useEffect(() {
-      final jsonString = Store.tryGet(StoreKey.externalEndpointList);
-
-      if (jsonString == null) {
-        return null;
-      }
-
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      entries.value = jsonList.map((e) => AuxilaryEndpoint.fromJson(e)).toList();
-      return null;
-    }, const []);
+    final deviceState = ref.watch(deviceProvider);
+    final device = ref.read(deviceProvider.notifier);
+    final activePaths = device.getActiveDevicePaths(deviceRemoteId: deviceState.seagateDeviceID);
+    final cachedPaths = deviceState.seagateDeviceID == null
+        ? null
+        : device.getCachedDevicePathsForDevice(deviceState.seagateDeviceID!);
+    final allPaths = (activePaths ?? cachedPaths?.paths ?? const <DevicePath>[])
+        .whereType<DevicePath>()
+        .toList();
+    final externalPaths = allPaths
+        .where((path) => path.type != DevicePathType.local)
+        .where((path) => path.type != DevicePathType.swaggerGeneratedUnknown)
+        .map(DeviceEndpointUtils.buildDevicePathUrl)
+        .toSet()
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -107,46 +56,37 @@ class ExternalNetworkPreference extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Divider(color: context.colorScheme.surfaceContainerHighest),
-                Form(
-                  key: GlobalKey<FormState>(),
-                  child: ReorderableListView.builder(
-                    buildDefaultDragHandles: false,
-                    proxyDecorator: proxyDecorator,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: entries.value.length,
-                    onReorder: handleReorder,
-                    itemBuilder: (context, index) {
-                      return EndpointInput(
-                        key: Key(index.toString()),
-                        index: index,
-                        initialValue: entries.value[index],
-                        onValidated: updateValidationStatus,
-                        onDismissed: handleDismiss,
-                        enabled: enabled,
-                      );
-                    },
+                if (externalPaths.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                    child: Text(
+                      'No external paths available from hc_device',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  )
+                else
+                  ...externalPaths.map(
+                    (endpoint) => ListTile(
+                      enabled: enabled,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                      leading: const Icon(Icons.check_circle_rounded, color: Colors.green),
+                      title: Text(
+                        endpoint,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: enabled
+                              ? context.primaryColor
+                              : context.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      subtitle: Text(
+                        'From hc_device discovered paths',
+                        style: context.textTheme.bodySmall,
+                      ),
+                    ),
                   ),
-                ),
-                // const SizedBox(height: 24),
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                //   child: SizedBox(
-                //     height: 48,
-                //     child: OutlinedButton.icon(
-                //       icon: const Icon(Icons.add),
-                //       label: Text('add_endpoint'.tr().toUpperCase()),
-                //       onPressed: enabled
-                //           ? () {
-                //               entries.value = [
-                //                 ...entries.value,
-                //                 const AuxilaryEndpoint(url: '', status: AuxCheckStatus.unknown),
-                //               ];
-                //             }
-                //           : null,
-                //     ),
-                //   ),
-                // ),
               ],
             ),
           ],

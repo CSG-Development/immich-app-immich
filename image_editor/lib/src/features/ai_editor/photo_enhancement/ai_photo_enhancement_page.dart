@@ -8,6 +8,9 @@ import 'package:image_editor/src/common/widgets/editor_action_app_bar.dart';
 import 'package:image_editor/src/core/interfaces.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/photo_enhancement_service.dart' as pe;
+import 'package:image_editor/src/features/ai_editor/photo_enhancement/blur_background_feature.dart';
+import 'package:image_editor/src/features/ai_editor/photo_enhancement/blur_background_overlay_host.dart';
+import 'package:image_editor/src/features/ai_editor/common/services/background_removal_service.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/layout_utils.dart';
 import 'package:image_editor/src/features/ai_editor/common/utils/onnx_model_loader.dart';
 import 'package:image_editor/src/features/ai_editor/common/models/history_stack.dart';
@@ -974,6 +977,12 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
   Future<void> _runEffect(ImageEffect effect) async {
     if (_isProcessing || _currentBytes.isEmpty) return;
+
+    if (effect is pe.ModnetBackgroundEnhancementEffect) {
+      await _runBlurBackgroundFlow(effect);
+      return;
+    }
+
     await runWithBusyAndError<void>(
       context: context,
       state: this,
@@ -1119,6 +1128,140 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         }
       },
     );
+  }
+
+  Future<void> _runBlurBackgroundFlow(pe.ModnetBackgroundEnhancementEffect effect) async {
+    final mode = await BlurBackgroundFeature.show(context: context);
+    if (mode == null || !mounted) return;
+
+    // Keep modal presentation snappy: defer model-permission and image decode
+    // work until the user has already picked automatic/manual mode.
+    final allowed = await _ensureModelPermission(effect);
+    if (!allowed || !mounted) return;
+
+    final backgroundService = BackgroundRemovalService(
+      modelPathOrUrl: widget.initConfigs.backgroundModelPathEffective,
+      inputWidth: 256,
+      inputHeight: 256,
+    );
+    try {
+      try {
+        if (mode == BlurBackgroundMode.automatic) {
+          await _runAutomaticBlurEffect(effect);
+          return;
+        }
+
+        final decoded = img.decodeImage(_currentBytes);
+        if (decoded == null) return;
+
+        await BlurBackgroundOverlayHost.show(
+          context: context,
+          theme: widget.initConfigs.theme,
+          imageBytes: _currentBytes,
+          imageWidth: decoded.width,
+          imageHeight: decoded.height,
+          backgroundRemovalService: backgroundService,
+          onDone: (mask) async {
+            final result = await _applyBlurWithMask(
+              sourceBytes: _currentBytes,
+              maskPngBytes: mask,
+              backgroundRemovalService: backgroundService,
+              blurRadius: effect.blurRadius,
+            );
+            await _applyBlurResult(result);
+          },
+          onCancel: () {},
+        );
+      } catch (error, stackTrace) {
+        if (mounted) {
+          _log.warning('Enhancement effect "${effect.name}" failed', error, stackTrace);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to apply "${effect.name}". Please try again.'),
+            ),
+          );
+        }
+      }
+    } finally {
+      await backgroundService.dispose();
+    }
+  }
+
+  Future<void> _runAutomaticBlurEffect(
+      pe.ModnetBackgroundEnhancementEffect effect) async {
+    if (!mounted) return;
+    await runWithBusyAndError<void>(
+      context: context,
+      state: this,
+      setBusy: () => setState(() => _isProcessing = true),
+      clearBusy: () => setState(() => _isProcessing = false),
+      errorMessageBuilder: (_, __) =>
+          'Failed to apply "${effect.name}". Please try again.',
+      onError: (error, stackTrace) => _log.warning(
+        'Enhancement effect "${effect.name}" failed',
+        error,
+        stackTrace,
+      ),
+      run: () async {
+        final result = await effect.apply(_currentBytes);
+        if (!mounted || result.isEmpty) return;
+        setState(() {
+          _history.push(result);
+        });
+        _clearImageCaches();
+      },
+    );
+  }
+
+  Future<Uint8List> _applyBlurWithMask({
+    required Uint8List sourceBytes,
+    required Uint8List maskPngBytes,
+    required BackgroundRemovalService backgroundRemovalService,
+    required int blurRadius,
+  }) async {
+    final blurredResult = await backgroundRemovalService.removeBackground(
+      sourceBytes,
+      mode: BackgroundEffectMode.blur,
+      blurRadius: blurRadius,
+    );
+
+    final original = img.decodeImage(sourceBytes);
+    final blurred = img.decodeImage(blurredResult);
+    final maskImage = img.decodeImage(maskPngBytes);
+    if (original == null || blurred == null || maskImage == null) {
+      return blurredResult;
+    }
+
+    final out = blurred.clone();
+    for (var y = 0; y < out.height; y++) {
+      for (var x = 0; x < out.width; x++) {
+        final origPixel = original.getPixel(x, y);
+        final blurPixel = blurred.getPixel(x, y);
+        final maskVal = maskImage.getPixel(x, y).r / 255.0;
+        final r = (origPixel.r * maskVal + blurPixel.r * (1.0 - maskVal))
+            .round()
+            .clamp(0, 255);
+        final g = (origPixel.g * maskVal + blurPixel.g * (1.0 - maskVal))
+            .round()
+            .clamp(0, 255);
+        final b = (origPixel.b * maskVal + blurPixel.b * (1.0 - maskVal))
+            .round()
+            .clamp(0, 255);
+        out.setPixel(x, y, img.ColorRgb8(r, g, b));
+      }
+    }
+    return Uint8List.fromList(img.encodePng(out));
+  }
+
+  Future<void> _applyBlurResult(Uint8List result) async {
+    if (!mounted) return;
+    // Manual flow already shows overlay-local progress while mask/blur runs.
+    // Keep result commit lightweight and synchronous with navigation closure.
+    if (!mounted || result.isEmpty) return;
+    setState(() {
+      _history.push(result);
+    });
+    _clearImageCaches();
   }
 
   void _handleUndo() {

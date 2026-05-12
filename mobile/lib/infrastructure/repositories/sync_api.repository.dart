@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
@@ -14,7 +16,8 @@ import 'package:openapi/api.dart';
 class SyncApiRepository {
   final Logger _logger = Logger('SyncApiRepository');
   final ApiService _api;
-  SyncApiRepository(this._api);
+  final HcDeviceEndpointResolver _endpointResolver;
+  SyncApiRepository(this._api, this._endpointResolver);
 
   Future<void> ack(List<String> data) {
     return _api.syncApi.sendSyncAck(SyncAckSetDto(acks: data));
@@ -43,7 +46,13 @@ class SyncApiRepository {
       runId: runId,
       extra: {'batchSize': batchSize},
     );
-    final basePath = await _api.setOpenApiServiceEndpoint(runId: runId) ?? _api.apiClient.basePath;
+    final basePath =
+        await _endpointResolver.resolveAndActivateWinner(
+          runId: runId,
+          trigger: 'sync_stream_bootstrap',
+          mode: ResolveMode.foreground,
+        ) ??
+        _api.apiClient.basePath;
     final hasApi = basePath.endsWith('/api') || basePath.endsWith('/api/');
     final cleanPath = basePath.endsWith('/') 
         ? basePath.substring(0, basePath.length - 1) 

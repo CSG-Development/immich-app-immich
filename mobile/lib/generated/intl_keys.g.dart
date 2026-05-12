@@ -879,6 +879,9 @@ abstract class IntlKeys {
   static const curator_passcode_enter_title = 'curator.passcode.enter.title';
   static const curator_passcode_remove_title = 'curator.passcode.remove.title';
   static const curator_passcode_title = 'curator.passcode.title';
+  static const curator_password_reset_too_many_requests_description =
+      'curator.password.reset.too.many.requests.description';
+  static const curator_password_reset_too_many_requests_title = 'curator.password.reset.too.many.requests.title';
   static const curator_pattern_confirm_error = 'curator.pattern.confirm.error';
   static const curator_pattern_confirm_subtitle = 'curator.pattern.confirm.subtitle';
   static const curator_pattern_confirm_title = 'curator.pattern.confirm.title';
@@ -900,6 +903,7 @@ abstract class IntlKeys {
   static const curator_settings_pattern_lock = 'curator.settings.pattern.lock';
   static const curator_shared_link_create_public_error = 'curator.shared.link.create.public.error';
   static const curator_sign_in_screen_button_request_new_code = 'curator.sign.in.screen.button.request.new.code';
+  static const curator_sign_in_screen_button_valid_remote_access = 'curator.sign.in.screen.button.valid.remote.access';
   static const curator_sign_in_screen_dropdown_device_error_no_device =
       'curator.sign.in.screen.dropdown.device.error.no.device';
   static const curator_sign_in_screen_dropdown_device_label = 'curator.sign.in.screen.dropdown.device.label';
@@ -910,6 +914,8 @@ abstract class IntlKeys {
       'curator.sign.in.screen.field.remote.code.error.invalid';
   static const curator_sign_in_screen_field_remote_code_hint = 'curator.sign.in.screen.field.remote.code.hint';
   static const curator_sign_in_screen_field_remote_code_label = 'curator.sign.in.screen.field.remote.code.label';
+  static const curator_sign_in_screen_field_remote_code_message = 'curator.sign.in.screen.field.remote.code.message';
+  static const curator_sign_in_screen_field_remote_code_title = 'curator.sign.in.screen.field.remote.code.title';
   static const curator_sign_in_screen_remote_code_allow_access = 'curator.sign.in.screen.remote.code.allow.access';
   static const curator_sign_in_screen_remote_code_cancel = 'curator.sign.in.screen.remote.code.cancel';
   static const curator_sign_in_screen_remote_code_description = 'curator.sign.in.screen.remote.code.description';
@@ -1893,6 +1899,7 @@ abstract class IntlKeys {
   static const password = 'password';
   static const password_does_not_match = 'password_does_not_match';
   static const password_required = 'password_required';
+  static const password_reset_email_sent_to = 'password_reset_email_sent_to';
   static const password_reset_success = 'password_reset_success';
   static const past_durations_days = 'past.durations.days';
   static const past_durations_hours = 'past.durations.hours';

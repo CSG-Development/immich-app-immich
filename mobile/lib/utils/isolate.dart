@@ -16,7 +16,6 @@ import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:logging/logging.dart';
 import 'package:worker_manager/worker_manager.dart';
 
@@ -59,7 +58,6 @@ Cancelable<T?> runInIsolateGentle<T>({
         final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
         final apiservice = ApiService(certPinning: certPinning);
 
-        
         final ref = ProviderContainer(
           overrides: [
             // TODO: Remove once isar is removed
@@ -75,7 +73,6 @@ Cancelable<T?> runInIsolateGentle<T>({
         Logger log = Logger("IsolateLogger");
 
         try {
-          HttpSSLOptions.apply(applyNative: false);
           result = await computation(ref);
         } on CanceledError {
           log.warning("Computation cancelled ${debugLabel == null ? '' : ' for $debugLabel'}");
@@ -83,8 +80,6 @@ Cancelable<T?> runInIsolateGentle<T>({
           log.severe("Error in runInIsolateGentle ${debugLabel == null ? '' : ' for $debugLabel'}", error, stack);
         } finally {
           try {
-            ref.dispose();
-
             await Store.dispose();
             await LogService.I.dispose();
             await logDb.close();
@@ -102,8 +97,6 @@ Cancelable<T?> runInIsolateGentle<T>({
             dPrint(() => "Error closing resources in isolate: $error, $stack");
           } finally {
             ref.dispose();
-            // Delay to ensure all resources are released
-            await Future.delayed(const Duration(seconds: 2));
           }
         }
       },

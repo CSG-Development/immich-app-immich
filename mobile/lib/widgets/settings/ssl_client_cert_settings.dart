@@ -8,7 +8,6 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/utils/http_ssl_cert_override.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
 
 class SslClientCertSettings extends StatefulWidget {
   const SslClientCertSettings({super.key, required this.isLoggedIn});
@@ -82,7 +81,6 @@ class _SslClientCertSettingsState extends State<SslClientCertSettings> {
       return;
     }
     await cert.save();
-    HttpSSLOptions.apply();
     setState(() => isCertExist = true);
     showMessage(context, "client_cert_import_success_msg".tr());
   }
@@ -123,7 +121,6 @@ class _SslClientCertSettingsState extends State<SslClientCertSettings> {
 
   Future<void> removeCert(BuildContext context) async {
     await SSLClientCertStoreVal.delete();
-    HttpSSLOptions.apply();
     setState(() => isCertExist = false);
     showMessage(context, "client_cert_remove_msg".tr());
   }

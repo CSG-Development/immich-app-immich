@@ -39,7 +39,7 @@ class SharedLinkEditPage extends HookConsumerWidget {
     final serverUrl = useState<String?>(null);
 
     useEffect(() {
-      final dp = ref.read(deviceProvider);
+      final dp = ref.read(deviceProvider.notifier);
       final cachedPathsForConnectedDevice = dp.seagateDeviceID == null
           ? null
           : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;

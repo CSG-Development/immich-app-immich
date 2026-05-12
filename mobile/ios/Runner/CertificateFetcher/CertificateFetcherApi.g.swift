@@ -110,18 +110,30 @@ func deepHashCertificateFetcherApi(value: Any?, hasher: inout Hasher) {
 
     
 
+/// Result of a synchronous snapshot read; Dart polls until [success] or [failed].
+enum CertificateChainSnapshotStatus: Int {
+  /// Native fetch in flight or not yet started for this key.
+  case pending = 0
+  /// Terminal success; [certificates] is non-empty (DER base64).
+  case success = 1
+  /// Terminal failure (timeout, empty chain, etc.); [certificates] is empty.
+  case failed = 2
+}
+
+/// Cache / single-flight key (no per-call id).
+///
 /// Generated class from Pigeon that represents data sent in messages.
-struct CertificateChainRequest: Hashable {
+struct CertificateChainKey: Hashable {
   var host: String
   var port: Int64
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> CertificateChainRequest? {
+  static func fromList(_ pigeonVar_list: [Any?]) -> CertificateChainKey? {
     let host = pigeonVar_list[0] as! String
     let port = pigeonVar_list[1] as! Int64
 
-    return CertificateChainRequest(
+    return CertificateChainKey(
       host: host,
       port: port
     )
@@ -132,7 +144,7 @@ struct CertificateChainRequest: Hashable {
       port,
     ]
   }
-  static func == (lhs: CertificateChainRequest, rhs: CertificateChainRequest) -> Bool {
+  static func == (lhs: CertificateChainKey, rhs: CertificateChainKey) -> Bool {
     return deepEqualsCertificateFetcherApi(lhs.toList(), rhs.toList())  }
   func hash(into hasher: inout Hasher) {
     deepHashCertificateFetcherApi(value: toList(), hasher: &hasher)
@@ -140,25 +152,29 @@ struct CertificateChainRequest: Hashable {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
-struct CertificateChainResponse: Hashable {
-  /// DER, base64
+struct CertificateChainSnapshot: Hashable {
+  var status: CertificateChainSnapshotStatus
+  /// DER, base64. Non-empty only when [status] == [CertificateChainSnapshotStatus.success].
   var certificates: [String]
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> CertificateChainResponse? {
-    let certificates = pigeonVar_list[0] as! [String]
+  static func fromList(_ pigeonVar_list: [Any?]) -> CertificateChainSnapshot? {
+    let status = pigeonVar_list[0] as! CertificateChainSnapshotStatus
+    let certificates = pigeonVar_list[1] as! [String]
 
-    return CertificateChainResponse(
+    return CertificateChainSnapshot(
+      status: status,
       certificates: certificates
     )
   }
   func toList() -> [Any?] {
     return [
-      certificates
+      status,
+      certificates,
     ]
   }
-  static func == (lhs: CertificateChainResponse, rhs: CertificateChainResponse) -> Bool {
+  static func == (lhs: CertificateChainSnapshot, rhs: CertificateChainSnapshot) -> Bool {
     return deepEqualsCertificateFetcherApi(lhs.toList(), rhs.toList())  }
   func hash(into hasher: inout Hasher) {
     deepHashCertificateFetcherApi(value: toList(), hasher: &hasher)
@@ -169,9 +185,15 @@ private class CertificateFetcherApiPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
     case 129:
-      return CertificateChainRequest.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return CertificateChainSnapshotStatus(rawValue: enumResultAsInt)
+      }
+      return nil
     case 130:
-      return CertificateChainResponse.fromList(self.readValue() as! [Any?])
+      return CertificateChainKey.fromList(self.readValue() as! [Any?])
+    case 131:
+      return CertificateChainSnapshot.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -180,11 +202,14 @@ private class CertificateFetcherApiPigeonCodecReader: FlutterStandardReader {
 
 private class CertificateFetcherApiPigeonCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? CertificateChainRequest {
+    if let value = value as? CertificateChainSnapshotStatus {
       super.writeByte(129)
-      super.writeValue(value.toList())
-    } else if let value = value as? CertificateChainResponse {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? CertificateChainKey {
       super.writeByte(130)
+      super.writeValue(value.toList())
+    } else if let value = value as? CertificateChainSnapshot {
+      super.writeByte(131)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -206,10 +231,12 @@ class CertificateFetcherApiPigeonCodec: FlutterStandardMessageCodec, @unchecked 
   static let shared = CertificateFetcherApiPigeonCodec(readerWriter: CertificateFetcherApiPigeonCodecReaderWriter())
 }
 
-
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol CertificateFetcherApi {
-  func fetchCertificateChain(request: CertificateChainRequest, completion: @escaping (Result<CertificateChainResponse, Error>) -> Void)
+  /// Fast path: returns cached terminal state, [pending], or starts background fetch and returns [pending].
+  func getCertificateChainSnapshot(key: CertificateChainKey) throws -> CertificateChainSnapshot
+  /// Aborts in-flight fetch for [key] (e.g. when Dart stops polling early).
+  func cancelCertificateChainForHost(key: CertificateChainKey) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -218,22 +245,37 @@ class CertificateFetcherApiSetup {
   /// Sets up an instance of `CertificateFetcherApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: CertificateFetcherApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let fetchCertificateChainChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.fetchCertificateChain\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    /// Fast path: returns cached terminal state, [pending], or starts background fetch and returns [pending].
+    let getCertificateChainSnapshotChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.getCertificateChainSnapshot\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      fetchCertificateChainChannel.setMessageHandler { message, reply in
+      getCertificateChainSnapshotChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let requestArg = args[0] as! CertificateChainRequest
-        api.fetchCertificateChain(request: requestArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
+        let keyArg = args[0] as! CertificateChainKey
+        do {
+          let result = try api.getCertificateChainSnapshot(key: keyArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
         }
       }
     } else {
-      fetchCertificateChainChannel.setMessageHandler(nil)
+      getCertificateChainSnapshotChannel.setMessageHandler(nil)
+    }
+    /// Aborts in-flight fetch for [key] (e.g. when Dart stops polling early).
+    let cancelCertificateChainForHostChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.CertificateFetcherApi.cancelCertificateChainForHost\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      cancelCertificateChainForHostChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let keyArg = args[0] as! CertificateChainKey
+        do {
+          try api.cancelCertificateChainForHost(key: keyArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      cancelCertificateChainForHostChannel.setMessageHandler(nil)
     }
   }
 }

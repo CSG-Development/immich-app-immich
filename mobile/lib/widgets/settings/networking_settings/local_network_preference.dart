@@ -2,77 +2,39 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath, DevicePathType;
+import 'package:hc_device/hc_device.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/providers/auth.provider.dart';
 
 class LocalNetworkPreference extends HookConsumerWidget {
   const LocalNetworkPreference({super.key, required this.enabled});
 
   final bool enabled;
 
-  Future<String?> _showEditDialog(BuildContext context, String title, String hintText, String initialValue) {
-    final controller = TextEditingController(text: initialValue);
-
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(border: const OutlineInputBorder(), hintText: hintText),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('cancel'.tr().toUpperCase(), style: const TextStyle(color: Colors.red)),
-          ),
-          TextButton(onPressed: () => Navigator.pop(context, controller.text), child: Text('save'.tr().toUpperCase())),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localEndpointText = useState("");
+    final localEndpointText = useState('');
 
     useEffect(() {
-      final localEndpoint = ref.read(authProvider.notifier).getSavedLocalEndpoint();
-
-      if (localEndpoint != null) {
-        localEndpointText.value = localEndpoint;
+      final deviceState = ref.read(deviceProvider);
+      final device = ref.read(deviceProvider.notifier);
+      final activePaths = device.getActiveDevicePaths(deviceRemoteId: deviceState.seagateDeviceID);
+      final cachedPaths = deviceState.seagateDeviceID == null
+          ? null
+          : device.getCachedDevicePathsForDevice(deviceState.seagateDeviceID!);
+      final allPaths = activePaths ?? cachedPaths?.paths ?? const [];
+      final localPath = allPaths
+          .where((p) => p.type == DevicePathType.local)
+          .cast<DevicePath>()
+          .map(DeviceEndpointUtils.buildDevicePathUrl)
+          .cast<String?>()
+          .firstWhere((url) => url != null && url.isNotEmpty, orElse: () => null);
+      if (localPath != null) {
+        localEndpointText.value = localPath;
       }
-
       return null;
-    }, []);
-
-    saveLocalEndpoint(String url) {
-      localEndpointText.value = url;
-      return ref.read(authProvider.notifier).saveLocalEndpoint(url);
-    }
-
-
-    handleEditServerEndpoint() async {
-      final localEndpoint = await _showEditDialog(
-        context,
-        "server_endpoint".tr(),
-        "http://local-ip:2283",
-        localEndpointText.value,
-      );
-
-      if (localEndpoint != null) {
-        await saveLocalEndpoint(localEndpoint);
-      }
-    }
-
-    autofillCurrentNetwork() async {
-      final serverEndpoint = ref.read(authProvider.notifier).getServerEndpoint();
-
-      if (serverEndpoint != null) {
-        saveLocalEndpoint(serverEndpoint);
-      }
-    }
+    }, [ref.watch(deviceProvider)]);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -120,9 +82,9 @@ class LocalNetworkPreference extends HookConsumerWidget {
                                         .withAlpha(100),
                               ),
                             ),
-                      trailing: IconButton(
-                        onPressed: enabled ? handleEditServerEndpoint : null,
-                        icon: const Icon(Icons.edit_rounded),
+                      trailing: const IconButton(
+                        onPressed: null,
+                        icon: Icon(Icons.edit_rounded),
                       ),
                     ),
                     // const SizedBox(height: 16),

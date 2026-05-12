@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_udid/flutter_udid.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
@@ -10,6 +11,8 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auth_state.model.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
+import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/auth.service.dart';
@@ -20,7 +23,6 @@ import 'package:immich_mobile/utils/hash.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:hc_device/providers/hcdevice.provider.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
@@ -70,17 +72,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return _authService.validateServerUrl(url);
   }
 
-  /// Validating the url is the alternative connecting server url without
-  /// saving the information to the local database
-  Future<bool> validateAuxilaryServerUrl(String url) async {
-    try {
-      final validEndpoint = await _apiService.resolveEndpoint(url);
-      return await _apiService.validateAuxilaryServerUrl(validEndpoint);
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<LoginResponse> login(String email, String password) async {
     final response = await _authService.login(email, password);
     await saveAuthInfo(accessToken: response.accessToken);
@@ -96,7 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Keep Remote Access session intact. Device cache/state must still be
       // cleared to avoid stale paths leaking into a subsequent photos session.
       try {
-        _ref.read(deviceProvider).clearDevice(save: true);
+        _ref.read(deviceProvider.notifier).clearDevice(save: true);
       } catch (error, stackTrace) {
         _log.warning("Failed to clear hc_device state during logout", error, stackTrace);
       }
@@ -165,6 +156,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<bool> saveAuthInfo({required String accessToken}) async {
     await _apiService.setAccessToken(accessToken);
+    var didRetryAfterPathRecovery = false;
 
     final serverEndpoint = Store.get(StoreKey.serverEndpoint);
     final customHeaders = Store.tryGet(StoreKey.customHeaders);
@@ -188,6 +180,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await Store.put(StoreKey.accessToken, accessToken);
       }
     } on ApiException catch (error, stackTrace) {
+      final message = error.message ?? '';
+      final isTransportIssue =
+          message.contains('TLS/SSL communication failed') ||
+          message.contains('Socket operation failed') ||
+          message.contains('Server is not reachable');
+      if (!didRetryAfterPathRecovery && isTransportIssue) {
+        didRetryAfterPathRecovery = true;
+        _log.warning('Transport error during refreshMyUser; retrying after resolver recovery');
+        try {
+          await _ref.read(hcDeviceEndpointResolverProvider).resolveAndActivateWinner(
+            trigger: 'auth_save_info_transport_retry',
+            mode: ResolveMode.foreground,
+          );
+          final serverUser = await _userService.refreshMyUser().timeout(_timeoutDuration);
+          if (serverUser != null) {
+            user = serverUser;
+            await Store.put(StoreKey.deviceId, deviceId);
+            await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
+            await Store.put(StoreKey.accessToken, accessToken);
+          }
+        } catch (retryError, retryStackTrace) {
+          _log.warning('Retry after resolver recovery failed', retryError, retryStackTrace);
+        }
+      }
       if (error.code == 401) {
         _log.severe("Unauthorized access, token likely expired. Logging out.");
         return false;
@@ -217,6 +233,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isAdmin: user.isAdmin,
     );
 
+    // Ensure resolver has at least one fallback
+    // endpoint even before the first successful discovery cycle.
+    final currentEndpoint = _apiService.apiClient.basePath;
+    if (currentEndpoint.isNotEmpty) {
+      await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);
+    }
+
     return true;
   }
 
@@ -224,16 +247,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await Store.put(StoreKey.preferredWifiName, wifiName);
   }
 
-  Future<void> saveLocalEndpoint(String url) async {
-    await Store.put(StoreKey.localEndpoint, url);
-  }
-
   String? getSavedWifiName() {
     return Store.tryGet(StoreKey.preferredWifiName);
-  }
-
-  String? getSavedLocalEndpoint() {
-    return Store.tryGet(StoreKey.localEndpoint);
   }
 
   /// Returns the current server endpoint (with /api) URL from the store

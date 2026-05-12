@@ -5,10 +5,14 @@ class NetworkStatusSnackBar extends StatelessWidget {
     super.key,
     required this.message,
     required this.onClose,
+    this.onRetry,
+    this.retryLabel,
   });
 
   final String message;
   final VoidCallback onClose;
+  final VoidCallback? onRetry;
+  final String? retryLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,19 @@ class NetworkStatusSnackBar extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(color: foregroundColor),
             ),
           ),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(52, 32),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                retryLabel ?? 'Retry',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: foregroundColor),
+              ),
+            ),
           SizedBox.square(
             dimension: 40,
             child: IconButton(

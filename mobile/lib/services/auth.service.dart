@@ -104,8 +104,6 @@ class AuthService {
       Store.delete(StoreKey.assetETag),
       Store.delete(StoreKey.autoEndpointSwitching),
       Store.delete(StoreKey.preferredWifiName),
-      Store.delete(StoreKey.localEndpoint),
-      Store.delete(StoreKey.externalEndpointList),
     ]);
   }
 

@@ -31,6 +31,7 @@ class BackgroundSyncWorker {
     
     var completionHandler: (UIBackgroundFetchResult) -> Void
     let taskSessionStart = Date()
+    private var didComplete = false
     
     // We need the completion handler to tell the system when we are done running
     init(_ completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
@@ -148,9 +149,6 @@ class BackgroundSyncWorker {
                     "systemStop",
                     arguments: nil,
                     result: nil)
-                
-                // Complete the execution
-                self.complete(UIBackgroundFetchResult.newData)
             }
         }
         
@@ -174,13 +172,15 @@ class BackgroundSyncWorker {
             "systemStop",
             arguments: nil,
             result: nil)
-        
-        // Complete the execution
-        self.complete(UIBackgroundFetchResult.newData)
     }
 
     // Completes the execution, destroys the engine, and sends a completion to our callback completionHandler
     private func complete(_ fetchResult: UIBackgroundFetchResult) {
+        guard !didComplete else {
+            return
+        }
+        didComplete = true
+        channel?.setMethodCallHandler(nil)
         engine?.destroyContext()
         channel = nil
         completionHandler(fetchResult)

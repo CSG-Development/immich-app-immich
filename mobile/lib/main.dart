@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:hc_device/hc_device.dart';
+import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/constants/locales.dart';
@@ -17,16 +18,17 @@ import 'package:immich_mobile/domain/services/background_worker.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/generated/codegen_loader.g.dart';
+import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
-import 'package:immich_mobile/providers/endpoint_recovery.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
-import 'package:immich_mobile/providers/curator_network_monitor.provider.dart';
-import 'package:immich_mobile/providers/network_change_listener.provider.dart';
+import 'package:immich_mobile/providers/debug/network_debug_overlay_visibility.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/theme.provider.dart';
@@ -45,16 +47,17 @@ import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dar
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/env_config.dart';
-import 'package:immich_mobile/utils/http_ssl_options.dart';
 import 'package:immich_mobile/utils/licenses.dart';
 import 'package:immich_mobile/utils/migration.dart';
 import 'package:immich_mobile/utils/platform_ui.dart';
+import 'package:immich_mobile/widgets/debug/network_debug_overlay.widget.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+import 'package:shared_preferences/shared_preferences.dart' show SharedPreferencesAsync;
 
 void main() async {
   ImmichWidgetsBinding();
@@ -69,8 +72,6 @@ void main() async {
   // Warm-up isolate pool for worker manager
   await workerManager.init(dynamicSpawning: true);
   await migrateDatabaseIfNeeded(isar, drift);
-  HttpSSLOptions.apply();
-
   // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
   // await telemetryChannel.invokeMethod('init', ['test']);
 
@@ -88,6 +89,7 @@ void main() async {
 
   await certPinning.initialize();
 
+  await _startRemoteAccessSession();
   final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
 
   final apiservice = ApiService(certPinning: certPinning);
@@ -104,6 +106,12 @@ void main() async {
       child: const MainWidget(),
     ),
   );
+}
+
+Future<void> _startRemoteAccessSession() async {
+  final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
+  final sessionId = DateTime.now().microsecondsSinceEpoch.toString();
+  await asyncPrefs.setString(remoteCurrentSessionIdKey, sessionId);
 }
 
 Future<void> initApp() async {
@@ -179,6 +187,7 @@ class ImmichApp extends ConsumerStatefulWidget {
 
 class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserver {
   int? _androidSdkInt;
+  StreamSubscription<conn.ConnectionState>? _connectionStateSubscription;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -187,7 +196,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
         dPrint(() => "[APP STATE] resumed");
         ref.read(appStateProvider.notifier).handleAppResume();
         unawaited(
-          ref.read(networkChangeListenerServiceProvider).processPendingOnResume(),
+          ref.read(curatorNetworkMonitorProvider).processPendingOnResume(),
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ref.read(curatorNetworkMonitorProvider).onAppLifecycleResumed();
@@ -195,18 +204,22 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
         break;
       case AppLifecycleState.inactive:
         dPrint(() => "[APP STATE] inactive");
+        ref.read(curatorNetworkMonitorProvider).onAppLifecycleBackgrounded();
         ref.read(appStateProvider.notifier).handleAppInactivity();
         break;
       case AppLifecycleState.paused:
         dPrint(() => "[APP STATE] paused");
+        ref.read(curatorNetworkMonitorProvider).onAppLifecycleBackgrounded();
         ref.read(appStateProvider.notifier).handleAppPause();
         break;
       case AppLifecycleState.detached:
         dPrint(() => "[APP STATE] detached");
+        ref.read(curatorNetworkMonitorProvider).onAppLifecycleBackgrounded();
         ref.read(appStateProvider.notifier).handleAppDetached();
         break;
       case AppLifecycleState.hidden:
         dPrint(() => "[APP STATE] hidden");
+        ref.read(curatorNetworkMonitorProvider).onAppLifecycleBackgrounded();
         ref.read(appStateProvider.notifier).handleAppHidden();
         break;
     }
@@ -266,6 +279,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
   initState() {
     super.initState();
     initApp().then((_) => dPrint(() => "App Init Completed"));
+    unawaited(ref.read(hcPathResolverBootstrapProvider.future));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // needs to be delayed so that EasyLocalization is working
       if (Store.isBetaTimelineEnabled) {
@@ -283,14 +297,29 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     api.curatorNetworkForceReconnectHandler = () {
       ref.read(curatorNetworkMonitorProvider).forceNetworkChangeHandling();
     };
+    api.curatorNetworkSlowRequestHandler = (requestUrl, elapsed, isHard) {
+      unawaited(
+        ref.read(curatorNetworkMonitorProvider).onSlowForegroundRequest(
+          requestUrl: requestUrl,
+          elapsed: elapsed,
+          isHard: isHard,
+        ),
+      );
+    };
+    _connectionStateSubscription = api.connectionStateChanges.listen((state) {
+      if (state.status == conn.ConnectionStatus.connected) {
+        ref.read(curatorNetworkMonitorProvider).onConnectionRestored();
+      }
+    });
 
-    // Initialize endpoint recovery service to start listening to connection state changes
-    ref.read(endpointRecoveryServiceProvider);
   }
 
   @override
   void dispose() {
     ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler = null;
+    ref.read(apiServiceProvider).curatorNetworkSlowRequestHandler = null;
+    _connectionStateSubscription?.cancel();
+    _connectionStateSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -320,7 +349,16 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
           value: computeOverlayStyle(context),
           child: ColoredBox(
             color: Theme.of(context).scaffoldBackgroundColor,
-            child: SafeArea(bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context), top: false, child: child!),
+            child: Stack(
+              children: [
+                SafeArea(
+                  bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
+                  top: false,
+                  child: child!,
+                ),
+                if (ref.watch(networkDebugOverlayVisibleProvider)) const NetworkDebugOverlay(),
+              ],
+            ),
           ),
         ),
       ),

@@ -2,23 +2,25 @@ import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/onboarding.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/pages/security/lock_flow.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/app_update.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/widgets/common/splash_screen.dart';
 import 'package:immich_mobile/widgets/security/local_auth_bottom_sheet.dart';
 import 'package:logging/logging.dart';
@@ -38,17 +40,62 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(_bootstrapSession());
+  }
+
+  Future<void> _bootstrapSession() async {
+    // Do not block splash on endpoint probing.
     unawaited(_warmupEndpointResolution());
-    resumeSession();
+    await resumeSession();
+  }
+
+  Future<void> _waitForEndpointBeforeStartupRequests() async {
+    // Keep startup responsive: wait briefly for endpoint settle, then continue.
+    Future<String?> resolve() {
+      return ref
+          .read(hcDeviceEndpointResolverProvider)
+          .resolveAndActivateWinner(
+            trigger: 'splash_warmup',
+            mode: ResolveMode.foreground,
+          )
+          .timeout(const Duration(seconds: 4));
+    }
+
+    try {
+      await resolve();
+      return;
+    } catch (error) {
+      log.warning('Startup endpoint wait attempt failed, retrying once: $error');
+    }
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await resolve();
+    } catch (error) {
+      log.warning('Startup endpoint wait failed after retry, continuing: $error');
+    }
   }
 
   Future<void> _warmupEndpointResolution() async {
     try {
-      final endpoint = await ref.read(apiServiceProvider).setOpenApiServiceEndpoint();
+      await ref
+          .read(hcDeviceEndpointResolverProvider)
+          .resolveAndActivateWinner(
+            trigger: 'splash_warmup',
+            mode: ResolveMode.foreground,
+          )
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) {
+        return;
+      }
+      final endpoint = ref.read(apiServiceProvider).apiClient.basePath;
       logConnectionInfo(endpoint);
     } catch (error) {
-      // Startup must remain non-blocking even if endpoint probing fails.
-      log.warning('Background endpoint warmup failed: $error');
+      // Startup should continue if path probing times out/fails.
+      if (!mounted) {
+        return;
+      }
+      log.warning('Startup endpoint warmup failed (continuing): $error');
     }
   }
 
@@ -60,7 +107,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     log.info("Resuming session at $endpoint");
   }
 
-  void resumeSession() async {
+  Future<void> resumeSession() async {
     if (!mounted) return;
 
     await ref.read(appUpdateServiceProvider).checkOnStart(context: context);
@@ -76,16 +123,22 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     if (accessToken != null &&
         // serverUrl != null &&
         endpoint != null) {
+      final endpointWarmupFuture = _waitForEndpointBeforeStartupRequests();
       final infoProvider = ref.read(serverInfoProvider.notifier);
       final wsProvider = ref.read(websocketProvider.notifier);
       final backgroundManager = ref.read(backgroundSyncProvider);
       final backupProvider = ref.read(driftBackupProvider.notifier);
-
-      ref.read(authProvider.notifier).saveAuthInfo(accessToken: accessToken).then(
-        (_) async {
+      // Keep splash non-blocking: restore auth/session in background.
+      unawaited(
+        _restoreAuthInfoWithRetry(accessToken: accessToken).then((didRestoreAuth) async {
           try {
+            await endpointWarmupFuture;
             wsProvider.connect();
             infoProvider.getServerInfo();
+
+            if (!didRestoreAuth) {
+              log.warning('Auth restore failed after retries; startup services continue in degraded mode');
+            }
 
             if (Store.isBetaTimelineEnabled) {
               bool syncSuccess = false;
@@ -94,7 +147,13 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
                 backgroundManager.syncRemote().then((success) => syncSuccess = success),
               ]);
 
+              if (!syncSuccess) {
+                await Future<void>.delayed(const Duration(seconds: 2));
+                syncSuccess = await backgroundManager.syncRemote();
+              }
+
               if (syncSuccess) {
+                backupProvider.updateError(BackupError.none);
                 await Future.wait([
                   backgroundManager.hashAssets().then((_) {
                     _resumeBackup(backupProvider);
@@ -113,17 +172,12 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
           } catch (e) {
             log.severe('Failed establishing connection to the server: $e');
           }
-        },
-        onError: (exception) => {
-          log.severe('Failed to update auth info with access token: $accessToken'),
-          ref.read(authProvider.notifier).logout(),
-          if (mounted) context.replaceRoute(const LoginRoute()),
-        },
+        }),
       );
     } else {
-      log.severe('Missing crucial offline login info - Logging out completely');
-      ref.read(authProvider.notifier).logout();
-      if (mounted) context.replaceRoute(const LoginRoute());
+      await _logoutAndRouteToLogin(
+        reason: 'Missing crucial offline login info',
+      );
       return;
     }
 
@@ -189,6 +243,82 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       if (currentUser != null) {
         notifier.handleBackupResume(currentUser.id);
       }
+    }
+  }
+
+  Future<bool> _restoreAuthInfoWithRetry({required String accessToken}) async {
+    const maxAttempts = 2;
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final restored = await ref
+            .read(authProvider.notifier)
+            .saveAuthInfo(accessToken: accessToken)
+            .timeout(const Duration(seconds: 8));
+        if (restored) {
+          return true;
+        }
+        log.warning(
+          'Auth restore attempt $attempt/$maxAttempts returned false',
+        );
+      } catch (error, stackTrace) {
+        lastError = error;
+        if (_isTransientAuthBootstrapFailure(error)) {
+          log.warning(
+            'Transient auth restore failure on attempt $attempt/$maxAttempts',
+            error,
+            stackTrace,
+          );
+        } else {
+          log.severe(
+            'Auth restore failed on attempt $attempt/$maxAttempts',
+            error,
+            stackTrace,
+          );
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        try {
+          await ref
+              .read(hcDeviceEndpointResolverProvider)
+              .resolveAndActivateWinner(
+                trigger: 'splash_auth_restore_retry_$attempt',
+                mode: ResolveMode.foreground,
+              )
+              .timeout(const Duration(seconds: 4));
+        } catch (error) {
+          log.warning('Endpoint recovery before auth retry failed: $error');
+        }
+      }
+    }
+
+    if (lastError != null) {
+      log.severe('Auth restore failed after retries', lastError);
+    }
+    return false;
+  }
+
+  bool _isTransientAuthBootstrapFailure(Object error) {
+    if (error is TimeoutException) {
+      return true;
+    }
+    final message = error.toString().toLowerCase();
+    return message.contains('tls/ssl') ||
+        message.contains('socket') ||
+        message.contains('timed out') ||
+        message.contains('timeout') ||
+        message.contains('not reachable') ||
+        message.contains('connection') && message.contains('failed');
+  }
+
+  Future<void> _logoutAndRouteToLogin({required String reason}) async {
+    log.severe('$reason - logging out completely');
+    await ref.read(authProvider.notifier).logout();
+    if (mounted) {
+      context.replaceRoute(const LoginRoute());
     }
   }
 

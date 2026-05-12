@@ -15,7 +15,7 @@ import 'package:logging/logging.dart';
 /// Root logger for `hc_device`.
 final Logger hcDeviceLogger = Logger('HcDevice');
 
-/// Optional Chopper interceptor — reference [`httpLogger`] equivalent at FINEST level.
+/// Optional Chopper interceptor used for detailed HTTP logs.
 ///
 /// Attach to short-lived unauthenticated clients (e.g. [DeviceDetectionService.getAbout]).
 final class HcDeviceChopperLogInterceptor implements Interceptor {
@@ -38,6 +38,8 @@ final class HcDeviceChopperLogInterceptor implements Interceptor {
 List<Interceptor> hcDeviceHttpLogInterceptors() => [
       if (kDebugMode) HcDeviceChopperLogInterceptor(),
     ];
+
+final Interceptor httpLogger = HcDeviceChopperLogInterceptor();
 
 final class HcDeviceReferenceLogger {
   void debug(String message, [Object? error]) {
@@ -69,5 +71,5 @@ final class HcDeviceReferenceLogger {
   void verbose(String message) => hcDeviceLogger.finer(message);
 }
 
-/// Global logger for ported reference code (`device_detection_service`, etc.).
+/// Global logger used across hc_device services (for example, device detection).
 final HcDeviceReferenceLogger logger = HcDeviceReferenceLogger();

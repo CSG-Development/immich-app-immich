@@ -13,23 +13,43 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart'
     show Connectivity, ConnectivityResult;
-import 'package:hc_device/api/api.swagger.dart' show About;
+import 'package:hc_device/services/logger_service.dart';
+import 'package:hc_device/api/api.swagger.dart' show Api, About;
 import 'package:hc_device/api/remote_access.enums.swagger.dart'
     show DevicePathType;
 import 'package:hc_device/api/remote_access.swagger.dart'
     show Device, DevicePath, DevicePaths;
-import 'package:hc_device/device_item.dart';
 import 'package:hc_device/providers/device.provider.dart';
-import 'package:hc_device/providers/remote.provider.dart';
-import 'package:hc_device/services/logger_service.dart';
-import 'package:hc_device/utils/core.dart'
-    show
-        durationDetection,
-        serviceNameDiscover,
-        serviceTypeDiscover,
-        timeoutLocalApiCall,
-        timeoutRemoteApiCall;
+import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
+import 'package:hc_device/device_item.dart';
 import 'package:nsd/nsd.dart' as nsd;
+
+const String serviceTypeDiscover = '_https._tcp';
+const String serviceNameDiscover = 'HomeCloud';
+const Duration defaultDurationLocalDetection = Duration(seconds: 5);
+const Duration timeoutLocalApiCall = Duration(seconds: 4);
+const Duration timeoutRemoteApiCall = Duration(seconds: 9);
+
+String _devicePathMultisetKey(DevicePath p) {
+  final addr = p.address.trim().toLowerCase();
+  final port = p.port ?? -1;
+  final type = p.type.value ?? '';
+  return '$type\u0000$addr\u0000$port';
+}
+
+bool _sameDedupedDevicePathMultiset(List<DevicePath> a, List<DevicePath> b) {
+  final keysA = dedupeDevicePathList(a).map(_devicePathMultisetKey).toList()..sort();
+  final keysB = dedupeDevicePathList(b).map(_devicePathMultisetKey).toList()..sort();
+  if (keysA.length != keysB.length) {
+    return false;
+  }
+  for (var i = 0; i < keysA.length; i++) {
+    if (keysA[i] != keysB[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /// Result of a ping operation on a device
 class PingResult {
@@ -53,8 +73,8 @@ class PingResult {
 /// Centralized service for device detection (mDNS + Remote Access)
 /// Supports cancellation and "cancel and restart" pattern to avoid concurrent detections
 class DeviceDetectionService {
-  final DeviceProvider deviceProvider;
-  final RemoteProvider remoteProvider;
+  final DeviceConnectivitySource deviceProvider;
+  final RemoteConnectivitySource remoteProvider;
 
   /// Callbacks for detection events
   final void Function(DeviceItem device)? onDeviceFound;
@@ -67,10 +87,8 @@ class DeviceDetectionService {
   bool _isDetecting = false;
   bool _isCancelled = false;
   bool _remoteDetectionDone = false;
+  int _operationId = 0;
   int _detectionCounter = 0;
-  int _sessionId = 0;
-  bool _isStoppingDiscovery = false;
-  bool _didEmitDetectionComplete = false;
   final Map<String, DeviceItem> _devices = {};
 
   DeviceDetectionService({
@@ -87,30 +105,28 @@ class DeviceDetectionService {
   /// Start device detection (local mDNS first, then remote if needed)
   /// If already detecting, cancels the current detection and restarts
   Future<void> startDetection() async {
+    // Cancel and restart pattern
     if (_isDetecting) {
       logger.info('[Network] Cancelling current detection to restart');
       await cancelDetection();
     }
 
-    _sessionId++;
+    _operationId++;
+    final activeOperation = _operationId;
     _isDetecting = true;
     _isCancelled = false;
     _remoteDetectionDone = false;
-    _didEmitDetectionComplete = false;
-    _isStoppingDiscovery = false;
     _devices.clear();
 
     logger.info('[Network] Starting detection');
 
-    await _startLocalDetection(_sessionId);
+    await _startLocalDetection(activeOperation);
   }
 
   /// Cancel the current detection
   Future<void> cancelDetection() async {
-    if (_isCancelled && !_isDetecting) {
-      return;
-    }
     logger.info('[Network] Cancelling detection');
+    _operationId++;
     _isCancelled = true;
     _detectionTimer?.cancel();
     _detectionTimer = null;
@@ -119,6 +135,9 @@ class DeviceDetectionService {
     _detectionCounter = 0;
   }
 
+  /// Check if connected to WiFi before starting mDNS discovery or testing local paths
+  /// This is important because mDNS discovery and local API calls will fail if not on the same network,
+  /// and we want to avoid long timeouts and a bad user experience in that case
   Future<bool> _checkWiFiConnectivity() async {
     try {
       final connectivity = await Connectivity().checkConnectivity();
@@ -139,15 +158,12 @@ class DeviceDetectionService {
         '[Network] Error checking connectivity, assuming connected to WiFi',
         e,
       );
-      return true;
+      return true; // Assume connected to avoid blocking detection, will likely fail but better than not trying at all
     }
   }
 
-  bool _isSessionActive(int sessionId) {
-    return !_isCancelled && _isDetecting && sessionId == _sessionId;
-  }
-
-  Future<void> _startLocalDetection(int sessionId) async {
+  /// Start mDNS detection of local devices
+  Future<void> _startLocalDetection(int operationId) async {
     if (_discovery != null || _isCancelled) {
       logger.info(
         '[Network] Discovery already in progress or detection cancelled, skipping local detection',
@@ -157,6 +173,7 @@ class DeviceDetectionService {
     _updateDetectionCounter(1);
 
     final hasWiFi = await _checkWiFiConnectivity();
+    if (operationId != _operationId) return;
     if (!hasWiFi) {
       logger.warning(
         '[Network] Skipping local detection due to no WiFi connectivity',
@@ -165,33 +182,44 @@ class DeviceDetectionService {
       return;
     }
 
-    if (!_isSessionActive(sessionId)) return;
+    if (_isCancelled) return;
 
     logger.info('[Network] Starting local mDNS detection');
     _discovery = await _startNsdDiscovery();
     if (_discovery != null) {
       _discovery?.addServiceListener((service, status) {
-        if (!_isSessionActive(sessionId)) return;
+        if (_isCancelled) return;
 
         if (status == nsd.ServiceStatus.found &&
             service.name!.contains(serviceNameDiscover)) {
           logger.info(
             '[Network] Device discovered on local network by mDNS: ${service.name}',
           );
-          _getAbout(
+          // Get About info to obtain certificateCommonName and confirm it's a valid HomeCloud device before adding to the list
+          getAbout(
             DeviceProvider.createBaseUrl(service.host!, service.port),
           ).then((about) {
-            if (about != null && _isSessionActive(sessionId)) {
+            // If detection was cancelled while waiting for getAbout, do not add device or call callbacks
+            if (about != null &&
+                !_isCancelled &&
+                operationId == _operationId) {
               final device = DeviceItem(
                 hostname: service.name,
                 baseUrl: DeviceProvider.createBaseUrl(
                   service.host!,
                   service.port,
                 ),
-                debugHostType: 'mDNS',
+                debugHostType: "mDNS",
                 about: about,
               );
-              _devices[about.certificateCommonName] = device;
+              final certificateCommonName = about.certificateCommonName;
+              if (certificateCommonName.isEmpty) {
+                logger.warning(
+                  '[Network] Skipping discovered device with missing certificateCommonName',
+                );
+                return;
+              }
+              _devices[certificateCommonName] = device;
               logger.info(
                 '[Network] Added device: ${device.name} at ${device.baseUrl}',
               );
@@ -201,10 +229,10 @@ class DeviceDetectionService {
         }
       });
 
-      _detectionTimer = Timer(durationDetection, () {
-        if (_isSessionActive(sessionId)) {
-          _stopDiscovery();
-        }
+      // Stop discovery after timeout
+      _detectionTimer = Timer(defaultDurationLocalDetection, () {
+        if (operationId != _operationId) return;
+        _stopDiscovery();
       });
     } else {
       logger.error('[Network] Failed to start mDNS discovery');
@@ -212,26 +240,20 @@ class DeviceDetectionService {
     }
   }
 
+  /// Stop mDNS discovery
   Future<void> _stopDiscovery() async {
-    if (_isStoppingDiscovery) {
-      return;
-    }
-    final discovery = _discovery;
-    if (discovery == null) {
-      return;
-    }
-    _isStoppingDiscovery = true;
-    _discovery = null;
-    try {
-      await nsd.stopDiscovery(discovery);
-    } catch (e) {
-      logger.error('[Network] Error stopping network discovery', e);
-    } finally {
-      _isStoppingDiscovery = false;
+    if (_discovery != null) {
+      try {
+        await nsd.stopDiscovery(_discovery!);
+      } catch (e) {
+        logger.error('[Network] Error stopping network discovery', e);
+      }
+      _discovery = null;
       _updateDetectionCounter(-1);
     }
   }
 
+  /// Start NSD discovery
   Future<nsd.Discovery?> _startNsdDiscovery() async {
     try {
       return await nsd.startDiscovery(
@@ -245,20 +267,14 @@ class DeviceDetectionService {
     return null;
   }
 
+  /// Update detection counter and trigger remote detection if needed
   void _updateDetectionCounter(int delta) {
     _detectionCounter += delta;
-    if (_detectionCounter < 0) {
-      _detectionCounter = 0;
-    }
     if (_detectionCounter == 0 && !_isCancelled) {
       if (!_remoteDetectionDone) {
-        _startRemoteDetection();
+        _startRemoteDetection(_operationId);
         return;
       }
-      if (_didEmitDetectionComplete) {
-        return;
-      }
-      _didEmitDetectionComplete = true;
       logger.info(
         '[Network] Detection finished, found ${_devices.length} devices',
       );
@@ -267,11 +283,12 @@ class DeviceDetectionService {
     }
   }
 
-  Future<void> _startRemoteDetection() async {
+  /// Get remote devices from the Remote Access server
+  Future<void> _startRemoteDetection(int operationId) async {
     _updateDetectionCounter(1);
     _remoteDetectionDone = true;
 
-    if (_isCancelled) {
+    if (_isCancelled || operationId != _operationId) {
       _updateDetectionCounter(-1);
       return;
     }
@@ -279,10 +296,9 @@ class DeviceDetectionService {
     if (remoteProvider.isAuthenticated) {
       logger.info('[Network] Starting remote detection');
       try {
-        final remoteApi = await remoteProvider.getPinnedApi();
-        final responseList = await remoteApi.clientV1DevicesGet();
+        final responseList = await remoteProvider.fetchDevices();
 
-        if (_isCancelled) {
+        if (_isCancelled || operationId != _operationId) {
           _updateDetectionCounter(-1);
           return;
         }
@@ -294,14 +310,16 @@ class DeviceDetectionService {
               '[Network] Found ${remoteDevices.length} remote devices',
             );
 
-            for (final Device remoteDevice in remoteDevices) {
+            for (Device remoteDevice in remoteDevices) {
               if (_isCancelled) break;
 
               final DeviceItem newDevice = DeviceItem(
                 hostname: remoteDevice.friendlyName,
                 remoteDevice: remoteDevice,
-                debugHostType: 'Remote Access',
+                debugHostType: "Remote Access",
               );
+              // Note: If a device is detected via mDNS and then later via Remote Access,
+              //  we want to have the seagateDeviceID to be able to query paths and other info from the remote access server
               if (_devices.containsKey(remoteDevice.certificateCommonName)) {
                 _devices[remoteDevice.certificateCommonName]!.update(
                   remoteDevice: remoteDevice,
@@ -322,14 +340,13 @@ class DeviceDetectionService {
           if (responseList.statusCode == 401 ||
               responseList.statusCode == 403) {
             logger.warning(
-              '[Auth][DeviceDetection] remote_auth_invalidated '
-              'statusCode=${responseList.statusCode} action=DEFER_TO_AUTHENTICATOR',
+              '[Network] Remote detection unauthorized; preserving remote session for retry',
             );
           }
-          onError?.call('Failed to fetch device list', responseList);
+          onError?.call("Failed to fetch device list", responseList);
         }
       } catch (error) {
-        onError?.call('Failed to fetch device list', error);
+        onError?.call("Failed to fetch device list", error);
       }
     } else {
       logger.warning(
@@ -340,30 +357,43 @@ class DeviceDetectionService {
     _updateDetectionCounter(-1);
   }
 
-  Future<About?> _getAbout(
+  /// Check if a device is connectable and get its About info
+  Future<About?> getAbout(
     Uri baseUrl, {
     Duration timeoutDelay = timeoutLocalApiCall,
   }) async {
     try {
-      final api = await deviceProvider.createApi(
-        baseUrl: baseUrl,
-        interceptors: hcDeviceHttpLogInterceptors(),
-      );
+      final api = deviceProvider is DeviceProvider
+          ? await (deviceProvider as DeviceProvider).createApi(
+              baseUrl: baseUrl,
+              interceptors: [httpLogger],
+            )
+          : Api.create(
+              baseUrl: baseUrl,
+              interceptors: [httpLogger],
+            );
       final response = await api.aboutGet().timeout(timeoutDelay);
       if (response.isSuccessful) {
         return response.body!;
       }
     } catch (error) {
+      // Timeout or connection error, silently ignore for testDeviceReachability
       logger.warning('[Network] Device not reachable', error);
     }
     return null;
   }
 
+  /// Test a device's reachability to find a connectable path
+  /// Uses seagateDeviceID to query paths from the server or cache
+  /// Set [useCachedPaths] to false to force a fresh API call
   Future<PingResult> findOptimalDeviceConnection({
     DeviceItem? device,
     String? seagateDeviceID,
     bool useCachedPaths = true,
+    FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
   }) async {
+    // If local device (no remoteDevice),
+    // try to connect directly using baseUrl first before fetching paths from server
     if (device != null && device.baseUrl != null) {
       final result = await _testPath(
         DevicePath(
@@ -371,7 +401,7 @@ class DeviceDetectionService {
           address: device.baseUrl!.host,
           port: device.baseUrl!.port,
         ),
-        debugHostType: device.debugHostType ?? 'mDNS',
+        debugHostType: device.debugHostType ?? "mDNS",
       );
       if (result != null) {
         device.update(
@@ -383,6 +413,7 @@ class DeviceDetectionService {
       }
     }
 
+    // Get seagateDeviceID from device or parameter
     final remoteDeviceID =
         seagateDeviceID ?? device?.remoteDevice?.seagateDeviceID;
     if (remoteDeviceID == null) {
@@ -399,46 +430,53 @@ class DeviceDetectionService {
       return PingResult.failed();
     }
 
+    // Try to use cached paths first
     DevicePaths? devicePaths;
     if (useCachedPaths) {
-      devicePaths = deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID);
+      devicePaths = deviceProvider.getCachedDevicePaths();
     }
 
+    // If no cached paths or cache disabled, fetch from server
     if (devicePaths == null) {
-      useCachedPaths = false;
+      useCachedPaths =
+          false; // Disable cache for this attempt since it was not available
       try {
         logger.info('[Network] Fetching device paths from remote server');
-        final remoteApi = await remoteProvider.getPinnedApi();
-        final responseInfo = await remoteApi.clientV1DevicesDeviceIDGet(
+        final responseInfo = await remoteProvider.fetchDevicePaths(
           deviceID: remoteDeviceID,
         );
 
         if (responseInfo.isSuccessful) {
           devicePaths = responseInfo.body!;
+          // Cache the paths for future use
           deviceProvider.setCachedDevicePaths(devicePaths);
         } else {
-          onError?.call('Failed to fetch device paths', responseInfo);
+          onError?.call("Failed to fetch device paths", responseInfo);
           return PingResult.failed();
         }
       } catch (error) {
-        onError?.call('Failed to fetch device paths', error);
+        onError?.call("Failed to fetch device paths", error);
         return PingResult.failed();
       }
     }
 
+    // Try paths in parallel: local has priority, then public, then remote.
+    // Remote is still treated as fallback for final selection.
     if (devicePaths.paths.isNotEmpty) {
       logger.info('[Network] Testing ${devicePaths.paths.length} paths');
 
+      // Check WiFi connectivity once for local paths
       final hasWiFi = await _checkWiFiConnectivity();
 
-      final priorityPaths = <DevicePath>[];
-      DevicePath? remotePath;
+      final localPaths = <DevicePath>[];
+      final publicPaths = <DevicePath>[];
+      final remotePaths = <DevicePath>[];
 
       for (final path in devicePaths.paths) {
         switch (path.type) {
           case DevicePathType.local:
             if (hasWiFi) {
-              priorityPaths.add(path);
+              localPaths.add(path);
             } else {
               logger.warning(
                 '[Network] Skipping local path due to no WiFi: ${path.address}:${path.port}',
@@ -446,10 +484,10 @@ class DeviceDetectionService {
             }
             break;
           case DevicePathType.public:
-            priorityPaths.add(path);
+            publicPaths.add(path);
             break;
           case DevicePathType.remote:
-            remotePath = path;
+            remotePaths.add(path);
             break;
           default:
             break;
@@ -457,32 +495,53 @@ class DeviceDetectionService {
       }
 
       logger.info(
-        '[Network] Priority paths: ${priorityPaths.length}, remote: ${remotePath != null ? 1 : 0}',
+        '[Network] Paths by type local=${localPaths.length} public=${publicPaths.length} remote=${remotePaths.length}',
       );
 
+      // Launch all available paths in parallel:
+      // - Return local immediately when one succeeds
+      // - Otherwise wait for all local checks to finish, then prefer public over remote
       PingResult? result;
-      if (priorityPaths.isNotEmpty) {
-        result = await _testPriorityPaths(priorityPaths);
+      final allCandidatePaths = <DevicePath>[
+        ...localPaths,
+        ...publicPaths,
+        ...remotePaths,
+      ];
+      if (allCandidatePaths.isNotEmpty) {
+        result = await _testAllPathsInParallel(
+          localPaths: localPaths,
+          publicPaths: publicPaths,
+          remotePaths: remotePaths,
+          onHigherPriorityPathResolved: onHigherPriorityPathResolved,
+        );
       }
 
+      // All priority paths failed — only refresh from server if cache is expired (older than 1 hour)
+      // to avoid unnecessary API calls on every temporary connection failure.
+      // When refreshing, compare new paths with old ones to avoid re-testing identical paths.
       if (result == null && useCachedPaths) {
         if (deviceProvider.isCacheExpired()) {
           logger.info(
             '[Network] All cached paths failed and cache is expired, fetching fresh paths',
           );
           try {
-            final remoteApi = await remoteProvider.getPinnedApi();
-            final responseInfo = await remoteApi.clientV1DevicesDeviceIDGet(
+            final responseInfo = await remoteProvider.fetchDevicePaths(
               deviceID: remoteDeviceID,
             );
             if (responseInfo.isSuccessful) {
               final freshPaths = responseInfo.body!;
-              if (freshPaths == devicePaths) {
-                deviceProvider.setCachedDevicePaths(freshPaths);
+              if (_sameDedupedDevicePathMultiset(
+                freshPaths.paths,
+                devicePaths.paths,
+              )) {
+                // Server returned identical paths — no point re-testing them.
+                // Refresh the cache timestamp so we don't re-fetch for another hour.
+                deviceProvider.touchCachedDevicePathsTimestamp();
                 logger.info(
                   '[Network] Fresh paths are identical to cached paths, skipping re-test',
                 );
               } else {
+                // Paths changed — cache & retry with the new ones
                 deviceProvider.setCachedDevicePaths(freshPaths);
                 logger.info(
                   '[Network] Fresh paths differ from cache, retrying with new paths',
@@ -502,13 +561,6 @@ class DeviceDetectionService {
             '[Network] All cached paths failed but cache is still fresh, skipping refresh',
           );
         }
-      }
-
-      if (result == null && remotePath != null) {
-        logger.info(
-          '[Network] Testing remote fallback path: ${remotePath.address}:${remotePath.port}',
-        );
-        result = await _testPath(remotePath);
       }
 
       if (result != null) {
@@ -531,6 +583,7 @@ class DeviceDetectionService {
     return PingResult.failed();
   }
 
+  /// Test a single path and return PingResult if successful
   Future<PingResult?> _testPath(
     DevicePath path, {
     String? debugHostType,
@@ -538,7 +591,7 @@ class DeviceDetectionService {
     final pathType = debugHostType ?? path.type.value ?? 'unknown';
     final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
     logger.info('[Network] Testing path: $pathType at $baseUrl');
-    final about = await _getAbout(
+    final about = await getAbout(
       baseUrl,
       timeoutDelay: path.type == DevicePathType.local
           ? timeoutLocalApiCall
@@ -549,12 +602,12 @@ class DeviceDetectionService {
       logger.warning('[Network] Path not reachable: $pathType at $baseUrl');
       return null;
     } else {
-      final PingResult result = PingResult(
+      PingResult result = PingResult(
         success: true,
         baseUrl: baseUrl,
         about: about,
         pathType: pathType,
-        debugHostType: debugHostType ?? 'Remote Access > $pathType',
+        debugHostType: debugHostType ?? "Remote Access > $pathType",
       );
       logger.info(
         '[Network] Path reachable: ${result.debugHostType} at $baseUrl',
@@ -563,76 +616,89 @@ class DeviceDetectionService {
     }
   }
 
-  Future<PingResult?> _testPriorityPaths(List<DevicePath> paths) async {
-    if (paths.isEmpty) return null;
+  /// Test all known paths in parallel.
+  /// Selection strategy:
+  /// - Return immediately on the first successful path (fast connect).
+  /// - Keep running remaining probes in background.
+  /// - If a higher-priority path resolves later, invoke upgrade callback.
+  Future<PingResult?> _testAllPathsInParallel({
+    required List<DevicePath> localPaths,
+    required List<DevicePath> publicPaths,
+    required List<DevicePath> remotePaths,
+    FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
+  }) async {
+    final paths = <DevicePath>[...localPaths, ...publicPaths, ...remotePaths];
+    if (paths.isEmpty) {
+      return null;
+    }
 
-    int localPendingCount = paths
-        .where((p) => p.type == DevicePathType.local)
-        .length;
+    var pendingCount = paths.length;
+    PingResult? selectedResult;
+    var selectedRank = 999;
+    final completer = Completer<PingResult?>();
 
     logger.info(
-      '[Network] Testing ${paths.length} priority paths in parallel ($localPendingCount local, ${paths.length - localPendingCount} public)',
+      '[Network] Testing all paths in parallel: total=${paths.length} local=${localPaths.length} public=${publicPaths.length} remote=${remotePaths.length}',
     );
 
-    final completer = Completer<PingResult?>();
-    int pendingCount = paths.length;
-    PingResult? bestResult;
+    int pathRank(DevicePathType type) {
+      switch (type) {
+        case DevicePathType.local:
+          return 0;
+        case DevicePathType.public:
+          return 1;
+        case DevicePathType.remote:
+          return 2;
+        case DevicePathType.swaggerGeneratedUnknown:
+          return 3;
+      }
+    }
+
+    void markDone(DevicePath path) {
+      pendingCount--;
+      if (pendingCount == 0 && !completer.isCompleted) {
+        completer.complete(selectedResult);
+      }
+    }
 
     for (final path in paths) {
       _testPath(path)
           .then((result) {
-            if (result != null && !completer.isCompleted) {
-              if (path.type == DevicePathType.local) {
+            if (result != null) {
+              final rank = pathRank(path.type);
+              if (selectedResult == null) {
+                selectedResult = result;
+                selectedRank = rank;
                 logger.info(
-                  '[Network] Local path succeeded, returning immediately: ${result.debugHostType} at ${result.baseUrl}',
+                  '[Network] First reachable path selected immediately: ${result.debugHostType} at ${result.baseUrl}',
                 );
-                completer.complete(result);
-              } else {
-                bestResult ??= result;
-                if (localPendingCount == 0 && !completer.isCompleted) {
-                  logger.info(
-                    '[Network] All local paths tested, returning public path immediately: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-                  );
-                  completer.complete(bestResult);
+                if (!completer.isCompleted) {
+                  completer.complete(result);
+                }
+              } else if (rank < selectedRank) {
+                selectedResult = result;
+                selectedRank = rank;
+                logger.info(
+                  '[Network] Higher-priority path resolved, requesting switch: ${result.debugHostType} at ${result.baseUrl}',
+                );
+                final callback = onHigherPriorityPathResolved;
+                if (callback != null) {
+                  unawaited(Future.sync(() => callback(result)));
                 }
               }
             }
-
-            if (path.type == DevicePathType.local) {
-              logger.debug(
-                '[Network] Local path tested and failed: ${path.address}:${path.port} (remaining local: ${localPendingCount - 1})',
-              );
-              localPendingCount--;
-            }
-            pendingCount--;
-            if (pendingCount == 0 && !completer.isCompleted) {
-              logger.info(
-                '[Network] All priority paths tested, returning best result: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-              );
-              completer.complete(bestResult);
-            }
+            markDone(path);
           })
           .catchError((_) {
-            if (path.type == DevicePathType.local) {
-              logger.debug(
-                '[Network] Local path tested and failed: ${path.address}:${path.port} (remaining local: ${localPendingCount - 1})',
-              );
-              localPendingCount--;
-            }
-            pendingCount--;
-            if (pendingCount == 0 && !completer.isCompleted) {
-              logger.info(
-                '[Network] All priority paths tested, returning best result: ${bestResult?.debugHostType} at ${bestResult?.baseUrl}',
-              );
-              completer.complete(bestResult);
-            }
+            markDone(path);
           });
     }
 
     return completer.future;
   }
 
+  /// Dispose resources
   void dispose() {
-    unawaited(cancelDetection());
+    cancelDetection();
   }
 }

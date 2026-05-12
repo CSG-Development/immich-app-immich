@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:hc_device/hc_device.dart';
 import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/services/auxiliary_endpoint_store.service.dart';
-import 'package:immich_mobile/services/device_detection.service.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/services/device_detection.service.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
 
@@ -58,11 +57,9 @@ class DevicePathRefreshService {
         return;
       }
 
-      final existingLocalEndpoint = _ref.read(authProvider.notifier).getSavedLocalEndpoint();
       await processAndSavePaths(
         paths,
         preferredLocalEndpoint: resolved?.preferredLocalEndpoint,
-        existingLocalEndpoint: existingLocalEndpoint,
       );
       _log.info('Successfully refreshed ${paths.length} device paths');
     } catch (e, stackTrace) {
@@ -91,8 +88,8 @@ class DevicePathRefreshService {
   }
 
   Future<_ResolvedPaths?> _resolvePathsForRefresh() async {
-    final dp = await Future.microtask(() => _ref.read(deviceProvider));
-    final rp = await Future.microtask(() => _ref.read(remoteProvider));
+    final dp = await Future.microtask(() => _ref.read(deviceProvider.notifier));
+    final rp = await Future.microtask(() => _ref.read(remoteProvider.notifier));
     final connectedDeviceID = dp.deviceID;
     if (connectedDeviceID == null) {
       _log.fine('Skipping path refresh: no connected device id');
@@ -168,7 +165,6 @@ class DevicePathRefreshService {
   Future<void> processAndSavePaths(
     List<dynamic> paths, {
     String? preferredLocalEndpoint,
-    String? existingLocalEndpoint,
   }) async {
     _log.fine('Processing ${paths.length} device paths for saving');
     final localPaths = <String>[];
@@ -179,31 +175,19 @@ class DevicePathRefreshService {
 
       if (devicePath.type == DevicePathType.local) {
         localPaths.add(path);
-      } else if (devicePath.type != DevicePathType.swaggerGeneratedUnknown) {
-        _log.finer(
-          'Saving external endpoint from device path: $path '
-          '(type=${devicePath.type.value})',
-        );
-        await _saveToExternalEndpointList(path);
       }
     }
 
     if (preferredLocalEndpoint != null && preferredLocalEndpoint.isNotEmpty) {
-      _log.finer('Saving local endpoint from mDNS/verified probe: $preferredLocalEndpoint');
-      await _ref.read(authProvider.notifier).saveLocalEndpoint(preferredLocalEndpoint);
+      _log.finer('Resolved preferred local endpoint from hc_device: $preferredLocalEndpoint');
       return;
     }
 
     if (localPaths.isNotEmpty) {
       // Fallback to RA-provided local path only when no verified mDNS path is available.
       final fallbackLocal = localPaths.first;
-      _log.finer('Saving local endpoint from RA local path fallback: $fallbackLocal');
-      await _ref.read(authProvider.notifier).saveLocalEndpoint(fallbackLocal);
+      _log.finer('Resolved fallback local endpoint from hc_device paths: $fallbackLocal');
       return;
-    }
-
-    if (existingLocalEndpoint != null && existingLocalEndpoint.isNotEmpty) {
-      _log.finer('Keeping existing local endpoint as temporary fallback: $existingLocalEndpoint');
     }
   }
 
@@ -213,23 +197,6 @@ class DevicePathRefreshService {
     return 'https://$authority/photos';
   }
 
-  Future<void> _saveToExternalEndpointList(String path) async {
-    try {
-      _log.fine('Attempting to save external endpoint: $path');
-      final added = await AuxiliaryEndpointStoreService.addValidIfMissing(path);
-      if (added) {
-        final validEndpointsCount = AuxiliaryEndpointStoreService.loadValid().length;
-        _log.info(
-          'Added new external endpoint and updated list, '
-          'totalValidEndpoints=$validEndpointsCount',
-        );
-      } else {
-        _log.fine('External endpoint already present in list, skipping save: $path');
-      }
-    } catch (error, stackTrace) {
-      _log.severe('Error saving external endpoint', error, stackTrace);
-    }
-  }
 }
 
 class _ResolvedPaths {

@@ -7,24 +7,31 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
-import 'package:immich_mobile/services/auxiliary_endpoint_store.service.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
-import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
-import 'package:immich_mobile/utils/user_agent.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
 class ConnectionRecoveryInterceptor extends BaseClient {
   final Client _inner;
   final Function(String) _onConnectionError;
+  final Function(String)? _onRequestSuccess;
+  final void Function(String, Duration, bool isHard)? _onSlowRequest;
 
-  ConnectionRecoveryInterceptor(this._inner, this._onConnectionError);
+  ConnectionRecoveryInterceptor(
+    this._inner,
+    this._onConnectionError, {
+    Function(String)? onRequestSuccess,
+    void Function(String, Duration, bool isHard)? onSlowRequest,
+  }) : _onRequestSuccess = onRequestSuccess,
+       _onSlowRequest = onSlowRequest;
+
+  static const Duration _slowRequestSoftThreshold = Duration(seconds: 8);
+  static const Duration _slowRequestHardThreshold = Duration(seconds: 15);
 
   bool _isConnectionError(dynamic error) {
     return error is SocketException ||
@@ -37,13 +44,37 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
+    final startedAt = DateTime.now();
+    var softReported = false;
+    var hardReported = false;
+    final softTimer = Timer(_slowRequestSoftThreshold, () {
+      softReported = true;
+      _onSlowRequest?.call(request.url.toString(), _slowRequestSoftThreshold, false);
+    });
+    final hardTimer = Timer(_slowRequestHardThreshold, () {
+      hardReported = true;
+      _onSlowRequest?.call(request.url.toString(), _slowRequestHardThreshold, true);
+    });
+
     try {
-      return await _inner.send(request);
+      final response = await _inner.send(request);
+      _onRequestSuccess?.call(request.url.toString());
+      return response;
     } catch (e) {
       if (_isConnectionError(e)) {
         _onConnectionError(request.url.toString());
       }
       rethrow;
+    } finally {
+      softTimer.cancel();
+      hardTimer.cancel();
+      final elapsed = DateTime.now().difference(startedAt);
+      if (!softReported && elapsed >= _slowRequestSoftThreshold) {
+        _onSlowRequest?.call(request.url.toString(), elapsed, false);
+      }
+      if (!hardReported && elapsed >= _slowRequestHardThreshold) {
+        _onSlowRequest?.call(request.url.toString(), elapsed, true);
+      }
     }
   }
 
@@ -56,6 +87,7 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
 class PerformanceHttpClient extends BaseClient {
   final Client _inner;
+  final _log = Logger("PerformanceHttpClient");
 
   PerformanceHttpClient(this._inner);
 
@@ -82,6 +114,7 @@ class PerformanceHttpClient extends BaseClient {
       return response;
     } on TlsException catch (e) {
       await httpMetric.stop();
+      _log.warning('[HTTP] TLS failure ${request.method} ${request.url}', e);
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'TLS/SSL communication failed: ${request.method} ${request.url}',
@@ -90,6 +123,7 @@ class PerformanceHttpClient extends BaseClient {
       );
     } on SocketException catch (e) {
       await httpMetric.stop();
+      _log.warning('[HTTP] Socket failure ${request.method} ${request.url}', e);
       throw ApiException.withInner(
         HttpStatus.badRequest,
         'Socket operation failed: ${request.method} ${request.url}',
@@ -98,6 +132,7 @@ class PerformanceHttpClient extends BaseClient {
       );
     } catch (e) {
       await httpMetric.stop();
+      _log.warning('[HTTP] Unhandled transport failure ${request.method} ${request.url}', e);
       rethrow;
     }
   }
@@ -135,12 +170,17 @@ class ApiService implements Authentication {
   final _log = Logger("ApiService");
   final StreamController<ConnectionState> _connectionStateController = StreamController<ConnectionState>.broadcast();
   Stream<ConnectionState> get connectionStateChanges => _connectionStateController.stream;
+  ConnectionStatus _lastConnectionStatus = ConnectionStatus.connected;
+
+  static const Duration _endpointAvailabilityPingTimeout = Duration(seconds: 15);
 
   bool _isSetEndpoint = false;
+  Future<void> _endpointSwitchQueue = Future<void>.value();
 
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
   void Function()? curatorNetworkForceReconnectHandler;
+  void Function(String, Duration, bool isHard)? curatorNetworkSlowRequestHandler;
 
   final HttpCertPinningManager certPinning;
 
@@ -172,7 +212,12 @@ class ApiService implements Authentication {
     }
 
     _baseClient = Client();
-    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(_baseClient, _handleConnectionError);
+    _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(
+      _baseClient,
+      _handleConnectionError,
+      onRequestSuccess: _handleRequestSuccess,
+      onSlowRequest: _handleSlowRequest,
+    );
     _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
     _httpClientInitialized = true;
   }
@@ -220,8 +265,38 @@ class ApiService implements Authentication {
     }
   }
 
+  void _handleRequestSuccess(String requestUrl) {
+    if (_lastConnectionStatus == ConnectionStatus.connected) {
+      return;
+    }
+
+    final activeEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (activeEndpoint != null && activeEndpoint.isNotEmpty && !requestUrl.startsWith(activeEndpoint)) {
+      return;
+    }
+
+    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    if (!isAuthenticated) {
+      return;
+    }
+
+    _log.info('Publishing connected state after successful request: $requestUrl');
+    notifyConnectionState(
+      const ConnectionState(status: ConnectionStatus.connected, connectionType: ConnectionType.api),
+    );
+  }
+
+  void _handleSlowRequest(String requestUrl, Duration elapsed, bool isHard) {
+    try {
+      curatorNetworkSlowRequestHandler?.call(requestUrl, elapsed, isHard);
+    } catch (error, stackTrace) {
+      _log.warning('curatorNetworkSlowRequestHandler failed', error, stackTrace);
+    }
+  }
+
   void notifyConnectionState(ConnectionState state) {
     try {
+      _lastConnectionStatus = state.status;
       if (!_connectionStateController.isClosed) {
         _connectionStateController.add(state);
       }
@@ -230,282 +305,11 @@ class ApiService implements Authentication {
     }
   }
 
-  Future<bool> validateAuxilaryServerUrl(String url) async {
-    final httpclient = HttpClient();
-    bool isValid = false;
-
-    try {
-      final uri = Uri.parse('$url/users/me');
-      final request = await httpclient.getUrl(uri);
-
-      // add auth token + any configured custom headers
-      final customHeaders = ApiService.getRequestHeaders();
-      customHeaders.forEach((key, value) {
-        request.headers.add(key, value);
-      });
-
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        isValid = true;
-      }
-    } catch (error) {
-      _log.severe("Error validating auxiliary endpoint", error);
-    } finally {
-      httpclient.close();
-    }
-
-    return isValid;
-  }
-
-  Future<String?> setOpenApiServiceEndpoint({List<String>? auxiliaryEndpoints, String? runId}) async {
-    // Prevent connection state notifications during endpoint switching
-    _isSetEndpoint = true;
-
-    try {
-      final sw = Stopwatch()..start();
-      final traceRunId = runId ?? BackupTrace.newRunId();
-      // Keep the currently configured endpoint as a fallback
-      final previousEndpoint = Store.tryGet(StoreKey.serverEndpoint);
-      String? endpoint;
-
-      if (auxiliaryEndpoints != null && auxiliaryEndpoints.isNotEmpty) {
-        for (final auxiliaryEndpoint in auxiliaryEndpoints) {
-          endpoint = await _setLocalConnection(endpoint: auxiliaryEndpoint, runId: traceRunId);
-          if (endpoint != null) {
-            _log.info(
-              'upload_telemetry source=api_service stage=endpoint_selected kind=auxiliary_local endpoint=$endpoint',
-            );
-            return endpoint;
-          }
-        }
-      }
-
-      // Try local connection first
-      endpoint = await _setLocalConnection(runId: traceRunId);
-      if (endpoint != null) {
-        // Keep reconnect latency low: as soon as local is available we return it.
-        // Any remote endpoint checks continue in the background for diagnostics only.
-        unawaited(_probeRemoteCandidatesInBackground(runId: traceRunId));
-        _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=local endpoint=$endpoint');
-        logBackupTrace(
-          _log,
-          level: Level.INFO,
-          event: BackupTraceEvent.endpointSelected,
-          phase: BackupTracePhase.endpoint,
-          step: 'ENDPOINT_LOCAL_OK',
-          source: 'NETWORK_SWITCH',
-          appState: 'RESUMED',
-          trigger: 'endpoint_resolve',
-          status: BackupTraceStatus.ok,
-          reasonCode: 'ENDPOINT_LOCAL_SELECTED',
-          runId: traceRunId,
-          elapsedMs: sw.elapsedMilliseconds,
-        );
-        return endpoint;
-      }
-
-      try {
-        endpoint ??= await _setRemoteConnection(runId: traceRunId);
-        dPrint(() => endpoint ?? 'failed to set endpoint');
-        if (endpoint != null) {
-          _log.info('upload_telemetry source=api_service stage=endpoint_selected kind=remote endpoint=$endpoint');
-          logBackupTrace(
-            _log,
-            level: Level.INFO,
-            event: BackupTraceEvent.endpointSelected,
-            phase: BackupTracePhase.endpoint,
-            step: 'ENDPOINT_REMOTE_OK',
-            source: 'NETWORK_SWITCH',
-            appState: 'RESUMED',
-            trigger: 'endpoint_resolve',
-            status: BackupTraceStatus.ok,
-            reasonCode: 'ENDPOINT_REMOTE_SELECTED',
-            runId: traceRunId,
-            elapsedMs: sw.elapsedMilliseconds,
-          );
-        } else {}
-        return endpoint;
-      } catch (error, stackTrace) {
-        _log.severe("Cannot set remote endpoint", error, stackTrace);
-      }
-
-      // If everything failed, fall back to the previously used endpoint (if any)
-      if (endpoint == null && previousEndpoint != null && previousEndpoint.isNotEmpty) {
-        dPrint(() => 'Falling back to previous endpoint: $previousEndpoint');
-        await resolveAndSetEndpoint(previousEndpoint);
-        endpoint = previousEndpoint;
-        _log.warning(
-          'upload_telemetry source=api_service stage=endpoint_selected kind=fallback_previous endpoint=$endpoint',
-        );
-        logBackupTrace(
-          _log,
-          level: Level.WARNING,
-          event: BackupTraceEvent.endpointFallback,
-          phase: BackupTracePhase.endpoint,
-          step: 'ENDPOINT_FALLBACK_PREVIOUS',
-          source: 'NETWORK_SWITCH',
-          appState: 'RESUMED',
-          trigger: 'endpoint_resolve',
-          status: BackupTraceStatus.retry,
-          reasonCode: 'ENDPOINT_FALLBACK_PREVIOUS',
-          runId: traceRunId,
-          elapsedMs: sw.elapsedMilliseconds,
-        );
-      }
-
-      if (endpoint == null) {
-      } else {}
-      return endpoint;
-    } catch (error) {
-      rethrow;
-    } finally {
-      // Give the new endpoint a brief settle time before clearing errors
-      await Future.delayed(const Duration(milliseconds: 1500));
-      // Allow connection state notifications again
-      _isSetEndpoint = false;
-    }
-  }
-
-  /// Attempts to connect to the local endpoint.
-  /// Returns the endpoint URL if successful, null otherwise.
-  Future<String?> tryLocalEndpoint(String? endpoints, {String? runId}) async {
-    try {
-      final localEndpoint = endpoints ?? _getLocalEndpoint();
-      if (localEndpoint == null || localEndpoint.isEmpty) {
-        _log.fine("Local endpoint is not set");
-        return null;
-      }
-
-      final resolvedEndpoint = await resolveAndSetEndpoint(localEndpoint);
-      return resolvedEndpoint;
-    } catch (error, stackTrace) {
-      _log.severe("Cannot set local endpoint", error, stackTrace);
-      logBackupTrace(
-        _log,
-        level: Level.SEVERE,
-        event: BackupTraceEvent.endpointLocalFail,
-        phase: BackupTracePhase.endpoint,
-        step: 'ENDPOINT_LOCAL_FAIL',
-        source: 'NETWORK_SWITCH',
-        appState: 'RESUMED',
-        trigger: 'endpoint_resolve',
-        status: BackupTraceStatus.fail,
-        reasonCode: 'ENDPOINT_LOCAL_CERT_FAIL',
-        runId: runId,
-        extra: {'endpoint': endpoints ?? _getLocalEndpoint() ?? '<null>'},
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return null;
-  }
-
-  Future<void> _probeRemoteCandidatesInBackground({required String runId}) async {
-    List<AuxilaryEndpoint> endpoints;
-    try {
-      endpoints = getExternalEndpointList();
-    } catch (error) {
-      return;
-    }
-
-    for (final endpoint in endpoints) {
-      try {
-        await resolveEndpoint(endpoint.url);
-      } catch (error) {}
-    }
-  }
-
-  /// Compatibility wrapper with singular argument naming.
-  Future<String?> tryLocalEndpointCandidate(String? endpoint, {String? runId}) =>
-      tryLocalEndpoint(endpoint, runId: runId);
-
-  /// Attempts to connect to remote endpoints from the external endpoint list.
-  /// Returns the first successful endpoint URL, or null if all fail.
-  Future<String?> tryRemoteEndpoints({String? runId}) async {
-    List<AuxilaryEndpoint> endpointList;
-
-    try {
-      endpointList = getExternalEndpointList();
-    } catch (error, stackTrace) {
-      _log.severe("Cannot get external endpoint", error, stackTrace);
-      return null;
-    }
-
-    final sortedEndpoints = _sortRemoteCandidatesForPriority(endpointList);
-    for (final endpoint in sortedEndpoints) {
-      try {
-        final resolvedEndpoint = await resolveAndSetEndpoint(endpoint.url);
-        return resolvedEndpoint;
-      } on ApiException catch (error) {
-        _log.severe("Cannot resolve endpoint ${endpoint.url}", error);
-        continue;
-      } catch (error, stackTrace) {
-        _log.severe("Auxiliary server ${endpoint.url} is not valid", error, stackTrace);
-        continue;
-      }
-    }
-
-    return null;
-  }
-
-  Future<String?> _setLocalConnection({String? endpoint, String? runId}) async {
-    return await tryLocalEndpoint(endpoint, runId: runId);
-  }
-
-  Future<String?> _setRemoteConnection({String? runId}) async {
-    return await tryRemoteEndpoints(runId: runId);
-  }
-
-  List<AuxilaryEndpoint> _sortRemoteCandidatesForPriority(List<AuxilaryEndpoint> endpoints) {
-    final directLike = <AuxilaryEndpoint>[];
-    final relayLike = <AuxilaryEndpoint>[];
-
-    for (final endpoint in endpoints) {
-      if (_isRelayLikeEndpoint(endpoint.url)) {
-        relayLike.add(endpoint);
-      } else {
-        directLike.add(endpoint);
-      }
-    }
-
-    return <AuxilaryEndpoint>[...directLike, ...relayLike];
-  }
-
-  bool _isRelayLikeEndpoint(String endpoint) {
-    final uri = Uri.tryParse(endpoint);
-    if (uri == null) {
-      return false;
-    }
-
-    final host = uri.host.toLowerCase();
-    final path = uri.path.toLowerCase();
-    return host.contains('relay') ||
-        host.contains('proxy') ||
-        host.contains('tunnel') ||
-        path.contains('relay') ||
-        path.contains('proxy') ||
-        path.contains('tunnel');
-  }
-
-  String? _getLocalEndpoint() {
-    return Store.tryGet(StoreKey.localEndpoint);
-  }
-
-  /// Gets the list of external endpoints from storage.
-  /// Returns an empty list if none are configured.
-  List<AuxilaryEndpoint> getExternalEndpointList() => AuxiliaryEndpointStoreService.loadAll();
-
-  /// Compatibility wrapper for clearer naming.
-  Future<String?> resolveAndActivateOpenApiEndpoint({List<String>? auxiliaryEndpoints, String? runId}) =>
-      setOpenApiServiceEndpoint(auxiliaryEndpoints: auxiliaryEndpoints, runId: runId);
-
   void setEndpoint(String endpoint) {
     // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
     _initHttpClient();
 
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
-    _setUserAgentHeader();
     _apiClient.client = _httpClient;
     if (_accessToken != null) {
       // ignore: discarded_futures
@@ -534,26 +338,59 @@ class ApiService implements Authentication {
     tagsApi = TagsApi(_apiClient);
   }
 
-  Future<void> _setUserAgentHeader() async {
-    final userAgent = await getUserAgentString();
-    _apiClient.addDefaultHeader('User-Agent', userAgent);
+  Future<String> resolveAndSetEndpoint(
+    String serverUrl, {
+    EndpointResolvePolicy policy = EndpointResolvePolicy.conservative,
+  }) async {
+    return _enqueueEndpointSwitch(() async {
+      _isSetEndpoint = true;
+      try {
+        final stopwatch = Stopwatch()..start();
+        final uri = Uri.parse(serverUrl);
+        _log.info(
+          'endpoint_switch start '
+          'host=${uri.host} '
+          'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${policy.settleDelay.inMilliseconds}',
+        );
+        await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
+        final endpoint = await resolveEndpoint(serverUrl, availabilityTimeout: policy.availabilityTimeout);
+        setEndpoint(endpoint);
+        try {
+          await Store.put(StoreKey.serverEndpoint, endpoint);
+        } on StateError catch (error, stackTrace) {
+          // Non-fatal during shutdown/background teardown when DB isolate is closing.
+          _log.warning('Skipping server endpoint persistence: store channel closed', error, stackTrace);
+        }
+
+        stopwatch.stop();
+        _log.info(
+          'endpoint_switch success '
+          'endpoint=$endpoint '
+          'host=${uri.host} '
+          'elapsedMs=${stopwatch.elapsedMilliseconds} '
+          'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
+          'settleMs=${policy.settleDelay.inMilliseconds}',
+        );
+        return endpoint;
+      } finally {
+        await Future.delayed(policy.settleDelay);
+        _isSetEndpoint = false;
+        _log.fine('endpoint_switch unlocked');
+      }
+    });
   }
 
-  Future<String> resolveAndSetEndpoint(String serverUrl) async {
-    final stopwatch = Stopwatch()..start();
-    final uri = Uri.parse(serverUrl);
-    await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
-    final endpoint = await resolveEndpoint(serverUrl);
-    setEndpoint(endpoint);
-
-    // Save in local database for next startup
-    Store.put(StoreKey.serverEndpoint, endpoint);
-    stopwatch.stop();
-    _log.info(
-      'upload_telemetry source=api_service stage=resolve_and_set endpoint=$endpoint '
-      'host=${uri.host} elapsedMs=${stopwatch.elapsedMilliseconds}',
-    );
-    return endpoint;
+  Future<T> _enqueueEndpointSwitch<T>(Future<T> Function() operation) {
+    final completer = Completer<T>();
+    _endpointSwitchQueue = _endpointSwitchQueue.then((_) async {
+      try {
+        completer.complete(await operation());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
   }
 
   /// Takes a server URL and attempts to resolve the API endpoint.
@@ -563,16 +400,13 @@ class ApiService implements Authentication {
   ///  host   - required
   ///  port   - optional (default: based on schema)
   ///  path   - optional
-  Future<String> resolveEndpoint(String serverUrl) async {
-    String url = sanitizeUrl(serverUrl);
+  Future<String> resolveEndpoint(
+    String serverUrl, {
+    Duration availabilityTimeout = _endpointAvailabilityPingTimeout,
+  }) async {
+    String url = _normalizeEndpoint(serverUrl);
 
-    // Check for /.well-known/immich
-    final wellKnownEndpoint = await _getWellKnownEndpoint(url);
-    if (wellKnownEndpoint.isNotEmpty) {
-      url = sanitizeUrl(wellKnownEndpoint);
-    }
-
-    if (!await _isEndpointAvailable(url)) {
+    if (!await _isEndpointAvailable(url, timeout: availabilityTimeout)) {
       throw ApiException(503, "Server is not reachable");
     }
 
@@ -580,7 +414,13 @@ class ApiService implements Authentication {
     return url;
   }
 
-  Future<bool> _isEndpointAvailable(String serverUrl) async {
+  String _normalizeEndpoint(String serverUrl) {
+    String url = sanitizeUrl(serverUrl);
+    final normalized = sanitizeUrl(_getWellKnownEndpoint(url));
+    return normalized;
+  }
+
+  Future<bool> _isEndpointAvailable(String serverUrl, {required Duration timeout}) async {
     final trace = FirebasePerformanceWrapper.newTrace('endpoint_availability') ?? NoOpTrace();
     await trace.start();
 
@@ -593,25 +433,53 @@ class ApiService implements Authentication {
       final tempClient = ApiClient(basePath: serverUrl, authentication: this)..client = _httpClient;
       final tempServerApi = ServerApi(tempClient);
 
-      await tempServerApi.pingServer().timeout(const Duration(seconds: 45));
+      await tempServerApi.pingServer().timeout(timeout);
       await trace.stop();
+      _log.fine(
+        'endpoint_availability ok '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
     } on TimeoutException catch (_) {
       await trace.stop();
+      _log.info(
+        'endpoint_availability timeout '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
       return false;
     } on SocketException catch (_) {
       await trace.stop();
+      _log.info(
+        'endpoint_availability socket_error '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+      );
       return false;
     } catch (error, stackTrace) {
       await trace.stop();
-      _log.severe("Error while checking server availability", error, stackTrace);
+      _log.severe(
+        'endpoint_availability failed '
+        'serverUrl=$serverUrl '
+        'timeoutMs=${timeout.inMilliseconds}',
+        error,
+        stackTrace,
+      );
       return false;
     }
     return true;
   }
 
   // Temporary
-  Future<String> _getWellKnownEndpoint(String baseUrl) async {
-    return baseUrl.endsWith('/photos') ? "$baseUrl/api" : "$baseUrl/photos/api";
+  String _getWellKnownEndpoint(String baseUrl) {
+    final normalized = sanitizeUrl(baseUrl);
+    if (normalized.endsWith('/photos/api') || normalized.endsWith('/api')) {
+      return normalized;
+    }
+    if (normalized.endsWith('/photos')) {
+      return '$normalized/api';
+    }
+    return '$normalized/photos/api';
   }
 
   Future<void> setAccessToken(String accessToken) async {
@@ -665,4 +533,16 @@ class ApiService implements Authentication {
   }
 
   ApiClient get apiClient => _apiClient;
+}
+
+class EndpointResolvePolicy {
+  const EndpointResolvePolicy({
+    this.availabilityTimeout = const Duration(seconds: 15),
+    this.settleDelay = const Duration(milliseconds: 1500),
+  });
+
+  final Duration availabilityTimeout;
+  final Duration settleDelay;
+
+  static const EndpointResolvePolicy conservative = EndpointResolvePolicy();
 }

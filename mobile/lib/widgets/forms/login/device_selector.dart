@@ -32,6 +32,31 @@ class DeviceSelector extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final isDropdownOpen = useState<bool>(false);
+    final List<DeviceItem> items = devices.cast<DeviceItem>();
+
+    void triggerAutocompleteRefresh({
+      required TextEditingController controller,
+      required FocusNode focusNode,
+    }) {
+      final currentText = controller.text;
+      if (!focusNode.hasFocus) {
+        focusNode.requestFocus();
+      }
+      // Force RawAutocomplete to re-evaluate options even when text is unchanged.
+      controller.value = TextEditingValue(
+        text: '$currentText ',
+        selection: TextSelection.collapsed(offset: currentText.length + 1),
+        composing: TextRange.empty,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        controller.value = TextEditingValue(
+          text: currentText,
+          selection: TextSelection.collapsed(offset: currentText.length),
+          composing: TextRange.empty,
+        );
+      });
+    }
 
     // Use useEffect to handle controller text updates
     useEffect(() {
@@ -56,6 +81,12 @@ class DeviceSelector extends HookWidget {
 
       void onFocusChange() {
         isDropdownOpen.value = focusNode!.hasFocus;
+        if (focusNode!.hasFocus) {
+          triggerAutocompleteRefresh(
+            controller: controller,
+            focusNode: focusNode!,
+          );
+        }
       }
 
       focusNode!.addListener(onFocusChange);
@@ -96,16 +127,19 @@ class DeviceSelector extends HookWidget {
             textEditingController: controller,
             focusNode: focusNode,
             optionsBuilder: (value) {
-              final List<DeviceItem> items = devices.cast<DeviceItem>();
               final query = value.text.trim().toLowerCase();
               if (query.isEmpty) {
                 return items;
               }
-              final hasExactMatch = items.any((device) => device.name.trim().toLowerCase() == query);
+              final hasExactMatch = items.any(
+                (device) => device.name.trim().toLowerCase() == query,
+              );
               if (hasExactMatch) {
                 return items;
               }
-              return items.where((device) => device.name.toLowerCase().contains(query));
+              return items.where(
+                (device) => device.name.toLowerCase().contains(query),
+              );
             },
             displayStringForOption: (value) => value.name,
             onSelected: (option) {
@@ -132,12 +166,9 @@ class DeviceSelector extends HookWidget {
                       focusNode.unfocus();
                       isDropdownOpen.value = false;
                     } else {
-                      focusNode.requestFocus();
-                      // Trigger optionsBuilder by notifying listeners
-                      controller.value = controller.value.copyWith(
-                        text: controller.text,
-                        selection: TextSelection.collapsed(offset: controller.text.length),
-                        composing: TextRange.empty,
+                      triggerAutocompleteRefresh(
+                        controller: controller,
+                        focusNode: focusNode,
                       );
                     }
                   },
@@ -166,7 +197,34 @@ class DeviceSelector extends HookWidget {
                       itemCount: options.length,
                       itemBuilder: (_, index) {
                         final option = options.elementAt(index);
-                        return ListTile(title: Text(option.name), onTap: () => onSelected(option));
+                        final selected = selectedDevice is DeviceItem
+                            ? selectedDevice as DeviceItem
+                            : null;
+                        final isSelected = selected != null &&
+                            (selected.id == option.id ||
+                                selected.name.trim().toLowerCase() ==
+                                    option.name.trim().toLowerCase());
+                        return ListTile(
+                          title: Text(
+                            option.name,
+                            style: TextStyle(
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedTileColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.08),
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )
+                              : null,
+                          onTap: () => onSelected(option),
+                        );
                       },
                     ),
                   ),

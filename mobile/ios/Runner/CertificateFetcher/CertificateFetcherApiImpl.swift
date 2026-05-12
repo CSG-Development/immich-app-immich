@@ -1,99 +1,270 @@
 import Foundation
 
 final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
+    private let stateQueue = DispatchQueue(label: "com.seagate.curator.certificate_fetcher.state")
 
-    func fetchCertificateChain(
-        request: CertificateChainRequest,
-        completion: @escaping (Result<CertificateChainResponse, Error>) -> Void
-    ) {
-        DispatchQueue.global(qos: .utility).async {
-            self.fetchWithURLSession(
-                host: request.host,
-                port: Int32(request.port),
-                completion: completion
-            )
+    private var disposeGeneration: Int = 0
+
+    private enum Cached {
+        case success([String], expiresAt: Date)
+        case failed(expiresAt: Date)
+    }
+
+    private var terminalCache: [String: Cached] = [:]
+    private var cacheAccessOrder: [String] = []
+    private let maxCacheEntries = 128
+
+    private var inflightSessions: [String: URLSession] = [:]
+    private var cancelledKeys = Set<String>()
+
+    private static let successCacheTTL: TimeInterval = 60
+    private static let failureCacheTTL: TimeInterval = 20
+    private static let socketTimeoutSeconds: TimeInterval = 3.2
+
+    func close() {
+        stateQueue.sync {
+            disposeGeneration += 1
+            terminalCache.removeAll(keepingCapacity: false)
+            cacheAccessOrder.removeAll(keepingCapacity: false)
+            cancelledKeys.removeAll(keepingCapacity: false)
+            for (_, session) in inflightSessions {
+                session.invalidateAndCancel()
+            }
+            inflightSessions.removeAll(keepingCapacity: false)
         }
     }
 
-    private func fetchWithURLSession(
+    func getCertificateChainSnapshot(key: CertificateChainKey) throws -> CertificateChainSnapshot {
+        let cacheKey = Self.normalizedCacheKey(host: key.host, port: key.port)
+
+        return stateQueue.sync {
+            if disposeGeneration != 0 {
+                return CertificateChainSnapshot(status: .failed, certificates: [])
+            }
+
+            Self.expireIfNeeded(
+                cacheKey: cacheKey,
+                terminalCache: &terminalCache,
+                cacheAccessOrder: &cacheAccessOrder,
+            )
+
+            if let cached = terminalCache[cacheKey] {
+                switch cached {
+                case let .success(certs, expiresAt):
+                    if Date() >= expiresAt {
+                        Self.removeCacheEntry(
+                            cacheKey: cacheKey,
+                            terminalCache: &terminalCache,
+                            cacheAccessOrder: &cacheAccessOrder,
+                        )
+                    } else {
+                        Self.touchLRU(cacheKey: cacheKey, cacheAccessOrder: &cacheAccessOrder)
+                        return CertificateChainSnapshot(status: .success, certificates: certs)
+                    }
+                case let .failed(expiresAt):
+                    if Date() >= expiresAt {
+                        Self.removeCacheEntry(
+                            cacheKey: cacheKey,
+                            terminalCache: &terminalCache,
+                            cacheAccessOrder: &cacheAccessOrder,
+                        )
+                    } else {
+                        Self.touchLRU(cacheKey: cacheKey, cacheAccessOrder: &cacheAccessOrder)
+                        return CertificateChainSnapshot(status: .failed, certificates: [])
+                    }
+                }
+            }
+
+            if inflightSessions[cacheKey] != nil {
+                return CertificateChainSnapshot(status: .pending, certificates: [])
+            }
+
+            let host = String(key.host)
+            let port = Int32(key.port)
+
+            let delegate = CertificateCaptureDelegate()
+            let delegateQueue = OperationQueue()
+            delegateQueue.maxConcurrentOperationCount = 1
+
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.timeoutIntervalForRequest = Self.socketTimeoutSeconds
+            configuration.timeoutIntervalForResource = Self.socketTimeoutSeconds
+            configuration.waitsForConnectivity = false
+
+            let session = URLSession(
+                configuration: configuration,
+                delegate: delegate,
+                delegateQueue: delegateQueue,
+            )
+            inflightSessions[cacheKey] = session
+
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                self?.runFetch(
+                    cacheKey: cacheKey,
+                    host: host,
+                    port: port,
+                    session: session,
+                    delegate: delegate,
+                )
+            }
+
+            return CertificateChainSnapshot(status: .pending, certificates: [])
+        }
+    }
+
+    func cancelCertificateChainForHost(key: CertificateChainKey) throws {
+        let cacheKey = Self.normalizedCacheKey(host: key.host, port: key.port)
+        stateQueue.sync {
+            if let session = inflightSessions.removeValue(forKey: cacheKey) {
+                cancelledKeys.insert(cacheKey)
+                session.invalidateAndCancel()
+            }
+        }
+    }
+
+    private func runFetch(
+        cacheKey: String,
         host: String,
         port: Int32,
-        completion: @escaping (Result<CertificateChainResponse, Error>) -> Void
+        session: URLSession,
+        delegate: CertificateCaptureDelegate,
     ) {
-        let delegate = CertificateCaptureDelegate()
-
-        let delegateQueue = OperationQueue()
-        delegateQueue.maxConcurrentOperationCount = 1
-
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 12.0
-        configuration.timeoutIntervalForResource = 12.0
-        configuration.waitsForConnectivity = false
-
-        let session = URLSession(
-            configuration: configuration,
-            delegate: delegate,
-            delegateQueue: delegateQueue
-        )
-
         let urlString = "https://\(host):\(port)"
         guard let url = URL(string: urlString) else {
-            DispatchQueue.main.async {
-                completion(.failure(NSError(
-                    domain: "INVALID_URL",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Invalid host or port"]
-                )))
-            }
+            applyTerminal(cacheKey: cacheKey, certificates: [])
             return
         }
 
-        var finished = false
-        let finishOnce: (Result<CertificateChainResponse, Error>) -> Void = { result in
-            guard !finished else { return }
-            finished = true
-            session.invalidateAndCancel()
-            DispatchQueue.main.async {
-                completion(result)
-            }
+        let task = session.dataTask(with: url) { [weak self] _, _, _ in
+            let certs = delegate.capturedCertificates
+            self?.applyTerminal(
+                cacheKey: cacheKey,
+                certificates: certs,
+            )
         }
-
-        let task = session.dataTask(with: url) { _, _, error in
-            let certificates = delegate.capturedCertificates
-
-            if !certificates.isEmpty {
-                finishOnce(.success(
-                    CertificateChainResponse(certificates: certificates)
-                ))
-                return
-            }
-
-            if let error = error as NSError? {
-                let isTimeout =
-                    error.domain == NSURLErrorDomain &&
-                    error.code == NSURLErrorTimedOut
-
-                finishOnce(.failure(NSError(
-                    domain: isTimeout ? "CONNECTION_TIMEOUT" : "TLS_HANDSHAKE_FAILED",
-                    code: error.code,
-                    userInfo: [
-                        NSLocalizedDescriptionKey:
-                            isTimeout
-                                ? "Connection timeout after 12 seconds"
-                                : "TLS handshake failed: \(error.localizedDescription)"
-                    ]
-                )))
-                return
-            }
-
-            finishOnce(.failure(NSError(
-                domain: "UNKNOWN_ERROR",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Unknown error occurred"]
-            )))
-        }
-
         task.resume()
+    }
+
+    private func applyTerminal(cacheKey: String, certificates: [String]) {
+        stateQueue.sync {
+            if let s = inflightSessions.removeValue(forKey: cacheKey) {
+                s.invalidateAndCancel()
+            }
+            if disposeGeneration != 0 {
+                return
+            }
+
+            let wasCancelled = cancelledKeys.remove(cacheKey) != nil
+            if wasCancelled {
+                Self.storeFailed(
+                    cacheKey: cacheKey,
+                    terminalCache: &terminalCache,
+                    cacheAccessOrder: &cacheAccessOrder,
+                    maxCacheEntries: maxCacheEntries,
+                    ttl: Self.failureCacheTTL,
+                )
+                return
+            }
+
+            if certificates.isEmpty {
+                Self.storeFailed(
+                    cacheKey: cacheKey,
+                    terminalCache: &terminalCache,
+                    cacheAccessOrder: &cacheAccessOrder,
+                    maxCacheEntries: maxCacheEntries,
+                    ttl: Self.failureCacheTTL,
+                )
+            } else {
+                Self.storeSuccess(
+                    cacheKey: cacheKey,
+                    certificates: certificates,
+                    terminalCache: &terminalCache,
+                    cacheAccessOrder: &cacheAccessOrder,
+                    maxCacheEntries: maxCacheEntries,
+                    ttl: Self.successCacheTTL,
+                )
+            }
+        }
+    }
+
+    private static func normalizedCacheKey(host: String, port: Int64) -> String {
+        "\(host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()):\(port)"
+    }
+
+    private static func expireIfNeeded(
+        cacheKey: String,
+        terminalCache: inout [String: Cached],
+        cacheAccessOrder: inout [String],
+    ) {
+        guard let cached = terminalCache[cacheKey] else { return }
+        let expired: Bool
+        switch cached {
+        case let .success(_, exp), let .failed(exp):
+            expired = Date() >= exp
+        }
+        if expired {
+            removeCacheEntry(cacheKey: cacheKey, terminalCache: &terminalCache, cacheAccessOrder: &cacheAccessOrder)
+        }
+    }
+
+    private static func removeCacheEntry(
+        cacheKey: String,
+        terminalCache: inout [String: Cached],
+        cacheAccessOrder: inout [String],
+    ) {
+        terminalCache.removeValue(forKey: cacheKey)
+        cacheAccessOrder.removeAll { $0 == cacheKey }
+    }
+
+    private static func touchLRU(cacheKey: String, cacheAccessOrder: inout [String]) {
+        cacheAccessOrder.removeAll { $0 == cacheKey }
+        cacheAccessOrder.append(cacheKey)
+    }
+
+    private static func storeSuccess(
+        cacheKey: String,
+        certificates: [String],
+        terminalCache: inout [String: Cached],
+        cacheAccessOrder: inout [String],
+        maxCacheEntries: Int,
+        ttl: TimeInterval,
+    ) {
+        evictIfNeeded(
+            terminalCache: &terminalCache,
+            cacheAccessOrder: &cacheAccessOrder,
+            maxCacheEntries: maxCacheEntries,
+            excluding: cacheKey,
+        )
+        terminalCache[cacheKey] = .success(certificates, expiresAt: Date().addingTimeInterval(ttl))
+        touchLRU(cacheKey: cacheKey, cacheAccessOrder: &cacheAccessOrder)
+    }
+
+    private static func storeFailed(
+        cacheKey: String,
+        terminalCache: inout [String: Cached],
+        cacheAccessOrder: inout [String],
+        maxCacheEntries: Int,
+        ttl: TimeInterval,
+    ) {
+        evictIfNeeded(
+            terminalCache: &terminalCache,
+            cacheAccessOrder: &cacheAccessOrder,
+            maxCacheEntries: maxCacheEntries,
+            excluding: cacheKey,
+        )
+        terminalCache[cacheKey] = .failed(expiresAt: Date().addingTimeInterval(ttl))
+        touchLRU(cacheKey: cacheKey, cacheAccessOrder: &cacheAccessOrder)
+    }
+
+    private static func evictIfNeeded(
+        terminalCache: inout [String: Cached],
+        cacheAccessOrder: inout [String],
+        maxCacheEntries: Int,
+        excluding: String,
+    ) {
+        while terminalCache.count >= maxCacheEntries, let oldest = cacheAccessOrder.first, oldest != excluding {
+            removeCacheEntry(cacheKey: oldest, terminalCache: &terminalCache, cacheAccessOrder: &cacheAccessOrder)
+        }
     }
 }
 
@@ -105,7 +276,7 @@ final class CertificateCaptureDelegate: NSObject, URLSessionDelegate {
     func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void,
     ) {
         guard let trust = challenge.protectionSpace.serverTrust else {
             completionHandler(.cancelAuthenticationChallenge, nil)
@@ -126,8 +297,6 @@ final class CertificateCaptureDelegate: NSObject, URLSessionDelegate {
         capturedCertificates = certificates
         lock.unlock()
 
-        // Capture the certificate chain but do not override
-        // the system trust evaluation (App Store safe).
         completionHandler(.performDefaultHandling, nil)
     }
 }

@@ -32353,6 +32353,9 @@ class CodegenLoader extends AssetLoader {
       "passcode_enter_title": "Please enter your passcode",
       "passcode_remove_title": "Remove your passcode",
       "passcode_title": "Passcode",
+      "password_reset_too_many_requests_description":
+          "Too many password reset requests. Please wait and try again or contact the owner.",
+      "password_reset_too_many_requests_title": "Too many requests",
       "pattern_confirm_error": "The patterns are not the same",
       "pattern_confirm_subtitle": "Confirm your pattern",
       "pattern_confirm_title": "Please reenter your passcode",
@@ -32374,6 +32377,7 @@ class CodegenLoader extends AssetLoader {
       "settings_pattern_lock": "Pattern lock",
       "shared_link_create_public_error": "Sharing is not possible because the public link is unavailable",
       "sign_in_screen_button_request_new_code": "Request new code",
+      "sign_in_screen_button_valid_remote_access": "Allow access",
       "sign_in_screen_dropdown_device_error_no_device": "No device detected",
       "sign_in_screen_dropdown_device_label": "Connecting to",
       "sign_in_screen_enable_biometric": "Enable biometric sign-in",
@@ -32381,6 +32385,9 @@ class CodegenLoader extends AssetLoader {
       "sign_in_screen_field_remote_code_error_invalid": "Incorrect code.",
       "sign_in_screen_field_remote_code_hint": "Enter the code sent to your email to enable remote access",
       "sign_in_screen_field_remote_code_label": "Confirmation Code",
+      "sign_in_screen_field_remote_code_message":
+          "We have sent a one-time code to authorize this device to access your Personal Cloud Photos. Check your email for the code and enter it here. If you do not see it in your inbox, please check your spam folder.",
+      "sign_in_screen_field_remote_code_title": "Allow remote access",
       "sign_in_screen_remote_code_allow_access": "Allow access",
       "sign_in_screen_remote_code_cancel": "Cancel",
       "sign_in_screen_remote_code_description":
@@ -33437,6 +33444,7 @@ class CodegenLoader extends AssetLoader {
     "password": "Password",
     "password_does_not_match": "Password does not match",
     "password_required": "Password Required",
+    "password_reset_email_sent_to": "Password reset email sent to\n{email}.",
     "password_reset_success": "Password reset success",
     "past_durations": {
       "days": "Past {days, plural, one {day} other {# days}}",
