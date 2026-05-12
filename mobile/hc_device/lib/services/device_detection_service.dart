@@ -339,7 +339,9 @@ class DeviceDetectionService {
         } else {
           if (responseList.statusCode == 401 ||
               responseList.statusCode == 403) {
-            await remoteProvider.logOut();
+            logger.warning(
+              '[Network] Remote detection unauthorized; preserving remote session for retry',
+            );
           }
           onError?.call("Failed to fetch device list", responseList);
         }
