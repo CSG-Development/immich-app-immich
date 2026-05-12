@@ -128,13 +128,17 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       final wsProvider = ref.read(websocketProvider.notifier);
       final backgroundManager = ref.read(backgroundSyncProvider);
       final backupProvider = ref.read(driftBackupProvider.notifier);
-
-      ref.read(authProvider.notifier).saveAuthInfo(accessToken: accessToken).then(
-        (_) async {
+      // Keep splash non-blocking: restore auth/session in background.
+      unawaited(
+        _restoreAuthInfoWithRetry(accessToken: accessToken).then((didRestoreAuth) async {
           try {
             await endpointWarmupFuture;
             wsProvider.connect();
             infoProvider.getServerInfo();
+
+            if (!didRestoreAuth) {
+              log.warning('Auth restore failed after retries; startup services continue in degraded mode');
+            }
 
             if (Store.isBetaTimelineEnabled) {
               bool syncSuccess = false;
@@ -168,17 +172,12 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
           } catch (e) {
             log.severe('Failed establishing connection to the server: $e');
           }
-        },
-        onError: (exception) => {
-          log.severe('Failed to update auth info with access token: $accessToken'),
-          ref.read(authProvider.notifier).logout(),
-          if (mounted) context.replaceRoute(const LoginRoute()),
-        },
+        }),
       );
     } else {
-      log.severe('Missing crucial offline login info - Logging out completely');
-      ref.read(authProvider.notifier).logout();
-      if (mounted) context.replaceRoute(const LoginRoute());
+      await _logoutAndRouteToLogin(
+        reason: 'Missing crucial offline login info',
+      );
       return;
     }
 
@@ -244,6 +243,82 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       if (currentUser != null) {
         notifier.handleBackupResume(currentUser.id);
       }
+    }
+  }
+
+  Future<bool> _restoreAuthInfoWithRetry({required String accessToken}) async {
+    const maxAttempts = 2;
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final restored = await ref
+            .read(authProvider.notifier)
+            .saveAuthInfo(accessToken: accessToken)
+            .timeout(const Duration(seconds: 8));
+        if (restored) {
+          return true;
+        }
+        log.warning(
+          'Auth restore attempt $attempt/$maxAttempts returned false',
+        );
+      } catch (error, stackTrace) {
+        lastError = error;
+        if (_isTransientAuthBootstrapFailure(error)) {
+          log.warning(
+            'Transient auth restore failure on attempt $attempt/$maxAttempts',
+            error,
+            stackTrace,
+          );
+        } else {
+          log.severe(
+            'Auth restore failed on attempt $attempt/$maxAttempts',
+            error,
+            stackTrace,
+          );
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        try {
+          await ref
+              .read(hcDeviceEndpointResolverProvider)
+              .resolveAndActivateWinner(
+                trigger: 'splash_auth_restore_retry_$attempt',
+                mode: ResolveMode.foreground,
+              )
+              .timeout(const Duration(seconds: 4));
+        } catch (error) {
+          log.warning('Endpoint recovery before auth retry failed: $error');
+        }
+      }
+    }
+
+    if (lastError != null) {
+      log.severe('Auth restore failed after retries', lastError);
+    }
+    return false;
+  }
+
+  bool _isTransientAuthBootstrapFailure(Object error) {
+    if (error is TimeoutException) {
+      return true;
+    }
+    final message = error.toString().toLowerCase();
+    return message.contains('tls/ssl') ||
+        message.contains('socket') ||
+        message.contains('timed out') ||
+        message.contains('timeout') ||
+        message.contains('not reachable') ||
+        message.contains('connection') && message.contains('failed');
+  }
+
+  Future<void> _logoutAndRouteToLogin({required String reason}) async {
+    log.severe('$reason - logging out completely');
+    await ref.read(authProvider.notifier).logout();
+    if (mounted) {
+      context.replaceRoute(const LoginRoute());
     }
   }
 
