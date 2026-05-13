@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_editor/src/core/interfaces.dart';
 import 'package:image_editor/src/core/models/init_configs/ai_editor_init_configs.dart';
+import 'package:image_editor/src/features/ai_editor/photo_enhancement/gpen_face_restoration_onnx.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/real_esrgan_onnx.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/low_light_enhancement_onnx.dart';
 import 'package:image_editor/src/features/ai_editor/photo_enhancement/enhancement_artifact_removal_pipeline.dart';
@@ -30,6 +31,8 @@ class SuperResolutionEffect implements ImageEffect {
     this.postSmoothStrength = 0.0,
     this.resizedOriginalBlurRadius = 1,
     this.artifactCleanupLevel = SrArtifactCleanupLevel.medium,
+    this.enableFaceRestoration = false,
+    this.faceRestorationModelPathOrUrl,
     EnhancementArtifactRemovalPipeline? artifactRemovalPipeline,
   }) : _sr = RealEsrganOnnx(
          modelPathOrUrl: modelPathOrUrl,
@@ -39,6 +42,10 @@ class SuperResolutionEffect implements ImageEffect {
          fixedInputSize: fixedInputSize,
          maxOutputSide: maxOutputSide,
        ),
+       _faceRestoration =
+           enableFaceRestoration && faceRestorationModelPathOrUrl != null && faceRestorationModelPathOrUrl.isNotEmpty
+           ? GpenFaceRestorationOnnx(modelPathOrUrl: faceRestorationModelPathOrUrl)
+           : null,
        _artifactRemovalPipeline = artifactRemovalPipeline;
 
   static final Logger _log = Logger('SuperResolutionEffect');
@@ -54,6 +61,9 @@ class SuperResolutionEffect implements ImageEffect {
   final double postSmoothStrength;
   final int resizedOriginalBlurRadius;
   final SrArtifactCleanupLevel artifactCleanupLevel;
+  final bool enableFaceRestoration;
+  final String? faceRestorationModelPathOrUrl;
+  final GpenFaceRestorationOnnx? _faceRestoration;
   final EnhancementArtifactRemovalPipeline? _artifactRemovalPipeline;
 
   @override
@@ -66,19 +76,20 @@ class SuperResolutionEffect implements ImageEffect {
   Future<Uint8List> apply(Uint8List imageBytes) async {
     final pipeline = _artifactRemovalPipeline;
     try {
-      final processed = await _sr.upscale(imageBytes);
+      final srInputBytes = _faceRestoration == null ? imageBytes : await _faceRestoration.restore(imageBytes);
+      final srOutputBytes = await _sr.upscale(srInputBytes);
       if (!enableArtifactPostprocess) {
-        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(processed));
+        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(srOutputBytes));
       }
-      if (pipeline == null || processed.isEmpty) {
-        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(processed));
+      if (pipeline == null || srOutputBytes.isEmpty) {
+        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(srOutputBytes));
       }
 
       // Super-resolution changes pixel grid/texture significantly. Comparing
       // resized source against upscaled output can over-mark valid detail as
       // "artifact". For true upscales, switch to self-anomaly detection.
-      final src = img.decodeImage(imageBytes);
-      final out = img.decodeImage(processed);
+      final src = img.decodeImage(srInputBytes);
+      final out = img.decodeImage(srOutputBytes);
       final isUpscaled = src != null && out != null && (out.width > src.width || out.height > src.height);
       final outPixels = out == null ? 0 : (out.width * out.height);
       const artifactHardLimitPixels = 1400000; // ~1.4MP safety cap
@@ -88,7 +99,7 @@ class SuperResolutionEffect implements ImageEffect {
           '[SuperResolution] Skipping artifact postprocess for large upscaled '
           'output ${out.width}x${out.height} to reduce OOM risk.',
         );
-        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(processed));
+        return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(srOutputBytes));
       }
 
       if (isUpscaled) {
@@ -112,7 +123,7 @@ class SuperResolutionEffect implements ImageEffect {
           // For SR edge-cases, detect differences against resized original,
           // but inpaint directly on the upscaled output.
           originalBytes: resizedOriginalBytes,
-          processedBytes: processed,
+          processedBytes: srOutputBytes,
           selfAnomalyOnly: false,
           disableRectMaskExpansion: cleanup.disableRectMaskExpansion,
           inpaintScale: cleanup.inpaintScale,
@@ -123,7 +134,7 @@ class SuperResolutionEffect implements ImageEffect {
         return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(cleaned));
       }
 
-      final cleaned = await pipeline.process(originalBytes: imageBytes, processedBytes: processed);
+      final cleaned = await pipeline.process(originalBytes: srInputBytes, processedBytes: srOutputBytes);
       return _applyStrengthBlend(sourceBytes: imageBytes, srBytes: _applyPostSmooth(cleaned));
     } catch (e, st) {
       _log.severe('[SuperResolution] Exception while upscaling', e, st);
@@ -132,12 +143,14 @@ class SuperResolutionEffect implements ImageEffect {
       // Aggressive unload mode for low-RAM stability:
       // always release SR and artifact ONNX sessions after each run.
       await _sr.dispose();
+      await _faceRestoration?.dispose();
       await pipeline?.dispose();
     }
   }
 
   Future<void> dispose() async {
     await _sr.dispose();
+    await _faceRestoration?.dispose();
   }
 
   Uint8List _applyPostSmooth(Uint8List bytes) {
@@ -652,7 +665,7 @@ class PhotoEnhancementService {
 
   AiEditorInitConfigs get configs => _configs;
 
-  SuperResolutionEffect createSuperResolutionEffect({
+  ImageEffect createSuperResolutionEffect({
     required String modelPathOrUrl,
     required int maxOutputSide,
     required int maxInputSide,
@@ -662,6 +675,8 @@ class PhotoEnhancementService {
     double postSmoothStrength = 0.0,
     int resizedOriginalBlurRadius = 1,
     SrArtifactCleanupLevel artifactCleanupLevel = SrArtifactCleanupLevel.medium,
+    bool enableFaceRestoration = false,
+    String? faceRestorationModelPathOrUrl,
   }) {
     return SuperResolutionEffect(
       modelPathOrUrl: modelPathOrUrl,
@@ -673,6 +688,8 @@ class PhotoEnhancementService {
       postSmoothStrength: postSmoothStrength,
       resizedOriginalBlurRadius: resizedOriginalBlurRadius,
       artifactCleanupLevel: artifactCleanupLevel,
+      enableFaceRestoration: enableFaceRestoration,
+      faceRestorationModelPathOrUrl: faceRestorationModelPathOrUrl,
       artifactRemovalPipeline: _artifactRemovalPipeline,
     );
   }

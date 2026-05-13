@@ -60,17 +60,8 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     if (path.contains('x4-256') || path.endsWith('realesrgan-x4-256.onnx')) {
       return 256;
     }
-    if (path.endsWith('realesrgan-x4.onnx')) {
-      return 64;
-    }
     return null;
   }
-
-  // Swin2SR hidden from SR dialog — restore with model option + defaults below:
-  // bool _isSwin2srModel(String modelPathOrUrl) {
-  //   final path = modelPathOrUrl.toLowerCase();
-  //   return path.contains('swin2sr-realworld-4x-onnx') || path.endsWith('swin2sr-realworld-x4.onnx');
-  // }
 
   @override
   void dispose() {
@@ -81,41 +72,25 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
   }
 
   Future<_SuperResolutionConfigResult?> _showSuperResolutionConfigDialog({
-    String? initialModelPathOrUrl,
+    required String modelPathOrUrl,
     String dialogTitle = 'Super resolution settings',
   }) {
     return showDialog<_SuperResolutionConfigResult>(
       context: context,
       builder: (context) {
-        final modelOptions = <_SrModelOption>[
-          _SrModelOption(
-            label: 'Default ESRGAN (configured)',
-            modelPathOrUrl: widget.initConfigs.realEsrganX2ModelPathEffective,
-          ),
-          // _SrModelOption(
-          //   label: 'Swin2SR real-world x4 (configured)',
-          //   modelPathOrUrl: widget.initConfigs.swin2srRealworldX4ModelPathEffective,
-          // ),
-          const _SrModelOption(
-            label: 'RealESRGAN x4 (dynamic)',
-            modelPathOrUrl: 'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4.onnx',
-          ),
-        ];
-        final availableModels = modelOptions.map((e) => e.modelPathOrUrl).toSet();
-        var selectedModelPath = availableModels.contains(initialModelPathOrUrl)
-            ? initialModelPathOrUrl!
-            : modelOptions.first.modelPathOrUrl;
+        final selectedModelPath = modelPathOrUrl;
         final outputOptions = List<int>.generate(13, (i) => 512 + i * 128);
         const dynamicInputOptions = <int>[128, 256, 384, 512];
-        int selectedOutput = 4; // default to balanced (1024)
+        var selectedPreset = _SrPreset.portraitClean;
+        int selectedOutput = 4;
         int selectedInput = _fixedInputSizeForSuperResolutionModel(selectedModelPath) != null ? 0 : 1;
         bool useFixedSquareInput = true;
         var useArtifactPostprocess = false;
-        // With Swin2SR option: strength = _isSwin2srModel(selectedModelPath) ? 0.95 : 1.0;
-        // With Swin2SR option: postSmoothStrength = _isSwin2srModel(selectedModelPath) ? 0.15 : 0.0;
-        double strength = 1.0;
-        double postSmoothStrength = 0.0;
-        pe.SrArtifactCleanupLevel artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
+        var useFaceRestoration = true;
+        double strength = 0.88;
+        double postSmoothStrength = 0.08;
+        pe.SrArtifactCleanupLevel artifactCleanupLevel = pe.SrArtifactCleanupLevel.low;
+        var advancedExpanded = false;
         var modelReady = false;
         var isCheckingModel = true;
         const contentTextStyle = AiModalUi.contentStyle;
@@ -125,27 +100,6 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         final srcLongestSide = srcW > srcH ? srcW : srcH;
         final srcMegaPixels = (srcW * srcH) / 1000000.0;
         final srcBytesMb = widget.initialImageBytes.length / (1024.0 * 1024.0);
-
-        // With Swin2SR model option restored, use:
-        // void applyModelDefaults(String modelPathOrUrl) {
-        //   if (_isSwin2srModel(modelPathOrUrl)) {
-        //     strength = 1.0;
-        //     postSmoothStrength = 0.0;
-        //     artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
-        //     useArtifactPostprocess = false;
-        //   } else {
-        //     strength = 1.0;
-        //     postSmoothStrength = 0.0;
-        //     artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
-        //     useArtifactPostprocess = false;
-        //   }
-        // }
-        void applyModelDefaults(String _) {
-          strength = 1.0;
-          postSmoothStrength = 0.0;
-          artifactCleanupLevel = pe.SrArtifactCleanupLevel.medium;
-          useArtifactPostprocess = false;
-        }
 
         String? _buildRiskWarning({
           required int maxOutputSide,
@@ -193,6 +147,57 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
           return b.toString();
         }
 
+        ({int outputIndex, int inputIndex, bool fixedSquareInput, bool useFaceRestoration, double strength, double postSmoothStrength})
+        presetValues(_SrPreset preset) {
+          return switch (preset) {
+            _SrPreset.portraitClean => (
+              outputIndex: 4,
+              inputIndex: 1,
+              fixedSquareInput: true,
+              useFaceRestoration: true,
+              strength: 0.88,
+              postSmoothStrength: 0.08,
+            ),
+            _SrPreset.softNatural => (
+              outputIndex: 4,
+              inputIndex: 1,
+              fixedSquareInput: true,
+              useFaceRestoration: true,
+              strength: 0.84,
+              postSmoothStrength: 0.35,
+            ),
+            _SrPreset.sharpDetail => (
+              outputIndex: 6,
+              inputIndex: 2,
+              fixedSquareInput: true,
+              useFaceRestoration: true,
+              strength: 0.97,
+              postSmoothStrength: 0.08,
+            ),
+            _SrPreset.aggressiveCleanup => (
+              outputIndex: 3,
+              inputIndex: 1,
+              fixedSquareInput: true,
+              useFaceRestoration: true,
+              strength: 0.82,
+              postSmoothStrength: 0.55,
+            ),
+          };
+        }
+
+        void applyPreset(_SrPreset preset) {
+          final values = presetValues(preset);
+          selectedPreset = preset;
+          selectedOutput = values.outputIndex.clamp(0, outputOptions.length - 1);
+          selectedInput = values.inputIndex.clamp(0, dynamicInputOptions.length - 1);
+          useFixedSquareInput = values.fixedSquareInput;
+          useFaceRestoration = values.useFaceRestoration;
+          strength = values.strength;
+          postSmoothStrength = values.postSmoothStrength;
+        }
+
+        applyPreset(selectedPreset);
+
         return StatefulBuilder(
           builder: (context, setState) {
             Future<void> refreshModelReady() async {
@@ -224,6 +229,14 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
               workingInput: workingInputSize,
               fixedSquareInput: useFixedSquareInput,
             );
+            final presetBaseline = presetValues(selectedPreset);
+            final hasCustomSettings =
+                selectedOutput != presetBaseline.outputIndex.clamp(0, outputOptions.length - 1) ||
+                selectedInput != presetBaseline.inputIndex.clamp(0, currentInputOptions.length - 1) ||
+                useFixedSquareInput != presetBaseline.fixedSquareInput ||
+                useFaceRestoration != presetBaseline.useFaceRestoration ||
+                (strength - presetBaseline.strength).abs() > 0.001 ||
+                (postSmoothStrength - presetBaseline.postSmoothStrength).abs() > 0.001;
 
             return AlertDialog(
               title: Text(dialogTitle),
@@ -232,42 +245,55 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DropdownButtonFormField<String>(
-                      value: selectedModelPath,
-                      style: AiModalUi.selectorValueStyle,
-                      decoration: AiModalUi.selectDecoration('SR model'),
-                      items: modelOptions
-                          .map(
-                            (option) => DropdownMenuItem<String>(
-                              value: option.modelPathOrUrl,
-                              child: Text(option.label, style: AiModalUi.selectorValueStyle),
+                    const Text('Choose style', style: AiModalUi.sectionTitleStyle),
+                    const SizedBox(height: 8),
+                    for (final preset in _SrPreset.values)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            setState(() {
+                              applyPreset(preset);
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: selectedPreset == preset
+                                  ? Colors.blue.withValues(alpha: 0.12)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: selectedPreset == preset
+                                    ? Colors.blue.withValues(alpha: 0.45)
+                                    : Colors.grey.withValues(alpha: 0.35),
+                              ),
                             ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() {
-                          selectedModelPath = value;
-                          selectedInput = 0;
-                          useFixedSquareInput = true;
-                          applyModelDefaults(value);
-                          isCheckingModel = true;
-                        });
-                      },
-                    ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(child: Text(preset.title, style: contentTextStyle)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(preset.description, style: noteTextStyle),
+                                const SizedBox(height: 2),
+                                Text('${preset.speedLabel} speed · ${preset.riskLabel}', style: noteTextStyle),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 4),
                     if (_fixedInputSizeForSuperResolutionModel(selectedModelPath) case final fixed?)
                       Padding(
-                        padding: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.only(bottom: 6),
                         child: Text('This model uses fixed ${fixed}x$fixed input.', style: noteTextStyle),
                       ),
-                    // if (_isSwin2srModel(selectedModelPath))
-                    //   const Padding(
-                    //     padding: EdgeInsets.only(top: 6),
-                    //     child: Text(
-                    //       'Swin2SR: keep working input at 256+ (prefer 384/512) for sharper results.',
-                    //       style: noteTextStyle,
-                    //     ),
-                    //   ),
                     const SizedBox(height: 8),
                     if (isCheckingModel)
                       const Row(
@@ -302,6 +328,179 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                         ],
                       ),
                     const SizedBox(height: 12),
+                    ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: EdgeInsets.zero,
+                      title: const Text('Advanced settings', style: AiModalUi.sectionTitleStyle),
+                      subtitle: Text(
+                        hasCustomSettings ? 'Using custom values' : 'Using preset defaults',
+                        style: noteTextStyle,
+                      ),
+                      initiallyExpanded: advancedExpanded,
+                      onExpansionChanged: (expanded) {
+                        setState(() {
+                          advancedExpanded = expanded;
+                        });
+                      },
+                      children: [
+                        if (hasCustomSettings)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  applyPreset(selectedPreset);
+                                });
+                              },
+                              child: const Text('Reset to preset'),
+                            ),
+                          ),
+                        const Text('Maximum output size', style: AiModalUi.sectionTitleStyle),
+                        const SizedBox(height: 8),
+                        Slider(
+                          value: selectedOutput.toDouble(),
+                          min: 0,
+                          max: (outputOptions.length - 1).toDouble(),
+                          divisions: outputOptions.length - 1,
+                          label: '${outputOptions[selectedOutput]} px',
+                          onChanged: (v) {
+                            setState(() {
+                              selectedOutput = v.round().clamp(0, outputOptions.length - 1);
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Higher values produce larger images but use significantly more memory '
+                          'and can become unstable on large source photos.',
+                          style: noteTextStyle,
+                        ),
+                        if (!fixedShapeModel) ...[
+                          const SizedBox(height: 16),
+                          const Text('Working input size', style: AiModalUi.sectionTitleStyle),
+                          const SizedBox(height: 8),
+                          Slider(
+                            value: selectedInput.toDouble(),
+                            min: 0,
+                            max: (currentInputOptions.length - 1).toDouble(),
+                            divisions: currentInputOptions.length > 1 ? currentInputOptions.length - 1 : null,
+                            label: '${currentInputOptions[selectedInput]} px',
+                            onChanged: (v) {
+                              setState(() {
+                                selectedInput = v.round().clamp(0, currentInputOptions.length - 1);
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Higher values can keep more detail, but increase RAM usage and latency.',
+                            style: noteTextStyle,
+                          ),
+                          const SizedBox(height: 16),
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: const Text('Use fixed square input', style: contentTextStyle),
+                            subtitle: const Text(
+                              'Keeps model input square. Turn off to keep original aspect ratio.',
+                              style: noteTextStyle,
+                            ),
+                            value: useFixedSquareInput,
+                            onChanged: (value) {
+                              setState(() {
+                                useFixedSquareInput = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: const Text('Face restoration (GPEN)', style: contentTextStyle),
+                          subtitle: const Text(
+                            'Runs face restoration before super resolution.',
+                            style: noteTextStyle,
+                          ),
+                          value: useFaceRestoration,
+                          onChanged: (value) {
+                            setState(() {
+                              useFaceRestoration = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: const Text('Artifact removal postprocess', style: contentTextStyle),
+                          subtitle: const Text('Use extra artifact cleanup after enhancement.', style: noteTextStyle),
+                          value: useArtifactPostprocess,
+                          onChanged: (value) {
+                            setState(() {
+                              useArtifactPostprocess = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('Model tuning', style: AiModalUi.sectionTitleStyle),
+                        const SizedBox(height: 8),
+                        Text('Blend with original (${strength.toStringAsFixed(2)})', style: noteTextStyle),
+                        Slider(
+                          value: strength,
+                          min: 0.7,
+                          max: 1.0,
+                          divisions: 30,
+                          onChanged: (v) {
+                            setState(() {
+                              strength = v;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Post smoothing (${postSmoothStrength.toStringAsFixed(2)})', style: noteTextStyle),
+                        Slider(
+                          value: postSmoothStrength,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          onChanged: (v) {
+                            setState(() {
+                              postSmoothStrength = v;
+                            });
+                          },
+                        ),
+                        if (useArtifactPostprocess) ...[
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<pe.SrArtifactCleanupLevel>(
+                            value: artifactCleanupLevel,
+                            style: AiModalUi.selectorValueStyle,
+                            decoration: AiModalUi.selectDecoration('Cleanup level'),
+                            items: const [
+                              DropdownMenuItem(
+                                value: pe.SrArtifactCleanupLevel.low,
+                                child: Text('Low', style: AiModalUi.selectorValueStyle),
+                              ),
+                              DropdownMenuItem(
+                                value: pe.SrArtifactCleanupLevel.medium,
+                                child: Text('Medium', style: AiModalUi.selectorValueStyle),
+                              ),
+                              DropdownMenuItem(
+                                value: pe.SrArtifactCleanupLevel.high,
+                                child: Text('High', style: AiModalUi.selectorValueStyle),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                artifactCleanupLevel = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     if (riskWarning != null) ...[
                       Container(
                         width: double.infinity,
@@ -315,133 +514,6 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    const Text('Maximum output size', style: AiModalUi.sectionTitleStyle),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: selectedOutput.toDouble(),
-                      min: 0,
-                      max: (outputOptions.length - 1).toDouble(),
-                      divisions: outputOptions.length - 1,
-                      label: '${outputOptions[selectedOutput]} px',
-                      onChanged: (v) {
-                        setState(() {
-                          selectedOutput = v.round().clamp(0, outputOptions.length - 1);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Higher values produce larger images but use significantly more memory '
-                      'and can become unstable on large source photos.',
-                      style: noteTextStyle,
-                    ),
-                    if (!fixedShapeModel) ...[
-                      const SizedBox(height: 16),
-                      const Text('Working input size', style: AiModalUi.sectionTitleStyle),
-                      const SizedBox(height: 8),
-                      Slider(
-                        value: selectedInput.toDouble(),
-                        min: 0,
-                        max: (currentInputOptions.length - 1).toDouble(),
-                        divisions: currentInputOptions.length > 1 ? currentInputOptions.length - 1 : null,
-                        label: '${currentInputOptions[selectedInput]} px',
-                        onChanged: (v) {
-                          setState(() {
-                            selectedInput = v.round().clamp(0, currentInputOptions.length - 1);
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Higher values can keep more detail, but increase RAM usage and latency.',
-                        style: noteTextStyle,
-                      ),
-                      const SizedBox(height: 16),
-                      SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        title: const Text('Use fixed square input', style: contentTextStyle),
-                        subtitle: const Text(
-                          'Keeps model input square. Turn off to keep original aspect ratio.',
-                          style: noteTextStyle,
-                        ),
-                        value: useFixedSquareInput,
-                        onChanged: (value) {
-                          setState(() {
-                            useFixedSquareInput = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      title: const Text('Artifact removal postprocess', style: contentTextStyle),
-                      subtitle: const Text('Use extra artifact cleanup after enhancement.', style: noteTextStyle),
-                      value: useArtifactPostprocess,
-                      onChanged: (value) {
-                        setState(() {
-                          useArtifactPostprocess = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('Model tuning', style: AiModalUi.sectionTitleStyle),
-                    const SizedBox(height: 8),
-                    Text('Blend with original (${strength.toStringAsFixed(2)})', style: noteTextStyle),
-                    Slider(
-                      value: strength,
-                      min: 0.7,
-                      max: 1.0,
-                      divisions: 30,
-                      onChanged: (v) {
-                        setState(() {
-                          strength = v;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Post smoothing (${postSmoothStrength.toStringAsFixed(2)})', style: noteTextStyle),
-                    Slider(
-                      value: postSmoothStrength,
-                      min: 0.0,
-                      max: 1.0,
-                      divisions: 20,
-                      onChanged: (v) {
-                        setState(() {
-                          postSmoothStrength = v;
-                        });
-                      },
-                    ),
-                    if (useArtifactPostprocess) ...[
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<pe.SrArtifactCleanupLevel>(
-                        value: artifactCleanupLevel,
-                        style: AiModalUi.selectorValueStyle,
-                        decoration: AiModalUi.selectDecoration('Cleanup level'),
-                        items: const [
-                          DropdownMenuItem(
-                            value: pe.SrArtifactCleanupLevel.low,
-                            child: Text('Low', style: AiModalUi.selectorValueStyle),
-                          ),
-                          DropdownMenuItem(
-                            value: pe.SrArtifactCleanupLevel.medium,
-                            child: Text('Medium', style: AiModalUi.selectorValueStyle),
-                          ),
-                          DropdownMenuItem(
-                            value: pe.SrArtifactCleanupLevel.high,
-                            child: Text('High', style: AiModalUi.selectorValueStyle),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() {
-                            artifactCleanupLevel = value;
-                          });
-                        },
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -454,10 +526,11 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
                           final workingInputSize = currentInputOptions[selectedInput];
                           Navigator.of(context).pop(
                             _SuperResolutionConfigResult(
-                              modelPathOrUrl: selectedModelPath,
+                              preset: selectedPreset,
                               maxOutputSide: outputOptions[selectedOutput],
                               maxInputSide: workingInputSize,
                               fixedInputSize: useFixedSquareInput ? workingInputSize : null,
+                              enableFaceRestoration: useFaceRestoration,
                               enableArtifactPostprocess: useArtifactPostprocess,
                               strength: strength,
                               postSmoothStrength: postSmoothStrength,
@@ -944,6 +1017,18 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
     final ok = await showModelDownloadDialog(context, modelPathOrUrl: modelPathOrUrl, modelName: modelName);
     if (!ok) return false;
 
+    if (effect is pe.SuperResolutionEffect &&
+        effect.enableFaceRestoration &&
+        effect.faceRestorationModelPathOrUrl != null &&
+        effect.faceRestorationModelPathOrUrl!.isNotEmpty) {
+      final faceRestoreOk = await showModelDownloadDialog(
+        context,
+        modelPathOrUrl: effect.faceRestorationModelPathOrUrl!,
+        modelName: 'Face restoration (GPEN-BFR-256)',
+      );
+      if (!faceRestoreOk) return false;
+    }
+
     if (effect is pe.RelightEffect &&
         effect.enableLightBalance &&
         effect.lightBalanceModelPathOrUrl != null &&
@@ -998,18 +1083,22 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
         // the user choose output size and then construct a fresh effect
         // instance with those settings.
         if (effect is pe.SuperResolutionEffect) {
+          final modelPathOrUrl = effect.modelPathOrUrl;
           final config = await _showSuperResolutionConfigDialog(
-            initialModelPathOrUrl: effect.modelPathOrUrl,
+            modelPathOrUrl: modelPathOrUrl,
             dialogTitle: '${effect.name} settings',
           );
           if (config == null) return;
 
           effective = _service.createSuperResolutionEffect(
-            modelPathOrUrl: config.modelPathOrUrl,
+            modelPathOrUrl: modelPathOrUrl,
             maxOutputSide: config.maxOutputSide,
-            maxInputSide: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ?? config.maxInputSide,
-            fixedInputSize: _fixedInputSizeForSuperResolutionModel(config.modelPathOrUrl) ?? config.fixedInputSize,
+            maxInputSide: _fixedInputSizeForSuperResolutionModel(modelPathOrUrl) ?? config.maxInputSide,
+            fixedInputSize: _fixedInputSizeForSuperResolutionModel(modelPathOrUrl) ?? config.fixedInputSize,
             enableArtifactPostprocess: config.enableArtifactPostprocess,
+            enableFaceRestoration: config.enableFaceRestoration,
+            faceRestorationModelPathOrUrl:
+                config.enableFaceRestoration ? widget.initConfigs.gpenFaceRestorationModelPathEffective : null,
             strength: config.strength,
             postSmoothStrength: config.postSmoothStrength,
             artifactCleanupLevel: config.artifactCleanupLevel,
@@ -1392,31 +1481,65 @@ class _AiPhotoEnhancementPageState extends State<AiPhotoEnhancementPage> {
 
 class _SuperResolutionConfigResult {
   const _SuperResolutionConfigResult({
-    required this.modelPathOrUrl,
+    required this.preset,
     required this.maxOutputSide,
     required this.maxInputSide,
     required this.fixedInputSize,
+    required this.enableFaceRestoration,
     required this.enableArtifactPostprocess,
     required this.strength,
     required this.postSmoothStrength,
     required this.artifactCleanupLevel,
   });
 
-  final String modelPathOrUrl;
+  final _SrPreset preset;
   final int maxOutputSide;
   final int maxInputSide;
   final int? fixedInputSize;
+  final bool enableFaceRestoration;
   final bool enableArtifactPostprocess;
   final double strength;
   final double postSmoothStrength;
   final pe.SrArtifactCleanupLevel artifactCleanupLevel;
 }
 
-class _SrModelOption {
-  const _SrModelOption({required this.label, required this.modelPathOrUrl});
+enum _SrPreset {
+  portraitClean(
+    title: 'Portrait clean',
+    description: 'Reduces JPEG artifacts while preserving eye and skin detail.',
+    speedLabel: 'Medium',
+    riskLabel: 'Balanced quality',
+  ),
+  softNatural(
+    title: 'Soft natural',
+    description: 'Keeps skin smooth and avoids over-sharpened AI look.',
+    speedLabel: 'Fast',
+    riskLabel: 'Low risk',
+  ),
+  sharpDetail(
+    title: 'Sharp detail',
+    description: 'Adds more texture and crispness for detailed portraits.',
+    speedLabel: 'Slower',
+    riskLabel: 'Higher risk on heavy JPEGs',
+  ),
+  aggressiveCleanup(
+    title: 'Aggressive cleanup',
+    description: 'Strong cleanup for blocking and ringing artifacts.',
+    speedLabel: 'Slower',
+    riskLabel: 'May smooth fine texture',
+  );
 
-  final String label;
-  final String modelPathOrUrl;
+  const _SrPreset({
+    required this.title,
+    required this.description,
+    required this.speedLabel,
+    required this.riskLabel,
+  });
+
+  final String title;
+  final String description;
+  final String speedLabel;
+  final String riskLabel;
 }
 
 class _DenoiseConfigResult {
