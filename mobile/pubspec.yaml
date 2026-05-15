@@ -141,6 +141,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/splash/
     - .env.dev
     - .env.prod
     - assets/fastdvdnet_m4.onnx
