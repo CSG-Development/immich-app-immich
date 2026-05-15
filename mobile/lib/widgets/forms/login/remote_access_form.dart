@@ -1,14 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
-
 import 'package:flutter_svg/svg.dart';
+
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_utils.dart';
 import 'package:immich_mobile/widgets/common/multi_finger_tap_detector.dart';
 import 'package:immich_mobile/widgets/forms/login/developer_options_dialog.dart';
 import 'package:immich_mobile/widgets/forms/login/email_input.dart';
+import 'package:immich_mobile/widgets/forms/login/login_brand_header.dart';
+import 'package:immich_mobile/widgets/forms/login/login_brand_strings.dart';
 import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
 
 class RemoteAccessForm extends HookConsumerWidget {
@@ -99,6 +102,14 @@ class RemoteAccessForm extends HookConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SizedBox(height: isLandscapePhone(context) ? null : 64),
+        SvgPicture.asset(
+          LoginBrandStrings.wordmarkSvg,
+          width: 162.0,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          colorFilter: ColorFilter.mode(context.colorScheme.onSurface, BlendMode.srcIn),
+        ),
         Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -107,17 +118,7 @@ class RemoteAccessForm extends HookConsumerWidget {
                 onFiveTwoFingerTaps: () {
                   showDeveloperOptionsModal(context: context, onSuccess: () async {});
                 },
-                child: Column(
-                  children: [
-                    const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
-                    SvgPicture.asset(
-                      context.isDarkTheme
-                          ? 'assets/curator-photos-logo-dark.svg'
-                          : 'assets/curator-photos-logo-light.svg',
-                      height: 20.0,
-                    ),
-                  ],
-                ),
+                child: const LoginBrandHeader(),
               ),
               const SizedBox(height: 24.0),
               Form(

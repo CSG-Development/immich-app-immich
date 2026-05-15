@@ -2,7 +2,9 @@ package com.seagate.curator.stxphotos.android
 
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import android.os.ext.SdkExtensions
+import androidx.core.view.WindowCompat
 import com.seagate.curator.stxphotos.android.background.BackgroundEngineLock
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerApiImpl
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostApi
@@ -26,6 +28,12 @@ import com.seagate.curator.stxphotos.android.update.UpdateApiImpl
 import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity : FlutterFragmentActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    // Align the Flutter view with the window so it draws behind system bars (edge-to-edge)
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    super.onCreate(savedInstanceState)
+  }
+
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     registerPlugins(this, flutterEngine)

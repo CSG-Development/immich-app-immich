@@ -281,6 +281,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     initApp().then((_) => dPrint(() => "App Init Completed"));
     unawaited(ref.read(hcPathResolverBootstrapProvider.future));
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(currentRouteNameProvider.notifier).state = SplashScreenRoute.name;
       // needs to be delayed so that EasyLocalization is working
       if (Store.isBetaTimelineEnabled) {
         ref.read(backgroundServiceProvider).disableService();
@@ -346,21 +347,34 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
           navigatorObservers: () => [PerformanceRouteObserver(), AppNavigationObserver(ref: ref)],
         ),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-          value: computeOverlayStyle(context),
-          child: ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Stack(
-              children: [
-                SafeArea(
-                  bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
-                  top: false,
-                  child: child!,
-                ),
-                if (ref.watch(networkDebugOverlayVisibleProvider)) const NetworkDebugOverlay(),
-              ],
+            value: computeOverlayStyle(context),
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Stack(
+                children: [
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final currentRouteName = ref.watch(currentRouteNameProvider);
+                      final isSplashScreen = currentRouteName == SplashScreenRoute.name;
+                      return isSplashScreen ? child! : SafeArea(
+                        bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
+                        top: false,
+                        child: child!,
+                      );
+                    },
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      if (ref.watch(networkDebugOverlayVisibleProvider)) {
+                        return const NetworkDebugOverlay();
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
       ),
     );
   }
