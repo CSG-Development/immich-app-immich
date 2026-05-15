@@ -1,10 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
@@ -81,8 +80,6 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                   itemBuilder: (context, index) {
                     final person = people[index];
 
-                    TextStyle textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
-
                     return Column(
                       children: [
                         Stack(
@@ -103,68 +100,43 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                             Positioned(
                               right: 0.0,
                               top: 0.0,
-                              child: PopupMenuButton<int>(
-                                onSelected: (int value) {
-                                  switch (value) {
-                                    case 0:
-                                      showNameEditModal(context, person);
-                                    case 1:
-                                      showBirthdayEditModal(context, person);
-                                    case 2:
-                                      context.pushRoute(DriftPeopleMergeRoute(person: person));
-                                    default:
-                                      break;
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) {
-                                  return [
-                                    PopupMenuItem(
-                                      value: 0,
-                                      child: ListTile(
-                                        leading: const Icon(Icons.edit),
-                                        title: Text('edit_name'.t(context: context), style: textStyle),
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 1,
-                                      child: ListTile(
-                                        leading: const Icon(Icons.cake),
-                                        title: Text(
-                                          (person.birthDate != null ? 'edit_birthday' : "add_birthday").t(
-                                            context: context,
-                                          ),
-                                          style: textStyle,
-                                        ),
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 2,
-                                      child: ListTile(
-                                        leading: SizedBox(
-                                          width: 24.0,
-                                          height: 24.0,
-                                          child: Center(
-                                            child: SvgPicture.asset(
-                                              'assets/merge-people-menu-item.svg',
-                                              colorFilter: ColorFilter.mode(
-                                                context.colorScheme.onSurface,
-                                                BlendMode.srcIn,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        title: Text(("merge_people").t(context: context), style: textStyle),
-                                      ),
-                                    ),
-                                  ];
-                                },
+                              child: IconButton(
                                 icon: Container(
                                   decoration: BoxDecoration(
-                                    color: context.colorScheme.surfaceContainer,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.black.withValues(alpha: 0.7)
+                                        : context.colorScheme.surfaceContainer,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const SizedBox(width: 40.0, height: 40, child: Icon(Icons.more_vert)),
+                                  child: const SizedBox(
+                                    width: 40.0,
+                                    height: 40.0,
+                                    child: Icon(Icons.more_vert, size: 24),
+                                  ),
                                 ),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    backgroundColor: context.colorScheme.surface,
+                                    builder: (sheetContext) {
+                                      return PersonOptionSheet(
+                                        onEditName: () {
+                                          sheetContext.pop();
+                                          showNameEditModal(sheetContext, person);
+                                        },
+                                        onEditBirthday: () {
+                                          sheetContext.pop();
+                                          showBirthdayEditModal(sheetContext, person);
+                                        },
+                                        onMerge: () {
+                                          sheetContext.pop();
+                                          sheetContext.pushRoute(DriftPeopleMergeRoute(person: person));
+                                        },
+                                        birthdayExists: person.birthDate != null,
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                             ),
                           ],
