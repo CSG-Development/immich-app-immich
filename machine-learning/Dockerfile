@@ -166,9 +166,8 @@ ADD --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574
 # FINAL IMAGE
 # =========================================================
 
-FROM prod-${DEVICE} AS prod
-
 ARG DEVICE
+FROM prod-${DEVICE} AS prod
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
