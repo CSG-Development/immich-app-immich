@@ -32551,7 +32551,7 @@ class CodegenLoader extends AssetLoader {
     "edit": "Edit",
     "edit_album": "Edit album",
     "edit_avatar": "Edit avatar",
-    "edit_birthday": "Edit birthday",
+    "edit_birthday": "Set date of birth",
     "edit_date": "Edit date",
     "edit_date_and_time": "Edit date and time",
     "edit_date_and_time_action_prompt": "{count} date and time edited",
