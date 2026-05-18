@@ -169,6 +169,39 @@ ADD --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574
 ARG DEVICE
 FROM builder-${DEVICE} AS builder
 
+ARG DEVICE
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        g++ \
+        python3-venv && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.15@sha256:a5727064a0de127bdb7c9d3c1383f3a9ac307d9f2d8a391edc7896c54289ced0 /uv /uvx /bin/
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --extra ${DEVICE} \
+        --no-dev \
+        --no-editable \
+        --no-install-project \
+        --compile-bytecode \
+        --no-progress \
+        --active \
+        --link-mode copy
+
+RUN if [ "$DEVICE" = "rocm" ]; then \
+    uv pip install /opt/onnxruntime_rocm-*.whl; \
+    fi
+
 # =========================================================
 # FINAL IMAGE
 # =========================================================
