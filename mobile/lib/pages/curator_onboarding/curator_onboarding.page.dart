@@ -82,14 +82,20 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
   }
 
   Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, bool isLandscape, int index) {
-    final imageWidth = isLandscape && !isTablet ? 120.0 : 312.0;
     final scrollController = _scrollControllers[index];
 
     Widget content = Column(
       mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(child: Image.asset(step.image, width: imageWidth)),
+        Center(
+          child: AspectRatio(
+            aspectRatio: 468 / 330,
+            child: step.imageType == 'svg'
+                ? Padding(padding: const EdgeInsets.all(36.0), child: SvgPicture.asset(step.image))
+                : Image.asset(step.image, fit: BoxFit.contain),
+          ),
+        ),
         const SizedBox(height: 40),
         Text(
           step.title.tr(),
