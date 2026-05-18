@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:immich_mobile/widgets/common/immich_logo.dart';
+import 'immich_logo.dart';
 
 class ImmichLoadingIndicator extends HookWidget {
   final double? borderRadius;
@@ -9,10 +9,6 @@ class ImmichLoadingIndicator extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logoAnimationController = useAnimationController(duration: const Duration(seconds: 6))
-      ..reverse()
-      ..repeat();
-
     final borderAnimationController = useAnimationController(duration: const Duration(seconds: 6))..repeat();
 
     return Container(
@@ -33,15 +29,7 @@ class ImmichLoadingIndicator extends HookWidget {
         },
         child: const Padding(
           padding: EdgeInsets.all(15),
-          // child: RotationTransition(
-          //   turns: logoAnimationController,
-          //   child: const ImmichLogo(
-          //     heroTag: 'logo',
-          //   ),
-          // ),
-          child: ImmichLogo(
-              heroTag: 'logo',
-            ),
+          child: ImmichLogo(size: 50),
         ),
       ),
     );
