@@ -91,8 +91,8 @@ RUN apt-get update && \
 # =========================================================
 
 RUN mkdir -p /tmp/gpu && cd /tmp/gpu && \
-    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-core-2_2.2.3+18417_amd64.deb && \
-    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-opencl-2_2.2.3+18417_amd64.deb && \
+    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-core-2_2.2.3+18417_amd64.deb && \
+    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-opencl-2_2.2.3+18417_amd64.deb && \
     curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd_24.48.31907.7_amd64.deb && \
     curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu_1.6.31907.7_amd64.deb && \
     curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb && \
