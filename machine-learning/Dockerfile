@@ -87,7 +87,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # =========================================================
-# Intel GPU Runtime (FIXED VERSION ALIGNMENT)
+# Intel GPU Runtime (manual install, no Intel repo)
 # =========================================================
 
 RUN apt-get update && \
@@ -100,22 +100,22 @@ RUN apt-get update && \
 RUN mkdir -p /tmp/intel-gpu && \
     cd /tmp/intel-gpu && \
     \
-    # Intel Graphics Compiler (IGC) - FIXED (NO +18417)
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-core-2_2.2.3_amd64.deb && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-opencl-2_2.2.3_amd64.deb && \
+    # Intel Graphics Compiler (IGC)
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-core-2_2.2.3+18417_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-opencl-2_2.2.3+18417_amd64.deb && \
     \
     # Intel compute runtime
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu_1.6.31907.7_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd_24.48.31907.7_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/libigdgmm12_22.5.0_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-level-zero-gpu_1.3.30872.22_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-opencl-icd_24.35.30872.22_amd64.deb && \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ./intel-igc-core-2_2.2.3_amd64.deb \
-        ./intel-igc-opencl-2_2.2.3_amd64.deb \
-        ./libigdgmm12_22.5.4_amd64.deb \
-        ./intel-level-zero-gpu_1.6.31907.7_amd64.deb \
-        ./intel-opencl-icd_24.48.31907.7_amd64.deb && \
+        ./intel-igc-core-2_2.2.3+18417_amd64.deb \
+        ./intel-igc-opencl-2_2.2.3+18417_amd64.deb \
+        ./libigdgmm12_22.5.0_amd64.deb \
+        ./intel-level-zero-gpu_1.3.30872.22_amd64.deb \
+        ./intel-opencl-icd_24.35.30872.22_amd64.deb && \
     \
     rm -rf /tmp/intel-gpu /var/lib/apt/lists/*
 
