@@ -83,41 +83,24 @@ RUN apt-get update && \
         libglib2.0-0 \
         libuuid1 \
         libstdc++6 \
-        libgcc-s1 && \
+        libgcc-s1 \
+        gnupg && \
     rm -rf /var/lib/apt/lists/*
 
 # =========================================================
-# Intel GPU Runtime (manual install, no Intel repo)
+# Intel GPU Runtime (FIXED: use Intel official repo, no broken DEB links)
 # =========================================================
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        wget \
-        ocl-icd-libopencl1 && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /tmp/intel-gpu && \
-    cd /tmp/intel-gpu && \
-    \
-    # Intel Graphics Compiler (IGC)
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-core_2.2.3+18417_amd64.deb && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-opencl_2.2.3+18417_amd64.deb && \
-    \
-    # Intel compute runtime
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/libigdgmm12_22.5.0_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-level-zero-gpu_1.3.30872.22_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-opencl-icd_24.35.30872.22_amd64.deb && \
-    \
+RUN mkdir -p /etc/apt/keyrings && \
+    wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | gpg --dearmor > /etc/apt/keyrings/intel.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/intel.gpg] https://repositories.intel.com/graphics/ubuntu jammy unified" > /etc/apt/sources.list.d/intel-graphics.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ./intel-igc-core_2.2.3+18417_amd64.deb \
-        ./intel-igc-opencl_2.2.3+18417_amd64.deb \
-        ./libigdgmm12_22.5.0_amd64.deb \
-        ./intel-level-zero-gpu_1.3.30872.22_amd64.deb \
-        ./intel-opencl-icd_24.35.30872.22_amd64.deb && \
-    \
-    rm -rf /tmp/intel-gpu /var/lib/apt/lists/*
+        intel-opencl-icd \
+        intel-level-zero-gpu \
+        level-zero \
+        ocl-icd-libopencl1 && \
+    rm -rf /var/lib/apt/lists/*
 
 # =========================================================
 # CPU prod base
@@ -246,7 +229,6 @@ ENV TRANSFORMERS_CACHE=/cache \
     VIRTUAL_ENV=/opt/venv \
     MACHINE_LEARNING_CACHE_FOLDER=/cache
 
-# prevent core dumps
 RUN echo "hard core 0" >> /etc/security/limits.conf && \
     echo "fs.suid_dumpable 0" >> /etc/sysctl.conf && \
     echo 'ulimit -S -c 0 > /dev/null 2>&1' >> /etc/profile
@@ -258,8 +240,6 @@ COPY immich_ml immich_ml
 RUN python -m ensurepip --upgrade
 RUN python -m pip install -r immich_ml/search/requirements.txt
 
-# --- Ensure preloaded model cache persists across runtime ---
-# Store a safe copy of preloaded model files
 COPY cache/ /cache
 
 ARG BUILD_ID
