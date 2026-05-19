@@ -87,7 +87,6 @@ RUN mkdir -p /tmp/intel-neo && \
     wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-opencl_1.0.17384.11_amd64.deb && \
     wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/intel-opencl-icd_24.31.30508.7_amd64.deb && \
     wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/libigdgmm12_22.4.1_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/libze-intel-gpu1_24.31.30508.7_amd64.deb && \
     dpkg -i *.deb && \
     rm -rf /tmp/intel-neo
 
