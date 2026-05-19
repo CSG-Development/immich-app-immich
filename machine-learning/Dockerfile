@@ -229,6 +229,7 @@ ENV TRANSFORMERS_CACHE=/cache \
     VIRTUAL_ENV=/opt/venv \
     MACHINE_LEARNING_CACHE_FOLDER=/cache
 
+# prevent core dumps
 RUN echo "hard core 0" >> /etc/security/limits.conf && \
     echo "fs.suid_dumpable 0" >> /etc/sysctl.conf && \
     echo 'ulimit -S -c 0 > /dev/null 2>&1' >> /etc/profile
@@ -240,6 +241,8 @@ COPY immich_ml immich_ml
 RUN python -m ensurepip --upgrade
 RUN python -m pip install -r immich_ml/search/requirements.txt
 
+# --- Ensure preloaded model cache persists across runtime ---
+# Store a safe copy of preloaded model files
 COPY cache/ /cache
 
 ARG BUILD_ID
