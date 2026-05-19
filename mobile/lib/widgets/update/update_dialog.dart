@@ -20,8 +20,10 @@ Future<bool> showUpdateAvailableDialog({
   final log = Logger('UpdateDialog');
   final UpdateApi updateApi = UpdateApi();
   var sessionId = 0;
+  var downloadInProgress = false;
 
-  return await showDialog<bool>(
+  final result =
+      await showDialog<bool>(
         context: context,
         barrierDismissible: !forced,
         builder: (ctx) => Consumer(
@@ -29,6 +31,15 @@ Future<bool> showUpdateAvailableDialog({
             final progressState = ref.watch(updateDownloadProvider);
             final int progress = progressState.percent;
             final bool isDownloading = progressState.isDownloading;
+
+            // Track download state for post-dialog cleanup
+            if (isDownloading) {
+              downloadInProgress = true;
+            }
+            if (!isDownloading && downloadInProgress && (progress >= 100 || progressState.errorMessage != null)) {
+              downloadInProgress = false;
+            }
+
             return AlertDialog(
               title: const Text('curator.update_dialog_title').tr(),
               content: Column(
@@ -64,9 +75,7 @@ Future<bool> showUpdateAvailableDialog({
                     onPressed: () async {
                       try {
                         final res = await updateApi.installDownloadedUpdate();
-                        log.info(
-                          'install_result success=${res.success} code=${res.errorCode} message=${res.message}',
-                        );
+                        log.info('install_result success=${res.success} code=${res.errorCode} message=${res.message}');
                         if (!res.success) {
                           if (ctx.mounted) {
                             ImmichToast.show(
@@ -144,9 +153,7 @@ Future<bool> showUpdateAvailableDialog({
                         _DialogCallbacks(
                           onProgress: (p) {
                             if (currentSessionId != sessionId) {
-                              log.fine(
-                                'ignoring_stale_progress_callback session=$currentSessionId current=$sessionId',
-                              );
+                              log.fine('ignoring_stale_progress_callback session=$currentSessionId current=$sessionId');
                               return;
                             }
                             log.info('download_progress percent=${p.percent}');
@@ -154,9 +161,7 @@ Future<bool> showUpdateAvailableDialog({
                           },
                           onError: (m) async {
                             if (currentSessionId != sessionId) {
-                              log.fine(
-                                'ignoring_stale_error_callback session=$currentSessionId current=$sessionId',
-                              );
+                              log.fine('ignoring_stale_error_callback session=$currentSessionId current=$sessionId');
                               return;
                             }
                             log.warning('download_error message=$m');
@@ -213,6 +218,37 @@ Future<bool> showUpdateAvailableDialog({
         ),
       ) ??
       false;
+
+  // Post-dialog cleanup: cancel download if dialog was dismissed during active download
+  if (downloadInProgress) {
+    log.info('dialog_dismissed_during_download_cancelling');
+    try {
+      await updateApi.cancelDownload();
+    } catch (e) {
+      log.warning('cancel_download_on_dismiss_error $e');
+    }
+    UpdateCallbacks.setUp(null);
+
+    // Reset provider state for next dialog instance
+    try {
+      final container = ProviderScope.containerOf(context, listen: false);
+      container.read(updateDownloadProvider.notifier).reset();
+    } catch (e) {
+      log.warning('failed_to_reset_provider_on_dismiss $e');
+    }
+
+    // Show feedback to user
+    if (context.mounted) {
+      ImmichToast.show(
+        context: context,
+        msg: 'curator.update_dialog_installation_canceled'.tr(),
+        toastType: ToastType.error,
+        gravity: ToastGravity.BOTTOM,
+      );
+    }
+  }
+
+  return result;
 }
 
 class _DialogCallbacks extends UpdateCallbacks {
