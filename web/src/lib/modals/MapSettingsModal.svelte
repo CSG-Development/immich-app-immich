@@ -1,8 +1,7 @@
 <script lang="ts">
   import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
-  import DateInput from '$lib/elements/DateInput.svelte';
   import type { MapSettings } from '$lib/stores/preferences.store';
-  import { Button, Field, HStack, Modal, ModalBody, ModalFooter, Stack, Switch } from '@immich/ui';
+  import { Button, DateInput, Field, HStack, Modal, ModalBody, ModalFooter, Stack, Switch } from '@immich/ui';
   import { Duration } from 'luxon';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';
@@ -84,17 +83,15 @@
           <div in:fly={{ y: 10, duration: 200 }} class="flex flex-col gap-4">
             <div class="flex items-center justify-between gap-8">
               <label class="immich-form-label shrink-0 text-sm" for="date-after">{$t('date_after')}</label>
-              <DateInput
-                class="immich-form-input w-40"
-                type="date"
-                id="date-after"
-                max={settings.dateBefore}
-                bind:value={settings.dateAfter}
-              />
+              <div class="w-40">
+                <DateInput type="date" id="date-after" max={settings.dateBefore} bind:value={settings.dateAfter} />
+              </div>
             </div>
             <div class="flex items-center justify-between gap-8">
               <label class="immich-form-label shrink-0 text-sm" for="date-before">{$t('date_before')}</label>
-              <DateInput class="immich-form-input w-40" type="date" id="date-before" bind:value={settings.dateBefore} />
+              <div class="w-40">
+                <DateInput type="date" id="date-before" bind:value={settings.dateBefore} />
+              </div>
             </div>
             <div class="flex justify-center text-xs">
               <Button
