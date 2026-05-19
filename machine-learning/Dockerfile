@@ -90,15 +90,20 @@ RUN apt-get update && \
 # MODERN Intel GPU stack (Level Zero ONLY - FIX)
 # =========================================================
 
-RUN apt-get update && apt-get install -y --no-install-recommends gnupg wget && \
-    wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | gpg --dearmor > /usr/share/keyrings/intel-graphics.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/debian trixie main" \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gnupg \
+        wget \
+        ca-certificates && \
+    wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | \
+        gpg --dearmor -o /usr/share/keyrings/intel-graphics.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/debian bookworm main" \
         > /etc/apt/sources.list.d/intel-graphics.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         intel-opencl-icd \
         intel-level-zero-gpu \
-        intel-media-va-driver-non-free \
+        libigdgmm12 \
         ocl-icd-libopencl1 && \
     rm -rf /var/lib/apt/lists/*
 
