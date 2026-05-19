@@ -87,25 +87,36 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # =========================================================
-# MODERN Intel GPU stack (Level Zero ONLY - FIX)
+# Intel GPU Runtime (NO Intel APT repo)
 # =========================================================
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        gnupg \
+        ca-certificates \
+        curl \
         wget \
-        ca-certificates && \
-    wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | \
-        gpg --dearmor -o /usr/share/keyrings/intel-graphics.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/debian bookworm main" \
-        > /etc/apt/sources.list.d/intel-graphics.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        intel-opencl-icd \
-        intel-level-zero-gpu \
-        libigdgmm12 \
         ocl-icd-libopencl1 && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /tmp/intel-gpu && \
+    cd /tmp/intel-gpu && \
+    \
+    # libigdgmm
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb && \
+    \
+    # level zero
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu_1.6.31907.7_amd64.deb && \
+    \
+    # opencl runtime
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd_24.48.31907.7_amd64.deb && \
+    \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ./libigdgmm12_22.5.4_amd64.deb \
+        ./intel-level-zero-gpu_1.6.31907.7_amd64.deb \
+        ./intel-opencl-icd_24.48.31907.7_amd64.deb && \
+    \
+    rm -rf /tmp/intel-gpu /var/lib/apt/lists/*
 
 # =========================================================
 # CPU prod base
