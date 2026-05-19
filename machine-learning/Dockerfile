@@ -77,8 +77,9 @@ FROM dhi.io/python:3.11-debian13-dev AS prod-openvino
 RUN apt-get update && \
     apt-get install --no-install-recommends -yqq \
         ocl-icd-libopencl1 \
+        intel-opencl-icd \
         wget \
-        ca-certificates && \
+        clinfo && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /tmp/intel-neo && \
