@@ -90,20 +90,17 @@ RUN apt-get update && \
 # MODERN Intel GPU stack (Level Zero ONLY - FIX)
 # =========================================================
 
-RUN mkdir -p /tmp/gpu && cd /tmp/gpu && \
-    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-core-2_2.2.3+18417_amd64.deb && \
-    curl -fLO https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-opencl-2_2.2.3+18417_amd64.deb && \
-    curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-opencl-icd_24.48.31907.7_amd64.deb && \
-    curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/intel-level-zero-gpu_1.6.31907.7_amd64.deb && \
-    curl -fLO https://github.com/intel/compute-runtime/releases/download/24.48.31907.7/libigdgmm12_22.5.4_amd64.deb && \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg wget && \
+    wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | gpg --dearmor > /usr/share/keyrings/intel-graphics.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/debian trixie main" \
+        > /etc/apt/sources.list.d/intel-graphics.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ./intel-igc-core-2_2.2.3+18417_amd64.deb \
-        ./intel-igc-opencl-2_2.2.3+18417_amd64.deb \
-        ./libigdgmm12_22.5.4_amd64.deb \
-        ./intel-level-zero-gpu_1.6.31907.7_amd64.deb \
-        ./intel-opencl-icd_24.48.31907.7_amd64.deb && \
-    rm -rf /tmp/gpu /var/lib/apt/lists/*
+        intel-opencl-icd \
+        intel-level-zero-gpu \
+        intel-media-va-driver-non-free \
+        ocl-icd-libopencl1 && \
+    rm -rf /var/lib/apt/lists/*
 
 # =========================================================
 # CPU prod base
