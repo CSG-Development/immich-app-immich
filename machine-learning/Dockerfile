@@ -101,8 +101,8 @@ RUN mkdir -p /tmp/intel-gpu && \
     cd /tmp/intel-gpu && \
     \
     # Intel Graphics Compiler (IGC)
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-core_2.2.3_amd64.deb && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.2.3/intel-igc-opencl_2.2.3_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-core_2.2.3+18417_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-2.2.3/intel-igc-opencl_2.2.3+18417_amd64.deb && \
     \
     # Intel compute runtime
     wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/libigdgmm12_22.5.0_amd64.deb && \
@@ -111,8 +111,8 @@ RUN mkdir -p /tmp/intel-gpu && \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ./intel-igc-core_2.2.3_amd64.deb \
-        ./intel-igc-opencl_2.2.3_amd64.deb \
+        ./intel-igc-core_2.2.3+18417_amd64.deb \
+        ./intel-igc-opencl_2.2.3+18417_amd64.deb \
         ./libigdgmm12_22.5.0_amd64.deb \
         ./intel-level-zero-gpu_1.3.30872.22_amd64.deb \
         ./intel-opencl-icd_24.35.30872.22_amd64.deb && \
