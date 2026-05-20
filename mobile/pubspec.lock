@@ -87,7 +87,7 @@ packages:
       path: background_downloader
       relative: true
     source: path
-    version: "9.2.5"
+    version: "9.5.4"
   basic_utils:
     dependency: "direct main"
     description:
