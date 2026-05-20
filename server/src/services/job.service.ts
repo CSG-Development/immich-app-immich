@@ -1,10 +1,10 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {ClassConstructor} from 'class-transformer';
-import {snakeCase} from 'lodash';
-import {SystemConfig} from 'src/config';
-import {OnEvent} from 'src/decorators';
-import {mapAsset} from 'src/dtos/asset-response.dto';
-import {AllJobStatusResponseDto, JobCommandDto, JobCreateDto, JobStatusDto} from 'src/dtos/job.dto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { ClassConstructor } from 'class-transformer';
+import { snakeCase } from 'lodash';
+import { SystemConfig } from 'src/config';
+import { OnEvent } from 'src/decorators';
+import { mapAsset } from 'src/dtos/asset-response.dto';
+import { AllJobStatusResponseDto, JobCommandDto, JobCreateDto, JobStatusDto } from 'src/dtos/job.dto';
 import {
   AssetType,
   AssetVisibility,
@@ -19,11 +19,11 @@ import {
   QueueCleanType,
   QueueName,
 } from 'src/enum';
-import {ArgOf, ArgsOf} from 'src/repositories/event.repository';
-import {BaseService} from 'src/services/base.service';
-import {ConcurrentQueueName, JobItem} from 'src/types';
-import {hexOrBufferToBase64} from 'src/utils/bytes';
-import {handlePromiseError} from 'src/utils/misc';
+import { ArgOf, ArgsOf } from 'src/repositories/event.repository';
+import { BaseService } from 'src/services/base.service';
+import { ConcurrentQueueName, JobItem } from 'src/types';
+import { hexOrBufferToBase64 } from 'src/utils/bytes';
+import { handlePromiseError } from 'src/utils/misc';
 
 const asJobItem = (dto: JobCreateDto): JobItem => {
   switch (dto.name) {
