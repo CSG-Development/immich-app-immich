@@ -230,9 +230,14 @@ private func updateGroupNotification(
     notificationConfig: NotificationConfig
 ) async {
     let groupNotificationId = notificationConfig.groupNotificationId
-    var groupNotification = GroupNotification.notifications[groupNotificationId] ?? GroupNotification(name: groupNotificationId, notificationConfig: notificationConfig)
+    let groupNotification = BDPlugin.propertyLock.withLock {
+        GroupNotification.notifications[groupNotificationId]
+            ?? GroupNotification(name: groupNotificationId, notificationConfig: notificationConfig)
+    }
     let stateChange = await groupNotification.update(task: task, notificationType: notificationType)
-    GroupNotification.notifications[groupNotificationId] = groupNotification
+    BDPlugin.propertyLock.withLock {
+        GroupNotification.notifications[groupNotificationId] = groupNotification
+    }
     if stateChange {
         // need to update the group notification
         let notificationCenter = UNUserNotificationCenter.current()
@@ -281,7 +286,9 @@ private func updateGroupNotification(
             // remove only if not re-activated within 5 seconds
             try? await _Concurrency.Task.sleep(nanoseconds: 5_000_000_000)
             if await groupNotification.isFinished {
-                GroupNotification.notifications.removeValue(forKey: groupNotificationId)
+                BDPlugin.propertyLock.withLock {
+                    GroupNotification.notifications.removeValue(forKey: groupNotificationId)
+                }
             }
         }
     }
