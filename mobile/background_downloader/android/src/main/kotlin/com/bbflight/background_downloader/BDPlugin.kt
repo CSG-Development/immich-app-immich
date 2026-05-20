@@ -53,6 +53,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 import androidx.work.OneTimeWorkRequest
+import android.util.Base64
 
 
 /**
@@ -619,6 +620,7 @@ class BDPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     "configProxyPort" -> methodConfigProxyPort(call)
                     "configRequestTimeout" -> methodConfigRequestTimeout(call)
                     "configBypassTLSCertificateValidation" -> methodConfigBypassTLSCertificateValidation()
+                    "configCertificatePinning" -> methodConfigCertificatePinning(call)
                     "configCheckAvailableSpace" -> methodConfigCheckAvailableSpace(call)
                     "configUseCacheDir" -> methodConfigUseCacheDir(call)
                     "configUseExternalStorage" -> methodConfigUseExternalStorage(call)
@@ -1387,6 +1389,27 @@ class BDPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     private suspend fun methodConfigBypassTLSCertificateValidation(): Any? {
         withContext(defaultScope.coroutineContext) {
             acceptUntrustedCertificates()
+        }
+        return null
+    }
+
+    /**
+     * Certificate pinning
+     */
+    private suspend fun methodConfigCertificatePinning(call: MethodCall): Any? {
+        withContext(defaultScope.coroutineContext) {
+            val pinnedCertsBytes = mutableListOf<ByteArray>()
+            val certsBase64 = call.arguments as List<String>
+            pinnedCertsBytes.clear()
+            certsBase64.forEach { base64Str ->
+                pinnedCertsBytes.add(Base64.decode(base64Str, Base64.DEFAULT))
+            }
+            if (pinnedCertsBytes.isNotEmpty()) {
+                SSLPinningManager.initialize(pinnedCertsBytes)
+                Log.w(TAG, "SSL pinning configured with ${pinnedCertsBytes.size} certificates")
+            } else {
+                Log.w(TAG, "No valid certificates provided for SSL pinning")
+            }
         }
         return null
     }

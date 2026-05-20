@@ -621,6 +621,8 @@ final class Config {
   /// Config string for bypass TLS certificate validation
   static const bypassTLSCertificateValidation =
       'bypassTLSCertificateValidation';
+  static const configCertificatePinning =
+      'configCertificatePinning';
 
   /// Config string for run in foreground
   static const runInForeground = 'runInForeground';

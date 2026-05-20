@@ -711,6 +711,9 @@ final class AndroidDownloader extends NativeDownloader {
             'restart and leave out the "configBypassCertificateValidation" configuration',
           );
         }
+      case (Config.configCertificatePinning, List<String> certs):
+        await NativeDownloader.methodChannel
+            .invokeMethod('configCertificatePinning', certs);
 
       case (Config.useCacheDir, String whenTo):
         assert(
@@ -790,6 +793,9 @@ final class IOSDownloader extends NativeDownloader {
           'configLocalize',
           translation,
         );
+      case (Config.configCertificatePinning, List<String> certs):
+        await NativeDownloader.methodChannel
+            .invokeMethod('configCertificatePinning', certs);
 
       case (Config.excludeFromCloudBackup, dynamic exclude):
         assert(
