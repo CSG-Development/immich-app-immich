@@ -1,3 +1,86 @@
+## 9.5.4
+
+* Add `TaskOptions` to `DataTask` with similar functionality as in `DownloadTask`
+* Bug fixes
+
+## 9.5.3
+
+* [Android] Fix race condition in `TaskWorker` where `setForeground` could crash for finished tasks
+* Add documentation
+* Add integration testing documentation and steps
+
+## 9.5.2
+
+* Moves LocalStorePersistentStorage to isolate model to off-load i/o operations, and unwinds Future.wait to loop
+
+## 9.5.1
+
+* [iOS] Support for UISceneDelegate in iOS 13.0 and above 
+
+## 9.5.0
+
+* Introduces Android User Initiated Data Transfer (UIDT), triggered when task priority is set to 0 (max priority) on Android 14+, provided a notification is also configured. Explanation of Android execution options:
+  * **WorkManager (default and preferred for most tasks)**: Used for most tasks. Subject to a 9-minute execution limit in the background. If the task is not finished within 9 minutes, it will be terminated (unless `allowPause` is true, in which case it will pause and resume).
+  * **Foreground Service**: Triggered via `Config.runInForeground`. Displays a persistent notification and is not subject to the 9-minute limit on many Android versions. Requires `FOREGROUND_SERVICE_DATA_SYNC` permission on Android 14+.
+  * **User Initiated Data Transfer (UIDT)**: Triggered by setting `priority: 0` on Android 14+. This is a specialized JobScheduler mode that does *not* have the 9-minute limit and is designed for large, user-aware data transfers. It requires a notification to be shown.
+    * **Note**: Using UIDT requires adding the `RUN_USER_INITIATED_JOBS` permission to your `AndroidManifest.xml`, as well as a service declaration for `.UIDTJobService`. See the README for details.
+* [Android] Fixes `HoldingQueue` logic to correctly include UIDT jobs and prevent race conditions
+* [Android] Properly captures WorkManager cancellations to ensure task status is updated to failed
+* [Android] Improvements for Android 14+ compatibility and Android 15 timeout logging
+* [Android] Updated minimum Kotlin compiler version to 2.1.0
+* [iOS] Updates to openFile and privacy manifest for iOS 16/17 compatibility
+* Replaces sync with async IO in `LocalStorePersistentStorage` to prevent UI stutter
+* [General] Documentation refactor: broken down README into separate files in `doc/` directory
+
+## 9.4.4
+
+* [Android] MinSDK is now 23 (was 21), required because the latest Android WorkManager is required to properly support Android 15+
+* [Android] Fixes bug fix related to foreground service in Android 15+
+* Performance improvements related to `Task.filePath`, `Task.split` and `ParallelDownloadTask` pause
+
+## 9.4.3
+
+* Improve JSON processing to reduce UI jank
+* Optimize database operations
+* Add `database.cleanUp()` to simplify and automate database maintenance, and added database clean-up to `start()` command
+* Fix iOS background callback performance
+
+## 9.4.2
+
+* Improve Android notification handling
+* Add local test server to reduce test suite flakiness
+* Improve code documentation
+
+## 9.4.1
+
+* Refine TaskQueue pauseAll/resumeAll to support specific tasks and groups. Updated `TaskQueue` interface to accept optional `tasks` and `group` parameters in `pauseAll` and `resumeAll` and implemented this for the `MemoryTaskQueue`
+* Change platform checks from `Platform.isAndroid` etc to `defaultTargetPlatform` which should lead to better tree shaking and smaller memory size
+
+## 9.4.0
+
+* Improves concurrency on mobile platforms by moving JSON encoding and decoding to an isolate, and introducing a job queue to ensure ordered message execution.
+* Adds `Config.skipExistingFiles` configuration option to skip the download if the destination file already exists (and conditionally does this only for files greater than a certain size)
+
+## 9.3.0
+
+Main change is in Android concurrency, triggered by the [Great Thread Merge](https://github.com/flutter/flutter/issues/150525) that causes UI blocking issues for recent versions of Flutter. The concurrency approach has been changed, but note this can cause minor changes in - for example - the sequence in which certain events happen.
+
+* Feature improvements
+  - Add pause and resume functionality to TaskQueue using `pauseAll` and `resumeAll`. These methods are now called when pausing or resuming all tasks using the `FileDownloader`
+
+* Bug fixes
+  - Fix issue with MultiUploadTask when uploading only one file
+  - UriUtils subclasses are now private, as they should have been to start with
+  - Address Dart analyzer recommendations
+
+## 9.2.6
+
+* Bug fix
+  - [Android] Fix Tap to open (on notification) bug, introduced in 9.2.4
+
+* Version upgrades
+  - [Android] compileSDK set to 36, targetSDK for example app set to 36, Kotlin compiler in example app set to 2.1.0
+
 ## 9.2.5
 
 * Minor bug fixes

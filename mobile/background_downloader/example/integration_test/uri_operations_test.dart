@@ -15,7 +15,8 @@ void main() {
   tearDown(defaultTearDown);
 
   group('Binary uploads', () {
-    test('enqueue binary file using URI', () async {
+    test('enqueue binary file using URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       FileDownloader().registerCallbacks(
           taskStatusCallback: statusCallback,
           taskProgressCallback: progressCallback);
@@ -38,7 +39,8 @@ void main() {
           equals(uploadFilename.substring(0, 6)));
     });
 
-    test('upload binary file using incorrect Android content URI', () async {
+    test('upload binary file using incorrect Android content URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final task = UriUploadTask(
           url: uploadBinaryTestUrl,
           fileUri: Uri.parse('content://some/invalid/path'),
@@ -50,7 +52,8 @@ void main() {
           result.exception?.exceptionType, equals('TaskFileSystemException'));
     }, skip: !Platform.isAndroid);
 
-    test('upload with fileUrl', () async {
+    test('upload with fileUrl', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       FileDownloader().registerCallbacks(
           taskStatusCallback: statusCallback,
           taskProgressCallback: progressCallback);
@@ -75,7 +78,8 @@ void main() {
   });
 
   group('Multipart uploads', () {
-    test('enqueue multipart file using Android content URI', () async {
+    test('enqueue multipart file using Android content URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       FileDownloader().registerCallbacks(
           taskStatusCallback: statusCallback,
           taskProgressCallback: progressCallback);
@@ -92,7 +96,8 @@ void main() {
       expect(lastStatus, equals(TaskStatus.complete));
     }, skip: !Platform.isAndroid);
 
-    test('upload multipart file using incorrect Android content URI', () async {
+    test('upload multipart file using incorrect Android content URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final task = UriUploadTask(
           url: uploadMultiTestUrl,
           fileUri: Uri.parse('content://some/invalid/path'));
@@ -103,7 +108,8 @@ void main() {
           result.exception?.exceptionType, equals('TaskFileSystemException'));
     }, skip: !Platform.isAndroid);
 
-    test('upload single multipart file using file URI', () async {
+    test('upload single multipart file using file URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final filePath = await uploadTask.filePath();
       final fileUri = Uri.file(filePath);
       final task = UriUploadTask(url: uploadTestUrl, fileUri: fileUri);
@@ -116,7 +122,8 @@ void main() {
       expect((resultTask).directoryUri, isNull);
     });
 
-    test('MultiUpload using URIs', () async {
+    test('MultiUpload using URIs', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       // move file to shared storage and obtain the URI
       final dummy = DownloadTask(url: uploadTestUrl, filename: uploadFilename);
       final uri = await FileDownloader()
@@ -137,7 +144,8 @@ void main() {
       expect(result.status, equals(TaskStatus.complete));
     });
 
-    test('multiUpload using file uris', () async {
+    test('multiUpload using file uris',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final dummy = DownloadTask(url: uploadTestUrl, filename: uploadFilename);
       final uri1 = Uri.file(await dummy.filePath());
       print('URI: $uri1');
@@ -159,10 +167,12 @@ void main() {
   });
 
   group('Downloads with file URI', () {
-    test('download file without filename', () async {
+    test('download file without filename',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final directory = await getApplicationDocumentsDirectory();
       final directoryUri = Uri.file(directory.path);
-      final task = UriDownloadTask(url: workingUrl, directoryUri: directoryUri);
+      final task = UriDownloadTask(
+          url: urlWithoutContentLength, directoryUri: directoryUri);
       expect(
           allDigitsRegex.hasMatch(task.filename), isTrue); // filename omitted
       expect(task.directoryUri, equals(directoryUri));
@@ -180,7 +190,8 @@ void main() {
       expect(await FileDownloader().uri.deleteFile(fileUri), isTrue);
     });
 
-    test('download file with suggested filename', () async {
+    test('download file with suggested filename',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final directory = await getApplicationDocumentsDirectory();
       final directoryUri = Uri.file(directory.path);
       final task = UriDownloadTask(
@@ -203,7 +214,8 @@ void main() {
       expect(await FileDownloader().uri.deleteFile(fileUri), isTrue);
     });
 
-    test('Download and pause/resume file with suggested filename', () async {
+    test('Download and pause/resume file with suggested filename',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       FileDownloader().registerCallbacks(
           taskStatusCallback: statusCallback,
           taskProgressCallback: progressCallback);
@@ -245,7 +257,8 @@ void main() {
   });
 
   group('Other utils', () {
-    testWidgets('open file from URI', (widgetTester) async {
+    testWidgets('open file from URI',
+        timeout: const Timeout(Duration(minutes: 2)), (widgetTester) async {
       // move file to shared storage and obtain the URI
       final dummy = DownloadTask(url: uploadTestUrl, filename: uploadFilename);
       final uri = await FileDownloader()
@@ -260,7 +273,8 @@ void main() {
   });
 
   group('File utils', () {
-    test('move task to shared storage with file URI', () async {
+    test('move task to shared storage with file URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // note: moved file is not deleted in this test
       var filePath = await task.filePath();
       await FileDownloader().download(task);
@@ -281,7 +295,7 @@ void main() {
 
     testWidgets('path in shared storage with file URI',
         // note: moved file is not deleted in this test
-        (widgetTester) async {
+        timeout: const Timeout(Duration(minutes: 2)), (widgetTester) async {
       await FileDownloader().download(task);
       final uri = await FileDownloader()
           .uri
@@ -308,7 +322,8 @@ void main() {
       }
     });
 
-    test('createDirectory', () async {
+    test('createDirectory', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       const testDir = 'testDir';
       const testSubDir = 'testSubDir';
       const multiLevelDirName = 'test/Dir';
@@ -357,7 +372,8 @@ void main() {
       }
     });
 
-    test('getFileBytes with file URI', () async {
+    test('getFileBytes with file URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a dummy file
       final directory = await getTemporaryDirectory();
       final file = File(p.join(directory.path, 'testFile.txt'));
@@ -371,7 +387,8 @@ void main() {
       await file.delete();
     });
 
-    test('copyFile with file:// URIs', () async {
+    test('copyFile with file:// URIs',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -394,7 +411,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('moveFile with file:// URIs', () async {
+    test('moveFile with file:// URIs',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -418,7 +436,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('copyFile with file:// URIs and String destination', () async {
+    test('copyFile with file:// URIs and String destination',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -441,7 +460,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('moveFile with file:// URIs and String destination', () async {
+    test('moveFile with file:// URIs and String destination',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -465,7 +485,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('copyFile with file:// URIs and File destination', () async {
+    test('copyFile with file:// URIs and File destination',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -487,7 +508,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('moveFile with file:// URIs and File destination', () async {
+    test('moveFile with file:// URIs and File destination',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -510,7 +532,8 @@ void main() {
       await destFile.delete();
     });
 
-    test('copyFile and moveFile throw with invalid destination type', () async {
+    test('copyFile and moveFile throw with invalid destination type',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a source file.
       final directory = await getTemporaryDirectory();
       final sourceFile = File(p.join(directory.path, 'source.txt'));
@@ -534,7 +557,8 @@ void main() {
       await sourceFile.delete();
     });
 
-    test('copyFile from content URI to file URI on Android', () async {
+    test('copyFile from content URI to file URI on Android',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Move a test file to shared storage to obtain a content:// URI.
       final dummy = DownloadTask(url: uploadTestUrl, filename: uploadFilename);
       final contentUri = await FileDownloader()
@@ -562,7 +586,8 @@ void main() {
       await destFile.delete();
     }, skip: !Platform.isAndroid);
 
-    test('moveFile from content URI to file URI on Android', () async {
+    test('moveFile from content URI to file URI on Android',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Move a test file to shared storage to obtain a content:// URI.
       final dummy = DownloadTask(url: uploadTestUrl, filename: uploadFilename);
       final contentUri = await FileDownloader()
@@ -592,7 +617,8 @@ void main() {
       await destFile.delete();
     }, skip: !Platform.isAndroid);
 
-    test('deleteFile with file URI', () async {
+    test('deleteFile with file URI',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // Create a dummy file
       final directory = await getTemporaryDirectory();
       final file = File(p.join(directory.path, 'testFile.txt'));

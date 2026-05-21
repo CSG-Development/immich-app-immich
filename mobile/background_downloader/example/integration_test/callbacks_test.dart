@@ -10,12 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' hide equals;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'test_utils.dart';
 
 const defaultFilename = 'get_result.txt';
-const getTestUrl =
-    'https://avmaps-dot-bbflightserver-hrd.appspot.com/public/test_get_data';
-const refreshTestUrl =
-    'https://avmaps-dot-bbflightserver-hrd.appspot.com/public/test_refresh';
 
 var callbackCounter = 0;
 var mainIsolateCallbackCounter = 0;
@@ -137,7 +134,8 @@ void main() {
   });
 
   group('beforeTaskStartCallback', () {
-    test('no-change callback', () async {
+    test('no-change callback', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true', 'param1': 'original'},
@@ -155,7 +153,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('cancel callback', () async {
+    test('cancel callback', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true', 'param1': 'original'},
@@ -174,7 +173,8 @@ void main() {
   });
 
   group('onStartCallback', () {
-    test('no-change callback', () async {
+    test('no-change callback', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true', 'param1': 'original'},
@@ -191,7 +191,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('url-change callback', () async {
+    test('url-change callback', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true', 'param1': 'original'},
@@ -208,7 +209,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('header-change callback', () async {
+    test('header-change callback', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true'},
@@ -229,7 +231,8 @@ void main() {
   });
 
   group('onFinishedCallback', () {
-    test('onFinishedCallback passes the appropriate status', () async {
+    test('onFinishedCallback passes the appropriate status',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       final task = DownloadTask(
           url: getTestUrl,
           urlQueryParameters: {'json': 'true', 'param1': 'original'},
@@ -247,7 +250,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('onFinishedCallback after canceling beforeStartCallback', () async {
+    test('onFinishedCallback after canceling beforeStartCallback',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // tests that onTaskFinished is also called when the task is canceled
       // via the beforeStartCallback
       final task = DownloadTask(
@@ -272,6 +276,51 @@ void main() {
     });
   });
 
+  group('DataTasks with callbacks', () {
+    test('beforeTaskStart callback cancel',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
+      final task = DataTask(
+          url: getTestUrl,
+          urlQueryParameters: {'json': 'true', 'param1': 'original'},
+          options: TaskOptions(beforeTaskStart: beforeTaskStartCallbackCancel));
+      final result = await FileDownloader().transmit(task);
+      expect(result.status, equals(TaskStatus.canceled));
+      expect(result.responseBody, equals('response'));
+      expect(result.responseHeaders, equals({'header': 'value'}));
+      expect(mainIsolateCallbackCounter,
+          equals(mainIsolateCallbackCounterAtStartOfTest + 1));
+    });
+
+    test('onTaskStart callback url change',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
+      final task = DataTask(
+          url: getTestUrl,
+          urlQueryParameters: {'json': 'true', 'param1': 'original'},
+          options: TaskOptions(onTaskStart: onTaskStartCallbackUrlChange));
+      final result = await FileDownloader().transmit(task);
+      expect(result.status, equals(TaskStatus.complete));
+      var resultJson = jsonDecode(result.responseBody!);
+      expect(resultJson['args']['param1'], equals('changed'));
+      expect(mainIsolateCallbackCounter,
+          equals(mainIsolateCallbackCounterAtStartOfTest + 1));
+    });
+
+    test('onTaskFinished callback',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
+      final task = DataTask(
+          url: getTestUrl,
+          urlQueryParameters: {'json': 'true', 'param1': 'original'},
+          options: TaskOptions(onTaskFinished: onTaskFinishedCallback));
+      final result = await FileDownloader().transmit(task);
+      expect(result.status, equals(TaskStatus.complete));
+      var resultJson = jsonDecode(result.responseBody!);
+      expect(resultJson['args']['param1'], equals('original'));
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(mainIsolateCallbackCounter,
+          equals(mainIsolateCallbackCounterAtStartOfTest + 1));
+    });
+  });
+
   group('onAuth callbacks', () {
     late Auth auth;
 
@@ -291,7 +340,8 @@ void main() {
       );
     });
 
-    test('refresh request', () async {
+    test('refresh request', timeout: const Timeout(Duration(minutes: 2)),
+        () async {
       final result = await http.post(Uri.parse(refreshTestUrl),
           headers: {'Auth': 'Bearer abcd', 'Content-type': 'application/json'},
           body: jsonEncode({'refresh_token': 'myRefreshToken'}));
@@ -302,7 +352,8 @@ void main() {
       expect(json['post_body']['refresh_token'], equals('myRefreshToken'));
     });
 
-    test('default handler with unexpired token -> no callback', () async {
+    test('default handler with unexpired token -> no callback',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // no callback makes no change to the original task, so only
       // the known arguments and headers should be present, as well as the
       // original auth argument and header (because no refresh took place)
@@ -332,7 +383,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('default handler with null auth callback', () async {
+    test('default handler with null auth callback',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // null auth callback makes no change to the original task, so only
       // the known arguments and headers should be present, as well as the
       // original auth argument and header (because no refresh took place)
@@ -360,7 +412,8 @@ void main() {
       await File(path).delete();
     });
 
-    test('default handler with refresh auth callback', () async {
+    test('default handler with refresh auth callback',
+        timeout: const Timeout(Duration(minutes: 2)), () async {
       // refresh auth callback changes the original task, so only
       // the known arguments and headers should be present, as well as the
       // original auth argument and header (because no refresh took place)

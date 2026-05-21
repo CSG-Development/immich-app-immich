@@ -2,8 +2,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show Random;
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
@@ -21,11 +21,13 @@ import 'web_downloader.dart'
 part 'uri/uri_task.dart';
 
 final _log = Logger('FileDownloader');
+final _random = Random();
 
 /// A server Request
 ///
 /// An equality test on a [Request] is an equality test on the [url]
 base class Request {
+  /// List of valid HTTP methods
   final validHttpMethods = ['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'PATCH'];
 
   /// String representation of the url, urlEncoded
@@ -73,61 +75,64 @@ base class Request {
   /// - a List: map will be jsonEncoded to a String and set as the POST body
   ///
   /// [retries] if >0 will retry a failed download this many times
-  Request(
-      {required String url,
-      Map<String, String>? urlQueryParameters,
-      Map<String, String>? headers,
-      String? httpRequestMethod,
-      post,
-      this.retries = 0,
-      DateTime? creationTime})
-      : url = urlWithQueryParameters(url, urlQueryParameters),
-        headers = headers ?? {},
-        httpRequestMethod =
-            httpRequestMethod?.toUpperCase() ?? (post == null ? 'GET' : 'POST'),
-        post = post is Uint8List
-            ? String.fromCharCodes(post)
-            : post is Map || post is List
-                ? jsonEncode(post)
-                : post,
-        retriesRemaining = retries,
-        creationTime = creationTime ?? DateTime.now() {
+  Request({
+    required String url,
+    Map<String, String>? urlQueryParameters,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    post,
+    this.retries = 0,
+    DateTime? creationTime,
+  }) : url = urlWithQueryParameters(url, urlQueryParameters),
+       headers = headers ?? {},
+       httpRequestMethod =
+           httpRequestMethod?.toUpperCase() ?? (post == null ? 'GET' : 'POST'),
+       post = post is Uint8List
+           ? String.fromCharCodes(post)
+           : post is Map || post is List
+           ? jsonEncode(post)
+           : post,
+       retriesRemaining = retries,
+       creationTime = creationTime ?? DateTime.now() {
     if (retries < 0 || retries > 10) {
       throw ArgumentError('Number of retries must be in range 1 through 10');
     }
     if (!validHttpMethods.contains(this.httpRequestMethod)) {
       throw ArgumentError(
-          'Invalid httpRequestMethod "${this.httpRequestMethod}": Must be one of ${validHttpMethods.join(', ')}');
+        'Invalid httpRequestMethod "${this.httpRequestMethod}": Must be one of ${validHttpMethods.join(', ')}',
+      );
     }
   }
 
   /// Creates object from [json]
   Request.fromJson(Map<String, dynamic> json)
-      : url = json['url'] ?? '',
-        headers = Map<String, String>.from(json['headers'] ?? {}),
-        httpRequestMethod = json['httpRequestMethod'] as String? ??
-            (json['post'] == null ? 'GET' : 'POST'),
-        post = json['post'] as String?,
-        retries = (json['retries'] as num?)?.toInt() ?? 0,
-        retriesRemaining = (json['retriesRemaining'] as num?)?.toInt() ?? 0,
-        creationTime = DateTime.fromMillisecondsSinceEpoch(
-            (json['creationTime'] as num?)?.toInt() ?? 0);
+    : url = json['url'] ?? '',
+      headers = Map<String, String>.from(json['headers'] ?? {}),
+      httpRequestMethod =
+          json['httpRequestMethod'] as String? ??
+          (json['post'] == null ? 'GET' : 'POST'),
+      post = json['post'] as String?,
+      retries = (json['retries'] as num?)?.toInt() ?? 0,
+      retriesRemaining = (json['retriesRemaining'] as num?)?.toInt() ?? 0,
+      creationTime = DateTime.fromMillisecondsSinceEpoch(
+        (json['creationTime'] as num?)?.toInt() ?? 0,
+      );
 
   /// Creates JSON map of this object
   Map<String, dynamic> toJson() => {
-        'url': url,
-        'headers': headers,
-        'httpRequestMethod': httpRequestMethod,
-        'post': post,
-        'retries': retries,
-        'retriesRemaining': retriesRemaining,
-        'creationTime': creationTime.millisecondsSinceEpoch
-      };
+    'url': url,
+    'headers': headers,
+    'httpRequestMethod': httpRequestMethod,
+    'post': post,
+    'retries': retries,
+    'retriesRemaining': retriesRemaining,
+    'creationTime': creationTime.millisecondsSinceEpoch,
+  };
 
   /// The regex pattern to split the cookies in `Set-Cookie`.
-  static final _regexSplitSetCookies = RegExp(',(?=[^ ])');
+  static final _splitSetCookiesRegExp = RegExp(',(?=[^ ])');
 
-  /// Returns the cookie header appropriate for this [request],
+  /// Returns the cookie header appropriate for this [Request],
   /// taken from the [cookies] list.
   ///
   /// [cookies] can be a `List<Cookie>` or the 'Set-Cookie' header value
@@ -143,23 +148,27 @@ base class Request {
       return {};
     }
     final List<Cookie> cookieList = switch (cookies) {
-      http.Response response =>
-        cookiesFromSetCookie(response.headers['set-cookie'] ?? ''),
+      http.Response response => cookiesFromSetCookie(
+        response.headers['set-cookie'] ?? '',
+      ),
       List<Cookie> list => list,
       String _ => cookiesFromSetCookie(cookies),
       _ => throw ArgumentError(
-          'cookies parameter must be a http.Response object, a String or a List<Cookie>')
+        'cookies parameter must be a http.Response object, a String or a List<Cookie>',
+      ),
     };
     final path = uri.path.isNotEmpty ? uri.path : '/';
-    final validCookies = cookieList.where((cookie) =>
-        (cookie.maxAge == null || cookie.maxAge! > 0) &&
-        (cookie.domain == null ||
-            uri.host.endsWith(cookie.domain!) ||
-            (cookie.domain!.startsWith('.') &&
-                uri.host == cookie.domain!.substring(1))) &&
-        (cookie.path == null || path.startsWith(cookie.path!)) &&
-        (cookie.expires == null || cookie.expires!.isAfter(DateTime.now())) &&
-        (!cookie.secure || uri.scheme == 'https'));
+    final validCookies = cookieList.where(
+      (cookie) =>
+          (cookie.maxAge == null || cookie.maxAge! > 0) &&
+          (cookie.domain == null ||
+              uri.host.endsWith(cookie.domain!) ||
+              (cookie.domain!.startsWith('.') &&
+                  uri.host == cookie.domain!.substring(1))) &&
+          (cookie.path == null || path.startsWith(cookie.path!)) &&
+          (cookie.expires == null || cookie.expires!.isAfter(DateTime.now())) &&
+          (!cookie.secure || uri.scheme == 'https'),
+    );
     final cookieHeaderValue = validCookies
         .map((c) => c.name.isNotEmpty ? '${c.name}=${c.value}' : c.value)
         .join('; ');
@@ -173,7 +182,7 @@ base class Request {
   static List<Cookie> cookiesFromSetCookie(String setCookie) {
     final cookies = <Cookie>[];
     if (setCookie.isNotEmpty) {
-      for (final cookie in setCookie.split(_regexSplitSetCookies)) {
+      for (final cookie in setCookie.split(_splitSetCookiesRegExp)) {
         cookies.add(Cookie.fromSetCookieValue(cookie));
       }
     }
@@ -203,9 +212,10 @@ base class Request {
   }
 }
 
-/// RegEx to match a path separator
-final _pathSeparator = RegExp(r'[/\\]');
-final _startsWithPathSeparator = RegExp(r'^[/\\]');
+/// RegExp to match a path separator and root directory
+final _pathSeparatorRegExp = RegExp(r'[/\\]');
+final _startsWithPathSeparatorRegExp = RegExp(r'^[/\\]');
+final _rootDirectoryRegExp = RegExp(r'^(/|\\|([a-zA-Z]:[\\/]))');
 
 /// Information related to a [Task]
 ///
@@ -260,6 +270,22 @@ sealed class Task extends Request implements Comparable {
 
   static bool useExternalStorage = false; // for Android configuration only
 
+  static final _baseDirectoryPathCache = <(BaseDirectory, bool), String>{};
+
+  static const _androidBaseDirs = [
+    BaseDirectory.temporary,
+    BaseDirectory.applicationLibrary,
+    BaseDirectory.applicationSupport,
+    BaseDirectory.applicationDocuments,
+  ];
+
+  static const _otherBaseDirs = [
+    BaseDirectory.temporary,
+    BaseDirectory.applicationSupport,
+    BaseDirectory.applicationLibrary,
+    BaseDirectory.applicationDocuments,
+  ];
+
   /// Uri schemes that are supported by the downloader in the context of
   /// a [Task] download directory or upload file
   static const allowedUriSchemes = ['file', 'content', 'urlbookmark', 'media'];
@@ -299,37 +325,37 @@ sealed class Task extends Request implements Comparable {
   /// [displayName] human readable name for this task
   /// [creationTime] time of task creation, 'now' by default.
   /// [options] optional task-specific configuration using [TaskOptions]
-  Task(
-      {String? taskId,
-      required super.url,
-      super.urlQueryParameters,
-      String? filename,
-      super.headers,
-      super.httpRequestMethod,
-      super.post,
-      String directory = '',
-      this.baseDirectory = BaseDirectory.applicationDocuments,
-      this.group = 'default',
-      this.updates = Updates.status,
-      this.requiresWiFi = false,
-      super.retries,
-      this.metaData = '',
-      this.displayName = '',
-      this.allowPause = false,
-      this.priority = 5,
-      super.creationTime,
-      this.options})
-      : taskId = taskId ?? Random().nextInt(1 << 32).toString(),
-        filename = filename ?? Random().nextInt(1 << 32).toString(),
-        directory = _startsWithPathSeparator.hasMatch(directory)
-            ? directory.substring(1)
-            : directory {
+  Task({
+    String? taskId,
+    required super.url,
+    super.urlQueryParameters,
+    String? filename,
+    super.headers,
+    super.httpRequestMethod,
+    super.post,
+    String directory = '',
+    this.baseDirectory = BaseDirectory.applicationDocuments,
+    this.group = 'default',
+    this.updates = Updates.status,
+    this.requiresWiFi = false,
+    super.retries,
+    this.metaData = '',
+    this.displayName = '',
+    this.allowPause = false,
+    this.priority = 5,
+    super.creationTime,
+    this.options,
+  }) : taskId = taskId ?? _random.nextInt(1 << 32).toString(),
+       filename = filename ?? _random.nextInt(1 << 32).toString(),
+       directory = _startsWithPathSeparatorRegExp.hasMatch(directory)
+           ? directory.substring(1)
+           : directory {
     if (filename?.isEmpty == true) {
       throw ArgumentError('Filename cannot be empty');
     }
     if (this is! UriTask &&
         this is! MultiUploadTask &&
-        _pathSeparator.hasMatch(this.filename)) {
+        _pathSeparatorRegExp.hasMatch(this.filename)) {
       throw ArgumentError('Filename cannot contain path separators');
     }
     if (allowPause && post != null) {
@@ -341,18 +367,22 @@ sealed class Task extends Request implements Comparable {
   }
 
   /// Create a new [Task] subclass from the provided [json]
-  factory Task.createFromJson(Map<String, dynamic> json) =>
-      switch (json['taskType']) {
-        'DownloadTask' => DownloadTask.fromJson(json),
-        'UriDownloadTask' => UriDownloadTask.fromJson(json),
-        'UploadTask' => UploadTask.fromJson(json),
-        'UriUploadTask' => UriUploadTask.fromJson(json),
-        'MultiUploadTask' => MultiUploadTask.fromJson(json),
-        'ParallelDownloadTask' => ParallelDownloadTask.fromJson(json),
-        'DataTask' => DataTask.fromJson(json),
-        _ => throw ArgumentError(
-            'taskType not in [DownloadTask, UploadTask, MultiUploadTask, ParallelDownloadTask, DataTask]')
-      };
+  ///
+  /// Use [Task.createFromJson] to create a properly subclassed [Task] from the [json]
+  factory Task.createFromJson(
+    Map<String, dynamic> json,
+  ) => switch (json['taskType']) {
+    'DownloadTask' => DownloadTask.fromJson(json),
+    'UriDownloadTask' => UriDownloadTask.fromJson(json),
+    'UploadTask' => UploadTask.fromJson(json),
+    'UriUploadTask' => UriUploadTask.fromJson(json),
+    'MultiUploadTask' => MultiUploadTask.fromJson(json),
+    'ParallelDownloadTask' => ParallelDownloadTask.fromJson(json),
+    'DataTask' => DataTask.fromJson(json),
+    _ => throw ArgumentError(
+      'taskType not in [DownloadTask, UploadTask, MultiUploadTask, ParallelDownloadTask, DataTask]',
+    ),
+  };
 
   /// Create a new [Task] subclass from provided [jsonString]
   factory Task.createFromJsonString(String jsonString) {
@@ -378,17 +408,26 @@ sealed class Task extends Request implements Comparable {
     switch (this) {
       case UriTask t:
         if (t.fileUri != null) {
-          assert(t.fileUri?.scheme == 'file',
-              'fileUri must be a URI scheme to return a path');
-          return t.fileUri!.toFilePath(windows: Platform.isWindows);
+          assert(
+            t.fileUri?.scheme == 'file',
+            'fileUri must be a URI scheme to return a path',
+          );
+          return t.fileUri!.toFilePath(
+            windows: defaultTargetPlatform == TargetPlatform.windows,
+          );
         } else {
-          assert(t.directoryUri?.scheme == 'file',
-              'directoryUri must be a URI scheme to return a path');
-          return '${t.directoryUri!.toFilePath(windows: Platform.isWindows)}${Platform.pathSeparator}${withFilename ?? filename}';
+          assert(
+            t.directoryUri?.scheme == 'file',
+            'directoryUri must be a URI scheme to return a path',
+          );
+          return '${t.directoryUri!.toFilePath(windows: defaultTargetPlatform == TargetPlatform.windows)}${Platform.pathSeparator}${withFilename ?? filename}';
         }
       default:
-        return p.join(await baseDirectoryPath(baseDirectory), directory,
-            withFilename ?? filename);
+        return p.join(
+          await baseDirectoryPath(baseDirectory),
+          directory,
+          withFilename ?? filename,
+        );
     }
   }
 
@@ -398,6 +437,10 @@ sealed class Task extends Request implements Comparable {
   /// because the drive letter is required to be included in the directory
   /// path
   static Future<String> baseDirectoryPath(BaseDirectory baseDirectory) async {
+    final cacheKey = (baseDirectory, Task.useExternalStorage);
+    if (_baseDirectoryPathCache.containsKey(cacheKey)) {
+      return _baseDirectoryPathCache[cacheKey]!;
+    }
     Directory? externalStorageDirectory;
     Directory? externalCacheDirectory;
     if (Task.useExternalStorage) {
@@ -405,7 +448,8 @@ sealed class Task extends Request implements Comparable {
       externalCacheDirectory = (await getExternalCacheDirectories())?.first;
       if (externalStorageDirectory == null || externalCacheDirectory == null) {
         throw const FileSystemException(
-            'Android external storage is not available');
+          'Android external storage is not available',
+        );
       }
     }
     final baseDir = switch ((baseDirectory, Task.useExternalStorage)) {
@@ -415,22 +459,30 @@ sealed class Task extends Request implements Comparable {
       (BaseDirectory.applicationSupport, false) =>
         await getApplicationSupportDirectory(),
       (BaseDirectory.applicationLibrary, false)
-          when Platform.isMacOS || Platform.isIOS =>
+          when defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.iOS =>
         await getLibraryDirectory(),
       (BaseDirectory.applicationLibrary, false) => Directory(
-          p.join((await getApplicationSupportDirectory()).path, 'Library')),
+        p.join((await getApplicationSupportDirectory()).path, 'Library'),
+      ),
       (BaseDirectory.root, _) => Directory('/'),
       // Android only: external storage variants
       (BaseDirectory.applicationDocuments, true) => externalStorageDirectory!,
       (BaseDirectory.temporary, true) => externalCacheDirectory!,
-      (BaseDirectory.applicationSupport, true) =>
-        Directory(p.join(externalStorageDirectory!.path, 'Support')),
-      (BaseDirectory.applicationLibrary, true) =>
-        Directory(p.join(externalStorageDirectory!.path, 'Library'))
+      (BaseDirectory.applicationSupport, true) => Directory(
+        p.join(externalStorageDirectory!.path, 'Support'),
+      ),
+      (BaseDirectory.applicationLibrary, true) => Directory(
+        p.join(externalStorageDirectory!.path, 'Library'),
+      ),
     };
-    return (Platform.isWindows && baseDirectory == BaseDirectory.root)
+    final path =
+        (defaultTargetPlatform == TargetPlatform.windows &&
+            baseDirectory == BaseDirectory.root)
         ? ''
         : baseDir.absolute.path;
+    _baseDirectoryPathCache[cacheKey] = path;
+    return path;
   }
 
   /// Extract the baseDirectory, directory and filename from
@@ -441,10 +493,13 @@ sealed class Task extends Request implements Comparable {
   /// Throws a FileSystemException if using external storage on Android (via
   /// configuration at startup), and external storage is not available.
   static Future<
-          (BaseDirectory baseDirectory, String directory, String filename)>
-      split({String? filePath, File? file}) async {
-    assert((filePath != null) ^ (file != null),
-        'Either filePath or file must be given and not both');
+    (BaseDirectory baseDirectory, String directory, String filename)
+  >
+  split({String? filePath, File? file}) async {
+    assert(
+      (filePath != null) ^ (file != null),
+      'Either filePath or file must be given and not both',
+    );
     final path = filePath ?? file!.absolute.path;
     final absoluteDirectoryPath = p.dirname(path);
     final filename = p.basename(path);
@@ -452,19 +507,11 @@ sealed class Task extends Request implements Comparable {
     // directories represented by the BaseDirectory enum.
     // Order matters, as some may be subdirs of others
     final testSequence =
-        Platform.isAndroid || Platform.isLinux || Platform.isWindows
-            ? [
-                BaseDirectory.temporary,
-                BaseDirectory.applicationLibrary,
-                BaseDirectory.applicationSupport,
-                BaseDirectory.applicationDocuments
-              ]
-            : [
-                BaseDirectory.temporary,
-                BaseDirectory.applicationSupport,
-                BaseDirectory.applicationLibrary,
-                BaseDirectory.applicationDocuments
-              ];
+        defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.windows
+        ? _androidBaseDirs
+        : _otherBaseDirs;
     for (final baseDirectoryEnum in testSequence) {
       final baseDirPath = await baseDirectoryPath(baseDirectoryEnum);
       final (match, directory) = _contains(baseDirPath, absoluteDirectoryPath);
@@ -474,12 +521,11 @@ sealed class Task extends Request implements Comparable {
     }
     // if no match, return a BaseDirectory.root with the absoluteDirectory
     // minus the leading characters that designate the root (differs by platform)
-    final match =
-        RegExp(r'^(/|\\|([a-zA-Z]:[\\/]))').firstMatch(absoluteDirectoryPath);
+    final match = _rootDirectoryRegExp.firstMatch(absoluteDirectoryPath);
     return (
       BaseDirectory.root,
       absoluteDirectoryPath.substring(match?.end ?? 0),
-      filename
+      filename,
     );
   }
 
@@ -491,73 +537,74 @@ sealed class Task extends Request implements Comparable {
   /// [dirPath] should not contain a filename - if it does, it is returned
   /// as part of the subdir.
   static (bool, String) _contains(String baseDirPath, String dirPath) {
-    final escapedBaseDirPath =
-        '$baseDirPath${Platform.pathSeparator}?'.replaceAll(r'\', r'\\');
+    final escapedBaseDirPath = '$baseDirPath${Platform.pathSeparator}?'
+        .replaceAll(r'\', r'\\');
     final match = RegExp('^$escapedBaseDirPath(.*)').firstMatch(dirPath);
     return (match != null, match?.group(1) ?? '');
   }
 
   /// Returns a copy of the [Task] with optional changes to specific fields
-  Task copyWith(
-      {String? taskId,
-      String? url,
-      String? filename,
-      Map<String, String>? headers,
-      String? httpRequestMethod,
-      Object? post,
-      String? directory,
-      BaseDirectory? baseDirectory,
-      String? group,
-      Updates? updates,
-      bool? requiresWiFi,
-      int? retries,
-      int? retriesRemaining,
-      bool? allowPause,
-      int? priority,
-      String? metaData,
-      String? displayName,
-      DateTime? creationTime});
+  Task copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    int? priority,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+  });
 
   /// Creates [Task] object from JsonMap
   ///
-  /// Only used by subclasses. Use [createFromJsonMap] to create a properly
+  /// Only used by subclasses. Use [Task.createFromJson] to create a properly
   /// subclassed [Task] from the [json]
   Task.fromJson(super.json)
-      : taskId = json['taskId'] ?? '',
-        filename = json['filename'] ?? '',
-        directory = json['directory'] ?? '',
-        baseDirectory =
-            BaseDirectory.values[(json['baseDirectory'] as num?)?.toInt() ?? 0],
-        group = json['group'] ?? FileDownloader.defaultGroup,
-        updates = Updates.values[(json['updates'] as num?)?.toInt() ?? 0],
-        requiresWiFi = json['requiresWiFi'] ?? false,
-        allowPause = json['allowPause'] ?? false,
-        priority = (json['priority'] as num?)?.toInt() ?? 5,
-        metaData = json['metaData'] ?? '',
-        displayName = json['displayName'] ?? '',
-        options = json['options'] != null
-            ? TaskOptions.fromJson(json['options'])
-            : null,
-        super.fromJson();
+    : taskId = json['taskId'] ?? '',
+      filename = json['filename'] ?? '',
+      directory = json['directory'] ?? '',
+      baseDirectory =
+          BaseDirectory.values[(json['baseDirectory'] as num?)?.toInt() ?? 0],
+      group = json['group'] ?? FileDownloader.defaultGroup,
+      updates = Updates.values[(json['updates'] as num?)?.toInt() ?? 0],
+      requiresWiFi = json['requiresWiFi'] ?? false,
+      allowPause = json['allowPause'] ?? false,
+      priority = (json['priority'] as num?)?.toInt() ?? 5,
+      metaData = json['metaData'] ?? '',
+      displayName = json['displayName'] ?? '',
+      options = json['options'] != null
+          ? TaskOptions.fromJson(json['options'])
+          : null,
+      super.fromJson();
 
   /// Creates JSON map of this object
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        'taskId': taskId,
-        'filename': filename,
-        'directory': directory,
-        'baseDirectory': baseDirectory.index, // stored as int
-        'group': group,
-        'updates': updates.index, // stored as int
-        'requiresWiFi': requiresWiFi,
-        'allowPause': allowPause,
-        'priority': priority,
-        'metaData': metaData,
-        'displayName': displayName,
-        'options': options?.toJson(),
-        'taskType': taskType
-      };
+    ...super.toJson(),
+    'taskId': taskId,
+    'filename': filename,
+    'directory': directory,
+    'baseDirectory': baseDirectory.index, // stored as int
+    'group': group,
+    'updates': updates.index, // stored as int
+    'requiresWiFi': requiresWiFi,
+    'allowPause': allowPause,
+    'priority': priority,
+    'metaData': metaData,
+    'displayName': displayName,
+    'options': options?.toJson(),
+    'taskType': taskType,
+  };
 
   /// If true, task expects progress updates
   bool get providesProgressUpdates =>
@@ -641,86 +688,88 @@ final class DownloadTask extends Task {
   /// [displayName] human readable name for this task
   /// [creationTime] time of task creation, 'now' by default.
   /// [options] optional task-specific configuration using [TaskOptions]
-  DownloadTask(
-      {super.taskId,
-      required super.url,
-      super.urlQueryParameters,
-      super.filename,
-      super.headers,
-      super.httpRequestMethod,
-      super.post,
-      super.directory,
-      super.baseDirectory,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.retries,
-      super.allowPause,
-      super.priority,
-      super.metaData,
-      super.displayName,
-      super.creationTime,
-      super.options});
+  DownloadTask({
+    super.taskId,
+    required super.url,
+    super.urlQueryParameters,
+    super.filename,
+    super.headers,
+    super.httpRequestMethod,
+    super.post,
+    super.directory,
+    super.baseDirectory,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.retries,
+    super.allowPause,
+    super.priority,
+    super.metaData,
+    super.displayName,
+    super.creationTime,
+    super.options,
+  });
 
   /// List of task types supported by [DownloadTask.fromJson]
   static final _taskTypes = [
     'DownloadTask',
     'ParallelDownloadTask',
-    'UriDownloadTask'
+    'UriDownloadTask',
   ];
 
   /// Creates [DownloadTask] object from [json]
   DownloadTask.fromJson(super.json)
-      : assert(
-            _taskTypes.contains(json['taskType']),
-            'The provided JSON map is not an UploadTask, '
-            'because key "taskType" is not in ${_taskTypes.join(',')}'),
-        super.fromJson();
+    : assert(
+        _taskTypes.contains(json['taskType']),
+        'The provided JSON map is not an UploadTask, '
+        'because key "taskType" is not in ${_taskTypes.join(',')}',
+      ),
+      super.fromJson();
 
   @override
   String get taskType => 'DownloadTask';
 
   @override
-  DownloadTask copyWith(
-          {String? taskId,
-          String? url,
-          String? filename,
-          Map<String, String>? headers,
-          String? httpRequestMethod,
-          Object? post,
-          String? directory,
-          BaseDirectory? baseDirectory,
-          String? group,
-          Updates? updates,
-          bool? requiresWiFi,
-          int? retries,
-          int? retriesRemaining,
-          bool? allowPause,
-          int? priority,
-          String? metaData,
-          String? displayName,
-          DateTime? creationTime,
-          TaskOptions? options}) =>
-      DownloadTask(
-          taskId: taskId ?? this.taskId,
-          url: url ?? this.url,
-          filename: filename ?? this.filename,
-          headers: headers ?? this.headers,
-          httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
-          post: post ?? this.post,
-          directory: directory ?? this.directory,
-          baseDirectory: baseDirectory ?? this.baseDirectory,
-          group: group ?? this.group,
-          updates: updates ?? this.updates,
-          requiresWiFi: requiresWiFi ?? this.requiresWiFi,
-          retries: retries ?? this.retries,
-          allowPause: allowPause ?? this.allowPause,
-          priority: priority ?? this.priority,
-          metaData: metaData ?? this.metaData,
-          displayName: displayName ?? this.displayName,
-          creationTime: creationTime ?? this.creationTime,
-          options: options ?? this.options)
-        ..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
+  DownloadTask copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    int? priority,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+    TaskOptions? options,
+  }) => DownloadTask(
+    taskId: taskId ?? this.taskId,
+    url: url ?? this.url,
+    filename: filename ?? this.filename,
+    headers: headers ?? this.headers,
+    httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
+    post: post ?? this.post,
+    directory: directory ?? this.directory,
+    baseDirectory: baseDirectory ?? this.baseDirectory,
+    group: group ?? this.group,
+    updates: updates ?? this.updates,
+    requiresWiFi: requiresWiFi ?? this.requiresWiFi,
+    retries: retries ?? this.retries,
+    allowPause: allowPause ?? this.allowPause,
+    priority: priority ?? this.priority,
+    metaData: metaData ?? this.metaData,
+    displayName: displayName ?? this.displayName,
+    creationTime: creationTime ?? this.creationTime,
+    options: options ?? this.options,
+  )..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
 
   /// Returns a copy of the task with the [Task.filename] property changed
   /// to the filename suggested by the server, or derived from the url, or
@@ -737,14 +786,21 @@ final class DownloadTask extends Task {
   ///
   /// The suggested filename is obtained by making a HEAD request to the url
   /// represented by the [DownloadTask], including urlQueryParameters and headers
-  Future<DownloadTask> withSuggestedFilename(
-      {unique = false,
-      Future<DownloadTask> Function(
-              DownloadTask task, Map<String, String> headers, bool unique)
-          taskWithFilenameBuilder = taskWithSuggestedFilename}) async {
+  Future<DownloadTask> withSuggestedFilename({
+    bool unique = false,
+    Future<DownloadTask> Function(
+          DownloadTask task,
+          Map<String, String> headers,
+          bool unique,
+        )
+        taskWithFilenameBuilder =
+        taskWithSuggestedFilename,
+  }) async {
     try {
-      final response = await DesktopDownloader.httpClient
-          .head(Uri.parse(url), headers: headers);
+      final response = await DesktopDownloader.httpClient.head(
+        Uri.parse(url),
+        headers: headers,
+      );
       if ([200, 201, 202, 203, 204, 205, 206].contains(response.statusCode)) {
         return taskWithFilenameBuilder(this, response.headers, unique);
       }
@@ -760,8 +816,10 @@ final class DownloadTask extends Task {
   /// represented by the [DownloadTask], including urlQueryParameters and headers
   Future<int> expectedFileSize() async {
     try {
-      final response = await DesktopDownloader.httpClient
-          .head(Uri.parse(url), headers: headers);
+      final response = await DesktopDownloader.httpClient.head(
+        Uri.parse(url),
+        headers: headers,
+      );
       if ([200, 201, 202, 203, 204, 205, 206].contains(response.statusCode)) {
         return getContentLength(response.headers, this);
       }
@@ -792,7 +850,7 @@ final class UploadTask extends Task {
   /// Map of name/value pairs to encode as form fields in a multi-part upload.
   /// To specify multiple values for a single name, format the value as
   /// '"value1", "value2", "value3"' so that it matches the following
-  /// RegEx: ^(?:"[^"]+"\s*,\s*)+"[^"]+"$
+  /// RegEx: `^(?:"[^"]+"\s*,\s*)+"[^"]+"$`
   final Map<String, String> fields;
 
   /// Creates [UploadTask]
@@ -824,38 +882,41 @@ final class UploadTask extends Task {
   /// [displayName] human readable name for this task
   /// [creationTime] time of task creation, 'now' by default.
   /// [options] optional task-specific configuration using [TaskOptions]
-  UploadTask(
-      {super.taskId,
-      required super.url,
-      super.urlQueryParameters,
-      required String super.filename,
-      super.headers,
-      String? httpRequestMethod,
-      String? super.post,
-      this.fileField = 'file',
-      String? mimeType,
-      Map<String, String>? fields,
-      super.directory,
-      super.baseDirectory,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.retries,
-      super.priority,
-      super.metaData,
-      super.displayName,
-      super.creationTime,
-      super.options})
-      : assert(filename.isNotEmpty, 'A filename is required'),
-        assert(post == null || post == 'binary',
-            'post field must be null, or "binary" for binary file upload'),
-        assert(fields == null || fields.isEmpty || post != 'binary',
-            'fields only allowed for multi-part uploads'),
-        fields = fields ?? {},
-        mimeType =
-            mimeType ?? lookupMimeType(filename) ?? 'application/octet-stream',
-        super(
-            httpRequestMethod: httpRequestMethod ?? 'POST', allowPause: false);
+  UploadTask({
+    super.taskId,
+    required super.url,
+    super.urlQueryParameters,
+    required String super.filename,
+    super.headers,
+    String? httpRequestMethod,
+    String? super.post,
+    this.fileField = 'file',
+    String? mimeType,
+    Map<String, String>? fields,
+    super.directory,
+    super.baseDirectory,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.retries,
+    super.priority,
+    super.metaData,
+    super.displayName,
+    super.creationTime,
+    super.options,
+  }) : assert(filename.isNotEmpty, 'A filename is required'),
+       assert(
+         post == null || post == 'binary',
+         'post field must be null, or "binary" for binary file upload',
+       ),
+       assert(
+         fields == null || fields.isEmpty || post != 'binary',
+         'fields only allowed for multi-part uploads',
+       ),
+       fields = fields ?? {},
+       mimeType =
+           mimeType ?? lookupMimeType(filename) ?? 'application/octet-stream',
+       super(httpRequestMethod: httpRequestMethod ?? 'POST', allowPause: false);
 
   /// Creates [UploadTask] from a [File] object, using the [file] absolute path.
   ///
@@ -863,53 +924,51 @@ final class UploadTask extends Task {
   /// files in an application's directory scope is not stable between application
   /// starts. Use the combination of [baseDirectory], [directory] and [filename]
   /// whenever possible to prevent hard to debug errors.
-  UploadTask.fromFile(
-      {required File file,
-      super.taskId,
-      required super.url,
-      super.urlQueryParameters,
-      super.headers,
-      String? httpRequestMethod,
-      String? super.post,
-      this.fileField = 'file',
-      String? mimeType,
-      Map<String, String>? fields,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.retries,
-      super.priority,
-      super.metaData,
-      super.displayName,
-      super.creationTime,
-      super.options})
-      : fields = fields ?? {},
-        mimeType =
-            mimeType ?? lookupMimeType(file.path) ?? 'application/octet-stream',
-        super(
-            baseDirectory: BaseDirectory.root,
-            directory: p.dirname(file.absolute.path),
-            filename: p.basename(file.absolute.path),
-            httpRequestMethod: httpRequestMethod ?? 'POST',
-            allowPause: false);
+  UploadTask.fromFile({
+    required File file,
+    super.taskId,
+    required super.url,
+    super.urlQueryParameters,
+    super.headers,
+    String? httpRequestMethod,
+    String? super.post,
+    this.fileField = 'file',
+    String? mimeType,
+    Map<String, String>? fields,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.retries,
+    super.priority,
+    super.metaData,
+    super.displayName,
+    super.creationTime,
+    super.options,
+  }) : fields = fields ?? {},
+       mimeType =
+           mimeType ?? lookupMimeType(file.path) ?? 'application/octet-stream',
+       super(
+         baseDirectory: BaseDirectory.root,
+         directory: p.dirname(file.absolute.path),
+         filename: p.basename(file.absolute.path),
+         httpRequestMethod: httpRequestMethod ?? 'POST',
+         allowPause: false,
+       );
 
   /// List of task types  supported by [UploadTask.fromJson]
-  static final _taskTypes = [
-    'UploadTask',
-    'MultiUploadTask',
-    'UriUploadTask',
-  ];
+  static final _taskTypes = ['UploadTask', 'MultiUploadTask', 'UriUploadTask'];
 
   /// Creates [UploadTask] object from [json]
   UploadTask.fromJson(super.json)
-      : assert(
-            _taskTypes.contains(json['taskType']),
-            'The provided JSON map is not an UploadTask, '
-            'because key "taskType" is not in ${_taskTypes.join(',')}'),
-        fileField = json['fileField'] ?? 'file',
-        mimeType = json['mimeType'] ?? 'application/octet-stream',
-        fields = Map<String, String>.from(json['fields'] ?? {}),
-        super.fromJson();
+    : assert(
+        _taskTypes.contains(json['taskType']),
+        'The provided JSON map is not an UploadTask, '
+        'because key "taskType" is not in ${_taskTypes.join(',')}',
+      ),
+      fileField = json['fileField'] ?? 'file',
+      mimeType = json['mimeType'] ?? 'application/octet-stream',
+      fields = Map<String, String>.from(json['fields'] ?? {}),
+      super.fromJson();
 
   /// Returns a list of fileData elements, one for each file to upload.
   /// Each element is a triple containing fileField, full filePath, mimeType
@@ -928,7 +987,9 @@ final class UploadTask extends Task {
     for (int i = 0; i < fileFields.length; i++) {
       final fileUri = Uri.tryParse(filenames[i]);
       final filenameOrPath = (fileUri?.scheme == 'file')
-          ? fileUri!.toFilePath(windows: Platform.isWindows)
+          ? fileUri!.toFilePath(
+              windows: defaultTargetPlatform == TargetPlatform.windows,
+            )
           : filenames[i];
       final file = File(filenameOrPath);
       if (await file.exists()) {
@@ -936,13 +997,11 @@ final class UploadTask extends Task {
       } else {
         // if file does not exist, assume it is a filename only relative path) and
         // append to baseDirectory and directory
-        result.add(
-          (
-            fileFields[i],
-            await filePath(withFilename: filenameOrPath),
-            mimeTypes[i],
-          ),
-        );
+        result.add((
+          fileFields[i],
+          await filePath(withFilename: filenameOrPath),
+          mimeTypes[i],
+        ));
       }
     }
     return result;
@@ -950,64 +1009,65 @@ final class UploadTask extends Task {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        'fileField': fileField,
-        'mimeType': mimeType,
-        'fields': fields
-      };
+    ...super.toJson(),
+    'fileField': fileField,
+    'mimeType': mimeType,
+    'fields': fields,
+  };
 
   @override
   String get taskType => 'UploadTask';
 
   @override
-  UploadTask copyWith(
-          {String? taskId,
-          String? url,
-          String? filename,
-          Map<String, String>? headers,
-          String? httpRequestMethod,
-          Object? post,
-          String? fileField,
-          String? mimeType,
-          Map<String, String>? fields,
-          String? directory,
-          BaseDirectory? baseDirectory,
-          String? group,
-          Updates? updates,
-          bool? requiresWiFi,
-          int? retries,
-          int? retriesRemaining,
-          bool? allowPause,
-          int? priority,
-          String? metaData,
-          String? displayName,
-          DateTime? creationTime,
-          TaskOptions? options}) =>
-      UploadTask(
-          taskId: taskId ?? this.taskId,
-          url: url ?? this.url,
-          filename: filename ?? this.filename,
-          headers: headers ?? this.headers,
-          httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
-          post: post as String? ?? this.post,
-          fileField: fileField ?? this.fileField,
-          mimeType: mimeType ?? this.mimeType,
-          fields: fields ?? this.fields,
-          directory: directory ?? this.directory,
-          baseDirectory: baseDirectory ?? this.baseDirectory,
-          group: group ?? this.group,
-          updates: updates ?? this.updates,
-          requiresWiFi: requiresWiFi ?? this.requiresWiFi,
-          priority: priority ?? this.priority,
-          retries: retries ?? this.retries,
-          metaData: metaData ?? this.metaData,
-          displayName: displayName ?? this.displayName,
-          creationTime: creationTime ?? this.creationTime,
-          options: options ?? this.options)
-        ..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
+  UploadTask copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? fileField,
+    String? mimeType,
+    Map<String, String>? fields,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    int? priority,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+    TaskOptions? options,
+  }) => UploadTask(
+    taskId: taskId ?? this.taskId,
+    url: url ?? this.url,
+    filename: filename ?? this.filename,
+    headers: headers ?? this.headers,
+    httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
+    post: post as String? ?? this.post,
+    fileField: fileField ?? this.fileField,
+    mimeType: mimeType ?? this.mimeType,
+    fields: fields ?? this.fields,
+    directory: directory ?? this.directory,
+    baseDirectory: baseDirectory ?? this.baseDirectory,
+    group: group ?? this.group,
+    updates: updates ?? this.updates,
+    requiresWiFi: requiresWiFi ?? this.requiresWiFi,
+    priority: priority ?? this.priority,
+    retries: retries ?? this.retries,
+    metaData: metaData ?? this.metaData,
+    displayName: displayName ?? this.displayName,
+    creationTime: creationTime ?? this.creationTime,
+    options: options ?? this.options,
+  )..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
 
   @override
-  String toString() => '${super.toString()} and fileField $fileField, '
+  String toString() =>
+      '${super.toString()} and fileField $fileField, '
       'mimeType $mimeType and fields $fields';
 }
 
@@ -1076,63 +1136,64 @@ final class MultiUploadTask extends UploadTask {
   /// [displayName] human readable name for this task
   /// [creationTime] time of task creation, 'now' by default.
   /// [options] optional task-specific configuration using [TaskOptions]
-  MultiUploadTask(
-      {super.taskId,
-      required super.url,
-      super.urlQueryParameters,
-      required List<dynamic> files,
-      super.headers,
-      super.httpRequestMethod,
-      super.fields = const {},
-      super.directory,
-      super.baseDirectory,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.priority,
-      super.retries,
-      super.metaData,
-      super.displayName,
-      super.creationTime,
-      super.options})
-      : fileFields = files
-            .map((e) => switch (e) {
-                  String filename => p.basenameWithoutExtension(filename),
-                  (String fileField, String _) ||
-                  (String fileField, String _, String _) ||
-                  (String fileField, Uri _) ||
-                  (String fileField, Uri _, String _) =>
-                    fileField,
-                  Uri _ => 'file${files.indexOf(e) + 1}',
-                  _ => throw ArgumentError(_filesArgumentError)
-                })
-            .toList(growable: false),
-        filenames = files
-            .map((e) => switch (e) {
-                  String filename ||
-                  (String _, String filename) ||
-                  (String _, String filename, String _) =>
-                    filename,
-                  Uri uri ||
-                  (String _, Uri uri) ||
-                  (String _, Uri uri, String _) =>
-                    uri.toString(),
-                  _ => throw ArgumentError(_filesArgumentError)
-                })
-            .toList(growable: false),
-        mimeTypes = files
-            .map((e) => switch (e) {
-                  String filename ||
-                  (String _, String filename) =>
-                    lookupMimeType(filename) ?? 'application/octet-stream',
-                  (String _, String _, String mimeType) ||
-                  (String _, Uri _, String mimeType) =>
-                    mimeType,
-                  Uri _ || (String _, Uri _) => '',
-                  _ => throw ArgumentError(_filesArgumentError)
-                })
-            .toList(growable: false),
-        super(filename: 'multi-upload', fileField: '', mimeType: '');
+  MultiUploadTask({
+    super.taskId,
+    required super.url,
+    super.urlQueryParameters,
+    required List<dynamic> files,
+    super.headers,
+    super.httpRequestMethod,
+    super.fields = const {},
+    super.directory,
+    super.baseDirectory,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.priority,
+    super.retries,
+    super.metaData,
+    super.displayName,
+    super.creationTime,
+    super.options,
+  }) : fileFields = files
+           .map(
+             (e) => switch (e) {
+               String filename => p.basenameWithoutExtension(filename),
+               (String fileField, String _) ||
+               (String fileField, String _, String _) ||
+               (String fileField, Uri _) ||
+               (String fileField, Uri _, String _) => fileField,
+               Uri _ => 'file${files.indexOf(e) + 1}',
+               _ => throw ArgumentError(_filesArgumentError),
+             },
+           )
+           .toList(growable: false),
+       filenames = files
+           .map(
+             (e) => switch (e) {
+               String filename ||
+               (String _, String filename) ||
+               (String _, String filename, String _) => filename,
+               Uri uri ||
+               (String _, Uri uri) ||
+               (String _, Uri uri, String _) => uri.toString(),
+               _ => throw ArgumentError(_filesArgumentError),
+             },
+           )
+           .toList(growable: false),
+       mimeTypes = files
+           .map(
+             (e) => switch (e) {
+               String filename || (String _, String filename) =>
+                 lookupMimeType(filename) ?? 'application/octet-stream',
+               (String _, String _, String mimeType) ||
+               (String _, Uri _, String mimeType) => mimeType,
+               Uri _ || (String _, Uri _) => '',
+               _ => throw ArgumentError(_filesArgumentError),
+             },
+           )
+           .toList(growable: false),
+       super(filename: 'multi-upload', fileField: '', mimeType: '');
 
   /// For [MultiUploadTask], returns jsonEncoded list of [fileFields]
   @override
@@ -1148,59 +1209,59 @@ final class MultiUploadTask extends UploadTask {
 
   /// Creates [MultiUploadTask] object from [json]
   MultiUploadTask.fromJson(super.json)
-      : assert(
-            json['taskType'] == 'MultiUploadTask',
-            'The provided JSON map is not'
-            ' a MultiUploadTask, because key "taskType" is not "MultiUploadTask".'),
-        fileFields =
-            List.from(jsonDecode(json['fileField'] as String? ?? '[]')),
-        filenames = List.from(jsonDecode(json['filename'] as String? ?? '[]')),
-        mimeTypes = List.from(jsonDecode(json['mimeType'] as String? ?? '[]')),
-        super.fromJson();
+    : assert(
+        json['taskType'] == 'MultiUploadTask',
+        'The provided JSON map is not'
+        ' a MultiUploadTask, because key "taskType" is not "MultiUploadTask".',
+      ),
+      fileFields = List.from(jsonDecode(json['fileField'] as String? ?? '[]')),
+      filenames = List.from(jsonDecode(json['filename'] as String? ?? '[]')),
+      mimeTypes = List.from(jsonDecode(json['mimeType'] as String? ?? '[]')),
+      super.fromJson();
 
   @override
-  MultiUploadTask copyWith(
-          {String? taskId,
-          String? url,
-          String? filename,
-          Map<String, String>? headers,
-          String? httpRequestMethod,
-          Object? post,
-          String? fileField,
-          String? mimeType,
-          Map<String, String>? fields,
-          String? directory,
-          BaseDirectory? baseDirectory,
-          String? group,
-          Updates? updates,
-          bool? requiresWiFi,
-          int? priority,
-          int? retries,
-          int? retriesRemaining,
-          bool? allowPause,
-          String? metaData,
-          String? displayName,
-          DateTime? creationTime,
-          TaskOptions? options}) =>
-      MultiUploadTask(
-          taskId: taskId ?? this.taskId,
-          url: url ?? this.url,
-          files: fileFields.indexed.map(_toRecord).toList(),
-          headers: headers ?? this.headers,
-          httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
-          fields: fields ?? this.fields,
-          directory: directory ?? this.directory,
-          baseDirectory: baseDirectory ?? this.baseDirectory,
-          group: group ?? this.group,
-          updates: updates ?? this.updates,
-          requiresWiFi: requiresWiFi ?? this.requiresWiFi,
-          priority: priority ?? this.priority,
-          retries: retries ?? this.retries,
-          metaData: metaData ?? this.metaData,
-          displayName: displayName ?? this.displayName,
-          creationTime: creationTime ?? this.creationTime,
-          options: options ?? this.options)
-        ..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
+  MultiUploadTask copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? fileField,
+    String? mimeType,
+    Map<String, String>? fields,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? priority,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+    TaskOptions? options,
+  }) => MultiUploadTask(
+    taskId: taskId ?? this.taskId,
+    url: url ?? this.url,
+    files: fileFields.indexed.map(_toRecord).toList(),
+    headers: headers ?? this.headers,
+    httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
+    fields: fields ?? this.fields,
+    directory: directory ?? this.directory,
+    baseDirectory: baseDirectory ?? this.baseDirectory,
+    group: group ?? this.group,
+    updates: updates ?? this.updates,
+    requiresWiFi: requiresWiFi ?? this.requiresWiFi,
+    priority: priority ?? this.priority,
+    retries: retries ?? this.retries,
+    metaData: metaData ?? this.metaData,
+    displayName: displayName ?? this.displayName,
+    creationTime: creationTime ?? this.creationTime,
+    options: options ?? this.options,
+  )..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
 
   /// Zips the fileField, filename and mimeType at an index to
   /// a record
@@ -1252,96 +1313,105 @@ final class ParallelDownloadTask extends DownloadTask {
   /// [options] optional task-specific configuration using [TaskOptions]
   ///
   /// A [ParallelDownloadTask] cannot be paused or resumed on failure
-  ParallelDownloadTask(
-      {super.taskId,
-      required dynamic url,
-      super.urlQueryParameters,
-      super.filename,
-      super.headers,
-      super.httpRequestMethod,
-      this.chunks = 1,
-      super.directory,
-      super.baseDirectory,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.retries,
-      super.allowPause,
-      super.priority,
-      super.metaData,
-      super.displayName,
-      super.creationTime,
-      super.options})
-      : assert(url is String || url is List<String>,
-            'The `url` parameter must be a string or a list of strings'),
-        assert(url is String || (url is List<String> && url.isNotEmpty),
-            'The list of urls must not be empty'),
-        urls = url is String
-            ? [urlWithQueryParameters(url, urlQueryParameters)]
-            : List.from(
-                url.map((e) => urlWithQueryParameters(e, urlQueryParameters))),
-        super(url: url is String ? url : url.first) {
+  ParallelDownloadTask({
+    super.taskId,
+    required dynamic url,
+    super.urlQueryParameters,
+    super.filename,
+    super.headers,
+    super.httpRequestMethod,
+    this.chunks = 1,
+    super.directory,
+    super.baseDirectory,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.retries,
+    super.allowPause,
+    super.priority,
+    super.metaData,
+    super.displayName,
+    super.creationTime,
+    super.options,
+  }) : assert(
+         url is String || url is List<String>,
+         'The `url` parameter must be a string or a list of strings',
+       ),
+       assert(
+         url is String || (url is List<String> && url.isNotEmpty),
+         'The list of urls must not be empty',
+       ),
+       urls = url is String
+           ? [urlWithQueryParameters(url, urlQueryParameters)]
+           : List.from(
+               url.map((e) => urlWithQueryParameters(e, urlQueryParameters)),
+             ),
+       super(url: url is String ? url : url.first) {
     retriesRemaining = 0; // chunk tasks will retry instead, based on [retries]
   }
 
   /// Creates [ParallelDownloadTask] object from [json]
   ParallelDownloadTask.fromJson(super.json)
-      : assert(
-            json['taskType'] == 'ParallelDownloadTask',
-            'The provided JSON map is not a ParallelDownloadTask, '
-            'because key "taskType" is not "ParallelDownloadTask".'),
-        urls = List.from(json['urls'] as List<dynamic>? ?? []),
-        chunks = json['chunks'] as int? ?? 1,
-        super.fromJson();
+    : assert(
+        json['taskType'] == 'ParallelDownloadTask',
+        'The provided JSON map is not a ParallelDownloadTask, '
+        'because key "taskType" is not "ParallelDownloadTask".',
+      ),
+      urls = List.from(json['urls'] as List<dynamic>? ?? []),
+      chunks = json['chunks'] as int? ?? 1,
+      super.fromJson();
 
   @override
-  Map<String, dynamic> toJson() =>
-      {...super.toJson(), 'urls': urls, 'chunks': chunks};
+  Map<String, dynamic> toJson() => {
+    ...super.toJson(),
+    'urls': urls,
+    'chunks': chunks,
+  };
 
   @override
   String get taskType => 'ParallelDownloadTask';
 
   @override
-  ParallelDownloadTask copyWith(
-          {String? taskId,
-          String? url,
-          String? filename,
-          Map<String, String>? headers,
-          String? httpRequestMethod,
-          Object? post,
-          String? directory,
-          BaseDirectory? baseDirectory,
-          String? group,
-          Updates? updates,
-          bool? requiresWiFi,
-          int? retries,
-          int? retriesRemaining,
-          bool? allowPause,
-          int? priority,
-          String? metaData,
-          String? displayName,
-          DateTime? creationTime,
-          TaskOptions? options}) =>
-      ParallelDownloadTask(
-          taskId: taskId ?? this.taskId,
-          url: url ?? urls,
-          filename: filename ?? this.filename,
-          headers: headers ?? this.headers,
-          httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
-          chunks: chunks,
-          directory: directory ?? this.directory,
-          baseDirectory: baseDirectory ?? this.baseDirectory,
-          group: group ?? this.group,
-          updates: updates ?? this.updates,
-          requiresWiFi: requiresWiFi ?? this.requiresWiFi,
-          retries: retries ?? this.retries,
-          allowPause: allowPause ?? this.allowPause,
-          priority: priority ?? this.priority,
-          metaData: metaData ?? this.metaData,
-          displayName: displayName ?? this.displayName,
-          creationTime: creationTime ?? this.creationTime,
-          options: options ?? this.options)
-        ..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
+  ParallelDownloadTask copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    int? priority,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+    TaskOptions? options,
+  }) => ParallelDownloadTask(
+    taskId: taskId ?? this.taskId,
+    url: url ?? urls,
+    filename: filename ?? this.filename,
+    headers: headers ?? this.headers,
+    httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
+    chunks: chunks,
+    directory: directory ?? this.directory,
+    baseDirectory: baseDirectory ?? this.baseDirectory,
+    group: group ?? this.group,
+    updates: updates ?? this.updates,
+    requiresWiFi: requiresWiFi ?? this.requiresWiFi,
+    retries: retries ?? this.retries,
+    allowPause: allowPause ?? this.allowPause,
+    priority: priority ?? this.priority,
+    metaData: metaData ?? this.metaData,
+    displayName: displayName ?? this.displayName,
+    creationTime: creationTime ?? this.creationTime,
+    options: options ?? this.options,
+  )..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
 }
 
 /// Class for background requests that do not involve a file
@@ -1372,29 +1442,33 @@ final class DataTask extends Task {
   /// [metaData] user data
   /// [displayName] human readable name for this task
   /// [creationTime] time of task creation, 'now' by default.
-  DataTask(
-      {super.taskId,
-      required super.url,
-      super.urlQueryParameters,
-      super.headers,
-      super.httpRequestMethod,
-      String? post,
-      Map<String, dynamic>? json,
-      String? contentType,
-      super.group,
-      super.updates,
-      super.requiresWiFi,
-      super.retries,
-      super.metaData,
-      super.displayName,
-      super.priority,
-      super.creationTime})
-      : assert(const [Updates.status, Updates.none].contains(updates),
-            'DataTasks can only provide status updates'),
-        super(
-            post: json != null ? jsonEncode(json) : post,
-            baseDirectory: BaseDirectory.temporary,
-            allowPause: false) {
+  DataTask({
+    super.taskId,
+    required super.url,
+    super.urlQueryParameters,
+    super.headers,
+    super.httpRequestMethod,
+    String? post,
+    Map<String, dynamic>? json,
+    String? contentType,
+    super.group,
+    super.updates,
+    super.requiresWiFi,
+    super.retries,
+    super.metaData,
+    super.displayName,
+    super.priority,
+    super.creationTime,
+    super.options,
+  }) : assert(
+         const [Updates.status, Updates.none].contains(updates),
+         'DataTasks can only provide status updates',
+       ),
+       super(
+         post: json != null ? jsonEncode(json) : post,
+         baseDirectory: BaseDirectory.temporary,
+         allowPause: false,
+       ) {
     // if no content-type header set, it is set to [contentType] or
     // (if post or json is given) to text/plain or application/json
     if (!headers.containsKey('Content-Type') &&
@@ -1403,61 +1477,68 @@ final class DataTask extends Task {
         if (contentType != null) {
           headers['Content-Type'] = contentType;
         } else if ((post != null || json != null)) {
-          assert((post != null) ^ (json != null),
-              'Only post or json can be set, not both');
-          headers['Content-Type'] =
-              json != null ? 'application/json' : 'text/plain; charset=utf-8';
+          assert(
+            (post != null) ^ (json != null),
+            'Only post or json can be set, not both',
+          );
+          headers['Content-Type'] = json != null
+              ? 'application/json'
+              : 'text/plain; charset=utf-8';
         }
       } on UnsupportedError {
         _log.warning(
-            'Could not add Content-Type header as supplied header is const');
+          'Could not add Content-Type header as supplied header is const',
+        );
       }
     }
   }
 
   @override
-  Task copyWith(
-          {String? taskId,
-          String? url,
-          String? filename,
-          Map<String, String>? headers,
-          String? httpRequestMethod,
-          Object? post,
-          String? directory,
-          BaseDirectory? baseDirectory,
-          String? group,
-          Updates? updates,
-          bool? requiresWiFi,
-          int? retries,
-          int? retriesRemaining,
-          bool? allowPause,
-          int? priority,
-          String? metaData,
-          String? displayName,
-          DateTime? creationTime}) =>
-      DataTask(
-          taskId: taskId ?? this.taskId,
-          url: url ?? this.url,
-          headers: headers ?? this.headers,
-          httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
-          post: post as String? ?? this.post,
-          group: group ?? this.group,
-          updates: updates ?? this.updates,
-          requiresWiFi: requiresWiFi ?? this.requiresWiFi,
-          retries: retries ?? this.retries,
-          priority: priority ?? this.priority,
-          metaData: metaData ?? this.metaData,
-          displayName: displayName ?? this.displayName,
-          creationTime: creationTime ?? this.creationTime)
-        ..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
+  Task copyWith({
+    String? taskId,
+    String? url,
+    String? filename,
+    Map<String, String>? headers,
+    String? httpRequestMethod,
+    Object? post,
+    String? directory,
+    BaseDirectory? baseDirectory,
+    String? group,
+    Updates? updates,
+    bool? requiresWiFi,
+    int? retries,
+    int? retriesRemaining,
+    bool? allowPause,
+    int? priority,
+    String? metaData,
+    String? displayName,
+    DateTime? creationTime,
+    TaskOptions? options,
+  }) => DataTask(
+    taskId: taskId ?? this.taskId,
+    url: url ?? this.url,
+    headers: headers ?? this.headers,
+    httpRequestMethod: httpRequestMethod ?? this.httpRequestMethod,
+    post: post as String? ?? this.post,
+    group: group ?? this.group,
+    updates: updates ?? this.updates,
+    requiresWiFi: requiresWiFi ?? this.requiresWiFi,
+    retries: retries ?? this.retries,
+    priority: priority ?? this.priority,
+    metaData: metaData ?? this.metaData,
+    displayName: displayName ?? this.displayName,
+    creationTime: creationTime ?? this.creationTime,
+    options: options ?? this.options,
+  )..retriesRemaining = retriesRemaining ?? this.retriesRemaining;
 
   /// Creates [DataTask] object from [json]
   DataTask.fromJson(super.json)
-      : assert(
-            json['taskType'] == 'DataTask',
-            'The provided JSON map is not a DataTask, '
-            'because key "taskType" is not "DataTask".'),
-        super.fromJson();
+    : assert(
+        json['taskType'] == 'DataTask',
+        'The provided JSON map is not a DataTask, '
+        'because key "taskType" is not "DataTask".',
+      ),
+      super.fromJson();
 
   @override
   String get taskType => 'DataTask';

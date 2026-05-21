@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdk 35
+    compileSdk 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -42,7 +42,7 @@ android {
         applicationId "com.bbflight.background_downloader_example"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
-        minSdkVersion 21
+        minSdkVersion localProperties.getProperty('flutter.minSdkVersion')?.toInteger() ?: 24
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -60,8 +60,8 @@ android {
 }
 
 dependencies {
-    androidTestImplementation "androidx.test:runner:1.2.0"
-    androidTestImplementation "androidx.test:rules:1.2.0"
+    androidTestImplementation "androidx.test:runner:1.7.0"
+    androidTestImplementation "androidx.test:rules:1.7.0"
 }
 
 flutter {

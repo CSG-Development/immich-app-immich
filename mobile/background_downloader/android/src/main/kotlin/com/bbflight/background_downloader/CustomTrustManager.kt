@@ -2,13 +2,25 @@ package com.bbflight.background_downloader
 
 import android.annotation.SuppressLint
 import android.util.Log
+import java.net.Socket
 import java.security.KeyStore
-import java.security.cert.*
-import javax.net.ssl.*
-import java.util.*
+import java.security.cert.CertPathValidator
+import java.security.cert.CertPathValidatorException
+import java.security.cert.Certificate
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.PKIXCertPathChecker
+import java.security.cert.PKIXParameters
+import java.security.cert.X509CertSelector
+import java.security.cert.X509Certificate
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.net.Socket
+import javax.net.ssl.SSLEngine
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509ExtendedTrustManager
+import javax.net.ssl.X509TrustManager
 
 class PinnedTrustManager(
     private val trustedKeyStore: KeyStore
@@ -22,14 +34,14 @@ class PinnedTrustManager(
 
     @Volatile
     private var currentHost: String? = null
-    
+
     init {
         val systemKeyStore = KeyStore.getInstance("AndroidCAStore").apply {
             load(null, null)
         }
         val tmfSystem = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
         tmfSystem.init(systemKeyStore)
-        
+
         systemTrustManager = tmfSystem.trustManagers
             .filterIsInstance<X509TrustManager>()
             .first()
@@ -39,7 +51,7 @@ class PinnedTrustManager(
         localTrustManager = tmfLocal.trustManagers
             .filterIsInstance<X509TrustManager>()
             .first()
-        
+
         Log.w(BDPlugin.TAG, "PinnedTrustManager initialized with ${trustedKeyStore.size()} certificates")
     }
 
@@ -71,7 +83,7 @@ class PinnedTrustManager(
     @SuppressLint("CustomX509TrustManager")
     override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
         val host = currentHost ?: "unknown"
-        
+
         Log.w(BDPlugin.TAG, "checkServerTrusted for host: $host, authType: $authType")
 
         val cached = getCachedValidation(host)
@@ -83,13 +95,13 @@ class PinnedTrustManager(
                 throw CertificateException("Cached validation failed for $host")
             }
         }
-        
+
         try {
             if (chain.isEmpty()) {
                 cacheValidation(host, false)
                 throw CertificateException("Empty certificate chain for $host")
             }
-            
+
             Log.w(BDPlugin.TAG, "Certificate chain length: ${chain.size}")
             chain.forEachIndexed { index, cert ->
                 Log.w(BDPlugin.TAG, "Cert[$index]: Subject=${cert.subjectDN}, Issuer=${cert.issuerDN}")
@@ -123,9 +135,10 @@ class PinnedTrustManager(
             }
 
             cacheValidation(host, false)
-            throw CertificateException("All validation methods failed for $host. " +
-                    "Certificate not in pinned set.")
-            
+            throw CertificateException(
+                "All validation methods failed for $host. Certificate not in pinned set."
+            )
+
         } catch (e: CertificateException) {
             cacheValidation(host, false)
             throw CertificateException("Certificate validation failed for $host: ${e.message}")
@@ -143,23 +156,24 @@ class PinnedTrustManager(
 
     private fun verifyChainManually(chain: Array<X509Certificate>): Boolean {
         Log.w(BDPlugin.TAG, "Manual chain verification started")
-        
+
         if (chain.isEmpty()) {
             Log.w(BDPlugin.TAG, "Empty certificate chain")
             return false
         }
 
         val ourRootCerts = getOurRootCertificates()
-        
-        Log.w(BDPlugin.TAG, "Chain has ${chain.size} certificates, we have ${ourRootCerts.size} root certificates")
+        Log.w(
+            BDPlugin.TAG,
+            "Chain has ${chain.size} certificates, we have ${ourRootCerts.size} root certificates"
+        )
 
         for ((certIndex, serverCert) in chain.withIndex()) {
             val serverFingerprint = getCertificateFingerprint(serverCert)
             Log.w(BDPlugin.TAG, "Server cert [$certIndex] fingerprint: ${serverFingerprint.take(16)}...")
-            
+
             for ((rootIndex, rootCert) in ourRootCerts.withIndex()) {
                 val rootFingerprint = getCertificateFingerprint(rootCert)
-                
                 if (serverFingerprint == rootFingerprint) {
                     Log.w(BDPlugin.TAG, "Direct fingerprint match found! Root cert [$rootIndex]: ${rootCert.subjectDN}")
                     return true
@@ -168,13 +182,10 @@ class PinnedTrustManager(
         }
 
         Log.w(BDPlugin.TAG, "No direct fingerprint match, trying chain validation...")
-
         for ((index, rootCert) in ourRootCerts.withIndex()) {
             Log.w(BDPlugin.TAG, "Trying chain validation with root certificate [$index]: ${rootCert.subjectDN}")
-            
             try {
                 val fullChain = chain + rootCert
-
                 if (validateChain(fullChain)) {
                     Log.w(BDPlugin.TAG, "Chain validation successful with root [$index]")
                     return true
@@ -189,7 +200,7 @@ class PinnedTrustManager(
             Log.w(BDPlugin.TAG, "Manual signature verification passed")
             return true
         }
-        
+
         Log.w(BDPlugin.TAG, "No valid chain found with any root certificate")
         return false
     }
@@ -197,7 +208,7 @@ class PinnedTrustManager(
     private fun validateChain(chain: Array<X509Certificate>): Boolean {
         try {
             Log.w(BDPlugin.TAG, "Validating certificate chain...")
-            
+
             val certFactory = CertificateFactory.getInstance("X.509")
             val certPath = certFactory.generateCertPath(chain.toList())
 
@@ -208,13 +219,16 @@ class PinnedTrustManager(
                 val certSelector = X509CertSelector()
                 certSelector.certificate = null
 
-                getOurRootCertificates().forEach { cert ->
+                getOurRootCertificates().forEach { _ ->
                     try {
                         addCertPathChecker(object : PKIXCertPathChecker() {
                             override fun init(forward: Boolean) {}
                             override fun isForwardCheckingSupported(): Boolean = true
                             override fun getSupportedExtensions(): Set<String>? = null
-                            override fun check(cert: Certificate, unresolvedCritExts: MutableCollection<String>?) {
+                            override fun check(
+                                cert: Certificate,
+                                unresolvedCritExts: MutableCollection<String>?
+                            ) {
                             }
                         })
                     } catch (e: Exception) {
@@ -222,10 +236,9 @@ class PinnedTrustManager(
                     }
                 }
             }
-            
+
             val validator = CertPathValidator.getInstance("PKIX")
             validator.validate(certPath, params)
-            
             Log.w(BDPlugin.TAG, "Chain validation successful")
             return true
         } catch (e: CertPathValidatorException) {
@@ -237,7 +250,6 @@ class PinnedTrustManager(
                 Log.w(BDPlugin.TAG, "Ignoring error: $errorMessage")
                 return true
             }
-            
             return false
         } catch (e: Exception) {
             Log.w(BDPlugin.TAG, "Chain validation exception: ${e.message}")
@@ -245,33 +257,32 @@ class PinnedTrustManager(
         }
     }
 
-    private fun verifySignaturesManually(chain: Array<X509Certificate>, rootCerts: List<X509Certificate>): Boolean {
+    private fun verifySignaturesManually(
+        chain: Array<X509Certificate>,
+        rootCerts: List<X509Certificate>
+    ): Boolean {
         Log.w(BDPlugin.TAG, "Manual signature verification started")
-        
         if (chain.isEmpty()) return false
 
         for (i in 0 until chain.size - 1) {
             val cert = chain[i]
             val issuer = chain[i + 1]
-            
             Log.w(BDPlugin.TAG, "Checking signature level $i: ${cert.subjectDN} signed by ${issuer.subjectDN}")
-            
+
             try {
                 cert.verify(issuer.publicKey)
                 Log.w(BDPlugin.TAG, "Level $i signature valid")
             } catch (e: Exception) {
                 Log.w(BDPlugin.TAG, "Level $i signature invalid: ${e.message}")
-
                 val issuerVerified = rootCerts.any { rootCert ->
                     try {
                         cert.verify(rootCert.publicKey)
                         Log.w(BDPlugin.TAG, "Level $i verified by root: ${rootCert.subjectDN}")
                         true
-                    } catch (e2: Exception) {
+                    } catch (_: Exception) {
                         false
                     }
                 }
-                
                 if (!issuerVerified) {
                     return false
                 }
@@ -284,23 +295,22 @@ class PinnedTrustManager(
                 lastCert.verify(rootCert.publicKey)
                 Log.w(BDPlugin.TAG, "Last certificate verified by root: ${rootCert.subjectDN}")
                 true
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
         }
-        
+
         if (!lastCertVerified) {
             Log.w(BDPlugin.TAG, "Last certificate not verified by any root")
             return false
         }
-        
+
         Log.w(BDPlugin.TAG, "All signatures valid")
         return true
     }
 
     private fun shouldIgnoreError(errorMessage: String): Boolean {
         val lowerError = errorMessage.lowercase(Locale.getDefault())
-        
         val ignorableErrors = listOf(
             "path does not chain with any of the trust anchors",
             "trustanchor",
@@ -310,7 +320,6 @@ class PinnedTrustManager(
             "no trusted certificate found",
             "no trusted certificate found"
         )
-        
         return ignorableErrors.any { lowerError.contains(it) }
     }
 
@@ -318,7 +327,7 @@ class PinnedTrustManager(
         return trustedKeyStore.aliases().toList().mapNotNull { alias ->
             try {
                 trustedKeyStore.getCertificate(alias) as? X509Certificate
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         }
@@ -349,23 +358,23 @@ class PinnedTrustManager(
         }
         return null
     }
-    
+
     private fun cacheValidation(host: String, isValid: Boolean) {
         val expiryTime = System.currentTimeMillis() + cacheTTL
         hostValidationCache[host] = Pair(expiryTime, isValid)
-        
+
         Log.w(BDPlugin.TAG, "Cached validation for $host: ${if (isValid) "VALID" else "INVALID"} for ${cacheTTL / 60000} minutes")
 
         if (hostValidationCache.size > 100) {
             cleanupCache()
         }
     }
-    
+
     private fun cleanupCache() {
         val currentTime = System.currentTimeMillis()
         val iterator = hostValidationCache.entries.iterator()
         var removedCount = 0
-        
+
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val expiryTime = entry.value.first
@@ -374,7 +383,7 @@ class PinnedTrustManager(
                 removedCount++
             }
         }
-        
+
         Log.w(BDPlugin.TAG, "Cache cleaned: removed $removedCount expired entries, ${hostValidationCache.size} remaining")
     }
 }

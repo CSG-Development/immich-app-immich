@@ -8,6 +8,9 @@
 import Foundation
 import MobileCoreServices
 import UIKit
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#endif
 
 ///
 func doOpenFile(filePath: String, mimeType: String?) -> Bool {
@@ -16,12 +19,18 @@ func doOpenFile(filePath: String, mimeType: String?) -> Bool {
     let delegate = DocumentInteractionControllerDelegate()
     documentInteractionController.delegate = delegate
     if (mimeType != nil) {
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType! as NSString, nil)?.takeRetainedValue()
-        {
-            documentInteractionController.uti = uti as String
+        if #available(iOS 14.0, *) {
+            if let type = UTType(mimeType: mimeType!) {
+                documentInteractionController.uti = type.identifier
+            }
+        } else {
+            if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType! as NSString, nil)?.takeRetainedValue()
+            {
+                documentInteractionController.uti = uti as String
+            }
         }
     }
-    guard let view = UIApplication.shared.delegate?.window??.rootViewController?.view
+    guard let view = getRootViewController()?.view
     else {
         return false
     }
@@ -35,6 +44,6 @@ func doOpenFile(filePath: String, mimeType: String?) -> Bool {
 class DocumentInteractionControllerDelegate: NSObject, UIDocumentInteractionControllerDelegate {
     
     func documentInteractionControllerViewControllerForPreview(_ controller: UIDocumentInteractionController) -> UIViewController {
-        return (UIApplication.shared.delegate?.window??.rootViewController)!
+        return getRootViewController()!
     }
 }
