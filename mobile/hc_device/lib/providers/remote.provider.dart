@@ -22,9 +22,8 @@ import 'package:hc_device/data/api/remote_api_client.dart';
 import 'package:hc_device/data/errors/domain_errors.dart';
 import 'package:hc_device/data/repositories/auth_repository.dart';
 import 'package:hc_device/data/repositories/remote_repository.dart';
-import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/api/remote_access.swagger.dart'
-    show Device, DevicePath, DevicePaths, InitiateResponse$Response, RemoteAccess, TokenResponse$Response;
+    show Device, DevicePaths, InitiateResponse$Response, RemoteAccess, TokenResponse$Response;
 import 'package:hc_device/providers/auth.api.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hc_device/services/auth/refresh_failure_classifier.dart';
@@ -87,11 +86,6 @@ class RemoteProvider extends Notifier<RemoteState>
   /// TODO: Replace with the production URL then remove HttpClient override
   static const String baseUrl =
       'https://hc-remote-access-env-https.eba-a2nvhpbm.us-west-2.elasticbeanstalk.com:443/api';
-
-  /// Debug fallback remote path when the backend returns no paths for a device.
-  /// Set to empty string to disable.
-  static const String debugFallbackRemotePath =
-      String.fromEnvironment('DEBUG_FALLBACK_REMOTE_PATH', defaultValue: 'https://homelab-fbx.lasea.fr:65405/photos');
   static const String refreshKey = 'curator_remote_refresh_token';
   static const String clientIdKey = 'curator_remote_client_id';
   static const String referenceKey = 'curator_remote_reference';
@@ -382,41 +376,8 @@ class RemoteProvider extends Notifier<RemoteState>
   Future<Response<List<Device>>> fetchDevices() => _repo.getDevices();
 
   @override
-  Future<Response<DevicePaths>> fetchDevicePaths({required String deviceID}) async {
-    final response = await _repo.getDevicePaths(deviceID: deviceID);
-
-    if (response.isSuccessful && debugFallbackRemotePath.isNotEmpty) {
-      final body = response.body;
-      if (body != null) {
-        final uri = Uri.parse(debugFallbackRemotePath);
-        final fallbackPath = DevicePath(
-          address: uri.host,
-          port: uri.port,
-          type: DevicePathType.remote,
-        );
-
-        // Only add fallback if this exact remote path is not already present
-        final alreadyExists = body.paths.any(
-          (p) => p.type == DevicePathType.remote &&
-                 p.address.toLowerCase() == uri.host.toLowerCase() &&
-                 p.port == uri.port,
-        );
-
-        if (!alreadyExists) {
-          logger.info(
-            '[Remote] Device $deviceID - merging debug fallback: $debugFallbackRemotePath',
-          );
-          final mergedPaths = [...body.paths, fallbackPath];
-          final patched = DevicePaths(
-            paths: mergedPaths,
-            seagateDeviceID: body.seagateDeviceID,
-          );
-          return response.copyWith<DevicePaths>(body: patched);
-        }
-      }
-    }
-
-    return response;
+  Future<Response<DevicePaths>> fetchDevicePaths({required String deviceID}) {
+    return _repo.getDevicePaths(deviceID: deviceID);
   }
 
   RemoteCodeValidationError classifyCodeFailure(Response<dynamic> response) {
