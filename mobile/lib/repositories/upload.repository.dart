@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 
@@ -92,6 +93,54 @@ class UploadRepository {
     );
   }
 
+  /// Upload one backup asset via HTTP. Uses [StoreKey.serverEndpoint] per request (path resolver).
+  /// [Client] respects global [HttpOverrides] for certificate pinning.
+  Future<({bool success, bool isDuplicate, String? remoteAssetId})> uploadBackupAsset(
+    UploadTaskWithFile candidate,
+    CancellationToken cancelToken,
+  ) async {
+    final logger = Logger('UploadRepository');
+    if (cancelToken.isCancelled) {
+      return (success: false, isDuplicate: false, remoteAssetId: null);
+    }
+
+    try {
+      final fileStream = candidate.file.openRead();
+      final assetRawUploadData = MultipartFile(
+        'assetData',
+        fileStream,
+        candidate.file.lengthSync(),
+        filename: candidate.task.filename,
+      );
+
+      final currentEndpoint = Store.get(StoreKey.serverEndpoint);
+      final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
+
+      baseRequest.headers.addAll(ApiService.getRequestHeaders());
+      baseRequest.headers.addAll(candidate.task.headers);
+      baseRequest.fields.addAll(candidate.task.fields);
+      baseRequest.files.add(assetRawUploadData);
+
+      final response = await Client().send(baseRequest, cancellationToken: cancelToken);
+      final responseBody = jsonDecode(await response.stream.bytesToString()) as Map<String, dynamic>;
+
+      if (![200, 201].contains(response.statusCode)) {
+        logger.warning(
+          'Error uploading ${candidate.task.filename} | status=${response.statusCode} | ${responseBody['error']}',
+        );
+        return (success: false, isDuplicate: false, remoteAssetId: null);
+      }
+
+      final remoteAssetId = responseBody['id'] as String?;
+      return (success: true, isDuplicate: response.statusCode == 200, remoteAssetId: remoteAssetId);
+    } on CancelledException {
+      rethrow;
+    } catch (error, stackTrace) {
+      logger.warning('Error uploading asset ${candidate.task.taskId}', error, stackTrace);
+      return (success: false, isDuplicate: false, remoteAssetId: null);
+    }
+  }
+
   Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
     final httpClient = Client();
     final stopwatch = Stopwatch()..start();
@@ -125,6 +174,7 @@ class UploadRepository {
         final currentEndpoint = Store.get(StoreKey.serverEndpoint);
         final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
 
+        baseRequest.headers.addAll(ApiService.getRequestHeaders());
         baseRequest.headers.addAll(candidate.task.headers);
         baseRequest.fields.addAll(candidate.task.fields);
         baseRequest.files.add(assetRawUploadData);

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hc_device/api/remote_access.swagger.dart' as api show Error;
 import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:hc_device/utils/mdns_platform_support.dart';
 
 import 'package:nsd/nsd.dart' as nsd;
 import 'package:shared_preferences/shared_preferences.dart' show SharedPreferencesAsync;
@@ -88,6 +89,10 @@ api.Error convertError(Response response) {
 }
 
 Future<nsd.Discovery?> startDiscovery() async {
+  if (!canUsePlatformMdnsDiscovery) {
+    return null;
+  }
+
   try {
     return await nsd.startDiscovery(serviceTypeDiscover, autoResolve: true, ipLookupType: nsd.IpLookupType.v4);
   } catch (e) {

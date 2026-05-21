@@ -49,7 +49,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   // Add operation coordination
   Completer<void>? _resumeOperation;
   Completer<void>? _pauseOperation;
-
   final _log = Logger("AppLifeCycleNotifier");
   static const Duration _resumeReconnectTimeout = Duration(seconds: 5);
 
@@ -213,7 +212,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _handleBetaTimelineResume() async {
-    _ref.read(backupProvider.notifier).cancelBackup();
     unawaited(_ref.read(backgroundWorkerLockServiceProvider).lock());
 
     // Give isolates time to complete any ongoing database transactions
@@ -239,12 +237,8 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       }
       if (syncSuccess) {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
-        await Future.wait([
-          _safeRun(backgroundManager.hashAssets(), "hashAssets").then((_) {
-            _resumeBackup();
-          }),
-          _resumeBackup(),
-        ]);
+        await _safeRun(backgroundManager.hashAssets(), "hashAssets");
+        await _resumeBackup();
       } else {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.syncFailed);
         await _safeRun(backgroundManager.hashAssets(), "hashAssets");
@@ -260,31 +254,34 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
   Future<void> _resumeBackup() async {
     final isEnableBackup = _ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup);
-
-    if (isEnableBackup) {
-      final currentUser = Store.tryGet(StoreKey.currentUser);
-      if (currentUser != null) {
-        final runId = BackupTrace.newRunId();
-        logBackupTrace(
-          _log,
-          level: Level.INFO,
-          event: BackupTraceEvent.uplResume,
-          phase: BackupTracePhase.trigger,
-          step: 'TRIGGER_RECEIVED',
-          source: 'APP_RESUME',
-          appState: 'RESUMED',
-          trigger: 'lifecycle_resume',
-          status: BackupTraceStatus.ok,
-          reasonCode: 'APP_RESUME_BACKUP_RESUME',
-          runId: runId,
-          extra: {'userId': currentUser.id},
-        );
-        await _safeRun(
-          _ref.read(driftBackupProvider.notifier).handleBackupResume(currentUser.id),
-          "handleBackupResume",
-        );
-      }
+    if (!isEnableBackup) {
+      return;
     }
+
+    final currentUser = Store.tryGet(StoreKey.currentUser);
+    if (currentUser == null) {
+      return;
+    }
+
+    final runId = BackupTrace.newRunId();
+    logBackupTrace(
+      _log,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplResume,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'lifecycle_resume',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'APP_RESUME_BACKUP_RESUME',
+      runId: runId,
+      extra: {'userId': currentUser.id},
+    );
+    await _safeRun(
+      _ref.read(driftBackupProvider.notifier).startForegroundBackup(currentUser.id),
+      'startForegroundBackup',
+    );
   }
 
   // Helper method to check if operations should continue
@@ -335,11 +332,11 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
   Future<void> _performPause() async {
     if (_ref.read(authProvider).isAuthenticated) {
-      if (!Store.isBetaTimelineEnabled) {
+      if (Store.isBetaTimelineEnabled) {
+        _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
+      } else if (_ref.read(backupProvider.notifier).backupProgress != BackUpProgressEnum.manualInProgress) {
         // Do not cancel backup if manual upload is in progress
-        if (_ref.read(backupProvider.notifier).backupProgress != BackUpProgressEnum.manualInProgress) {
-          _ref.read(backupProvider.notifier).cancelBackup();
-        }
+        _ref.read(backupProvider.notifier).cancelBackup();
       }
 
       _ref.read(websocketProvider.notifier).disconnect();

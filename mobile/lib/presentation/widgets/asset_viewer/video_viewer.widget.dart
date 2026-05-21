@@ -98,8 +98,8 @@ class NativeVideoViewer extends HookConsumerWidget {
         if (videoAsset.hasLocal && (videoAsset.isVideo || videoAsset.isMotionPhoto)) {
           final id = videoAsset is LocalAsset ? videoAsset.id : (videoAsset as RemoteAsset).localId!;
           final file = videoAsset.isMotionPhoto
-              ? await const StorageRepository().getMotionFileById(id)
-              : await const StorageRepository().getFileForAsset(id);
+              ? await StorageRepository().getMotionFileById(id)
+              : await StorageRepository().getFileForAsset(id);
           if (file == null) {
             throw Exception('No file found for the video');
           }

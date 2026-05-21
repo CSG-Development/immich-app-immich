@@ -60,12 +60,15 @@ class UploadService {
   String? _currentRunId;
 
   final StreamController<TaskStatusUpdate> _taskStatusController = StreamController<TaskStatusUpdate>.broadcast();
+  final Set<String> _completedTaskIds = {};
+  int _duplicateCompleteSkips = 0;
   final StreamController<TaskProgressUpdate> _taskProgressController = StreamController<TaskProgressUpdate>.broadcast();
 
   Stream<TaskStatusUpdate> get taskStatusStream => _taskStatusController.stream;
   Stream<TaskProgressUpdate> get taskProgressStream => _taskProgressController.stream;
 
   bool shouldAbortQueuingTasks = false;
+  bool isBuildingQueue = false;
 
   void _onTaskProgressCallback(TaskProgressUpdate update) {
     if (!_taskProgressController.isClosed) {
@@ -74,6 +77,14 @@ class UploadService {
   }
 
   void _onUploadCallback(TaskStatusUpdate update) {
+    if (update.status == TaskStatus.complete) {
+      final taskId = update.task.taskId;
+      if (_completedTaskIds.contains(taskId)) {
+        _duplicateCompleteSkips++;
+        return;
+      }
+      _completedTaskIds.add(taskId);
+    }
     if (!_taskStatusController.isClosed) {
       _taskStatusController.add(update);
     }
@@ -95,6 +106,67 @@ class UploadService {
 
   Future<({int total, int remainder, int processing})> getBackupCounts(String userId) {
     return _backupRepository.getAllCounts(userId);
+  }
+
+  /// Logs backup queue breakdown to explain why upload may start with 0 candidates.
+  Future<void> _logBackupQueueDiagnostics({
+    required String userId,
+    required String stage,
+    required String source,
+    String? traceSource,
+    String? traceTrigger,
+    String? appState,
+    int? processed,
+    int? candidatesTotal,
+  }) async {
+    try {
+      final counts = await _backupRepository.getAllCounts(userId);
+      final selectedAlbums = await _backupRepository.countSelectedBackupAlbums();
+      final candidatesReady = await _backupRepository.getCandidates(userId);
+      final candidatesIncludingUnhashed = await _backupRepository.getCandidates(userId, onlyHashed: false);
+      final pendingHash = candidatesIncludingUnhashed.length - candidatesReady.length;
+      final backedUp = counts.total - counts.remainder;
+
+      final uploadCandidates = candidatesTotal ?? candidatesReady.length;
+
+      _logger.info(
+        '$_telemetryTag source=$source stage=$stage '
+        'selectedAlbums=$selectedAlbums total=${counts.total} backedUp=$backedUp '
+        'remaining=${counts.remainder} processing=${counts.processing} '
+        'uploadCandidates=$uploadCandidates pendingHash=$pendingHash'
+        '${processed != null ? ' processed=$processed' : ''}',
+      );
+
+      if (traceSource != null && traceTrigger != null && appState != null) {
+        logBackupTrace(
+          _logger,
+          level: Level.INFO,
+          event: BackupTraceEvent.uplQueueSummary,
+          phase: BackupTracePhase.queue,
+          step: 'QUEUE_DIAGNOSTICS',
+          source: traceSource,
+          appState: appState,
+          trigger: traceTrigger,
+          status: BackupTraceStatus.ok,
+          reasonCode: 'QUEUE_DIAGNOSTICS',
+          runId: _currentRunId,
+          extra: {
+            'stage': stage,
+            'selectedAlbums': selectedAlbums,
+            'total': counts.total,
+            'backedUp': backedUp,
+            'remainder': counts.remainder,
+            'processing': counts.processing,
+            'candidatesReady': candidatesReady.length,
+            'uploadCandidates': uploadCandidates,
+            'pendingHash': pendingHash,
+            if (processed != null) 'processed': processed,
+          },
+        );
+      }
+    } catch (error, stackTrace) {
+      _logger.warning('$_telemetryTag source=$source stage=$stage diagnostics_error', error, stackTrace);
+    }
   }
 
   Future<void> manualBackup(List<LocalAsset> localAssets) async {
@@ -120,14 +192,63 @@ class UploadService {
   /// Build the upload tasks
   /// Enqueue the tasks
   Future<void> startBackup(String userId, void Function(EnqueueStatus status) onEnqueueTasks) async {
+    if (isBuildingQueue) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.queue,
+        step: 'QUEUE_BUILD_SKIPPED',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_start_backup',
+        status: BackupTraceStatus.skip,
+        reasonCode: 'QUEUE_BUILD_ALREADY_IN_PROGRESS',
+        runId: _currentRunId,
+        extra: {'userId': userId},
+      );
+      return;
+    }
+
+    isBuildingQueue = true;
     _currentRunId = BackupTrace.newRunId();
     final start = Stopwatch()..start();
-    await _storageRepository.clearCache();
+    try {
+      await _storageRepository.clearCache();
 
-    shouldAbortQueuingTasks = false;
+      shouldAbortQueuingTasks = false;
+      _completedTaskIds.clear();
+      _duplicateCompleteSkips = 0;
 
-    final candidates = await _backupRepository.getCandidates(userId);
-    if (candidates.isEmpty) {
+      final candidates = await _backupRepository.getCandidates(userId);
+      await _logBackupQueueDiagnostics(
+        userId: userId,
+        stage: 'start_backup',
+        source: 'background_downloader',
+        traceSource: 'MANUAL_SCREEN',
+        traceTrigger: 'user_start_backup',
+        appState: 'ACTIVE',
+        candidatesTotal: candidates.length,
+      );
+      if (candidates.isEmpty) {
+        logBackupTrace(
+          _logger,
+          level: Level.INFO,
+          event: BackupTraceEvent.uplStart,
+          phase: BackupTracePhase.queue,
+          step: 'QUEUE_START',
+          source: 'MANUAL_SCREEN',
+          appState: 'ACTIVE',
+          trigger: 'user_start_backup',
+          status: BackupTraceStatus.skip,
+          reasonCode: 'QUEUE_NO_CANDIDATES',
+          runId: _currentRunId,
+          elapsedMs: start.elapsedMilliseconds,
+          extra: {'userId': userId, 'candidates': 0},
+        );
+        _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=0');
+        return;
+      }
       logBackupTrace(
         _logger,
         level: Level.INFO,
@@ -137,98 +258,140 @@ class UploadService {
         source: 'MANUAL_SCREEN',
         appState: 'ACTIVE',
         trigger: 'user_start_backup',
-        status: BackupTraceStatus.skip,
-        reasonCode: 'QUEUE_NO_CANDIDATES',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'QUEUE_CANDIDATES_READY',
         runId: _currentRunId,
         elapsedMs: start.elapsedMilliseconds,
-        extra: {'userId': userId, 'candidates': 0},
+        extra: {'userId': userId, 'candidates': candidates.length},
       );
-      _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=0');
-      return;
-    }
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplStart,
-      phase: BackupTracePhase.queue,
-      step: 'QUEUE_START',
-      source: 'MANUAL_SCREEN',
-      appState: 'ACTIVE',
-      trigger: 'user_start_backup',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'QUEUE_CANDIDATES_READY',
-      runId: _currentRunId,
-      elapsedMs: start.elapsedMilliseconds,
-      extra: {'userId': userId, 'candidates': candidates.length},
-    );
 
-    const batchSize = 100;
-    _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=${candidates.length} batchSize=$batchSize');
-    int count = 0;
-    for (int i = 0; i < candidates.length; i += batchSize) {
-      if (shouldAbortQueuingTasks) {
-        break;
-      }
-
-      final batch = candidates.skip(i).take(batchSize).toList();
-      _logger.info(
-        '$_telemetryTag source=background_downloader stage=build_batch index=${(i / batchSize).floor()} '
-        'batchCandidates=${batch.length} enqueuedSoFar=$count',
-      );
-      List<UploadTask> tasks = [];
-      for (final asset in batch) {
-        final task = await _getUploadTask(asset);
-        if (task != null) {
-          tasks.add(task);
+      const batchSize = 100;
+      _logger.info('$_telemetryTag source=background_downloader stage=start_backup candidates=${candidates.length} batchSize=$batchSize');
+      int count = 0;
+      for (int i = 0; i < candidates.length; i += batchSize) {
+        if (shouldAbortQueuingTasks) {
+          break;
         }
-      }
 
-      if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
-        count += tasks.length;
-        await enqueueTasks(tasks);
-        await _logQueueSnapshot(source: 'background_downloader', batchIndex: (i / batchSize).floor(), queuedInBatch: tasks.length);
-
-        onEnqueueTasks(EnqueueStatus(enqueueCount: count, totalCount: candidates.length));
-        logBackupTrace(
-          _logger,
-          level: Level.INFO,
-          event: BackupTraceEvent.uplBatchEnqueued,
-          phase: BackupTracePhase.queue,
-          step: 'QUEUE_BATCH_ENQUEUED',
-          source: 'MANUAL_SCREEN',
-          appState: 'ACTIVE',
-          trigger: 'user_start_backup',
-          status: BackupTraceStatus.ok,
-          reasonCode: 'QUEUE_BATCH_READY',
-          runId: _currentRunId,
-          extra: {
-            'batchId': (i / batchSize).floor(),
-            'batchCandidates': batch.length,
-            'queuedTotal': count,
-            'queueTotal': candidates.length,
-          },
+        final batchIndex = (i / batchSize).floor();
+        final batchBuildSw = Stopwatch()..start();
+        final batch = candidates.skip(i).take(batchSize).toList();
+        _logger.info(
+          '$_telemetryTag source=background_downloader stage=build_batch index=$batchIndex '
+          'batchCandidates=${batch.length} enqueuedSoFar=$count',
         );
+        List<UploadTask> tasks = [];
+        for (final asset in batch) {
+          final task = await _getUploadTask(asset);
+          if (task != null) {
+            tasks.add(task);
+          }
+        }
+        final buildBatchMs = batchBuildSw.elapsedMilliseconds;
+
+        if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
+          count += tasks.length;
+          await enqueueTasks(tasks);
+          await _logQueueSnapshot(source: 'background_downloader', batchIndex: batchIndex, queuedInBatch: tasks.length);
+
+          onEnqueueTasks(EnqueueStatus(enqueueCount: count, totalCount: candidates.length));
+          logBackupTrace(
+            _logger,
+            level: Level.INFO,
+            event: BackupTraceEvent.uplBatchEnqueued,
+            phase: BackupTracePhase.queue,
+            step: 'QUEUE_BATCH_ENQUEUED',
+            source: 'MANUAL_SCREEN',
+            appState: 'ACTIVE',
+            trigger: 'user_start_backup',
+            status: BackupTraceStatus.ok,
+            reasonCode: 'QUEUE_BATCH_READY',
+            runId: _currentRunId,
+            extra: {
+              'batchId': batchIndex,
+              'batchCandidates': batch.length,
+              'tasksBuilt': tasks.length,
+              'buildBatchMs': buildBatchMs,
+              'queuedTotal': count,
+              'queueTotal': candidates.length,
+            },
+          );
+        }
+
+        await Future<void>.delayed(Duration.zero);
       }
+      _logger.info('$_telemetryTag source=background_downloader stage=end_backup enqueuedTotal=$count candidates=${candidates.length}');
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplQueueSummary,
+        phase: BackupTracePhase.summary,
+        step: 'QUEUE_SUMMARY',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_start_backup',
+        status: shouldAbortQueuingTasks ? BackupTraceStatus.partial : BackupTraceStatus.ok,
+        reasonCode: shouldAbortQueuingTasks ? 'QUEUE_ABORTED' : 'QUEUE_COMPLETE',
+        runId: _currentRunId,
+        elapsedMs: start.elapsedMilliseconds,
+        extra: {
+          'enqueuedTotal': count,
+          'candidates': candidates.length,
+          'duplicateCompleteSkips': _duplicateCompleteSkips,
+        },
+      );
+    } finally {
+      isBuildingQueue = false;
     }
-    _logger.info('$_telemetryTag source=background_downloader stage=end_backup enqueuedTotal=$count candidates=${candidates.length}');
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplQueueSummary,
-      phase: BackupTracePhase.summary,
-      step: 'QUEUE_SUMMARY',
-      source: 'MANUAL_SCREEN',
+  }
+
+  /// Foreground/manual backup via HTTP (per-asset file fetch). [cancelCompleter] stops the loop.
+  Future<void> startForegroundBackupWithHttpClient(
+    String userId,
+    Completer<void> cancelCompleter, {
+    required bool hasWifi,
+    void Function(int processed, int total)? onProgress,
+    void Function(String localAssetId, {bool isDuplicate})? onSuccess,
+  }) async {
+    final token = CancellationToken();
+    unawaited(cancelCompleter.future.then((_) => token.cancel()));
+
+    await _runHttpBackup(
+      userId: userId,
+      hasWifi: hasWifi,
+      token: token,
+      isCancelled: () => cancelCompleter.isCompleted || token.isCancelled,
+      traceSource: 'MANUAL_SCREEN',
+      traceTrigger: 'user_start_backup',
       appState: 'ACTIVE',
-      trigger: 'user_start_backup',
-      status: shouldAbortQueuingTasks ? BackupTraceStatus.partial : BackupTraceStatus.ok,
-      reasonCode: shouldAbortQueuingTasks ? 'QUEUE_ABORTED' : 'QUEUE_COMPLETE',
-      runId: _currentRunId,
-      elapsedMs: start.elapsedMilliseconds,
-      extra: {'enqueuedTotal': count, 'candidates': candidates.length},
+      onProgress: onProgress,
+      onSuccess: onSuccess,
     );
   }
 
   Future<void> startBackupWithHttpClient(String userId, bool hasWifi, CancellationToken token) async {
+    await _runHttpBackup(
+      userId: userId,
+      hasWifi: hasWifi,
+      token: token,
+      isCancelled: () => shouldAbortQueuingTasks || token.isCancelled,
+      traceSource: 'BG_WORKER',
+      traceTrigger: 'background_task',
+      appState: 'PAUSED',
+    );
+  }
+
+  Future<void> _runHttpBackup({
+    required String userId,
+    required bool hasWifi,
+    required CancellationToken token,
+    required bool Function() isCancelled,
+    required String traceSource,
+    required String traceTrigger,
+    required String appState,
+    void Function(int processed, int total)? onProgress,
+    void Function(String localAssetId, {bool isDuplicate})? onSuccess,
+  }) async {
     _currentRunId ??= BackupTrace.newRunId();
     final sw = Stopwatch()..start();
     await _storageRepository.clearCache();
@@ -236,6 +399,15 @@ class UploadService {
     shouldAbortQueuingTasks = false;
 
     final candidates = await _backupRepository.getCandidates(userId);
+    await _logBackupQueueDiagnostics(
+      userId: userId,
+      stage: 'start_backup',
+      source: 'dart_http',
+      traceSource: traceSource,
+      traceTrigger: traceTrigger,
+      appState: appState,
+      candidatesTotal: candidates.length,
+    );
     if (candidates.isEmpty) {
       _logger.info('$_telemetryTag source=dart_http stage=start_backup candidates=0');
       logBackupTrace(
@@ -244,9 +416,9 @@ class UploadService {
         event: BackupTraceEvent.runSummary,
         phase: BackupTracePhase.summary,
         step: 'RUN_SUMMARY',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: 'background_task',
+        source: traceSource,
+        appState: appState,
+        trigger: traceTrigger,
         status: BackupTraceStatus.skip,
         reasonCode: 'HTTP_BACKUP_NO_CANDIDATES',
         runId: _currentRunId,
@@ -255,64 +427,203 @@ class UploadService {
     }
 
     const batchSize = 100;
+    final total = candidates.length;
+    var processed = 0;
+
     _logger.info(
-      '$_telemetryTag source=dart_http stage=start_backup candidates=${candidates.length} batchSize=$batchSize hasWifi=$hasWifi',
+      '$_telemetryTag source=dart_http stage=start_backup candidates=$total batchSize=$batchSize hasWifi=$hasWifi',
     );
+    onProgress?.call(0, total);
+
     for (int i = 0; i < candidates.length; i += batchSize) {
-      if (shouldAbortQueuingTasks || token.isCancelled) {
+      if (isCancelled()) {
         break;
       }
 
       final batch = candidates.skip(i).take(batchSize).toList();
       _logger.info(
-        '$_telemetryTag source=dart_http stage=build_batch index=${(i / batchSize).floor()} '
+        '$_telemetryTag source=dart_http stage=upload_batch index=${(i / batchSize).floor()} '
         'batchCandidates=${batch.length}',
       );
-      List<UploadTaskWithFile> tasks = [];
-      int skippedForWifi = 0;
+
       for (final asset in batch) {
+        if (isCancelled()) {
+          break;
+        }
+
         final requireWifi = _shouldRequireWiFi(asset);
         if (requireWifi && !hasWifi) {
           _logger.warning('Skipping upload for ${asset.id} because it requires WiFi');
-          skippedForWifi++;
+          processed++;
+          onProgress?.call(processed, total);
           continue;
         }
 
-        final task = await _getUploadTaskWithFile(asset);
-        if (task != null) {
-          tasks.add(task);
+        final uploaded = await _uploadSingleBackupAsset(
+          asset,
+          token,
+          onSuccess: onSuccess,
+        );
+        if (uploaded) {
+          logBackupTrace(
+            _logger,
+            level: Level.INFO,
+            event: BackupTraceEvent.uplTaskComplete,
+            phase: BackupTracePhase.upload,
+            step: 'UPLOAD_TASK_COMPLETE',
+            source: traceSource,
+            appState: appState,
+            trigger: traceTrigger,
+            status: BackupTraceStatus.ok,
+            reasonCode: 'UPLOAD_TASK_COMPLETED',
+            runId: _currentRunId,
+            extra: {'localAssetId': asset.id},
+          );
         }
-      }
 
-      if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
-        _logger.info(
-          '$_telemetryTag source=dart_http stage=upload_batch index=${(i / batchSize).floor()} '
-          'uploadable=${tasks.length} skippedForWifi=$skippedForWifi',
-        );
-        await _uploadRepository.backupWithDartClient(tasks, token);
-        await _logQueueSnapshot(
-          source: 'dart_http',
-          batchIndex: (i / batchSize).floor(),
-          queuedInBatch: tasks.length,
-        );
+        processed++;
+        onProgress?.call(processed, total);
       }
     }
-    _logger.info('$_telemetryTag source=dart_http stage=end_backup candidates=${candidates.length}');
+
+    await _logBackupQueueDiagnostics(
+      userId: userId,
+      stage: 'end_backup',
+      source: 'dart_http',
+      traceSource: traceSource,
+      traceTrigger: traceTrigger,
+      appState: appState,
+      processed: processed,
+      candidatesTotal: total,
+    );
+    _logger.info('$_telemetryTag source=dart_http stage=end_backup candidates=$total processed=$processed');
     logBackupTrace(
       _logger,
       level: Level.INFO,
       event: BackupTraceEvent.runSummary,
       phase: BackupTracePhase.summary,
       step: 'RUN_SUMMARY',
-      source: 'BG_WORKER',
-      appState: 'PAUSED',
-      trigger: 'background_task',
-      status: shouldAbortQueuingTasks || token.isCancelled ? BackupTraceStatus.partial : BackupTraceStatus.ok,
-      reasonCode: shouldAbortQueuingTasks || token.isCancelled ? 'HTTP_BACKUP_ABORTED' : 'HTTP_BACKUP_COMPLETE',
+      source: traceSource,
+      appState: appState,
+      trigger: traceTrigger,
+      status: isCancelled() ? BackupTraceStatus.partial : BackupTraceStatus.ok,
+      reasonCode: isCancelled() ? 'HTTP_BACKUP_ABORTED' : 'HTTP_BACKUP_COMPLETE',
       runId: _currentRunId,
       elapsedMs: sw.elapsedMilliseconds,
-      extra: {'candidates': candidates.length},
+      extra: {'candidates': total, 'processed': processed},
     );
+  }
+
+  Future<bool> _uploadSingleBackupAsset(
+    LocalAsset asset,
+    CancellationToken token, {
+    void Function(String localAssetId, {bool isDuplicate})? onSuccess,
+  }) async {
+    if (token.isCancelled) {
+      return false;
+    }
+
+    final entity = await _storageRepository.getAssetEntityForAsset(asset);
+    if (entity == null) {
+      return false;
+    }
+
+    File? motionFile;
+    File? photoFile;
+    String? livePhotoVideoId;
+
+    try {
+      if (entity.isLivePhoto) {
+        motionFile = await _resolveBackupFile(asset.id, motion: true);
+        if (motionFile == null) {
+          return false;
+        }
+
+        final motionName = p.setExtension(asset.name, p.extension(motionFile.path));
+        final motionTask = await buildUploadTask(
+          motionFile,
+          createdAt: asset.createdAt,
+          modifiedAt: asset.updatedAt,
+          originalFileName: motionName,
+          deviceAssetId: asset.id,
+          group: kBackupGroup,
+          priority: 0,
+          isFavorite: asset.isFavorite,
+          requiresWiFi: _shouldRequireWiFi(asset),
+        );
+
+        final motionResult = await _uploadRepository.uploadBackupAsset(
+          UploadTaskWithFile(file: motionFile, task: motionTask),
+          token,
+        );
+        if (!motionResult.success) {
+          return false;
+        }
+        livePhotoVideoId = motionResult.remoteAssetId;
+      }
+
+      photoFile = await _resolveBackupFile(asset.id, motion: false);
+      if (photoFile == null) {
+        return false;
+      }
+
+      final originalFileName = entity.isLivePhoto
+          ? p.setExtension(asset.name, p.extension(photoFile.path))
+          : asset.name;
+
+      final fields = livePhotoVideoId != null ? {'livePhotoVideoId': livePhotoVideoId} : null;
+
+      final photoTask = await buildUploadTask(
+        photoFile,
+        createdAt: asset.createdAt,
+        modifiedAt: asset.updatedAt,
+        originalFileName: originalFileName,
+        deviceAssetId: asset.id,
+        fields: fields,
+        group: kBackupGroup,
+        priority: 0,
+        isFavorite: asset.isFavorite,
+        requiresWiFi: _shouldRequireWiFi(asset),
+      );
+
+      final photoResult = await _uploadRepository.uploadBackupAsset(
+        UploadTaskWithFile(file: photoFile, task: photoTask),
+        token,
+      );
+
+      if (photoResult.success) {
+        onSuccess?.call(asset.id, isDuplicate: photoResult.isDuplicate);
+        return true;
+      }
+      return false;
+    } on CancelledException {
+      rethrow;
+    } catch (error, stackTrace) {
+      _logger.warning('HTTP backup failed for ${asset.id}', error, stackTrace);
+      return false;
+    } finally {
+      if (Platform.isIOS) {
+        try {
+          await motionFile?.delete();
+          await photoFile?.delete();
+        } catch (e) {
+          _logger.fine('Error deleting temp files for ${asset.id}: $e');
+        }
+      }
+    }
+  }
+
+  Future<File?> _resolveBackupFile(String assetId, {required bool motion}) async {
+    if (Platform.isIOS) {
+      final isLocal = await _storageRepository.isAssetAvailableLocally(assetId);
+      if (!isLocal) {
+        return motion
+            ? _storageRepository.loadMotionFileFromCloud(assetId)
+            : _storageRepository.loadFileFromCloud(assetId);
+      }
+    }
+
+    return motion ? _storageRepository.getMotionFileById(assetId) : _storageRepository.getFileForAsset(assetId);
   }
 
   /// Cancel all ongoing uploads and reset the upload queue
@@ -425,42 +736,6 @@ class UploadService {
     } catch (error, stackTrace) {
       dPrint(() => "Error handling live photo upload task: $error $stackTrace");
     }
-  }
-
-  Future<UploadTaskWithFile?> _getUploadTaskWithFile(LocalAsset asset) async {
-    final entity = await _storageRepository.getAssetEntityForAsset(asset);
-    if (entity == null) {
-      return null;
-    }
-
-    final file = await _storageRepository.getFileForAsset(asset.id);
-    if (file == null) {
-      return null;
-    }
-
-    final originalFileName = entity.isLivePhoto ? p.setExtension(asset.name, p.extension(file.path)) : asset.name;
-
-    String metadata = UploadTaskMetadata(
-      localAssetId: asset.id,
-      isLivePhotos: entity.isLivePhoto,
-      livePhotoVideoId: '',
-    ).toJson();
-
-    return UploadTaskWithFile(
-      file: file,
-      task: await buildUploadTask(
-        file,
-        createdAt: asset.createdAt,
-        modifiedAt: asset.updatedAt,
-        originalFileName: originalFileName,
-        deviceAssetId: asset.id,
-        metadata: metadata,
-        group: "group",
-        priority: 0,
-        isFavorite: asset.isFavorite,
-        requiresWiFi: false,
-      ),
-    );
   }
 
   Future<UploadTask?> _getUploadTask(LocalAsset asset, {String group = kBackupGroup, int? priority}) async {

@@ -206,7 +206,7 @@ class _BackupIndicator extends ConsumerWidget {
     final backupStateStream = ref.watch(settingsProvider).watch(Setting.enableBackup);
     final isDarkTheme = context.isDarkTheme;
     final iconColor = isDarkTheme ? Colors.white : Colors.black;
-    final isUploading = ref.watch(driftBackupProvider.select((state) => state.uploadItems.isNotEmpty));
+    final isUploading = ref.watch(driftBackupProvider.select((state) => state.showsBackupProgress));
 
     return StreamBuilder(
       stream: backupStateStream,
