@@ -10,6 +10,7 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/string_extensions.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/utils/backup_connectivity.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -440,18 +441,23 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
           state = state.copyWith(enqueueCount: processed, enqueueTotalCount: total);
         },
         onSuccess: (localAssetId, {bool isDuplicate = false}) {
-          if (!isDuplicate) {
-            state = state.copyWith(
-              backupCount: state.backupCount + 1,
-              remainderCount: state.remainderCount > 0 ? state.remainderCount - 1 : 0,
-            );
-          }
+          state = state.copyWith(
+            backupCount: state.backupCount + 1,
+            remainderCount: state.remainderCount > 0 ? state.remainderCount - 1 : 0,
+          );
           dPrint(() => 'HTTP backup uploaded $localAssetId duplicate=$isDuplicate');
         },
       );
     } finally {
       _httpCancelCompleter = null;
       state = state.copyWith(isHttpBackupActive: false, enqueueCount: 0, enqueueTotalCount: 0);
+      updateSyncing(true);
+      final syncOk = await _ref.read(backgroundSyncProvider).syncRemote();
+      updateSyncing(false);
+      if (!syncOk) {
+        updateError(BackupError.syncFailed);
+      }
+      await getBackupStatus(userId);
     }
   }
 
