@@ -44,7 +44,7 @@ enum TaskStatus {
 
   /// Task is in paused state and may be able to resume
   ///
-  /// To resume a paused Task, call [resumeTaskWithId]. If the resume is
+  /// To resume a paused Task, call [FileDownloader.resume]. If the resume is
   /// possible, status will change to [TaskStatus.running] and continue from
   /// there. If resume fails (e.g. because the temp file with the partial
   /// download has been deleted by the operating system) status will switch
@@ -99,7 +99,7 @@ enum BaseDirectory {
   /// the application's directory structure are *not* stable, and you
   /// should use [applicationDocuments], [applicationSupport] or
   /// [applicationLibrary] instead to avoid errors.
-  root
+  root,
 }
 
 /// Type of updates requested for a task or group of tasks
@@ -118,11 +118,11 @@ enum Updates {
 }
 
 /// Signature for a function you can register to be called
-/// when the status of a [task] changes.
+/// when the status of a [Task] changes.
 typedef TaskStatusCallback = void Function(TaskStatusUpdate update);
 
 /// Signature for a function you can register to be called
-/// for every progress change of a [task].
+/// for every progress change of a [Task].
 ///
 /// A successfully completed task will always finish with progress 1.0
 /// [TaskStatus.failed] results in progress -1.0
@@ -134,11 +134,11 @@ typedef TaskProgressCallback = void Function(TaskProgressUpdate update);
 
 /// Signature for function you can register to be called when a notification
 /// is tapped by the user
-typedef TaskNotificationTapCallback = void Function(
-    Task task, NotificationType notificationType);
+typedef TaskNotificationTapCallback =
+    void Function(Task task, NotificationType notificationType);
 
-/// Signature for a function you can provide to the [downloadBatch] or
-/// [uploadBatch] that will be called upon completion of each task
+/// Signature for a function you can provide to the [FileDownloader.downloadBatch] or
+/// [FileDownloader.uploadBatch] that will be called upon completion of each task
 /// in the batch.
 ///
 /// [succeeded] will count the number of successful downloads, and
@@ -184,7 +184,7 @@ sealed class TaskUpdate {
 
   /// Create object from [json]
   TaskUpdate.fromJson(Map<String, dynamic> json)
-      : task = Task.createFromJson(json['task'] ?? json);
+    : task = Task.createFromJson(json['task'] ?? json);
 
   /// Return JSON Map representing object
   Map<String, dynamic> toJson() => {'task': task.toJson()};
@@ -205,28 +205,31 @@ class TaskStatusUpdate extends TaskUpdate {
   final String? mimeType; // derived from Content-Type header
   final String? charSet; // derived from Content-Type header
 
-  const TaskStatusUpdate(super.task, this.status,
-      [this.exception,
-      this.responseBody,
-      this.responseHeaders,
-      this.responseStatusCode,
-      this.mimeType,
-      this.charSet]);
+  const TaskStatusUpdate(
+    super.task,
+    this.status, [
+    this.exception,
+    this.responseBody,
+    this.responseHeaders,
+    this.responseStatusCode,
+    this.mimeType,
+    this.charSet,
+  ]);
 
   /// Create object from [json]
   TaskStatusUpdate.fromJson(super.json)
-      : status = TaskStatus.values[(json['taskStatus'] as num?)?.toInt() ?? 0],
-        exception = json['exception'] != null
-            ? TaskException.fromJson(json['exception'])
-            : null,
-        responseBody = json['responseBody'],
-        responseHeaders = json['responseHeaders'] != null
-            ? Map.from(json['responseHeaders'])
-            : null,
-        responseStatusCode = (json['responseStatusCode'] as num?)?.toInt(),
-        mimeType = json['mimeType'],
-        charSet = json['charSet'],
-        super.fromJson();
+    : status = TaskStatus.values[(json['taskStatus'] as num?)?.toInt() ?? 0],
+      exception = json['exception'] != null
+          ? TaskException.fromJson(json['exception'])
+          : null,
+      responseBody = json['responseBody'],
+      responseHeaders = json['responseHeaders'] != null
+          ? Map.from(json['responseHeaders'])
+          : null,
+      responseStatusCode = (json['responseStatusCode'] as num?)?.toInt(),
+      mimeType = json['mimeType'],
+      charSet = json['charSet'],
+      super.fromJson();
 
   /// Create object from [jsonString]
   factory TaskStatusUpdate.fromJsonString(String jsonString) =>
@@ -235,34 +238,35 @@ class TaskStatusUpdate extends TaskUpdate {
   /// Return JSON Map representing object
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        'taskStatus': status.index,
-        'exception': exception?.toJson(),
-        'responseBody': responseBody,
-        'responseHeaders': responseHeaders,
-        'responseStatusCode': responseStatusCode,
-        'mimeType': mimeType,
-        'charSet': charSet
-      };
+    ...super.toJson(),
+    'taskStatus': status.index,
+    'exception': exception?.toJson(),
+    'responseBody': responseBody,
+    'responseHeaders': responseHeaders,
+    'responseStatusCode': responseStatusCode,
+    'mimeType': mimeType,
+    'charSet': charSet,
+  };
 
-  TaskStatusUpdate copyWith(
-          {Task? task,
-          TaskStatus? status,
-          TaskException? exception,
-          String? responseBody,
-          Map<String, String>? responseHeaders,
-          int? responseStatusCode,
-          String? mimeType,
-          String? charSet}) =>
-      TaskStatusUpdate(
-          task ?? this.task,
-          status ?? this.status,
-          exception ?? this.exception,
-          responseBody ?? this.responseBody,
-          responseHeaders ?? this.responseHeaders,
-          responseStatusCode ?? this.responseStatusCode,
-          mimeType ?? this.mimeType,
-          charSet ?? this.charSet);
+  TaskStatusUpdate copyWith({
+    Task? task,
+    TaskStatus? status,
+    TaskException? exception,
+    String? responseBody,
+    Map<String, String>? responseHeaders,
+    int? responseStatusCode,
+    String? mimeType,
+    String? charSet,
+  }) => TaskStatusUpdate(
+    task ?? this.task,
+    status ?? this.status,
+    exception ?? this.exception,
+    responseBody ?? this.responseBody,
+    responseHeaders ?? this.responseHeaders,
+    responseStatusCode ?? this.responseStatusCode,
+    mimeType ?? this.mimeType,
+    charSet ?? this.charSet,
+  );
 }
 
 /// A progress update
@@ -281,26 +285,31 @@ class TaskStatusUpdate extends TaskUpdate {
 /// [networkSpeed] is valid if positive, expressed in MB/second
 /// [timeRemaining] is valid if positive
 ///
-/// Use the [has...] getters to determine whether a field is valid
+/// Use the [hasExpectedFileSize], [hasNetworkSpeed] and [hasTimeRemaining]
+/// getters to determine whether a field is valid
 class TaskProgressUpdate extends TaskUpdate {
   final double progress;
   final int expectedFileSize;
   final double networkSpeed; // in MB/s
   final Duration timeRemaining;
 
-  const TaskProgressUpdate(super.task, this.progress,
-      [this.expectedFileSize = -1,
-      this.networkSpeed = -1,
-      this.timeRemaining = const Duration(seconds: -1)]);
+  const TaskProgressUpdate(
+    super.task,
+    this.progress, [
+    this.expectedFileSize = -1,
+    this.networkSpeed = -1,
+    this.timeRemaining = const Duration(seconds: -1),
+  ]);
 
   /// Create object from [json]
   TaskProgressUpdate.fromJson(super.json)
-      : progress = (json['progress'] as num?)?.toDouble() ?? progressFailed,
-        expectedFileSize = (json['expectedFileSize'] as num?)?.toInt() ?? -1,
-        networkSpeed = (json['networkSpeed'] as num?)?.toDouble() ?? -1,
-        timeRemaining =
-            Duration(seconds: (json['timeRemaining'] as num?)?.toInt() ?? -1),
-        super.fromJson();
+    : progress = (json['progress'] as num?)?.toDouble() ?? progressFailed,
+      expectedFileSize = (json['expectedFileSize'] as num?)?.toInt() ?? -1,
+      networkSpeed = (json['networkSpeed'] as num?)?.toDouble() ?? -1,
+      timeRemaining = Duration(
+        seconds: (json['timeRemaining'] as num?)?.toInt() ?? -1,
+      ),
+      super.fromJson();
 
   /// Create object from [jsonString]
   factory TaskProgressUpdate.fromJsonString(String jsonString) =>
@@ -309,12 +318,12 @@ class TaskProgressUpdate extends TaskUpdate {
   /// Return JSON Map representing object
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        'progress': progress,
-        'expectedFileSize': expectedFileSize,
-        'networkSpeed': networkSpeed,
-        'timeRemaining': timeRemaining.inSeconds
-      };
+    ...super.toJson(),
+    'progress': progress,
+    'expectedFileSize': expectedFileSize,
+    'networkSpeed': networkSpeed,
+    'timeRemaining': timeRemaining.inSeconds,
+  };
 
   /// If true, [expectedFileSize] contains a valid value
   bool get hasExpectedFileSize => expectedFileSize >= 0;
@@ -325,22 +334,27 @@ class TaskProgressUpdate extends TaskUpdate {
   /// If true, [timeRemaining] contains a valid value
   bool get hasTimeRemaining => !timeRemaining.isNegative;
 
+  /// Use the [hasExpectedFileSize], [hasNetworkSpeed] and [hasTimeRemaining]
+  /// getters to determine whether a field is valid
+  ///
   /// String is '-- MB/s' if N/A, otherwise in MB/s or kB/s
   String get networkSpeedAsString => switch (networkSpeed) {
-        <= 0 => '-- MB/s',
-        >= 1 => '${networkSpeed.round()} MB/s',
-        _ => '${(networkSpeed * 1000).round()} kB/s'
-      };
+    <= 0 => '-- MB/s',
+    >= 1 => '${networkSpeed.round()} MB/s',
+    _ => '${(networkSpeed * 1000).round()} kB/s',
+  };
 
   /// String is '--:--' if N/A, otherwise HH:MM:SS or MM:SS
   String get timeRemainingAsString => switch (timeRemaining.inSeconds) {
-        <= 0 => '--:--',
-        < 3600 => '${timeRemaining.inMinutes.toString().padLeft(2, "0")}'
-            ':${timeRemaining.inSeconds.remainder(60).toString().padLeft(2, "0")}',
-        _ => '${timeRemaining.inHours}'
-            ':${timeRemaining.inMinutes.remainder(60).toString().padLeft(2, "0")}'
-            ':${timeRemaining.inSeconds.remainder(60).toString().padLeft(2, "0")}'
-      };
+    <= 0 => '--:--',
+    < 3600 =>
+      '${timeRemaining.inMinutes.toString().padLeft(2, "0")}'
+          ':${timeRemaining.inSeconds.remainder(60).toString().padLeft(2, "0")}',
+    _ =>
+      '${timeRemaining.inHours}'
+          ':${timeRemaining.inMinutes.remainder(60).toString().padLeft(2, "0")}'
+          ':${timeRemaining.inSeconds.remainder(60).toString().padLeft(2, "0")}',
+  };
 
   @override
   String toString() {
@@ -364,15 +378,19 @@ class ResumeData {
   final int requiredStartByte;
   final String? eTag;
 
-  const ResumeData(this.task, this.data,
-      [this.requiredStartByte = 0, this.eTag]);
+  const ResumeData(
+    this.task,
+    this.data, [
+    this.requiredStartByte = 0,
+    this.eTag,
+  ]);
 
   /// Create object from [json]
   ResumeData.fromJson(Map<String, dynamic> json)
-      : task = Task.createFromJson(json['task']),
-        data = json['data'] as String,
-        requiredStartByte = (json['requiredStartByte'] as num?)?.toInt() ?? 0,
-        eTag = json['eTag'] as String?;
+    : task = Task.createFromJson(json['task']),
+      data = json['data'] as String,
+      requiredStartByte = (json['requiredStartByte'] as num?)?.toInt() ?? 0,
+      eTag = json['eTag'] as String?;
 
   /// Create object from [jsonString]
   factory ResumeData.fromJsonString(String jsonString) =>
@@ -380,11 +398,11 @@ class ResumeData {
 
   /// Return JSON Map representing object
   Map<String, dynamic> toJson() => {
-        'task': task.toJson(),
-        'data': data,
-        'requiredStartByte': requiredStartByte,
-        'eTag': eTag
-      };
+    'task': task.toJson(),
+    'data': data,
+    'requiredStartByte': requiredStartByte,
+    'eTag': eTag,
+  };
 
   String get taskId => task.taskId;
 
@@ -410,11 +428,35 @@ class ResumeData {
 }
 
 /// Types of undelivered data that can be requested
-enum Undelivered { resumeData, statusUpdates, progressUpdates }
+enum Undelivered {
+  /// Resume data
+  resumeData,
+
+  /// Status updates
+  statusUpdates,
+
+  /// Progress updates
+  progressUpdates,
+}
 
 /// Notification types, as configured in [TaskNotificationConfig] and passed
 /// on to [TaskNotificationTapCallback]
-enum NotificationType { running, complete, error, paused, canceled }
+enum NotificationType {
+  /// Task is running
+  running,
+
+  /// Task has completed
+  complete,
+
+  /// Task has failed
+  error,
+
+  /// Task is paused
+  paused,
+
+  /// Task is canceled
+  canceled,
+}
 
 /// Notification specification for a [Task]
 ///
@@ -439,7 +481,7 @@ final class TaskNotification {
 
 /// Notification configuration object
 ///
-/// Determines how a [taskOrGroup] or [group] of tasks needs to be notified
+/// Determines how a [taskOrGroup] or [Task.group] of tasks needs to be notified
 ///
 /// [running] is the notification used while the task is in progress
 /// [complete] is the notification used when the task completed
@@ -495,37 +537,39 @@ final class TaskNotificationConfig {
   ///    [complete] notification is shown (if configured). If any task in the
   ///    groupNotification fails, the [error] notification is shown.
   ///    The first character of the [groupNotificationId] cannot be '*'.
-  TaskNotificationConfig(
-      {this.taskOrGroup,
-      this.running,
-      this.complete,
-      this.error,
-      this.paused,
-      this.canceled,
-      this.progressBar = false,
-      this.tapOpensFile = false,
-      this.groupNotificationId = ''}) {
+  TaskNotificationConfig({
+    this.taskOrGroup,
+    this.running,
+    this.complete,
+    this.error,
+    this.paused,
+    this.canceled,
+    this.progressBar = false,
+    this.tapOpensFile = false,
+    this.groupNotificationId = '',
+  }) {
     assert(
-        running != null ||
-            complete != null ||
-            error != null ||
-            paused != null ||
-            canceled != null,
-        'At least one notification must be set');
+      running != null ||
+          complete != null ||
+          error != null ||
+          paused != null ||
+          canceled != null,
+      'At least one notification must be set',
+    );
   }
 
   /// Return JSON Map representing object, excluding the [taskOrGroup] field,
   /// as the JSON map is only required to pass along the config with a task
   Map<String, dynamic> toJson() => {
-        'running': running?.toJson(),
-        'complete': complete?.toJson(),
-        'error': error?.toJson(),
-        'paused': paused?.toJson(),
-        'canceled': canceled?.toJson(),
-        'progressBar': progressBar,
-        'tapOpensFile': tapOpensFile,
-        'groupNotificationId': groupNotificationId
-      };
+    'running': running?.toJson(),
+    'complete': complete?.toJson(),
+    'error': error?.toJson(),
+    'paused': paused?.toJson(),
+    'canceled': canceled?.toJson(),
+    'progressBar': progressBar,
+    'tapOpensFile': tapOpensFile,
+    'groupNotificationId': groupNotificationId,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -556,39 +600,73 @@ enum SharedStorage {
   files,
 
   /// Android-only: the 'external storage' directory
-  external
+  external,
 }
 
 final class Config {
   // Config topics
+
+  /// Config string for request timeout
   static const requestTimeout = 'requestTimeout';
+
+  /// Config string for resource timeout
   static const resourceTimeout = 'resourceTimeout';
+
+  /// Config string for check available space
   static const checkAvailableSpace = 'checkAvailableSpace';
+
+  /// Config string for proxy
   static const proxy = 'proxy';
+
+  /// Config string for bypass TLS certificate validation
   static const bypassTLSCertificateValidation =
       'bypassTLSCertificateValidation';
-  static const configCertificatePinning =
-      'configCertificatePinning';
+
+  /// Config string for run in foreground
   static const runInForeground = 'runInForeground';
+
+  /// Config string for run in foreground if file larger than
   static const runInForegroundIfFileLargerThan =
       'runInForegroundIfFileLargerThan';
+
+  /// Config string for localize
   static const localize = 'localize';
+
+  /// Config string for exclude from cloud backup
   static const excludeFromCloudBackup = 'excludeFromCloudBackup';
+
+  /// Config string for use cache dir
   static const useCacheDir = 'useCacheDir';
+
+  /// Config string for use external storage
   static const useExternalStorage = 'useExternalStorage';
+
+  /// Config string for holding queue
   static const holdingQueue = 'holdingQueue';
 
+  /// Config string for skip existing files
+  static const skipExistingFiles = 'skipExistingFiles';
+
   // Config arguments
+
+  /// Config argument for always
   static const always = 'always'; // int 0 on native side
+
+  /// Config argument for never
   static const never = 'never'; // int -1 on native side
+
+  /// Config argument for when able
   static const whenAble = 'whenAble'; // int -2 on native side
 
   /// Returns the int equivalent of commonly used String arguments
   ///
   /// The int equivalent is used in communication with the native downloader
   static int argToInt(String argument) {
-    final value =
-        {Config.always: 0, Config.whenAble: -2, Config.never: -1}[argument];
+    final value = {
+      Config.always: 0,
+      Config.whenAble: -2,
+      Config.never: -1,
+    }[argument];
     if (value == null) {
       throw ArgumentError('Argument $argument cannot be converted to int');
     }

@@ -23,8 +23,8 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
     public static var keyConfigProxyPort = "com.bbflight.background_downloader.config.proxyPort"
     public static var keyConfigCheckAvailableSpace = "com.bbflight.background_downloader.config.checkAvailableSpace"
     public static var keyConfigExcludeFromCloudBackup = "com.bbflight.background_downloader.config.excludeFromCloudBackup"
+    public static var keyConfigSkipExistingFiles = "com.bbflight.background_downloader.config.skipExistingFiles"
     public static var keyRequireWiFi = "com.bbflight.background_downloader.requireWiFi"
-    public static var keyConfigCertificatePinning = "com.bbflight.background_downloader.config.certificatePinning"
     public static var forceFailPostOnBackgroundChannel = false
     
     static var progressInfo = [String: (lastProgressUpdateTime: TimeInterval,
@@ -50,8 +50,6 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
     static var mimeTypes = [String : String]() // [taskId : mimeType]
     static var charSets = [String : String]() // [taskId : charSet]
     static var holdingQueue: HoldingQueue? = nil
-    static var pinnedCertificates: [Data] = []
-    static var isSSLPinningEnabled = false
     
     static var propertyLock: NSLock = NSLock() // used to synchronize access to static properties
     
@@ -149,14 +147,14 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
                 methodConfigHoldingQueue(call: call, result: result)
             case "configExcludeFromCloudBackup":
                 storeInUserDefaults(key: BDPlugin.keyConfigExcludeFromCloudBackup, value: call.arguments, result: result)
+            case "configSkipExistingFiles":
+                storeInUserDefaults(key: BDPlugin.keyConfigSkipExistingFiles, value: call.arguments as? Int, result: result)
             case "platformVersion":
                 result(UIDevice.current.systemVersion)
             case "forceFailPostOnBackgroundChannel":
                 methodForceFailPostOnBackgroundChannel(call: call, result: result)
             case "testSuggestedFilename":
                 methodTestSuggestedFilename(call: call, result: result)
-            case "configCertificatePinning":
-                methodConfigCertificatePinning(call: call, result: result)
             default:
                 os_log("Invalid method: %@", log: log, type: .error, call.method)
                 result(FlutterMethodNotImplemented)
@@ -256,6 +254,27 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
             os_log("Could not decode %@ to Task", log: log, taskJsonString)
             return false
         }
+        // Check if the file should be skipped
+        if !isResume {
+            let skipThreshold = UserDefaults.standard.object(forKey: BDPlugin.keyConfigSkipExistingFiles) as? Int ?? -1
+            if skipThreshold != -1 {
+                let filePath = getFilePath(for: task)
+                if let path = filePath, FileManager.default.fileExists(atPath: path) {
+                    do {
+                        let attributes = try FileManager.default.attributesOfItem(atPath: path)
+                        if let fileSize = attributes[.size] as? Int64 {
+                            if fileSize > skipThreshold * 1024 * 1024 {
+                                processStatusUpdate(task: task, status: .complete, responseStatusCode: 304)
+                                return true
+                            }
+                        }
+                    } catch {
+                        // Ignore
+                    }
+                }
+            }
+        }
+
         if notificationConfigJsonString != nil {
             BDPlugin.propertyLock.withLock {
                 BDPlugin.notificationConfigJsonStrings[task.taskId] = notificationConfigJsonString
@@ -739,10 +758,15 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
             else {
                 return
             }
-            filePath = getFilePath(for: task)
+            let unpacked = unpack(packedString: task.filename)
+            if let uri = unpacked.uri {
+                filePath = decodeToFileUrl(uri: uri)?.path
+            } else {
+                filePath = getFilePath(for: task)
+            }
         }
-        if !FileManager.default.fileExists(atPath: filePath!) {
-            os_log("File does not exist: %@", log: log, type: .info, filePath!)
+        if filePath == nil || !FileManager.default.fileExists(atPath: filePath!) {
+            os_log("File does not exist: %@", log: log, type: .info, filePath ?? "nil")
             return
         }
         let mimeType = args[2] as? String
@@ -860,66 +884,6 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
         result(nil)
     }
     
-    private func methodConfigCertificatePinning(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        configureSSLPinning(certificates: call.arguments as! [String])
-        result(nil)
-    }
-
-  
-  
-  private func configureSSLPinning(certificates: [String]) {
-      BDPlugin.pinnedCertificates.removeAll()
-      
-      os_log("Configuring SSL pinning...", log: log, type: .info)
-      
-      for base64String in certificates {
-          if let derData = Data(base64Encoded: base64String),
-             SecCertificateCreateWithData(nil, derData as CFData) != nil {
-              BDPlugin.pinnedCertificates.append(derData)
-              os_log("Added as DER", log: log, type: .info)
-              continue
-          }
-
-          if let firstDecode = Data(base64Encoded: base64String),
-             let pemString = String(data: firstDecode, encoding: .utf8),
-             pemString.contains("-----BEGIN") {
-
-              let lines = pemString.components(separatedBy: .newlines)
-              var base64Lines: [String] = []
-              var inCertificate = false
-              
-              for line in lines {
-                  let trimmed = line.trimmingCharacters(in: .whitespaces)
-                  
-                  if trimmed.hasPrefix("-----BEGIN") {
-                      inCertificate = true
-                      continue
-                  }
-                  
-                  if trimmed.hasPrefix("-----END") {
-                      inCertificate = false
-                      continue
-                  }
-                  
-                  if inCertificate && !trimmed.isEmpty {
-                      base64Lines.append(trimmed)
-                  }
-              }
-              
-              let cleanBase64 = base64Lines.joined()
-              
-              if let certData = Data(base64Encoded: cleanBase64),
-                 SecCertificateCreateWithData(nil, certData as CFData) != nil {
-                  BDPlugin.pinnedCertificates.append(certData)
-                  os_log("Added as PEM (extracted)", log: log, type: .info)
-              }
-          }
-      }
-      
-      BDPlugin.isSSLPinningEnabled = !BDPlugin.pinnedCertificates.isEmpty
-      os_log("Result: %@ certificates", log: log, type: .info, String(BDPlugin.pinnedCertificates.count))
-  }
-
     /// Sets or resets flag to force failing posting on background channel
     ///
     /// For testing only
@@ -1038,16 +1002,25 @@ public class BDPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate
                 if notificationType == NotificationType.complete.rawValue {
                     guard let notificationConfigString = userInfo["notificationConfig"] as? String,
                           let notificationConfigData = notificationConfigString.data(using: .utf8),
-                          let notificationConfig = try? JSONDecoder().decode(NotificationConfig.self, from: notificationConfigData),
-                          let filePath = getFilePath(for: task)
+                          let notificationConfig = try? JSONDecoder().decode(NotificationConfig.self, from: notificationConfigData)
                     else {
-                        os_log("Could not extract filePath for notification tap on .complete", log: log, type: .info)
+                        os_log("Could not extract notification config for notification tap on .complete", log: log, type: .info)
                         return
                     }
                     if notificationConfig.tapOpensFile {
-                        if !doOpenFile(filePath: filePath, mimeType: nil)
-                        {
-                            os_log("Failed to open file on notification tap", log: log, type: .info)
+                        let unpacked = unpack(packedString: task.filename)
+                        var filePath: String? = nil
+                        if let uri = unpacked.uri {
+                            filePath = decodeToFileUrl(uri: uri)?.path
+                        } else {
+                            filePath = getFilePath(for: task)
+                        }
+                        if let filePath = filePath {
+                            if !doOpenFile(filePath: filePath, mimeType: nil) {
+                                os_log("Failed to open file on notification tap", log: log, type: .info)
+                            }
+                        } else {
+                            os_log("Could not extract filePath for notification tap on .complete", log: log, type: .info)
                         }
                     }
                 }
