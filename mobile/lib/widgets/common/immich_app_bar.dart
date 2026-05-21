@@ -150,7 +150,7 @@ class ImmichAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget? _getBackupBadgeIcon(BuildContext context, WidgetRef ref) {
     final backupStateStream = ref.watch(settingsProvider).watch(Setting.enableBackup);
     final iconColor = context.isDarkTheme ? Colors.white : Colors.black;
-    final isUploading = ref.watch(driftBackupProvider.select((state) => state.uploadItems.isNotEmpty));
+    final isUploading = ref.watch(driftBackupProvider.select((state) => state.showsBackupProgress));
 
     return StreamBuilder(
       stream: backupStateStream,

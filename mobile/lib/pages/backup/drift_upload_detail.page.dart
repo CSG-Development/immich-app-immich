@@ -17,6 +17,15 @@ class DriftUploadDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uploadItems = ref.watch(driftBackupProvider.select((state) => state.uploadItems));
+    final isHttpBackupActive = ref.watch(driftBackupProvider.select((state) => state.isHttpBackupActive));
+    final processedCount = ref.watch(driftBackupProvider.select((state) => state.enqueueCount));
+    final totalCount = ref.watch(driftBackupProvider.select((state) => state.enqueueTotalCount));
+
+    final body = uploadItems.isNotEmpty
+        ? _buildUploadList(uploadItems)
+        : isHttpBackupActive && totalCount > 0
+        ? _buildHttpBackupProgress(context, processedCount, totalCount)
+        : _buildEmptyState(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,7 +34,7 @@ class DriftUploadDetailPage extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
-      body: uploadItems.isEmpty ? _buildEmptyState(context) : _buildUploadList(uploadItems),
+      body: body,
     );
   }
 
@@ -39,6 +48,39 @@ class DriftUploadDetailPage extends ConsumerWidget {
           Text(
             "no_uploads_in_progress".t(context: context),
             style: context.textTheme.titleMedium?.copyWith(color: context.colorScheme.onSurface.withValues(alpha: 0.6)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHttpBackupProgress(BuildContext context, int processedCount, int totalCount) {
+    final progress = totalCount > 0 ? (processedCount / totalCount).clamp(0.0, 1.0) : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_upload_outlined, size: 64, color: context.primaryColor.withValues(alpha: 0.8)),
+          const SizedBox(height: 24),
+          Text(
+            "uploading".t(context: context),
+            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "queue_status".t(
+              context: context,
+              args: {'count': processedCount.toString(), 'total': totalCount.toString()},
+            ),
+            style: context.textTheme.bodyLarge?.copyWith(color: context.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 24),
+          LinearProgressIndicator(
+            minHeight: 8,
+            value: progress,
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
         ],
       ),

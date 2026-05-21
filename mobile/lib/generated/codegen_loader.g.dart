@@ -33574,7 +33574,7 @@ class CodegenLoader extends AssetLoader {
     "purchase_server_description_2": "Supporter status",
     "purchase_server_title": "Server",
     "purchase_settings_server_activated": "The server product key is managed by the admin",
-    "queue_status": "Queuing {count}/{total}",
+    "queue_status": "Uploading {count}/{total}",
     "rating": "Star rating",
     "rating_clear": "Clear rating",
     "rating_count": "{count, plural, one {# star} other {# stars}}",

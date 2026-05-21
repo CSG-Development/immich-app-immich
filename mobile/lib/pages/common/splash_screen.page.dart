@@ -154,12 +154,8 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
               if (syncSuccess) {
                 backupProvider.updateError(BackupError.none);
-                await Future.wait([
-                  backgroundManager.hashAssets().then((_) {
-                    _resumeBackup(backupProvider);
-                  }),
-                  _resumeBackup(backupProvider),
-                ]);
+                await backgroundManager.hashAssets();
+                await _resumeBackup(backupProvider);
               } else {
                 backupProvider.updateError(BackupError.syncFailed);
                 await backgroundManager.hashAssets();
@@ -238,12 +234,16 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   Future<void> _resumeBackup(DriftBackupNotifier notifier) async {
     final isEnableBackup = Store.get(StoreKey.enableBackup, false);
 
-    if (isEnableBackup) {
-      final currentUser = Store.tryGet(StoreKey.currentUser);
-      if (currentUser != null) {
-        notifier.handleBackupResume(currentUser.id);
-      }
+    if (!isEnableBackup) {
+      return;
     }
+
+    final currentUser = Store.tryGet(StoreKey.currentUser);
+    if (currentUser == null) {
+      return;
+    }
+
+    await notifier.handleBackupResume(currentUser.id);
   }
 
   Future<bool> _restoreAuthInfoWithRetry({required String accessToken}) async {

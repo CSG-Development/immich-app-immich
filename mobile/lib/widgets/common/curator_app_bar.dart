@@ -145,7 +145,7 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final backupStateStream = ref.watch(settingsProvider).watch(Setting.enableBackup);
     final iconColor = context.isDarkTheme ? Colors.white : Colors.black;
     final isUploading = ref.watch(
-      driftBackupProvider.select((state) => state.uploadItems.isNotEmpty),
+      driftBackupProvider.select((state) => state.showsBackupProgress),
     );
 
     return StreamBuilder(
