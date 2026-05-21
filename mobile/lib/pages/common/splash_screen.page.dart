@@ -157,11 +157,13 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
               if (syncSuccess) {
                 backupProvider.updateError(BackupError.none);
-                await backgroundManager.hashAssets();
-                await _resumeBackup(backupProvider);
               } else {
                 backupProvider.updateError(BackupError.syncFailed);
-                await backgroundManager.hashAssets();
+              }
+              await backupProvider.refreshBackupNetworkGuard();
+              await backgroundManager.hashAssets();
+              if (syncSuccess && await backupProvider.canResumeBackupOnCurrentNetwork()) {
+                await _resumeBackup(backupProvider);
               }
 
               if (Store.get(StoreKey.syncAlbums, false)) {

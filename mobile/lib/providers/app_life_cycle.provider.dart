@@ -235,13 +235,16 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
           "syncRemoteRetry",
         );
       }
+      final backupNotifier = _ref.read(driftBackupProvider.notifier);
       if (syncSuccess) {
-        _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
-        await _safeRun(backgroundManager.hashAssets(), "hashAssets");
-        await _resumeBackup();
+        backupNotifier.updateError(BackupError.none);
       } else {
-        _ref.read(driftBackupProvider.notifier).updateError(BackupError.syncFailed);
-        await _safeRun(backgroundManager.hashAssets(), "hashAssets");
+        backupNotifier.updateError(BackupError.syncFailed);
+      }
+      await backupNotifier.refreshBackupNetworkGuard();
+      await _safeRun(backgroundManager.hashAssets(), "hashAssets");
+      if (syncSuccess && await backupNotifier.canResumeBackupOnCurrentNetwork()) {
+        await _resumeBackup();
       }
 
       if (isAlbumLinkedSyncEnable) {

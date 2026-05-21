@@ -8,8 +8,8 @@ import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 
 class BackupToggleButton extends ConsumerStatefulWidget {
-  final VoidCallback onStart;
-  final VoidCallback onStop;
+  final Future<void> Function() onStart;
+  final Future<void> Function() onStop;
 
   const BackupToggleButton({super.key, required this.onStart, required this.onStop});
 
@@ -49,9 +49,11 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
     });
 
     if (value) {
-      widget.onStart.call();
+      await ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
+      await widget.onStart();
     } else {
-      widget.onStop.call();
+      await widget.onStop();
+      await ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
     }
   }
 

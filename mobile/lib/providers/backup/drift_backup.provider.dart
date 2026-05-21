@@ -18,6 +18,7 @@ import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
+import 'package:immich_mobile/providers/app_settings.provider.dart';
 
 class EnqueueStatus {
   final int enqueueCount;
@@ -102,7 +103,7 @@ class DriftUploadStatus {
   }
 }
 
-enum BackupError { none, syncFailed }
+enum BackupError { none, syncFailed, noWifiPermission }
 
 class DriftBackupState {
   final int totalCount;
@@ -393,12 +394,41 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     state = state.copyWith(error: error);
   }
 
+  /// Updates [BackupError.noWifiPermission] when backup is enabled on cellular
+  /// without upload permission. Clears that warning when conditions no longer apply.
+  Future<void> refreshBackupNetworkGuard() async {
+    final networkBlocked = await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    );
+    if (networkBlocked) {
+      updateError(BackupError.noWifiPermission);
+    } else if (state.error == BackupError.noWifiPermission) {
+      updateError(BackupError.none);
+    }
+  }
+
+  Future<bool> canResumeBackupOnCurrentNetwork() async {
+    return !(await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    ));
+  }
+
   void updateSyncing(bool isSyncing) async {
     state = state.copyWith(isSyncing: isSyncing);
   }
 
   /// Foreground HTTP backup (upstream: [startForegroundBackup]).
   Future<void> startForegroundBackup(String userId) async {
+    if (await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    )) {
+      updateError(BackupError.noWifiPermission);
+      return;
+    }
+
     if (state.isHttpBackupActive) {
       stopForegroundBackup();
     }
@@ -457,6 +487,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       if (!syncOk) {
         updateError(BackupError.syncFailed);
       }
+      await refreshBackupNetworkGuard();
       await getBackupStatus(userId);
     }
   }
@@ -602,4 +633,17 @@ final driftCandidateBackupAlbumInfoProvider = FutureProvider.autoDispose.family<
   assetId,
 ) {
   return ref.read(localAssetRepository).getSourceAlbums(assetId, backupSelection: BackupSelection.selected);
+});
+
+/// Returns `true` when backup is enabled but the current network is cellular
+/// and the user has **not** granted permission to use cellular data for uploads.
+///
+/// This provider reacts to connectivity changes (via [connectivityApiProvider])
+/// and app-settings changes, so UI can reactively show a warning banner or
+/// error badge on the backup icon.
+final backupNetworkBlockedProvider = FutureProvider.autoDispose<bool>((ref) async {
+  return isBackupNetworkBlocked(
+    appSettings: ref.watch(appSettingsServiceProvider),
+    connectivityApi: ref.read(connectivityApiProvider),
+  );
 });
