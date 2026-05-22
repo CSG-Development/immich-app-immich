@@ -4,5 +4,5 @@ import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
 export const load = (() => {
-  redirect(302, resolve(AppRoute.ADMIN_USERS));
+  redirect(302, resolve(AppRoute.ADMIN_USER_MANAGEMENT));
 }) satisfies PageLoad;

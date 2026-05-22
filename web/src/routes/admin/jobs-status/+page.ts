@@ -1,5 +1,4 @@
-/* eslint-disable unicorn/no-empty-file */
-/* import { authenticate } from '$lib/utils/auth';
+import { authenticate } from '$lib/utils/auth';
 import { getFormatter } from '$lib/utils/i18n';
 import { getAllJobsStatus } from '@immich/sdk';
 import type { PageLoad } from './$types';
@@ -16,4 +15,4 @@ export const load = (async ({ url }) => {
       title: $t('admin.job_status'),
     },
   };
-}) satisfies PageLoad; */
+}) satisfies PageLoad;

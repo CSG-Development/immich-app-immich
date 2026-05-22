@@ -1,4 +1,4 @@
-<!-- <script lang="ts">
+<script lang="ts">
   import JobsPanel from '$lib/components/admin-page/jobs/jobs-panel.svelte';
   import AdminPageLayout from '$lib/components/layouts/AdminPageLayout.svelte';
   import { AppRoute } from '$lib/constants';
@@ -64,4 +64,4 @@
       {/if}
     </section>
   </section>
-</AdminPageLayout> -->
+</AdminPageLayout>
