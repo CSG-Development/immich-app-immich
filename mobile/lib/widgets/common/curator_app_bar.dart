@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/setting.model.dart';
+import 'package:immich_mobile/extensions/backup_error_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
@@ -30,18 +31,22 @@ class CuratorAppBar extends ConsumerWidget implements PreferredSizeWidget {
         : null;
 
     buildBackupIndicator() {
-      final hasError = ref.watch(
-        driftBackupProvider.select((state) => state.error != BackupError.none),
-      );
-      final indicatorIcon = hasError
+      final backupError = ref.watch(driftBackupProvider.select((state) => state.error));
+      final hasNetworkWarning = backupError.isNetworkWarning;
+      final hasError = backupError.isFailure;
+      final indicatorIcon = hasNetworkWarning || hasError
           ? Icon(
               Icons.warning_rounded,
               size: 12,
-              color: context.colorScheme.error,
+              color: hasNetworkWarning
+                  ? backupError.badgeIconColor(context.colorScheme)
+                  : context.colorScheme.error,
               semanticLabel: 'backup_controller_page_backup'.tr(),
             )
           : _getBackupBadgeIcon(context, ref);
-      final badgeBackground = hasError
+      final badgeBackground = hasNetworkWarning
+          ? backupError.badgeBackgroundColor(context.colorScheme)
+          : hasError
           ? context.colorScheme.errorContainer
           : context.colorScheme.surfaceContainer;
 

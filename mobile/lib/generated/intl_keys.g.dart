@@ -654,6 +654,8 @@ abstract class IntlKeys {
   static const backup_manual_in_progress = 'backup_manual_in_progress';
   static const backup_manual_success = 'backup_manual_success';
   static const backup_manual_title = 'backup_manual_title';
+  static const backup_network_blocked_message = 'backup_network_blocked_message';
+  static const backup_network_blocked_title = 'backup_network_blocked_title';
   static const backup_options = 'backup_options';
   static const backup_options_page_title = 'backup_options_page_title';
   static const backup_setting_subtitle = 'backup_setting_subtitle';

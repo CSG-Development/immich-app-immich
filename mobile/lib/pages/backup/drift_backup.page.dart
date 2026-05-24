@@ -59,8 +59,14 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
       if (!mounted) {
         return;
       }
-      backupNotifier.updateError(syncSuccess == true ? BackupError.none : BackupError.syncFailed);
       backupNotifier.updateSyncing(false);
+
+      if (syncSuccess == true) {
+        backupNotifier.updateError(BackupError.none);
+      } else {
+        backupNotifier.updateError(BackupError.syncFailed);
+      }
+      await backupNotifier.refreshBackupNetworkGuard();
 
       if (mounted) {
         await backupNotifier.getBackupStatus(currentUser.id);
@@ -103,6 +109,12 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
       if (syncSuccess == false) {
         Logger("DriftBackupPage").warning("Remote sync did not complete successfully, skipping backup");
         backupNotifier.updateError(BackupError.syncFailed);
+        await backupNotifier.refreshBackupNetworkGuard();
+        return;
+      }
+
+      await backupNotifier.refreshBackupNetworkGuard();
+      if (!await backupNotifier.canResumeBackupOnCurrentNetwork()) {
         return;
       }
       await backupNotifier.startBackup(currentUser.id);
@@ -147,7 +159,7 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
                   const _RemainderCard(),
                   const Divider(),
                   BackupToggleButton(
-                    onStart: () async => await startBackup(),
+                    onStart: startBackup,
                     onStop: () async {
                       syncSuccess = null;
                       await stopBackup();
@@ -172,6 +184,7 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
                         ],
                       ),
                     ),
+                    BackupError.noWifiPermission => const _NetworkBlockedBanner(),
                   },
                   TextButton.icon(
                     icon: const Icon(Icons.info_outline_rounded),
@@ -530,6 +543,52 @@ class _PreparingStatusState extends ConsumerState {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _NetworkBlockedBanner extends ConsumerWidget {
+  const _NetworkBlockedBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: context.colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
+          border: Border.all(color: context.colorScheme.tertiary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.wifi_off_rounded, color: context.colorScheme.tertiary, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "backup_network_blocked_title".t(context: context),
+                    style: context.textTheme.titleSmall?.copyWith(
+                      color: context.colorScheme.tertiary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "backup_network_blocked_message".t(context: context),
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.onSurfaceSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

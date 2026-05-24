@@ -219,9 +219,13 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
       }
       if (remoteSyncSucceeded) {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
-        await _resumeBackupQueueIfEnabled();
+        await _ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
+        if (await _ref.read(driftBackupProvider.notifier).canResumeBackupOnCurrentNetwork()) {
+          await _resumeBackupQueueIfEnabled();
+        }
       } else if (shouldRunRemoteRecovery) {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.syncFailed);
+        await _ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
       }
     } finally {
       _isResumingSyncAfterReconnect = false;

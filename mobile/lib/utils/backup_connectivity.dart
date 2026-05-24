@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:immich_mobile/extensions/network_capability_extensions.dart';
 import 'package:immich_mobile/platform/connectivity_api.g.dart';
+import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('BackupConnectivity');
@@ -38,4 +39,25 @@ Future<bool> _hasWifiFromConnectivityPlus() async {
     // Last resort: allow backup to proceed; per-asset requiresWiFi still applies in upload loop.
     return true;
   }
+}
+
+/// Returns `true` when backup is enabled, the device is not on Wi‑Fi, and
+/// cellular uploads are disabled for both photos and videos.
+Future<bool> isBackupNetworkBlocked({
+  required AppSettingsService appSettings,
+  ConnectivityApi? connectivityApi,
+}) async {
+  final enableBackup = appSettings.getSetting(AppSettingsEnum.enableBackup);
+  if (!enableBackup) {
+    return false;
+  }
+
+  final hasWifi = await resolveBackupHasWifi(connectivityApi: connectivityApi);
+  if (hasWifi) {
+    return false;
+  }
+
+  final cellularPhotos = appSettings.getSetting(AppSettingsEnum.useCellularForUploadPhotos);
+  final cellularVideos = appSettings.getSetting(AppSettingsEnum.useCellularForUploadVideos);
+  return !cellularPhotos && !cellularVideos;
 }

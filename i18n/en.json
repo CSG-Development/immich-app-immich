@@ -610,6 +610,8 @@
   "backup_manual_in_progress": "Upload already in progress. Try after sometime",
   "backup_manual_success": "Success",
   "backup_manual_title": "Upload status",
+  "backup_network_blocked_message": "Connect to Wi-Fi or enable cellular data for backup in settings",
+  "backup_network_blocked_title": "Backup paused",
   "backup_options": "Backup Options",
   "backup_options_page_title": "Backup options",
   "backup_setting_subtitle": "Manage background and foreground upload settings",
