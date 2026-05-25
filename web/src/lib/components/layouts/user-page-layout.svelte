@@ -6,6 +6,7 @@
   import { useActions, type ActionArray } from '$lib/actions/use-actions';
   import NavigationBar from '$lib/components/shared-components/navigation-bar/navigation-bar.svelte';
   import UserSidebar from '$lib/components/shared-components/side-bar/user-sidebar.svelte';
+  import AdminSidebar from '$lib/sidebars/AdminSidebar.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
   import type { Snippet } from 'svelte';
@@ -17,6 +18,7 @@
     title?: string | undefined;
     description?: string | undefined;
     scrollbar?: boolean;
+    admin?: boolean;
     use?: ActionArray;
     header?: Snippet;
     sidebar?: Snippet;
@@ -31,6 +33,7 @@
     title = undefined,
     description = undefined,
     scrollbar = true,
+    admin = false,
     use = [],
     header,
     sidebar,
@@ -59,6 +62,8 @@
 >
   {#if sidebar}
     {@render sidebar()}
+  {:else if admin}
+    <AdminSidebar />
   {:else}
     <UserSidebar />
   {/if}

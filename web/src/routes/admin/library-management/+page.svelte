@@ -1,4 +1,4 @@
-<!-- <script lang="ts">
+<script lang="ts">
   import LibraryImportPathsForm from '$lib/components/forms/library-import-paths-form.svelte';
   import LibraryScanSettingsForm from '$lib/components/forms/library-scan-settings-form.svelte';
   import AdminPageLayout from '$lib/components/layouts/AdminPageLayout.svelte';
@@ -37,9 +37,9 @@
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { fade, slide } from 'svelte/transition';
-  import type { PageData } from './$types'; -->
+  import type { PageData } from './$types';
 
-<!--   interface Props {
+  interface Props {
     data: PageData;
   }
 
@@ -104,8 +104,8 @@
       await readLibraryList();
     }
 
-    if (createdLibrary) { -->
-<!-- // Open the import paths form for the newly created library
+    if (createdLibrary) {
+      // Open the import paths form for the newly created library
       const createdLibraryIndex = libraries.findIndex((library) => library.id === createdLibrary.id);
       const result = await modalManager.show(LibraryImportPathModal, {
         title: $t('add_import_path'),
@@ -349,9 +349,9 @@
                   </ButtonContextMenu>
                 </td>
               </tr>
-              {#if editImportPaths === index} -->
-<!-- &lt;!&ndash; svelte-ignore node_invalid_placement_ssr &ndash;&gt; -->
-<!-- <div transition:slide={{ duration: 250 }}>
+              {#if editImportPaths === index}
+                <!-- svelte-ignore node_invalid_placement_ssr -->
+                <div transition:slide={{ duration: 250 }}>
                   <LibraryImportPathsForm
                     {library}
                     onSubmit={(lib) => handleUpdate(lib, index)}
@@ -359,9 +359,9 @@
                   />
                 </div>
               {/if}
-              {#if editScanSettings === index} -->
-<!-- &lt;!&ndash; svelte-ignore node_invalid_placement_ssr &ndash;&gt; -->
-<!--  <div transition:slide={{ duration: 250 }} class="mb-4 ms-4 me-4">
+              {#if editScanSettings === index}
+                <!-- svelte-ignore node_invalid_placement_ssr -->
+                <div transition:slide={{ duration: 250 }} class="mb-4 ms-4 me-4">
                   <LibraryScanSettingsForm
                     {library}
                     onSubmit={(lib) => handleUpdate(lib, index)}
@@ -371,12 +371,10 @@
               {/if}
             {/each}
           </tbody>
-        </table> -->
-
-<!-- Empty message -->
-<!-- {:else}
+        </table>
+      {:else}
         <EmptyPlaceholder text={$t('no_libraries_message')} onClick={onCreateNewLibraryClicked} />
       {/if}
     </div>
   </section>
-</AdminPageLayout> -->
+</AdminPageLayout>
