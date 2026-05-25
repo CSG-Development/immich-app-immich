@@ -25,6 +25,7 @@ class BackupTraceEvent {
   static const String uplCancel = 'BKP-UPL-CANCEL';
   static const String uplTaskFail = 'BKP-UPL-TASK-FAIL';
   static const String uplTaskComplete = 'BKP-UPL-TASK-COMPLETE';
+  static const String uplResumeSkipped = 'BKP-UPL-RESUME-SKIPPED';
   static const String syncStart = 'BKP-SYNC-START';
   static const String syncEnd = 'BKP-SYNC-END';
   static const String syncBatch = 'BKP-SYNC-BATCH';

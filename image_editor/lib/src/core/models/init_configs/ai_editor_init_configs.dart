@@ -28,6 +28,8 @@ class AiEditorInitConfigs implements EditorInitConfigs {
     this.animalSegmentationModelPathOrUrl,
     this.realEsrganX2ModelPathOrUrl =
         'https://huggingface.co/AXERA-TECH/Real-ESRGAN/resolve/main/onnx/realesrgan-x4-256.onnx',
+    this.gpenFaceRestorationModelPathOrUrl =
+        'https://huggingface.co/facefusion/models-3.0.0/resolve/main/gpen_bfr_256.onnx',
     this.swin2srRealworldX4ModelPathOrUrl =
         'https://huggingface.co/h3110Fr13nd/swin2sr-realworld-4x-onnx/resolve/main/model.onnx',
     this.fcnSegmentationModelPathOrUrl,
@@ -108,6 +110,9 @@ class AiEditorInitConfigs implements EditorInitConfigs {
   /// Can be an asset path or a remote URL. This provides an alternative SR
   /// backend to RealESRGAN so callers can expose both model families.
   final String? swin2srRealworldX4ModelPathOrUrl;
+
+  /// Path or URL to the GPEN-BFR face restoration ONNX model.
+  final String? gpenFaceRestorationModelPathOrUrl;
 
   /// Path or URL to an FCN-based segmentation ONNX model (e.g. FCN-ResNet50).
   ///
@@ -276,6 +281,11 @@ class AiEditorInitConfigs implements EditorInitConfigs {
       swin2srRealworldX4ModelPathOrUrl ??
       'https://huggingface.co/h3110Fr13nd/swin2sr-realworld-4x-onnx/resolve/main/model.onnx';
 
+  /// Effective GPEN face restoration model path or URL.
+  String get gpenFaceRestorationModelPathEffective =>
+      gpenFaceRestorationModelPathOrUrl ??
+      'https://huggingface.co/facefusion/models-3.0.0/resolve/main/gpen_bfr_256.onnx';
+
   /// Effective FCN segmentation model path or URL, falling back to a sane default.
   String get fcnSegmentationModelPathEffective =>
       fcnSegmentationModelPathOrUrl ??
@@ -339,6 +349,7 @@ class AiEditorInitConfigs implements EditorInitConfigs {
     String? fastdvdnetModelPathOrUrl,
     String? animalSegmentationModelPathOrUrl,
     String? realEsrganX2ModelPathOrUrl,
+    String? gpenFaceRestorationModelPathOrUrl,
     String? swin2srRealworldX4ModelPathOrUrl,
     String? fcnSegmentationModelPathOrUrl,
     double? relightStrength,
@@ -399,6 +410,8 @@ class AiEditorInitConfigs implements EditorInitConfigs {
       fastdvdnetModelPathOrUrl: fastdvdnetModelPathOrUrl ?? this.fastdvdnetModelPathOrUrl,
       animalSegmentationModelPathOrUrl: animalSegmentationModelPathOrUrl ?? this.animalSegmentationModelPathOrUrl,
       realEsrganX2ModelPathOrUrl: realEsrganX2ModelPathOrUrl ?? this.realEsrganX2ModelPathOrUrl,
+      gpenFaceRestorationModelPathOrUrl:
+          gpenFaceRestorationModelPathOrUrl ?? this.gpenFaceRestorationModelPathOrUrl,
       swin2srRealworldX4ModelPathOrUrl: swin2srRealworldX4ModelPathOrUrl ?? this.swin2srRealworldX4ModelPathOrUrl,
       fcnSegmentationModelPathOrUrl: fcnSegmentationModelPathOrUrl ?? this.fcnSegmentationModelPathOrUrl,
       relightStrength: relightStrength ?? this.relightStrength,

@@ -8,8 +8,8 @@ import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 
 class BackupToggleButton extends ConsumerStatefulWidget {
-  final VoidCallback onStart;
-  final VoidCallback onStop;
+  final Future<void> Function() onStart;
+  final Future<void> Function() onStop;
 
   const BackupToggleButton({super.key, required this.onStart, required this.onStop});
 
@@ -49,9 +49,11 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
     });
 
     if (value) {
-      widget.onStart.call();
+      await ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
+      await widget.onStart();
     } else {
-      widget.onStop.call();
+      await widget.onStop();
+      await ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
     }
   }
 
@@ -63,11 +65,15 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
 
     final isCanceling = ref.watch(driftBackupProvider.select((state) => state.isCanceling));
 
-    final uploadTasks = ref.watch(driftBackupProvider.select((state) => state.uploadItems));
-
     final isSyncing = ref.watch(driftBackupProvider.select((state) => state.isSyncing));
 
-    final isProcessing = uploadTasks.isNotEmpty || isSyncing;
+    final isHttpBackupActive = ref.watch(driftBackupProvider.select((state) => state.isHttpBackupActive));
+
+    final hasLegacyUploadTasks = ref.watch(driftBackupProvider.select((state) => state.uploadItems.isNotEmpty));
+
+    final isProcessing = isSyncing || isHttpBackupActive || hasLegacyUploadTasks;
+
+    final showUploadProgress = isHttpBackupActive && enqueueTotalCount > 0 && !isCanceling;
 
     return AnimatedBuilder(
       animation: _animationController,
@@ -152,7 +158,7 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
                                 ),
                               ],
                             ),
-                            if (enqueueCount != enqueueTotalCount)
+                            if (showUploadProgress)
                               Text(
                                 "queue_status".t(
                                   context: context,

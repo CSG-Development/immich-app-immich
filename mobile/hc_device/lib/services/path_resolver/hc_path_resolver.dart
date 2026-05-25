@@ -4,6 +4,8 @@ import 'package:hc_device/device_item.dart';
 import 'package:hc_device/providers/device.provider.dart';
 import 'package:hc_device/providers/remote.provider.dart';
 import 'package:hc_device/services/device_detection_service.dart';
+import 'package:hc_device/services/path_probe_mode.dart';
+import 'package:hc_device/utils/mdns_platform_support.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ResolveMode { foreground, background, terminatedBgTask }
@@ -233,12 +235,14 @@ class HcPathResolver {
     }
 
     try {
+      final plan = _resolvePlanFor(context);
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
         final ping = await DeviceDetectionService(
           deviceProvider: _deviceProvider,
           remoteProvider: _remoteProvider,
         ).findOptimalDeviceConnection(
           seagateDeviceID: seagateDeviceID,
+          pathProbeMode: plan.probeMode,
           onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
             ping: betterPing,
             context: context,
@@ -255,9 +259,24 @@ class HcPathResolver {
         if (fromSeagate != null) {
           return fromSeagate;
         }
+        if (plan.skipDiscovery) {
+          return _fallbackToAvailablePath(
+            allowFallbackToAvailablePath: allowFallbackToAvailablePath,
+            context: context,
+            validateExternal: validateExternal,
+          );
+        }
       }
 
       if (deviceID == null || deviceID.isEmpty) {
+        return _fallbackToAvailablePath(
+          allowFallbackToAvailablePath: allowFallbackToAvailablePath,
+          context: context,
+          validateExternal: validateExternal,
+        );
+      }
+
+      if (plan.skipDiscovery) {
         return _fallbackToAvailablePath(
           allowFallbackToAvailablePath: allowFallbackToAvailablePath,
           context: context,
@@ -286,6 +305,7 @@ class HcPathResolver {
         ).findOptimalDeviceConnection(
           device: selected,
           seagateDeviceID: remoteDeviceID,
+          pathProbeMode: plan.probeMode,
           onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
             ping: betterPing,
             context: context,
@@ -503,6 +523,29 @@ class HcPathResolver {
     return result.ok;
   }
 
+  _ResolvePlan _resolvePlanFor(ResolveContext context) {
+    final probeMode = context.localOnly
+        ? PathProbeMode.localOnly
+        : _usesRemoteOnlyProbe(context)
+        ? PathProbeMode.remoteOnly
+        : PathProbeMode.all;
+    final skipDiscovery =
+        !canUsePlatformMdnsDiscovery ||
+        probeMode == PathProbeMode.localOnly ||
+        (probeMode == PathProbeMode.remoteOnly && context.trigger != ResolveTrigger.connectivityChange);
+    return _ResolvePlan(probeMode: probeMode, skipDiscovery: skipDiscovery);
+  }
+
+  bool _usesRemoteOnlyProbe(ResolveContext context) {
+    if (context.mode != ResolveMode.foreground) {
+      return true;
+    }
+    return switch (context.trigger) {
+      ResolveTrigger.connectivityChange || ResolveTrigger.splashWarmup || ResolveTrigger.unknown => false,
+      _ => true,
+    };
+  }
+
   Future<List<DeviceItem>> _discoverDevices() async {
     final completer = Completer<void>();
     final found = <DeviceItem>[];
@@ -637,4 +680,11 @@ class HcPathResolver {
       await prefs.setInt(_lastResolveTriggerKey, _lastTrigger!.index);
     }
   }
+}
+
+class _ResolvePlan {
+  const _ResolvePlan({required this.probeMode, required this.skipDiscovery});
+
+  final PathProbeMode probeMode;
+  final bool skipDiscovery;
 }

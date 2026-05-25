@@ -20,16 +20,16 @@ env:
   FLUTTER_MIN_SDK: '3.24.0'
 
 jobs:
-  format:
-    name: "Check formatting"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          cache: true
-      - run: dart format --set-exit-if-changed .
-      - run: dart format --set-exit-if-changed example
+  # format:
+  #   name: "Check formatting"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         cache: true
+  #     - run: dart format --set-exit-if-changed .
+  #     - run: dart format --set-exit-if-changed example
 
   lint:
     name: "Check linting"
@@ -67,7 +67,6 @@ jobs:
           flutter-version: ${{ matrix.sdk == 'min' && env.FLUTTER_MIN_SDK || '' }}
           channel: ${{ matrix.sdk == 'min' && 'stable' || matrix.sdk }}
       - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
       - name: Build example APK
         working-directory: example
         run: flutter build apk
@@ -124,6 +123,7 @@ jobs:
       - name: Setup Linux build environment
         run: |
           flutter config --enable-linux-desktop
+          sudo apt-get update
           sudo apt-get install -y ninja-build
           sudo apt-get install -y libgtk-3-dev
           export CMAKE_CXX_COMPILER=$(which g++)

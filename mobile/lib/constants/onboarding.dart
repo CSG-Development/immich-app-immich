@@ -1,5 +1,6 @@
 class OnboardingSlide {
   final String image;
+  final String imageType;
   final String title;
   final String description;
 
@@ -7,12 +8,14 @@ class OnboardingSlide {
     required this.image,
     required this.title,
     required this.description,
+    this.imageType = 'png',
   });
 }
 
 const List<OnboardingSlide> kCuratorOnboardingSlidesData = [
   OnboardingSlide(
-    image: 'assets/onboarding-1.png',
+    image: 'assets/splash/login_logo_mark.svg',
+    imageType: 'svg',
     title: "curator.onboarding.slide1.title",
     description: "curator.onboarding.slide1.description",
   ),

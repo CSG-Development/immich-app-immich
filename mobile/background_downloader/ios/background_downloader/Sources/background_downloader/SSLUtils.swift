@@ -9,7 +9,7 @@ extension Data {
         }
         return Data(hash)
     }
-    
+
     var hexString: String {
         return map { String(format: "%02hhx", $0) }.joined()
     }

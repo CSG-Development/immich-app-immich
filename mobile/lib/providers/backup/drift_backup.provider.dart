@@ -10,11 +10,15 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/string_extensions.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/utils/backup_connectivity.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/services/upload.service.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
+import 'package:immich_mobile/providers/app_settings.provider.dart';
 
 class EnqueueStatus {
   final int enqueueCount;
@@ -99,7 +103,7 @@ class DriftUploadStatus {
   }
 }
 
-enum BackupError { none, syncFailed }
+enum BackupError { none, syncFailed, noWifiPermission }
 
 class DriftBackupState {
   final int totalCount;
@@ -112,9 +116,13 @@ class DriftBackupState {
 
   final bool isSyncing;
   final bool isCanceling;
+  final bool isHttpBackupActive;
   final BackupError error;
 
   final Map<String, DriftUploadStatus> uploadItems;
+
+  /// True while backup uploads are in progress (HTTP or legacy downloader tasks).
+  bool get showsBackupProgress => uploadItems.isNotEmpty || isHttpBackupActive;
 
   const DriftBackupState({
     required this.totalCount,
@@ -125,6 +133,7 @@ class DriftBackupState {
     required this.enqueueTotalCount,
     required this.isCanceling,
     required this.isSyncing,
+    this.isHttpBackupActive = false,
     required this.uploadItems,
     this.error = BackupError.none,
   });
@@ -138,6 +147,7 @@ class DriftBackupState {
     int? enqueueTotalCount,
     bool? isCanceling,
     bool? isSyncing,
+    bool? isHttpBackupActive,
     Map<String, DriftUploadStatus>? uploadItems,
     BackupError? error,
   }) {
@@ -150,6 +160,7 @@ class DriftBackupState {
       enqueueTotalCount: enqueueTotalCount ?? this.enqueueTotalCount,
       isCanceling: isCanceling ?? this.isCanceling,
       isSyncing: isSyncing ?? this.isSyncing,
+      isHttpBackupActive: isHttpBackupActive ?? this.isHttpBackupActive,
       uploadItems: uploadItems ?? this.uploadItems,
       error: error ?? this.error,
     );
@@ -173,6 +184,7 @@ class DriftBackupState {
         other.enqueueTotalCount == enqueueTotalCount &&
         other.isCanceling == isCanceling &&
         other.isSyncing == isSyncing &&
+        other.isHttpBackupActive == isHttpBackupActive &&
         mapEquals(other.uploadItems, uploadItems) &&
         other.error == error;
   }
@@ -187,17 +199,18 @@ class DriftBackupState {
         enqueueTotalCount.hashCode ^
         isCanceling.hashCode ^
         isSyncing.hashCode ^
+        isHttpBackupActive.hashCode ^
         uploadItems.hashCode ^
         error.hashCode;
   }
 }
 
 final driftBackupProvider = StateNotifierProvider<DriftBackupNotifier, DriftBackupState>((ref) {
-  return DriftBackupNotifier(ref.watch(uploadServiceProvider));
+  return DriftBackupNotifier(ref.watch(uploadServiceProvider), ref);
 });
 
 class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
-  DriftBackupNotifier(this._uploadService)
+  DriftBackupNotifier(this._uploadService, this._ref)
     : super(
         const DriftBackupState(
           totalCount: 0,
@@ -219,10 +232,13 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   }
 
   final UploadService _uploadService;
+  final Ref _ref;
   StreamSubscription<TaskStatusUpdate>? _statusSubscription;
   StreamSubscription<TaskProgressUpdate>? _progressSubscription;
   final _logger = Logger("DriftBackupNotifier");
   String? _runId;
+  Completer<void>? _httpCancelCompleter;
+  bool _handleBackupResumeInProgress = false;
 
   /// Remove upload item from state
   void _removeUploadItem(String taskId) {
@@ -252,9 +268,25 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
         }
 
       case TaskStatus.failed:
-        // Ignore retry errors to avoid confusing users
-        if (update.exception?.description == 'Delayed or retried enqueue failed') {
+        // Legacy downloader retries (e.g. live-photo follow-up); main backup uses HTTP.
+        if (update.task.group == kBackupGroup &&
+            update.exception?.description == 'Delayed or retried enqueue failed') {
           _removeUploadItem(taskId);
+          _logger.warning('Downloader enqueue failed for taskId: $taskId');
+          logBackupTrace(
+            _logger,
+            level: Level.WARNING,
+            event: BackupTraceEvent.uplTaskFail,
+            phase: BackupTracePhase.upload,
+            step: 'UPLOAD_TASK_FAIL',
+            source: 'BG_WORKER',
+            appState: 'PAUSED',
+            trigger: 'background_task',
+            status: BackupTraceStatus.fail,
+            reasonCode: 'DOWNLOADER_ENQUEUE_FAILED',
+            runId: _runId,
+            extra: {'taskId': taskId},
+          );
           return;
         }
 
@@ -362,12 +394,46 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     state = state.copyWith(error: error);
   }
 
+  /// Updates [BackupError.noWifiPermission] when backup is enabled on cellular
+  /// without upload permission. Clears that warning when conditions no longer apply.
+  Future<void> refreshBackupNetworkGuard() async {
+    final networkBlocked = await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    );
+    if (networkBlocked) {
+      updateError(BackupError.noWifiPermission);
+    } else if (state.error == BackupError.noWifiPermission) {
+      updateError(BackupError.none);
+    }
+  }
+
+  Future<bool> canResumeBackupOnCurrentNetwork() async {
+    return !(await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    ));
+  }
+
   void updateSyncing(bool isSyncing) async {
     state = state.copyWith(isSyncing: isSyncing);
   }
 
-  Future<void> startBackup(String userId) {
-    state = state.copyWith(error: BackupError.none);
+  /// Foreground HTTP backup (upstream: [startForegroundBackup]).
+  Future<void> startForegroundBackup(String userId) async {
+    if (await isBackupNetworkBlocked(
+      appSettings: _ref.read(appSettingsServiceProvider),
+      connectivityApi: _ref.read(connectivityApiProvider),
+    )) {
+      updateError(BackupError.noWifiPermission);
+      return;
+    }
+
+    if (state.isHttpBackupActive) {
+      stopForegroundBackup();
+    }
+
+    state = state.copyWith(error: BackupError.none, isHttpBackupActive: true);
     _runId = BackupTrace.newRunId();
     logBackupTrace(
       _logger,
@@ -383,15 +449,63 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       runId: _runId,
       extra: {'userId': userId},
     );
-    return _uploadService.startBackup(userId, _updateEnqueueCount);
+
+    _httpCancelCompleter = Completer<void>();
+
+    _logger.info(
+      'upload_telemetry source=manual_screen stage=backup_ui_state '
+      'total=${state.totalCount} backedUp=${state.backupCount} '
+      'remaining=${state.remainderCount} processing=${state.processingCount} '
+      'isHttpBackupActive=${state.isHttpBackupActive}',
+    );
+
+    try {
+      final hasWifi = await resolveBackupHasWifi(
+        connectivityApi: _ref.read(connectivityApiProvider),
+      );
+      await _uploadService.startForegroundBackupWithHttpClient(
+        userId,
+        _httpCancelCompleter!,
+        hasWifi: hasWifi,
+        onProgress: (processed, total) {
+          state = state.copyWith(enqueueCount: processed, enqueueTotalCount: total);
+        },
+        onSuccess: (localAssetId, {bool isDuplicate = false}) {
+          state = state.copyWith(
+            backupCount: state.backupCount + 1,
+            remainderCount: state.remainderCount > 0 ? state.remainderCount - 1 : 0,
+          );
+          dPrint(() => 'HTTP backup uploaded $localAssetId duplicate=$isDuplicate');
+        },
+      );
+    } finally {
+      _httpCancelCompleter = null;
+      state = state.copyWith(isHttpBackupActive: false, enqueueCount: 0, enqueueTotalCount: 0);
+      updateSyncing(true);
+      final syncOk = await _ref.read(backgroundSyncProvider).syncRemote();
+      updateSyncing(false);
+      if (!syncOk) {
+        updateError(BackupError.syncFailed);
+      }
+      await refreshBackupNetworkGuard();
+      await getBackupStatus(userId);
+    }
   }
 
-  void _updateEnqueueCount(EnqueueStatus status) {
-    state = state.copyWith(enqueueCount: status.enqueueCount, enqueueTotalCount: status.totalCount);
+  /// Stops foreground HTTP backup when the app is paused (upstream: [stopForegroundBackup]).
+  void stopForegroundBackup() {
+    _httpCancelCompleter?.complete();
+    _httpCancelCompleter = null;
+    state = state.copyWith(isHttpBackupActive: false, uploadItems: {}, enqueueCount: 0, enqueueTotalCount: 0);
   }
+
+  Future<void> startBackup(String userId) => startForegroundBackup(userId);
 
   Future<void> cancel() async {
     dPrint(() => "Canceling backup tasks...");
+    if (_httpCancelCompleter != null && !_httpCancelCompleter!.isCompleted) {
+      _httpCancelCompleter!.complete();
+    }
     state = state.copyWith(enqueueCount: 0, enqueueTotalCount: 0, isCanceling: true, error: BackupError.none);
     logBackupTrace(
       _logger,
@@ -420,47 +534,81 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   }
 
   Future<void> handleBackupResume(String userId) async {
-    _logger.info("Resuming backup tasks...");
-    _runId ??= BackupTrace.newRunId();
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplResume,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'APP_RESUME',
-      appState: 'RESUMED',
-      trigger: 'lifecycle_resume',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'BACKUP_RESUME_REQUESTED',
-      runId: _runId,
-      extra: {'userId': userId},
-    );
-    state = state.copyWith(error: BackupError.none);
-    final tasks = await _uploadService.getActiveTasks(kBackupGroup);
-    _logger.info("Found ${tasks.length} tasks");
+    if (_handleBackupResumeInProgress) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.trigger,
+        step: 'RESUME_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'lifecycle_resume',
+        status: BackupTraceStatus.skip,
+        reasonCode: 'BACKUP_RESUME_ALREADY_IN_PROGRESS',
+        runId: _runId,
+        extra: {'userId': userId},
+      );
+      return;
+    }
 
-    if (tasks.isEmpty) {
-      // Start a new backup queue
-      _logger.info("Start a new backup queue");
+    if (state.isHttpBackupActive) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.trigger,
+        step: 'RESUME_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'lifecycle_resume',
+        status: BackupTraceStatus.skip,
+        reasonCode: 'HTTP_BACKUP_ALREADY_ACTIVE',
+        runId: _runId,
+        extra: {'userId': userId},
+      );
+      return;
+    }
+
+    if (_uploadService.isBuildingQueue) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.queue,
+        step: 'RESUME_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'lifecycle_resume',
+        status: BackupTraceStatus.skip,
+        reasonCode: 'QUEUE_BUILD_IN_PROGRESS',
+        runId: _runId,
+        extra: {'userId': userId},
+      );
+      return;
+    }
+
+    _handleBackupResumeInProgress = true;
+    try {
+      _runId ??= BackupTrace.newRunId();
       logBackupTrace(
         _logger,
         level: Level.INFO,
         event: BackupTraceEvent.uplResume,
-        phase: BackupTracePhase.queue,
-        step: 'QUEUE_START',
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_RECEIVED',
         source: 'APP_RESUME',
         appState: 'RESUMED',
         trigger: 'lifecycle_resume',
-        status: BackupTraceStatus.retry,
-        reasonCode: 'NO_ACTIVE_TASKS_NEW_QUEUE',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'BACKUP_RESUME_REQUESTED',
         runId: _runId,
+        extra: {'userId': userId},
       );
-      return startBackup(userId);
+      await startForegroundBackup(userId);
+    } finally {
+      _handleBackupResumeInProgress = false;
     }
-
-    _logger.info("Tasks to resume: ${tasks.length}");
-    return _uploadService.resumeBackup();
   }
 
   @override
@@ -485,4 +633,17 @@ final driftCandidateBackupAlbumInfoProvider = FutureProvider.autoDispose.family<
   assetId,
 ) {
   return ref.read(localAssetRepository).getSourceAlbums(assetId, backupSelection: BackupSelection.selected);
+});
+
+/// Returns `true` when backup is enabled but the current network is cellular
+/// and the user has **not** granted permission to use cellular data for uploads.
+///
+/// This provider reacts to connectivity changes (via [connectivityApiProvider])
+/// and app-settings changes, so UI can reactively show a warning banner or
+/// error badge on the backup icon.
+final backupNetworkBlockedProvider = FutureProvider.autoDispose<bool>((ref) async {
+  return isBackupNetworkBlocked(
+    appSettings: ref.watch(appSettingsServiceProvider),
+    connectivityApi: ref.read(connectivityApiProvider),
+  );
 });

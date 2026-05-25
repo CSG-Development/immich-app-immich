@@ -52,6 +52,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   Future<void> _waitForEndpointBeforeStartupRequests() async {
     // Keep startup responsive: wait briefly for endpoint settle, then continue.
     Future<String?> resolve() {
+      if (!mounted) {
+        return Future.value(null);
+      }
       return ref
           .read(hcDeviceEndpointResolverProvider)
           .resolveAndActivateWinner(
@@ -154,15 +157,13 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
               if (syncSuccess) {
                 backupProvider.updateError(BackupError.none);
-                await Future.wait([
-                  backgroundManager.hashAssets().then((_) {
-                    _resumeBackup(backupProvider);
-                  }),
-                  _resumeBackup(backupProvider),
-                ]);
               } else {
                 backupProvider.updateError(BackupError.syncFailed);
-                await backgroundManager.hashAssets();
+              }
+              await backupProvider.refreshBackupNetworkGuard();
+              await backgroundManager.hashAssets();
+              if (syncSuccess && await backupProvider.canResumeBackupOnCurrentNetwork()) {
+                await _resumeBackup(backupProvider);
               }
 
               if (Store.get(StoreKey.syncAlbums, false)) {
@@ -238,12 +239,16 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   Future<void> _resumeBackup(DriftBackupNotifier notifier) async {
     final isEnableBackup = Store.get(StoreKey.enableBackup, false);
 
-    if (isEnableBackup) {
-      final currentUser = Store.tryGet(StoreKey.currentUser);
-      if (currentUser != null) {
-        notifier.handleBackupResume(currentUser.id);
-      }
+    if (!isEnableBackup) {
+      return;
     }
+
+    final currentUser = Store.tryGet(StoreKey.currentUser);
+    if (currentUser == null) {
+      return;
+    }
+
+    await notifier.handleBackupResume(currentUser.id);
   }
 
   Future<bool> _restoreAuthInfoWithRetry({required String accessToken}) async {
@@ -281,6 +286,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
 
       if (attempt < maxAttempts) {
         await Future<void>.delayed(const Duration(milliseconds: 400));
+        if (!mounted) {
+          return false;
+        }
         try {
           await ref
               .read(hcDeviceEndpointResolverProvider)

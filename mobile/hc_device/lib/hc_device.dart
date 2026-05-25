@@ -15,8 +15,10 @@ export 'package:hc_device/providers/remote.provider.dart';
 export 'package:hc_device/providers/hcdevice.provider.dart';
 export 'package:hc_device/utils/device_merge.dart';
 export 'package:hc_device/utils/core.dart';
+export 'package:hc_device/utils/mdns_platform_support.dart';
 export 'package:hc_device/services/logger_service.dart';
 export 'package:hc_device/services/connection_info.dart';
 export 'package:hc_device/services/device_detection_service.dart'
     hide serviceTypeDiscover, serviceNameDiscover, timeoutLocalApiCall, timeoutRemoteApiCall;
+export 'package:hc_device/services/path_probe_mode.dart';
 export 'package:hc_device/services/path_resolver/hc_path_resolver.dart';

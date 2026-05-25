@@ -35,7 +35,7 @@ class LoginPage extends HookConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: isRemoteAccessForm.value ? null :AppBar(
         leading: isRemoteAccessForm.value
             ? null
             : IconButton(

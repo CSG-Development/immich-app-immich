@@ -22,6 +22,8 @@ import 'package:hc_device/api/remote_access.swagger.dart'
 import 'package:hc_device/providers/device.provider.dart';
 import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
 import 'package:hc_device/device_item.dart';
+import 'package:hc_device/services/path_probe_mode.dart';
+import 'package:hc_device/utils/mdns_platform_support.dart';
 import 'package:nsd/nsd.dart' as nsd;
 
 const String serviceTypeDiscover = '_https._tcp';
@@ -178,6 +180,11 @@ class DeviceDetectionService {
       logger.warning(
         '[Network] Skipping local detection due to no WiFi connectivity',
       );
+      _updateDetectionCounter(-1);
+      return;
+    }
+
+    if (!canUsePlatformMdnsDiscovery) {
       _updateDetectionCounter(-1);
       return;
     }
@@ -390,11 +397,10 @@ class DeviceDetectionService {
     DeviceItem? device,
     String? seagateDeviceID,
     bool useCachedPaths = true,
+    PathProbeMode pathProbeMode = PathProbeMode.all,
     FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
   }) async {
-    // If local device (no remoteDevice),
-    // try to connect directly using baseUrl first before fetching paths from server
-    if (device != null && device.baseUrl != null) {
+    if (pathProbeMode == PathProbeMode.all && device != null && device.baseUrl != null) {
       final result = await _testPath(
         DevicePath(
           type: DevicePathType.local,
@@ -421,6 +427,12 @@ class DeviceDetectionService {
         '[Network] Reachability check skipped: no device identifier available',
       );
       return PingResult.failed();
+    }
+
+    if (pathProbeMode == PathProbeMode.localOnly) {
+      if (!await _checkWiFiConnectivity()) {
+        return PingResult.failed();
+      }
     }
 
     if (!remoteProvider.isAuthenticated) {
@@ -471,22 +483,29 @@ class DeviceDetectionService {
       final localPaths = <DevicePath>[];
       final publicPaths = <DevicePath>[];
       final remotePaths = <DevicePath>[];
+      final includeLocal = pathProbeMode != PathProbeMode.remoteOnly;
+      final includePublicRemote = pathProbeMode != PathProbeMode.localOnly;
 
       for (final path in devicePaths.paths) {
         switch (path.type) {
           case DevicePathType.local:
-            if (hasWiFi) {
-              localPaths.add(path);
-            } else {
-              logger.warning(
-                '[Network] Skipping local path due to no WiFi: ${path.address}:${path.port}',
-              );
+            if (!includeLocal) continue;
+            if (!hasWiFi) {
+              if (pathProbeMode == PathProbeMode.all) {
+                logger.warning(
+                  '[Network] Skipping local path due to no WiFi: ${path.address}:${path.port}',
+                );
+              }
+              continue;
             }
+            localPaths.add(path);
             break;
           case DevicePathType.public:
+            if (!includePublicRemote) continue;
             publicPaths.add(path);
             break;
           case DevicePathType.remote:
+            if (!includePublicRemote) continue;
             remotePaths.add(path);
             break;
           default:
@@ -550,6 +569,7 @@ class DeviceDetectionService {
                   device: device,
                   seagateDeviceID: remoteDeviceID,
                   useCachedPaths: true,
+                  pathProbeMode: pathProbeMode,
                 );
               }
             }

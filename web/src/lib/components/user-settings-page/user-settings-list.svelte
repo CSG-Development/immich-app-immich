@@ -12,6 +12,7 @@
   import { type ApiKeyResponseDto, type SessionResponseDto, type SystemConfigDto } from '@immich/sdk';
   import {
     mdiAccountGroupOutline,
+    mdiApi,
     /* mdiAccountOutline, */
     /* mdiApi, */
     mdiBellOutline,
@@ -37,6 +38,7 @@
   import PartnerSettings from './partner-settings.svelte';
   /* import UserAPIKeyList from './user-api-key-list.svelte'; */
   /* import UserProfileSettings from './user-profile-settings.svelte'; */
+  import UserApiKeyList from '$lib/components/user-settings-page/user-api-key-list.svelte';
   import { featureFlags } from '$lib/stores/server-config.store';
 
   interface Props {
@@ -78,9 +80,9 @@
     <UserUsageStatistic />
   </SettingAccordion>
 
-  <!--  <SettingAccordion icon={mdiApi} key="api-keys" title={$t('api_keys')} subtitle={$t('manage_your_api_keys')}>-->
-  <!--    <UserAPIKeyList bind:keys />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion icon={mdiApi} key="api-keys" title={$t('api_keys')} subtitle={$t('manage_your_api_keys')}>
+    <UserApiKeyList bind:keys />
+  </SettingAccordion>
 
   <SettingAccordion
     child={false}

@@ -90,7 +90,7 @@ class PhotoWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.CenterHorizontally
           ) {
             Image(
-              provider = ImageProvider(R.drawable.splash),
+              provider = ImageProvider(R.drawable.ic_launcher_foreground),
               contentDescription = null,
             )
 

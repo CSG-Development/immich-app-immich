@@ -78,29 +78,59 @@ import 'auth_callback.dart';
 class Auth {
   static final log = Logger('Auth');
 
+  /// The access token used for authentication
   String? accessToken;
+
+  /// Headers to use for access requests. Can contain {accessToken} and
+  /// {refreshToken} which will be replaced by the actual tokens
   Map<String, String> accessHeaders;
+
+  /// Query parameters to use for access requests. Can contain {accessToken} and
+  /// {refreshToken} which will be replaced by the actual tokens
   Map<String, String> accessQueryParams;
+
+  /// Time when the access token expires
   DateTime? accessTokenExpiryTime;
+
+  /// The refresh token used to obtain a new access token
   String? refreshToken;
+
+  /// Headers to use for refresh requests. Can contain {accessToken} and
+  /// {refreshToken} which will be replaced by the actual tokens
   Map<String, String> refreshHeaders;
+
+  /// Query parameters to use for refresh requests. Can contain {accessToken} and
+  /// {refreshToken} which will be replaced by the actual tokens
   Map<String, String> refreshQueryParams;
+
+  /// The URL to use for refreshing the token
   String? refreshUrl;
   int? _onAuthRawHandle; // for callback
 
-  Auth(
-      {this.accessToken,
-      this.accessHeaders = const {},
-      this.accessQueryParams = const {},
-      this.accessTokenExpiryTime,
-      this.refreshToken,
-      this.refreshUrl,
-      this.refreshHeaders = const {},
-      this.refreshQueryParams = const {},
-      OnAuthCallback? onAuth})
-      : _onAuthRawHandle = onAuth != null
-            ? PluginUtilities.getCallbackHandle(onAuth)?.toRawHandle()
-            : null;
+  /// Creates an [Auth] object
+  ///
+  /// [accessToken] is the initial access token
+  /// [accessHeaders] are headers to use for access requests
+  /// [accessQueryParams] are query parameters to use for access requests
+  /// [accessTokenExpiryTime] is the time when the access token expires
+  /// [refreshToken] is the initial refresh token
+  /// [refreshUrl] is the URL to use for refreshing the token
+  /// [refreshHeaders] are headers to use for refresh requests
+  /// [refreshQueryParams] are query parameters to use for refresh requests
+  /// [onAuth] is a callback to be called when the access token expires
+  Auth({
+    this.accessToken,
+    this.accessHeaders = const {},
+    this.accessQueryParams = const {},
+    this.accessTokenExpiryTime,
+    this.refreshToken,
+    this.refreshUrl,
+    this.refreshHeaders = const {},
+    this.refreshQueryParams = const {},
+    OnAuthCallback? onAuth,
+  }) : _onAuthRawHandle = onAuth != null
+           ? PluginUtilities.getCallbackHandle(onAuth)?.toRawHandle()
+           : null;
 
   /// Convert the Auth instance to JSON
   Map<String, dynamic> toJson() {
@@ -113,44 +143,47 @@ class Auth {
       'refreshUrl': refreshUrl,
       'refreshHeaders': refreshHeaders,
       'refreshQueryParams': refreshQueryParams,
-      'onAuthRawHandle': _onAuthRawHandle
+      'onAuthRawHandle': _onAuthRawHandle,
     };
   }
 
   /// Create an Auth instance from JSON
   Auth.fromJson(Map<String, dynamic> json)
-      : accessToken = json['accessToken'],
-        accessHeaders = json['accessHeaders'] != null
-            ? Map<String, String>.from(json['accessHeaders'])
-            : const {},
-        accessQueryParams = json['accessQueryParams'] != null
-            ? Map<String, String>.from(json['accessQueryParams'])
-            : const {},
-        accessTokenExpiryTime = json['accessTokenExpiryTime'] != null
-            ? DateTime.fromMillisecondsSinceEpoch(
-                json['accessTokenExpiryTime'] as int)
-            : null,
-        refreshToken = json['refreshToken'],
-        refreshUrl = json['refreshUrl'],
-        refreshHeaders = json['refreshHeaders'] != null
-            ? Map<String, String>.from(json['refreshHeaders'])
-            : const {},
-        refreshQueryParams = json['refreshQueryParams'] != null
-            ? Map<String, String>.from(json['refreshQueryParams'])
-            : const {},
-        _onAuthRawHandle = json['onAuthRawHandle'] as int?;
+    : accessToken = json['accessToken'],
+      accessHeaders = json['accessHeaders'] != null
+          ? Map<String, String>.from(json['accessHeaders'])
+          : const {},
+      accessQueryParams = json['accessQueryParams'] != null
+          ? Map<String, String>.from(json['accessQueryParams'])
+          : const {},
+      accessTokenExpiryTime = json['accessTokenExpiryTime'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              json['accessTokenExpiryTime'] as int,
+            )
+          : null,
+      refreshToken = json['refreshToken'],
+      refreshUrl = json['refreshUrl'],
+      refreshHeaders = json['refreshHeaders'] != null
+          ? Map<String, String>.from(json['refreshHeaders'])
+          : const {},
+      refreshQueryParams = json['refreshQueryParams'] != null
+          ? Map<String, String>.from(json['refreshQueryParams'])
+          : const {},
+      _onAuthRawHandle = json['onAuthRawHandle'] as int?;
 
   /// Returns the [OnAuthCallback] registered with this [Auth], or null
   OnAuthCallback? get onAuthCallback => _onAuthRawHandle != null
       ? PluginUtilities.getCallbackFromHandle(
-          CallbackHandle.fromRawHandle(_onAuthRawHandle!)) as OnAuthCallback
+              CallbackHandle.fromRawHandle(_onAuthRawHandle!),
+            )
+            as OnAuthCallback
       : null;
 
   /// Set the [OnAuthCallback]
   set onAuthCallback(OnAuthCallback? onAuth) =>
       _onAuthRawHandle = onAuth != null
-          ? PluginUtilities.getCallbackHandle(onAuth)?.toRawHandle()
-          : null;
+      ? PluginUtilities.getCallbackHandle(onAuth)?.toRawHandle()
+      : null;
 
   /// Returns the Uri for accessing the resource
   ///
@@ -158,12 +191,13 @@ class Auth {
   /// [url] or [uri] with access query parameters. If headers are used to
   /// authenticate, then call [getAccessHeaders] after this call, to make sure
   /// they contain updated access tokens.
-  Future<Uri> getAccessUri(
-      {String? url,
-      Uri? uri,
-      http.Client? httpClient,
-      String? refreshUrl,
-      Uri? refreshUri}) async {
+  Future<Uri> getAccessUri({
+    String? url,
+    Uri? uri,
+    http.Client? httpClient,
+    String? refreshUrl,
+    Uri? refreshUri,
+  }) async {
     if (uri == null && url == null) {
       throw ArgumentError('Either uri or url must be provided');
     }
@@ -171,15 +205,18 @@ class Auth {
     if (isTokenExpired()) {
       // make the refresh request
       final (updatedAccesstoken, _) = await refreshAccessToken(
-          httpClient: httpClient,
-          refreshUrl: refreshUrl,
-          refreshUri: refreshUri);
+        httpClient: httpClient,
+        refreshUrl: refreshUrl,
+        refreshUri: refreshUri,
+      );
       if (!updatedAccesstoken) {
         throw const HttpException('Could not refresh access token');
       }
     }
     return addOrUpdateQueryParams(
-        uri: accessUri, queryParams: getAccessQueryParams());
+      uri: accessUri,
+      queryParams: getAccessQueryParams(),
+    );
   }
 
   /// Returns the URL string for accessing the resource
@@ -188,18 +225,20 @@ class Auth {
   /// [url] or [uri] with access query parameters. If headers are used to
   /// authenticate, then call [getAccessHeaders] after this call, to make sure
   /// they contain updated access tokens.
-  Future<String> getAccessUrl(
-      {String? url,
-      Uri? uri,
-      http.Client? httpClient,
-      String? refreshUrl,
-      Uri? refreshUri}) async {
+  Future<String> getAccessUrl({
+    String? url,
+    Uri? uri,
+    http.Client? httpClient,
+    String? refreshUrl,
+    Uri? refreshUri,
+  }) async {
     final accessUri = await getAccessUri(
-        url: url,
-        uri: uri,
-        httpClient: httpClient,
-        refreshUrl: refreshUrl,
-        refreshUri: refreshUri);
+      url: url,
+      uri: uri,
+      httpClient: httpClient,
+      refreshUrl: refreshUrl,
+      refreshUri: refreshUri,
+    );
     return accessUri.toString();
   }
 
@@ -213,11 +252,15 @@ class Auth {
   ///
   /// If neither [refreshUrl] nor [refreshUri] are given, the Auth object's
   /// [Auth.refreshUrl] is used
-  Future<(bool, bool)> refreshAccessToken(
-      {http.Client? httpClient, String? refreshUrl, Uri? refreshUri}) async {
+  Future<(bool, bool)> refreshAccessToken({
+    http.Client? httpClient,
+    String? refreshUrl,
+    Uri? refreshUri,
+  }) async {
     if (refreshUrl == null && refreshUri == null && this.refreshUrl == null) {
       throw ArgumentError(
-          'refreshUrl, refreshUri or Auth object refreshUrl required');
+        'refreshUrl, refreshUri or Auth object refreshUrl required',
+      );
     }
     var updatedAccessToken = false;
     var updatedRefreshToken = false;
@@ -226,14 +269,18 @@ class Auth {
       final selectedRefreshUri =
           refreshUri ?? Uri.parse(refreshUrl ?? this.refreshUrl!);
       final uri = addOrUpdateQueryParams(
-          uri: selectedRefreshUri, queryParams: expandMap(refreshQueryParams));
+        uri: selectedRefreshUri,
+        queryParams: expandMap(refreshQueryParams),
+      );
       final headers = expandMap(refreshHeaders);
       headers['Content-type'] = 'application/json';
       final response = await client.post(
         uri,
         headers: headers,
-        body: jsonEncode(
-            {'grant_type': 'refresh_token', 'refresh_token': refreshToken}),
+        body: jsonEncode({
+          'grant_type': 'refresh_token',
+          'refresh_token': refreshToken,
+        }),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -243,13 +290,15 @@ class Auth {
           updatedAccessToken = true;
           var newExpiresIn = data['expires_in'];
           if (newExpiresIn != null) {
-            accessTokenExpiryTime =
-                DateTime.now().add(Duration(seconds: newExpiresIn));
+            accessTokenExpiryTime = DateTime.now().add(
+              Duration(seconds: newExpiresIn),
+            );
           }
         } else {
           log.fine(
-              'Failed to refresh access token: no access_token in response body.\n'
-              'Body is ${response.body}');
+            'Failed to refresh access token: no access_token in response body.\n'
+            'Body is ${response.body}',
+          );
         }
         final newRefreshToken = data['refresh_token'];
         if (newRefreshToken != null) {
@@ -275,8 +324,11 @@ class Auth {
 
   /// Add/update the query parameters in this [url] or [uri] with [queryParams]
   /// and return the new uri
-  Uri addOrUpdateQueryParams(
-      {String? url, Uri? uri, Map<String, String> queryParams = const {}}) {
+  Uri addOrUpdateQueryParams({
+    String? url,
+    Uri? uri,
+    Map<String, String> queryParams = const {},
+  }) {
     if (uri == null && url == null) {
       throw ArgumentError('Either uri or url must be provided');
     }
@@ -284,8 +336,9 @@ class Auth {
     if (queryParams.isEmpty) {
       return startUri;
     }
-    final updatedQueryParams =
-        Map<String, String>.from(startUri.queryParameters);
+    final updatedQueryParams = Map<String, String>.from(
+      startUri.queryParameters,
+    );
     queryParams.forEach((key, value) {
       updatedQueryParams[key] = value;
     });
@@ -294,7 +347,7 @@ class Auth {
 
   /// Returns true if the [accessTokenExpiryTime is after now plus
   /// the [bufferTime], otherwise returns false
-  bool isTokenExpired({bufferTime = const Duration(seconds: 10)}) {
+  bool isTokenExpired({Duration bufferTime = const Duration(seconds: 10)}) {
     if (accessTokenExpiryTime == null) return false;
     return DateTime.now().add(bufferTime).isAfter(accessTokenExpiryTime!);
   }

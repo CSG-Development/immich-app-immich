@@ -309,7 +309,7 @@ export class JobService extends BaseService {
    * Queue follow up jobs
    */
   private async onDone(item: JobItem) {
-    this.logger.log(`Job done: ${JSON.stringify(item)}`);
+    this.logger.log(`Job done: ${JSON.stringify(item)} at ${new Date().toISOString().slice(11, 23)}`);
     const { jobCounts: detectionCount} = await this.getJobStatus(QueueName.FaceDetection);
     const { jobCounts: recognitionCount} = await this.getJobStatus(QueueName.FacialRecognition);
     if (detectionCount.waiting === 0 && recognitionCount.waiting === 0) {

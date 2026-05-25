@@ -1,4 +1,4 @@
-<!-- <script lang="ts">
+<script lang="ts">
   import ServerStatsPanel from '$lib/components/admin-page/server-stats/server-stats-panel.svelte';
   import AdminPageLayout from '$lib/components/layouts/AdminPageLayout.svelte';
   import { asyncTimeout } from '$lib/utils';
@@ -32,4 +32,4 @@
       <ServerStatsPanel stats={data.stats} />
     </section>
   </section>
-</AdminPageLayout> -->
+</AdminPageLayout>

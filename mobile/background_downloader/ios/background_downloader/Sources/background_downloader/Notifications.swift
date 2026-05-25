@@ -230,9 +230,14 @@ private func updateGroupNotification(
     notificationConfig: NotificationConfig
 ) async {
     let groupNotificationId = notificationConfig.groupNotificationId
-    var groupNotification = GroupNotification.notifications[groupNotificationId] ?? GroupNotification(name: groupNotificationId, notificationConfig: notificationConfig)
+    let groupNotification = BDPlugin.propertyLock.withLock {
+        GroupNotification.notifications[groupNotificationId]
+            ?? GroupNotification(name: groupNotificationId, notificationConfig: notificationConfig)
+    }
     let stateChange = await groupNotification.update(task: task, notificationType: notificationType)
-    GroupNotification.notifications[groupNotificationId] = groupNotification
+    BDPlugin.propertyLock.withLock {
+        GroupNotification.notifications[groupNotificationId] = groupNotification
+    }
     if stateChange {
         // need to update the group notification
         let notificationCenter = UNUserNotificationCenter.current()
@@ -281,7 +286,9 @@ private func updateGroupNotification(
             // remove only if not re-activated within 5 seconds
             try? await _Concurrency.Task.sleep(nanoseconds: 5_000_000_000)
             if await groupNotification.isFinished {
-                GroupNotification.notifications.removeValue(forKey: groupNotificationId)
+                BDPlugin.propertyLock.withLock {
+                    GroupNotification.notifications.removeValue(forKey: groupNotificationId)
+                }
             }
         }
     }
@@ -354,8 +361,12 @@ let numTotalRegEx = try! NSRegularExpression(pattern: "\\{numTotal\\}", options:
 func replaceTokens(input: String, task: Task, progress: Double? = nil, notificationGroup: GroupNotification? = nil) async -> String {
     let inputString = NSMutableString()
     inputString.append(input)
+
+    let unpacked = unpack(packedString: task.filename)
+    let safeFilename = unpacked.filename ?? task.filename
+
     displayNameRegEx.replaceMatches(in: inputString, range: NSMakeRange(0, inputString.length), withTemplate: task.displayName)
-    fileNameRegEx.replaceMatches(in: inputString, range: NSMakeRange(0, inputString.length), withTemplate: task.filename)
+    fileNameRegEx.replaceMatches(in: inputString, range: NSMakeRange(0, inputString.length), withTemplate: safeFilename)
     metaDataRegEx.replaceMatches(in: inputString, range: NSMakeRange(0, inputString.length), withTemplate: task.metaData)
     if (progress == nil) {
         progressRegEx.replaceMatches(in: inputString, range: NSMakeRange(0, inputString.length), withTemplate: "")}

@@ -7,7 +7,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
-import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
@@ -22,6 +21,7 @@ import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
 import 'package:immich_mobile/widgets/forms/login/device_selector.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
+import 'package:immich_mobile/widgets/forms/login/login_brand_header.dart';
 import 'package:immich_mobile/widgets/forms/login/login_button.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
@@ -925,17 +925,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             children: [
               GestureDetector(
                 onDoubleTap: () => populateDevCredentials(),
-                child: Column(
-                  children: [
-                    const Image(width: 140.0, height: 140.0, image: AssetImage('assets/curator-photos-logo.png')),
-                    SvgPicture.asset(
-                      context.isDarkTheme
-                          ? 'assets/curator-photos-logo-dark.svg'
-                          : 'assets/curator-photos-logo-light.svg',
-                      height: 20,
-                    ),
-                  ],
-                ),
+                child: const LoginBrandHeader(),
               ),
               const SizedBox(height: 24.0),
               isLoading.value

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/setting.model.dart';
+import 'package:immich_mobile/extensions/backup_error_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/server_info/server_info.model.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
@@ -167,16 +168,24 @@ class _BackupIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const widgetSize = 30.0;
-    final hasError = ref.watch(driftBackupProvider.select((state) => state.error != BackupError.none));
-    final indicatorIcon = hasError
+    final backupError = ref.watch(driftBackupProvider.select((state) => state.error));
+    final hasNetworkWarning = backupError.isNetworkWarning;
+    final hasError = backupError.isFailure;
+    final indicatorIcon = hasNetworkWarning || hasError
         ? Icon(
             Icons.warning_rounded,
             size: 12,
-            color: context.colorScheme.error,
+            color: hasNetworkWarning
+                ? backupError.badgeIconColor(context.colorScheme)
+                : context.colorScheme.error,
             semanticLabel: 'backup_controller_page_backup'.tr(),
           )
         : _getBackupBadgeIcon(context, ref);
-    final badgeBackground = hasError ? context.colorScheme.errorContainer : context.colorScheme.surfaceContainer;
+    final badgeBackground = hasNetworkWarning
+        ? backupError.badgeBackgroundColor(context.colorScheme)
+        : hasError
+        ? context.colorScheme.errorContainer
+        : context.colorScheme.surfaceContainer;
 
     return InkWell(
       onTap: () => context.pushRoute(const DriftBackupRoute()),
@@ -205,7 +214,7 @@ class _BackupIndicator extends ConsumerWidget {
     final backupStateStream = ref.watch(settingsProvider).watch(Setting.enableBackup);
     final isDarkTheme = context.isDarkTheme;
     final iconColor = isDarkTheme ? Colors.white : Colors.black;
-    final isUploading = ref.watch(driftBackupProvider.select((state) => state.uploadItems.isNotEmpty));
+    final isUploading = ref.watch(driftBackupProvider.select((state) => state.showsBackupProgress));
 
     return StreamBuilder(
       stream: backupStateStream,

@@ -198,6 +198,7 @@ class HcDeviceEndpointResolver {
         );
       case 'app_resume':
       case 'resume':
+      case 'sync_stream_bootstrap':
         return const _ResolvedTriggerConfig(
           resolveTrigger: ResolveTrigger.appResume,
           policy: EndpointResolvePolicy.conservative,

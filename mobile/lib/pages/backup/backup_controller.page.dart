@@ -11,6 +11,7 @@ import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
+import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/backup/error_backup_list.provider.dart';
 import 'package:immich_mobile/providers/backup/ios_background_settings.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
@@ -214,7 +215,56 @@ class BackupControllerPage extends HookConsumerWidget {
         title: Text('background_backup_running_error'.tr()),
       );
     }
-
+  
+    Widget buildNetworkBlockedBanner() {
+      final networkBlocked = ref.watch(backupNetworkBlockedProvider);
+      return networkBlocked.when(
+        data: (blocked) {
+          if (!blocked) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: context.colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                border: Border.all(color: context.colorScheme.error.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: context.colorScheme.error, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "backup_network_blocked_title".tr(),
+                          style: context.textTheme.titleSmall?.copyWith(
+                            color: context.colorScheme.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "backup_network_blocked_message".tr(),
+                          style: context.textTheme.bodySmall?.copyWith(
+                            color: context.colorScheme.onSurfaceSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+      );
+    }
+  
     buildLoadingIndicator() {
       return const Padding(
         padding: EdgeInsets.only(top: 42.0),
@@ -279,6 +329,7 @@ class BackupControllerPage extends HookConsumerWidget {
                         const Divider(),
                         const CurrentUploadingAssetInfoBox(),
                         if (!hasExclusiveAccess) buildBackgroundBackupInfo(),
+                        buildNetworkBlockedBanner(),
                         buildBackupButton(),
                       ]
                     : [
