@@ -76,15 +76,23 @@ FROM dhi.io/python:3.11-debian13-dev AS prod-openvino
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -yqq ocl-icd-libopencl1 wget && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /tmp/intel-neo && \
+    cd /tmp/intel-neo && \
     wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-core_1.0.17384.11_amd64.deb && \
     wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-opencl_1.0.17384.11_amd64.deb && \
     wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/intel-opencl-icd_24.31.30508.7_amd64.deb && \
     # TODO: Figure out how to get renovate to manage this differently versioned libigdgmm file
     wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/libigdgmm12_22.4.1_amd64.deb && \
     dpkg -i *.deb && \
-    rm *.deb && \
-    apt-get remove wget -yqq && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /tmp/intel-neo
+
+RUN mkdir -p /etc/OpenCL/vendors && \
+    rm -f /etc/OpenCL/vendors/*.icd || true && \
+    echo "/usr/lib/x86_64-linux-gnu/intel-opencl/libigdrcl.so" > /etc/OpenCL/vendors/intel.icd
+
+RUN ldconfig
 
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04@sha256:94c1577b2cd9dd6c0312dc04dff9cb2fdce2b268018abc3d7c2dbcacf1155000 AS prod-cuda
 
