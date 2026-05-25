@@ -32,11 +32,11 @@ export class UserAdminController {
     return this.service.create(createUserDto);
   }
 
-  // @Get(':id')
-  // @Authenticated({ permission: Permission.AdminUserRead, admin: true })
-  // getUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
-  //   return this.service.get(auth, id);
-  // }
+  @Get(':id')
+  @Authenticated({ permission: Permission.AdminUserRead, admin: true })
+  getUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
+    return this.service.get(auth, id);
+  }
 
   @Put(':id')
   @Authenticated({ permission: Permission.AdminUserUpdate, admin: true })
@@ -84,10 +84,10 @@ export class UserAdminController {
     return this.service.updatePreferences(auth, id, dto);
   }
 
-  // @Post(':id/restore')
-  // @Authenticated({ permission: Permission.AdminUserDelete, admin: true })
-  // @HttpCode(HttpStatus.OK)
-  // restoreUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
-  //   return this.service.restore(auth, id);
-  // }
+  @Post(':id/restore')
+  @Authenticated({ permission: Permission.AdminUserDelete, admin: true })
+  @HttpCode(HttpStatus.OK)
+  restoreUserAdmin(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<UserAdminResponseDto> {
+    return this.service.restore(auth, id);
+  }
 }

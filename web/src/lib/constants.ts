@@ -18,7 +18,7 @@ export enum AssetAction {
 }
 
 export enum AppRoute {
-  ADMIN_USERS = '/admin/users',
+  ADMIN_USER_MANAGEMENT = '/admin/user-management',
   ADMIN_LIBRARY_MANAGEMENT = '/admin/library-management',
   ADMIN_SETTINGS = '/admin/system-settings',
   ADMIN_STATS = '/admin/server-status',
