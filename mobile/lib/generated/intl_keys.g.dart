@@ -859,6 +859,7 @@ abstract class IntlKeys {
   static const curator_login_form_password_hint = 'curator.login.form.password.hint';
   static const curator_login_form_version_check_error = 'curator.login.form.version.check.error';
   static const curator_network_finding = 'curator.network.finding';
+  static const curator_network_no_internet = 'curator.network.no_internet';
   static const curator_onboarding_done = 'curator.onboarding.done';
   static const curator_onboarding_skip = 'curator.onboarding.skip';
   static const curator_onboarding_slide1_description = 'curator.onboarding.slide1.description';

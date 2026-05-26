@@ -170,7 +170,7 @@ class CuratorNetworkMonitor {
       return;
     }
     _pendingNetworkChange = false;
-    await reconnectDeviceEndpoint(fromConnectivityChange: true);
+    await reconnectDeviceEndpoint(fromConnectivityChange: true, suppressFindingToast: true);
   }
 
   void onAppLifecycleResumed() {
@@ -200,7 +200,7 @@ class CuratorNetworkMonitor {
 
   bool _isPhotosAuthenticated() => Store.get(StoreKey.accessToken, "").isNotEmpty;
 
-  Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false}) async {
+  Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false, bool suppressFindingToast = false}) async {
     final trigger = _deriveTrigger(
       fromConnectivityChange: fromConnectivityChange,
       fromRemoteAuthRetry: fromRemoteAuthRetry,
@@ -231,8 +231,8 @@ class CuratorNetworkMonitor {
       }
       return;
     }
-    final shouldSurfaceFindingToast = _shouldSurfaceFindingToast(trigger);
-    if (fromConnectivityChange) {
+    final shouldSurfaceFindingToast = !suppressFindingToast && _shouldSurfaceFindingToast(trigger);
+    if (fromConnectivityChange && !suppressFindingToast) {
       noteConnectivityDrivenReconnect();
     } else if (shouldSurfaceFindingToast && !_reconnectEpisodeService.hasActiveFailureEpisode) {
       _reconnectEpisodeService.startFailureEpisode(resetDismissedFindingToast: false);

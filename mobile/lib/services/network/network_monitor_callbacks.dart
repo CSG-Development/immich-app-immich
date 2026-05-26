@@ -149,7 +149,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     }
     final hasUsableTransport = _ref.read(curatorOsTransportUsableProvider);
     if (!hasUsableTransport) {
-      return NetworkBannerKind.unable;
+      return NetworkBannerKind.noInternet;
     }
     final status = _ref.read(connectionStateProvider).status;
     if (status == conn.ConnectionStatus.disconnected) {
