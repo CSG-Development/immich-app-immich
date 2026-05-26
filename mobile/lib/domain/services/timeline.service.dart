@@ -84,7 +84,7 @@ class TimelineService {
 
         if (totalAssets == 0) {
           _bufferOffset = 0;
-          _buffer.clear();
+          _buffer = [];
         } else {
           final int offset;
           final int count;
@@ -227,7 +227,7 @@ class TimelineService {
   Future<void> dispose() async {
     await _bucketSubscription?.cancel();
     _bucketSubscription = null;
-    _buffer.clear();
+    _buffer = [];
     _bufferOffset = 0;
   }
 }
