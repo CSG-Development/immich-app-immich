@@ -67,7 +67,8 @@ class OrtSession:
             log.debug(f"Available OpenVINO devices: {device_ids}")
 
             gpu_devices = [device_id for device_id in device_ids if device_id.startswith("GPU")]
-            if not gpu_devices:
+            #if not gpu_devices:
+            if True:
                 log.warning("No GPU device found in OpenVINO. Falling back to CPU.")
                 available_providers.remove(openvino)
         return [provider for provider in SUPPORTED_PROVIDERS if provider in available_providers]
@@ -93,9 +94,9 @@ class OrtSession:
                 case "OpenVINOExecutionProvider":
                     options = {
                         "device_type": f"GPU.{settings.device_id}",
-                        "precision": "FP8",
+                        #"precision": "FP8",
                         #"precision": "FP16",
-                        # "precision": "FP32",
+                        "precision": "FP32",
                         "cache_dir": (self.model_path.parent / "openvino").as_posix(),
                     }
                 case _:
