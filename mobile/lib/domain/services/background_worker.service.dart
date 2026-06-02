@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:background_downloader/background_downloader.dart';
-import 'package:cancellation_token_http/http.dart';
+import 'package:cancellation_token_http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
@@ -12,10 +12,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/utils/backup_connectivity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
-import 'package:immich_mobile/extensions/translate_extensions.dart';
-import 'package:immich_mobile/generated/intl_keys.g.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/logger_db.repository.dart';
 import 'package:immich_mobile/platform/background_worker_api.g.dart';
@@ -23,24 +20,26 @@ import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/platform.provider.dart'
+    show connectivityApiProvider, nativeSyncApiProvider;
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/localization.service.dart';
-import 'package:immich_mobile/services/upload.service.dart';
+import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
-import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/wm_executor.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
-import 'package:worker_manager/worker_manager.dart';
 
 class BackgroundWorkerFgService {
   final BackgroundWorkerFgHostApi _foregroundHostApi;
@@ -49,6 +48,9 @@ class BackgroundWorkerFgService {
 
   // TODO: Move this call to native side once old timeline is removed
   Future<void> enable() => _foregroundHostApi.enable();
+
+  Future<void> saveNotificationMessage(String title, String body) =>
+      _foregroundHostApi.saveNotificationMessage(title, body);
 
   Future<void> configure({int? minimumDelaySeconds, bool? requireCharging}) => _foregroundHostApi.configure(
     BackgroundWorkerSettings(
@@ -70,7 +72,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   final Drift _drift;
   final DriftLogger _driftLogger;
   final BackgroundWorkerBgHostApi _backgroundHostApi;
-  final CancellationToken _cancellationToken = CancellationToken();
+  final http.CancellationToken _cancellationToken = http.CancellationToken();
   final Logger _logger = Logger('BackgroundWorkerBgService');
 
   final RemoteAccessDependencies _remoteAccessDependencies;
@@ -122,15 +124,12 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         reasonCode: 'BG_WORKER_INIT_START',
         runId: _runId,
       );
-      final certs = await HttpCertPinningManager.loadRootCertsBytes([
-        'assets/tdci.pem',
-        'assets/fake-device-noveo.cer',
-      ]);
+      final certs = await HttpCertPinningManager.loadDefaultRootCertsBytes();
 
       await Future.wait(
         [
           loadTranslations(),
-          workerManager.init(dynamicSpawning: true),
+          workerManagerPatch.init(dynamicSpawning: true),
           // Initialize the file downloader
           FileDownloader().configure(
             globalConfig: [
@@ -157,15 +156,8 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
       configureFileDownloaderNotifications();
 
-      if (Platform.isAndroid) {
-        await _backgroundHostApi.showNotification(
-          IntlKeys.uploading_media.t(),
-          IntlKeys.backup_background_service_default_notification.t(),
-        );
-      }
-
       // Notify the host that the background worker service has been initialized and is ready to use
-      _backgroundHostApi.onInitialized();
+      unawaited(_backgroundHostApi.onInitialized());
       logBackupTrace(
         _logger,
         level: Level.INFO,
@@ -181,7 +173,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       );
     } catch (error, stack) {
       _logger.severe("Failed to initialize background worker", error, stack);
-      _backgroundHostApi.close();
+      unawaited(_backgroundHostApi.close());
       logBackupTrace(
         _logger,
         level: Level.SEVERE,
@@ -392,6 +384,12 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   }
 
   Future<void> _cleanup() async {
+    await runZonedGuarded(_handleCleanup, (error, stack) {
+      dPrint(() => "Error during background worker cleanup: $error, $stack");
+    });
+  }
+
+  Future<void> _handleCleanup() async {
     // If ref is null, it means the service was never initialized properly
     if (_isCleanedUp || _ref == null) {
       return;
@@ -402,7 +400,9 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       final backgroundSyncManager = _ref?.read(backgroundSyncProvider);
       final nativeSyncApi = _ref?.read(nativeSyncApiProvider);
       _logger.info("Cleaning up background worker");
-      _cancellationToken.cancel();
+      if (!_cancellationToken.isCancelled) {
+        _cancellationToken.cancel();
+      }
 
       // Cancel outstanding background sync tasks before disposing workerManager.
       // Running both in parallel can race in worker_manager internals and produce
@@ -410,18 +410,21 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       await nativeSyncApi?.cancelHashing();
       await backgroundSyncManager?.cancel();
 
+      await _drift.close();
+      await _driftLogger.close();
+
       _ref?.dispose();
       _ref = null;
-
       final cleanupFutures = [
-        workerManager.dispose().catchError((_) async {
+        nativeSyncApi?.cancelHashing(),
+        workerManagerPatch.dispose().catchError((_) async {
           // Discard any errors on the dispose call
           return;
         }),
         LogService.I.dispose(),
         Store.dispose(),
-        _drift.close(),
-        _driftLogger.close(),
+
+        backgroundSyncManager?.cancel(),
       ];
 
       if (_isar.isOpen) {
@@ -491,12 +494,14 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
           return;
         }
 
-        final hasWifi = await resolveBackupHasWifi(
-          connectivityApi: _ref?.read(connectivityApiProvider),
-        );
+        await _ref?.read(connectivityApiProvider).getCapabilities();
+        if (Platform.isIOS) {
+          return _ref?.read(driftBackupProvider.notifier).startBackupWithURLSession(currentUser.id);
+        }
+
         return _ref
-            ?.read(uploadServiceProvider)
-            .startBackupWithHttpClient(currentUser.id, hasWifi, _cancellationToken);
+            ?.read(foregroundUploadServiceProvider)
+            .uploadCandidates(currentUser.id, _cancellationToken, useSequentialUpload: true);
       },
       (error, stack) {
         dPrint(() => "Error in backup zone $error, $stack");
@@ -586,21 +591,14 @@ Future<void> backgroundSyncNativeEntrypoint() async {
 
   final (isar, drift, logDB) = await Bootstrap.initDB();
   await Bootstrap.initDomain(isar, drift, logDB, shouldBufferLogs: false, listenStoreUpdates: false);
-
-  final certPinning = HttpCertPinningManager(
-    config: const CertPinningConfig(
-      allowFallback: false,
-      installRootsInSecurityContext: true,
-    ),
-  );
-  await certPinning.initialize();
+  await HttpCertPinningManager.ensureInitialized();
 
   final remoteAccessDependencies = await initHCDevice(
-    registerHostTrustedChain: certPinning.registerHostTrustedChain,
+    httpClient: NetworkRepository.client,
     isMainRuntime: false,
   );
 
-  final apiservice = ApiService(certPinning: certPinning);
+  final apiservice = ApiService();
 
   await BackgroundWorkerBgService(
     isar: isar,

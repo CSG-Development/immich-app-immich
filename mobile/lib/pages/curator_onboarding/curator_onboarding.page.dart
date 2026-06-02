@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 
 final _onboardingSteps = kCuratorOnboardingSlidesData;
@@ -75,6 +78,11 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
     final isBeta = Store.isBetaTimelineEnabled;
     if (isBeta) {
       await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+      final backgroundManager = ref.read(backgroundSyncProvider);
+      unawaited(backgroundManager.syncRemote());
+      if (ref.read(galleryPermissionNotifier.notifier).hasPermission) {
+        unawaited(backgroundManager.syncLocal(full: true));
+      }
       context.replaceRoute(const SplashScreenRoute());
       return;
     }
@@ -214,10 +222,14 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
                         child: GestureDetector(
                           onTap: _nextPage,
                           child: _currentPage < _onboardingSteps.length - 1
-                              ? SvgPicture.asset(
-                                  'assets/arrow-forward.svg',
-                                  colorFilter: ColorFilter.mode(context.colorScheme.onSurface, BlendMode.srcIn),
-                                )
+                              ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: SvgPicture.asset(
+                                    'assets/arrow-forward.svg',
+                                    colorFilter: ColorFilter.mode(context.colorScheme.onSurface, BlendMode.srcIn),
+                                  ),
+                              )
                               : Text(
                                   "curator.onboarding.done".tr(),
                                   style: TextStyle(color: context.colorScheme.onSurface, fontWeight: FontWeight.w500),

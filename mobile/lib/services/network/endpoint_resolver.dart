@@ -152,6 +152,7 @@ class HcDeviceEndpointResolver {
         } else {
           try {
             final resolved = await _apiService.resolveAndSetEndpoint(fallback, policy: triggerConfig.policy);
+            await _resolver.setAvailablePath(resolved);
             _log.info(
               '[Resolver] endpoint fallback activated '
               'trigger=$trigger '

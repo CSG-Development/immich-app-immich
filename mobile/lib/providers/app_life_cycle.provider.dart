@@ -9,6 +9,7 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
@@ -124,12 +125,16 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
     final routerStack = _ref.read(appRouterProvider).navigatorKey.currentContext?.router.stack;
 
-    final hasSplashScreenRoute = routerStack?.firstWhereOrNull((r) {
+    final hasSplashScreenRoute =
+        routerStack?.firstWhereOrNull((r) {
           return r.name == SplashScreenRoute.name;
-        }) != null;
-    final hasLockScreenRoute = routerStack?.firstWhereOrNull((r) {
+        }) !=
+        null;
+    final hasLockScreenRoute =
+        routerStack?.firstWhereOrNull((r) {
           return r.name == LockScreenRoute.name;
-        }) != null;
+        }) !=
+        null;
 
     final canShowLockScreen = !hasSplashScreenRoute && !hasLockScreenRoute;
 
@@ -226,21 +231,26 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     try {
       bool syncSuccess = false;
       await Future.wait([
-        _safeRun(backgroundManager.syncLocal(), "syncLocal"),
+        _safeRun(backgroundManager.syncLocal(full: CurrentPlatform.isAndroid ? true : false), "syncLocal"),
         _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemote"),
       ]);
       if (!syncSuccess) {
         // On app restart/resume reconnect can still be settling.
         // Retry once before surfacing syncFailed in the app bar badge.
         await Future<void>.delayed(const Duration(seconds: 2));
-        await _safeRun(
-          backgroundManager.syncRemote().then((success) => syncSuccess = success),
-          "syncRemoteRetry",
-        );
+        await _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemoteRetry");
       }
       final backupNotifier = _ref.read(driftBackupProvider.notifier);
       if (syncSuccess) {
         backupNotifier.updateError(BackupError.none);
+        await Future.wait([
+          _safeRun(backgroundManager.hashAssets(), "hashAssets").then((_) {
+            _resumeBackup();
+          }),
+          _resumeBackup(),
+          // TODO: Bring back when the soft freeze issue is addressed
+          // _safeRun(backgroundManager.syncCloudIds(), "syncCloudIds"),
+        ]);
       } else {
         backupNotifier.updateError(BackupError.syncFailed);
       }
@@ -336,21 +346,21 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     }
   }
 
-  Future<void> _performPause() async {
+  Future<void> _performPause() {
     if (_ref.read(authProvider).isAuthenticated) {
       if (Store.isBetaTimelineEnabled) {
         _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
       } else if (_ref.read(backupProvider.notifier).backupProgress != BackUpProgressEnum.manualInProgress) {
         // Do not cancel backup if manual upload is in progress
         _ref.read(backupProvider.notifier).cancelBackup();
+      } else {
+        _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
       }
 
       _ref.read(websocketProvider.notifier).disconnect();
     }
 
-    try {
-      LogService.I.flush();
-    } catch (_) {}
+    return LogService.I.flush().catchError((_) {});
   }
 
   Future<void> handleAppDetached() async {
@@ -362,7 +372,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
     // Flush logs before closing database
     try {
-      LogService.I.flush();
+      await LogService.I.flush();
     } catch (_) {}
 
     // Close Isar database safely

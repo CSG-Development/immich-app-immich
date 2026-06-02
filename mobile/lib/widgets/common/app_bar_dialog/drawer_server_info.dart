@@ -1,11 +1,14 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:immich_mobile/models/server_info/server_info.model.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
+import 'package:immich_mobile/widgets/common/app_bar_dialog/server_update_notification.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class DrawerServerInfo extends HookConsumerWidget {
@@ -15,14 +18,15 @@ class DrawerServerInfo extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
     final serverInfo = ref.watch(serverInfoProvider);
+    final user = ref.watch(currentUserProvider);
+    final bool showVersionWarning = ref.watch(versionWarningPresentProvider(user));
 
     final appInfo = useState<Map<String, String?>>({});
     final fontSize = 12.0;
     final isDarkTheme = context.isDarkTheme;
-    final borderColor =
-        context.isDarkTheme ? const Color(0xFF616161) : const Color(0xFFCBCDD3);
-    final textColor =
-        context.textTheme.bodySmall?.color?.withValues(alpha: 0.87);
+    final latestVersion = serverInfo.latestVersion;
+    final borderColor = context.isDarkTheme ? const Color(0xFF616161) : const Color(0xFFCBCDD3);
+    final textColor = context.textTheme.bodySmall?.color?.withValues(alpha: 0.87);
 
     useEffect(
       () {
@@ -48,10 +52,13 @@ class DrawerServerInfo extends HookConsumerWidget {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
+          if (showVersionWarning) ...[
+            const ServerUpdateNotification(),
+            const SizedBox(height: 8),
+          ],
           _InfoRow(
             label: "server_info_box_app_version".tr(),
-            value:
-                "${appInfo.value["version"] ?? '--'} build.${appInfo.value["buildNumber"] ?? '--'}",
+            value: "${appInfo.value["version"] ?? '--'} build.${appInfo.value["buildNumber"] ?? '--'}",
             borderColor: borderColor,
             style: rowTextStyle(),
           ),
@@ -72,23 +79,24 @@ class DrawerServerInfo extends HookConsumerWidget {
             tooltipColor: context.primaryColor.withValues(alpha: 0.9),
             tooltipTextColor: isDarkTheme ? Colors.black : Colors.white,
           ),
-          _InfoRow(
-            labelWidget: Row(
-              children: [
-                if (serverInfo.isNewReleaseAvailable)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 5.0),
-                    child: Icon(Icons.info, color: Color(0xFFF3BC6A), size: 12),
-                  ),
-                Text("latest_version".tr(), style: rowTextStyle()),
-              ],
+          if (latestVersion != null)
+            _InfoRow(
+              labelWidget: Row(
+                children: [
+                  if (serverInfo.versionStatus == VersionStatus.serverOutOfDate)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 5.0),
+                      child: Icon(Icons.info, color: Color(0xFFF3BC6A), size: 12),
+                    ),
+                  Text("latest_version".tr(), style: rowTextStyle()),
+                ],
+              ),
+              value: latestVersion.major > 0
+                  ? "${latestVersion.major}.${latestVersion.minor}.${latestVersion.patch}"
+                  : "--",
+              borderColor: borderColor,
+              style: rowTextStyle(),
             ),
-            value: serverInfo.latestVersion.major > 0
-                ? "${serverInfo.latestVersion.major}.${serverInfo.latestVersion.minor}.${serverInfo.latestVersion.patch}"
-                : "--",
-            borderColor: borderColor,
-            style: rowTextStyle(),
-          ),
         ],
       ),
     );

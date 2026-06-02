@@ -5,18 +5,22 @@ import android.os.Build
 import android.os.Bundle
 import android.os.ext.SdkExtensions
 import androidx.core.view.WindowCompat
+import com.seagate.curator.stxphotos.android.core.HttpClientManager
+import com.seagate.curator.stxphotos.android.core.NetworkApiPlugin
 import com.seagate.curator.stxphotos.android.background.BackgroundEngineLock
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerApiImpl
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostApi
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerLockApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApiImpl
-import com.seagate.curator.stxphotos.android.images.ThumbnailApi
-import com.seagate.curator.stxphotos.android.images.ThumbnailsImpl
+import com.seagate.curator.stxphotos.android.images.LocalImageApi
+import com.seagate.curator.stxphotos.android.images.LocalImagesImpl
+import com.seagate.curator.stxphotos.android.images.RemoteImageApi
+import com.seagate.curator.stxphotos.android.images.RemoteImagesImpl
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApi
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl26
 import com.seagate.curator.stxphotos.android.sync.NativeSyncApiImpl30
-import com.seagate.curator.stxphotos.android.sync.ImmichPlugin
+import com.seagate.curator.stxphotos.android.core.ImmichPlugin
 import com.seagate.curator.stxphotos.android.clipboard.NativeClipboardApi
 import com.seagate.curator.stxphotos.android.clipboard.ClipboardMessagesImpl
 import com.seagate.curator.stxphotos.android.certificate.CertificateFetcherApi
@@ -26,6 +30,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import com.seagate.curator.stxphotos.android.update.UpdateApi
 import com.seagate.curator.stxphotos.android.update.UpdateApiImpl
 import java.util.concurrent.ConcurrentHashMap
+import me.albemala.native_video_player.NativeVideoPlayerPlugin
 
 class MainActivity : FlutterFragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,9 +49,14 @@ class MainActivity : FlutterFragmentActivity() {
 
     fun registerPlugins(ctx: Context, flutterEngine: FlutterEngine) {
       val engineId = flutterEngine.hashCode()
+      HttpClientManager.initialize(ctx)
+      NativeVideoPlayerPlugin.dataSourceFactory = HttpClientManager::createDataSourceFactory
+      flutterEngine.plugins.add(NetworkApiPlugin())
       flutterEngine.plugins.add(TelemetryWrapperPlugin())
 
       val messenger = flutterEngine.dartExecutor.binaryMessenger
+      LocalImageApi.setUp(messenger, LocalImagesImpl(ctx))
+      RemoteImageApi.setUp(messenger, RemoteImagesImpl(ctx))
       val backgroundEngineLockImpl = BackgroundEngineLock(ctx)
       BackgroundWorkerLockApi.setUp(messenger, backgroundEngineLockImpl)
       val nativeSyncApiImpl =
@@ -56,7 +66,6 @@ class MainActivity : FlutterFragmentActivity() {
           NativeSyncApiImpl30(ctx)
         }
       NativeSyncApi.setUp(messenger, nativeSyncApiImpl)
-      ThumbnailApi.setUp(messenger, ThumbnailsImpl(ctx))
       BackgroundWorkerFgHostApi.setUp(messenger, BackgroundWorkerApiImpl(ctx))
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
       NativeClipboardApi.setUp(messenger, ClipboardMessagesImpl(ctx))

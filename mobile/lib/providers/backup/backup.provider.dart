@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:cancellation_token_http/http.dart';
+import 'package:cancellation_token_http/http.dart' as http;
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
@@ -68,7 +69,6 @@ class BackupNotifier extends StateNotifier<BackUpState> {
           progressInFileSpeeds: const [],
           progressInFileSpeedUpdateTime: DateTime.now(),
           progressInFileSpeedUpdateSentBytes: 0,
-          cancelToken: CancellationToken(),
           autoBackup: Store.get(StoreKey.autoBackup, false),
           backgroundBackup: Store.get(StoreKey.backgroundBackup, false),
           backupRequireWifi: Store.get(StoreKey.backupRequireWifi, true),
@@ -102,6 +102,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   final FileMediaRepository _fileMediaRepository;
   final BackupAlbumService _backupAlbumService;
   final Ref ref;
+  http.CancellationToken? _cancelToken;
 
   ///
   /// UI INTERACTION
@@ -389,7 +390,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
 
     state = state.copyWith(backgroundBackup: isEnabled);
     if (isEnabled != Store.get(StoreKey.backgroundBackup, !isEnabled)) {
-      Store.put(StoreKey.backgroundBackup, isEnabled);
+      await Store.put(StoreKey.backgroundBackup, isEnabled);
     }
 
     if (state.backupProgress != BackUpProgressEnum.inBackground) {
@@ -463,7 +464,8 @@ class BackupNotifier extends StateNotifier<BackUpState> {
       }
 
       // Perform Backup
-      state = state.copyWith(cancelToken: CancellationToken());
+      _cancelToken?.cancel();
+      _cancelToken = http.CancellationToken();
 
       final pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
 
@@ -474,7 +476,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
 
       await _backupService.backupAsset(
         assetsWillBeBackup,
-        state.cancelToken,
+        _cancelToken!,
         pmProgressHandler: pmProgressHandler,
         onSuccess: _onAssetUploaded,
         onProgress: _onUploadProgress,
@@ -483,7 +485,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
       );
       await notifyBackgroundServiceCanRun();
     } else {
-      openAppSettings();
+      await openAppSettings();
     }
   }
 
@@ -503,7 +505,8 @@ class BackupNotifier extends StateNotifier<BackUpState> {
     if (state.backupProgress != BackUpProgressEnum.inProgress) {
       notifyBackgroundServiceCanRun();
     }
-    state.cancelToken.cancel();
+    _cancelToken?.cancel();
+    _cancelToken = null;
     state = state.copyWith(
       backupProgress: BackUpProgressEnum.idle,
       progressInPercentage: 0.0,
@@ -542,10 +545,10 @@ class BackupNotifier extends StateNotifier<BackUpState> {
         progressInFileSpeedUpdateTime: DateTime.now(),
         progressInFileSpeedUpdateSentBytes: 0,
       );
-      _updatePersistentAlbumsSelection();
+      await _updatePersistentAlbumsSelection();
     }
 
-    updateDiskInfo();
+    await updateDiskInfo();
   }
 
   void _onUploadProgress(int sent, int total) {
@@ -596,11 +599,7 @@ class BackupNotifier extends StateNotifier<BackUpState> {
   }
 
   Future<void> _resumeBackup() async {
-    // Check if user is login
-    final accessKey = Store.tryGet(StoreKey.accessToken);
-
-    // User has been logged out return
-    if (accessKey == null || !_authState.isAuthenticated) {
+    if (!_authState.isAuthenticated) {
       log.info("[_resumeBackup] not authenticated - abort");
       return;
     }

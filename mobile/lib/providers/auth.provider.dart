@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:hc_device/hc_device.dart';
@@ -16,13 +17,14 @@ import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/auth.service.dart';
+import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
-import 'package:immich_mobile/services/upload.service.dart';
+import 'package:immich_mobile/services/background_upload.service.dart';
 import 'package:immich_mobile/services/widget.service.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/hash.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
-import 'package:immich_mobile/utils/debug_print.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
@@ -30,7 +32,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     ref.watch(authServiceProvider),
     ref.watch(apiServiceProvider),
     ref.watch(userServiceProvider),
-    ref.watch(uploadServiceProvider),
     ref.watch(secureStorageServiceProvider),
     ref.watch(widgetServiceProvider),
   );
@@ -41,7 +42,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
   final ApiService _apiService;
   final UserService _userService;
-  final UploadService _uploadService;
+
   final SecureStorageService _secureStorageService;
   final WidgetService _widgetService;
   final _log = Logger("AuthenticationNotifier");
@@ -53,7 +54,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._authService,
     this._apiService,
     this._userService,
-    this._uploadService,
     this._secureStorageService,
     this._widgetService,
   ) : super(
@@ -74,7 +74,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<LoginResponse> login(String email, String password) async {
     final response = await _authService.login(email, password);
-    await saveAuthInfo(accessToken: response.accessToken);
+    final didSave = await saveAuthInfo(accessToken: response.accessToken);
+    if (!didSave) {
+      throw ApiException(HttpStatus.unauthorized, 'Failed to establish authenticated session');
+    }
     return response;
   }
 
@@ -103,7 +106,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _log.warning("Timeout during secure storage/widget cleanup");
       }
 
-      Store.put(StoreKey.enableBiometric, false);
+      await Store.put(StoreKey.enableBiometric, false);
 
       try {
         await _authService.logout().timeout(const Duration(seconds: 8));
@@ -112,10 +115,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       try {
-        await _uploadService.cancelBackup().timeout(const Duration(seconds: 5));
+        await _ref.read(backgroundUploadServiceProvider).cancel().timeout(const Duration(seconds: 5));
       } on TimeoutException {
         _log.warning("Timeout during backup cancellation");
       }
+      _ref.read(foregroundUploadServiceProvider).cancel();
     } catch (error, stackTrace) {
       _log.severe("Error during logout", error, stackTrace);
     } finally {
@@ -155,6 +159,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> saveAuthInfo({required String accessToken}) async {
+    // Persist before network calls so guards/background isolates can read it immediately.
+    await Store.put(StoreKey.accessToken, accessToken);
     await _apiService.setAccessToken(accessToken);
     var didRetryAfterPathRecovery = false;
 
@@ -177,7 +183,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user = serverUser;
         await Store.put(StoreKey.deviceId, deviceId);
         await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
-        await Store.put(StoreKey.accessToken, accessToken);
       }
     } on ApiException catch (error, stackTrace) {
       final message = error.message ?? '';
@@ -189,16 +194,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         didRetryAfterPathRecovery = true;
         _log.warning('Transport error during refreshMyUser; retrying after resolver recovery');
         try {
-          await _ref.read(hcDeviceEndpointResolverProvider).resolveAndActivateWinner(
-            trigger: 'auth_save_info_transport_retry',
-            mode: ResolveMode.foreground,
-          );
+          await _ref
+              .read(hcDeviceEndpointResolverProvider)
+              .resolveAndActivateWinner(trigger: 'auth_save_info_transport_retry', mode: ResolveMode.foreground);
           final serverUser = await _userService.refreshMyUser().timeout(_timeoutDuration);
           if (serverUser != null) {
             user = serverUser;
             await Store.put(StoreKey.deviceId, deviceId);
             await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
-            await Store.put(StoreKey.accessToken, accessToken);
           }
         } catch (retryError, retryStackTrace) {
           _log.warning('Retry after resolver recovery failed', retryError, retryStackTrace);
@@ -235,6 +238,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Ensure resolver has at least one fallback
     // endpoint even before the first successful discovery cycle.
+    final currentEndpoint = _apiService.apiClient.basePath;
+    if (currentEndpoint.isNotEmpty) {
+      await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);
+    }
+
+    return true;
+  }
+
+  Future<bool> restoreSessionFromServer() async {
+    String deviceId = Store.tryGet(StoreKey.deviceId) ?? await FlutterUdid.consistentUdid;
+    UserDto? user = _userService.tryGetMyUser();
+
+    try {
+      final serverUser = await _userService.refreshMyUser().timeout(_timeoutDuration);
+      if (serverUser == null) {
+        _log.severe("Unable to get user information from the server.");
+      } else {
+        user = serverUser;
+        await Store.put(StoreKey.deviceId, deviceId);
+        await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
+      }
+    } on ApiException catch (error, stackTrace) {
+      if (error.code == 401) {
+        _log.severe("Unauthorized session.");
+        return false;
+      }
+      _log.severe("Error getting user information from the server [API EXCEPTION]", error, stackTrace);
+      return false;
+    } catch (error, stackTrace) {
+      _log.severe("Error getting user information from the server [CATCH ALL]", error, stackTrace);
+      dPrint(() => "Error getting user information from the server [CATCH ALL] $error $stackTrace");
+      return false;
+    }
+
+    if (user == null || !mounted) {
+      return false;
+    }
+
+    state = state.copyWith(
+      deviceId: deviceId,
+      userId: user.id,
+      userEmail: user.email,
+      isAuthenticated: true,
+      name: user.name,
+      isAdmin: user.isAdmin,
+    );
+
     final currentEndpoint = _apiService.apiClient.basePath;
     if (currentEndpoint.isNotEmpty) {
       await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);

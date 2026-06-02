@@ -258,6 +258,6 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     if (currentUser == null) {
       return;
     }
-    await _ref.read(driftBackupProvider.notifier).handleBackupResume(currentUser.id);
+    await _ref.read(driftBackupProvider.notifier).startBackupWithURLSession(currentUser.id);
   }
 }

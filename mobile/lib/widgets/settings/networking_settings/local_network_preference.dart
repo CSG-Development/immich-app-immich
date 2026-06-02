@@ -1,4 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'dart:async';
+
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -6,6 +8,8 @@ import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath, Devic
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/providers/network.provider.dart';
 
 class LocalNetworkPreference extends HookConsumerWidget {
   const LocalNetworkPreference({super.key, required this.enabled});
@@ -61,7 +65,7 @@ class LocalNetworkPreference extends HookConsumerWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 24),
-                      child: Text("local_network_sheet_info".tr(), style: context.textTheme.bodyMedium),
+                      child: Text("local_network_sheet_info".t(context: context), style: context.textTheme.bodyMedium),
                     ),
                     const SizedBox(height: 4),
                     Divider(color: context.colorScheme.surfaceContainerHighest),
@@ -69,23 +73,17 @@ class LocalNetworkPreference extends HookConsumerWidget {
                       enabled: enabled,
                       contentPadding: const EdgeInsets.only(left: 24, right: 8),
                       leading: const Icon(Icons.lan_rounded),
-                      title: Text("server_endpoint".tr()),
+                      title: Text("server_endpoint".t(context: context)),
                       subtitle: localEndpointText.value.isEmpty
                           ? const Text("http://local-ip:2283")
                           : Text(
                               localEndpointText.value,
                               style: context.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: enabled
-                                    ? context.primaryColor
-                                    : context.colorScheme.onSurface
-                                        .withAlpha(100),
+                                color: enabled ? context.primaryColor : context.colorScheme.onSurface.withAlpha(100),
+                                fontFamily: 'GoogleSansCode',
                               ),
                             ),
-                      trailing: const IconButton(
-                        onPressed: null,
-                        icon: Icon(Icons.edit_rounded),
-                      ),
+                      trailing: const IconButton(onPressed: null, icon: Icon(Icons.edit_rounded)),
                     ),
                     // const SizedBox(height: 16),
                     // Padding(

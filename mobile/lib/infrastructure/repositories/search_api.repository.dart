@@ -18,6 +18,33 @@ class SearchApiRepository extends ApiRepository {
       type = AssetTypeEnum.VIDEO;
     }
 
+    if ((filter.context != null && filter.context!.isNotEmpty) ||
+        (filter.assetId != null && filter.assetId!.isNotEmpty)) {
+      return _api.searchSmart(
+        SmartSearchDto(
+          query: filter.context,
+          queryAssetId: filter.assetId,
+          language: filter.language,
+          country: filter.location.country,
+          state: filter.location.state,
+          city: filter.location.city,
+          make: filter.camera.make,
+          model: filter.camera.model,
+          takenAfter: filter.date.takenAfter,
+          takenBefore: filter.date.takenBefore,
+          visibility: filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline,
+          rating: filter.rating.rating,
+          isFavorite: filter.display.isFavorite ? true : null,
+          isNotInAlbum: filter.display.isNotInAlbum ? true : null,
+          personIds: filter.people.map((e) => e.id).toList(),
+          tagIds: filter.tagIds,
+          type: type,
+          page: page,
+          size: 100,
+        ),
+      );
+    }
+
     final exifPlaceholders = _buildExifPlaceholders(filter.completedExifFilters);
 
     if (filter.context != null && filter.context!.isNotEmpty) {
@@ -25,6 +52,7 @@ class SearchApiRepository extends ApiRepository {
         query: filter.context!,
         language: filter.language,
         country: filter.location.country,
+        ocr: filter.ocr != null && filter.ocr!.isNotEmpty ? filter.ocr : null,
         state: filter.location.state,
         city: filter.location.city,
         make: filter.camera.make,
@@ -32,9 +60,11 @@ class SearchApiRepository extends ApiRepository {
         takenAfter: filter.date.takenAfter,
         takenBefore: filter.date.takenBefore,
         visibility: filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline,
+        rating: filter.rating.rating,
         isFavorite: filter.display.isFavorite ? true : null,
         isNotInAlbum: filter.display.isNotInAlbum ? true : null,
         personIds: filter.people.map((e) => e.id).toList(),
+        tagIds: filter.tagIds,
         type: type,
         page: page,
         size: 100,

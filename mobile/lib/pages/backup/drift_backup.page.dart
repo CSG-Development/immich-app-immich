@@ -39,34 +39,19 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
     WakelockPlus.enable();
 
     final currentUser = ref.read(currentUserProvider);
-    final backupNotifier = ref.read(driftBackupProvider.notifier);
-    final backupSyncManager = ref.read(backgroundSyncProvider);
     if (currentUser == null) {
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) {
-        return;
-      }
+      final backupNotifier = ref.read(driftBackupProvider.notifier);
+      final syncManager = ref.read(backgroundSyncProvider);
+
       await backupNotifier.getBackupStatus(currentUser.id);
-      if (!mounted) {
-        return;
-      }
 
       backupNotifier.updateSyncing(true);
-      syncSuccess = await backupSyncManager.syncRemote();
-      if (!mounted) {
-        return;
-      }
+      syncSuccess = await syncManager.syncRemote();
       backupNotifier.updateSyncing(false);
-
-      if (syncSuccess == true) {
-        backupNotifier.updateError(BackupError.none);
-      } else {
-        backupNotifier.updateError(BackupError.syncFailed);
-      }
-      await backupNotifier.refreshBackupNetworkGuard();
 
       if (mounted) {
         await backupNotifier.getBackupStatus(currentUser.id);
@@ -99,29 +84,18 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
       }
 
       if (syncSuccess == null) {
-        ref.read(driftBackupProvider.notifier).updateSyncing(true);
+        backupNotifier.updateSyncing(true);
         syncSuccess = await backupSyncManager.syncRemote();
-        ref.read(driftBackupProvider.notifier).updateSyncing(false);
+        backupNotifier.updateSyncing(false);
       }
 
       await backupNotifier.getBackupStatus(currentUser.id);
 
       if (syncSuccess == false) {
         Logger("DriftBackupPage").warning("Remote sync did not complete successfully, skipping backup");
-        backupNotifier.updateError(BackupError.syncFailed);
-        await backupNotifier.refreshBackupNetworkGuard();
         return;
       }
-
-      await backupNotifier.refreshBackupNetworkGuard();
-      if (!await backupNotifier.canResumeBackupOnCurrentNetwork()) {
-        return;
-      }
-      await backupNotifier.startBackup(currentUser.id);
-    }
-
-    Future<void> stopBackup() async {
-      await backupNotifier.cancel();
+      await backupNotifier.startForegroundBackup(currentUser.id);
     }
 
     return Scaffold(
@@ -159,10 +133,10 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
                   const _RemainderCard(),
                   const Divider(),
                   BackupToggleButton(
-                    onStart: startBackup,
+                    onStart: () async => await startBackup(),
                     onStop: () async {
                       syncSuccess = null;
-                      await stopBackup();
+                      await backupNotifier.stopForegroundBackup();
                     },
                   ),
                   switch (error) {
@@ -176,15 +150,35 @@ class _DriftBackupPageState extends ConsumerState<DriftBackupPage> {
                         children: [
                           Icon(Icons.warning_rounded, color: context.colorScheme.error, fill: 1),
                           const SizedBox(width: 8),
-                          // Text(
-                          //   IntlKeys.backup_error_sync_failed.t(),
-                          //   style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.error),
-                          //   textAlign: TextAlign.center,
-                          // ),
+                          Flexible(
+                            child: Text(
+                              "backup_error_sync_failed".t(context: context),
+                              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.error),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    BackupError.noWifiPermission => const _NetworkBlockedBanner(),
+                    BackupError.noWifiPermission => Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Icon(Icons.wifi_off_rounded, color: context.colorScheme.tertiary, fill: 1),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              "backup_network_blocked_message".t(context: context),
+                              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.tertiary),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   },
                   TextButton.icon(
                     icon: const Icon(Icons.info_outline_rounded),
@@ -295,7 +289,7 @@ class _BackupAlbumSelectionCard extends ConsumerWidget {
             if (currentUser == null) {
               return;
             }
-            ref.read(driftBackupProvider.notifier).getBackupStatus(currentUser.id);
+            unawaited(ref.read(driftBackupProvider.notifier).getBackupStatus(currentUser.id));
           },
           child: const Text("select", style: TextStyle(fontWeight: FontWeight.bold)).tr(),
         ),
@@ -373,6 +367,7 @@ class _RemainderCard extends ConsumerWidget {
                       remainderCount.toString(),
                       style: context.textTheme.titleLarge?.copyWith(
                         color: context.colorScheme.onSurface.withAlpha(syncStatus.isRemoteSyncing ? 50 : 255),
+                        fontFeatures: [const FontFeature.tabularFigures()],
                       ),
                     ),
                     if (syncStatus.isRemoteSyncing)
@@ -512,6 +507,7 @@ class _PreparingStatusState extends ConsumerState {
                     style: context.textTheme.titleMedium?.copyWith(
                       color: context.colorScheme.primary,
                       fontWeight: FontWeight.w600,
+                      fontFeatures: [const FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
@@ -536,6 +532,7 @@ class _PreparingStatusState extends ConsumerState {
                   style: context.textTheme.titleMedium?.copyWith(
                     color: context.primaryColor,
                     fontWeight: FontWeight.w600,
+                    fontFeatures: [const FontFeature.tabularFigures()],
                   ),
                 ),
               ],
@@ -543,52 +540,6 @@ class _PreparingStatusState extends ConsumerState {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _NetworkBlockedBanner extends ConsumerWidget {
-  const _NetworkBlockedBanner();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: context.colorScheme.tertiaryContainer.withValues(alpha: 0.3),
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          border: Border.all(color: context.colorScheme.tertiary.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.wifi_off_rounded, color: context.colorScheme.tertiary, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "backup_network_blocked_title".t(context: context),
-                    style: context.textTheme.titleSmall?.copyWith(
-                      color: context.colorScheme.tertiary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "backup_network_blocked_message".t(context: context),
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: context.colorScheme.onSurfaceSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

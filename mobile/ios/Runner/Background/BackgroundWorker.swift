@@ -95,7 +95,7 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     // Register plugins in the new engine
     GeneratedPluginRegistrant.register(with: engine)
     // Register custom plugins
-    AppDelegate.registerPlugins(with: engine)
+    AppDelegate.registerPlugins(with: engine, controller: nil)
     flutterApi = BackgroundWorkerFlutterApi(binaryMessenger: engine.binaryMessenger)
     BackgroundWorkerBgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: self)
     // Note: CertificateFetcherApiSetup is already set up by AppDelegate.registerPlugins
@@ -119,10 +119,6 @@ class BackgroundWorker: BackgroundWorkerBgHostApi {
     flutterApi?.onIosUpload(isRefresh: self.taskType == .refresh, maxSeconds: maxSeconds.map { Int64($0) }, completion: { result in
       self.handleHostResult(result: result)
     })
-  }
-  
-  func showNotification(title: String, content: String) throws {
-    // No-op on iOS for the time being
   }
   
   /**

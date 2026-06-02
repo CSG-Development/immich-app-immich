@@ -5,6 +5,7 @@ import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_shee
 import 'package:immich_mobile/presentation/widgets/map/map.state.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
+import 'package:immich_mobile/providers/user.provider.dart';
 
 class MapBottomSheet extends StatelessWidget {
   const MapBottomSheet({super.key});
@@ -13,7 +14,7 @@ class MapBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseBottomSheet(
       initialChildSize: 0.25,
-      maxChildSize: 0.9,
+      maxChildSize: 0.75,
       shouldCloseOnMinExtent: false,
       resizeOnScroll: false,
       actions: [],
@@ -32,8 +33,18 @@ class _ScopedMapTimeline extends StatelessWidget {
     return ProviderScope(
       overrides: [
         timelineServiceProvider.overrideWith((ref) {
-          final bounds = ref.watch(mapStateProvider).bounds;
-          final timelineService = ref.watch(timelineFactoryProvider).map(bounds);
+          final user = ref.watch(currentUserProvider);
+          if (user == null) {
+            throw Exception('User must be logged in to access archive');
+          }
+
+          final users = ref.watch(mapStateProvider).withPartners
+              ? ref.watch(timelineUsersProvider).valueOrNull ?? [user.id]
+              : [user.id];
+
+          final timelineService = ref
+              .watch(timelineFactoryProvider)
+              .map(users, ref.watch(mapStateProvider).toOptions());
           ref.onDispose(timelineService.dispose);
           return timelineService;
         }),

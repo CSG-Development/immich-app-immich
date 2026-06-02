@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -174,17 +176,17 @@ class CreateAlbumPage extends HookConsumerWidget {
             .watch(albumProvider.notifier)
             .createAlbum(ref.read(albumTitleProvider), selectedAssets.value);
 
-        if (newAlbum != null) {
-          ref.read(albumProvider.notifier).refreshRemoteAlbums();
-          selectedAssets.value = {};
-          ref.read(albumTitleProvider.notifier).clearAlbumTitle();
-          ref.read(albumViewerProvider.notifier).disableEditAlbum();
-          context.replaceRoute(AlbumViewerRoute(albumId: newAlbum.id));
-        }
-      } finally {
-        // Let overlay show briefly if operation was very fast
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (context.mounted) processingOverlay.value = false;
+if (newAlbum != null) {
+  await ref.read(albumProvider.notifier).refreshRemoteAlbums();
+  selectedAssets.value = {};
+  ref.read(albumTitleProvider.notifier).clearAlbumTitle();
+  ref.read(albumViewerProvider.notifier).disableEditAlbum();
+  unawaited(context.replaceRoute(AlbumViewerRoute(albumId: newAlbum.id)));
+}
+} finally {
+  // Let overlay show briefly if operation was very fast
+  await Future.delayed(const Duration(milliseconds: 300));
+  if (context.mounted) processingOverlay.value = false;
       }
     }
 

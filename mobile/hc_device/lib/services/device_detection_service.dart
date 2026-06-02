@@ -14,6 +14,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart'
     show Connectivity, ConnectivityResult;
 import 'package:hc_device/services/logger_service.dart';
+import 'package:hc_device/services/request_timeout_interceptor.dart';
 import 'package:hc_device/api/api.swagger.dart' show Api, About;
 import 'package:hc_device/api/remote_access.enums.swagger.dart'
     show DevicePathType;
@@ -370,16 +371,18 @@ class DeviceDetectionService {
     Duration timeoutDelay = timeoutLocalApiCall,
   }) async {
     try {
+      final timeoutInterceptor = CuratorRequestTimeoutInterceptor(timeoutDelay);
       final api = deviceProvider is DeviceProvider
           ? await (deviceProvider as DeviceProvider).createApi(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             )
           : Api.create(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             );
-      final response = await api.aboutGet().timeout(timeoutDelay);
+      // Native client enforces [timeoutDelay] via CuratorRequestTimeoutInterceptor.
+      final response = await api.aboutGet();
       if (response.isSuccessful) {
         return response.body!;
       }

@@ -12,9 +12,13 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
+import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
@@ -813,6 +817,18 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
+    Future<void> handleSyncFlow() async {
+      final backgroundManager = ref.read(backgroundSyncProvider);
+
+      await backgroundManager.syncLocal(full: true);
+      await backgroundManager.syncRemote();
+      await backgroundManager.hashAssets();
+
+      if (Store.get(StoreKey.syncAlbums, false)) {
+        await backgroundManager.syncLinkedAlbum();
+      }
+    }
+
     Future<void> login() async {
       if (hasPreviousLoginFailed.value) {
         return;
@@ -885,11 +901,30 @@ class CuratorLoginForm extends HookConsumerWidget {
           context.pushRoute(const ChangePasswordRoute());
         } else {
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
-          if (onboardingWasShown) {
-            context.replaceRoute(const SplashScreenRoute());
-          } else {
+          if (!onboardingWasShown) {
+            if (Store.isBetaTimelineEnabled) {
+              // Start remote sync during onboarding so the timeline is ready after permissions.
+              unawaited(ref.read(backgroundSyncProvider).syncRemote());
+              ref.read(websocketProvider.notifier).connect();
+            }
             context.replaceRoute(const CuratorOnboardingRoute());
+            return;
           }
+
+          final isBeta = Store.isBetaTimelineEnabled;
+          if (isBeta) {
+            await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+            unawaited(handleSyncFlow());
+            ref.read(websocketProvider.notifier).connect();
+            context.replaceRoute(const TabShellRoute());
+            return;
+          }
+
+          if (ref.read(galleryPermissionNotifier.notifier).hasPermission) {
+            unawaited(ref.read(backupProvider.notifier).resumeBackup());
+          }
+          ref.read(websocketProvider.notifier).connect();
+          context.replaceRoute(const TabControllerRoute());
         }
       } on ApiException catch (e) {
         if (e.code == 400 || e.code == 401 || e.code == 403) {

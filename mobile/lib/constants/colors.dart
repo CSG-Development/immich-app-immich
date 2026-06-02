@@ -1,18 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ImmichColorPreset {
-  indigo,
-  deepPurple,
-  pink,
-  red,
-  orange,
-  yellow,
-  lime,
-  green,
-  cyan,
-  slateGray,
-  curator
-}
+enum ImmichColorPreset { indigo, deepPurple, pink, red, orange, yellow, lime, green, cyan, slateGray, curator }
 
 const ImmichColorPreset defaultColorPreset = ImmichColorPreset.curator;
 const String defaultColorPresetName = "curator";
@@ -23,6 +11,6 @@ const Color immichBrandColorDark = Color(0xFFACCBFA);
 const Color curatorBrandColorLight = Color(0xFF1976D2);
 const Color curatorBrandColorDark = Color(0xFF64B5F6);
 
-const Color whiteOpacity75 = Color.fromARGB((0.75 * 255) ~/ 1, 255, 255, 255);
+const Color whiteOpacity75 = Color.fromRGBO(255, 255, 255, 0.75);
 const Color red400 = Color(0xFFEF5350);
 const Color grey200 = Color(0xFFEEEEEE);

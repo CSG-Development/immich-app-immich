@@ -1,5 +1,6 @@
 import BackgroundTasks
 import Flutter
+import native_video_player
 import network_info_plus
 import package_info_plus
 import path_provider_foundation
@@ -22,7 +23,7 @@ import Foundation
   ) -> Bool {
     // Required for flutter_local_notification
     if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+      UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     }
     
     func startAirPlayManager(flutterViewController: FlutterViewController) {
@@ -45,9 +46,11 @@ import Foundation
 
     configureAudioSession()
 
+    SwiftNativeVideoPlayerPlugin.cookieStorage = URLSessionManager.cookieStorage
+    URLSessionManager.patchBackgroundDownloader()
     GeneratedPluginRegistrant.register(with: self)
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
-    AppDelegate.registerPlugins(with: controller.engine)
+    AppDelegate.registerPlugins(with: controller.engine, controller: controller)
     BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
 
     BackgroundServicePlugin.registerBackgroundProcessing()
@@ -85,20 +88,23 @@ import Foundation
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
-  public static func registerPlugins(with engine: FlutterEngine) {
+  public static func registerPlugins(with engine: FlutterEngine, controller: FlutterViewController?) {
     NativeSyncApiImpl.register(with: engine.registrar(forPlugin: NativeSyncApiImpl.name)!)
-    ThumbnailApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ThumbnailApiImpl())
+    LocalImageApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: LocalImageApiImpl())
+    RemoteImageApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: RemoteImageApiImpl())
     BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: BackgroundWorkerApiImpl())
+    ConnectivityApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ConnectivityApiImpl())
     NativeClipboardApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ClipboardApiImpl())
     let fetcher = CertificateFetcherApiImplSimple()
     certificateFetchersLock.lock()
     certificateFetchers[ObjectIdentifier(engine)] = fetcher
     certificateFetchersLock.unlock()
     CertificateFetcherApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: fetcher)
+    NetworkApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: NetworkApiImpl(viewController: controller))
   }
 
   public static func cancelPlugins(with engine: FlutterEngine) {
-    (engine.valuePublished(byPlugin: NativeSyncApiImpl.name) as? NativeSyncApiImpl)?.detachFromEngine()
+    (engine.valuePublished(byPlugin: NativeSyncApiImpl.name) as? ImmichPlugin)?.detachFromEngine()
     certificateFetchersLock.lock()
     let fetcher = certificateFetchers.removeValue(forKey: ObjectIdentifier(engine))
     certificateFetchersLock.unlock()

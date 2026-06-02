@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
@@ -8,8 +10,7 @@ import 'package:isar/isar.dart';
 import '../../fixtures/user.stub.dart';
 import '../../test_utils.dart';
 
-const _kTestDeviceId = "#TestDeviceId";
-const _kTestAccessToken = "#TestAccessToken";
+const _kTestAccessToken = "#TestToken";
 final _kTestBackupFailed = DateTime(2025, 2, 20, 11, 45);
 const _kTestVersion = 10;
 const _kTestColorfulInterface = false;
@@ -100,7 +101,7 @@ void main() {
       final count = await db.storeValues.count();
       expect(count, isNot(isZero));
       await sut.deleteAll();
-      expectLater(await db.storeValues.count(), isZero);
+      unawaited(expectLater(await db.storeValues.count(), isZero));
     });
   });
 
@@ -125,29 +126,31 @@ void main() {
 
     test('watch()', () async {
       final stream = sut.watch(StoreKey.version);
-      expectLater(stream, emitsInOrder([_kTestVersion, _kTestVersion + 10]));
+      unawaited(expectLater(stream, emitsInOrder([_kTestVersion, _kTestVersion + 10])));
       await pumpEventQueue();
       await sut.upsert(StoreKey.version, _kTestVersion + 10);
     });
 
     test('watchAll()', () async {
       final stream = sut.watchAll();
-      expectLater(
-        stream,
-        emitsInOrder([
-          [
-            const StoreDto<Object>(StoreKey.version, _kTestVersion),
-            StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
-            const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
-            const StoreDto<Object>(StoreKey.colorfulInterface, _kTestColorfulInterface),
-          ],
-          [
-            const StoreDto<Object>(StoreKey.version, _kTestVersion + 10),
-            StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
-            const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
-            const StoreDto<Object>(StoreKey.colorfulInterface, _kTestColorfulInterface),
-          ],
-        ]),
+      unawaited(
+        expectLater(
+          stream,
+          emitsInOrder([
+            [
+              const StoreDto<Object>(StoreKey.version, _kTestVersion),
+              StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
+              const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
+              const StoreDto<Object>(StoreKey.colorfulInterface, _kTestColorfulInterface),
+            ],
+            [
+              const StoreDto<Object>(StoreKey.version, _kTestVersion + 10),
+              StoreDto<Object>(StoreKey.backupFailedSince, _kTestBackupFailed),
+              const StoreDto<Object>(StoreKey.accessToken, _kTestAccessToken),
+              const StoreDto<Object>(StoreKey.colorfulInterface, _kTestColorfulInterface),
+            ],
+          ]),
+        ),
       );
       await sut.upsert(StoreKey.version, _kTestVersion + 10);
     });

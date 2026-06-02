@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
@@ -62,7 +64,7 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
               .toDto(
                 assetCount: row.read(assetCount) ?? 0,
                 ownerName: row.read(_db.userEntity.name)!,
-                isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 2,
+                isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 0,
               ),
         )
         .get();
@@ -107,7 +109,7 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
               .toDto(
                 assetCount: row.read(assetCount) ?? 0,
                 ownerName: row.read(_db.userEntity.name)!,
-                isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 2,
+                isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 0,
               ),
         )
         .getSingleOrNull();
@@ -221,6 +223,15 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
         .get();
   }
 
+  Future<AlbumUserRole?> getUserRole(String albumId, String userId) async {
+    final query = _db.remoteAlbumUserEntity.select()
+      ..where((row) => row.albumId.equals(albumId) & row.userId.equals(userId))
+      ..limit(1);
+
+    final result = await query.getSingleOrNull();
+    return result?.role;
+  }
+
   Future<List<RemoteAsset>> getAssets(String albumId) {
     final query = _db.remoteAlbumAssetEntity.select().join([
       innerJoin(_db.remoteAssetEntity, _db.remoteAssetEntity.id.equalsExp(_db.remoteAlbumAssetEntity.assetId)),
@@ -305,32 +316,39 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
           .readTable(_db.remoteAlbumEntity)
           .toDto(
             ownerName: row.read(_db.userEntity.name)!,
-            isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 2,
+            isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 0,
           );
+
       return album;
     }).watchSingleOrNull();
   }
 
-  Future<DateTime?> getNewestAssetTimestamp(String albumId) {
-    final query = _db.remoteAlbumAssetEntity.selectOnly()
-      ..where(_db.remoteAlbumAssetEntity.albumId.equals(albumId))
-      ..addColumns([_db.remoteAssetEntity.localDateTime.max()])
-      ..join([
-        innerJoin(_db.remoteAssetEntity, _db.remoteAssetEntity.id.equalsExp(_db.remoteAlbumAssetEntity.assetId)),
-      ]);
+  Future<List<String>> getSortedAlbumIds(List<String> albumIds, {required AssetDateAggregation aggregation}) async {
+    if (albumIds.isEmpty) return [];
 
-    return query.map((row) => row.read(_db.remoteAssetEntity.localDateTime.max())).getSingleOrNull();
-  }
+    final jsonIds = jsonEncode(albumIds);
+    final sqlAgg = aggregation == AssetDateAggregation.start ? 'MIN' : 'MAX';
 
-  Future<DateTime?> getOldestAssetTimestamp(String albumId) {
-    final query = _db.remoteAlbumAssetEntity.selectOnly()
-      ..where(_db.remoteAlbumAssetEntity.albumId.equals(albumId))
-      ..addColumns([_db.remoteAssetEntity.localDateTime.min()])
-      ..join([
-        innerJoin(_db.remoteAssetEntity, _db.remoteAssetEntity.id.equalsExp(_db.remoteAlbumAssetEntity.assetId)),
-      ]);
+    final rows = await _db
+        .customSelect(
+          '''
+          SELECT
+            raae.album_id,
+            $sqlAgg(rae.local_date_time) AS asset_date
+          FROM json_each(?) ids
+          INNER JOIN remote_album_asset_entity raae
+            ON raae.album_id = ids.value
+          INNER JOIN remote_asset_entity rae
+            ON rae.id = raae.asset_id
+          GROUP BY raae.album_id
+          ORDER BY asset_date ASC
+          ''',
+          variables: [Variable<String>(jsonIds)],
+          readsFrom: {_db.remoteAlbumAssetEntity, _db.remoteAssetEntity},
+        )
+        .get();
 
-    return query.map((row) => row.read(_db.remoteAssetEntity.localDateTime.min())).getSingleOrNull();
+    return rows.map((row) => row.read<String>('album_id')).toList();
   }
 
   Future<int> getCount() {
@@ -371,6 +389,61 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
       );
 
     return query.map((row) => row.read(_db.remoteAssetEntity.id)!).get();
+  }
+
+  Future<List<RemoteAlbum>> getAlbumsContainingAsset(String assetId) async {
+    // Note: this needs to be 2 queries as the where clause filtering causes the assetCount to always be 1
+    final albumIdsQuery = _db.remoteAlbumAssetEntity.selectOnly()
+      ..addColumns([_db.remoteAlbumAssetEntity.albumId])
+      ..where(_db.remoteAlbumAssetEntity.assetId.equals(assetId));
+
+    final albumIds = await albumIdsQuery.map((row) => row.read(_db.remoteAlbumAssetEntity.albumId)!).get();
+
+    if (albumIds.isEmpty) {
+      return [];
+    }
+
+    final assetCount = _db.remoteAlbumAssetEntity.assetId.count(distinct: true);
+    final query =
+        _db.remoteAlbumEntity.select().join([
+            leftOuterJoin(
+              _db.remoteAlbumAssetEntity,
+              _db.remoteAlbumAssetEntity.albumId.equalsExp(_db.remoteAlbumEntity.id),
+              useColumns: false,
+            ),
+            leftOuterJoin(
+              _db.remoteAssetEntity,
+              _db.remoteAssetEntity.id.equalsExp(_db.remoteAlbumAssetEntity.assetId),
+              useColumns: false,
+            ),
+            leftOuterJoin(
+              _db.userEntity,
+              _db.userEntity.id.equalsExp(_db.remoteAlbumEntity.ownerId),
+              useColumns: false,
+            ),
+            leftOuterJoin(
+              _db.remoteAlbumUserEntity,
+              _db.remoteAlbumUserEntity.albumId.equalsExp(_db.remoteAlbumEntity.id),
+              useColumns: false,
+            ),
+          ])
+          ..where(_db.remoteAlbumEntity.id.isIn(albumIds) & _db.remoteAssetEntity.deletedAt.isNull())
+          ..addColumns([assetCount])
+          ..addColumns([_db.remoteAlbumUserEntity.userId.count(distinct: true)])
+          ..addColumns([_db.userEntity.name])
+          ..groupBy([_db.remoteAlbumEntity.id]);
+
+    return query
+        .map(
+          (row) => row
+              .readTable(_db.remoteAlbumEntity)
+              .toDto(
+                ownerName: row.read(_db.userEntity.name) ?? '',
+                isShared: row.read(_db.remoteAlbumUserEntity.userId.count(distinct: true))! > 0,
+                assetCount: row.read(assetCount) ?? 0,
+              ),
+        )
+        .get();
   }
 }
 

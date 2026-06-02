@@ -10,8 +10,7 @@
 //
 
 import 'dart:async' show Completer, unawaited;
-import 'dart:io' show HttpClient, SecurityContext;
-import 'package:http/io_client.dart' show IOClient;
+import 'package:http/http.dart' as http;
 
 import 'package:basic_utils/basic_utils.dart' show StringUtils;
 import 'package:chopper/chopper.dart';
@@ -103,8 +102,7 @@ class RemoteProvider extends Notifier<RemoteState>
 
   late final Map<String, dynamic> _storageData;
   late final FlutterSecureStorage _secureStorage;
-  late final Future<void> Function({required String host, int? port})
-      _registerHostTrustedChain;
+  late final http.Client _httpClient;
   late final String? _currentSessionId;
   late final String? _lastProactiveRefreshSessionId;
   late final DateTime? _accessExpiryAt;
@@ -127,7 +125,7 @@ class RemoteProvider extends Notifier<RemoteState>
     final deps = ref.read(remoteAccessDependenciesProvider);
     _storageData = deps.storageData;
     _secureStorage = deps.secureStorage;
-    _registerHostTrustedChain = deps.registerHostTrustedChain;
+    _httpClient = deps.httpClient;
     _isMainRuntime = deps.isMainRuntime;
     _authRepo = AuthRepository(_secureStorage);
     final secureData = deps.secureData;
@@ -138,12 +136,10 @@ class RemoteProvider extends Notifier<RemoteState>
     _accessExpiryAt = _readStorageDateTimeFromEpoch(accessExpiryEpochMsKey);
     _initClientId();
 
-    final HttpClient client = HttpClient(context: SecurityContext.defaultContext);
-
     _api = _apiClientFactory.create(
       baseUrl: Uri.parse(baseUrl),
       authProvider: this,
-      httpClient: IOClient(client),
+      httpClient: _httpClient,
     );
     _repo = RemoteRepository(() => _api);
     final initial = RemoteState(
@@ -196,11 +192,7 @@ class RemoteProvider extends Notifier<RemoteState>
   String? get reference => state.reference;
   RemoteAccess get api => _api;
 
-  Future<RemoteAccess> getPinnedApi() async {
-    final uri = Uri.parse(baseUrl);
-    await _registerHostTrustedChain(host: uri.host, port: uri.port);
-    return _api;
-  }
+  Future<RemoteAccess> getPinnedApi() async => _api;
 
   /// Initialize clientId with a unique, persistent identifier per device/app install
   void _initClientId() {

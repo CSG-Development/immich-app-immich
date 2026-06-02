@@ -32,7 +32,7 @@ import 'package:hc_device/data/repositories/device_repository.dart';
 import 'package:hc_device/providers/auth.api.dart';
 import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
 import 'package:hc_device/services/logger_service.dart';
-import 'package:http/io_client.dart' show IOClient;
+import 'package:http/http.dart' as http;
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferencesAsync;
@@ -217,8 +217,7 @@ class DeviceProvider extends Notifier<DeviceState>
 
   late final Map<String, dynamic> _storageData;
   late final FlutterSecureStorage _secureStorage;
-  late final Future<void> Function({required String host, int? port})
-      _registerHostTrustedChain;
+  late final http.Client _httpClient;
   late final DeviceRepository _repo;
   late final AuthRepository _authRepo;
   final DeviceApiClientFactory _apiClientFactory = const DeviceApiClientFactory();
@@ -228,7 +227,7 @@ class DeviceProvider extends Notifier<DeviceState>
     final deps = ref.read(remoteAccessDependenciesProvider);
     _storageData = deps.storageData;
     _secureStorage = deps.secureStorage;
-    _registerHostTrustedChain = deps.registerHostTrustedChain;
+    _httpClient = deps.httpClient;
     _authRepo = AuthRepository(_secureStorage);
     _repo = DeviceRepository(() => api);
 
@@ -620,11 +619,10 @@ class DeviceProvider extends Notifier<DeviceState>
     Authenticator? authenticator,
     List<Interceptor>? interceptors,
   }) async {
-    await _registerHostTrustedChain(host: baseUrl.host, port: baseUrl.port);
     return _apiClientFactory.create(
       baseUrl: baseUrl,
       authProvider: this,
-      httpClient: IOClient(),
+      httpClient: _httpClient,
       authenticator: authenticator,
       interceptors: interceptors,
     );
