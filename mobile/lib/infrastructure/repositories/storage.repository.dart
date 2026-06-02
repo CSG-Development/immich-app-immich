@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:logging/logging.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -85,13 +86,13 @@ class StorageRepository {
     try {
       final entity = await AssetEntity.fromId(assetId);
       if (entity == null) {
-        log.warning('Cannot get AssetEntity for asset $assetId');
+        log.warning("Cannot get AssetEntity for asset $assetId");
         return false;
       }
 
       return await entity.isLocallyAvailable(isOrigin: true);
     } catch (error, stackTrace) {
-      log.warning('Error checking if asset is locally available $assetId', error, stackTrace);
+      log.warning("Error checking if asset is locally available $assetId", error, stackTrace);
       return false;
     }
   }
@@ -100,13 +101,13 @@ class StorageRepository {
     try {
       final entity = await AssetEntity.fromId(assetId);
       if (entity == null) {
-        log.warning('Cannot get AssetEntity for asset $assetId');
+        log.warning("Cannot get AssetEntity for asset $assetId");
         return null;
       }
 
       return await entity.loadFile(progressHandler: progressHandler);
     } catch (error, stackTrace) {
-      log.warning('Error loading file from cloud for asset $assetId', error, stackTrace);
+      log.warning("Error loading file from cloud for asset $assetId", error, stackTrace);
       return null;
     }
   }
@@ -115,13 +116,13 @@ class StorageRepository {
     try {
       final entity = await AssetEntity.fromId(assetId);
       if (entity == null) {
-        log.warning('Cannot get AssetEntity for asset $assetId');
+        log.warning("Cannot get AssetEntity for asset $assetId");
         return null;
       }
 
       return await entity.loadFile(withSubtype: true, progressHandler: progressHandler);
     } catch (error, stackTrace) {
-      log.warning('Error loading motion file from cloud for asset $assetId', error, stackTrace);
+      log.warning("Error loading motion file from cloud for asset $assetId", error, stackTrace);
       return null;
     }
   }
@@ -133,6 +134,18 @@ class StorageRepository {
       await PhotoManager.clearFileCache();
     } catch (error, stackTrace) {
       log.warning("Error clearing cache", error, stackTrace);
+    }
+
+    if (!CurrentPlatform.isIOS) {
+      return;
+    }
+
+    try {
+      if (await Directory.systemTemp.exists()) {
+        await Directory.systemTemp.delete(recursive: true);
+      }
+    } catch (error, stackTrace) {
+      log.warning("Error deleting temporary directory", error, stackTrace);
     }
   }
 }

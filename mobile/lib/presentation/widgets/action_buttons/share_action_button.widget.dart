@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -31,23 +32,29 @@ class _SharePreparingDialog extends StatelessWidget {
 
 class ShareActionButton extends ConsumerWidget {
   final ActionSource source;
+  final bool iconOnly;
+  final bool menuItem;
 
-  const ShareActionButton({super.key, required this.source});
+  const ShareActionButton({super.key, required this.source, this.iconOnly = false, this.menuItem = false});
 
   void _onTap(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) {
       return;
     }
 
-    showDialog(
+    final cancelCompleter = Completer<void>();
+    const preparingDialog = _SharePreparingDialog();
+    await showDialog(
       context: context,
       builder: (BuildContext buildContext) {
-        ref.read(actionProvider.notifier).shareAssets(source, context).then((ActionResult result) {
-          ref.read(multiSelectProvider.notifier).reset();
-
-          if (!context.mounted) {
+        ref.read(actionProvider.notifier).shareAssets(source, context, cancelCompleter: cancelCompleter).then((
+          ActionResult result,
+        ) {
+          if (cancelCompleter.isCompleted || !context.mounted) {
             return;
           }
+
+          ref.read(multiSelectProvider.notifier).reset();
 
           if (!result.success) {
             ImmichToast.show(
@@ -62,11 +69,15 @@ class ShareActionButton extends ConsumerWidget {
         });
 
         // show a loading spinner with a "Preparing" message
-        return const _SharePreparingDialog();
+        return preparingDialog;
       },
       barrierDismissible: false,
       useRootNavigator: false,
-    );
+    ).then((_) {
+      if (!cancelCompleter.isCompleted) {
+        cancelCompleter.complete();
+      }
+    });
   }
 
   @override
@@ -74,6 +85,8 @@ class ShareActionButton extends ConsumerWidget {
     return BaseActionButton(
       iconData: Platform.isAndroid ? Icons.share_rounded : Icons.ios_share_rounded,
       label: 'share'.t(context: context),
+      iconOnly: iconOnly,
+      menuItem: menuItem,
       onPressed: () => _onTap(context, ref),
     );
   }

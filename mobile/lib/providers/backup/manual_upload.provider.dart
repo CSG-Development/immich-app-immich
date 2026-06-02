@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:cancellation_token_http/http.dart';
+import 'package:cancellation_token_http/http.dart' as http;
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
@@ -27,11 +28,11 @@ import 'package:immich_mobile/services/backup_album.service.dart';
 import 'package:immich_mobile/services/local_notification.service.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
-import 'package:immich_mobile/utils/debug_print.dart';
 
 final manualUploadProvider = StateNotifierProvider<ManualUploadNotifier, ManualUploadState>((ref) {
   return ManualUploadNotifier(
@@ -51,6 +52,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
   final BackupAlbumService _backupAlbumService;
   final Ref ref;
   String? _runId;
+  http.CancellationToken? _cancelToken;
 
   ManualUploadNotifier(
     this._localNotificationService,
@@ -66,7 +68,6 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
           progressInFileSpeeds: const [],
           progressInFileSpeedUpdateTime: DateTime.now(),
           progressInFileSpeedUpdateSentBytes: 0,
-          cancelToken: CancellationToken(),
           currentUploadAsset: CurrentUploadAsset(
             id: '...',
             fileCreatedAt: DateTime.parse('2020-10-04'),
@@ -229,10 +230,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
           status: BackupTraceStatus.ok,
           reasonCode: 'MANUAL_LOCAL_FILTER_APPLIED',
           runId: _runId,
-          extra: {
-            'selectedAssets': allManualUploads.length,
-            'localOnlyAssets': allAssetsFromDevice.length,
-          },
+          extra: {'selectedAssets': allManualUploads.length, 'localOnlyAssets': allAssetsFromDevice.length},
         );
 
         final selectedBackupAlbums = await _backupAlbumService.getAllBySelection(BackupSelection.select);
@@ -283,7 +281,6 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
             fileName: '...',
             fileType: '...',
           ),
-          cancelToken: CancellationToken(),
         );
         // Reset Error List
         ref.watch(errorBackupListProvider.notifier).empty();
@@ -299,11 +296,13 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         state = state.copyWith(showDetailedNotification: showDetailedNotification);
         final pmProgressHandler = Platform.isIOS ? PMProgressHandler() : null;
 
+        _cancelToken?.cancel();
+        _cancelToken = http.CancellationToken();
         final bool ok = await ref
             .read(backupServiceProvider)
             .backupAsset(
               uploadAssets,
-              state.cancelToken,
+              _cancelToken!,
               pmProgressHandler: pmProgressHandler,
               onSuccess: _onAssetUploaded,
               onProgress: _onProgress,
@@ -327,7 +326,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
             'total': state.totalAssetsToUpload,
             'successful': state.successfulUploads,
             'failed': state.totalAssetsToUpload - state.successfulUploads,
-            'cancelled': state.cancelToken.isCancelled,
+            'cancelled': _cancelToken?.isCancelled ?? false,
           },
         );
 
@@ -340,14 +339,14 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         );
 
         // User cancelled upload
-        if (!ok && state.cancelToken.isCancelled) {
+        if (!ok && _cancelToken == null) {
           await _localNotificationService.showOrUpdateManualUploadStatus(
             "backup_manual_title".tr(),
             "backup_manual_cancelled".tr(),
             presentBanner: true,
           );
           hasErrors = true;
-        } else if (state.successfulUploads == 0 || (!ok && !state.cancelToken.isCancelled)) {
+        } else if (state.successfulUploads == 0 || (!ok && _cancelToken != null)) {
           await _localNotificationService.showOrUpdateManualUploadStatus(
             "backup_manual_title".tr(),
             "failed".tr(),
@@ -362,7 +361,7 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
           );
         }
       } else {
-        openAppSettings();
+        unawaited(openAppSettings());
         dPrint(() => "[_startUpload] Do not have permission to the gallery");
         logBackupTrace(
           _log,
@@ -419,7 +418,8 @@ class ManualUploadNotifier extends StateNotifier<ManualUploadState> {
         _backupProvider.backupProgress != BackUpProgressEnum.manualInProgress) {
       _backupProvider.notifyBackgroundServiceCanRun();
     }
-    state.cancelToken.cancel();
+    _cancelToken?.cancel();
+    _cancelToken = null;
     if (_backupProvider.backupProgress != BackUpProgressEnum.manualInProgress) {
       _backupProvider.updateBackupProgress(BackUpProgressEnum.idle);
     }

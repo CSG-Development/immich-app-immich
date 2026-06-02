@@ -28,29 +28,29 @@ import 'package:path_provider/path_provider.dart';
 void configureFileDownloaderNotifications() {
   FileDownloader().configureNotificationForGroup(
     kDownloadGroupImage,
-    running: TaskNotification('downloading_media'.t(), '${'file_name'.t()}: {filename}'),
-    complete: TaskNotification('download_finished'.t(), '${'file_name'.t()}: {filename}'),
+    running: TaskNotification('downloading_media'.t(), '${'file_name_text'.t()}: {filename}'),
+    complete: TaskNotification('download_finished'.t(), '${'file_name_text'.t()}: {filename}'),
     progressBar: true,
   );
 
   FileDownloader().configureNotificationForGroup(
     kDownloadGroupVideo,
-    running: TaskNotification('downloading_media'.t(), '${'file_name'.t()}: {filename}'),
-    complete: TaskNotification('download_finished'.t(), '${'file_name'.t()}: {filename}'),
+    running: TaskNotification('downloading_media'.t(), '${'file_name_text'.t()}: {filename}'),
+    complete: TaskNotification('download_finished'.t(), '${'file_name_text'.t()}: {filename}'),
     progressBar: true,
   );
 
   FileDownloader().configureNotificationForGroup(
     kManualUploadGroup,
     running: TaskNotification('uploading_media'.t(), 'backup_background_service_in_progress_notification'.t()),
-    complete: TaskNotification('upload_finished'.t(), 'backup_background_service_in_progress_notification'.t()),
+    complete: TaskNotification('upload_finished'.t(), 'backup_background_service_complete_notification'.t()),
     groupNotificationId: kManualUploadGroup,
   );
 
   FileDownloader().configureNotificationForGroup(
     kBackupGroup,
     running: TaskNotification('uploading_media'.t(), 'backup_background_service_in_progress_notification'.t()),
-    complete: TaskNotification('upload_finished'.t(), 'backup_background_service_in_progress_notification'.t()),
+    complete: TaskNotification('upload_finished'.t(), 'backup_background_service_complete_notification'.t()),
     groupNotificationId: kBackupGroup,
   );
 }
@@ -106,5 +106,7 @@ abstract final class Bootstrap {
       storeRepository: storeRepo,
       shouldBuffer: shouldBufferLogs,
     );
+
+    // NetworkRepository.init runs after HttpCertPinningManager.initialize() in main().
   }
 }

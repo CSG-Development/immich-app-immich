@@ -83,28 +83,14 @@ class FolderPage extends HookConsumerWidget {
         child: folderState.when(
           data: (rootFolder) {
             if (folder == null) {
-              return FolderContent(
-                folder: rootFolder,
-                root: rootFolder,
-                sortOrder: sortOrder.value,
-              );
+              return FolderContent(folder: rootFolder, root: rootFolder, sortOrder: sortOrder.value);
             } else {
-              return FolderContent(
-                folder: currentFolder.value!,
-                root: rootFolder,
-                sortOrder: sortOrder.value,
-              );
+              return FolderContent(folder: currentFolder.value!, root: rootFolder, sortOrder: sortOrder.value);
             }
           },
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) {
-            ImmichToast.show(
-              context: context,
-              msg: "failed_to_load_folder".tr(),
-              toastType: ToastType.error,
-            );
+            ImmichToast.show(context: context, msg: "failed_to_load_folder".tr(), toastType: ToastType.error);
             return Center(child: const Text("failed_to_load_folder").tr());
           },
         ),
@@ -250,6 +236,7 @@ class FolderPath extends StatelessWidget {
               Text(
                 currentFolder.path,
                 style: TextStyle(
+                  fontFamily: 'GoogleSansCode',
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: context.colorScheme.onSurface.withAlpha(175),

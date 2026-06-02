@@ -1,8 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 
-enum SortOrder { asc, desc }
+enum SortOrder {
+  asc,
+  desc;
 
-enum TextSearchType { context, filename, description }
+  SortOrder reverse() {
+    return this == SortOrder.asc ? SortOrder.desc : SortOrder.asc;
+  }
+}
+
+enum TextSearchType { context, filename, description, ocr }
 
 enum AssetVisibilityEnum { timeline, hidden, archive, locked }
 
@@ -23,3 +30,9 @@ enum AppLockTimeout {
   String tr() => translationKey.tr();
   Duration get during => Duration(minutes: durationinMinutes);
 }
+
+enum CleanupStep { selectDate, filterOptions, scan, delete }
+
+enum AssetKeepType { none, photosOnly, videosOnly }
+
+enum AssetDateAggregation { start, end }

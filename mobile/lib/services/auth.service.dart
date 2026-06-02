@@ -13,6 +13,7 @@ import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/repositories/auth.repository.dart';
 import 'package:immich_mobile/repositories/auth_api.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:logging/logging.dart';
@@ -62,6 +63,29 @@ class AuthService {
     return validUrl;
   }
 
+  Future<bool> validateAuxilaryServerUrl(String url) async {
+    bool isValid = false;
+
+    try {
+      final urls = ApiService.getServerUrls();
+      urls.add(url);
+      await NetworkRepository.setHeaders(
+        ApiService.getRequestHeaders(),
+        urls,
+        token: _apiService.transientAccessToken ?? Store.tryGet(StoreKey.accessToken),
+      );
+      final uri = Uri.parse('$url/users/me');
+      final response = await NetworkRepository.client.get(uri);
+      if (response.statusCode == 200) {
+        isValid = true;
+      }
+    } catch (error) {
+      _log.severe("Error validating auxiliary endpoint", error);
+    }
+
+    return isValid;
+  }
+
   Future<LoginResponse> login(String email, String password) {
     return _authApiRepository.login(email, password);
   }
@@ -96,7 +120,6 @@ class AuthService {
   /// This method performs a concurrent deletion of:
   /// - Authentication repository data
   /// - Current user information
-  /// - Access token
   /// - Asset ETag
   ///
   /// All deletions are executed in parallel using [Future.wait].
@@ -104,6 +127,7 @@ class AuthService {
     // Cancel any ongoing background sync operations before clearing data
     await _backgroundSyncManager.cancel();
     await _hcPathResolver.clearPhotosSession();
+    await _apiService.clearAccessToken();
     _apiService.setEndpoint('');
     _apiService.notifyConnectionState(
       const conn.ConnectionState(
@@ -114,7 +138,6 @@ class AuthService {
     await Future.wait([
       _authRepository.clearLocalData(),
       Store.delete(StoreKey.currentUser),
-      Store.delete(StoreKey.accessToken),
       Store.delete(StoreKey.assetETag),
       Store.delete(StoreKey.serverEndpoint),
       Store.delete(StoreKey.autoEndpointSwitching),

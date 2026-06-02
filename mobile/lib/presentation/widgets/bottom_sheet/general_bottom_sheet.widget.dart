@@ -113,7 +113,7 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
         const DuplicateActionButton(source: ActionSource.timeline),
         if (multiselect.hasRemote) ...[
           const ShareLinkActionButton(source: ActionSource.timeline),
-          const DownloadActionButton(source: ActionSource.timeline),
+          if (multiselect.onlyRemote) const DownloadActionButton(source: ActionSource.timeline),
           isTrashEnable
               ? const TrashActionButton(source: ActionSource.timeline)
               : const DeletePermanentActionButton(source: ActionSource.timeline),
@@ -124,10 +124,11 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           const MoveToLockFolderActionButton(source: ActionSource.timeline),
           if (multiselect.selectedAssets.length > 1) const StackActionButton(source: ActionSource.timeline),
           if (multiselect.hasStacked) const UnStackActionButton(source: ActionSource.timeline),
-          const DeleteActionButton(source: ActionSource.timeline),
+          if (multiselect.onlyLocal || multiselect.hasMerged) const DeleteActionButton(source: ActionSource.timeline),
         ],
-        if (multiselect.hasLocal || multiselect.hasMerged) const DeleteLocalActionButton(source: ActionSource.timeline),
-        if (multiselect.hasLocal) const UploadActionButton(source: ActionSource.timeline),
+        if (multiselect.onlyLocal || multiselect.hasMerged)
+          const DeleteLocalActionButton(source: ActionSource.timeline),
+        if (multiselect.onlyLocal) const UploadActionButton(source: ActionSource.timeline),
       ],
       slivers: multiselect.hasRemote
           ? [

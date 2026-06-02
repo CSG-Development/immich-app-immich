@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
@@ -35,25 +36,29 @@ class LoginPage extends HookConsumerWidget {
     });
 
     return Scaffold(
-      appBar: isRemoteAccessForm.value ? null :AppBar(
-        leading: isRemoteAccessForm.value
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  isRemoteAccessForm.value = true;
-                },
-              ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        systemOverlayStyle: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-        actions: devEnableSettingsOnLogin ? [
-          IconButton(
-            icon: const Icon(Icons.settings, size: 24.0),
-            onPressed: () => context.pushRoute(const SettingsRoute()),
-          ),
-        ] : null,
-      ),
+      appBar: isRemoteAccessForm.value
+          ? null
+          : AppBar(
+              leading: isRemoteAccessForm.value
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        isRemoteAccessForm.value = true;
+                      },
+                    ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              systemOverlayStyle: context.isDarkTheme ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+              actions: devEnableSettingsOnLogin
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.settings, size: 24.0),
+                        onPressed: () => context.pushRoute(const SettingsRoute()),
+                      ),
+                    ]
+                  : null,
+            ),
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -64,7 +69,10 @@ class LoginPage extends HookConsumerWidget {
             return SingleChildScrollView(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isWide ? 400 : double.infinity, minHeight: constraints.maxHeight),
+                  constraints: BoxConstraints(
+                    maxWidth: isWide ? 400 : double.infinity,
+                    minHeight: constraints.maxHeight,
+                  ),
                   child: IntrinsicHeight(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
@@ -88,6 +96,41 @@ class LoginPage extends HookConsumerWidget {
               ),
             );
           },
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: SizedBox(
+            height: 50,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'v${appVersion.value}',
+                  style: TextStyle(
+                    color: context.colorScheme.onSurfaceSecondary,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "GoogleSansCode",
+                  ),
+                ),
+                const Text(' '),
+                GestureDetector(
+                  child: Text(
+                    'Logs',
+                    style: TextStyle(
+                      color: context.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "GoogleSansCode",
+                    ),
+                  ),
+                  onTap: () {
+                    context.pushRoute(const AppLogRoute());
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

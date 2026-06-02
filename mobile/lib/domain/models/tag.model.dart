@@ -76,4 +76,4 @@ class Tag {
   @override
   String toString() =>
       'Tag(id: $id, name: $name, value: $value, color: $color, parentId: $parentId, createdAt: $createdAt, updatedAt: $updatedAt)';
-} 
+}

@@ -16,7 +16,9 @@ class PartnersApi {
 
   final ApiClient apiClient;
 
-  /// This endpoint requires the `partner.create` permission.
+  /// Create a partner
+  ///
+  /// Create a new partner to share assets with.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -48,7 +50,9 @@ class PartnersApi {
     );
   }
 
-  /// This endpoint requires the `partner.create` permission.
+  /// Create a partner
+  ///
+  /// Create a new partner to share assets with.
   ///
   /// Parameters:
   ///
@@ -68,7 +72,9 @@ class PartnersApi {
     return null;
   }
 
-  /// This property was deprecated in v1.141.0. This endpoint requires the `partner.create` permission.
+  /// Create a partner
+  ///
+  /// Create a new partner to share assets with.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -101,7 +107,9 @@ class PartnersApi {
     );
   }
 
-  /// This property was deprecated in v1.141.0. This endpoint requires the `partner.create` permission.
+  /// Create a partner
+  ///
+  /// Create a new partner to share assets with.
   ///
   /// Parameters:
   ///
@@ -121,13 +129,16 @@ class PartnersApi {
     return null;
   }
 
-  /// This endpoint requires the `partner.read` permission.
+  /// Retrieve partners
+  ///
+  /// Retrieve a list of partners with whom assets are shared.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [PartnerDirection] direction (required):
+  ///   Partner direction
   Future<Response> getPartnersWithHttpInfo(PartnerDirection direction,) async {
     // ignore: prefer_const_declarations
     final apiPath = r'/partners';
@@ -155,11 +166,14 @@ class PartnersApi {
     );
   }
 
-  /// This endpoint requires the `partner.read` permission.
+  /// Retrieve partners
+  ///
+  /// Retrieve a list of partners with whom assets are shared.
   ///
   /// Parameters:
   ///
   /// * [PartnerDirection] direction (required):
+  ///   Partner direction
   Future<List<PartnerResponseDto>?> getPartners(PartnerDirection direction,) async {
     final response = await getPartnersWithHttpInfo(direction,);
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -178,7 +192,9 @@ class PartnersApi {
     return null;
   }
 
-  /// This endpoint requires the `partner.delete` permission.
+  /// Remove a partner
+  ///
+  /// Stop sharing assets with a partner.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -211,7 +227,9 @@ class PartnersApi {
     );
   }
 
-  /// This endpoint requires the `partner.delete` permission.
+  /// Remove a partner
+  ///
+  /// Stop sharing assets with a partner.
   ///
   /// Parameters:
   ///
@@ -223,7 +241,9 @@ class PartnersApi {
     }
   }
 
-  /// This endpoint requires the `partner.update` permission.
+  /// Update a partner
+  ///
+  /// Specify whether a partner's assets should appear in the user's timeline.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -258,7 +278,9 @@ class PartnersApi {
     );
   }
 
-  /// This endpoint requires the `partner.update` permission.
+  /// Update a partner
+  ///
+  /// Specify whether a partner's assets should appear in the user's timeline.
   ///
   /// Parameters:
   ///

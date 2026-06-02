@@ -1,4 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'dart:convert';
+
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath, DevicePathType;
@@ -19,9 +21,7 @@ class ExternalNetworkPreference extends HookConsumerWidget {
     final cachedPaths = deviceState.seagateDeviceID == null
         ? null
         : device.getCachedDevicePathsForDevice(deviceState.seagateDeviceID!);
-    final allPaths = (activePaths ?? cachedPaths?.paths ?? const <DevicePath>[])
-        .whereType<DevicePath>()
-        .toList();
+    final allPaths = (activePaths ?? cachedPaths?.paths ?? const <DevicePath>[]).whereType<DevicePath>().toList();
     final externalPaths = allPaths
         .where((path) => path.type != DevicePathType.local)
         .where((path) => path.type != DevicePathType.swaggerGeneratedUnknown)
@@ -52,7 +52,7 @@ class ExternalNetworkPreference extends HookConsumerWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 24),
-                  child: Text("external_network_sheet_info".tr(), style: context.textTheme.bodyMedium),
+                  child: Text("external_network_sheet_info".t(context: context), style: context.textTheme.bodyMedium),
                 ),
                 const SizedBox(height: 4),
                 Divider(color: context.colorScheme.surfaceContainerHighest),
@@ -76,15 +76,10 @@ class ExternalNetworkPreference extends HookConsumerWidget {
                         endpoint,
                         style: context.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: enabled
-                              ? context.primaryColor
-                              : context.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: enabled ? context.primaryColor : context.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
-                      subtitle: Text(
-                        'From hc_device discovered paths',
-                        style: context.textTheme.bodySmall,
-                      ),
+                      subtitle: Text('From hc_device discovered paths', style: context.textTheme.bodySmall),
                     ),
                   ),
               ],

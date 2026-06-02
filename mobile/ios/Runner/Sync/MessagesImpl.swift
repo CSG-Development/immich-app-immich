@@ -1,35 +1,17 @@
 import Photos
 import CryptoKit
 
-class ImmichPlugin: NSObject {
-  var detached: Bool
-
-  override init() {
-    detached = false
-    super.init()
-  }
-
-  func detachFromEngine() {
-    self.detached = true
-  }
-
-  func completeWhenActive<T>(for completion: @escaping (T) -> Void, with value: T) {
-    guard !self.detached else { return }
-    completion(value)
-  }
-}
-
 struct AssetWrapper: Hashable, Equatable {
   let asset: PlatformAsset
-  
+
   init(with asset: PlatformAsset) {
     self.asset = asset
   }
-  
+
   func hash(into hasher: inout Hasher) {
     hasher.combine(self.asset.id)
   }
-  
+
   static func == (lhs: AssetWrapper, rhs: AssetWrapper) -> Bool {
     return lhs.asset.id == rhs.asset.id
   }
@@ -37,17 +19,15 @@ struct AssetWrapper: Hashable, Equatable {
 
 class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
   static let name = "NativeSyncApi"
-
   static func register(with registrar: any FlutterPluginRegistrar) {
     let instance = NativeSyncApiImpl()
     NativeSyncApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
     registrar.publish(instance)
   }
-
   func detachFromEngine(for registrar: any FlutterPluginRegistrar) {
     super.detachFromEngine()
   }
-
+  
   private let defaults: UserDefaults
   private let changeTokenKey = "immich:changeToken"
   private let albumTypes: [PHAssetCollectionType] = [.album, .smartAlbum]
@@ -60,6 +40,7 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
   
   init(with defaults: UserDefaults = .standard) {
     self.defaults = defaults
+    super.init()
   }
   
   @available(iOS 16, *)
@@ -121,7 +102,9 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
         let options = PHFetchOptions()
         options.sortDescriptors = [NSSortDescriptor(key: "modificationDate", ascending: false)]
         options.includeHiddenAssets = false
-        let assets = PHAsset.fetchAssets(in: album, options: options)
+        
+        let assets = getAssetsFromAlbum(in: album, options: options)
+        
         let isCloud = album.assetCollectionSubtype == .albumCloudShared || album.assetCollectionSubtype == .albumMyPhotoStream
         
         var domainAlbum = PlatformAlbum(
@@ -189,7 +172,8 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
             type: 0,
             durationInSeconds: 0,
             orientation: 0,
-            isFavorite: false
+            isFavorite: false,
+            playbackStyle: .unknown
           )
           if (updatedAssets.contains(AssetWrapper(with: predicate))) {
             continue
@@ -219,7 +203,7 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
         let options = PHFetchOptions()
         options.predicate = NSPredicate(format: "localIdentifier IN %@", assets.map(\.id))
         options.includeHiddenAssets = false
-        let result = PHAsset.fetchAssets(in: album, options: options)
+        let result = self.getAssetsFromAlbum(in: album, options: options)
         result.enumerateObjects { (asset, _, _) in
           albumAssets[asset.localIdentifier, default: []].append(album.localIdentifier)
         }
@@ -237,7 +221,7 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
     var ids: [String] = []
     let options = PHFetchOptions()
     options.includeHiddenAssets = false
-    let assets = PHAsset.fetchAssets(in: album, options: options)
+    let assets = getAssetsFromAlbum(in: album, options: options)
     assets.enumerateObjects { (asset, _, _) in
       ids.append(asset.localIdentifier)
     }
@@ -254,7 +238,7 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
     let options = PHFetchOptions()
     options.predicate = NSPredicate(format: "creationDate > %@ OR modificationDate > %@", date, date)
     options.includeHiddenAssets = false
-    let assets = PHAsset.fetchAssets(in: album, options: options)
+    let assets = getAssetsFromAlbum(in: album, options: options)
     return Int64(assets.count)
   }
   
@@ -271,7 +255,7 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
       options.predicate = NSPredicate(format: "creationDate > %@ OR modificationDate > %@", date, date)
     }
     
-    let result = PHAsset.fetchAssets(in: album, options: options)
+    let result = getAssetsFromAlbum(in: album, options: options)
     if(result.count == 0) {
       return []
     }
@@ -392,5 +376,42 @@ class NativeSyncApiImpl: ImmichPlugin, NativeSyncApi, FlutterPlugin {
       guard let requestId = requestRef.id else { return }
       PHAssetResourceManager.default().cancelDataRequest(requestId)
     })
+  }
+  
+  func getTrashedAssets() throws -> [String: [PlatformAsset]] {
+    throw PigeonError(code: "UNSUPPORTED_OS", message: "This feature not supported on iOS.", details: nil)
+  }
+  
+  private func getAssetsFromAlbum(in album: PHAssetCollection, options: PHFetchOptions) -> PHFetchResult<PHAsset> {
+    // Ensure to actually getting all assets for the Recents album
+    if (album.assetCollectionSubtype == .smartAlbumUserLibrary) {
+      return PHAsset.fetchAssets(with: options)
+    } else {
+      return PHAsset.fetchAssets(in: album, options: options)
+    }
+  }
+  
+  func getCloudIdForAssetIds(assetIds: [String]) throws -> [CloudIdResult] {
+    guard #available(iOS 16, *) else {
+      return assetIds.map { CloudIdResult(assetId: $0) }
+    }
+    
+    var mappings: [CloudIdResult] = []
+    let result = PHPhotoLibrary.shared().cloudIdentifierMappings(forLocalIdentifiers: assetIds)
+    for (key, value) in result {
+      switch value {
+      case .success(let cloudIdentifier):
+        let cloudId = cloudIdentifier.stringValue
+        // Ignores invalid cloud ids of the format "GUID:ID:". Valid Ids are of the form "GUID:ID:HASH"
+        if !cloudId.hasSuffix(":") {
+          mappings.append(CloudIdResult(assetId: key, cloudId: cloudId))
+        } else {
+          mappings.append(CloudIdResult(assetId: key, error: "Incomplete Cloud Id: \(cloudId)"))
+        }
+      case .failure(let error):
+        mappings.append(CloudIdResult(assetId: key, error: "Error getting Cloud Id: \(error.localizedDescription)"))
+      }
+    }
+    return mappings;
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:background_downloader/background_downloader.dart';
@@ -10,15 +11,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:hc_device/hc_device.dart';
-import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/domain/services/background_worker.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/generated/codegen_loader.g.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
+import 'package:immich_mobile/pages/common/splash_screen.page.dart';
 import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
@@ -43,7 +46,7 @@ import 'package:immich_mobile/theme/dynamic_theme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
-import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/env_config.dart';
@@ -51,61 +54,56 @@ import 'package:immich_mobile/utils/licenses.dart';
 import 'package:immich_mobile/utils/migration.dart';
 import 'package:immich_mobile/utils/platform_ui.dart';
 import 'package:immich_mobile/widgets/debug/network_debug_overlay.widget.dart';
+import 'package:immich_mobile/wm_executor.dart';
+import 'package:immich_ui/immich_ui.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
-import 'package:worker_manager/worker_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart' show SharedPreferencesAsync;
 
 void main() async {
-  ImmichWidgetsBinding();
-  unawaited(BackgroundWorkerLockService(BackgroundWorkerLockApi()).lock());
+  try {
+    ImmichWidgetsBinding();
+    unawaited(BackgroundWorkerLockService(BackgroundWorkerLockApi()).lock());
 
-  await Firebase.initializeApp();
-  await FirebasePerformanceWrapper.initialize();
+    await Firebase.initializeApp();
+    await FirebasePerformanceWrapper.initialize();
 
-  final (isar, drift, logDb) = await Bootstrap.initDB();
-  await Bootstrap.initDomain(isar, drift, logDb);
-  await initApp();
-  // Warm-up isolate pool for worker manager
-  await workerManager.init(dynamicSpawning: true);
-  await migrateDatabaseIfNeeded(isar, drift);
-  // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
-  // await telemetryChannel.invokeMethod('init', ['test']);
+    await EasyLocalization.ensureInitialized();
+    final (isar, drift, logDb) = await Bootstrap.initDB();
+    await Bootstrap.initDomain(isar, drift, logDb);
+    await initApp();
+    // Warm-up isolate pool for worker manager
+    await workerManagerPatch.init(dynamicSpawning: true, isolatesCount: max(Platform.numberOfProcessors - 1, 5));
+    await migrateDatabaseIfNeeded(isar, drift);
+    // const MethodChannel telemetryChannel = MethodChannel('stxphotos/telemetry');
+    // await telemetryChannel.invokeMethod('init', ['test']);
 
-  final certPinning = HttpCertPinningManager(
-    config: const CertPinningConfig(
-      allowFallback: false,
-      installRootsInSecurityContext: true
-    ),
-  );
+    await HttpCertPinningManager.storeDefaultRootCerts();
+    await HttpCertPinningManager.ensureInitialized();
 
-  await HttpCertPinningManager.storeRootCerts([
-    'assets/tdci.pem',
-    'assets/fake-device-noveo.cer',
-  ]);
+    await _startRemoteAccessSession();
+    final remoteAccessDependencies = await initHCDevice(httpClient: NetworkRepository.client);
 
-  await certPinning.initialize();
+    final apiservice = ApiService();
 
-  await _startRemoteAccessSession();
-  final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
-
-  final apiservice = ApiService(certPinning: certPinning);
-
-  runApp(
-    ProviderScope(
-      overrides: [
-        dbProvider.overrideWithValue(isar),
-        isarProvider.overrideWithValue(isar),
-        driftProvider.overrideWith(driftOverride(drift)),
-        remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
-        apiServiceProvider.overrideWithValue(apiservice),
-      ],
-      child: const MainWidget(),
-    ),
-  );
+    runApp(
+      ProviderScope(
+        overrides: [
+          dbProvider.overrideWithValue(isar),
+          isarProvider.overrideWithValue(isar),
+          driftProvider.overrideWith(driftOverride(drift)),
+          remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
+          apiServiceProvider.overrideWithValue(apiservice),
+        ],
+        child: const MainWidget(),
+      ),
+    );
+  } catch (error, stack) {
+    runApp(BootstrapErrorWidget(error: error.toString(), stack: stack.toString()));
+  }
 }
 
 Future<void> _startRemoteAccessSession() async {
@@ -116,14 +114,11 @@ Future<void> _startRemoteAccessSession() async {
 
 Future<void> initApp() async {
   final startupLog = Logger("StartupLogger");
-  startupLog.info(
-    'Starting app with flavor: ${EnvConfig.appFlavor ?? 'unknown'} (env file: ${EnvConfig.envFileName})',
-  );
+  startupLog.info('Starting app with flavor: ${EnvConfig.appFlavor ?? 'unknown'} (env file: ${EnvConfig.envFileName})');
 
-  await EasyLocalization.ensureInitialized();
   await initializeDateFormatting();
 
-  if (kReleaseMode && Platform.isAndroid) {
+  if (Platform.isAndroid) {
     try {
       await FlutterDisplayMode.setHighRefreshRate();
       dPrint(() => "Enabled high refresh mode");
@@ -152,10 +147,7 @@ Future<void> initApp() async {
 
   initializeTimeZones();
 
-  final certs = await HttpCertPinningManager.loadRootCertsBytes([
-    'assets/tdci.pem',
-    'assets/fake-device-noveo.cer'
-  ]);
+  final certs = await HttpCertPinningManager.loadDefaultRootCertsBytes();
 
   // Initialize the file downloader
   await FileDownloader().configure(
@@ -164,12 +156,12 @@ Future<void> initApp() async {
     // On Android, if files are larger than 256MB, run in foreground service
     globalConfig: [(Config.holdingQueue, (6, 6, 3)), (Config.runInForegroundIfFileLargerThan, 256)],
     iOSConfig: [(Config.configCertificatePinning, certs)],
-    androidConfig: [(Config.configCertificatePinning, certs)]
+    androidConfig: [(Config.configCertificatePinning, certs)],
   );
 
   await FileDownloader().trackTasksInGroup(kDownloadGroupLivePhoto, markDownloadedComplete: false);
 
-  await FileDownloader().trackTasks();
+  unawaited(FileDownloader().trackTasks());
 
   LicenseRegistry.addLicense(() async* {
     for (final license in nonPubLicenses.entries) {
@@ -195,9 +187,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       case AppLifecycleState.resumed:
         dPrint(() => "[APP STATE] resumed");
         ref.read(appStateProvider.notifier).handleAppResume();
-        unawaited(
-          ref.read(curatorNetworkMonitorProvider).processPendingOnResume(),
-        );
+        unawaited(ref.read(curatorNetworkMonitorProvider).processPendingOnResume());
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ref.read(curatorNetworkMonitorProvider).onAppLifecycleResumed();
         });
@@ -229,7 +219,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     WidgetsBinding.instance.addObserver(this);
 
     // Draw the app from edge to edge
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
 
     // Sets the navigation bar color
     SystemUiOverlayStyle overlayStyle = const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent);
@@ -286,6 +276,14 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       if (Store.isBetaTimelineEnabled) {
         ref.read(backgroundServiceProvider).disableService();
         ref.read(backgroundWorkerFgServiceProvider).enable();
+        if (Platform.isAndroid) {
+          ref
+              .read(backgroundWorkerFgServiceProvider)
+              .saveNotificationMessage(
+                "uploading_media".tr(),
+                "backup_background_service_default_notification".tr(),
+              );
+        }
       } else {
         ref.read(backgroundWorkerFgServiceProvider).disable();
         ref.read(backgroundServiceProvider).resumeServiceIfEnabled();
@@ -300,11 +298,9 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     };
     api.curatorNetworkSlowRequestHandler = (requestUrl, elapsed, isHard) {
       unawaited(
-        ref.read(curatorNetworkMonitorProvider).onSlowForegroundRequest(
-          requestUrl: requestUrl,
-          elapsed: elapsed,
-          isHard: isHard,
-        ),
+        ref
+            .read(curatorNetworkMonitorProvider)
+            .onSlowForegroundRequest(requestUrl: requestUrl, elapsed: elapsed, isHard: isHard),
       );
     };
     _connectionStateSubscription = api.connectionStateChanges.listen((state) {
@@ -312,7 +308,6 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
         ref.read(curatorNetworkMonitorProvider).onConnectionRestored();
       }
     });
-
   }
 
   @override
@@ -323,6 +318,14 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     _connectionStateSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void reassemble() {
+    if (kDebugMode) {
+      NetworkRepository.init();
+    }
+    super.reassemble();
   }
 
   @override
@@ -339,7 +342,6 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
         supportedLocales: context.supportedLocales,
         locale: context.locale,
         themeMode: ref.watch(immichThemeModeProvider),
-        // routeInformationParser: router.defaultRouteParser(),
         darkTheme: getThemeData(colorScheme: immichTheme.dark, locale: context.locale),
         theme: getThemeData(colorScheme: immichTheme.light, locale: context.locale),
         routerConfig: router.config(
@@ -347,34 +349,45 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
           navigatorObservers: () => [PerformanceRouteObserver(), AppNavigationObserver(ref: ref)],
         ),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-            value: computeOverlayStyle(context),
-            child: ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Stack(
-                children: [
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final currentRouteName = ref.watch(currentRouteNameProvider);
-                      final isSplashScreen = currentRouteName == SplashScreenRoute.name;
-                      return isSplashScreen ? child! : SafeArea(
-                        bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
-                        top: false,
-                        child: child!,
-                      );
-                    },
-                  ),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      if (ref.watch(networkDebugOverlayVisibleProvider)) {
-                        return const NetworkDebugOverlay();
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ],
+          value: computeOverlayStyle(context),
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: ImmichTranslationProvider(
+              translations: ImmichTranslations(
+                submit: "submit".t(context: context),
+                password: "password".t(context: context),
+              ),
+              child: ImmichThemeProvider(
+                colorScheme: context.colorScheme,
+                child: Stack(
+                  children: [
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final currentRouteName = ref.watch(currentRouteNameProvider);
+                        final isSplashScreen = currentRouteName == SplashScreenRoute.name;
+                        return isSplashScreen
+                            ? child!
+                            : SafeArea(
+                                bottom: PlatformUiUtils.isAndroidThreeButtonNavigation(context),
+                                top: false,
+                                child: child!,
+                              );
+                      },
+                    ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        if (ref.watch(networkDebugOverlayVisibleProvider)) {
+                          return const NetworkDebugOverlay();
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+        ),
       ),
     );
   }

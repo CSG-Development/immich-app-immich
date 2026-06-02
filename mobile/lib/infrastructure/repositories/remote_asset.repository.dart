@@ -12,6 +12,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 class RemoteAssetRepository extends DriftDatabaseRepository {
   final Drift _db;
+
   const RemoteAssetRepository(this._db) : super(_db);
 
   /// For testing purposes
@@ -81,9 +82,11 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
         .getSingleOrNull();
   }
 
-  Future<List<(String, String)>> getPlaces() {
+  Future<List<(String, String)>> getPlaces(String userId) {
     final asset = Subquery(
-      _db.remoteAssetEntity.select()..orderBy([(row) => OrderingTerm.desc(row.createdAt)]),
+      _db.remoteAssetEntity.select()
+        ..where((row) => row.ownerId.equals(userId))
+        ..orderBy([(row) => OrderingTerm.desc(row.createdAt)]),
       "asset",
     );
 
@@ -261,6 +264,12 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
   Future<void> updateDescription(String assetId, String description) async {
     await (_db.remoteExifEntity.update()..where((row) => row.assetId.equals(assetId))).write(
       RemoteExifEntityCompanion(description: Value(description)),
+    );
+  }
+
+  Future<void> updateRating(String assetId, int rating) async {
+    await (_db.remoteExifEntity.update()..where((row) => row.assetId.equals(assetId))).write(
+      RemoteExifEntityCompanion(rating: Value(rating)),
     );
   }
 

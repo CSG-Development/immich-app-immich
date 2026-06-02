@@ -135,7 +135,7 @@ class DownloadService {
       return result != null;
     } on PlatformException catch (error, stack) {
       // Handle saving MotionPhotos on iOS
-      if (error.code == 'PHPhotosErrorDomain (-1)') {
+      if (error.code.startsWith('PHPhotosErrorDomain')) {
         final result = await _fileMediaRepository.saveImageWithFile(imageFilePath, title: task.filename);
         return result != null;
       }

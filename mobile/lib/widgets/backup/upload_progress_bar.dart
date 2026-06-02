@@ -27,13 +27,7 @@ class BackupUploadProgressBar extends ConsumerWidget {
       child: Row(
         children: [
           if (isIcloudAsset)
-            SizedBox(
-              width: 110,
-              child: Text(
-                "Personal Cloud Photos Upload",
-                style: context.textTheme.labelSmall,
-              ),
-            ),
+            SizedBox(width: 110, child: Text("Personal Cloud Photos Upload", style: context.textTheme.labelSmall)),
           Expanded(
             child: LinearProgressIndicator(
               minHeight: 10.0,
@@ -43,7 +37,7 @@ class BackupUploadProgressBar extends ConsumerWidget {
           ),
           Text(
             " ${uploadProgress.toStringAsFixed(0)}%",
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(fontSize: 12, fontFamily: "GoogleSansCode"),
           ),
         ],
       ),

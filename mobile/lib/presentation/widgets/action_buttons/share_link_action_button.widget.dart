@@ -8,8 +8,10 @@ import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 class ShareLinkActionButton extends ConsumerWidget {
   final ActionSource source;
+  final bool iconOnly;
+  final bool menuItem;
 
-  const ShareLinkActionButton({super.key, required this.source});
+  const ShareLinkActionButton({super.key, required this.source, this.iconOnly = false, this.menuItem = false});
 
   _onTap(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) {
@@ -31,6 +33,8 @@ class ShareLinkActionButton extends ConsumerWidget {
     return BaseActionButton(
       iconData: Icons.link_rounded,
       label: "share_link".t(context: context),
+      iconOnly: iconOnly,
+      menuItem: menuItem,
       onPressed: () => _onTap(context, ref),
     );
   }

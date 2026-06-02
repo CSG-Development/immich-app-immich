@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hc_device/hc_device.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
@@ -202,7 +200,7 @@ class CuratorNetworkMonitor {
     unawaited(reconnectDeviceEndpoint());
   }
 
-  bool _isPhotosAuthenticated() => Store.get(StoreKey.accessToken, "").isNotEmpty;
+  bool _isPhotosAuthenticated() => remoteProvider.isAuthenticated;
 
   Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false, bool suppressFindingToast = false}) async {
     final trigger = _deriveTrigger(

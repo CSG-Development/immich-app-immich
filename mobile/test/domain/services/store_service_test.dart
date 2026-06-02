@@ -8,7 +8,6 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../infrastructure/repository.mock.dart';
 
-const _kDeviceId = '#ThisIsADeviceId';
 const _kAccessToken = '#ThisIsAToken';
 const _kBackgroundBackup = false;
 const _kGroupAssetsBy = 2;
@@ -25,7 +24,7 @@ void main() {
     mockStoreRepo = MockStoreRepository();
     mockDriftStoreRepo = MockDriftStoreRepository();
     // For generics, we need to provide fallback to each concrete type to avoid runtime errors
-    registerFallbackValue(StoreKey.deviceId);
+    registerFallbackValue(StoreKey.accessToken);
     registerFallbackValue(StoreKey.backupTriggerDelay);
     registerFallbackValue(StoreKey.backgroundBackup);
     registerFallbackValue(StoreKey.backupFailedSince);
@@ -54,7 +53,7 @@ void main() {
   });
 
   tearDown(() async {
-    sut.dispose();
+    unawaited(sut.dispose());
     await controller.close();
   });
 
@@ -82,7 +81,7 @@ void main() {
 
   group('Store Service get:', () {
     test('Returns the stored value for the given key', () {
-      expect(sut.get(StoreKey.deviceId), _kDeviceId);
+      expect(sut.get(StoreKey.accessToken), _kAccessToken);
     });
 
     test('Throws StoreKeyNotFoundException for nonexistent keys', () {
@@ -130,14 +129,14 @@ void main() {
       final stream = sut.watch(StoreKey.accessToken);
       final events = <String?>[_kAccessToken, _kAccessToken.toUpperCase(), null, _kAccessToken.toLowerCase()];
 
-      expectLater(stream, emitsInOrder(events));
+      unawaited(expectLater(stream, emitsInOrder(events)));
 
       for (final event in events) {
         valueController.add(event);
       }
 
       await pumpEventQueue();
-      verify(() => mockStoreRepo.watch<String>(StoreKey.deviceId)).called(1);
+      verify(() => mockStoreRepo.watch<String>(StoreKey.accessToken)).called(1);
     });
   });
 
@@ -153,8 +152,8 @@ void main() {
     });
 
     test('Removes the value from the cache', () async {
-      await sut.delete(StoreKey.deviceId);
-      expect(sut.tryGet(StoreKey.deviceId), isNull);
+      await sut.delete(StoreKey.accessToken);
+      expect(sut.tryGet(StoreKey.accessToken), isNull);
     });
   });
 
@@ -167,7 +166,7 @@ void main() {
     test('Clears all values from the store', () async {
       await sut.clear();
       verify(() => mockStoreRepo.deleteAll()).called(1);
-      expect(sut.tryGet(StoreKey.deviceId), isNull);
+      expect(sut.tryGet(StoreKey.accessToken), isNull);
       expect(sut.tryGet(StoreKey.backgroundBackup), isNull);
       expect(sut.tryGet(StoreKey.groupAssetsBy), isNull);
       expect(sut.tryGet(StoreKey.backupFailedSince), isNull);

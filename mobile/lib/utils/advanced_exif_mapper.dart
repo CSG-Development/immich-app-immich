@@ -10,8 +10,6 @@ class AdvancedExifMapper {
     }
 
     final imageItems = <AdvancedExifItem?>[
-      _stringItem('advanced_exif_image_width', _toWholeNumber(exifInfo.width)),
-      _stringItem('advanced_exif_image_height', _toWholeNumber(exifInfo.height)),
       _stringItem('advanced_exif_orientation', exifInfo.orientation),
     ].whereType<AdvancedExifItem>().toList();
 
@@ -76,10 +74,4 @@ class AdvancedExifMapper {
     return value.toStringAsFixed(4).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
   }
 
-  static String? _toWholeNumber(double? value) {
-    if (value == null) {
-      return null;
-    }
-    return value.toInt().toString();
-  }
 }

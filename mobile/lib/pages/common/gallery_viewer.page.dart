@@ -22,7 +22,6 @@ import 'package:immich_mobile/providers/asset_viewer/asset_stack.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
-import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
 import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
@@ -97,7 +96,7 @@ class GalleryViewerPage extends HookConsumerWidget {
       } catch (e) {
         // swallow error silently
         log.severe('Error precaching next image: $e');
-        context.maybePop();
+        await context.maybePop();
       }
     }
 
@@ -107,13 +106,6 @@ class GalleryViewerPage extends HookConsumerWidget {
       } else {
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
       }
-    useEffect(
-      () {
-        if (ref.read(showControlsProvider)) {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        } else {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-        }
 
       // Delay this a bit so we can finish loading the page
       Timer(const Duration(milliseconds: 400), () {
@@ -122,10 +114,6 @@ class GalleryViewerPage extends HookConsumerWidget {
 
       return null;
     }, const []);
-        return null;
-      },
-      const [],
-    );
 
     useEffect(() {
       final asset = loadAsset(currentIndex.value);
@@ -234,8 +222,37 @@ class GalleryViewerPage extends HookConsumerWidget {
         onDragUpdate: (_, details, __) {
           handleSwipeUpDown(details);
         },
-        onTapDown: (_, __, ___) {
-          ref.read(showControlsProvider.notifier).toggle();
+        onTapDown: (ctx, tapDownDetails, _) {
+          final tapToNavigate = ref.read(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.tapToNavigate);
+          if (!tapToNavigate) {
+            ref.read(showControlsProvider.notifier).toggle();
+            return;
+          }
+
+          double tapX = tapDownDetails.globalPosition.dx;
+          double screenWidth = ctx.width;
+
+          // We want to change images if the user taps in the leftmost or
+          // rightmost quarter of the screen
+          bool tappedLeftSide = tapX < screenWidth / 4;
+          bool tappedRightSide = tapX > screenWidth * (3 / 4);
+
+          int? currentPage = controller.page?.toInt();
+          int maxPage = renderList.totalAssets - 1;
+
+          if (tappedLeftSide && currentPage != null) {
+            // Nested if because we don't want to fallback to show/hide controls
+            if (currentPage != 0) {
+              controller.jumpToPage(currentPage - 1);
+            }
+          } else if (tappedRightSide && currentPage != null) {
+            // Nested if because we don't want to fallback to show/hide controls
+            if (currentPage != maxPage) {
+              controller.jumpToPage(currentPage + 1);
+            }
+          } else {
+            ref.read(showControlsProvider.notifier).toggle();
+          }
         },
         onLongPressStart: asset.isMotionPhoto
             ? (_, __, ___) {
@@ -273,9 +290,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                 height: 250,
                 width: 250,
                 color: Colors.black,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               );
             }
           },
@@ -307,9 +322,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                 height: context.height,
                 width: context.width,
                 color: Colors.black,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               );
             }
           },
@@ -371,7 +384,7 @@ class GalleryViewerPage extends HookConsumerWidget {
         if (isAirPlayConnected) {
           // Pre-convert photo in background for seamless experience
           AirplayService.preConvertPhotoForAirPlay(newAsset, ref);
-          
+
           return buildVideo(context, newAsset);
         }
         // Otherwise, use regular photo view
@@ -399,7 +412,7 @@ class GalleryViewerPage extends HookConsumerWidget {
                   isZoomed.value = state != PhotoViewScaleState.initial;
                   ref.read(showControlsProvider.notifier).show = !isZoomed.value;
                 }
-                
+
                 // Force show controls when AirPlay is active
                 final isAirPlayConnected = ref.read(airplayProvider);
                 if (isAirPlayConnected) {
@@ -444,9 +457,6 @@ class GalleryViewerPage extends HookConsumerWidget {
                 stackIndex.value = 0;
 
                 ref.read(currentAssetProvider.notifier).set(newAsset);
-                if (newAsset.isVideo || newAsset.isMotionPhoto) {
-                  ref.read(videoPlaybackValueProvider.notifier).reset();
-                }
 
                 // Wait for page change animation to finish, then precache the next image
                 Timer(const Duration(milliseconds: 400), () {

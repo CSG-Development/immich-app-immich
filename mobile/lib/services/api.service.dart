@@ -7,9 +7,10 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
-import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
+import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
@@ -80,7 +81,7 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
   @override
   void close() {
-    _inner.close();
+    // Do not close the shared underlying client from interceptor wrappers.
     super.close();
   }
 }
@@ -147,7 +148,7 @@ class ApiService implements Authentication {
 
   late UsersApi usersApi;
   late AuthenticationApi authenticationApi;
-  late OAuthApi oAuthApi;
+  late AuthenticationApi oAuthApi;
   late AlbumsApi albumsApi;
   late AssetsApi assetsApi;
   late SearchApi searchApi;
@@ -162,7 +163,7 @@ class ApiService implements Authentication {
   late DownloadApi downloadApi;
   late TrashApi trashApi;
   late StacksApi stacksApi;
-  late ViewApi viewApi;
+  late ViewsApi viewApi;
   late MemoriesApi memoriesApi;
   late SessionsApi sessionsApi;
   late TagsApi tagsApi;
@@ -177,14 +178,14 @@ class ApiService implements Authentication {
   bool _isSetEndpoint = false;
   Future<void> _endpointSwitchQueue = Future<void>.value();
 
+  bool get isEndpointSwitchInProgress => _isSetEndpoint;
+
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
   void Function()? curatorNetworkForceReconnectHandler;
   void Function(String, Duration, bool isHard)? curatorNetworkSlowRequestHandler;
 
-  final HttpCertPinningManager certPinning;
-
-  ApiService({required this.certPinning}) {
+  ApiService() {
     _initHttpClient();
     // Initialize with empty endpoint first, then restore the last known endpoint (if any).
     setEndpoint('');
@@ -194,24 +195,17 @@ class ApiService implements Authentication {
     }
   }
 
-  static instantiate() async {
-    final certPinning = HttpCertPinningManager(
-      config: const CertPinningConfig(allowFallback: false, installRootsInSecurityContext: true),
-    );
-
-    await certPinning.initialize();
-
-    return ApiService(certPinning: certPinning);
+  static Future<ApiService> instantiate() async {
+    await HttpCertPinningManager.ensureInitialized();
+    return ApiService();
   }
 
   void _initHttpClient() {
-    // Recreate clients to avoid reusing keep-alive connections when switching endpoints
     if (_httpClientInitialized) {
-      _connectionRecoveryInterceptor.close();
-      _baseClient.close();
+      return;
     }
 
-    _baseClient = Client();
+    _baseClient = NetworkRepository.client;
     _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(
       _baseClient,
       _handleConnectionError,
@@ -243,7 +237,7 @@ class ApiService implements Authentication {
       return;
     }
 
-    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    final isAuthenticated = Store.tryGet(StoreKey.currentUser) != null;
     if (!isAuthenticated) {
       dPrint(() => '_handleConnectionError: Skipping notification - not authenticated');
       return;
@@ -275,7 +269,7 @@ class ApiService implements Authentication {
       return;
     }
 
-    final isAuthenticated = Store.get(StoreKey.accessToken, "").isNotEmpty;
+    final isAuthenticated = Store.tryGet(StoreKey.currentUser) != null;
     if (!isAuthenticated) {
       return;
     }
@@ -306,7 +300,6 @@ class ApiService implements Authentication {
   }
 
   void setEndpoint(String endpoint) {
-    // Rebuild HTTP clients when changing endpoints to drop stale keep-alive connections
     _initHttpClient();
 
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
@@ -317,7 +310,7 @@ class ApiService implements Authentication {
     }
     usersApi = UsersApi(_apiClient);
     authenticationApi = AuthenticationApi(_apiClient);
-    oAuthApi = OAuthApi(_apiClient);
+    oAuthApi = AuthenticationApi(_apiClient);
     albumsApi = AlbumsApi(_apiClient);
     assetsApi = AssetsApi(_apiClient);
     serverInfoApi = ServerApi(_apiClient);
@@ -332,7 +325,7 @@ class ApiService implements Authentication {
     downloadApi = DownloadApi(_apiClient);
     trashApi = TrashApi(_apiClient);
     stacksApi = StacksApi(_apiClient);
-    viewApi = ViewApi(_apiClient);
+    viewApi = ViewsApi(_apiClient);
     memoriesApi = MemoriesApi(_apiClient);
     sessionsApi = SessionsApi(_apiClient);
     tagsApi = TagsApi(_apiClient);
@@ -346,15 +339,15 @@ class ApiService implements Authentication {
       _isSetEndpoint = true;
       try {
         final stopwatch = Stopwatch()..start();
-        final uri = Uri.parse(serverUrl);
+        final normalizedEndpoint = _normalizeEndpoint(serverUrl);
+        final uri = Uri.parse(normalizedEndpoint);
         _log.info(
           'endpoint_switch start '
           'host=${uri.host} '
           'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
           'settleMs=${policy.settleDelay.inMilliseconds}',
         );
-        await certPinning.registerHostTrustedChain(host: uri.host, port: uri.port);
-        final endpoint = await resolveEndpoint(serverUrl, availabilityTimeout: policy.availabilityTimeout);
+        final endpoint = await resolveEndpoint(normalizedEndpoint, availabilityTimeout: policy.availabilityTimeout);
         setEndpoint(endpoint);
         try {
           await Store.put(StoreKey.serverEndpoint, endpoint);
@@ -485,6 +478,13 @@ class ApiService implements Authentication {
   Future<void> setAccessToken(String accessToken) async {
     _accessToken = accessToken;
     await Store.put(StoreKey.accessToken, accessToken);
+    await updateHeaders();
+  }
+
+  Future<void> clearAccessToken() async {
+    _accessToken = null;
+    await Store.delete(StoreKey.accessToken);
+    await updateHeaders();
   }
 
   Future<void> setDeviceInfoHeader() async {
@@ -505,13 +505,8 @@ class ApiService implements Authentication {
   }
 
   static Map<String, String> getRequestHeaders() {
-    var accessToken = Store.get(StoreKey.accessToken, "");
     var customHeadersStr = Store.get(StoreKey.customHeaders, "");
     var header = <String, String>{};
-    if (accessToken.isNotEmpty) {
-      header['x-immich-user-token'] = accessToken;
-    }
-
     if (customHeadersStr.isEmpty) {
       return header;
     }
@@ -524,6 +519,47 @@ class ApiService implements Authentication {
     return header;
   }
 
+  /// Custom headers plus the current access token for transports that do not use
+  /// [NetworkRepository.setHeaders] (e.g. socket.io extra headers).
+  static Map<String, String> getAuthenticatedRequestHeaders() {
+    final headers = Map<String, String>.from(getRequestHeaders());
+    final token = Store.tryGet(StoreKey.accessToken);
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
+  static List<String> getServerUrls() {
+    final urls = <String>[];
+    final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (serverEndpoint != null && serverEndpoint.isNotEmpty) {
+      urls.add(serverEndpoint);
+    }
+    final localEndpoint = Store.tryGet(StoreKey.localEndpoint);
+    if (localEndpoint != null && localEndpoint.isNotEmpty) {
+      urls.add(localEndpoint);
+    }
+    final externalJson = Store.tryGet(StoreKey.externalEndpointList);
+    if (externalJson != null) {
+      final List<dynamic> list = jsonDecode(externalJson);
+      for (final entry in list) {
+        final url = AuxilaryEndpoint.fromJson(entry).url;
+        if (url.isNotEmpty) urls.add(url);
+      }
+    }
+    return urls;
+  }
+
+  Future<void> updateHeaders() async {
+    await NetworkRepository.setHeaders(
+      getRequestHeaders(),
+      getServerUrls(),
+      token: _accessToken ?? Store.tryGet(StoreKey.accessToken),
+    );
+    _apiClient.client = _httpClient;
+  }
+
   @override
   Future<void> applyToParams(List<QueryParam> queryParams, Map<String, String> headerParams) {
     return Future<void>(() {
@@ -533,6 +569,7 @@ class ApiService implements Authentication {
   }
 
   ApiClient get apiClient => _apiClient;
+  String? get transientAccessToken => _accessToken;
 }
 
 class EndpointResolvePolicy {

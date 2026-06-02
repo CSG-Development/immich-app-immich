@@ -1,25 +1,62 @@
-import 'dart:async';
+// ignore_for_file: constant_identifier_names
 
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/extensions/platform_extensions.dart';
+import 'package:immich_mobile/infrastructure/repositories/local_asset.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_api.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/sync_migration.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
+import 'package:immich_mobile/infrastructure/repositories/trashed_local_asset.repository.dart';
+import 'package:immich_mobile/repositories/local_files_manager.repository.dart';
+import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/semver.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
+
+enum SyncMigrationTask {
+  v20260128_ResetExifV1, // EXIF table has incorrect width and height information.
+  v20260128_CopyExifWidthHeightToAsset, // Asset table has incorrect width and height for video ratio calculations.
+  v20260128_ResetAssetV1, // Asset v2.5.0 has width and height information that were edited assets.
+}
 
 class SyncStreamService {
   final Logger _logger = Logger('SyncStreamService');
 
   final SyncApiRepository _syncApiRepository;
   final SyncStreamRepository _syncStreamRepository;
+  final DriftLocalAssetRepository _localAssetRepository;
+  final DriftTrashedLocalAssetRepository _trashedLocalAssetRepository;
+  final LocalFilesManagerRepository _localFilesManager;
+  final StorageRepository _storageRepository;
+  final SyncMigrationRepository _syncMigrationRepository;
+  final ApiService _api;
   final bool Function()? _cancelChecker;
 
   SyncStreamService({
     required SyncApiRepository syncApiRepository,
     required SyncStreamRepository syncStreamRepository,
+    required DriftLocalAssetRepository localAssetRepository,
+    required DriftTrashedLocalAssetRepository trashedLocalAssetRepository,
+    required LocalFilesManagerRepository localFilesManager,
+    required StorageRepository storageRepository,
+    required SyncMigrationRepository syncMigrationRepository,
+    required ApiService api,
     bool Function()? cancelChecker,
   }) : _syncApiRepository = syncApiRepository,
        _syncStreamRepository = syncStreamRepository,
+       _localAssetRepository = localAssetRepository,
+       _trashedLocalAssetRepository = trashedLocalAssetRepository,
+       _localFilesManager = localFilesManager,
+       _storageRepository = storageRepository,
+       _syncMigrationRepository = syncMigrationRepository,
+       _api = api,
        _cancelChecker = cancelChecker;
 
   bool get isCancelled => _cancelChecker?.call() ?? false;
@@ -40,9 +77,31 @@ class SyncStreamService {
       reasonCode: 'SYNC_SERVICE_START',
       runId: runId,
     );
+
+    final serverVersion = await _api.serverInfoApi.getServerVersion();
+    if (serverVersion == null) {
+      _logger.severe("Cannot perform sync: unable to determine server version");
+      return false;
+    }
+
+    final serverSemVer = SemVer(major: serverVersion.major, minor: serverVersion.minor, patch: serverVersion.patch_);
+
+    final value = Store.get(StoreKey.syncMigrationStatus, "[]");
+    final migrations = (jsonDecode(value) as List).cast<String>();
+    int previousLength = migrations.length;
+    await _runPreSyncTasks(migrations, serverSemVer);
+
+    if (migrations.length != previousLength) {
+      _logger.info("Updated pre-sync migration status: $migrations");
+      await Store.put(StoreKey.syncMigrationStatus, jsonEncode(migrations));
+    }
     // Start the sync stream and handle events
     bool shouldReset = false;
-    await _syncApiRepository.streamChanges(_handleEvents, onReset: () => shouldReset = true);
+    await _syncApiRepository.streamChanges(
+      _handleEvents,
+      serverVersion: serverSemVer,
+      onReset: () => shouldReset = true,
+    );
     if (shouldReset) {
       _logger.info("Resetting sync state as requested by server");
       logBackupTrace(
@@ -58,7 +117,7 @@ class SyncStreamService {
         reasonCode: 'SYNC_RESET_RECEIVED',
         runId: runId,
       );
-      await _syncApiRepository.streamChanges(_handleEvents);
+      await _syncApiRepository.streamChanges(_handleEvents, serverVersion: serverSemVer);
     }
     logBackupTrace(
       _logger,
@@ -73,7 +132,53 @@ class SyncStreamService {
       reasonCode: 'SYNC_SERVICE_COMPLETE',
       runId: runId,
     );
+
+    previousLength = migrations.length;
+    await _runPostSyncTasks(migrations);
+
+    if (migrations.length != previousLength) {
+      _logger.info("Updated pre-sync migration status: $migrations");
+      await Store.put(StoreKey.syncMigrationStatus, jsonEncode(migrations));
+    }
     return true;
+  }
+
+  Future<void> _runPreSyncTasks(List<String> migrations, SemVer semVer) async {
+    if (!migrations.contains(SyncMigrationTask.v20260128_ResetExifV1.name)) {
+      _logger.info("Running pre-sync task: v20260128_ResetExifV1");
+      await _syncApiRepository.deleteSyncAck([
+        SyncEntityType.assetExifV1,
+        SyncEntityType.partnerAssetExifV1,
+        SyncEntityType.albumAssetExifCreateV1,
+        SyncEntityType.albumAssetExifUpdateV1,
+      ]);
+      migrations.add(SyncMigrationTask.v20260128_ResetExifV1.name);
+    }
+
+    if (!migrations.contains(SyncMigrationTask.v20260128_ResetAssetV1.name) &&
+        semVer >= const SemVer(major: 2, minor: 5, patch: 0)) {
+      _logger.info("Running pre-sync task: v20260128_ResetAssetV1");
+      await _syncApiRepository.deleteSyncAck([
+        SyncEntityType.assetV1,
+        SyncEntityType.partnerAssetV1,
+        SyncEntityType.albumAssetCreateV1,
+        SyncEntityType.albumAssetUpdateV1,
+      ]);
+
+      migrations.add(SyncMigrationTask.v20260128_ResetAssetV1.name);
+
+      if (!migrations.contains(SyncMigrationTask.v20260128_CopyExifWidthHeightToAsset.name)) {
+        migrations.add(SyncMigrationTask.v20260128_CopyExifWidthHeightToAsset.name);
+      }
+    }
+  }
+
+  Future<void> _runPostSyncTasks(List<String> migrations) async {
+    if (!migrations.contains(SyncMigrationTask.v20260128_CopyExifWidthHeightToAsset.name)) {
+      _logger.info("Running post-sync task: v20260128_CopyExifWidthHeightToAsset");
+      await _syncMigrationRepository.v20260128CopyExifWidthHeightToAsset();
+      migrations.add(SyncMigrationTask.v20260128_CopyExifWidthHeightToAsset.name);
+    }
   }
 
   Future<void> _handleEvents(List<SyncEvent> events, Function() abort, Function() reset) async {
@@ -124,11 +229,30 @@ class SyncStreamService {
       case SyncEntityType.partnerDeleteV1:
         return _syncStreamRepository.deletePartnerV1(data.cast());
       case SyncEntityType.assetV1:
-        return _syncStreamRepository.updateAssetsV1(data.cast());
+        final remoteSyncAssets = data.cast<SyncAssetV1>();
+        await _syncStreamRepository.updateAssetsV1(remoteSyncAssets);
+        if (CurrentPlatform.isAndroid && Store.get(StoreKey.manageLocalMediaAndroid, false)) {
+          final hasPermission = await _localFilesManager.hasManageMediaPermission();
+          if (hasPermission) {
+            await _handleRemoteTrashed(remoteSyncAssets.where((e) => e.deletedAt != null).map((e) => e.checksum));
+            await _applyRemoteRestoreToLocal();
+          } else {
+            _logger.warning("sync Trashed Assets cannot proceed because MANAGE_MEDIA permission is missing");
+          }
+        }
+        return;
       case SyncEntityType.assetDeleteV1:
         return _syncStreamRepository.deleteAssetsV1(data.cast());
       case SyncEntityType.assetExifV1:
         return _syncStreamRepository.updateAssetsExifV1(data.cast());
+      case SyncEntityType.assetEditV1:
+        return _syncStreamRepository.updateAssetEditsV1(data.cast());
+      case SyncEntityType.assetEditDeleteV1:
+        return _syncStreamRepository.deleteAssetEditsV1(data.cast());
+      case SyncEntityType.assetMetadataV1:
+        return _syncStreamRepository.updateAssetsMetadataV1(data.cast());
+      case SyncEntityType.assetMetadataDeleteV1:
+        return _syncStreamRepository.deleteAssetsMetadataV1(data.cast());
       case SyncEntityType.partnerAssetV1:
         return _syncStreamRepository.updateAssetsV1(data.cast(), debugLabel: 'partner');
       case SyncEntityType.partnerAssetBackfillV1:
@@ -171,9 +295,10 @@ class SyncStreamService {
       // to acknowledge that the client has processed all the backfill events
       case SyncEntityType.syncAckV1:
         return;
-      // No-op. SyncCompleteV1 is used to signal the completion of the sync process
+      // SyncCompleteV1 is used to signal the completion of the sync process. Cleanup stale assets and signal completion
       case SyncEntityType.syncCompleteV1:
         return;
+      // return _syncStreamRepository.pruneAssets();
       // Request to reset the client state. Clear everything related to remote entities
       case SyncEntityType.syncResetV1:
         return _syncStreamRepository.reset();
@@ -205,6 +330,8 @@ class SyncStreamService {
         return _syncStreamRepository.deletePeopleV1(data.cast());
       case SyncEntityType.assetFaceV1:
         return _syncStreamRepository.updateAssetFacesV1(data.cast());
+      case SyncEntityType.assetFaceV2:
+        return _syncStreamRepository.updateAssetFacesV2(data.cast());
       case SyncEntityType.assetFaceDeleteV1:
         return _syncStreamRepository.deleteAssetFacesV1(data.cast());
       default:
@@ -294,6 +421,78 @@ class SyncStreamService {
         error: error,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  Future<void> handleWsAssetEditReadyV1(dynamic data) async {
+    _logger.info('Processing AssetEditReadyV1 event');
+
+    try {
+      if (data is! Map<String, dynamic>) {
+        throw ArgumentError("Invalid data format for AssetEditReadyV1 event");
+      }
+
+      final payload = data;
+
+      if (payload['asset'] == null) {
+        throw ArgumentError("Missing 'asset' field in AssetEditReadyV1 event data");
+      }
+
+      final asset = SyncAssetV1.fromJson(payload['asset']);
+      if (asset == null) {
+        throw ArgumentError("Failed to parse 'asset' field in AssetEditReadyV1 event data");
+      }
+
+      List<SyncAssetEditV1> assetEdits = [];
+
+      // Edits are only send on v2.6.0+
+      if (payload['edit'] != null && payload['edit'] is List<dynamic>) {
+        assetEdits = (payload['edit'] as List<dynamic>)
+            .map((e) => SyncAssetEditV1.fromJson(e))
+            .whereType<SyncAssetEditV1>()
+            .toList();
+      }
+
+      await _syncStreamRepository.updateAssetsV1([asset], debugLabel: 'websocket-edit');
+      await _syncStreamRepository.replaceAssetEditsV1(asset.id, assetEdits, debugLabel: 'websocket-edit');
+
+      _logger.info(
+        'Successfully processed AssetEditReadyV1 event for asset ${asset.id} with ${assetEdits.length} edits',
+      );
+    } catch (error, stackTrace) {
+      _logger.severe("Error processing AssetEditReadyV1 websocket event", error, stackTrace);
+    }
+  }
+
+  Future<void> _handleRemoteTrashed(Iterable<String> checksums) async {
+    if (checksums.isEmpty) {
+      return Future.value();
+    } else {
+      final localAssetsToTrash = await _localAssetRepository.getAssetsFromBackupAlbums(checksums);
+      if (localAssetsToTrash.isNotEmpty) {
+        final mediaUrls = await Future.wait(
+          localAssetsToTrash.values
+              .expand((e) => e)
+              .map((localAsset) => _storageRepository.getAssetEntityForAsset(localAsset).then((e) => e?.getMediaUrl())),
+        );
+        _logger.info("Moving to trash ${mediaUrls.join(", ")} assets");
+        final result = await _localFilesManager.moveToTrash(mediaUrls.nonNulls.toList());
+        if (result) {
+          await _trashedLocalAssetRepository.trashLocalAsset(localAssetsToTrash);
+        }
+      } else {
+        _logger.info("No assets found in backup-enabled albums for assets: $checksums");
+      }
+    }
+  }
+
+  Future<void> _applyRemoteRestoreToLocal() async {
+    final assetsToRestore = await _trashedLocalAssetRepository.getToRestore();
+    if (assetsToRestore.isNotEmpty) {
+      final restoredIds = await _localFilesManager.restoreAssetsFromTrash(assetsToRestore);
+      await _trashedLocalAssetRepository.applyRestoredAssets(restoredIds);
+    } else {
+      _logger.info("No remote assets found for restoration");
     }
   }
 }

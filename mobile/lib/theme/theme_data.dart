@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 
 class ImmichTheme {
@@ -24,8 +25,10 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
     splashColor: colorScheme.primary.withValues(alpha: 0.1),
     highlightColor: colorScheme.primary.withValues(alpha: 0.1),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: colorScheme.surfaceContainer),
+    fontFamily: _getFontFamilyFromLocale(locale),
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
+        fontFamily: _getFontFamilyFromLocale(locale),
         color: colorScheme.primary,
         fontWeight: FontWeight.bold,
       ),
@@ -34,17 +37,16 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
     appBarTheme: AppBarTheme(
       titleTextStyle: TextStyle(
         color: colorScheme.primary,
+        fontFamily: _getFontFamilyFromLocale(locale),
         fontWeight: FontWeight.w600,
         fontSize: 18,
       ),
-      backgroundColor: colorScheme.surfaceContainerLowest,
+      backgroundColor: colorScheme.surface,
       foregroundColor: colorScheme.primary,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
-      systemOverlayStyle: isDark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+      systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -61,15 +63,21 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
       ),
     ),
     chipTheme: const ChipThemeData(side: BorderSide.none),
-    sliderTheme: const SliderThemeData(thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7), trackHeight: 2.0),
+    sliderTheme: const SliderThemeData(
+      trackHeight: 12,
+      // ignore: deprecated_member_use
+      year2023: false,
+    ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(type: BottomNavigationBarType.fixed),
     popupMenuTheme: const PopupMenuThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: colorScheme.surfaceContainerLowest,
+      backgroundColor: isDark ? colorScheme.surfaceContainer : colorScheme.surface,
       height: 68.0,
-      labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      labelTextStyle: const WidgetStatePropertyAll(
+        TextStyle(fontSize: 14, fontWeight: FontWeight.w500, overflow: TextOverflow.ellipsis),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       focusedBorder: OutlineInputBorder(
@@ -77,27 +85,19 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-        ),
+        borderSide: BorderSide(color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-        ),
+        borderSide: BorderSide(color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colorScheme.outlineVariant),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
-      labelStyle: TextStyle(
-        color: isDark ? const Color(0xDEFFFFFF) : const Color(0xDE000000),
-      ),
-      floatingLabelStyle: TextStyle(
-        color: colorScheme.primary,
-      ),
+      labelStyle: TextStyle(color: isDark ? const Color(0xDEFFFFFF) : const Color(0xDE000000)),
+      floatingLabelStyle: TextStyle(color: colorScheme.primary),
       hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
     ),
     textSelectionTheme: TextSelectionThemeData(cursorColor: colorScheme.primary),
@@ -120,8 +120,7 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
         hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
       ),
     ),
-    drawerTheme:
-        DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
+    drawerTheme: DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
     dialogTheme: DialogThemeData(backgroundColor: colorScheme.surfaceContainer),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       // ignore: deprecated_member_use
@@ -173,4 +172,12 @@ ImmichTheme decolorizeSurfaces({required ImmichTheme theme}) {
       onInverseSurface: const Color(0xFF303030),
     ),
   );
+}
+
+String? _getFontFamilyFromLocale(Locale locale) {
+  if (localesNotSupportedByAppFont.contains(locale)) {
+    // Let Flutter use the default font
+    return null;
+  }
+  return 'GoogleSans';
 }
