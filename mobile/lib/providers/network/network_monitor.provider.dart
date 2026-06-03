@@ -41,7 +41,7 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
           connectionType: conn.ConnectionType.api,
         ),
       );
-      // Show "unable to connect" immediately when transport is lost.
+      // Show "no internet" immediately when transport is lost.
       unawaited(callbacks.onReconnectionFailed());
     },
     callbacks: callbacks,

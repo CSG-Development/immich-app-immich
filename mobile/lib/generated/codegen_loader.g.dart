@@ -32318,7 +32318,7 @@ class CodegenLoader extends AssetLoader {
       "login_form_loading_text": "Logging in to your account",
       "login_form_password_hint": "Enter password",
       "login_form_version_check_error": "Error checking version compatibility",
-      "network": {"finding": "Finding network..."},
+      "network": {"finding": "Finding network...", "no_internet": "No internet"},
       "onboarding": {
         "done": "Done",
         "skip": "Skip",

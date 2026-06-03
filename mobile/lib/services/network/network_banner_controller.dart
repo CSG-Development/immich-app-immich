@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart';
 
-enum NetworkBannerKind { hidden, finding, unable }
+enum NetworkBannerKind { hidden, finding, noInternet, unable }
 
 class NetworkBannerController {
   NetworkBannerController({
@@ -42,17 +42,17 @@ class NetworkBannerController {
       return;
     }
 
-    if (desired == NetworkBannerKind.unable) {
+    if (desired == NetworkBannerKind.unable || desired == NetworkBannerKind.noInternet) {
       _findingTimer?.cancel();
       _findingTimer = null;
-      _showNow(NetworkBannerKind.unable);
+      _showNow(desired);
       return;
     }
 
     _findingTimer?.cancel();
     _findingTimer = Timer(_findingDelay, () {
       _findingTimer = null;
-      if (activeKind == NetworkBannerKind.hidden || activeKind == NetworkBannerKind.unable) {
+      if (activeKind == NetworkBannerKind.hidden || activeKind == NetworkBannerKind.unable || activeKind == NetworkBannerKind.noInternet) {
         _showNow(NetworkBannerKind.finding);
       }
     });
@@ -145,12 +145,17 @@ class _ReactiveNetworkStatusSnackBar extends StatelessWidget {
     return ValueListenableBuilder<NetworkBannerKind>(
       valueListenable: kindListenable,
       builder: (_, kind, __) {
-        final isUnable = kind == NetworkBannerKind.unable;
+        final isError = kind == NetworkBannerKind.unable || kind == NetworkBannerKind.noInternet;
+        final message = switch (kind) {
+          NetworkBannerKind.noInternet => 'curator.network.no_internet'.tr(),
+          NetworkBannerKind.unable => 'errors.unable_to_connect'.tr(),
+          _ => 'curator.network.finding'.tr(),
+        };
         return NetworkStatusSnackBar(
-          message: isUnable ? 'errors.unable_to_connect'.tr() : 'curator.network.finding'.tr(),
+          message: message,
           onClose: onClose,
-          onRetry: isUnable ? onRetry : null,
-          retryLabel: isUnable ? 'retry'.tr() : null,
+          onRetry: isError ? onRetry : null,
+          retryLabel: isError ? 'retry'.tr() : null,
         );
       },
     );
