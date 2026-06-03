@@ -1,12 +1,15 @@
+import { DatabaseConnectionParams } from '@immich/sql-tools';
 import { RegisterQueueOptions } from '@nestjs/bullmq';
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { QueueOptions } from 'bullmq';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { Request, Response } from 'express';
+import { HelmetOptions } from 'helmet';
 import { RedisOptions } from 'ioredis';
 import { CLS_ID, ClsModuleOptions } from 'nestjs-cls';
 import { OpenTelemetryModuleOptions } from 'nestjs-otel/lib/interfaces';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { citiesFile, excludePaths, IWorker } from 'src/constants';
 import { Telemetry } from 'src/decorators';
@@ -17,10 +20,11 @@ import {
   ImmichHeader,
   ImmichTelemetry,
   ImmichWorker,
+  LogFormat,
   LogLevel,
   QueueName,
 } from 'src/enum';
-import { DatabaseConnectionParams, VectorExtension } from 'src/types';
+import { VectorExtension } from 'src/types';
 import { setDifference } from 'src/utils/set';
 
 export interface EnvData {
@@ -29,6 +33,7 @@ export interface EnvData {
   environment: ImmichEnvironment;
   configFile?: string;
   logLevel?: LogLevel;
+  logFormat?: LogFormat;
 
   buildMetadata: {
     build?: string;
@@ -55,6 +60,10 @@ export interface EnvData {
     config: ClsModuleOptions;
   };
 
+  helmet: {
+    config?: HelmetOptions;
+  };
+
   database: {
     config: DatabaseConnectionParams;
     skipMigrations: boolean;
@@ -64,6 +73,10 @@ export interface EnvData {
   licensePublicKey: {
     client: string;
     server: string;
+  };
+
+  versionCheck: {
+    url: string;
   };
 
   network: {
@@ -85,9 +98,14 @@ export interface EnvData {
       root: string;
       indexHtml: string;
     };
+    corePlugin: string;
   };
 
   redis: RedisOptions;
+
+  setup: {
+    allow: boolean;
+  };
 
   telemetry: {
     apiPort: number;
@@ -101,6 +119,13 @@ export interface EnvData {
   };
 
   workers: ImmichWorker[];
+
+  plugins: {
+    external: {
+      allow: boolean;
+      installFolder?: string;
+    };
+  };
 
   noColor: boolean;
   nodeVersion?: string;
@@ -126,6 +151,25 @@ const TELEMETRY_TYPES = new Set(Object.values(ImmichTelemetry));
 const asSet = <T>(value: string | undefined, defaults: T[]) => {
   const values = (value || '').replaceAll(/\s/g, '').split(',').filter(Boolean);
   return new Set(values.length === 0 ? defaults : (values as T[]));
+};
+
+const resolveHelmetFile = (helmetFile: 'true' | 'false' | string | undefined) => {
+  // default is off
+  if (!helmetFile || helmetFile === 'false') {
+    return;
+  }
+
+  helmetFile =
+    helmetFile === 'true'
+      ? // eslint-disable-next-line unicorn/prefer-module
+        join(__dirname, '..', '..', 'helmet.json')
+      : helmetFile;
+
+  try {
+    return JSON.parse(readFileSync(helmetFile).toString()) as HelmetOptions;
+  } catch (error) {
+    throw new Error(`Failed to read helmet file: ${helmetFile}`, { cause: error });
+  }
 };
 
 const getEnv = (): EnvData => {
@@ -170,7 +214,7 @@ const getEnv = (): EnvData => {
     try {
       redisConfig = JSON.parse(Buffer.from(redisUrl.slice(10), 'base64').toString());
     } catch (error) {
-      throw new Error(`Failed to decode redis options: ${error}`);
+      throw new Error('Failed to decode redis options', { cause: error });
     }
   }
 
@@ -221,6 +265,7 @@ const getEnv = (): EnvData => {
     environment,
     configFile: dto.IMMICH_CONFIG_FILE,
     logLevel: dto.IMMICH_LOG_LEVEL,
+    logFormat: dto.IMMICH_LOG_FORMAT || LogFormat.Console,
 
     buildMetadata: {
       build: dto.IMMICH_BUILD,
@@ -243,7 +288,7 @@ const getEnv = (): EnvData => {
         prefix: 'immich_bull',
         connection: { ...redisConfig },
         defaultJobOptions: {
-          attempts: 3,
+          attempts: 1,
           removeOnComplete: true,
           removeOnFail: false,
         },
@@ -273,7 +318,15 @@ const getEnv = (): EnvData => {
       vectorExtension,
     },
 
+    helmet: {
+      config: resolveHelmetFile(dto.IMMICH_HELMET_FILE),
+    },
+
     licensePublicKey: isProd ? productionKeys : stagingKeys,
+
+    versionCheck: {
+      url: isProd ? 'https://version.immich.cloud/version' : 'https://version.dev.immich.cloud/version',
+    },
 
     network: {
       trustedProxies: dto.IMMICH_TRUSTED_PROXIES ?? ['linklocal', 'uniquelocal'],
@@ -304,6 +357,11 @@ const getEnv = (): EnvData => {
         root: folders.web,
         indexHtml: join(folders.web, 'index.html'),
       },
+      corePlugin: join(buildFolder, 'corePlugin'),
+    },
+
+    setup: {
+      allow: dto.IMMICH_ALLOW_SETUP ?? true,
     },
 
     storage: {
@@ -318,6 +376,13 @@ const getEnv = (): EnvData => {
     },
 
     workers,
+
+    plugins: {
+      external: {
+        allow: dto.IMMICH_ALLOW_EXTERNAL_PLUGINS ?? false,
+        installFolder: dto.IMMICH_PLUGINS_INSTALL_FOLDER,
+      },
+    },
 
     noColor: !!dto.NO_COLOR,
   };

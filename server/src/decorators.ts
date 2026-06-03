@@ -1,11 +1,10 @@
+import { BeforeUpdateTrigger, Column, ColumnOptions } from '@immich/sql-tools';
 import { SetMetadata, applyDecorators } from '@nestjs/common';
-import { ApiExtension, ApiOperation, ApiOperationOptions, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiOperationOptions, ApiProperty, ApiPropertyOptions, ApiTags } from '@nestjs/swagger';
 import _ from 'lodash';
-import { ADDED_IN_PREFIX, DEPRECATED_IN_PREFIX, LIFECYCLE_EXTENSION } from 'src/constants';
-import { ImmichWorker, JobName, MetadataKey, QueueName } from 'src/enum';
+import { ApiCustomExtension, ApiTag, ImmichWorker, JobName, MetadataKey, QueueName } from 'src/enum';
 import { EmitEvent } from 'src/repositories/event.repository';
 import { immich_uuid_v7, updated_at } from 'src/schema/functions';
-import { BeforeUpdateTrigger, Column, ColumnOptions } from 'src/sql-tools';
 import { setUnion } from 'src/utils/set';
 
 const GeneratedUuidV7Column = (options: Omit<ColumnOptions, 'type' | 'default' | 'nullable'> = {}) =>
@@ -74,7 +73,8 @@ export function Chunked(
     const originalMethod = descriptor.value;
     const parameterIndex = options.paramIndex ?? 0;
     const chunkSize = options.chunkSize || DATABASE_PARAMETER_CHUNK_SIZE;
-    descriptor.value = async function (...arguments_: any[]) {
+    const mergeFn = options.mergeFn;
+    descriptor.value = function (...arguments_: any[]) {
       const argument = arguments_[parameterIndex];
 
       // Early return if argument length is less than or equal to the chunk size.
@@ -82,28 +82,28 @@ export function Chunked(
         (Array.isArray(argument) && argument.length <= chunkSize) ||
         (argument instanceof Set && argument.size <= chunkSize)
       ) {
-        return await originalMethod.apply(this, arguments_);
+        return originalMethod.apply(this, arguments_);
       }
 
       return Promise.all(
-        chunks(argument, chunkSize).map(async (chunk) => {
-          await Reflect.apply(originalMethod, this, [
+        chunks(argument, chunkSize).map((chunk) => {
+          return Reflect.apply(originalMethod, this, [
             ...arguments_.slice(0, parameterIndex),
             chunk,
             ...arguments_.slice(parameterIndex + 1),
           ]);
         }),
-      ).then((results) => (options.mergeFn ? options.mergeFn(results) : results));
+      ).then((results) => (mergeFn ? mergeFn(results) : results));
     };
   };
 }
 
-export function ChunkedArray(options?: { paramIndex?: number }): MethodDecorator {
+export function ChunkedArray(options?: { paramIndex?: number; chunkSize?: number }): MethodDecorator {
   return Chunked({ ...options, mergeFn: _.flatten });
 }
 
-export function ChunkedSet(options?: { paramIndex?: number }): MethodDecorator {
-  return Chunked({ ...options, mergeFn: setUnion });
+export function ChunkedSet(options?: { paramIndex?: number; chunkSize?: number }): MethodDecorator {
+  return Chunked({ ...options, mergeFn: (args: Set<any>[]) => setUnion(...args) });
 }
 
 const UUID = '00000000-0000-4000-a000-000000000000';
@@ -153,39 +153,122 @@ export type JobConfig = {
 };
 export const OnJob = (config: JobConfig) => SetMetadata(MetadataKey.JobConfig, config);
 
-type LifecycleRelease = 'NEXT_RELEASE' | string;
-type LifecycleMetadata = {
-  addedAt?: LifecycleRelease;
-  deprecatedAt?: LifecycleRelease;
-};
+type EndpointOptions = ApiOperationOptions & { history?: HistoryBuilder };
+export const Endpoint = ({ history, ...options }: EndpointOptions) => {
+  const decorators: MethodDecorator[] = [];
+  const extensions = history?.getExtensions() ?? {};
 
-export const EndpointLifecycle = ({
-  addedAt,
-  deprecatedAt,
-  description,
-  ...options
-}: LifecycleMetadata & ApiOperationOptions) => {
-  const decorators: MethodDecorator[] = [ApiExtension(LIFECYCLE_EXTENSION, { addedAt, deprecatedAt })];
-  if (deprecatedAt) {
-    decorators.push(
-      ApiTags('Deprecated'),
-      ApiOperation({
-        deprecated: true,
-        description: DEPRECATED_IN_PREFIX + deprecatedAt + (description ? `. ${description}` : ''),
-        ...options,
-      }),
-    );
+  if (!extensions[ApiCustomExtension.History]) {
+    console.log(`Missing history for endpoint: ${options.summary}`);
   }
+
+  if (history?.isDeprecated()) {
+    options.deprecated = true;
+    decorators.push(ApiTags(ApiTag.Deprecated));
+  }
+
+  decorators.push(ApiOperation({ ...options, ...extensions }));
 
   return applyDecorators(...decorators);
 };
 
-export const PropertyLifecycle = ({ addedAt, deprecatedAt }: LifecycleMetadata) => {
-  const decorators: PropertyDecorator[] = [];
-  decorators.push(ApiProperty({ description: ADDED_IN_PREFIX + addedAt }));
-  if (deprecatedAt) {
-    decorators.push(ApiProperty({ deprecated: true, description: DEPRECATED_IN_PREFIX + deprecatedAt }));
+export type PropertyOptions = ApiPropertyOptions & { history?: HistoryBuilder };
+export const Property = ({ history, ...options }: PropertyOptions) => {
+  const extensions = history?.getExtensions() ?? {};
+
+  if (history?.isDeprecated()) {
+    options.deprecated = true;
   }
 
-  return applyDecorators(...decorators);
+  return ApiProperty({ ...options, ...extensions });
 };
+
+type HistoryEntry = {
+  version: string;
+  state: ApiState | 'Added' | 'Updated';
+  description?: string;
+  replacementId?: string;
+};
+
+type DeprecatedOptions = {
+  /** replacement operationId */
+  replacementId?: string;
+};
+
+type CustomExtensions = {
+  [ApiCustomExtension.State]?: ApiState;
+  [ApiCustomExtension.History]?: HistoryEntry[];
+};
+
+enum ApiState {
+  'Stable' = 'Stable',
+  'Alpha' = 'Alpha',
+  'Beta' = 'Beta',
+  'Internal' = 'Internal',
+  'Deprecated' = 'Deprecated',
+}
+export class HistoryBuilder {
+  private hasDeprecated = false;
+  private items: HistoryEntry[] = [];
+
+  added(version: string, description?: string) {
+    return this.push({ version, state: 'Added', description });
+  }
+
+  updated(version: string, description: string) {
+    return this.push({ version, state: 'Updated', description });
+  }
+
+  alpha(version: string) {
+    return this.push({ version, state: ApiState.Alpha });
+  }
+
+  beta(version: string) {
+    return this.push({ version, state: ApiState.Beta });
+  }
+
+  internal(version: string) {
+    return this.push({ version, state: ApiState.Internal });
+  }
+
+  stable(version: string) {
+    return this.push({ version, state: ApiState.Stable });
+  }
+
+  deprecated(version: string, options?: DeprecatedOptions) {
+    const { replacementId } = options || {};
+    this.hasDeprecated = true;
+    return this.push({ version, state: ApiState.Deprecated, replacementId });
+  }
+
+  isDeprecated(): boolean {
+    return this.hasDeprecated;
+  }
+
+  getExtensions() {
+    const extensions: CustomExtensions = {};
+
+    if (this.items.length > 0) {
+      extensions[ApiCustomExtension.History] = this.items;
+    }
+
+    for (const item of this.items.toReversed()) {
+      if (item.state === 'Added' || item.state === 'Updated') {
+        continue;
+      }
+
+      extensions[ApiCustomExtension.State] = item.state;
+      break;
+    }
+
+    return extensions;
+  }
+
+  private push(item: HistoryEntry) {
+    if (!item.version.startsWith('v')) {
+      throw new Error(`Version string must start with 'v': received '${JSON.stringify(item)}'`);
+    }
+    this.items.push(item);
+    return this;
+  }
+}
