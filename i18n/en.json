@@ -819,7 +819,8 @@
     "login_form_version_check_error": "Error checking version compatibility",
     "network": {
       "finding": "Finding network...",
-      "no_internet": "No internet"
+      "no_internet": "No internet",
+      "unable_to_connect": "Unable to connect"
     },
     "onboarding": {
       "done": "Done",

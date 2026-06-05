@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/services/network/network_monitor_callbacks.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
@@ -31,18 +30,30 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
         ),
       );
     },
-    onTransportUsableChanged: (usable) {
-      ref.read(curatorOsTransportUsableProvider.notifier).state = usable;
-    },
-    onTransportLost: () {
+    onReconnectStarted: () {
       ref.read(apiServiceProvider).notifyConnectionState(
         const conn.ConnectionState(
-          status: conn.ConnectionStatus.disconnected,
+          status: conn.ConnectionStatus.reconnecting,
           connectionType: conn.ConnectionType.api,
         ),
       );
-      // Show "no internet" immediately when transport is lost.
-      unawaited(callbacks.onReconnectionFailed());
+      callbacks.syncNetworkToast();
+    },
+    onTransportUsableChanged: (usable) {
+      ref.read(curatorOsTransportUsableProvider.notifier).state = usable;
+      callbacks.syncNetworkToast();
+    },
+    onTransportLost: () {
+      if (!ref.read(pathResolveTriggerServiceProvider).isResolving &&
+          !ref.read(connectionStateProvider).isReconnecting) {
+        ref.read(apiServiceProvider).notifyConnectionState(
+          const conn.ConnectionState(
+            status: conn.ConnectionStatus.disconnected,
+            connectionType: conn.ConnectionType.api,
+          ),
+        );
+      }
+      callbacks.syncNetworkToast();
     },
     callbacks: callbacks,
   );
