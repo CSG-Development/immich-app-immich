@@ -353,7 +353,10 @@ class BackgroundService {
 
     await certPinning.initialize();
 
-    final remoteAccessDependencies = await initHCDevice(registerHostTrustedChain: certPinning.registerHostTrustedChain);
+    final remoteAccessDependencies = await initHCDevice(
+      registerHostTrustedChain: certPinning.registerHostTrustedChain,
+      isMainRuntime: false,
+    );
     final apiservice = ApiService(certPinning: certPinning);
 
     final ref = ProviderContainer(

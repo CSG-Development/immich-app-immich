@@ -72,17 +72,20 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       _pauseOperation!.complete();
     }
 
-    _resumeOperation = Completer<void>();
+    final operation = Completer<void>();
+    _resumeOperation = operation;
 
     try {
       await _performResume();
     } catch (e, stackTrace) {
       _log.severe("Error during app resume", e, stackTrace);
     } finally {
-      if (!_resumeOperation!.isCompleted) {
-        _resumeOperation!.complete();
+      if (!operation.isCompleted) {
+        operation.complete();
       }
-      _resumeOperation = null;
+      if (identical(_resumeOperation, operation)) {
+        _resumeOperation = null;
+      }
     }
   }
 
@@ -148,7 +151,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       // This allows switching public->local when local becomes available again.
       await _ref
           .read(curatorNetworkMonitorProvider)
-          .reconnectDeviceEndpoint()
+          .reconnectDeviceEndpoint(fromConnectivityChange: true, suppressFindingToast: true)
           .timeout(
             _resumeReconnectTimeout,
             onTimeout: () {

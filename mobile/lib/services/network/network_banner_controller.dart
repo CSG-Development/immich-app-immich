@@ -12,16 +12,13 @@ class NetworkBannerController {
     required BuildContext? Function() contextGetter,
     required VoidCallback onFindingDismissed,
     required VoidCallback onRetry,
-    Duration findingDelay = const Duration(milliseconds: 200),
   }) : _contextGetter = contextGetter,
        _onFindingDismissed = onFindingDismissed,
-       _onRetry = onRetry,
-       _findingDelay = findingDelay;
+       _onRetry = onRetry;
 
   final BuildContext? Function() _contextGetter;
   final VoidCallback _onFindingDismissed;
   final VoidCallback _onRetry;
-  final Duration _findingDelay;
 
   final ValueNotifier<NetworkBannerKind> _kind = ValueNotifier(NetworkBannerKind.hidden);
   Timer? _findingTimer;
@@ -42,20 +39,19 @@ class NetworkBannerController {
       return;
     }
 
+    if (desired == NetworkBannerKind.finding) {
+      _findingTimer?.cancel();
+      _findingTimer = null;
+      _showNow(NetworkBannerKind.finding);
+      return;
+    }
+
     if (desired == NetworkBannerKind.unable || desired == NetworkBannerKind.noInternet) {
       _findingTimer?.cancel();
       _findingTimer = null;
       _showNow(desired);
       return;
     }
-
-    _findingTimer?.cancel();
-    _findingTimer = Timer(_findingDelay, () {
-      _findingTimer = null;
-      if (activeKind == NetworkBannerKind.hidden || activeKind == NetworkBannerKind.unable || activeKind == NetworkBannerKind.noInternet) {
-        _showNow(NetworkBannerKind.finding);
-      }
-    });
   }
 
   void dispose() {
@@ -148,7 +144,7 @@ class _ReactiveNetworkStatusSnackBar extends StatelessWidget {
         final isError = kind == NetworkBannerKind.unable || kind == NetworkBannerKind.noInternet;
         final message = switch (kind) {
           NetworkBannerKind.noInternet => 'curator.network.no_internet'.tr(),
-          NetworkBannerKind.unable => 'errors.unable_to_connect'.tr(),
+          NetworkBannerKind.unable => 'curator.network.unable_to_connect'.tr(),
           _ => 'curator.network.finding'.tr(),
         };
         return NetworkStatusSnackBar(

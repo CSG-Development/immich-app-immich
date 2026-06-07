@@ -20,6 +20,7 @@ import 'package:immich_mobile/services/network/network_banner_controller.dart';
 import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
@@ -122,36 +123,44 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
 
   @override
   Future<void> onReconnectionFailed() async {
+    if (_ref.read(pathResolveTriggerServiceProvider).isResolving) {
+      _ensureResolveStateSubscription();
+      return;
+    }
+
     _lastReconnectionFailureWasNetwork = true;
     _ref.read(apiServiceProvider).notifyConnectionState(
       conn.ConnectionState(
         status: conn.ConnectionStatus.disconnected,
-        lastErrorUrl: Store.get(StoreKey.serverEndpoint),
+        lastErrorUrl: getServerUrl() ?? Store.tryGet(StoreKey.serverEndpoint),
         lastErrorTime: DateTime.now(),
         connectionType: conn.ConnectionType.api,
       ),
     );
-    if (_ref.read(pathResolveTriggerServiceProvider).isResolving) {
-      _ensureResolveStateSubscription();
-    }
     _syncNetworkToast();
   }
 
+  void syncNetworkToast() => _syncNetworkToast();
+
   void _syncNetworkToast({NetworkBannerKind? forceDesired}) {
+    if (Store.tryGet(StoreKey.accessToken)?.isNotEmpty != true) {
+      _bannerController.transitionTo(NetworkBannerKind.hidden);
+      return;
+    }
     final desired = forceDesired ?? _desiredNetworkToast();
     _bannerController.transitionTo(desired);
   }
 
   NetworkBannerKind _desiredNetworkToast() {
-    final isResolving = _ref.read(pathResolveTriggerServiceProvider).isResolving;
-    if (isResolving) {
-      return NetworkBannerKind.finding;
-    }
     final hasUsableTransport = _ref.read(curatorOsTransportUsableProvider);
     if (!hasUsableTransport) {
       return NetworkBannerKind.noInternet;
     }
+    final isResolving = _ref.read(pathResolveTriggerServiceProvider).isResolving;
     final status = _ref.read(connectionStateProvider).status;
+    if (isResolving || status == conn.ConnectionStatus.reconnecting) {
+      return NetworkBannerKind.finding;
+    }
     if (status == conn.ConnectionStatus.disconnected) {
       return NetworkBannerKind.unable;
     }

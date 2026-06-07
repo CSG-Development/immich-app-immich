@@ -13,6 +13,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:chopper/chopper.dart';
+import 'package:hc_device/services/auth/refresh_failure_classifier.dart';
 import 'package:hc_device/services/logger_service.dart';
 
 /// Interface for refresh logic and logout
@@ -87,13 +88,20 @@ class CuratorAuthenticator implements Authenticator {
             _refreshRetryMarkerHeader: _refreshRetryMarkerValue,
           });
         } catch (e) {
-          logger.error('[Auth] Unable to refresh token', e);
+          final failure = RefreshFailureClassifier.describe(e);
+          logger.error(
+            '[Auth] Unable to refresh token ${failure.logSuffix}',
+            e,
+          );
           if (_provider.shouldLogoutOnRefreshFailure(e)) {
             await _provider.logOut(notify: true);
           }
         }
       } else {
-        logger.warning('[Auth] Unable to refresh token (already attempted or failed)');
+        final failure = RefreshFailureClassifier.alreadyAttempted();
+        logger.warning(
+          '[Auth] Unable to refresh token ${failure.logSuffix}',
+        );
         await _provider.logOut(notify: true);
       }
       return null;
@@ -114,7 +122,11 @@ class CuratorAuthenticator implements Authenticator {
       _completer = null; // Reset for next refresh cycle
       return token;
     } catch (e) {
-      logger.error('[Auth] Automatic token refresh failed', e);
+      final failure = RefreshFailureClassifier.describe(e);
+      logger.error(
+        '[Auth] Automatic token refresh failed ${failure.logSuffix}',
+        e,
+      );
       _completer!.completeError(e);
       _completer = null; // Reset so next request can retry
       rethrow;
