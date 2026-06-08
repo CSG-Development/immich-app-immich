@@ -34,10 +34,19 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
         }
     }
 
+    private struct FetchParams {
+        let session: URLSession
+        let host: String
+        let port: Int32
+        let delegate: CertificateCaptureDelegate
+    }
+
     func getCertificateChainSnapshot(key: CertificateChainKey) throws -> CertificateChainSnapshot {
         let cacheKey = Self.normalizedCacheKey(host: key.host, port: key.port)
 
-        return stateQueue.sync {
+        var fetchParams: FetchParams?
+
+        let snapshot: CertificateChainSnapshot = stateQueue.sync {
             if disposeGeneration != 0 {
                 return CertificateChainSnapshot(status: .failed, certificates: [])
             }
@@ -97,19 +106,25 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
                 delegateQueue: delegateQueue,
             )
             inflightSessions[cacheKey] = session
-
-            DispatchQueue.global(qos: .utility).async { [weak self] in
-                self?.runFetch(
-                    cacheKey: cacheKey,
-                    host: host,
-                    port: port,
-                    session: session,
-                    delegate: delegate,
-                )
-            }
+            fetchParams = FetchParams(session: session, host: host, port: port, delegate: delegate)
 
             return CertificateChainSnapshot(status: .pending, certificates: [])
         }
+
+        // Start fetch after releasing stateQueue — dataTask + resume are non-blocking.
+        // This eliminates the race where close()/cancel could invalidate the session
+        // before the async dispatch got CPU time.
+        if let params = fetchParams {
+            runFetch(
+                cacheKey: cacheKey,
+                host: params.host,
+                port: params.port,
+                session: params.session,
+                delegate: params.delegate,
+            )
+        }
+
+        return snapshot
     }
 
     func cancelCertificateChainForHost(key: CertificateChainKey) throws {
@@ -146,10 +161,9 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
     }
 
     private func applyTerminal(cacheKey: String, certificates: [String]) {
+        var sessionToInvalidate: URLSession?
         stateQueue.sync {
-            if let s = inflightSessions.removeValue(forKey: cacheKey) {
-                s.invalidateAndCancel()
-            }
+            sessionToInvalidate = inflightSessions.removeValue(forKey: cacheKey)
             if disposeGeneration != 0 {
                 return
             }
@@ -183,6 +197,13 @@ final class CertificateFetcherApiImplSimple: CertificateFetcherApi {
                     maxCacheEntries: maxCacheEntries,
                     ttl: Self.successCacheTTL,
                 )
+            }
+        }
+        // Invalidate outside the completion handler callstack so Firebase Performance's
+        // URLSession instrumentation can safely finish accessing session/task properties.
+        if let s = sessionToInvalidate {
+            DispatchQueue.global(qos: .utility).async {
+                s.finishTasksAndInvalidate()
             }
         }
     }

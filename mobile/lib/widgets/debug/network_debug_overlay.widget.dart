@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
+import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 
 class NetworkDebugOverlay extends ConsumerStatefulWidget {
@@ -61,7 +61,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     final triggerLabel = triggerService.lastTriggerType?.name ?? 'n/a';
     final activeTriggerLabel = triggerService.activeTriggerType?.name ?? '-';
     final queuedTriggerLabel = triggerService.queuedTriggerType?.name ?? '-';
-    final connectedEndpoint = triggerService.lastResolvedEndpoint ?? ref.read(apiServiceProvider).apiClient.basePath;
+    final connectedEndpoint = getServerUrl() ?? '';
     final connectedType = _resolvePathType(
       connectedEndpoint: connectedEndpoint,
       possiblePaths: possiblePaths,
@@ -140,7 +140,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                       children: [
                         const _DebugInfoLine(label: 'Mode', value: 'WIFI'),
                         _DebugInfoLine(label: 'Status', value: resolverInProgress ? 'resolving' : 'stable'),
-                        _DebugInfoLine(label: 'Err URL', value: state.lastErrorUrl ?? '-'),
+                        _DebugInfoLine(label: 'Err URL', value: getServerUrl() ?? state.lastErrorUrl ?? '-'),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -499,7 +499,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     timeline.add(('Public done', fromStart(_resolveTiming.publicProbeDoneAt)));
     timeline.add(('Priority done', fromStart(_resolveTiming.priorityPhaseDoneAt)));
     timeline.add(('Selected', fromStart(_resolveTiming.selectedAt)));
-    timeline.add(('Endpoint', _resolveTiming.selectedEndpoint ?? triggerService.lastResolvedEndpoint ?? '-'));
+    timeline.add(('Endpoint', getServerUrl() ?? _resolveTiming.selectedEndpoint ?? triggerService.lastResolvedEndpoint ?? '-'));
 
     final total = anchor == null
         ? '-'

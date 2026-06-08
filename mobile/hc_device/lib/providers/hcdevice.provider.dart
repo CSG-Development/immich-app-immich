@@ -18,12 +18,14 @@ class RemoteAccessDependencies {
   final FlutterSecureStorage secureStorage;
   final Map<String, String> secureData;
   final Future<void> Function({required String host, int? port}) registerHostTrustedChain;
+  final bool isMainRuntime;
 
   RemoteAccessDependencies({
     required this.storageData,
     required this.secureStorage,
     required this.secureData,
-    required this.registerHostTrustedChain
+    required this.registerHostTrustedChain,
+    this.isMainRuntime = true,
   });
 }
 

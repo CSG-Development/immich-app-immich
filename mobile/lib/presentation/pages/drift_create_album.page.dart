@@ -24,10 +24,18 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   FocusNode albumTitleTextFieldFocusNode = FocusNode();
   FocusNode albumDescriptionTextFieldFocusNode = FocusNode();
   bool isAlbumTitleTextFieldFocus = false;
+  bool _isCreating = false;
   Set<BaseAsset> selectedAssets = {};
 
   @override
+  void initState() {
+    super.initState();
+    albumTitleController.addListener(_onTitleChanged);
+  }
+
+  @override
   void dispose() {
+    albumTitleController.removeListener(_onTitleChanged);
     albumTitleController.dispose();
     albumDescriptionController.dispose();
     albumTitleTextFieldFocusNode.dispose();
@@ -35,7 +43,11 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
     super.dispose();
   }
 
-  bool get _canCreateAlbum => albumTitleController.text.isNotEmpty;
+  void _onTitleChanged() {
+    setState(() {});
+  }
+
+  bool get _canCreateAlbum => albumTitleController.text.isNotEmpty && !_isCreating;
 
   String _getEffectiveTitle() {
     return albumTitleController.text.isNotEmpty
@@ -154,6 +166,9 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   }
 
   Future<void> createAlbum() async {
+    if (_isCreating) return;
+    setState(() => _isCreating = true);
+
     onBackgroundTapped();
 
     final title = _getEffectiveTitle().trim();
@@ -163,23 +178,30 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
           SnackBar(content: Text('create_album_title_required'.t()), backgroundColor: context.colorScheme.error),
         );
       }
+      setState(() => _isCreating = false);
       return;
     }
 
-    final album = await ref
-        .watch(remoteAlbumProvider.notifier)
-        .createAlbum(
-          title: title,
-          description: albumDescriptionController.text.trim(),
-          assetIds: selectedAssets.map((asset) {
-            final remoteAsset = asset as RemoteAsset;
-            return remoteAsset.id;
-          }).toList(),
-        );
+    try {
+      final album = await ref
+          .watch(remoteAlbumProvider.notifier)
+          .createAlbum(
+            title: title,
+            description: albumDescriptionController.text.trim(),
+            assetIds: selectedAssets.map((asset) {
+              final remoteAsset = asset as RemoteAsset;
+              return remoteAsset.id;
+            }).toList(),
+          );
 
-    if (album != null) {
-      ref.read(currentRemoteAlbumProvider.notifier).setAlbum(album);
-      context.replaceRoute(RemoteAlbumRoute(album: album));
+      if (album != null) {
+        ref.read(currentRemoteAlbumProvider.notifier).setAlbum(album);
+        context.replaceRoute(RemoteAlbumRoute(album: album));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
     }
   }
 

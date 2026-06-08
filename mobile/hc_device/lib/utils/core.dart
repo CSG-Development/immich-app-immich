@@ -115,7 +115,10 @@ Future<void> stopDiscovery(nsd.Discovery discovery) async {
   }
 }
 
-Future<RemoteAccessDependencies> initHCDevice({dynamic registerHostTrustedChain}) async {
+Future<RemoteAccessDependencies> initHCDevice({
+  dynamic registerHostTrustedChain,
+  bool isMainRuntime = true,
+}) async {
   final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
   final Map<String, dynamic> storageData = await asyncPrefs.getAll();
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
@@ -147,6 +150,7 @@ Future<RemoteAccessDependencies> initHCDevice({dynamic registerHostTrustedChain}
     secureData: secureData,
     secureStorage: secureStorage,
     storageData: storageData,
-    registerHostTrustedChain: registerHostTrustedChain
+    registerHostTrustedChain: registerHostTrustedChain,
+    isMainRuntime: isMainRuntime,
   );
 }
