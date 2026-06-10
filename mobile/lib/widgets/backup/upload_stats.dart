@@ -26,10 +26,10 @@ class BackupUploadStats extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(uploadFileProgress, style: const TextStyle(fontSize: 10, fontFamily: "GoogleSansCode")),
+          Text(uploadFileProgress, style: const TextStyle(fontSize: 10)),
           Text(
             _formatUploadFileSpeed(uploadFileSpeed),
-            style: const TextStyle(fontSize: 10, fontFamily: "GoogleSansCode"),
+            style: const TextStyle(fontSize: 10),
           ),
         ],
       ),

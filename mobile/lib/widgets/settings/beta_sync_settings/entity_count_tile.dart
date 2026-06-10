@@ -52,7 +52,7 @@ class EntityCountTile extends StatelessWidget {
             padding: const EdgeInsets.only(top: 8.0),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 18, fontFamily: 'GoogleSansCode'),
+                style: const TextStyle(fontSize: 18),
                 children: [
                   TextSpan(
                     text: zeroPadding(count, maxDigits),
