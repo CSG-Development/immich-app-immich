@@ -80,7 +80,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
                               localEndpointText.value,
                               style: context.textTheme.labelLarge?.copyWith(
                                 color: enabled ? context.primaryColor : context.colorScheme.onSurface.withAlpha(100),
-                                fontFamily: 'GoogleSansCode',
                               ),
                             ),
                       trailing: const IconButton(onPressed: null, icon: Icon(Icons.edit_rounded)),

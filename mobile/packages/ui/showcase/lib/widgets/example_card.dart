@@ -211,7 +211,6 @@ class _CodeCard extends StatelessWidget {
                   child: Text(
                     '${index + 1}',
                     style: TextStyle(
-                      fontFamily: 'GoogleSansCode',
                       fontSize: 13,
                       color: lineNumberColor,
                       height: 1.5,
@@ -224,7 +223,6 @@ class _CodeCard extends StatelessWidget {
             SelectableText.rich(
               _codeHighlighter.highlight(code),
               style: const TextStyle(
-                fontFamily: 'GoogleSansCode',
                 fontSize: 13,
                 height: 1.54,
               ),

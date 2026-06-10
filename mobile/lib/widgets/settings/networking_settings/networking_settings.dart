@@ -36,7 +36,7 @@ class NetworkingSettings extends HookConsumerWidget {
                   : const Icon(Icons.circle_outlined),
               title: Text(
                 currentEndpoint ?? "--",
-                style: TextStyle(fontSize: 14, fontFamily: 'GoogleSansCode', color: context.primaryColor),
+                style: TextStyle(fontSize: 14, color: context.primaryColor),
               ),
             ),
           ),

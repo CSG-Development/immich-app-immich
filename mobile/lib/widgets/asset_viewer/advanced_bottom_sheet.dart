@@ -59,7 +59,6 @@ class AdvancedBottomSheet extends HookConsumerWidget {
                           style: const TextStyle(
                             fontSize: 12.0,
                             fontWeight: FontWeight.bold,
-                            fontFamily: "GoogleSansCode",
                           ),
                           showCursor: true,
                         ),
