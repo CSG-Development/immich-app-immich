@@ -43,6 +43,7 @@ migration:
 	dart run drift_dev make-migrations
 
 translation:
+	cd ../i18n && pnpm install --ignore-workspace
 	pnpm --prefix ../i18n run format:fix
 	dart run easy_localization:generate -S ../i18n
 	dart run bin/generate_keys.dart
