@@ -7,6 +7,7 @@ import com.seagate.curator.stxphotos.android.INITIAL_BUFFER_SIZE
 import com.seagate.curator.stxphotos.android.NativeBuffer
 import com.seagate.curator.stxphotos.android.NativeByteBuffer
 import com.seagate.curator.stxphotos.android.core.HttpClientManager
+import com.seagate.curator.stxphotos.android.core.NetworkCertificatePinning
 import kotlinx.coroutines.*
 import okhttp3.Cache
 import okhttp3.Call
@@ -126,7 +127,8 @@ private object ImageFetcherManager {
   }
 
   private fun build(): ImageFetcher {
-    return if (HttpClientManager.isMtls) {
+    // Cronet uses the system trust store only; pinned Curator roots require OkHttp.
+    return if (HttpClientManager.isMtls || NetworkCertificatePinning.isEnabled()) {
       OkHttpImageFetcher.create(cacheDir)
     } else {
       CronetImageFetcher()
