@@ -311,7 +311,7 @@ object HttpClientManager {
 
   @OptIn(UnstableApi::class)
   fun createDataSourceFactory(headers: Map<String, String>): DataSource.Factory {
-    return if (isMtls) {
+    return if (isMtls || NetworkCertificatePinning.isEnabled()) {
       OkHttpDataSource.Factory(client.newBuilder().cache(null).build())
     } else {
       ResolvingDataSource.Factory(
