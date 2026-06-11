@@ -69,7 +69,7 @@ class CopyActionButton extends ConsumerWidget {
 
     return BaseActionButton(
       iconData: Icons.copy_outlined,
-      label: 'Copy',
+      label: 'copy_to_clipboard'.t(context: context),
       menuItem: menuItem,
       onPressed: enabled ? () => _onTap(context, ref) : null,
     );

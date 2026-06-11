@@ -124,6 +124,6 @@ final timelineTotalAssetsProvider = StreamProvider.autoDispose<int>((ref) async*
   yield* timelineService.watchBuckets().map(
     (buckets) => buckets.fold<int>(0, (acc, bucket) => acc + bucket.assetCount),
   );
-});
+}, dependencies: [timelineServiceProvider]);
 
 final timelineStateProvider = NotifierProvider<TimelineStateNotifier, TimelineState>(TimelineStateNotifier.new);

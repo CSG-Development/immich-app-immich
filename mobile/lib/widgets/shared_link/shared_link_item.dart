@@ -1,14 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:auto_route/auto_route.dart';
-import 'package:collection/collection.dart';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:hc_device/api/remote_access.enums.swagger.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/shared_link/shared_link.model.dart';
@@ -71,23 +69,13 @@ class SharedLinkItem extends ConsumerWidget {
           : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;
       final connectedDevicePaths =
           dp.getActiveDevicePaths(deviceRemoteId: dp.seagateDeviceID) ?? cachedPathsForConnectedDevice;
-      final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
-
-      var serverUrl = remoteUrl != null
-          ? Uri(scheme: 'https', host: remoteUrl.address, port: remoteUrl.port, path: 'photos').toString()
-          : null;
-
-      // final externalDomain = ref.read(serverInfoProvider.select((s) => s.serverConfig.externalDomain));
-      // var serverUrl = externalDomain.isNotEmpty ? externalDomain : getServerUrl();
-      if (serverUrl != null && !serverUrl.endsWith('/')) {
-        serverUrl += '/';
-      }
+      final serverUrl = DeviceEndpointUtils.buildSharedLinkBaseUrl(connectedDevicePaths);
       if (serverUrl == null) {
         ImmichToast.show(
           context: context,
           gravity: ToastGravity.BOTTOM,
           toastType: ToastType.error,
-          msg: "shared_link_error_server_url_fetch".tr(),
+          msg: 'curator.shared_link_create_public_error'.tr(),
         );
         return;
       }

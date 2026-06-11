@@ -13,27 +13,27 @@ import 'package:hc_device/api/remote_access.swagger.dart'
         Validate$RequestBody;
 
 class RemoteRepository {
-  RemoteRepository(this._getApi);
+  RemoteRepository(this._api);
 
-  final RemoteAccess Function() _getApi;
+  final RemoteAccess _api;
 
   Future<Response<TokenResponse$Response>> refreshToken({
     required String clientId,
     required String refreshToken,
   }) {
-    return _getApi().clientV1AuthRefreshPost(
+    return _api.clientV1AuthRefreshPost(
       body: Refresh$RequestBody(clientId: clientId, refreshToken: refreshToken),
     );
   }
 
   Future<Response<List<Device>>> getDevices() {
-    return _getApi().clientV1DevicesGet();
+    return _api.clientV1DevicesGet();
   }
 
   Future<Response<DevicePaths>> getDevicePaths({
     required String deviceID,
   }) {
-    return _getApi().clientV1DevicesDeviceIDGet(deviceID: deviceID);
+    return _api.clientV1DevicesDeviceIDGet(deviceID: deviceID);
   }
 
   Future<Response<InitiateResponse$Response>> initiateEmailAccess({
@@ -41,7 +41,7 @@ class RemoteRepository {
     required String clientId,
     required String clientFriendlyName,
   }) {
-    return _getApi().clientV1AuthInitiatePost(
+    return _api.clientV1AuthInitiatePost(
       type: ClientV1AuthInitiatePostType.email,
       body: Code$RequestBody(
         email: email,
@@ -56,7 +56,7 @@ class RemoteRepository {
     required String clientId,
     required String reference,
   }) {
-    return _getApi().clientV1AuthTokenPost(
+    return _api.clientV1AuthTokenPost(
       type: ClientV1AuthTokenPostType.email,
       body: Validate$RequestBody(
         code: code,

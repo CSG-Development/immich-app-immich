@@ -5,12 +5,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_access_form.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 @RoutePage()
 class LoginPage extends HookConsumerWidget {
@@ -21,19 +19,8 @@ class LoginPage extends HookConsumerWidget {
     final authenticatedEmail = ref.read(deviceProvider).login ?? '';
     final devEnableSettingsOnLogin = ref.watch(developerOptionsProvider).devEnableSettingsOnLogin;
 
-    final appVersion = useState('0.0.0');
     final isRemoteAccessForm = useState<bool>(authenticatedEmail.isEmpty);
     final remoteAccessInitialEmailError = useState<String?>(null);
-
-    getAppInfo() async {
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      appVersion.value = packageInfo.version;
-    }
-
-    useEffect(() {
-      getAppInfo();
-      return null;
-    });
 
     return Scaffold(
       appBar: isRemoteAccessForm.value
@@ -96,39 +83,6 @@ class LoginPage extends HookConsumerWidget {
               ),
             );
           },
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'v${appVersion.value}',
-                  style: TextStyle(
-                    color: context.colorScheme.onSurfaceSecondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(' '),
-                GestureDetector(
-                  child: Text(
-                    'Logs',
-                    style: TextStyle(
-                      color: context.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  onTap: () {
-                    context.pushRoute(const AppLogRoute());
-                  },
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

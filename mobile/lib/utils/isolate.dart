@@ -13,6 +13,7 @@ import 'package:immich_mobile/providers/infrastructure/cancel.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
+import 'package:immich_mobile/utils/secondary_runtime_api.bootstrap.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -50,10 +51,11 @@ Cancelable<T?> runInIsolateGentle<T>({
         await HttpCertPinningManager.ensureInitialized();
 
         final remoteAccessDependencies = await initHCDevice(
-          httpClient: NetworkRepository.client,
+          httpClientProvider: () => NetworkRepository.client,
           isMainRuntime: false,
         );
         final apiservice = ApiService();
+        await bootstrapSecondaryRuntimeApiSession(apiservice);
 
         final ref = ProviderContainer(
           overrides: [

@@ -9,7 +9,7 @@ import 'package:http/http.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -21,14 +21,22 @@ class UploadTaskWithFile {
   const UploadTaskWithFile({required this.file, required this.task});
 }
 
-final uploadRepositoryProvider = Provider((ref) => UploadRepository());
+typedef PhotosHttpClientProvider = Client Function();
+
+final uploadRepositoryProvider = Provider((ref) {
+  return UploadRepository(
+    httpClientProvider: () => ref.read(apiServiceProvider).httpClient,
+  );
+});
 
 class UploadRepository {
   final Logger logger = Logger('UploadRepository');
+  final PhotosHttpClientProvider _httpClientProvider;
   void Function(TaskStatusUpdate)? onUploadStatus;
   void Function(TaskProgressUpdate)? onTaskProgress;
 
-  UploadRepository() {
+  UploadRepository({required PhotosHttpClientProvider httpClientProvider})
+    : _httpClientProvider = httpClientProvider {
     FileDownloader().registerCallbacks(
       group: kBackupGroup,
       taskStatusCallback: (update) => onUploadStatus?.call(update),
@@ -124,7 +132,7 @@ class UploadRepository {
       baseRequest.fields.addAll(candidate.task.fields);
       baseRequest.files.add(assetRawUploadData);
 
-      final response = await NetworkRepository.client.send(baseRequest);
+      final response = await _httpClientProvider().send(baseRequest);
       final responseBody = jsonDecode(await response.stream.bytesToString()) as Map<String, dynamic>;
 
       if (![200, 201].contains(response.statusCode)) {
@@ -178,7 +186,7 @@ class UploadRepository {
         baseRequest.fields.addAll(candidate.task.fields);
         baseRequest.files.add(assetRawUploadData);
 
-        final response = await NetworkRepository.client.send(baseRequest);
+        final response = await _httpClientProvider().send(baseRequest);
 
         final responseBody = jsonDecode(await response.stream.bytesToString());
         processed++;
@@ -238,7 +246,7 @@ class UploadRepository {
       baseRequest.fields.addAll(fields);
       baseRequest.files.add(assetRawUploadData);
 
-      final response = await NetworkRepository.client.send(baseRequest);
+      final response = await _httpClientProvider().send(baseRequest);
       final responseBodyString = await response.stream.bytesToString();
 
       if (![200, 201].contains(response.statusCode)) {

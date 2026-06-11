@@ -86,8 +86,8 @@ class DriftSearchPage extends HookConsumerWidget {
 
     final userPreferences = ref.watch(userMetadataPreferencesProvider);
 
-    search(SearchFilter f) {
-      if (f == filter.value) {
+    search(SearchFilter f, {bool force = false}) {
+      if (!force && f == filter.value) {
         return;
       }
 
@@ -151,7 +151,7 @@ class DriftSearchPage extends HookConsumerWidget {
       handleApply() {
         final label = people.map((e) => e.name != '' ? e.name : 'no_name'.t(context: context)).join(', ');
         peopleCurrentFilterWidget.value = label.isNotEmpty ? Text(label, style: context.textTheme.labelLarge) : null;
-        search(filter.value.copyWith(people: people));
+        search(filter.value.copyWith(people: people), force: true);
       }
 
       showFilterBottomSheet(

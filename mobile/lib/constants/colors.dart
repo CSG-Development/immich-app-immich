@@ -14,3 +14,6 @@ const Color curatorBrandColorDark = Color(0xFF64B5F6);
 const Color whiteOpacity75 = Color.fromRGBO(255, 255, 255, 0.75);
 const Color red400 = Color(0xFFEF5350);
 const Color grey200 = Color(0xFFEEEEEE);
+const Color grey500 = Color(0xFF9E9E9E);
+const Color greyBorder = Color(0xFFCBCDD3);
+const Color greyBorderDark = Color(0xFF616161);

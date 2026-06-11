@@ -32,7 +32,6 @@ import 'package:hc_device/data/repositories/device_repository.dart';
 import 'package:hc_device/providers/auth.api.dart';
 import 'package:hc_device/services/contracts/device_connectivity_sources.dart';
 import 'package:hc_device/services/logger_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferencesAsync;
@@ -217,7 +216,7 @@ class DeviceProvider extends Notifier<DeviceState>
 
   late final Map<String, dynamic> _storageData;
   late final FlutterSecureStorage _secureStorage;
-  late final http.Client _httpClient;
+  late final HttpClientProvider _httpClientProvider;
   late final DeviceRepository _repo;
   late final AuthRepository _authRepo;
   final DeviceApiClientFactory _apiClientFactory = const DeviceApiClientFactory();
@@ -227,7 +226,7 @@ class DeviceProvider extends Notifier<DeviceState>
     final deps = ref.read(remoteAccessDependenciesProvider);
     _storageData = deps.storageData;
     _secureStorage = deps.secureStorage;
-    _httpClient = deps.httpClient;
+    _httpClientProvider = deps.httpClientProvider;
     _authRepo = AuthRepository(_secureStorage);
     _repo = DeviceRepository(() => api);
 
@@ -331,13 +330,29 @@ class DeviceProvider extends Notifier<DeviceState>
 
   /// Returns active in-memory device paths only when they belong to the
   /// provided remote device identity (if any).
+  ///
+  /// Returns `null` when paths are unset or empty so callers can fall back to
+  /// [getCachedDevicePathsForDevice].
   List<DevicePath>? getActiveDevicePaths({String? deviceRemoteId}) {
     if (deviceRemoteId != null &&
         state.seagateDeviceID != null &&
         state.seagateDeviceID != deviceRemoteId) {
       return null;
     }
-    return state.devicePaths;
+    final paths = state.devicePaths;
+    if (paths == null || paths.isEmpty) {
+      return null;
+    }
+    return paths;
+  }
+
+  /// Active paths for [deviceRemoteId], falling back to cached Remote Access paths.
+  List<DevicePath> resolveDevicePathsForDisplay({String? deviceRemoteId}) {
+    final remoteId = deviceRemoteId ?? state.seagateDeviceID;
+    final cached = remoteId != null && remoteId.isNotEmpty
+        ? getCachedDevicePathsForDevice(remoteId)?.paths
+        : getCachedDevicePaths()?.paths;
+    return getActiveDevicePaths(deviceRemoteId: remoteId) ?? cached ?? const [];
   }
 
   @override
@@ -603,6 +618,19 @@ class DeviceProvider extends Notifier<DeviceState>
   }
 
   static Uri createBaseUrl(String host, int? port) {
+    host = host.trim();
+
+    // Defensive normalization for Remote Access payloads that may incorrectly
+    // include a full URL in the "address" field instead of host-only value.
+    final uriLikeHost = host.startsWith(RegExp(r'https?://', caseSensitive: false))
+        ? host
+        : 'https://$host';
+    final parsed = Uri.tryParse(uriLikeHost);
+    if (parsed != null && parsed.host.isNotEmpty) {
+      host = parsed.host;
+      port ??= parsed.hasPort ? parsed.port : null;
+    }
+
     // Fix mDNS on iOS, the hostname could be "HomeCloud-5022166.local."
     if (host.endsWith(".")) {
       host = host.substring(0, host.length - 1);
@@ -622,7 +650,7 @@ class DeviceProvider extends Notifier<DeviceState>
     return _apiClientFactory.create(
       baseUrl: baseUrl,
       authProvider: this,
-      httpClient: _httpClient,
+      httpClient: _httpClientProvider(),
       authenticator: authenticator,
       interceptors: interceptors,
     );

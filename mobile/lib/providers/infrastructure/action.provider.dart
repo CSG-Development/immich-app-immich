@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:background_downloader/background_downloader.dart';
 import 'package:cancellation_token_http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/asset.service.dart';
-import 'package:immich_mobile/models/download/livephotos_medatada.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/asset.provider.dart';
@@ -16,12 +17,13 @@ import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/providers/backup/asset_upload_progress.provider.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/action.service.dart';
-import 'package:immich_mobile/services/download.service.dart';
 import 'package:immich_mobile/services/timeline.service.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/widgets/asset_grid/delete_dialog.dart';
 import 'package:logging/logging.dart';
+import 'package:openapi/api.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 final actionProvider = NotifierProvider<ActionNotifier, void>(
@@ -45,7 +47,6 @@ class ActionNotifier extends Notifier<void> {
   late ActionService _service;
   late ForegroundUploadService _foregroundUploadService;
   late AssetService _assetService;
-  late DownloadService _downloadService;
 
   ActionNotifier() : super();
 
@@ -54,29 +55,6 @@ class ActionNotifier extends Notifier<void> {
     _foregroundUploadService = ref.watch(foregroundUploadServiceProvider);
     _service = ref.watch(actionServiceProvider);
     _assetService = ref.watch(assetServiceProvider);
-    _downloadService = ref.watch(downloadServiceProvider);
-    _downloadService.onImageDownloadStatus = _downloadImageCallback;
-    _downloadService.onVideoDownloadStatus = _downloadVideoCallback;
-    _downloadService.onLivePhotoDownloadStatus = _downloadLivePhotoCallback;
-  }
-
-  void _downloadImageCallback(TaskStatusUpdate update) {
-    if (update.status == TaskStatus.complete) {
-      _downloadService.saveImageWithPath(update.task);
-    }
-  }
-
-  void _downloadVideoCallback(TaskStatusUpdate update) {
-    if (update.status == TaskStatus.complete) {
-      _downloadService.saveVideo(update.task);
-    }
-  }
-
-  void _downloadLivePhotoCallback(TaskStatusUpdate update) async {
-    if (update.status == TaskStatus.complete) {
-      final livePhotosId = LivePhotosMetadata.fromJson(update.task.metaData).id;
-      unawaited(_downloadService.saveLivePhotos(update.task, livePhotosId));
-    }
   }
 
   List<String> _getRemoteIdsForSource(ActionSource source) {
@@ -189,10 +167,15 @@ class ActionNotifier extends Notifier<void> {
     }
   }
 
+  void _resetMultiSelect() {
+    ref.read(multiSelectProvider.notifier).reset();
+  }
+
   Future<ActionResult> archive(ActionSource source) async {
     final ids = _getOwnedRemoteIdsForSource(source);
     try {
       await _service.archive(ids);
+      _resetMultiSelect();
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to archive assets', error, stack);
@@ -213,9 +196,9 @@ class ActionNotifier extends Notifier<void> {
 
   Future<ActionResult> moveToLockFolder(ActionSource source) async {
     final ids = _getOwnedRemoteIdsForSource(source);
-    final localIds = _getLocalIdsForSource(source, ignoreLocalOnly: true);
     try {
-      await _service.moveToLockFolder(ids, localIds);
+      await _service.moveToLockFolder(ids);
+      _resetMultiSelect();
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to move assets to lock folder', error, stack);
@@ -239,6 +222,7 @@ class ActionNotifier extends Notifier<void> {
 
     try {
       await _service.trash(ids);
+      _resetMultiSelect();
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to trash assets', error, stack);
@@ -268,13 +252,46 @@ class ActionNotifier extends Notifier<void> {
     }
   }
 
+  Future<ActionResult> emptyTrash(String userId) async {
+    try {
+      final count = await _service.emptyTrash(userId);
+      return ActionResult(count: count, success: true);
+    } catch (error, stack) {
+      _logger.severe('Failed to empty trash', error, stack);
+      return ActionResult(count: 0, success: false, error: error.toString());
+    }
+  }
+
+  Future<ActionResult> restoreAllTrash(String userId) async {
+    try {
+      final count = await _service.restoreAllTrash(userId);
+      return ActionResult(count: count, success: true);
+    } catch (error, stack) {
+      _logger.severe('Failed to restore all trash assets', error, stack);
+      return ActionResult(count: 0, success: false, error: error.toString());
+    }
+  }
+
+  void _logDeleteAuthPath(Object error) {
+    if (error is! ApiException || error.code != HttpStatus.unauthorized) {
+      return;
+    }
+    final api = ref.read(apiServiceProvider);
+    _logger.warning(
+      '[auth-path] delete 401 store=${Store.tryGet(StoreKey.serverEndpoint)} '
+      'api=${api.apiClient.basePath} switching=${api.isEndpointSwitchInProgress}',
+    );
+  }
+
   Future<ActionResult> trashRemoteAndDeleteLocal(ActionSource source) async {
     final ids = _getOwnedRemoteIdsForSource(source);
     final localIds = _getLocalIdsForSource(source);
     try {
       await _service.trashRemoteAndDeleteLocal(ids, localIds);
+      _resetMultiSelect();
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
+      _logDeleteAuthPath(error);
       _logger.severe('Failed to delete assets', error, stack);
       return ActionResult(count: ids.length, success: false, error: error.toString());
     }
@@ -285,8 +302,10 @@ class ActionNotifier extends Notifier<void> {
     final localIds = _getLocalIdsForSource(source);
     try {
       await _service.deleteRemoteAndLocal(ids, localIds);
+      _resetMultiSelect();
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
+      _logDeleteAuthPath(error);
       _logger.severe('Failed to delete assets', error, stack);
       return ActionResult(count: ids.length, success: false, error: error.toString());
     }

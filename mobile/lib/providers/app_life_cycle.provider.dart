@@ -12,7 +12,6 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
@@ -21,7 +20,6 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/backup/ios_background_settings.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
-import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/memory.provider.dart';
@@ -51,7 +49,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   Completer<void>? _resumeOperation;
   Completer<void>? _pauseOperation;
   final _log = Logger("AppLifeCycleNotifier");
-  static const Duration _resumeReconnectTimeout = Duration(seconds: 5);
 
   AppLifeCycleNotifier(this._ref) : super(AppLifeCycleEnum.active);
 
@@ -119,8 +116,17 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _performResume() async {
-    // no need to resume because app was never really paused
-    if (!_wasPaused) return;
+    final isAuthenticated = _ref.read(authProvider).isAuthenticated;
+    final isColdStart = !_wasPaused;
+
+    // On cold start, refresh server version as soon as auth is available.
+    if (isColdStart) {
+      if (isAuthenticated) {
+        unawaited(_ref.read(serverInfoProvider.notifier).getServerVersion());
+      }
+      return;
+    }
+
     _wasPaused = false;
 
     final routerStack = _ref.read(appRouterProvider).navigatorKey.currentContext?.router.stack;
@@ -148,26 +154,8 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       }
     }
 
-    final isAuthenticated = _ref.read(authProvider).isAuthenticated;
-
     // Needs to be logged in
     if (isAuthenticated) {
-      // In hc_device-driven resolver mode, trigger winner selection on resume.
-      // This allows switching public->local when local becomes available again.
-      await _ref
-          .read(curatorNetworkMonitorProvider)
-          .reconnectDeviceEndpoint(fromConnectivityChange: true, suppressFindingToast: true)
-          .timeout(
-            _resumeReconnectTimeout,
-            onTimeout: () {
-              _log.warning(
-                "Resume reconnect exceeded ${_resumeReconnectTimeout.inSeconds}s; continuing resume pipeline",
-              );
-            },
-          );
-      final endpoint = _ref.read(apiServiceProvider).apiClient.basePath;
-      _log.info("Using server URL: $endpoint");
-
       if (!Store.isBetaTimelineEnabled) {
         final permission = _ref.watch(galleryPermissionNotifier);
         if (permission.isGranted || permission.isLimited) {
@@ -220,6 +208,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _handleBetaTimelineResume() async {
+    await _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
     unawaited(_ref.read(backgroundWorkerLockServiceProvider).lock());
 
     // Give isolates time to complete any ongoing database transactions

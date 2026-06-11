@@ -458,6 +458,45 @@ class CuratorLoginForm extends HookConsumerWidget {
       return selectedDevice.value;
     }
 
+    String buildDevicePhotosBaseUrl(Uri baseUrl) {
+      final hasCustomPort = baseUrl.port != 80 && baseUrl.port != 443;
+      final authority = hasCustomPort ? '${baseUrl.host}:${baseUrl.port}' : baseUrl.host;
+      return '${baseUrl.scheme}://$authority/photos';
+    }
+
+    Future<bool> syncServerEndpointWithBaseUrl({
+      required Uri baseUrl,
+      required String flowTag,
+    }) async {
+      final normalizedBaseUrl = buildDevicePhotosBaseUrl(baseUrl);
+      final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
+      final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
+
+      if (normalizedServerUrl.isEmpty) {
+        warningMessage.value = "login_form_server_empty".tr();
+        log.warning('[$flowTag] Aborted: normalized server url is empty');
+        return false;
+      }
+
+      try {
+        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
+        log.info('[$flowTag] Endpoint synced to selected device: $normalizedServerUrl');
+        return true;
+      } on ApiException catch (e) {
+        warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
+        log.warning('[$flowTag] Endpoint sync failed with ApiException: code=${e.code}, message=${e.message}');
+        return false;
+      } on HandshakeException {
+        warningMessage.value = 'login_form_handshake_exception'.tr();
+        log.warning('[$flowTag] Endpoint sync failed with TLS/handshake exception');
+        return false;
+      } catch (e) {
+        warningMessage.value = 'login_form_server_error'.tr();
+        log.warning('[$flowTag] Endpoint sync failed with unexpected error: $e');
+        return false;
+      }
+    }
+
     Future<bool> fetchServerAuthSettings() async {
       final device = resolveSelectedDeviceForAction();
       log.info(
@@ -469,6 +508,46 @@ class CuratorLoginForm extends HookConsumerWidget {
         log.warning('[Login] Aborted: no selected device');
         return false;
       }
+
+      // For Remote Access-capable devices, always resolve through path probing
+      // so login validation uses the same priority model (local > public > remote).
+      if (device.remoteDevice?.seagateDeviceID case final String seagateId when seagateId.isNotEmpty) {
+        final ping = await resolveRemoteDeviceConnection(
+          device: device,
+          flowTag: 'Login',
+          requireFreshPaths: true,
+        );
+        if (ping == null || ping.baseUrl == null) {
+          return false;
+        }
+        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: ping.baseUrl!, flowTag: 'Login');
+        if (!endpointSynced) {
+          return false;
+        }
+
+        try {
+          await ref.read(serverInfoProvider.notifier).getServerInfo();
+          await updateVersionCompatibilityWarning();
+          log.info(
+            '[Login] Server validation succeeded via resolved path type=${ping.pathType?.name} '
+            'host=${ping.baseUrl?.host}',
+          );
+          return true;
+        } on ApiException catch (e) {
+          warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
+          log.warning('[Login] Server validation failed with ApiException: code=${e.code}, message=${e.message}');
+          return false;
+        } on HandshakeException {
+          warningMessage.value = 'login_form_handshake_exception'.tr();
+          log.warning('[Login] Server validation failed with TLS/handshake exception');
+          return false;
+        } catch (e) {
+          warningMessage.value = 'login_form_server_error'.tr();
+          log.warning('[Login] Server validation failed with unexpected error: $e');
+          return false;
+        }
+      }
+
       var baseUrl = device.baseUrl;
       if (baseUrl == null && device.remoteDevice != null) {
         final ping = await resolveRemoteDeviceConnection(device: device, flowTag: 'Login', requireFreshPaths: true);
@@ -483,26 +562,18 @@ class CuratorLoginForm extends HookConsumerWidget {
         log.warning('[Login] Aborted: selected device has no baseUrl');
         return false;
       }
-      final normalizedBaseUrl =
-          '${baseUrl.scheme}://${baseUrl.host}${baseUrl.port != 80 && baseUrl.port != 443 ? ':${baseUrl.port}' : ''}/photos';
 
       clearAllErrors();
-      final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
-      final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
-
-      if (normalizedServerUrl.isEmpty) {
-        warningMessage.value = "login_form_server_empty".tr();
-        log.warning('[ResetPassword] Aborted: normalized server url is empty');
+      final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: baseUrl, flowTag: 'Login');
+      if (!endpointSynced) {
         return false;
       }
 
       try {
-        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
-
         await ref.read(serverInfoProvider.notifier).getServerInfo();
         await updateVersionCompatibilityWarning();
 
-        log.info('[Login] Server validation succeeded: $normalizedServerUrl');
+        log.info('[Login] Server validation succeeded for selected device host=${baseUrl.host}');
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
@@ -646,37 +717,39 @@ class CuratorLoginForm extends HookConsumerWidget {
       final dp = ref.read(deviceProvider.notifier);
       final rp = ref.read(remoteProvider.notifier);
       final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
+      final seagateDeviceId = device.remoteDevice?.seagateDeviceID;
 
-      if (device.about != null && device.baseUrl != null) {
-        await dp.setHost(
-          baseUrl: device.baseUrl,
-          deviceID: device.id,
-          seagateDeviceID: device.remoteDevice?.seagateDeviceID,
-          debugHostType: device.debugHostType,
-          login: email.value.trim(),
-        );
-        return true;
-      }
-
-      if (device.remoteDevice != null) {
+      if (seagateDeviceId != null && seagateDeviceId.isNotEmpty) {
         final ping = await detection.findOptimalDeviceConnection(
           device: device,
-          seagateDeviceID: device.remoteDevice!.seagateDeviceID,
+          seagateDeviceID: seagateDeviceId,
           useCachedPaths: false,
         );
         if (ping.success && ping.baseUrl != null) {
           await dp.setHost(
             baseUrl: ping.baseUrl,
             deviceID: device.id,
-            seagateDeviceID: device.remoteDevice?.seagateDeviceID,
+            seagateDeviceID: seagateDeviceId,
             debugHostType: ping.debugHostType,
             login: email.value.trim(),
-            devicePaths: device.remoteDevice?.seagateDeviceID == null
-                ? null
-                : dp.getCachedDevicePathsForDevice(device.remoteDevice!.seagateDeviceID)?.paths,
+            devicePaths: dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
           );
           return true;
         }
+      }
+
+      if (device.about != null && device.baseUrl != null) {
+        await dp.setHost(
+          baseUrl: device.baseUrl,
+          deviceID: device.id,
+          seagateDeviceID: seagateDeviceId,
+          debugHostType: device.debugHostType,
+          login: email.value.trim(),
+          devicePaths: seagateDeviceId == null
+              ? null
+              : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
+        );
+        return true;
       }
 
       dp.clearDevice(save: true);
@@ -878,6 +951,17 @@ class CuratorLoginForm extends HookConsumerWidget {
           return;
         }
 
+        final connectedBaseUrl = ref.read(deviceProvider).baseUrl;
+        if (connectedBaseUrl == null) {
+          warningMessage.value = "login_form_server_error".tr();
+          log.warning('[Login] Aborted: connected device host is null after prepareDeviceHostForLogin');
+          return;
+        }
+        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: connectedBaseUrl, flowTag: 'Login');
+        if (!endpointSynced) {
+          return;
+        }
+
         final isDeviceReady = await checkDeviceReadyForLogin();
         if (!isDeviceReady) {
           return;
@@ -888,12 +972,9 @@ class CuratorLoginForm extends HookConsumerWidget {
         final result = await ref.read(authProvider.notifier).login(email.value, passwordController.text);
 
         final dp = ref.read(deviceProvider.notifier);
-        final seagateDeviceId = selected.remoteDevice?.seagateDeviceID;
-        final cachedPathsForSelectedDevice = seagateDeviceId == null
-            ? null
-            : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths;
-        final paths = dp.getActiveDevicePaths(deviceRemoteId: seagateDeviceId) ?? cachedPathsForSelectedDevice;
-        if (paths != null && paths.isNotEmpty) {
+        final seagateDeviceId = dp.seagateDeviceID ?? selected.remoteDevice?.seagateDeviceID;
+        final paths = dp.resolveDevicePathsForDisplay(deviceRemoteId: seagateDeviceId);
+        if (paths.isNotEmpty) {
           await ref.read(devicePathRefreshServiceProvider).processAndSavePaths(paths);
         }
 

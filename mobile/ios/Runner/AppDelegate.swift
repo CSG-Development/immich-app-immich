@@ -47,6 +47,9 @@ import Foundation
     configureAudioSession()
 
     SwiftNativeVideoPlayerPlugin.cookieStorage = URLSessionManager.cookieStorage
+    DispatchQueue.main.async {
+      URLSessionManager.shared.bindVideoProxySession()
+    }
     URLSessionManager.patchBackgroundDownloader()
     GeneratedPluginRegistrant.register(with: self)
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController

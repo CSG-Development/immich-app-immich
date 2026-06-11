@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:hc_device/providers/device.provider.dart';
 import 'package:hc_device/providers/remote.provider.dart';
 
+typedef HttpClientProvider = http.Client Function();
+
 // Provider for DeviceProvider dependencies
 final remoteAccessDependenciesProvider = Provider<RemoteAccessDependencies>((
   ref,
@@ -18,14 +20,14 @@ class RemoteAccessDependencies {
   final Map<String, dynamic> storageData;
   final FlutterSecureStorage secureStorage;
   final Map<String, String> secureData;
-  final http.Client httpClient;
+  final HttpClientProvider httpClientProvider;
   final bool isMainRuntime;
 
   RemoteAccessDependencies({
     required this.storageData,
     required this.secureStorage,
     required this.secureData,
-    required this.httpClient,
+    required this.httpClientProvider,
     this.isMainRuntime = true,
   });
 }

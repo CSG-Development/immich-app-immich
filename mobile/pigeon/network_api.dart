@@ -16,32 +16,6 @@ class ClientCertPrompt {
   ClientCertPrompt(this.title, this.message, this.cancel, this.confirm);
 }
 
-class HttpRequestData {
-  String method;
-  String url;
-  Map<String, String> headers;
-  Uint8List? body;
-
-  HttpRequestData({
-    required this.method,
-    required this.url,
-    required this.headers,
-    this.body,
-  });
-}
-
-class HttpResponseData {
-  int statusCode;
-  Map<String, String> headers;
-  Uint8List body;
-
-  HttpResponseData({
-    required this.statusCode,
-    required this.headers,
-    required this.body,
-  });
-}
-
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/platform/network_api.g.dart',
@@ -70,18 +44,11 @@ abstract class NetworkApi {
 
   void setRequestHeaders(Map<String, String> headers, List<String> serverUrls, String? token);
 
-  /// Installs custom root CAs (DER, base64) for the shared native HTTP client.
   void configureCertificatePinning(List<String> rootCertificatesBase64);
 
-  /// Registers intermediate/trusted certs (DER, base64) for [host], excluding the leaf.
   void registerTrustedChain(String host, List<String> chainCertificatesBase64);
 
   void unregisterTrustedChain(String host);
 
-  /// Performs an HTTP request on the shared native client (iOS URLSession / Android OkHttp).
-  ///
-  /// Completion is handled entirely in native code so Dart does not register FFI
-  /// URLSession completion blocks (which can crash after timeouts).
-  @async
-  HttpResponseData sendHttpRequest(HttpRequestData request, int timeoutSeconds);
+  void cancelInFlightHttpRequests();
 }

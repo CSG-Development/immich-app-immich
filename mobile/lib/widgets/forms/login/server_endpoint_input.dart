@@ -38,7 +38,7 @@ class ServerEndpointInput extends StatelessWidget {
         return TextFormField(
           controller: controller,
           inputFormatters: const [TrimFormatter()],
-          decoration: LoginInputDecorations.baseDecoration(
+          decoration: InputDecorations.baseDecoration(
             context: context,
             labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
             hintText:

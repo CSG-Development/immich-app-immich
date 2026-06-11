@@ -176,76 +176,6 @@ struct ClientCertPrompt: Hashable {
   }
 }
 
-/// Generated class from Pigeon that represents data sent in messages.
-struct HttpRequestData: Hashable {
-  var method: String
-  var url: String
-  var headers: [String: String]
-  var body: FlutterStandardTypedData? = nil
-
-
-  // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> HttpRequestData? {
-    let method = pigeonVar_list[0] as! String
-    let url = pigeonVar_list[1] as! String
-    let headers = pigeonVar_list[2] as! [String: String]
-    let body: FlutterStandardTypedData? = nilOrValue(pigeonVar_list[3])
-
-    return HttpRequestData(
-      method: method,
-      url: url,
-      headers: headers,
-      body: body
-    )
-  }
-  func toList() -> [Any?] {
-    return [
-      method,
-      url,
-      headers,
-      body,
-    ]
-  }
-  static func == (lhs: HttpRequestData, rhs: HttpRequestData) -> Bool {
-    return deepEqualsNetwork(lhs.toList(), rhs.toList())  }
-  func hash(into hasher: inout Hasher) {
-    deepHashNetwork(value: toList(), hasher: &hasher)
-  }
-}
-
-/// Generated class from Pigeon that represents data sent in messages.
-struct HttpResponseData: Hashable {
-  var statusCode: Int64
-  var headers: [String: String]
-  var body: FlutterStandardTypedData
-
-
-  // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> HttpResponseData? {
-    let statusCode = pigeonVar_list[0] as! Int64
-    let headers = pigeonVar_list[1] as! [String: String]
-    let body = pigeonVar_list[2] as! FlutterStandardTypedData
-
-    return HttpResponseData(
-      statusCode: statusCode,
-      headers: headers,
-      body: body
-    )
-  }
-  func toList() -> [Any?] {
-    return [
-      statusCode,
-      headers,
-      body,
-    ]
-  }
-  static func == (lhs: HttpResponseData, rhs: HttpResponseData) -> Bool {
-    return deepEqualsNetwork(lhs.toList(), rhs.toList())  }
-  func hash(into hasher: inout Hasher) {
-    deepHashNetwork(value: toList(), hasher: &hasher)
-  }
-}
-
 private class NetworkPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -253,10 +183,6 @@ private class NetworkPigeonCodecReader: FlutterStandardReader {
       return ClientCertData.fromList(self.readValue() as! [Any?])
     case 130:
       return ClientCertPrompt.fromList(self.readValue() as! [Any?])
-    case 131:
-      return HttpRequestData.fromList(self.readValue() as! [Any?])
-    case 132:
-      return HttpResponseData.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -270,12 +196,6 @@ private class NetworkPigeonCodecWriter: FlutterStandardWriter {
       super.writeValue(value.toList())
     } else if let value = value as? ClientCertPrompt {
       super.writeByte(130)
-      super.writeValue(value.toList())
-    } else if let value = value as? HttpRequestData {
-      super.writeByte(131)
-      super.writeValue(value.toList())
-    } else if let value = value as? HttpResponseData {
-      super.writeByte(132)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -306,16 +226,10 @@ protocol NetworkApi {
   func hasCertificate() throws -> Bool
   func getClientPointer() throws -> Int64
   func setRequestHeaders(headers: [String: String], serverUrls: [String], token: String?) throws
-  /// Installs custom root CAs (DER, base64) for the shared native HTTP client.
   func configureCertificatePinning(rootCertificatesBase64: [String]) throws
-  /// Registers intermediate/trusted certs (DER, base64) for [host], excluding the leaf.
   func registerTrustedChain(host: String, chainCertificatesBase64: [String]) throws
   func unregisterTrustedChain(host: String) throws
-  /// Performs an HTTP request on the shared native client (iOS URLSession / Android OkHttp).
-  ///
-  /// Completion is handled entirely in native code so Dart does not register FFI
-  /// URLSession completion blocks (which can crash after timeouts).
-  func sendHttpRequest(request: HttpRequestData, timeoutSeconds: Int64, completion: @escaping (Result<HttpResponseData, Error>) -> Void)
+  func cancelInFlightHttpRequests() throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -416,7 +330,6 @@ class NetworkApiSetup {
     } else {
       setRequestHeadersChannel.setMessageHandler(nil)
     }
-    /// Installs custom root CAs (DER, base64) for the shared native HTTP client.
     let configureCertificatePinningChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.configureCertificatePinning\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       configureCertificatePinningChannel.setMessageHandler { message, reply in
@@ -432,7 +345,6 @@ class NetworkApiSetup {
     } else {
       configureCertificatePinningChannel.setMessageHandler(nil)
     }
-    /// Registers intermediate/trusted certs (DER, base64) for [host], excluding the leaf.
     let registerTrustedChainChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.registerTrustedChain\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       registerTrustedChainChannel.setMessageHandler { message, reply in
@@ -464,27 +376,18 @@ class NetworkApiSetup {
     } else {
       unregisterTrustedChainChannel.setMessageHandler(nil)
     }
-    /// Performs an HTTP request on the shared native client (iOS URLSession / Android OkHttp).
-    ///
-    /// Completion is handled entirely in native code so Dart does not register FFI
-    /// URLSession completion blocks (which can crash after timeouts).
-    let sendHttpRequestChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.sendHttpRequest\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let cancelInFlightHttpRequestsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.cancelInFlightHttpRequests\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      sendHttpRequestChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let requestArg = args[0] as! HttpRequestData
-        let timeoutSecondsArg = args[1] as! Int64
-        api.sendHttpRequest(request: requestArg, timeoutSeconds: timeoutSecondsArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
+      cancelInFlightHttpRequestsChannel.setMessageHandler { _, reply in
+        do {
+          try api.cancelInFlightHttpRequests()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
         }
       }
     } else {
-      sendHttpRequestChannel.setMessageHandler(nil)
+      cancelInFlightHttpRequestsChannel.setMessageHandler(nil)
     }
   }
 }

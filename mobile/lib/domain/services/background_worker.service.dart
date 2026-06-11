@@ -34,6 +34,7 @@ import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/backup_trace.dart';
+import 'package:immich_mobile/utils/secondary_runtime_api.bootstrap.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -130,6 +131,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         [
           loadTranslations(),
           workerManagerPatch.init(dynamicSpawning: true),
+          bootstrapSecondaryRuntimeApiSession(_apiService),
           // Initialize the file downloader
           FileDownloader().configure(
             globalConfig: [
@@ -211,7 +213,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       runId: _runId,
     );
     try {
-      if (!_isEndpointReady('background_task')) {
+      if (!await _isEndpointReady('background_task')) {
         return;
       }
       if (!await _syncAssets(hashTimeout: Duration(minutes: _isBackupEnabled ? 3 : 6))) {
@@ -278,7 +280,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       extra: {'maxSeconds': maxSeconds ?? -1},
     );
     try {
-      if (!_isEndpointReady(isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing')) {
+      if (!await _isEndpointReady(isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing')) {
         finalStatus = BackupTraceStatus.skip;
         finalReasonCode = 'BG_ENDPOINT_UNRESOLVED';
         return;
@@ -338,7 +340,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     }
   }
 
-  bool _isEndpointReady(String trigger) {
+  Future<bool> _isEndpointReady(String trigger) async {
     final endpoint = _resolvedEndpoint ?? _ref?.read(apiServiceProvider).apiClient.basePath;
     if (endpoint == null || endpoint.isEmpty) {
       _logger.warning("Skipping background worker run: endpoint unresolved");
@@ -594,11 +596,12 @@ Future<void> backgroundSyncNativeEntrypoint() async {
   await HttpCertPinningManager.ensureInitialized();
 
   final remoteAccessDependencies = await initHCDevice(
-    httpClient: NetworkRepository.client,
+    httpClientProvider: () => NetworkRepository.client,
     isMainRuntime: false,
   );
 
   final apiservice = ApiService();
+  await bootstrapSecondaryRuntimeApiSession(apiservice);
 
   await BackgroundWorkerBgService(
     isar: isar,

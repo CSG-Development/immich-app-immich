@@ -72,7 +72,10 @@ class AssetViewerStateNotifier extends Notifier<AssetViewerState> {
   AssetViewerState build() {
     ref.listen(_watchedCurrentAssetProvider, (_, next) {
       final updated = next.valueOrNull;
-      if (updated != null) {
+      if (updated == null) return;
+
+      final currentHeroTag = state.currentAsset?.heroTag;
+      if (currentHeroTag == null || updated.heroTag == currentHeroTag) {
         state = state.copyWith(currentAsset: updated);
       }
     });

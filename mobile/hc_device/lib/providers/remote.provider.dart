@@ -86,6 +86,7 @@ class RemoteProvider extends Notifier<RemoteState>
   /// TODO: Replace with the production URL then remove HttpClient override
   static const String baseUrl =
       'https://hc-remote-access-env-https.eba-a2nvhpbm.us-west-2.elasticbeanstalk.com:443/api';
+
   static const String refreshKey = 'curator_remote_refresh_token';
   static const String clientIdKey = 'curator_remote_client_id';
   static const String referenceKey = 'curator_remote_reference';
@@ -151,7 +152,7 @@ class RemoteProvider extends Notifier<RemoteState>
       authProvider: this,
       httpClient: IOClient(client),
     );
-    _repo = RemoteRepository(() => _api);
+    _repo = RemoteRepository(_api);
     final initial = RemoteState(
       refreshToken: secureData[refreshKey],
       reference: secureData[referenceKey],

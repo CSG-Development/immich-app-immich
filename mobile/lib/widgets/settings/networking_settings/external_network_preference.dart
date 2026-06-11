@@ -1,9 +1,7 @@
-import 'dart:convert';
-
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath, DevicePathType;
+import 'package:hc_device/api/remote_access.swagger.dart' show DevicePathType;
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:hc_device/hc_device.dart';
@@ -17,11 +15,7 @@ class ExternalNetworkPreference extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceState = ref.watch(deviceProvider);
     final device = ref.read(deviceProvider.notifier);
-    final activePaths = device.getActiveDevicePaths(deviceRemoteId: deviceState.seagateDeviceID);
-    final cachedPaths = deviceState.seagateDeviceID == null
-        ? null
-        : device.getCachedDevicePathsForDevice(deviceState.seagateDeviceID!);
-    final allPaths = (activePaths ?? cachedPaths?.paths ?? const <DevicePath>[]).whereType<DevicePath>().toList();
+    final allPaths = device.resolveDevicePathsForDisplay(deviceRemoteId: deviceState.seagateDeviceID);
     final externalPaths = allPaths
         .where((path) => path.type != DevicePathType.local)
         .where((path) => path.type != DevicePathType.swaggerGeneratedUnknown)

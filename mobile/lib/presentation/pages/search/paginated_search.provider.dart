@@ -38,6 +38,7 @@ final paginatedSearchProvider = StateNotifierProvider<PaginatedSearchNotifier, S
 class PaginatedSearchNotifier extends StateNotifier<SearchState> {
   final SearchService _searchService;
   final _assetCountController = StreamController<int>.broadcast();
+  int _searchGeneration = 0;
 
   PaginatedSearchNotifier(this._searchService) : super(const SearchState());
 
@@ -46,12 +47,18 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
   Future<void> search(SearchFilter filter) async {
     if (state.nextPage == null || state.isLoading) return;
 
-    state = SearchState(assets: state.assets, nextPage: state.nextPage, isLoading: true);
+    final page = state.nextPage!;
+    final generation = ++_searchGeneration;
+    state = SearchState(assets: state.assets, nextPage: page, isLoading: true);
 
-    final result = await _searchService.search(filter, state.nextPage!);
+    final result = await _searchService.search(filter, page);
+
+    if (generation != _searchGeneration) {
+      return;
+    }
 
     if (result == null) {
-      state = SearchState(assets: state.assets, nextPage: state.nextPage);
+      state = SearchState(assets: state.assets, nextPage: null);
       return;
     }
 
@@ -64,6 +71,7 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
   }
 
   void clear() {
+    _searchGeneration++;
     state = const SearchState();
     _assetCountController.add(0);
   }

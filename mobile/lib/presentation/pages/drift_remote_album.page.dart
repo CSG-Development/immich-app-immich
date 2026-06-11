@@ -17,6 +17,7 @@ import 'package:immich_mobile/providers/infrastructure/remote_album.provider.dar
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/remote_album_sliver_app_bar.dart';
 
@@ -318,11 +319,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
                   controller: titleController,
                   maxLines: 1,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                    filled: true,
-                    fillColor: context.colorScheme.surface,
-                  ),
+                  decoration: InputDecorations.outlineDecoration(context: context),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'album_name_required'.t(context: context);
@@ -343,11 +340,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
                   controller: descriptionController,
                   maxLines: 4,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                    filled: true,
-                    fillColor: context.colorScheme.surface,
-                  ),
+                  decoration: InputDecorations.outlineDecoration(context: context),
                 ),
                 const SizedBox(height: 24),
 

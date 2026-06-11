@@ -14,12 +14,14 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/extensions/scroll_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/download_status_floating_button.widget.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/airplay_timeline_playback.helper.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_page.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_preloader.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_stack.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/viewer_top_app_bar.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/viewer_bottom_app_bar.widget.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/viewer_scope.provider.dart';
@@ -94,10 +96,15 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   StreamSubscription? _reloadSubscription;
   KeepAliveLink? _stackChildrenKeepAlive;
 
-  // Fork: Places functionality
-  bool _assetReloadRequested = false;
   BaseAsset? _fallbackAsset;
   bool _didShowMovedPlaceToast = false;
+
+  /// Hero tag of an asset the viewer intentionally navigated away from (archive,
+  /// lock, delete, etc.). Prevents timeline reload from jumping back to it.
+  String? _dismissedHeroTag;
+
+  /// Guards against stale async asset loads reverting the viewer after dismissal.
+  int _assetChangeGeneration = 0;
 
   bool get _isPlacesScopedViewer => ref.read(assetViewerPlacesExitProvider);
 
@@ -184,16 +191,33 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
     _handleCasting();
   }
 
-  void _onAssetChanged(int index) async {
+  Future<void> _onAssetChanged(int index) async {
+    final generation = ++_assetChangeGeneration;
     _currentPage = index;
 
     final asset = await ref.read(timelineServiceProvider).getAssetAsync(index);
-    if (asset == null) return;
+    if (!mounted || generation != _assetChangeGeneration || asset == null) {
+      return;
+    }
+
+    final dismissedHeroTag = _dismissedHeroTag;
+    if (dismissedHeroTag != null && asset.heroTag == dismissedHeroTag) {
+      return;
+    }
 
     _fallbackAsset = null;
     _didShowMovedPlaceToast = false;
     AssetViewer._setAsset(ref, asset);
     _preloader.preload(index, context.sizeData);
+    if (AirplayTimelinePlayback.isSupported && ref.read(airplayProvider)) {
+      unawaited(
+        AirplayTimelinePlayback.prefetchNeighbors(
+          index: index,
+          timelineService: ref.read(timelineServiceProvider),
+          ref: ref,
+        ),
+      );
+    }
     _handleCasting();
     _stackChildrenKeepAlive?.close();
     _stackChildrenKeepAlive = ref.read(stackChildrenNotifier(asset).notifier).ref.keepAlive();
@@ -230,9 +254,6 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       case TimelineReloadEvent():
         _onTimelineReloadEvent();
       case ViewerReloadAssetEvent():
-        // Fork: set flag for asset reload (Places functionality)
-        _assetReloadRequested = true;
-        // Upstream: navigate to adjacent asset on reload
         _onViewerReloadEvent();
       case ViewerExitAfterPlacesLocationEditEvent():
         _exitViewerAfterPlacesLocationEdit();
@@ -241,18 +262,58 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   }
 
   void _onViewerReloadEvent() {
-    if (_totalAssets <= 1) return;
+    if (_totalAssets <= 1) {
+      context.maybePop();
+      return;
+    }
 
-    final index = _pageController.page?.round() ?? 0;
+    _dismissedHeroTag = ref.read(assetViewerProvider).currentAsset?.heroTag;
+
+    final index = _pageController.page?.round() ?? _currentPage;
     final target = index >= _totalAssets - 1 ? index - 1 : index + 1;
-    _pageController.animateToPage(target, duration: Durations.medium1, curve: Curves.easeInOut);
-    _onAssetChanged(target);
+
+    // Always advance the page index immediately so a pending timeline reload
+    // cannot snap back to the dismissed asset while the buffer is still stale.
+    _currentPage = target;
+
+    unawaited(_prefetchAdjacentAsset(target));
+
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(target, duration: Durations.medium1, curve: Curves.easeInOut);
+    }
+  }
+
+  Future<void> _prefetchAdjacentAsset(int target) async {
+    final timelineService = ref.read(timelineServiceProvider);
+    final nextAsset = await timelineService.getAssetAsync(target);
+    if (!mounted || _currentPage != target || nextAsset == null) {
+      return;
+    }
+
+    final dismissedHeroTag = _dismissedHeroTag;
+    if (dismissedHeroTag != null && nextAsset.heroTag == dismissedHeroTag) {
+      return;
+    }
+
+    AssetViewer._setAsset(ref, nextAsset);
+    _stackChildrenKeepAlive?.close();
+    _stackChildrenKeepAlive = ref.read(stackChildrenNotifier(nextAsset).notifier).ref.keepAlive();
+    _preloader.preload(target, context.sizeData);
+    if (AirplayTimelinePlayback.isSupported && ref.read(airplayProvider)) {
+      unawaited(
+        AirplayTimelinePlayback.prefetchNeighbors(
+          index: target,
+          timelineService: timelineService,
+          ref: ref,
+        ),
+      );
+    }
+    _handleCasting();
   }
 
   void _onTimelineReloadEvent() {
     final timelineService = ref.read(timelineServiceProvider);
     final totalAssets = timelineService.totalAssets;
-    _totalAssets = totalAssets;
 
     if (totalAssets == 0) {
       if (_isPlacesScopedViewer) {
@@ -273,21 +334,44 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       return;
     }
 
-    final currentAsset = ref.read(assetViewerProvider).currentAsset;
-    final assetIndex = currentAsset != null ? timelineService.getIndex(currentAsset.heroTag) : null;
-    final index = (assetIndex ?? _currentPage).clamp(0, totalAssets - 1);
+    unawaited(_syncTimelineReload(totalAssets, timelineService));
+  }
 
-    if (index != _currentPage) {
-      _pageController.jumpToPage(index);
-      _onAssetChanged(index);
-    } else if (currentAsset != null && assetIndex == null) {
-      _onAssetChanged(index);
+  Future<void> _syncTimelineReload(int totalAssets, TimelineService timelineService) async {
+    final currentAsset = ref.read(assetViewerProvider).currentAsset;
+    final dismissedHeroTag = _dismissedHeroTag;
+
+    var index = _currentPage.clamp(0, totalAssets - 1);
+
+    if (currentAsset != null && currentAsset.heroTag != dismissedHeroTag) {
+      final resolvedIndex = await timelineService.findAssetIndexByHeroTag(
+        currentAsset.heroTag,
+        preferredIndex: _currentPage,
+      );
+      if (resolvedIndex != null) {
+        index = resolvedIndex;
+      }
     }
 
-    // Fork: handle asset reload request (Places functionality)
-    if (_assetReloadRequested) {
-      _assetReloadRequested = false;
-      _onAssetReloadEvent(index);
+    if (!mounted) {
+      return;
+    }
+
+    _currentPage = index;
+
+    if (_pageController.hasClients && _pageController.page?.round() != index) {
+      _pageController.jumpToPage(index);
+    }
+
+    await _onAssetChanged(index);
+
+    if (!mounted) {
+      return;
+    }
+
+    final displayedAsset = ref.read(assetViewerProvider).currentAsset;
+    if (dismissedHeroTag != null && displayedAsset?.heroTag != dismissedHeroTag) {
+      _dismissedHeroTag = null;
     }
 
     if (_totalAssets != totalAssets) {
@@ -295,64 +379,6 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
         _totalAssets = totalAssets;
       });
     }
-  }
-
-  // Fork: Places functionality - reload specific asset by index
-  void _onAssetReloadEvent(int index) async {
-    final timelineService = ref.read(timelineServiceProvider);
-    final currentAsset = ref.read(assetViewerProvider).currentAsset;
-    final preferredIndex = index;
-    int targetIndex = preferredIndex < 0
-        ? 0
-        : preferredIndex >= _totalAssets
-        ? _totalAssets - 1
-        : preferredIndex;
-
-    if (currentAsset != null) {
-      final resolvedIndex = await timelineService.findAssetIndexByHeroTag(
-        currentAsset.heroTag,
-        preferredIndex: preferredIndex,
-      );
-      if (resolvedIndex != null) {
-        targetIndex = resolvedIndex;
-      }
-    }
-
-    final targetAsset = await timelineService.getAssetAsync(targetIndex);
-    if (targetAsset == null) {
-      if (_isPlacesScopedViewer) {
-        _showMovedPlaceNotice();
-        if (mounted) {
-          context.maybePop();
-        }
-        return;
-      }
-
-      _fallbackAsset ??= currentAsset;
-      if (_fallbackAsset != null) {
-        _showMovedPlaceNotice();
-      }
-      if (_fallbackAsset == null && mounted) {
-        context.maybePop();
-      } else if (mounted) {
-        setState(() {});
-      }
-      return;
-    }
-
-    if (currentAsset != null && targetAsset.heroTag == currentAsset.heroTag && targetIndex == preferredIndex) {
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    if (_pageController.hasClients && _pageController.page?.round() != targetIndex) {
-      _pageController.jumpToPage(targetIndex);
-    }
-
-    _onAssetChanged(targetIndex);
   }
 
   void _setSystemUIMode(bool controls, bool details) {
@@ -412,11 +438,6 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
                     ? const FastScrollPhysics()
                     : const FastClampingScrollPhysics(),
                 itemCount: _itemCount,
-                onPageChanged: (index) {
-                  if (_totalAssets > 0) {
-                    _onAssetChanged(index);
-                  }
-                },
                 itemBuilder: (context, index) => AssetPage(
                   index: _totalAssets > 0 ? index : 0,
                   heroOffset: _heroOffset,

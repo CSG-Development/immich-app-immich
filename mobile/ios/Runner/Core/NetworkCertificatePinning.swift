@@ -11,7 +11,9 @@ final class NetworkCertificatePinning {
   private let queue = DispatchQueue(label: "immich.network.pinning")
   private let cacheQueue = DispatchQueue(label: "immich.network.pinning.cache")
   private var rootCertificates: [Data] = []
-  private var hostValidationCache: [String: (Date, Bool)] = [:]
+  /// Only successful validations are cached. Failures are never cached so a transient
+  /// TLS error during concurrent thumbnail loads cannot block the host for minutes.
+  private var hostValidationCache: [String: Date] = [:]
   private let cacheTTL: TimeInterval = 300
 
   private init() {}
@@ -44,13 +46,9 @@ final class NetworkCertificatePinning {
   ) {
     let normalizedHost = host.lowercased()
 
-    if let (_, isValid) = getCachedValidation(for: normalizedHost) {
-      NSLog(
-        "NetworkCertificatePinning: SSL for %@ - from cache (%@)",
-        normalizedHost,
-        isValid ? "VALID" : "INVALID"
-      )
-      completion(isValid)
+    if isCachedValid(for: normalizedHost) {
+      NSLog("NetworkCertificatePinning: SSL for %@ - from cache (VALID)", normalizedHost)
+      completion(true)
       return
     }
 
@@ -61,7 +59,10 @@ final class NetworkCertificatePinning {
     }
 
     let isValid = verifyCertificateChainIgnoringStandards(serverTrust: serverTrust, roots: roots)
-    cacheValidation(for: normalizedHost, isValid: isValid)
+    if isValid {
+      cacheValidation(for: normalizedHost)
+    }
+
     NSLog(
       "NetworkCertificatePinning: SSL validation for %@: %@",
       normalizedHost,
@@ -76,23 +77,23 @@ final class NetworkCertificatePinning {
     }
   }
 
-  private func getCachedValidation(for host: String) -> (Date, Bool)? {
+  private func isCachedValid(for host: String) -> Bool {
     cacheQueue.sync {
-      guard let (expiryDate, isValid) = hostValidationCache[host] else {
-        return nil
+      guard let expiryDate = hostValidationCache[host] else {
+        return false
       }
       if Date() < expiryDate {
-        return (expiryDate, isValid)
+        return true
       }
       hostValidationCache.removeValue(forKey: host)
-      return nil
+      return false
     }
   }
 
-  private func cacheValidation(for host: String, isValid: Bool) {
+  private func cacheValidation(for host: String) {
     cacheQueue.async {
       let expiryDate = Date().addingTimeInterval(self.cacheTTL)
-      self.hostValidationCache[host] = (expiryDate, isValid)
+      self.hostValidationCache[host] = expiryDate
 
       if self.hostValidationCache.count > 100 {
         self.cleanupCache()
@@ -102,11 +103,11 @@ final class NetworkCertificatePinning {
 
   private func cleanupCache() {
     let currentDate = Date()
-    for (host, (expiryDate, _)) in hostValidationCache where currentDate >= expiryDate {
+    for (host, expiryDate) in hostValidationCache where currentDate >= expiryDate {
       hostValidationCache.removeValue(forKey: host)
     }
     if hostValidationCache.count > 100 {
-      let sorted = hostValidationCache.sorted { $0.value.0 < $1.value.0 }
+      let sorted = hostValidationCache.sorted { $0.value < $1.value }
       hostValidationCache = Dictionary(uniqueKeysWithValues: sorted.prefix(50).map { ($0.key, $0.value) })
     }
   }

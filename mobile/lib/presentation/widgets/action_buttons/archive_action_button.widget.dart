@@ -7,7 +7,6 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
-import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 // used to allow performing archive action from different sources  (without duplicating code)
@@ -19,18 +18,17 @@ Future<void> performArchiveAction(BuildContext context, WidgetRef ref, {required
   }
 
   final result = await ref.read(actionProvider.notifier).archive(source);
-  ref.read(multiSelectProvider.notifier).reset();
+
+  if (!context.mounted) return;
 
   final successMessage = 'archive_action_prompt'.t(context: context, args: {'count': result.count.toString()});
 
-  if (context.mounted) {
-    ImmichToast.show(
-      context: context,
-      msg: result.success ? successMessage : 'scaffold_body_error_occurred'.t(context: context),
-      gravity: ToastGravity.BOTTOM,
-      toastType: result.success ? ToastType.success : ToastType.error,
-    );
-  }
+  ImmichToast.show(
+    context: context,
+    msg: result.success ? successMessage : 'scaffold_body_error_occurred'.t(context: context),
+    gravity: ToastGravity.BOTTOM,
+    toastType: result.success ? ToastType.success : ToastType.error,
+  );
 }
 
 class ArchiveActionButton extends ConsumerWidget {

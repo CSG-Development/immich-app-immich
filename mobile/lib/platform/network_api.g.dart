@@ -14,39 +14,47 @@ PlatformException _createConnectionError(String channelName) {
     message: 'Unable to establish connection on channel: "$channelName".',
   );
 }
-
 bool _deepEquals(Object? a, Object? b) {
   if (a is List && b is List) {
-    return a.length == b.length && a.indexed.every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
+    return a.length == b.length &&
+        a.indexed
+        .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
   }
   if (a is Map && b is Map) {
-    return a.length == b.length &&
-        a.entries.every(
-          (MapEntry<Object?, Object?> entry) =>
-              (b as Map<Object?, Object?>).containsKey(entry.key) && _deepEquals(entry.value, b[entry.key]),
-        );
+    return a.length == b.length && a.entries.every((MapEntry<Object?, Object?> entry) =>
+        (b as Map<Object?, Object?>).containsKey(entry.key) &&
+        _deepEquals(entry.value, b[entry.key]));
   }
   return a == b;
 }
 
+
 class ClientCertData {
-  ClientCertData({required this.data, required this.password});
+  ClientCertData({
+    required this.data,
+    required this.password,
+  });
 
   Uint8List data;
 
   String password;
 
   List<Object?> _toList() {
-    return <Object?>[data, password];
+    return <Object?>[
+      data,
+      password,
+    ];
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static ClientCertData decode(Object result) {
     result as List<Object?>;
-    return ClientCertData(data: result[0]! as Uint8List, password: result[1]! as String);
+    return ClientCertData(
+      data: result[0]! as Uint8List,
+      password: result[1]! as String,
+    );
   }
 
   @override
@@ -63,11 +71,17 @@ class ClientCertData {
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList());
+  int get hashCode => Object.hashAll(_toList())
+;
 }
 
 class ClientCertPrompt {
-  ClientCertPrompt({required this.title, required this.message, required this.cancel, required this.confirm});
+  ClientCertPrompt({
+    required this.title,
+    required this.message,
+    required this.cancel,
+    required this.confirm,
+  });
 
   String title;
 
@@ -78,12 +92,16 @@ class ClientCertPrompt {
   String confirm;
 
   List<Object?> _toList() {
-    return <Object?>[title, message, cancel, confirm];
+    return <Object?>[
+      title,
+      message,
+      cancel,
+      confirm,
+    ];
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static ClientCertPrompt decode(Object result) {
     result as List<Object?>;
@@ -109,97 +127,10 @@ class ClientCertPrompt {
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList());
+  int get hashCode => Object.hashAll(_toList())
+;
 }
 
-class HttpRequestData {
-  HttpRequestData({required this.method, required this.url, required this.headers, this.body});
-
-  String method;
-
-  String url;
-
-  Map<String, String> headers;
-
-  Uint8List? body;
-
-  List<Object?> _toList() {
-    return <Object?>[method, url, headers, body];
-  }
-
-  Object encode() {
-    return _toList();
-  }
-
-  static HttpRequestData decode(Object result) {
-    result as List<Object?>;
-    return HttpRequestData(
-      method: result[0]! as String,
-      url: result[1]! as String,
-      headers: (result[2] as Map<Object?, Object?>?)!.cast<String, String>(),
-      body: result[3] as Uint8List?,
-    );
-  }
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  bool operator ==(Object other) {
-    if (other is! HttpRequestData || other.runtimeType != runtimeType) {
-      return false;
-    }
-    if (identical(this, other)) {
-      return true;
-    }
-    return _deepEquals(encode(), other.encode());
-  }
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList());
-}
-
-class HttpResponseData {
-  HttpResponseData({required this.statusCode, required this.headers, required this.body});
-
-  int statusCode;
-
-  Map<String, String> headers;
-
-  Uint8List body;
-
-  List<Object?> _toList() {
-    return <Object?>[statusCode, headers, body];
-  }
-
-  Object encode() {
-    return _toList();
-  }
-
-  static HttpResponseData decode(Object result) {
-    result as List<Object?>;
-    return HttpResponseData(
-      statusCode: result[0]! as int,
-      headers: (result[1] as Map<Object?, Object?>?)!.cast<String, String>(),
-      body: result[2]! as Uint8List,
-    );
-  }
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  bool operator ==(Object other) {
-    if (other is! HttpResponseData || other.runtimeType != runtimeType) {
-      return false;
-    }
-    if (identical(this, other)) {
-      return true;
-    }
-    return _deepEquals(encode(), other.encode());
-  }
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList());
-}
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -208,17 +139,11 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    } else if (value is ClientCertData) {
+    }    else if (value is ClientCertData) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    } else if (value is ClientCertPrompt) {
+    }    else if (value is ClientCertPrompt) {
       buffer.putUint8(130);
-      writeValue(buffer, value.encode());
-    } else if (value is HttpRequestData) {
-      buffer.putUint8(131);
-      writeValue(buffer, value.encode());
-    } else if (value is HttpResponseData) {
-      buffer.putUint8(132);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -228,14 +153,10 @@ class _PigeonCodec extends StandardMessageCodec {
   @override
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
-      case 129:
+      case 129: 
         return ClientCertData.decode(readValue(buffer)!);
-      case 130:
+      case 130: 
         return ClientCertPrompt.decode(readValue(buffer)!);
-      case 131:
-        return HttpRequestData.decode(readValue(buffer)!);
-      case 132:
-        return HttpResponseData.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -247,8 +168,8 @@ class NetworkApi {
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
   NetworkApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
-    : pigeonVar_binaryMessenger = binaryMessenger,
-      pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -256,15 +177,15 @@ class NetworkApi {
   final String pigeonVar_messageChannelSuffix;
 
   Future<void> addCertificate(ClientCertData clientData) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.addCertificate$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.addCertificate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[clientData]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -279,15 +200,15 @@ class NetworkApi {
   }
 
   Future<void> selectCertificate(ClientCertPrompt promptText) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.selectCertificate$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.selectCertificate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[promptText]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -302,15 +223,15 @@ class NetworkApi {
   }
 
   Future<void> removeCertificate() async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.removeCertificate$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.removeCertificate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -325,15 +246,15 @@ class NetworkApi {
   }
 
   Future<bool> hasCertificate() async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.hasCertificate$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.hasCertificate$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -353,15 +274,15 @@ class NetworkApi {
   }
 
   Future<int> getClientPointer() async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.getClientPointer$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.getClientPointer$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -381,15 +302,15 @@ class NetworkApi {
   }
 
   Future<void> setRequestHeaders(Map<String, String> headers, List<String> serverUrls, String? token) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.setRequestHeaders$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.setRequestHeaders$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[headers, serverUrls, token]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -403,17 +324,16 @@ class NetworkApi {
     }
   }
 
-  /// Installs custom root CAs (DER, base64) for the shared native HTTP client.
   Future<void> configureCertificatePinning(List<String> rootCertificatesBase64) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.configureCertificatePinning$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.configureCertificatePinning$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[rootCertificatesBase64]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -427,17 +347,16 @@ class NetworkApi {
     }
   }
 
-  /// Registers intermediate/trusted certs (DER, base64) for [host], excluding the leaf.
   Future<void> registerTrustedChain(String host, List<String> chainCertificatesBase64) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.registerTrustedChain$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.registerTrustedChain$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[host, chainCertificatesBase64]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -452,15 +371,15 @@ class NetworkApi {
   }
 
   Future<void> unregisterTrustedChain(String host) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.unregisterTrustedChain$pigeonVar_messageChannelSuffix';
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.unregisterTrustedChain$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[host]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -474,20 +393,16 @@ class NetworkApi {
     }
   }
 
-  /// Performs an HTTP request on the shared native client (iOS URLSession / Android OkHttp).
-  ///
-  /// Completion is handled entirely in native code so Dart does not register FFI
-  /// URLSession completion blocks (which can crash after timeouts).
-  Future<HttpResponseData> sendHttpRequest(HttpRequestData request, int timeoutSeconds) async {
-    final String pigeonVar_channelName =
-        'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.sendHttpRequest$pigeonVar_messageChannelSuffix';
+  Future<void> cancelInFlightHttpRequests() async {
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.personal_cloud_photos.NetworkApi.cancelInFlightHttpRequests$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request, timeoutSeconds]);
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -496,13 +411,8 @@ class NetworkApi {
         message: pigeonVar_replyList[1] as String?,
         details: pigeonVar_replyList[2],
       );
-    } else if (pigeonVar_replyList[0] == null) {
-      throw PlatformException(
-        code: 'null-error',
-        message: 'Host platform returned null value for non-null return value.',
-      );
     } else {
-      return (pigeonVar_replyList[0] as HttpResponseData?)!;
+      return;
     }
   }
 }

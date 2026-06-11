@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
@@ -17,6 +18,7 @@ import 'package:immich_mobile/utils/bytes_units.dart';
 import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
 import 'package:immich_mobile/providers/protected_feature_visibility.provider.dart';
 import 'package:immich_mobile/widgets/settings/beta_timeline_list_tile.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/settings/custom_proxy_headers_settings/custom_proxy_headers_settings.dart';
 import 'package:immich_mobile/widgets/settings/local_storage_settings.dart';
 import 'package:immich_mobile/widgets/settings/settings_action_tile.dart';
@@ -170,32 +172,29 @@ class AdvancedSettings extends HookConsumerWidget {
           try {
             clearedBytes = await remoteImageApi.clearCache();
           } catch (e) {
-            context.scaffoldMessenger.showSnackBar(
-              SnackBar(
-                duration: const Duration(seconds: 2),
-                content: Text(
-                  "advanced_settings_clear_image_cache_error".tr(),
-                  style: context.textTheme.bodyLarge?.copyWith(color: context.themeData.colorScheme.error),
-                ),
-              ),
+            if (!context.mounted) {
+              return;
+            }
+            ImmichToast.show(
+              context: context,
+              msg: "advanced_settings_clear_image_cache_error".tr(),
+              toastType: ToastType.error,
+              gravity: ToastGravity.BOTTOM,
             );
             return;
           }
 
-          if (clearedBytes < 0) {
+          if (!context.mounted) {
             return;
           }
 
-          // iOS always returns a small non-zero value
-          final clearedMB = clearedBytes < (256 * 1024) ? "0 MiB" : formatHumanReadableBytes(clearedBytes, 2);
-          context.scaffoldMessenger.showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              content: Text(
-                "advanced_settings_clear_image_cache_success".tr(namedArgs: {'size': clearedMB}),
-                style: context.textTheme.bodyLarge?.copyWith(color: context.primaryColor),
-              ),
-            ),
+          // iOS always returns a small non-zero value. Native returns -1 when a clear is already in progress.
+          final clearedMB = clearedBytes < (256 * 1024) ? "0 MB" : formatBytes(clearedBytes);
+          ImmichToast.show(
+            context: context,
+            msg: "advanced_settings_clear_image_cache_success".tr(namedArgs: {'size': clearedMB}),
+            toastType: ToastType.success,
+            gravity: ToastGravity.BOTTOM,
           );
         },
       ),

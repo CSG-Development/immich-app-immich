@@ -5,7 +5,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/constants/locales.dart';
@@ -23,13 +22,11 @@ import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/app_update.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
 import 'package:immich_mobile/theme/color_scheme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
@@ -301,60 +298,48 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_bootstrapSession());
+    unawaited(_bootstrap());
   }
 
-  Future<void> _bootstrapSession() async {
-    // Do not block splash on endpoint probing.
-    unawaited(_warmupEndpointResolution());
-    await resumeSession();
-  }
-
-  Future<void> _waitForEndpointBeforeStartupRequests() async {
-    // Keep startup responsive: wait briefly for endpoint settle, then continue.
-    Future<String?> resolve() {
-      if (!mounted) {
-        return Future.value(null);
-      }
-      return ref
-          .read(hcDeviceEndpointResolverProvider)
-          .resolveAndActivateWinner(trigger: 'splash_warmup', mode: ResolveMode.foreground)
-          .timeout(const Duration(seconds: 4));
-    }
-
-    try {
-      await resolve();
+  Future<void> _bootstrap() async {
+    if (!mounted) {
       return;
-    } catch (error) {
-      log.warning('Startup endpoint wait attempt failed, retrying once: $error');
     }
 
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      await resolve();
-    } catch (error) {
-      log.warning('Startup endpoint wait failed after retry, continuing: $error');
+    unawaited(ref.read(appUpdateServiceProvider).checkOnStart(context: context));
+
+    final lockFlagsFuture = _readLockFlags();
+    if (Store.tryGet(StoreKey.accessToken) != null) {
+      logConnectionInfo(Store.tryGet(StoreKey.serverEndpoint));
+    } else {
+      unawaited(ref.read(authProvider.notifier).setOpenApiServiceEndpoint());
     }
+
+    if (!mounted) {
+      return;
+    }
+
+    final lockFlags = await lockFlagsFuture;
+    if (!mounted) {
+      return;
+    }
+
+    await resumeSession(
+      enablePasscodeLock: lockFlags.enablePasscodeLock,
+      enablePatternLock: lockFlags.enablePatternLock,
+    );
   }
 
-  Future<void> _warmupEndpointResolution() async {
-    try {
-      await ref
-          .read(hcDeviceEndpointResolverProvider)
-          .resolveAndActivateWinner(trigger: 'splash_warmup', mode: ResolveMode.foreground)
-          .timeout(const Duration(seconds: 8));
-      if (!mounted) {
-        return;
-      }
-      final endpoint = ref.read(apiServiceProvider).apiClient.basePath;
-      logConnectionInfo(endpoint);
-    } catch (error) {
-      // Startup should continue if path probing times out/fails.
-      if (!mounted) {
-        return;
-      }
-      log.warning('Startup endpoint warmup failed (continuing): $error');
-    }
+  Future<({bool enablePasscodeLock, bool enablePatternLock})> _readLockFlags() async {
+    final secureStorage = ref.read(secureStorageServiceProvider);
+    final lockFlags = await Future.wait([
+      secureStorage.read(kSecuredPasscode),
+      secureStorage.read(kSecuredPattern),
+    ]);
+    return (
+      enablePasscodeLock: lockFlags[0] != null,
+      enablePatternLock: lockFlags[1] != null,
+    );
   }
 
   void logConnectionInfo(String? endpoint) {
@@ -365,76 +350,67 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     log.info("Resuming session at $endpoint");
   }
 
-  Future<void> resumeSession() async {
+  Future<void> resumeSession({
+    required bool enablePasscodeLock,
+    required bool enablePatternLock,
+  }) async {
     if (!mounted) return;
 
-    await ref.read(appUpdateServiceProvider).checkOnStart(context: context);
-    if (!mounted) return;
-
-    final endpoint = Store.tryGet(StoreKey.serverEndpoint);
     final accessToken = Store.tryGet(StoreKey.accessToken);
     final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
 
-    final enablePasscodeLock = (await ref.read(secureStorageServiceProvider).read(kSecuredPasscode)) != null;
-    final enablePatternLock = (await ref.read(secureStorageServiceProvider).read(kSecuredPattern)) != null;
-    if (!mounted) return;
-
-    if (accessToken != null && endpoint != null) {
-      final endpointWarmupFuture = _waitForEndpointBeforeStartupRequests();
-      final infoProvider = ref.read(serverInfoProvider.notifier);
-      final wsProvider = ref.read(websocketProvider.notifier);
-      final backgroundManager = ref.read(backgroundSyncProvider);
-      final backupProvider = ref.read(driftBackupProvider.notifier);
-
-      unawaited(
-        ref
-            .read(authProvider.notifier)
-            .saveAuthInfo(accessToken: accessToken)
-            .then((didRestoreAuth) async {
-              if (!mounted) return;
-              if (!didRestoreAuth) {
-                await _logoutAndRouteToLogin(reason: 'Unable to restore authenticated session');
-                return;
-              }
-
-              try {
-                await endpointWarmupFuture;
-                unawaited(wsProvider.connect());
-                unawaited(infoProvider.getServerInfo());
-
-                if (Store.isBetaTimelineEnabled) {
-                  bool syncSuccess = false;
-                  await Future.wait([
-                    backgroundManager.syncLocal(full: true),
-                    backgroundManager.syncRemote().then((success) => syncSuccess = success),
-                  ]);
-
-                  if (syncSuccess) {
-                    await Future.wait([
-                      backgroundManager.hashAssets().then((_) {
-                        _resumeBackup(backupProvider);
-                      }),
-                      _resumeBackup(backupProvider),
-                      // TODO: Bring back when the soft freeze issue is addressed
-                      // backgroundManager.syncCloudIds(),
-                    ]);
-                  } else {
-                    await backgroundManager.hashAssets();
-                  }
-
-                  if (Store.get(StoreKey.syncAlbums, false)) {
-                    await backgroundManager.syncLinkedAlbum();
-                  }
-                }
-              } catch (e) {
-                log.severe('Failed establishing connection to the server: $e');
-              }
-            }),
-      );
-    } else {
+    if (accessToken == null) {
       await _logoutAndRouteToLogin(reason: 'Missing crucial offline login info');
       return;
     }
+
+    final authNotifier = ref.read(authProvider.notifier);
+    final infoProvider = ref.read(serverInfoProvider.notifier);
+    final wsProvider = ref.read(websocketProvider.notifier);
+    final backgroundManager = ref.read(backgroundSyncProvider);
+    final backupNotifier = ref.read(driftBackupProvider.notifier);
+
+    unawaited(
+      authNotifier.saveAuthInfo(accessToken: accessToken).then(
+        (didSave) async {
+          if (!didSave) {
+            return;
+          }
+          try {
+            unawaited(wsProvider.connect());
+            unawaited(infoProvider.getServerInfo());
+
+            if (Store.isBetaTimelineEnabled) {
+              var syncSuccess = false;
+              await Future.wait([
+                backgroundManager.syncLocal(full: true),
+                backgroundManager.syncRemote().then((success) => syncSuccess = success),
+              ]);
+
+              if (syncSuccess) {
+                await Future.wait([
+                  backgroundManager.hashAssets().then((_) {
+                    _resumeBackup(backupNotifier);
+                  }),
+                  _resumeBackup(backupNotifier),
+                ]);
+              } else {
+                await backgroundManager.hashAssets();
+              }
+
+              if (Store.get(StoreKey.syncAlbums, false)) {
+                await backgroundManager.syncLinkedAlbum();
+              }
+            }
+          } catch (e, stackTrace) {
+            log.severe('Failed establishing connection to the server: $e', e, stackTrace);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          log.severe('Failed to update auth info with access token', error, stackTrace);
+        },
+      ),
+    );
 
     // clean install - change the default of the flag
     // current install not using beta timeline
@@ -529,9 +505,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
   }
 
   Future<void> _resumeBackup(DriftBackupNotifier notifier) async {
-    final isEnableBackup = Store.get(StoreKey.enableBackup, false);
-
-    if (!isEnableBackup) {
+    if (!Store.get(StoreKey.enableBackup, false)) {
       return;
     }
 
@@ -548,7 +522,10 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     await ref.read(authProvider.notifier).logout();
     if (mounted) {
       await context.replaceRoute(const LoginRoute());
+      return;
     }
+    final router = ref.read(appRouterProvider);
+    await router.replaceAll([const LoginRoute()]);
   }
 
   @override

@@ -45,34 +45,6 @@ class SheetTagsDetails extends ConsumerWidget {
 
     void removeTag(Tag tag) async => ref.read(assetProvider.notifier).removeTagsFromAsset(entityAsset, [tag]);
 
-    if (tags.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: RawChip(
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, size: 20, color: context.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text(
-                  'add'.tr(),
-                  style: context.textTheme.labelLarge?.copyWith(
-                    color: context.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colorScheme.surfaceContainerHigh,
-            shape: const StadiumBorder(),
-            onPressed: addTag,
-          ),
-        ),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
       child: Column(
@@ -86,26 +58,10 @@ class SheetTagsDetails extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: [
-              ...tags.map(
-                (tag) => Chip(
-                  label: Text(
-                    tag.name,
-                    style: context.textTheme.labelLarge?.copyWith(
-                      color: context.colorScheme.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  backgroundColor: context.colorScheme.primary,
-                  shape: const StadiumBorder(),
-                  deleteIcon: Icon(Icons.close, color: context.colorScheme.onPrimary, size: 20),
-                  onDeleted: () => removeTag(tag),
-                ),
-              ),
-              RawChip(
+          if (tags.isEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RawChip(
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -124,8 +80,48 @@ class SheetTagsDetails extends ConsumerWidget {
                 shape: const StadiumBorder(),
                 onPressed: addTag,
               ),
-            ],
-          ),
+            )
+          else
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: [
+                ...tags.map(
+                  (tag) => Chip(
+                    label: Text(
+                      tag.name,
+                      style: context.textTheme.labelLarge?.copyWith(
+                        color: context.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    backgroundColor: context.colorScheme.primary,
+                    shape: const StadiumBorder(),
+                    deleteIcon: Icon(Icons.close, color: context.colorScheme.onPrimary, size: 20),
+                    onDeleted: () => removeTag(tag),
+                  ),
+                ),
+                RawChip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, size: 20, color: context.colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        'add'.tr(),
+                        style: context.textTheme.labelLarge?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: context.colorScheme.surfaceContainerHigh,
+                  shape: const StadiumBorder(),
+                  onPressed: addTag,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -205,34 +201,6 @@ class SheetTagsDetailsBeta extends ConsumerWidget {
       }
     }
 
-    if (tags.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: RawChip(
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, size: 20, color: context.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text(
-                  'add'.tr(),
-                  style: context.textTheme.labelLarge?.copyWith(
-                    color: context.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colorScheme.surfaceContainerHigh,
-            shape: const StadiumBorder(),
-            onPressed: addTag,
-          ),
-        ),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
       child: Column(
@@ -246,26 +214,10 @@ class SheetTagsDetailsBeta extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: [
-              ...tags.map(
-                (tag) => Chip(
-                  label: Text(
-                    tag.name,
-                    style: context.textTheme.labelLarge?.copyWith(
-                      color: context.colorScheme.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  backgroundColor: context.colorScheme.primary,
-                  shape: const StadiumBorder(),
-                  deleteIcon: Icon(Icons.close, color: context.colorScheme.onPrimary, size: 20),
-                  onDeleted: () => removeTag(tag),
-                ),
-              ),
-              RawChip(
+          if (tags.isEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RawChip(
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -284,8 +236,48 @@ class SheetTagsDetailsBeta extends ConsumerWidget {
                 shape: const StadiumBorder(),
                 onPressed: addTag,
               ),
-            ],
-          ),
+            )
+          else
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: [
+                ...tags.map(
+                  (tag) => Chip(
+                    label: Text(
+                      tag.name,
+                      style: context.textTheme.labelLarge?.copyWith(
+                        color: context.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    backgroundColor: context.colorScheme.primary,
+                    shape: const StadiumBorder(),
+                    deleteIcon: Icon(Icons.close, color: context.colorScheme.onPrimary, size: 20),
+                    onDeleted: () => removeTag(tag),
+                  ),
+                ),
+                RawChip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, size: 20, color: context.colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        'add'.tr(),
+                        style: context.textTheme.labelLarge?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: context.colorScheme.surfaceContainerHigh,
+                  shape: const StadiumBorder(),
+                  onPressed: addTag,
+                ),
+              ],
+            ),
         ],
       ),
     );

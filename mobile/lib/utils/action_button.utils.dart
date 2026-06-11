@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -98,8 +96,7 @@ enum ActionButtonType {
       ActionButtonType.advancedInfo => context.advancedTroubleshooting,
       ActionButtonType.share => true,
       ActionButtonType.copy =>
-        Platform.isAndroid &&
-            context.asset.isImage &&
+        context.asset.isImage &&
             RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)$", caseSensitive: false).hasMatch(context.asset.name),
       ActionButtonType.shareLink =>
         !context.isInLockedView && //

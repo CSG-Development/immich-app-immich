@@ -6,8 +6,11 @@ const double downloadFailed = -2;
 
 const String kMobileMetadataKey = "mobile-app";
 
-// Number of log entries to retain on app start
-const int kLogTruncateLimit = 2000;
+// Number of log entries retained in the log DB (trimmed on app start).
+const int kLogTruncateLimit = 10000;
+
+// In-memory ring buffer for the network debug overlay (resolver / monitor / OTP).
+const int kNetworkDebugLogBufferLimit = 5000;
 
 // Sync
 const int kSyncEventBatchSize = 5000;

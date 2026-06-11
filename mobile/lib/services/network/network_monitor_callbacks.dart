@@ -7,8 +7,8 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
-import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
@@ -21,7 +21,7 @@ import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
-import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
+import 'package:immich_mobile/services/network/remote_access_auth.service.dart';
 import 'package:logging/logging.dart';
 
 class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallbacks {
@@ -49,6 +49,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     'dns',
     'http exception',
     'clientexception',
+    'nsurlerror',
   ];
   BuildContext? get _navigatorContext => _ref.read(appRouterProvider).navigatorKey.currentContext;
   late final NetworkBannerController _bannerController = NetworkBannerController(
@@ -70,53 +71,32 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   }
 
   @override
+  void syncNetworkBanner() => _syncNetworkToast();
+
+  @override
   Future<void> onReconnected(PingResult result) async {
     _bannerController.transitionTo(NetworkBannerKind.hidden);
     _ref.read(websocketProvider.notifier).disconnect();
     await Future<void>.delayed(const Duration(milliseconds: 500));
     await _ref.read(websocketProvider.notifier).connect(force: true);
+    if (Store.isBetaTimelineEnabled && Store.tryGet(StoreKey.accessToken)?.isNotEmpty == true) {
+      await _ref.read(backgroundSyncProvider).syncRemote();
+    }
     await _resumeSyncIfInterruptedAfterReconnect();
+    await _resumeBackupIfNeeded();
     _lastReconnectionFailureWasNetwork = false;
   }
 
   @override
   Future<void> onNeedRemoteAccessAuth(Future<void> Function() retry) async {
     _log.info('[Network/Callback] onNeedRemoteAccessAuth invoked');
-    if (_ref.read(remoteProvider).isAuthenticated) {
-      _log.info('[Network/Callback] Remote already authenticated, retrying reconnect directly');
-      await retry();
-      return;
-    }
-    final context = _navigatorContext;
-    if (context == null || !context.mounted) {
-      _log.warning('[Network/Callback] Cannot show OTP modal: navigator context unavailable');
-      return;
-    }
-    final email = (_ref.read(deviceProvider).login ?? '').trim().isNotEmpty
-        ? (_ref.read(deviceProvider).login ?? '').trim()
-        : _ref.read(authProvider).userEmail.trim();
-    if (email.isEmpty) {
-      _log.warning('[Network/Callback] Cannot show OTP modal: no email in device/auth state');
-      await onReconnectionFailed();
-      return;
-    }
-    _log.info('[Network/Callback] Showing OTP modal for email=$email');
-    var remoteOk = false;
-    await showRemoteCodeModal(
-      context: context,
-      remoteProvider: _ref.read(remoteProvider.notifier),
-      email: email,
-      skipInitialCodeSend: _ref.read(remoteProvider).isAuthenticated,
-      onEmailNotAllowed: () async {
-        _log.warning('[Network/Callback] OTP rejected email during reconnect; keeping photos session active');
-      },
-      onSuccess: () async => remoteOk = true,
+    final remoteOk = await _ref.read(remoteAccessAuthServiceProvider).promptAndRetry(retry);
+    _log.info(
+      '[Network/Callback] onNeedRemoteAccessAuth result '
+      'remoteOk=$remoteOk remoteAuth=${_ref.read(remoteProvider).isAuthenticated}',
     );
-    if (remoteOk) {
-      _log.info('[Network/Callback] OTP flow succeeded, retrying reconnect');
-      await retry();
-    } else {
-      _log.warning('[Network/Callback] OTP flow closed/failed before success');
+    if (!remoteOk && !_ref.read(remoteProvider).isAuthenticated) {
+      _log.warning('[Network/Callback] OTP flow failed, calling onReconnectionFailed');
       await onReconnectionFailed();
     }
   }
@@ -156,9 +136,8 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     if (!hasUsableTransport) {
       return NetworkBannerKind.noInternet;
     }
-    final isResolving = _ref.read(pathResolveTriggerServiceProvider).isResolving;
     final status = _ref.read(connectionStateProvider).status;
-    if (isResolving || status == conn.ConnectionStatus.reconnecting) {
+    if (status == conn.ConnectionStatus.reconnecting) {
       return NetworkBannerKind.finding;
     }
     if (status == conn.ConnectionStatus.disconnected) {
@@ -228,10 +207,6 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
       }
       if (remoteSyncSucceeded) {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.none);
-        await _ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
-        if (await _ref.read(driftBackupProvider.notifier).canResumeBackupOnCurrentNetwork()) {
-          await _resumeBackupQueueIfEnabled();
-        }
       } else if (shouldRunRemoteRecovery) {
         _ref.read(driftBackupProvider.notifier).updateError(BackupError.syncFailed);
         await _ref.read(driftBackupProvider.notifier).refreshBackupNetworkGuard();
@@ -249,15 +224,31 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     return _networkErrorHints.any(normalized.contains);
   }
 
-  Future<void> _resumeBackupQueueIfEnabled() async {
-    final isBackupEnabled = _ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup);
-    if (!isBackupEnabled) {
+  Future<void> _resumeBackupIfNeeded() async {
+    if (!_ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup)) {
       return;
     }
+
     final currentUser = Store.tryGet(StoreKey.currentUser);
     if (currentUser == null) {
       return;
     }
-    await _ref.read(driftBackupProvider.notifier).startBackupWithURLSession(currentUser.id);
+
+    final backupNotifier = _ref.read(driftBackupProvider.notifier);
+    await backupNotifier.refreshBackupNetworkGuard();
+    if (!await backupNotifier.canResumeBackupOnCurrentNetwork()) {
+      return;
+    }
+
+    backupNotifier.updateError(BackupError.none);
+
+    final appState = _ref.read(appStateProvider);
+    final isForeground = appState == AppLifeCycleEnum.resumed || appState == AppLifeCycleEnum.active;
+    _log.info('[Network/Callback] Resuming backup after path recovery foreground=$isForeground');
+    if (isForeground) {
+      await backupNotifier.startForegroundBackup(currentUser.id);
+    } else {
+      await backupNotifier.startBackupWithURLSession(currentUser.id);
+    }
   }
 }

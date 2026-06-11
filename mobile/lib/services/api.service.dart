@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cupertino_http/cupertino_http.dart' show NSErrorClientException;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
@@ -34,13 +35,73 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   static const Duration _slowRequestSoftThreshold = Duration(seconds: 8);
   static const Duration _slowRequestHardThreshold = Duration(seconds: 15);
 
-  bool _isConnectionError(dynamic error) {
-    return error is SocketException ||
+  static const String _nsUrlErrorDomain = 'NSURLErrorDomain';
+
+  static const Set<int> _nsUrlTransportErrorCodes = {
+    -1001,
+    -1003,
+    -1004,
+    -1005,
+    -1006,
+    -1009,
+    -1020,
+  };
+
+  static final RegExp _nsUrlErrorPattern = RegExp(r'\[domain=([^,\]]+), code=(-?\d+)\]');
+
+  bool _isConnectionError(dynamic error) => isTransportFailure(error);
+
+  static bool isTransportFailure(Object error) {
+    if (error is SocketException ||
         error is TimeoutException ||
         error is TlsException ||
         error is HandshakeException ||
-        error is HttpException ||
-        (error is ClientException && error.message.contains('Connection') == true);
+        error is HttpException) {
+      return true;
+    }
+    if (error is NSErrorClientException) {
+      return _isNsUrlTransportFailure(error);
+    }
+    if (error is ClientException) {
+      return _isClientTransportFailure(error);
+    }
+    return false;
+  }
+
+  static bool _isNsUrlTransportFailure(NSErrorClientException error) {
+    final parsed = _parseNsUrlError(error.toString());
+    return parsed != null && _isNsUrlTransportCode(parsed.$1, parsed.$2);
+  }
+
+  static bool _isNsUrlTransportCode(String domain, int code) {
+    if (domain != _nsUrlErrorDomain || code == -999) {
+      return false;
+    }
+    return _nsUrlTransportErrorCodes.contains(code);
+  }
+
+  static bool _isClientTransportFailure(ClientException error) {
+    final fromMessage = _parseNsUrlError(error.message);
+    if (fromMessage != null) {
+      return _isNsUrlTransportCode(fromMessage.$1, fromMessage.$2);
+    }
+    final fromDescription = _parseNsUrlError(error.toString());
+    if (fromDescription != null) {
+      return _isNsUrlTransportCode(fromDescription.$1, fromDescription.$2);
+    }
+    return false;
+  }
+
+  static (String, int)? _parseNsUrlError(String text) {
+    final match = _nsUrlErrorPattern.firstMatch(text);
+    if (match == null) {
+      return null;
+    }
+    final code = int.tryParse(match.group(2)!);
+    if (code == null) {
+      return null;
+    }
+    return (match.group(1)!, code);
   }
 
   @override
@@ -131,6 +192,13 @@ class PerformanceHttpClient extends BaseClient {
         e,
         StackTrace.current,
       );
+    } on ClientException catch (e) {
+      await httpMetric.stop();
+      if (ConnectionRecoveryInterceptor.isTransportFailure(e)) {
+        rethrow;
+      }
+      _log.warning('[HTTP] Unhandled transport failure ${request.method} ${request.url}', e);
+      rethrow;
     } catch (e) {
       await httpMetric.stop();
       _log.warning('[HTTP] Unhandled transport failure ${request.method} ${request.url}', e);
@@ -174,11 +242,24 @@ class ApiService implements Authentication {
   ConnectionStatus _lastConnectionStatus = ConnectionStatus.connected;
 
   static const Duration _endpointAvailabilityPingTimeout = Duration(seconds: 15);
+  static const Duration endpointSwitchSettleTimeout = Duration(seconds: 15);
+  static const Duration endpointSwitchPollInterval = Duration(milliseconds: 200);
 
   bool _isSetEndpoint = false;
   Future<void> _endpointSwitchQueue = Future<void>.value();
 
   bool get isEndpointSwitchInProgress => _isSetEndpoint;
+
+  Future<void> waitForEndpointSwitchToSettle() async {
+    final deadline = DateTime.now().add(endpointSwitchSettleTimeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (!isEndpointSwitchInProgress) {
+        return;
+      }
+      await Future<void>.delayed(endpointSwitchPollInterval);
+    }
+    _log.warning('[auth-path] endpoint switch settle wait timed out');
+  }
 
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
@@ -200,11 +281,7 @@ class ApiService implements Authentication {
     return ApiService();
   }
 
-  void _initHttpClient() {
-    if (_httpClientInitialized) {
-      return;
-    }
-
+  void _syncHttpClientFromRepository() {
     _baseClient = NetworkRepository.client;
     _connectionRecoveryInterceptor = ConnectionRecoveryInterceptor(
       _baseClient,
@@ -213,6 +290,14 @@ class ApiService implements Authentication {
       onSlowRequest: _handleSlowRequest,
     );
     _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
+  }
+
+  void _initHttpClient() {
+    if (_httpClientInitialized) {
+      return;
+    }
+
+    _syncHttpClientFromRepository();
     _httpClientInitialized = true;
   }
 
@@ -304,10 +389,6 @@ class ApiService implements Authentication {
 
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
     _apiClient.client = _httpClient;
-    if (_accessToken != null) {
-      // ignore: discarded_futures
-      setAccessToken(_accessToken!);
-    }
     usersApi = UsersApi(_apiClient);
     authenticationApi = AuthenticationApi(_apiClient);
     oAuthApi = AuthenticationApi(_apiClient);
@@ -334,6 +415,7 @@ class ApiService implements Authentication {
   Future<String> resolveAndSetEndpoint(
     String serverUrl, {
     EndpointResolvePolicy policy = EndpointResolvePolicy.conservative,
+    bool pathAlreadyProbed = false,
   }) async {
     return _enqueueEndpointSwitch(() async {
       _isSetEndpoint = true;
@@ -341,13 +423,20 @@ class ApiService implements Authentication {
         final stopwatch = Stopwatch()..start();
         final normalizedEndpoint = _normalizeEndpoint(serverUrl);
         final uri = Uri.parse(normalizedEndpoint);
+        final currentHost = _apiClient.basePath.isEmpty ? null : Uri.tryParse(_apiClient.basePath)?.host;
+        if (currentHost != null && currentHost != uri.host) {
+          await NetworkRepository.cancelInFlightHttpRequests();
+        }
         _log.info(
           'endpoint_switch start '
           'host=${uri.host} '
+          'probed=$pathAlreadyProbed '
           'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
           'settleMs=${policy.settleDelay.inMilliseconds}',
         );
-        final endpoint = await resolveEndpoint(normalizedEndpoint, availabilityTimeout: policy.availabilityTimeout);
+        final endpoint = pathAlreadyProbed
+            ? normalizedEndpoint
+            : await resolveEndpoint(normalizedEndpoint, availabilityTimeout: policy.availabilityTimeout);
         setEndpoint(endpoint);
         try {
           await Store.put(StoreKey.serverEndpoint, endpoint);
@@ -355,6 +444,10 @@ class ApiService implements Authentication {
           // Non-fatal during shutdown/background teardown when DB isolate is closing.
           _log.warning('Skipping server endpoint persistence: store channel closed', error, stackTrace);
         }
+
+        // Sync native auth cookies after Store reflects the new endpoint so cookie
+        // domains match the active host (getServerUrls reads from Store).
+        await updateHeaders();
 
         stopwatch.stop();
         _log.info(
@@ -393,6 +486,87 @@ class ApiService implements Authentication {
   ///  host   - required
   ///  port   - optional (default: based on schema)
   ///  path   - optional
+  Future<bool> checkEndpointAvailable(
+    String serverUrl, {
+    Duration timeout = _endpointAvailabilityPingTimeout,
+  }) {
+    return _isEndpointAvailable(_normalizeEndpoint(serverUrl), timeout: timeout);
+  }
+
+  /// Probes [candidates] in parallel and activates the first reachable endpoint.
+  Future<String?> activateFirstReachable(
+    Iterable<String> candidates, {
+    EndpointResolvePolicy policy = EndpointResolvePolicy.bootstrap,
+  }) async {
+    final unique = _dedupeEndpointCandidates(candidates);
+    if (unique.isEmpty) {
+      return null;
+    }
+
+    final winner = await _raceReachableEndpoint(
+      unique,
+      timeout: policy.availabilityTimeout,
+    );
+    if (winner == null) {
+      return null;
+    }
+
+    try {
+      return await resolveAndSetEndpoint(
+        winner,
+        policy: policy,
+        pathAlreadyProbed: true,
+      );
+    } on ApiException catch (error) {
+      _log.severe('Cannot resolve endpoint', error);
+    } catch (error, stackTrace) {
+      _log.severe('Cannot resolve endpoint', error, stackTrace);
+    }
+
+    return null;
+  }
+
+  List<String> _dedupeEndpointCandidates(Iterable<String> candidates) {
+    final unique = <String>[];
+    final seen = <String>{};
+    for (final candidate in candidates) {
+      if (candidate.isEmpty || !seen.add(candidate)) {
+        continue;
+      }
+      unique.add(candidate);
+    }
+    return unique;
+  }
+
+  Future<String?> _raceReachableEndpoint(
+    List<String> candidates, {
+    required Duration timeout,
+  }) async {
+    final completer = Completer<String?>();
+    var pending = candidates.length;
+
+    for (final candidate in candidates) {
+      unawaited(() async {
+        try {
+          if (await checkEndpointAvailable(candidate, timeout: timeout)) {
+            if (!completer.isCompleted) {
+              completer.complete(candidate);
+            }
+          }
+        } catch (error, stackTrace) {
+          _log.fine('Endpoint probe failed for $candidate', error, stackTrace);
+        } finally {
+          pending--;
+          if (pending == 0 && !completer.isCompleted) {
+            completer.complete(null);
+          }
+        }
+      }());
+    }
+
+    return completer.future;
+  }
+
   Future<String> resolveEndpoint(
     String serverUrl, {
     Duration availabilityTimeout = _endpointAvailabilityPingTimeout,
@@ -552,11 +726,17 @@ class ApiService implements Authentication {
   }
 
   Future<void> updateHeaders() async {
+    _log.fine(
+      '[auth-path] cookie sync store=${Store.tryGet(StoreKey.serverEndpoint)} api=${_apiClient.basePath}',
+    );
     await NetworkRepository.setHeaders(
       getRequestHeaders(),
       getServerUrls(),
       token: _accessToken ?? Store.tryGet(StoreKey.accessToken),
     );
+    if (_httpClientInitialized) {
+      _syncHttpClientFromRepository();
+    }
     _apiClient.client = _httpClient;
   }
 
@@ -569,6 +749,11 @@ class ApiService implements Authentication {
   }
 
   ApiClient get apiClient => _apiClient;
+
+  Client get httpClient {
+    _initHttpClient();
+    return _httpClient;
+  }
   String? get transientAccessToken => _accessToken;
 }
 
@@ -582,4 +767,9 @@ class EndpointResolvePolicy {
   final Duration settleDelay;
 
   static const EndpointResolvePolicy conservative = EndpointResolvePolicy();
+
+  static const EndpointResolvePolicy bootstrap = EndpointResolvePolicy(
+    availabilityTimeout: Duration(seconds: 5),
+    settleDelay: Duration(milliseconds: 200),
+  );
 }

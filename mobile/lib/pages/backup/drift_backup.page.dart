@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -335,7 +336,7 @@ class _RemainderCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final remainderCount = ref.watch(driftBackupProvider.select((p) => p.remainderCount));
+    final remainderCount = max(0, ref.watch(driftBackupProvider.select((p) => p.remainderCount)));
     final syncStatus = ref.watch(syncStatusProvider);
 
     return Card(
@@ -459,9 +460,9 @@ class _PreparingStatusState extends ConsumerState {
   @override
   Widget build(BuildContext context) {
     final syncStatus = ref.watch(syncStatusProvider);
-    final remainderCount = ref.watch(driftBackupProvider.select((p) => p.remainderCount));
+    final remainderCount = max(0, ref.watch(driftBackupProvider.select((p) => p.remainderCount)));
     final processingCount = ref.watch(driftBackupProvider.select((p) => p.processingCount));
-    final readyForUploadCount = remainderCount - processingCount;
+    final readyForUploadCount = max(0, remainderCount - processingCount);
 
     ref.listen<int>(driftBackupProvider.select((p) => p.processingCount), (previous, next) {
       if (next > 0 && _pollingTimer == null) {

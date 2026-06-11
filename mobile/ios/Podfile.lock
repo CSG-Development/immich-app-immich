@@ -254,7 +254,7 @@ DEPENDENCIES:
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
+  trunk:
     - Firebase
     - FirebaseABTesting
     - FirebaseCore
@@ -269,15 +269,14 @@ SPEC REPOS:
     - FirebaseSharedSwift
     - GoogleDataTransport
     - GoogleUtilities
+    - KeychainAccess
     - MapLibre
     - nanopb
+    - onnxruntime-c
+    - onnxruntime-objc
     - PromisesObjC
     - PromisesSwift
     - sqlite3
-  trunk:
-    - KeychainAccess
-    - onnxruntime-c
-    - onnxruntime-objc
 
 EXTERNAL SOURCES:
   background_downloader:

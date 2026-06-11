@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import 'dart:convert' show jsonDecode;
 
-import 'package:http/http.dart' as http;
-
 import 'package:chopper/chopper.dart' show Response;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -118,7 +116,7 @@ Future<void> stopDiscovery(nsd.Discovery discovery) async {
 }
 
 Future<RemoteAccessDependencies> initHCDevice({
-  required http.Client httpClient,
+  required HttpClientProvider httpClientProvider,
   bool isMainRuntime = true,
 }) async {
   final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
@@ -152,7 +150,7 @@ Future<RemoteAccessDependencies> initHCDevice({
     secureData: secureData,
     secureStorage: secureStorage,
     storageData: storageData,
-    httpClient: httpClient,
+    httpClientProvider: httpClientProvider,
     isMainRuntime: isMainRuntime,
   );
 }

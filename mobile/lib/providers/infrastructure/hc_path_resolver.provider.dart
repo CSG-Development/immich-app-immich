@@ -13,7 +13,3 @@ final hcPathResolverProvider = Provider<HcPathResolver>((ref) {
   });
   return resolver;
 });
-
-final hcPathResolverBootstrapProvider = FutureProvider<void>((ref) async {
-  await ref.read(hcPathResolverProvider).init();
-});

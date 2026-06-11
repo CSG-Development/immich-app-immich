@@ -70,88 +70,8 @@ class NetworkApiImpl: NetworkApi {
     NetworkCertificatePinning.shared.unregisterHost(host)
   }
 
-  func sendHttpRequest(
-    request: HttpRequestData,
-    timeoutSeconds: Int64,
-    completion: @escaping (Result<HttpResponseData, Error>) -> Void
-  ) {
-    guard let url = URL(string: request.url) else {
-      DispatchQueue.main.async {
-        completion(
-          .failure(
-            NSError(
-              domain: "NetworkApi",
-              code: -1,
-              userInfo: [NSLocalizedDescriptionKey: "Invalid URL: \(request.url)"]
-            )
-          )
-        )
-      }
-      return
-    }
-
-    var urlRequest = URLRequest(url: url)
-    urlRequest.httpMethod = request.method
-    urlRequest.timeoutInterval = TimeInterval(timeoutSeconds)
-
-    let skipHeader = "x-curator-request-timeout-seconds"
-    for (key, value) in request.headers {
-      if key.lowercased() == skipHeader {
-        continue
-      }
-      urlRequest.setValue(value, forHTTPHeaderField: key)
-    }
-
-    if let body = request.body {
-      urlRequest.httpBody = body.data
-    }
-
-    var didComplete = false
-    let completeOnMain: (Result<HttpResponseData, Error>) -> Void = { result in
-      guard !didComplete else { return }
-      didComplete = true
-      DispatchQueue.main.async {
-        completion(result)
-      }
-    }
-
-    let task = URLSessionManager.shared.session.dataTask(with: urlRequest) { data, response, error in
-      if let error = error {
-        completeOnMain(.failure(error))
-        return
-      }
-
-      guard let httpResponse = response as? HTTPURLResponse else {
-        completeOnMain(
-          .failure(
-            NSError(
-              domain: "NetworkApi",
-              code: -1,
-              userInfo: [NSLocalizedDescriptionKey: "No HTTP response"]
-            )
-          )
-        )
-        return
-      }
-
-      var headers: [String: String] = [:]
-      for (key, value) in httpResponse.allHeaderFields {
-        if let key = key as? String, let value = value as? String {
-          headers[key.lowercased()] = value
-        }
-      }
-
-      completeOnMain(
-        .success(
-          HttpResponseData(
-            statusCode: Int64(httpResponse.statusCode),
-            headers: headers,
-            body: FlutterStandardTypedData(bytes: data ?? Data())
-          )
-        )
-      )
-    }
-    task.resume()
+  func cancelInFlightHttpRequests() throws {
+    URLSessionManager.shared.cancelInFlightRequests()
   }
 
   func setRequestHeaders(headers: [String : String], serverUrls: [String], token: String?) throws {
@@ -187,6 +107,8 @@ class NetworkApiImpl: NetworkApi {
     if headers != UserDefaults.group.dictionary(forKey: HEADERS_KEY) as? [String: String] {
       UserDefaults.group.set(headers, forKey: HEADERS_KEY)
       URLSessionManager.shared.recreateSession()
+    } else {
+      URLSessionManager.shared.bindVideoProxySession()
     }
   }
 }

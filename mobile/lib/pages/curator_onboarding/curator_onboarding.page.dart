@@ -13,6 +13,7 @@ import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/websocket.provider.dart';
 
 final _onboardingSteps = kCuratorOnboardingSlidesData;
 
@@ -72,21 +73,37 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
 
   void _skip() => _finishOnboarding();
 
+  Future<void> _runSyncFlow() async {
+    final backgroundManager = ref.read(backgroundSyncProvider);
+
+    await backgroundManager.syncLocal(full: true);
+    await backgroundManager.syncRemote();
+    await backgroundManager.hashAssets();
+
+    if (Store.get(StoreKey.syncAlbums, false)) {
+      await backgroundManager.syncLinkedAlbum();
+    }
+  }
+
   void _finishOnboarding() async {
     await Store.put(StoreKey.onboardingWasShown, true);
     await Store.delete(StoreKey.onboardingViewedCount);
+    if (!mounted) {
+      return;
+    }
+
     final isBeta = Store.isBetaTimelineEnabled;
     if (isBeta) {
       await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-      final backgroundManager = ref.read(backgroundSyncProvider);
-      unawaited(backgroundManager.syncRemote());
-      if (ref.read(galleryPermissionNotifier.notifier).hasPermission) {
-        unawaited(backgroundManager.syncLocal(full: true));
+      if (!mounted) {
+        return;
       }
-      context.replaceRoute(const SplashScreenRoute());
+      unawaited(_runSyncFlow());
+      unawaited(ref.read(websocketProvider.notifier).connect());
+      unawaited(context.replaceRoute(const TabShellRoute()));
       return;
     }
-    context.replaceRoute(const TabControllerRoute());
+    unawaited(context.replaceRoute(const TabControllerRoute()));
   }
 
   Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, bool isLandscape, int index) {

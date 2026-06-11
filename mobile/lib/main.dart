@@ -25,13 +25,14 @@ import 'package:immich_mobile/pages/common/splash_screen.page.dart';
 import 'package:immich_mobile/platform/background_worker_lock_api.g.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
+import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/debug/network_debug_overlay_visibility.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/theme.provider.dart';
@@ -46,7 +47,6 @@ import 'package:immich_mobile/theme/dynamic_theme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
-import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/env_config.dart';
@@ -85,7 +85,9 @@ void main() async {
     await HttpCertPinningManager.ensureInitialized();
 
     await _startRemoteAccessSession();
-    final remoteAccessDependencies = await initHCDevice(httpClient: NetworkRepository.client);
+    final remoteAccessDependencies = await initHCDevice(
+      httpClientProvider: () => NetworkRepository.client,
+    );
 
     final apiservice = ApiService();
 
@@ -187,10 +189,7 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       case AppLifecycleState.resumed:
         dPrint(() => "[APP STATE] resumed");
         ref.read(appStateProvider.notifier).handleAppResume();
-        unawaited(ref.read(curatorNetworkMonitorProvider).processPendingOnResume());
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(curatorNetworkMonitorProvider).onAppLifecycleResumed();
-        });
+        unawaited(ref.read(curatorNetworkMonitorProvider).onAppLifecycleResumed());
         break;
       case AppLifecycleState.inactive:
         dPrint(() => "[APP STATE] inactive");
@@ -269,9 +268,10 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
   initState() {
     super.initState();
     initApp().then((_) => dPrint(() => "App Init Completed"));
-    unawaited(ref.read(hcPathResolverBootstrapProvider.future));
+    unawaited(ref.read(hcDeviceEndpointResolverProvider).init());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(currentRouteNameProvider.notifier).state = SplashScreenRoute.name;
+      _syncCuratorNetworkMonitoring(ref.read(authProvider).isAuthenticated);
       // needs to be delayed so that EasyLocalization is working
       if (Store.isBetaTimelineEnabled) {
         ref.read(backgroundServiceProvider).disableService();
@@ -307,11 +307,22 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
       if (state.status == conn.ConnectionStatus.connected) {
         ref.read(curatorNetworkMonitorProvider).onConnectionRestored();
       }
+      ref.read(curatorNetworkMonitorProvider).callbacks.syncNetworkBanner();
     });
+  }
+
+  void _syncCuratorNetworkMonitoring(bool isPhotosAuthenticated) {
+    final monitor = ref.read(curatorNetworkMonitorProvider);
+    if (isPhotosAuthenticated) {
+      monitor.startMonitoring();
+    } else {
+      monitor.stopMonitoring();
+    }
   }
 
   @override
   void dispose() {
+    ref.read(curatorNetworkMonitorProvider).stopMonitoring();
     ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler = null;
     ref.read(apiServiceProvider).curatorNetworkSlowRequestHandler = null;
     _connectionStateSubscription?.cancel();
@@ -330,6 +341,10 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authProvider.select((auth) => auth.isAuthenticated), (previous, isAuthenticated) {
+      _syncCuratorNetworkMonitoring(isAuthenticated);
+    });
+
     final router = ref.watch(appRouterProvider);
     final immichTheme = ref.watch(immichThemeProvider);
 

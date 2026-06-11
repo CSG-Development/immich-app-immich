@@ -12,8 +12,6 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auth_state.model.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
-import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/auth.service.dart';
@@ -194,9 +192,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         didRetryAfterPathRecovery = true;
         _log.warning('Transport error during refreshMyUser; retrying after resolver recovery');
         try {
-          await _ref
-              .read(hcDeviceEndpointResolverProvider)
-              .resolveAndActivateWinner(trigger: 'auth_save_info_transport_retry', mode: ResolveMode.foreground);
+          await _authService.setOpenApiServiceEndpoint(trigger: 'auth_save_info_transport_retry');
+          await _apiService.updateHeaders();
           final serverUser = await _userService.refreshMyUser().timeout(_timeoutDuration);
           if (serverUser != null) {
             user = serverUser;
@@ -236,12 +233,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isAdmin: user.isAdmin,
     );
 
-    // Ensure resolver has at least one fallback
-    // endpoint even before the first successful discovery cycle.
-    final currentEndpoint = _apiService.apiClient.basePath;
-    if (currentEndpoint.isNotEmpty) {
-      await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);
-    }
+    await _apiService.updateHeaders();
 
     return true;
   }
@@ -285,11 +277,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isAdmin: user.isAdmin,
     );
 
-    final currentEndpoint = _apiService.apiClient.basePath;
-    if (currentEndpoint.isNotEmpty) {
-      await _ref.read(hcPathResolverProvider).setAvailablePath(currentEndpoint);
-    }
-
     return true;
   }
 
@@ -304,6 +291,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Returns the current server endpoint (with /api) URL from the store
   String? getServerEndpoint() {
     return Store.tryGet(StoreKey.serverEndpoint);
+  }
+
+  Future<String?> setOpenApiServiceEndpoint({String trigger = 'app_resume'}) {
+    return _authService.setOpenApiServiceEndpoint(trigger: trigger);
   }
 
   Future<bool> unlockPinCode(String pinCode) {

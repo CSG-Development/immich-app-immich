@@ -25,11 +25,11 @@ import 'package:immich_mobile/repositories/backup.repository.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/backup.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
+import 'package:immich_mobile/utils/secondary_runtime_api.bootstrap.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -344,7 +344,7 @@ class BackgroundService {
     await HttpCertPinningManager.ensureInitialized();
 
     final remoteAccessDependencies = await initHCDevice(
-      httpClient: NetworkRepository.client,
+      httpClientProvider: () => NetworkRepository.client,
       isMainRuntime: false,
     );
     final apiservice = ApiService();
@@ -359,15 +359,12 @@ class BackgroundService {
       ],
     );
     try {
-      final accessToken = await _consumeBootstrapAccessToken();
-      if (accessToken != null && accessToken.isNotEmpty) {
-        await ref.read(apiServiceProvider).setAccessToken(accessToken);
-      } else {
-        await ref.read(apiServiceProvider).updateHeaders();
-      }
-      final resolvedEndpoint = await ref
-          .read(hcDeviceEndpointResolverProvider)
-          .resolveAndActivateWinner(trigger: 'legacy_background_service', mode: ResolveMode.terminatedBgTask);
+      await bootstrapSecondaryRuntimeApiSession(ref.read(apiServiceProvider));
+      final resolvedEndpoint = await bootstrapSecondaryRuntimeEndpoint(
+        ref,
+        trigger: 'legacy_background_service',
+        mode: ResolveMode.terminatedBgTask,
+      );
       if (resolvedEndpoint == null || resolvedEndpoint.isEmpty) {
         dPrint(() => '[BG UPLOAD] Skipping run: endpoint unresolved (BG_ENDPOINT_UNRESOLVED)');
         return false;
@@ -615,14 +612,6 @@ class BackgroundService {
       return false;
     }
     return await _foregroundChannel.invokeMethod('backgroundAppRefreshEnabled');
-  }
-
-  Future<String?> _consumeBootstrapAccessToken() async {
-    final token = Store.tryGet(StoreKey.accessToken);
-    if (token == null || token.isEmpty) {
-      return null;
-    }
-    return token;
   }
 }
 

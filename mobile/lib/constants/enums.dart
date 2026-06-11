@@ -31,7 +31,7 @@ enum AppLockTimeout {
   Duration get during => Duration(minutes: durationinMinutes);
 }
 
-enum CleanupStep { selectDate, filterOptions, scan, delete }
+enum CleanupStep { selectDate, scan, delete }
 
 enum AssetKeepType { none, photosOnly, videosOnly }
 

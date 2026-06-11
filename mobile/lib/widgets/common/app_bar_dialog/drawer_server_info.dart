@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
@@ -25,7 +27,7 @@ class DrawerServerInfo extends HookConsumerWidget {
     final fontSize = 12.0;
     final isDarkTheme = context.isDarkTheme;
     final latestVersion = serverInfo.latestVersion;
-    final borderColor = context.isDarkTheme ? const Color(0xFF616161) : const Color(0xFFCBCDD3);
+    final borderColor = context.colorScheme.outlineVariant;
     final textColor = context.textTheme.bodySmall?.color?.withValues(alpha: 0.87);
 
     useEffect(
@@ -37,9 +39,14 @@ class DrawerServerInfo extends HookConsumerWidget {
             "buildNumber": packageInfo.buildNumber,
           };
         }();
+
+        if (serverInfo.serverVersion.major == 0) {
+          unawaited(ref.read(serverInfoProvider.notifier).getServerVersion());
+        }
+
         return null;
       },
-      [],
+      [serverInfo.serverVersion.major],
     );
 
     TextStyle rowTextStyle() => TextStyle(fontSize: fontSize, color: textColor);

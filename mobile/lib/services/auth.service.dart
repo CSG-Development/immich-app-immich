@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:hc_device/services/path_resolver/hc_path_resolver.dart';
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
+import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath;
+import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/utils/background_sync.dart';
@@ -16,6 +18,7 @@ import 'package:immich_mobile/repositories/auth_api.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
 
 final authServiceProvider = Provider(
@@ -26,6 +29,7 @@ final authServiceProvider = Provider(
     ref.watch(backgroundSyncProvider),
     ref.watch(appSettingsServiceProvider),
     ref.watch(hcPathResolverProvider),
+    ref.read(deviceProvider.notifier),
   ),
 );
 
@@ -36,6 +40,7 @@ class AuthService {
   final BackgroundSyncManager _backgroundSyncManager;
   final AppSettingsService _appSettingsService;
   final HcPathResolver _hcPathResolver;
+  final DeviceProvider _deviceProvider;
   final _log = Logger("AuthService");
 
   AuthService(
@@ -45,6 +50,7 @@ class AuthService {
     this._backgroundSyncManager,
     this._appSettingsService,
     this._hcPathResolver,
+    this._deviceProvider,
   );
 
   /// Validates the provided server URL by resolving and setting the endpoint.
@@ -140,6 +146,7 @@ class AuthService {
       Store.delete(StoreKey.currentUser),
       Store.delete(StoreKey.assetETag),
       Store.delete(StoreKey.serverEndpoint),
+      Store.delete(StoreKey.serverVersion),
       Store.delete(StoreKey.autoEndpointSwitching),
       Store.delete(StoreKey.preferredWifiName),
     ]);
@@ -164,5 +171,40 @@ class AuthService {
 
   Future<void> setupPinCode(String pinCode) {
     return _authApiRepository.setupPinCode(pinCode);
+  }
+
+  Future<String?> setOpenApiServiceEndpoint({String trigger = 'app_resume'}) async {
+    await _hcPathResolver.init();
+    final resolved = await _apiService.activateFirstReachable(_availablePathCandidates());
+    if (resolved != null) {
+      _log.info('[EndpointSwitch] activated trigger=$trigger endpoint=$resolved');
+    }
+    return resolved;
+  }
+
+  List<String> _availablePathCandidates() {
+    final candidates = <String>[];
+
+    final available = _hcPathResolver.getAvailablePath();
+    if (available != null && available.isNotEmpty) {
+      candidates.add(available);
+    }
+
+    final stored = Store.tryGet(StoreKey.serverEndpoint);
+    if (stored != null && stored.isNotEmpty) {
+      candidates.add(stored);
+    }
+
+    final seagateDeviceId = _deviceProvider.seagateDeviceID;
+    if (seagateDeviceId != null && seagateDeviceId.isNotEmpty) {
+      final paths = _hcPathResolver
+          .getDevicePaths(seagateDeviceId)
+          .whereType<DevicePath>()
+          .where((path) => path.type != DevicePathType.swaggerGeneratedUnknown)
+          .toList(growable: false);
+      candidates.addAll(DeviceEndpointUtils.buildSortedAuxiliaryEndpoints(paths));
+    }
+
+    return candidates;
   }
 }

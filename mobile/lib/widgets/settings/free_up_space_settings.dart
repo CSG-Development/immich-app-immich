@@ -124,6 +124,8 @@ class _FreeUpSpaceSettingsState extends ConsumerState<FreeUpSpaceSettings> {
       _hasScanned = true;
       if (state.assetsToDelete.isNotEmpty) {
         _currentStep = CleanupStep.delete;
+      } else {
+        _currentStep = CleanupStep.scan;
       }
     });
   }
@@ -615,41 +617,36 @@ class _FreeUpSpaceSettingsState extends ConsumerState<FreeUpSpaceSettings> {
                   content: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: context.colorScheme.errorContainer.withValues(alpha: 0.3),
-                          borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          border: Border.all(color: context.colorScheme.error.withValues(alpha: 0.3)),
+                      if (hasAssets) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.errorContainer.withValues(alpha: 0.3),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                            border: Border.all(color: context.colorScheme.error.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            'cleanup_step4_summary'.t(
+                              context: context,
+                              args: {
+                                'count': state.assetsToDelete.length.toString(),
+                                'date': DateFormat.yMMMd().format(state.selectedDate!),
+                              },
+                            ),
+                            style: context.textTheme.labelLarge?.copyWith(fontSize: 15),
+                          ),
                         ),
-                        child: hasAssets
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'cleanup_step4_summary'.t(
-                                      context: context,
-                                      args: {
-                                        'count': state.assetsToDelete.length.toString(),
-                                        'date': DateFormat.yMMMd().format(state.selectedDate!),
-                                      },
-                                    ),
-                                    style: context.textTheme.labelLarge?.copyWith(fontSize: 15),
-                                  ),
-                                ],
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
                       OutlinedButton.icon(
-                        onPressed: () => _showAssetsPreview(state.assetsToDelete),
+                        onPressed: hasAssets ? () => _showAssetsPreview(state.assetsToDelete) : null,
                         icon: const Icon(Icons.preview),
                         label: Text('preview'.t(context: context)),
                         style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
-                        onPressed: state.isDeleting ? null : _deleteAssets,
+                        onPressed: hasAssets && !state.isDeleting ? _deleteAssets : null,
                         icon: state.isDeleting
                             ? const SizedBox(
                                 width: 20,

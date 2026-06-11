@@ -145,77 +145,6 @@ data class ClientCertPrompt (
 
   override fun hashCode(): Int = toList().hashCode()
 }
-
-/** Generated class from Pigeon that represents data sent in messages. */
-data class HttpRequestData (
-  val method: String,
-  val url: String,
-  val headers: Map<String, String>,
-  val body: ByteArray? = null
-)
- {
-  companion object {
-    fun fromList(pigeonVar_list: List<Any?>): HttpRequestData {
-      val method = pigeonVar_list[0] as String
-      val url = pigeonVar_list[1] as String
-      val headers = pigeonVar_list[2] as Map<String, String>
-      val body = pigeonVar_list[3] as ByteArray?
-      return HttpRequestData(method, url, headers, body)
-    }
-  }
-  fun toList(): List<Any?> {
-    return listOf(
-      method,
-      url,
-      headers,
-      body,
-    )
-  }
-  override fun equals(other: Any?): Boolean {
-    if (other !is HttpRequestData) {
-      return false
-    }
-    if (this === other) {
-      return true
-    }
-    return NetworkPigeonUtils.deepEquals(toList(), other.toList())  }
-
-  override fun hashCode(): Int = toList().hashCode()
-}
-
-/** Generated class from Pigeon that represents data sent in messages. */
-data class HttpResponseData (
-  val statusCode: Long,
-  val headers: Map<String, String>,
-  val body: ByteArray
-)
- {
-  companion object {
-    fun fromList(pigeonVar_list: List<Any?>): HttpResponseData {
-      val statusCode = pigeonVar_list[0] as Long
-      val headers = pigeonVar_list[1] as Map<String, String>
-      val body = pigeonVar_list[2] as ByteArray
-      return HttpResponseData(statusCode, headers, body)
-    }
-  }
-  fun toList(): List<Any?> {
-    return listOf(
-      statusCode,
-      headers,
-      body,
-    )
-  }
-  override fun equals(other: Any?): Boolean {
-    if (other !is HttpResponseData) {
-      return false
-    }
-    if (this === other) {
-      return true
-    }
-    return NetworkPigeonUtils.deepEquals(toList(), other.toList())  }
-
-  override fun hashCode(): Int = toList().hashCode()
-}
 private open class NetworkPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -229,16 +158,6 @@ private open class NetworkPigeonCodec : StandardMessageCodec() {
           ClientCertPrompt.fromList(it)
         }
       }
-      131.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          HttpRequestData.fromList(it)
-        }
-      }
-      132.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          HttpResponseData.fromList(it)
-        }
-      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -250,14 +169,6 @@ private open class NetworkPigeonCodec : StandardMessageCodec() {
       }
       is ClientCertPrompt -> {
         stream.write(130)
-        writeValue(stream, value.toList())
-      }
-      is HttpRequestData -> {
-        stream.write(131)
-        writeValue(stream, value.toList())
-      }
-      is HttpResponseData -> {
-        stream.write(132)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -274,18 +185,10 @@ interface NetworkApi {
   fun hasCertificate(): Boolean
   fun getClientPointer(): Long
   fun setRequestHeaders(headers: Map<String, String>, serverUrls: List<String>, token: String?)
-  /** Installs custom root CAs (DER, base64) for the shared native HTTP client. */
   fun configureCertificatePinning(rootCertificatesBase64: List<String>)
-  /** Registers intermediate/trusted certs (DER, base64) for [host], excluding the leaf. */
   fun registerTrustedChain(host: String, chainCertificatesBase64: List<String>)
   fun unregisterTrustedChain(host: String)
-  /**
-   * Performs an HTTP request on the shared native client (iOS URLSession / Android OkHttp).
-   *
-   * Completion is handled entirely in native code so Dart does not register FFI
-   * URLSession completion blocks (which can crash after timeouts).
-   */
-  fun sendHttpRequest(request: HttpRequestData, timeoutSeconds: Long, callback: (Result<HttpResponseData>) -> Unit)
+  fun cancelInFlightHttpRequests()
 
   companion object {
     /** The codec used by NetworkApi. */
@@ -457,21 +360,16 @@ interface NetworkApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.sendHttpRequest$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.cancelInFlightHttpRequests$separatedMessageChannelSuffix", codec)
         if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val requestArg = args[0] as HttpRequestData
-            val timeoutSecondsArg = args[1] as Long
-            api.sendHttpRequest(requestArg, timeoutSecondsArg) { result: Result<HttpResponseData> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(NetworkPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(NetworkPigeonUtils.wrapResult(data))
-              }
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.cancelInFlightHttpRequests()
+              listOf(null)
+            } catch (exception: Throwable) {
+              NetworkPigeonUtils.wrapError(exception)
             }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

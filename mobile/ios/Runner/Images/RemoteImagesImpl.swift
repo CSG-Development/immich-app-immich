@@ -20,6 +20,7 @@ final class RemoteImageRequest: ImageRequest {
 
 class RemoteImageApiImpl: NSObject, RemoteImageApi {
   private static let registry = RequestRegistry<RemoteImageRequest>()
+  private static let maxTlsRetries = 1
   private static let rgbaFormat = vImage_CGImageFormat(
     bitsPerComponent: 8,
     bitsPerPixel: 32,
@@ -35,21 +36,63 @@ class RemoteImageApiImpl: NSObject, RemoteImageApi {
   ] as CFDictionary
 
   func requestImage(url: String, headers: [String: String], requestId: Int64, preferEncoded: Bool, completion: @escaping (Result<[String : Int64]?, any Error>) -> Void) {
+    let request = RemoteImageRequest(id: requestId, completion: completion)
+    Self.registry.add(requestId: requestId, request: request)
+    Self.startRequest(
+      request: request,
+      url: url,
+      headers: headers,
+      preferEncoded: preferEncoded,
+      retryCount: 0
+    )
+  }
+
+  private static func startRequest(
+    request: RemoteImageRequest,
+    url: String,
+    headers: [String: String],
+    preferEncoded: Bool,
+    retryCount: Int
+  ) {
+    if request.isCancelled {
+      return
+    }
+
     var urlRequest = URLRequest(url: URL(string: url)!)
     urlRequest.cachePolicy = .returnCacheDataElseLoad
     for (key, value) in headers {
       urlRequest.setValue(value, forHTTPHeaderField: key)
     }
 
-    let request = RemoteImageRequest(id: requestId, completion: completion)
-
     let task = URLSessionManager.shared.session.dataTask(with: urlRequest) { data, response, error in
-      Self.handleCompletion(request: request, encoded: preferEncoded, data: data, response: response, error: error)
+      if let error = error, retryCount < maxTlsRetries, isTlsError(error), !request.isCancelled {
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.2) {
+          startRequest(
+            request: request,
+            url: url,
+            headers: headers,
+            preferEncoded: preferEncoded,
+            retryCount: retryCount + 1
+          )
+        }
+        return
+      }
+
+      handleCompletion(request: request, encoded: preferEncoded, data: data, response: response, error: error)
     }
 
     request.task = task
-    Self.registry.add(requestId: requestId, request: request)
     task.resume()
+  }
+
+  private static func isTlsError(_ error: Error) -> Bool {
+    let nsError = error as NSError
+    guard nsError.domain == NSURLErrorDomain else {
+      return false
+    }
+    return nsError.code == NSURLErrorSecureConnectionFailed
+      || nsError.code == NSURLErrorServerCertificateUntrusted
+      || nsError.code == NSURLErrorClientCertificateRejected
   }
 
   private static func handleCompletion(request: RemoteImageRequest, encoded: Bool, data: Data?, response: URLResponse?, error: Error?) {

@@ -16,6 +16,7 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/download_status_floating_button.widget.dart';
+import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/general_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/constants.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/scrubber.widget.dart';
@@ -46,6 +47,7 @@ class Timeline extends StatelessWidget {
     this.readOnly = false,
     this.persistentBottomBar = false,
     this.loadingWidget,
+    this.showClipboardPaste = false,
   });
 
   final Widget? topSliverWidget;
@@ -61,12 +63,23 @@ class Timeline extends StatelessWidget {
   final bool readOnly;
   final bool persistentBottomBar;
   final Widget? loadingWidget;
+  final bool showClipboardPaste;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      floatingActionButton: const DownloadStatusFloatingButton(),
+      floatingActionButton: showClipboardPaste
+          ? const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ClipboardPasteButton(),
+                SizedBox(height: 12),
+                DownloadStatusFloatingButton(),
+              ],
+            )
+          : const DownloadStatusFloatingButton(),
       body: LayoutBuilder(
         builder: (_, constraints) => ProviderScope(
           overrides: [
@@ -385,7 +398,8 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
           final topPadding = context.padding.top + (widget.appBar == null ? 0 : kToolbarHeight) + 10;
 
           const bottomSheetOpenModifier = 120.0;
-          final contentBottomPadding = context.padding.bottom + (isMultiSelectEnabled ? bottomSheetOpenModifier : 0);
+          final contentBottomPadding =
+              context.padding.bottom + (isMultiSelectEnabled || widget.persistentBottomBar ? bottomSheetOpenModifier : 0);
           final scrubberBottomPadding = contentBottomPadding + kScrubberThumbHeight;
 
           final grid = CustomScrollView(
@@ -471,7 +485,7 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
                 child: Stack(
                   children: [
                     timeline,
-                    if (isBottomWidgetVisible)
+                    if (isMultiSelectStatusVisible)
                       Positioned(
                         top: MediaQuery.paddingOf(context).top,
                         left: 25,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max, min;
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:cancellation_token_http/http.dart';
@@ -266,6 +267,15 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   Completer<void>? _httpCancelCompleter;
   bool _handleBackupResumeInProgress = false;
 
+  Map<String, Object?> _foregroundBackupStateSnapshot() => {
+    'hasCancelToken': state.cancelToken != null,
+    'cancelTokenCancelled': state.cancelToken?.isCancelled ?? false,
+    'uploadItemsCount': state.uploadItems.length,
+    'iCloudProgressCount': state.iCloudDownloadProgress.length,
+    'remainderCount': state.remainderCount,
+    'isHttpBackupActive': state.isHttpBackupActive,
+  };
+
   /// Remove upload item from state
   void _removeUploadItem(String taskId) {
     if (!mounted) {
@@ -290,7 +300,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       case TaskStatus.complete:
         if (update.task.group == kBackupGroup) {
           if (update.responseStatusCode == 201) {
-            state = state.copyWith(backupCount: state.backupCount + 1, remainderCount: state.remainderCount - 1);
+            _adjustCountsAfterUpload();
           }
         }
 
@@ -427,12 +437,43 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       return;
     }
 
+    final total = max(0, counts.total);
+    final remainder = max(0, counts.remainder);
     state = state.copyWith(
-      totalCount: counts.total,
-      backupCount: counts.total - counts.remainder,
-      remainderCount: counts.remainder,
-      processingCount: counts.processing,
+      totalCount: total,
+      backupCount: max(0, min(total, total - remainder)),
+      remainderCount: remainder,
+      processingCount: max(0, counts.processing),
     );
+  }
+
+  /// Optimistic count update while uploads are in progress. Clamped so UI cannot go negative.
+  void _adjustCountsAfterUpload() {
+    if (!mounted) {
+      return;
+    }
+    final total = state.totalCount;
+    state = state.copyWith(
+      backupCount: min(total, state.backupCount + 1),
+      remainderCount: max(0, state.remainderCount - 1),
+    );
+  }
+
+  /// Sync remote assets then reload backup counts from the database.
+  Future<void> _reconcileBackupCounts(String userId) async {
+    if (!mounted) {
+      _logger.warning("Skip _reconcileBackupCounts (pre-call): notifier disposed");
+      return;
+    }
+    updateSyncing(true);
+    final syncOk = await _ref.read(backgroundSyncProvider).syncRemote();
+    updateSyncing(false);
+    if (!syncOk) {
+      updateError(BackupError.syncFailed);
+    }
+    await refreshBackupNetworkGuard();
+    await getBackupStatus(userId);
+    _ref.invalidate(driftBackupCandidateProvider);
   }
 
   void updateError(BackupError error) async {
@@ -468,7 +509,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     state = state.copyWith(isSyncing: isSyncing);
   }
 
-  /// Foreground HTTP backup (fork specific).
+  /// Foreground HTTP backup while the app is in the foreground.
   Future<void> startForegroundBackupHttp(String userId) async {
     if (await isBackupNetworkBlocked(
       appSettings: _ref.read(appSettingsServiceProvider),
@@ -479,6 +520,20 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     }
 
     if (state.isHttpBackupActive) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplCancel,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_SKIPPED',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_start_backup',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'HTTP_BACKUP_STOP_BEFORE_RESTART',
+        runId: _runId,
+        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      );
       stopForegroundBackupHttp();
     }
 
@@ -518,62 +573,233 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
           state = state.copyWith(enqueueCount: processed, enqueueTotalCount: total);
         },
         onSuccess: (localAssetId, {bool isDuplicate = false}) {
-          state = state.copyWith(
-            backupCount: state.backupCount + 1,
-            remainderCount: state.remainderCount > 0 ? state.remainderCount - 1 : 0,
-          );
+          _adjustCountsAfterUpload();
           dPrint(() => 'HTTP backup uploaded $localAssetId duplicate=$isDuplicate');
         },
       );
     } finally {
       _httpCancelCompleter = null;
       state = state.copyWith(isHttpBackupActive: false, enqueueCount: 0, enqueueTotalCount: 0);
-      updateSyncing(true);
-      final syncOk = await _ref.read(backgroundSyncProvider).syncRemote();
-      updateSyncing(false);
-      if (!syncOk) {
-        updateError(BackupError.syncFailed);
-      }
-      await refreshBackupNetworkGuard();
-      await getBackupStatus(userId);
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'MANUAL_SCREEN',
+        appState: 'ACTIVE',
+        trigger: 'user_start_backup',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'HTTP_BACKUP_COMPLETE',
+        runId: _runId,
+        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      );
+      await _reconcileBackupCounts(userId);
     }
   }
 
-  /// Stops foreground HTTP backup when the app is paused (fork specific).
+  /// Stops foreground HTTP backup when the app is paused.
   void stopForegroundBackupHttp() {
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplCancel,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_SKIPPED',
+      source: 'APP_RESUME',
+      appState: 'PAUSED',
+      trigger: 'foreground_http_stop',
+      status: BackupTraceStatus.retry,
+      reasonCode: 'HTTP_BACKUP_CANCEL_REQUESTED',
+      runId: _runId,
+      extra: _foregroundBackupStateSnapshot(),
+    );
     _httpCancelCompleter?.complete();
     _httpCancelCompleter = null;
     state = state.copyWith(isHttpBackupActive: false, uploadItems: {}, enqueueCount: 0, enqueueTotalCount: 0);
   }
 
-  /// Foreground backup using ForegroundUploadService (upstream).
+  /// Foreground backup using [ForegroundUploadService].
   Future<void> startForegroundBackup(String userId) async {
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplResume,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'foreground_resume',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'FOREGROUND_BACKUP_ENTRY',
+      runId: _runId,
+      extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+    );
+
     // Cancel any existing backup before starting a new one
     if (state.cancelToken != null) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplCancel,
+        phase: BackupTracePhase.trigger,
+        step: 'TRIGGER_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'foreground_resume',
+        status: BackupTraceStatus.retry,
+        reasonCode: 'FOREGROUND_BACKUP_RESTART_CANCEL_PREVIOUS',
+        runId: _runId,
+        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      );
       await stopForegroundBackup();
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.trigger,
+        step: 'RESUME_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'foreground_resume',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'FOREGROUND_BACKUP_STATE_AFTER_RESTART_CANCEL',
+        runId: _runId,
+        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      );
     }
 
+    _runId ??= BackupTrace.newRunId();
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplStart,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'foreground_resume',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'FOREGROUND_BACKUP_START_REQUESTED',
+      runId: _runId,
+      extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+    );
     state = state.copyWith(error: BackupError.none);
 
     final cancelToken = CancellationToken();
     state = state.copyWith(cancelToken: cancelToken);
-
-    return _foregroundUploadService.uploadCandidates(
-      userId,
-      cancelToken,
-      callbacks: UploadCallbacks(
-        onProgress: _handleForegroundBackupProgress,
-        onSuccess: _handleForegroundBackupSuccess,
-        onError: _handleForegroundBackupError,
-        onICloudProgress: _handleICloudProgress,
-      ),
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplStart,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_RECEIVED',
+      source: 'APP_RESUME',
+      appState: 'RESUMED',
+      trigger: 'foreground_resume',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'FOREGROUND_BACKUP_TOKEN_ASSIGNED',
+      runId: _runId,
+      extra: {
+        'userId': userId,
+        'cancelTokenHash': cancelToken.hashCode,
+        'stateCancelTokenHash': state.cancelToken?.hashCode,
+        ..._foregroundBackupStateSnapshot(),
+      },
     );
+
+    try {
+      await getBackupStatus(userId);
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplStart,
+        phase: BackupTracePhase.queue,
+        step: 'QUEUE_START',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'foreground_resume',
+        status: BackupTraceStatus.ok,
+        reasonCode: 'FOREGROUND_BACKUP_UPLOAD_CANDIDATES_START',
+        runId: _runId,
+        extra: {
+          'userId': userId,
+          'remainderCount': state.remainderCount,
+          'cancelTokenCancelled': cancelToken.isCancelled,
+          ..._foregroundBackupStateSnapshot(),
+        },
+      );
+      await _foregroundUploadService.uploadCandidates(
+        userId,
+        cancelToken,
+        callbacks: UploadCallbacks(
+          onProgress: _handleForegroundBackupProgress,
+          onSuccess: _handleForegroundBackupSuccess,
+          onError: _handleForegroundBackupError,
+          onICloudProgress: _handleICloudProgress,
+        ),
+      );
+    } finally {
+      state = state.copyWith(cancelToken: null);
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.runSummary,
+        phase: BackupTracePhase.summary,
+        step: 'RUN_SUMMARY',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'foreground_resume',
+        status: cancelToken.isCancelled ? BackupTraceStatus.partial : BackupTraceStatus.ok,
+        reasonCode: cancelToken.isCancelled ? 'FOREGROUND_BACKUP_ABORTED' : 'FOREGROUND_BACKUP_COMPLETE',
+        runId: _runId,
+        extra: {
+          'userId': userId,
+          'cancelTokenCancelled': cancelToken.isCancelled,
+          ..._foregroundBackupStateSnapshot(),
+        },
+      );
+      await _reconcileBackupCounts(userId);
+    }
   }
 
   Future<void> stopForegroundBackup() async {
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplCancel,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_SKIPPED',
+      source: 'APP_RESUME',
+      appState: 'PAUSED',
+      trigger: 'foreground_stop',
+      status: BackupTraceStatus.retry,
+      reasonCode: 'FOREGROUND_BACKUP_CANCEL_REQUESTED',
+      runId: _runId,
+      extra: _foregroundBackupStateSnapshot(),
+    );
+    final existingToken = state.cancelToken;
     state.cancelToken?.cancel();
     _uploadSpeedManager.clear();
     state = state.copyWith(cancelToken: null, uploadItems: {}, iCloudDownloadProgress: {});
+    logBackupTrace(
+      _logger,
+      level: Level.INFO,
+      event: BackupTraceEvent.uplCancel,
+      phase: BackupTracePhase.trigger,
+      step: 'TRIGGER_SKIPPED',
+      source: 'APP_RESUME',
+      appState: 'PAUSED',
+      trigger: 'foreground_stop',
+      status: BackupTraceStatus.ok,
+      reasonCode: 'FOREGROUND_BACKUP_STATE_AFTER_CANCEL',
+      runId: _runId,
+      extra: {
+        'existingTokenHash': existingToken?.hashCode,
+        'existingTokenCancelled': existingToken?.isCancelled,
+        ..._foregroundBackupStateSnapshot(),
+      },
+    );
   }
 
   void _handleICloudProgress(String localAssetId, double progress) {
@@ -653,7 +879,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   }
 
   void _handleForegroundBackupSuccess(String localAssetId, String remoteAssetId) {
-    state = state.copyWith(backupCount: state.backupCount + 1, remainderCount: state.remainderCount - 1);
+    _adjustCountsAfterUpload();
     _uploadSpeedManager.removeTask(localAssetId);
 
     Future.delayed(const Duration(milliseconds: 1000), () {

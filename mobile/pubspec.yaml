@@ -100,7 +100,11 @@ dependencies:
   pub_semver: ^2.2.0
   exif: ^3.3.0
   cronet_http: ^1.7.0
-  cupertino_http: ^2.4.0
+  cupertino_http:
+    git:
+      url: https://github.com/mertalev/http
+      ref: 'a0a933358517c6d01cff37fc2a2752ee2d744a3c'
+      path: pkgs/cupertino_http/
   web_socket: ^1.0.1
   socket_io_client:
     git:

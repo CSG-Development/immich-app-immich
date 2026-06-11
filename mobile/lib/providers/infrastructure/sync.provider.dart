@@ -11,7 +11,6 @@ import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/cancel.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/providers/infrastructure/storage.provider.dart';
 import 'package:immich_mobile/repositories/local_files_manager.repository.dart';
 
@@ -32,10 +31,7 @@ final syncStreamServiceProvider = Provider(
 );
 
 final syncApiRepositoryProvider = Provider(
-  (ref) => SyncApiRepository(
-    ref.watch(apiServiceProvider),
-    ref.watch(hcDeviceEndpointResolverProvider),
-  ),
+  (ref) => SyncApiRepository(ref.watch(apiServiceProvider)),
 );
 
 final syncStreamRepositoryProvider = Provider((ref) => SyncStreamRepository(ref.watch(driftProvider)));

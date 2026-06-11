@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/server_info/server_config.model.dart';
 import 'package:immich_mobile/models/server_info/server_disk_info.model.dart';
 import 'package:immich_mobile/models/server_info/server_features.model.dart';
@@ -10,23 +14,42 @@ import 'package:immich_mobile/utils/semver.dart';
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+ServerVersion? _readCachedServerVersion() {
+  final cached = Store.tryGet<String>(StoreKey.serverVersion);
+  if (cached == null) {
+    return null;
+  }
+
+  try {
+    final semVer = SemVer.fromString(cached);
+    return ServerVersion(major: semVer.major, minor: semVer.minor, patch: semVer.patch);
+  } catch (_) {
+    return null;
+  }
+}
+
+void _persistServerVersion(ServerVersion version) {
+  unawaited(Store.put(StoreKey.serverVersion, '${version.major}.${version.minor}.${version.patch}'));
+}
+
 class ServerInfoNotifier extends StateNotifier<ServerInfo> {
-  ServerInfoNotifier(this._serverInfoService)
-    : super(
-        const ServerInfo(
-          serverVersion: ServerVersion(major: 0, minor: 0, patch: 0),
-          serverFeatures: ServerFeatures(map: true, trash: true, oauthEnabled: false, passwordLogin: true),
-          serverConfig: ServerConfig(
-            trashDays: 30,
-            oauthButtonText: '',
-            externalDomain: '',
-            mapLightStyleUrl: 'https://tiles.immich.cloud/v1/style/light.json',
-            mapDarkStyleUrl: 'https://tiles.immich.cloud/v1/style/dark.json',
-          ),
-          serverDiskInfo: ServerDiskInfo(diskAvailable: "0", diskSize: "0", diskUse: "0", diskUsagePercentage: 0),
-          versionStatus: VersionStatus.upToDate,
-        ),
-      );
+  ServerInfoNotifier(this._serverInfoService) : super(_initialState());
+
+  static ServerInfo _initialState() {
+    return ServerInfo(
+      serverVersion: _readCachedServerVersion() ?? const ServerVersion(major: 0, minor: 0, patch: 0),
+      serverFeatures: const ServerFeatures(map: true, trash: true, oauthEnabled: false, passwordLogin: true),
+      serverConfig: const ServerConfig(
+        trashDays: 30,
+        oauthButtonText: '',
+        externalDomain: '',
+        mapLightStyleUrl: 'https://tiles.immich.cloud/v1/style/light.json',
+        mapDarkStyleUrl: 'https://tiles.immich.cloud/v1/style/dark.json',
+      ),
+      serverDiskInfo: const ServerDiskInfo(diskAvailable: "0", diskSize: "0", diskUse: "0", diskUsagePercentage: 0),
+      versionStatus: VersionStatus.upToDate,
+    );
+  }
 
   final ServerInfoService _serverInfoService;
   final _log = Logger("ServerInfoNotifier");
@@ -57,6 +80,7 @@ class ServerInfoNotifier extends StateNotifier<ServerInfo> {
   }
 
   _checkServerVersionMismatch(ServerVersion serverVersion, {ServerVersion? latestVersion}) async {
+    _persistServerVersion(serverVersion);
     state = state.copyWith(serverVersion: serverVersion, latestVersion: latestVersion);
 
     var packageInfo = await PackageInfo.fromPlatform();

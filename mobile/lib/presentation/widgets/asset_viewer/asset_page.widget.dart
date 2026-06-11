@@ -14,11 +14,14 @@ import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details.wi
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_stack.provider.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_stack.widget.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/airplay_timeline_playback.helper.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/video_viewer.widget.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart';
+import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
+import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_loading_indicator.dart';
@@ -287,10 +290,20 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     required PhotoViewHeroAttributes? heroAttributes,
     required bool isCurrent,
     required bool isPlayingMotionVideo,
+    required bool isAirPlayActive,
   }) {
     final size = context.sizeData;
+    final useAirPlayPhotoPlayback = AirplayTimelinePlayback.shouldRouteImageThroughVideoPlayer(
+      isAirPlayActive: isAirPlayActive,
+      isPlayingMotionVideo: isPlayingMotionVideo,
+      asset: asset,
+    );
 
-    if (asset.isImage && !isPlayingMotionVideo) {
+    if (useAirPlayPhotoPlayback) {
+      unawaited(AirplayService.preConvertTimelinePhotoForAirPlay(asset, ref));
+    }
+
+    if (asset.isImage && !isPlayingMotionVideo && !useAirPlayPhotoPlayback) {
       return PhotoView(
         key: Key(asset.heroTag),
         index: widget.index,
@@ -357,6 +370,7 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     _showingDetails = ref.watch(assetViewerProvider.select((s) => s.showingDetails));
     final stackIndex = ref.watch(assetViewerProvider.select((s) => s.stackIndex));
     final isPlayingMotionVideo = ref.watch(isPlayingMotionVideoProvider);
+    final isAirPlayActive = ref.watch(airplayProvider);
 
     final asset = ref.read(timelineServiceProvider).getAssetSafe(widget.index) ?? widget.fallbackAsset;
     if (asset == null) {
@@ -403,6 +417,7 @@ class _AssetPageState extends ConsumerState<AssetPage> {
                         : null,
                     isCurrent: isCurrent,
                     isPlayingMotionVideo: isPlayingMotionVideo,
+                    isAirPlayActive: isAirPlayActive,
                   ),
                 ),
                 IgnorePointer(

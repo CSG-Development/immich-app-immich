@@ -88,14 +88,9 @@ class ActionService {
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.timeline);
   }
 
-  Future<void> moveToLockFolder(List<String> remoteIds, List<String> localIds) async {
+  Future<void> moveToLockFolder(List<String> remoteIds) async {
     await _assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.locked);
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.locked);
-
-    // Ask user if they want to delete local copies
-    if (localIds.isNotEmpty) {
-      await _deleteLocalAssets(localIds);
-    }
   }
 
   Future<void> removeFromLockFolder(List<String> remoteIds) async {
@@ -111,6 +106,18 @@ class ActionService {
   Future<void> restoreTrash(List<String> ids) async {
     await _assetApiRepository.restoreTrash(ids);
     await _remoteAssetRepository.restoreTrash(ids);
+  }
+
+  Future<int> emptyTrash(String userId) async {
+    final count = await _assetApiRepository.emptyTrash();
+    await _remoteAssetRepository.emptyTrash(userId);
+    return count;
+  }
+
+  Future<int> restoreAllTrash(String userId) async {
+    final count = await _assetApiRepository.restoreAllTrash();
+    await _remoteAssetRepository.restoreAllTrash(userId);
+    return count;
   }
 
   Future<void> trashRemoteAndDeleteLocal(List<String> remoteIds, List<String> localIds) async {

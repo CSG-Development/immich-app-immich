@@ -23,6 +23,7 @@ import 'package:immich_mobile/providers/routes.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/album.service.dart';
+import 'package:immich_mobile/presentation/widgets/action_buttons/duplicate_action_runner.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/services/stack.service.dart';
 import 'package:immich_mobile/utils/immich_loading_overlay.dart';
@@ -314,32 +315,19 @@ class MultiselectGrid extends HookConsumerWidget {
     void onDuplicate() async {
       processing.value = true;
       try {
-        // Use the new direct duplication method
-        final result = await ClipboardService.duplicateAssets(
+        await DuplicateActionRunner.runFromLegacyAssets(
           context,
           ref,
           selection.value,
+          onFinished: (result) async {
+            if (result.success && onAfterDuplicate != null && result.newAssets.isNotEmpty) {
+              await onAfterDuplicate!(result.newAssets);
+            }
+            selectionEnabledHook.value = false;
+          },
         );
-        
-        if (result.success) {
-          if (onAfterDuplicate != null && result.newAssets.isNotEmpty) {
-            await onAfterDuplicate!(result.newAssets);
-          }
-          if (result.hasErrors) {
-            // Partial success with errors
-            // Silent error handling
-          } else {
-            // Complete success
-          }
-        } else {
-          // Complete failure
-          // Silent error handling
-        }
-      } catch (e) {
-        // Silent error handling
       } finally {
         processing.value = false;
-        selectionEnabledHook.value = false;
       }
     }
 

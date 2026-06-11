@@ -80,6 +80,25 @@ class URLSessionManager: NSObject {
 
   func recreateSession() {
     session = Self.buildSession(delegate: delegate)
+    syncVideoProxySession()
+  }
+
+  func bindVideoProxySession() {
+    syncVideoProxySession()
+  }
+
+  private func syncVideoProxySession() {
+    if #available(iOS 15, *) {
+      VideoProxyServer.shared.session = session
+    }
+  }
+
+  func cancelInFlightRequests() {
+    session.getTasksWithCompletionHandler { dataTasks, uploadTasks, downloadTasks in
+      dataTasks.forEach { $0.cancel() }
+      uploadTasks.forEach { $0.cancel() }
+      downloadTasks.forEach { $0.cancel() }
+    }
   }
 
   static func setServerUrls(_ urls: [String]) {
@@ -152,10 +171,18 @@ class URLSessionManager: NSObject {
     config.httpCookieStorage = cookieStorage
     config.httpMaximumConnectionsPerHost = 64
     config.timeoutIntervalForRequest = 60
+    config.timeoutIntervalForResource = 60
+    config.waitsForConnectivity = false
 
     var headers = UserDefaults.group.dictionary(forKey: HEADERS_KEY) as? [String: String] ?? [:]
     headers["User-Agent"] = headers["User-Agent"] ?? userAgent
     config.httpAdditionalHeaders = headers
+
+    var protocolClasses = config.protocolClasses ?? []
+    if !protocolClasses.contains(where: { $0 == RequestTimeoutURLProtocol.self }) {
+      protocolClasses.insert(RequestTimeoutURLProtocol.self, at: 0)
+    }
+    config.protocolClasses = protocolClasses
 
     return URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
   }
@@ -250,6 +277,9 @@ class URLSessionManagerDelegate: NSObject, URLSessionTaskDelegate, URLSessionWeb
     if NetworkCertificatePinning.shared.isEnabled {
       NetworkCertificatePinning.shared.handleServerTrust(serverTrust, host: host) { isValid in
         if isValid {
+          completion(.useCredential, URLCredential(trust: serverTrust))
+        } else if self.evaluateWithSystemTrust(serverTrust, host: host) {
+          NSLog("URLSessionManager: pinning failed for %@, system trust succeeded", host)
           completion(.useCredential, URLCredential(trust: serverTrust))
         } else {
           completion(.cancelAuthenticationChallenge, nil)

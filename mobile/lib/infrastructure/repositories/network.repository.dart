@@ -1,9 +1,8 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:cupertino_http/cupertino_http.dart';
 import 'package:http/http.dart' as http;
-import 'package:immich_mobile/infrastructure/repositories/native_shared_url_session_client.dart';
-import 'package:immich_mobile/infrastructure/repositories/native_shared_url_session_web_socket.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:ok_http/ok_http.dart';
 import 'package:web_socket/web_socket.dart';
@@ -20,10 +19,8 @@ class NetworkRepository {
     _clientPointer = clientPointer;
     _client?.close();
     if (Platform.isIOS) {
-      // Use URLSessionManager's session so NetworkCertificatePinning and shared
-      // cookies apply. CupertinoClient.defaultSessionConfiguration() creates a
-      // separate session without the pinning delegate.
-      _client = NativeSharedUrlSessionClient.fromPointer(clientPointer.address);
+      final session = URLSession.fromRawPointer(clientPointer.cast());
+      _client = CupertinoClient.fromSharedSession(session);
     } else {
       _client = OkHttpClient.fromJniGlobalRef(
         clientPointer,
@@ -36,6 +33,10 @@ class NetworkRepository {
     }
   }
 
+  static Future<void> cancelInFlightHttpRequests() async {
+    await networkApi.cancelInFlightHttpRequests();
+  }
+
   static Future<void> setHeaders(Map<String, String> headers, List<String> serverUrls, {String? token}) async {
     await networkApi.setRequestHeaders(headers, serverUrls, token);
     if (Platform.isIOS) {
@@ -43,38 +44,16 @@ class NetworkRepository {
     }
   }
 
-  static Future<WebSocket> createWebSocket(
-    Uri uri, {
-    Map<String, String>? headers,
-    Iterable<String>? protocols,
-  }) async {
-    if (_clientPointer == null) {
-      await init();
-    }
-
+  static Future<WebSocket> createWebSocket(Uri uri, {Map<String, String>? headers, Iterable<String>? protocols}) {
     if (Platform.isIOS) {
-      return NativeSharedUrlSessionWebSocket.connectFromPointer(
-        _clientPointer!.address,
-        uri,
-        protocols: protocols,
-        headers: headers,
-      );
+      final session = URLSession.fromRawPointer(_clientPointer!.cast());
+      return CupertinoWebSocket.connectWithSession(session, uri, protocols: protocols);
+    } else {
+      return OkHttpWebSocket.connectFromJniGlobalRef(_clientPointer!, uri, protocols: protocols);
     }
-
-    return OkHttpWebSocket.connectFromJniGlobalRef(
-      _clientPointer!,
-      uri,
-      protocols: protocols,
-    );
   }
 
   const NetworkRepository();
 
-  /// Returns a shared HTTP client that uses native SSL configuration.
-  ///
-  /// On iOS: Uses SharedURLSessionManager's URLSession.
-  /// On Android: Uses SharedHttpClientManager's OkHttpClient.
-  ///
-  /// Must call [init] before using this method.
   static http.Client get client => _client!;
 }

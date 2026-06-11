@@ -70,7 +70,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                 }
                 return GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isTablet ? 4 : 2,
+                    crossAxisCount: isTablet ? 6 : 3,
                     childAspectRatio: 0.85,
                     mainAxisSpacing: isPortrait && isTablet ? 36 : 0,
                   ),
@@ -83,18 +83,27 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                       key: ValueKey(person.id),
                       children: [
                         Stack(
+                          alignment: Alignment.center,
                           children: [
                             GestureDetector(
                               onTap: () {
                                 context.pushRoute(DriftPersonRoute(person: person));
                               },
-                              child: Material(
-                                shape: const CircleBorder(side: BorderSide.none),
-                                elevation: 3,
-                                child: CircleAvatar(
-                                  key: ValueKey('avatar-${person.id}'),
-                                  maxRadius: isTablet ? 100 / 2 : 96 / 2,
-                                  backgroundImage: RemoteImageProvider(url: getFaceThumbnailUrl(person.id)),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final avatarDiameter = constraints.maxWidth * 0.85;
+                                    return Material(
+                                      shape: const CircleBorder(side: BorderSide.none),
+                                      elevation: 3,
+                                      child: CircleAvatar(
+                                        key: ValueKey('avatar-${person.id}'),
+                                        radius: avatarDiameter / 2,
+                                        backgroundImage: RemoteImageProvider(url: getFaceThumbnailUrl(person.id)),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),

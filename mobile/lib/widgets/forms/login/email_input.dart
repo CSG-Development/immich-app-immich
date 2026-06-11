@@ -33,7 +33,7 @@ class EmailInput extends StatelessWidget {
           controller: controller,
           validator: validator,
           inputFormatters: const [TrimFormatter()],
-          decoration: LoginInputDecorations.baseDecoration(
+          decoration: InputDecorations.baseDecoration(
             context: context,
             labelText: 'email'.tr(),
             hintText: 'curator.login_form_email_hint'.tr(),

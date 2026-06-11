@@ -1,12 +1,11 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:hc_device/api/remote_access.enums.swagger.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
+import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/shared_link/shared_link.model.dart';
@@ -47,11 +46,7 @@ class SharedLinkEditPage extends HookConsumerWidget {
           : dp.getCachedDevicePathsForDevice(dp.seagateDeviceID!)?.paths;
       final connectedDevicePaths =
           dp.getActiveDevicePaths(deviceRemoteId: dp.seagateDeviceID) ?? cachedPathsForConnectedDevice;
-      final remoteUrl = connectedDevicePaths?.firstWhereOrNull((path) => path.type == DevicePathType.remote);
-
-      serverUrl.value = remoteUrl != null
-          ? Uri(scheme: 'https', host: remoteUrl.address, port: remoteUrl.port, path: 'photos').toString()
-          : null;
+      serverUrl.value = DeviceEndpointUtils.buildSharedLinkBaseUrl(connectedDevicePaths);
       if (serverUrl.value == null) {
         Future.microtask(() {
           ImmichToast.show(

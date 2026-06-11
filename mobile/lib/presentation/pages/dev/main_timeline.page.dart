@@ -27,6 +27,7 @@ class MainTimelinePage extends ConsumerWidget {
           ),
           topSliverWidgetHeight: topSliverHeight,
           showStorageIndicator: true,
+          showClipboardPaste: true,
         ),
         SyncLoadingOverlay(topOffset: topSliverHeight + 80),
       ],
