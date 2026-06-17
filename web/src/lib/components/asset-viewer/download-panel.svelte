@@ -106,9 +106,9 @@
           </div>
           <div class="absolute end-4">
             <IconButton
-              variant="ghost"
-              shape="round"
               color="secondary"
+              variant="outline"
+              shape="round"
               aria-label={$t('close')}
               onclick={() => abort(downloadKey, download)}
               size="tiny"

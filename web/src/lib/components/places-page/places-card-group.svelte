@@ -1,13 +1,11 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { AppRoute } from '$lib/constants';
+  import { Route } from '$lib/route';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { placesViewSettings } from '$lib/stores/preferences.store';
-  import { getAssetThumbnailUrl } from '$lib/utils';
-  import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
+  import { getAssetMediaUrl } from '$lib/utils';
   import { type PlacesGroup, isPlacesGroupCollapsed, togglePlacesGroupCollapsing } from '$lib/utils/places-utils';
   import { AssetMediaSize, type AssetResponseDto } from '@immich/sdk';
+  import { Icon } from '@immich/ui';
   import { mdiChevronRight } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -42,7 +40,7 @@
       class="h-12 dark:text-immich-dark-fg flex items-center gap-x-1"
       aria-expanded={!isCollapsed}
     >
-      <Icon path={mdiChevronRight} size="24" class="transition-all duration-250 {iconRotation}" />
+      <Icon icon={mdiChevronRight} size="24" class="transition-all duration-250 {iconRotation}" />
       <span class="font-bold text-2xl/8 text-black dark:text-white">{group.name}</span>
       <span class="font-medium">({$t('places_count', { values: { count: places.length } })})</span>
     </button>
@@ -58,16 +56,13 @@
     >
       {#each places as item (item.id)}
         {@const city = item.exifInfo?.city}
-        <a
-          class="relative md:w-40 w-26.5"
-          href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city })}`)}
-          draggable="false"
-        >
+        <a class="relative md:w-40 w-26.5" href={Route.search({ city })} draggable="false">
           <div class="flex justify-center overflow-hidden rounded-xl brightness-75 filter">
             <img
-              src={getAssetThumbnailUrl({ id: item.id, size: AssetMediaSize.Thumbnail })}
+              src={getAssetMediaUrl({ id: item.id, size: AssetMediaSize.Thumbnail })}
               alt={city}
               class="object-cover aspect-square w-full"
+              loading="lazy"
             />
           </div>
           <span

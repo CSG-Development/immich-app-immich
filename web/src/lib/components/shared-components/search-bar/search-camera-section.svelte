@@ -1,26 +1,20 @@
-<script lang="ts" module>
-  export interface SearchCameraFilter {
-    make?: string;
-    model?: string;
-  }
-</script>
-
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import Combobox, { asComboboxOptions, asSelectedOption } from '$lib/components/shared-components/combobox.svelte';
+  import type { SearchCameraFilter } from '$lib/types';
   import { handlePromiseError } from '$lib/utils';
   import { SearchSuggestionType, getSearchSuggestions } from '@immich/sdk';
+  import { Text } from '@immich/ui';
   import { t } from 'svelte-i18n';
 
-  interface Props {
+  type Props = {
     filters: SearchCameraFilter;
-  }
+  };
 
   let { filters = $bindable() }: Props = $props();
 
   let makes: string[] = $state([]);
   let models: string[] = $state([]);
+  let lensModels: string[] = $state([]);
 
   async function updateMakes() {
     const results: Array<string | null> = await getSearchSuggestions({
@@ -48,19 +42,40 @@
       filters.model = undefined;
     }
   }
-  let makeFilter = $derived(filters.make);
-  let modelFilter = $derived(filters.model);
-  run(() => {
+
+  async function updateLensModels(make?: string, model?: string) {
+    const results: Array<string | null> = await getSearchSuggestions({
+      $type: SearchSuggestionType.CameraLensModel,
+      make,
+      model,
+      includeNull: true,
+    });
+
+    lensModels = results.map((result) => result ?? '');
+
+    if (filters.lensModel && !lensModels.includes(filters.lensModel)) {
+      filters.lensModel = undefined;
+    }
+  }
+
+  const makeFilter = $derived(filters.make);
+  const modelFilter = $derived(filters.model);
+  const lensModelFilter = $derived(filters.lensModel);
+
+  // TODO replace by async $derived, at the latest when it's in stable https://svelte.dev/docs/svelte/await-expressions
+  $effect(() => {
     handlePromiseError(updateMakes());
   });
-  run(() => {
+  $effect(() => {
     handlePromiseError(updateModels(makeFilter));
+  });
+  $effect(() => {
+    handlePromiseError(updateLensModels(makeFilter, modelFilter));
   });
 </script>
 
 <div id="camera-selection">
-  <p class="uppercase immich-form-label">{$t('camera')}</p>
-
+  <Text fontWeight="medium">{$t('camera')}</Text>
   <div class="grid grid-auto-fit-40 gap-5 mt-1">
     <div class="w-full">
       <Combobox
@@ -79,6 +94,16 @@
         options={asComboboxOptions(models)}
         placeholder={$t('search_camera_model')}
         selectedOption={asSelectedOption(modelFilter)}
+      />
+    </div>
+
+    <div class="w-full">
+      <Combobox
+        label={$t('lens_model')}
+        onSelect={(option) => (filters.lensModel = option?.value)}
+        options={asComboboxOptions(lensModels)}
+        placeholder={$t('search_camera_lens_model')}
+        selectedOption={asSelectedOption(lensModelFilter)}
       />
     </div>
   </div>

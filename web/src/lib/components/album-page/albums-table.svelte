@@ -1,7 +1,6 @@
 <script lang="ts">
   import AlbumTableHeader from '$lib/components/album-page/albums-table-header.svelte';
   import AlbumTableRow from '$lib/components/album-page/albums-table-row.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
   import { AlbumGroupBy, albumViewSettings } from '$lib/stores/preferences.store';
   import {
     isAlbumGroupCollapsed,
@@ -11,6 +10,7 @@
   } from '$lib/utils/album-utils';
   import type { ContextMenuPosition } from '$lib/utils/context-menu';
   import type { AlbumResponseDto } from '@immich/sdk';
+  import { Icon } from '@immich/ui';
   import { mdiChevronRight } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { slide } from 'svelte/transition';
@@ -35,7 +35,7 @@
     </tr>
   </thead>
   {#if albumGroupOption === AlbumGroupBy.None}
-    <tbody class="block w-full overflow-y-auto rounded-md border immich-border">
+    <tbody class="block w-full overflow-y-auto rounded-md border dark:border-immich-dark-gray dark:text-immich-dark-fg">
       {#each groupedAlbums[0].albums as album (album.id)}
         <AlbumTableRow {album} {onShowContextMenu} />
       {/each}
@@ -51,7 +51,7 @@
           aria-expanded={!isCollapsed}
         >
           <td class="text-md text-start flex items-center">
-            <Icon path={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
+            <Icon icon={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
             <span class="font-bold text-2xl">{albumGroup.name}</span>
             <span class="ms-1 text-xs">
               ({$t('albums_count', { values: { count: albumGroup.albums.length } })})

@@ -1,14 +1,10 @@
 <script lang="ts">
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
-  import {
-    NotificationType,
-    notificationController,
-  } from '$lib/components/shared-components/notification/notification';
-  import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { OnFavorite } from '$lib/utils/actions';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAssets } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
+  import { IconButton, toastManager } from '@immich/ui';
   import { mdiHeartMinusOutline, mdiHeartOutline, mdiTimerSand } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -25,14 +21,12 @@
 
   let loading = $state(false);
 
-  const { clearSelect, getOwnedAssets } = getAssetControlContext();
-
   const handleFavorite = async () => {
     const isFavorite = !removeFavorite;
     loading = true;
 
     try {
-      const assets = [...getOwnedAssets()].filter((asset) => asset.isFavorite !== isFavorite);
+      const assets = assetMultiSelectManager.ownedAssets.filter((asset) => asset.isFavorite !== isFavorite);
 
       const ids = assets.map(({ id }) => id);
 
@@ -46,14 +40,13 @@
 
       onFavorite?.(ids, isFavorite);
 
-      notificationController.show({
-        message: isFavorite
+      toastManager.primary(
+        isFavorite
           ? $t('added_to_favorites_count', { values: { count: ids.length } })
           : $t('removed_from_favorites_count', { values: { count: ids.length } }),
-        type: NotificationType.Success,
-      });
+      );
 
-      clearSelect();
+      assetMultiSelectManager.clear();
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_remove_favorites', { values: { favorite: isFavorite } }));
     } finally {

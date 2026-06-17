@@ -1,5 +1,5 @@
+import { UploadState, type UploadAsset } from '$lib/types';
 import { derived, writable } from 'svelte/store';
-import { UploadState, type UploadAsset } from '../models/upload-asset';
 
 function createUploadStore() {
   const uploadAssets = writable<Array<UploadAsset>>([]);
@@ -14,12 +14,7 @@ function createUploadStore() {
 
   const isUploading = derived(uploadAssets, (items) => items.length > 0);
   const isDismissible = derived(uploadAssets, (items) =>
-    items.some(
-      (item) =>
-        item.state === UploadState.ERROR ||
-        item.state === UploadState.DUPLICATED ||
-        item.state === UploadState.UNSUPPORTED_TYPE,
-    ),
+    items.some((item) => item.state === UploadState.ERROR || item.state === UploadState.DUPLICATED),
   );
   const remainingUploads = derived(
     uploadAssets,
@@ -85,17 +80,37 @@ function createUploadStore() {
   };
 
   const removeItem = (id: string) => {
-    uploadAssets.update((uploadingAsset) => uploadingAsset.filter((a) => a.id != id));
+    uploadAssets.update((uploadingAsset) => {
+      const assetToRemove = uploadingAsset.find((a) => a.id === id);
+      if (assetToRemove) {
+        stats.update((stats) => {
+          switch (assetToRemove.state) {
+            case UploadState.DUPLICATED: {
+              stats.duplicates--;
+              break;
+            }
+
+            case UploadState.ERROR: {
+              stats.errors--;
+              break;
+            }
+
+            case UploadState.DONE: {
+              break;
+            }
+          }
+
+          return stats;
+        });
+      }
+
+      return uploadingAsset.filter((a) => a.id != id);
+    });
   };
 
   const dismissErrors = () =>
     uploadAssets.update((value) =>
-      value.filter(
-        (e) =>
-          e.state !== UploadState.ERROR &&
-          e.state !== UploadState.DUPLICATED &&
-          e.state !== UploadState.UNSUPPORTED_TYPE,
-      ),
+      value.filter((e) => e.state !== UploadState.ERROR && e.state !== UploadState.DUPLICATED),
     );
 
   const reset = () => {

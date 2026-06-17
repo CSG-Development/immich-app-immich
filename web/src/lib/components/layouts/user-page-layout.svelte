@@ -6,21 +6,21 @@
   import { useActions, type ActionArray } from '$lib/actions/use-actions';
   import NavigationBar from '$lib/components/shared-components/navigation-bar/navigation-bar.svelte';
   import UserSidebar from '$lib/components/shared-components/side-bar/user-sidebar.svelte';
-  import AdminSidebar from '$lib/sidebars/AdminSidebar.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
+  import type { HeaderButtonActionItem } from '$lib/types';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { Button, ContextMenuButton, HStack, isMenuItemType, type MenuItemType } from '@immich/ui';
   import type { Snippet } from 'svelte';
+  import { t } from 'svelte-i18n';
 
   interface Props {
     hideNavbar?: boolean;
     hideSection?: boolean;
-    showUploadButton?: boolean;
     title?: string | undefined;
     description?: string | undefined;
     scrollbar?: boolean;
-    admin?: boolean;
     use?: ActionArray;
-    header?: Snippet;
+    actions?: Array<HeaderButtonActionItem | MenuItemType>;
     sidebar?: Snippet;
     buttons?: Snippet;
     children?: Snippet;
@@ -29,17 +29,21 @@
   let {
     hideNavbar = false,
     hideSection = false,
-    showUploadButton = false,
     title = undefined,
     description = undefined,
     scrollbar = true,
-    admin = false,
     use = [],
-    header,
+    actions = [],
     sidebar,
     buttons,
     children,
   }: Props = $props();
+
+  const enabledActions = $derived(
+    actions
+      .filter((action): action is HeaderButtonActionItem => !isMenuItemType(action))
+      .filter((action) => action.$if?.() ?? true),
+  );
 
   let scrollbarClass = $derived(scrollbar ? 'immich-scrollbar' : 'scrollbar-hidden');
   let hasTitleClass = $derived(title ? 'top-16 h-[calc(100%-(--spacing(16)))]' : 'top-0 h-full');
@@ -47,23 +51,19 @@
 
 <header>
   {#if !hideNavbar}
-    <NavigationBar {showUploadButton} onUploadClick={() => openFileUploadDialog()} />
+    <NavigationBar onUploadClick={() => openFileUploadDialog()} />
   {/if}
-
-  {@render header?.()}
 </header>
 <div
   tabindex="-1"
   class="relative z-0 grid grid-cols-[--spacing(0)_auto] overflow-hidden sidebar:grid-cols-[--spacing(75)_auto]
-    {hideNavbar ? 'h-dvh' : 'h-[calc(100dvh-var(--navbar-height))]'}
+    {hideNavbar ? 'h-dvh' : 'h-[calc(100dvh-var(--navbar-height))] max-md:h-[calc(100dvh-var(--navbar-height-md))]'}
     {hideNavbar ? 'pt-(--navbar-height)' : ''}
     {hideNavbar ? 'max-md:pt-(--navbar-height-md)' : ''}
     {hideSection ? 'invisible' : ''}"
 >
   {#if sidebar}
     {@render sidebar()}
-  {:else if admin}
-    <AdminSidebar />
   {:else}
     <UserSidebar />
   {/if}
@@ -75,21 +75,44 @@
     >
       {@render children?.()}
     </div>
+
     {#if title || buttons}
       <div
         class={`relative flex h-16 place-items-center justify-between border-b immich-border ${mobileDevice.maxMd ? 'px-3' : 'px-4'} text-dark`}
       >
         <div class="flex items-center">
           {#if title}
-            <div class="font-medium outline-none text-black dark:text-white/[.87]" tabindex="-1" id={headerId}>
+            <div class="font-medium outline-none text-black dark:text-white/87" tabindex="-1" id={headerId}>
               {title}
             </div>
           {/if}
           {#if description}
-            <p class="pl-1.5 font-medium outline-none text-black dark:text-white/[.87]">({description})</p>
+            <p class="pl-1.5 font-medium outline-none text-black dark:text-white/87">{description}</p>
           {/if}
         </div>
+
         {@render buttons?.()}
+
+        {#if enabledActions.length > 0}
+          <div class="hidden md:block">
+            <HStack gap={0}>
+              {#each enabledActions as action, i (i)}
+                <Button
+                  variant="ghost"
+                  size="small"
+                  color={action.color ?? 'secondary'}
+                  leadingIcon={action.icon}
+                  onclick={() => action.onAction(action)}
+                  title={action.data?.title}
+                >
+                  {action.title}
+                </Button>
+              {/each}
+            </HStack>
+          </div>
+
+          <ContextMenuButton aria-label={$t('open')} items={actions} class="md:hidden" />
+        {/if}
       </div>
     {/if}
   </main>

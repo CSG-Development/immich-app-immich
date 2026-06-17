@@ -1,153 +1,64 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import empty3Url from '$lib/assets/empty-3.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import {
-    notificationController,
-    NotificationType,
-  } from '$lib/components/shared-components/notification/notification';
   import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
   import RestoreAssets from '$lib/components/timeline/actions/RestoreAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
-  import { AppRoute } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
+  import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
-  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { featureFlags, serverConfig } from '$lib/stores/server-config.store';
+  import { Route } from '$lib/route';
+  import { getTrashActions } from '$lib/services/trash.service';
   import { handlePromiseError } from '$lib/utils';
-  import { handleError } from '$lib/utils/handle-error';
-  import { emptyTrash, restoreTrash } from '@immich/sdk';
-  import { Button, HStack, Text } from '@immich/ui';
-  import { mdiDeleteForeverOutline, mdiHistory } from '@mdi/js';
-  import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
-  interface Props {
+  type Props = {
     data: PageData;
-  }
+  };
 
   let { data }: Props = $props();
 
-  if (!$featureFlags.trash) {
-    handlePromiseError(goto(resolve(AppRoute.PHOTOS)));
+  let timelineManager = $state<TimelineManager>() as TimelineManager;
+  const options = { isTrashed: true };
+
+  if (!featureFlagsManager.value.trash) {
+    handlePromiseError(goto(Route.photos()));
   }
 
-  const timelineManager = new TimelineManager();
-  void timelineManager.updateOptions({ isTrashed: true });
-  onDestroy(() => timelineManager.destroy());
-
-  const assetInteraction = new AssetInteraction();
-
-  const handleEmptyTrash = async () => {
-    const isConfirmed = await modalManager.showDialog({
-      prompt: $t('empty_trash_confirmation'),
-      confirmColor: 'danger',
-      mdFullSize: false,
-    });
-
-    if (!isConfirmed) {
-      return;
-    }
-
-    try {
-      const { count } = await emptyTrash();
-      const assets = await timelineManager.getAssets();
-
-      const ids = assets.map((a) => a.id);
-      timelineManager.removeAssets(ids);
-      await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
-
-      notificationController.show({
-        message: $t('assets_permanently_deleted_count', { values: { count } }),
-        type: NotificationType.Success,
-      });
-    } catch (error) {
-      handleError(error, $t('errors.unable_to_empty_trash'));
-    }
-  };
-
-  const handleRestoreTrash = async () => {
-    const isConfirmed = await modalManager.showDialog({
-      prompt: $t('assets_restore_confirmation'),
-      confirmColor: 'danger',
-      mdFullSize: false,
-    });
-    if (!isConfirmed) {
-      return;
-    }
-    try {
-      const { count } = await restoreTrash();
-      const assets = await timelineManager.getAssets();
-
-      const ids = assets.map((a) => a.id);
-      timelineManager.removeAssets(ids);
-      await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
-
-      notificationController.show({
-        message: $t('assets_restored_count', { values: { count } }),
-        type: NotificationType.Success,
-      });
-
-      // reset asset grid (TODO fix in asset store that it should reset when it is empty)
-      // note - this is still a problem, but updateOptions with the same value will not
-      // do anything, so need to flip it for it to reload/reinit
-      // await timelineManager.updateOptions({ deferInit: true, isTrashed: true });
-      // await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
-    } catch (error) {
-      handleError(error, $t('errors.unable_to_restore_trash'));
-    }
-  };
-
   const handleEscape = () => {
-    if (assetInteraction.selectionActive) {
-      assetInteraction.clearMultiselect();
+    if (assetMultiSelectManager.selectionActive) {
+      assetMultiSelectManager.clear();
       return;
     }
   };
+
+  const { Empty, RestoreAll } = $derived(getTrashActions($t));
 </script>
 
-{#if $featureFlags.loaded && $featureFlags.trash}
+{#if featureFlagsManager.value.trash}
   <UserPageLayout
-    hideNavbar={assetInteraction.selectionActive}
-    description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+    hideNavbar={assetMultiSelectManager.selectionActive}
+    actions={assetMultiSelectManager.selectionActive ? [] : [Empty, RestoreAll]}
     title={data.meta.title}
     scrollbar={false}
   >
-    {#snippet buttons()}
-      <HStack gap={0}>
-        <Button
-          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
-          leadingIcon={mdiHistory}
-          onclick={handleRestoreTrash}
-          disabled={assetInteraction.selectionActive}
-          variant="ghost"
-          color="secondary"
-          size="small"
-        >
-          <Text class="hidden md:block font-medium">{$t('restore_all')}</Text>
-        </Button>
-        <Button
-          class="[&_svg]:w-4.5 [&_svg]:h-4.5"
-          leadingIcon={mdiDeleteForeverOutline}
-          onclick={() => handleEmptyTrash()}
-          disabled={assetInteraction.selectionActive}
-          variant="ghost"
-          color="secondary"
-          size="small"
-        >
-          <Text class="hidden md:block font-medium">{$t('empty_trash')}</Text>
-        </Button>
-      </HStack>
-    {/snippet}
-
-    <Timeline enableRouting={true} {timelineManager} {assetInteraction} onEscape={handleEscape}>
+    <Timeline
+      enableRouting={true}
+      bind:timelineManager
+      {options}
+      assetInteraction={assetMultiSelectManager}
+      onEscape={handleEscape}
+    >
       <p class="font-medium text-black/60 dark:text-white/70 py-4">
-        {$t('trashed_items_will_be_permanently_deleted_after', { values: { days: $serverConfig.trashDays } })}
+        {$t('trashed_items_will_be_permanently_deleted_after', {
+          values: { days: serverConfigManager.value.trashDays },
+        })}
       </p>
       {#snippet empty()}
         <EmptyPlaceholder text={$t('trash_no_results_message')} src={empty3Url} />
@@ -156,18 +67,15 @@
   </UserPageLayout>
 {/if}
 
-{#if assetInteraction.selectionActive}
-  <AssetSelectControlBar
-    assets={assetInteraction.selectedAssets}
-    clearSelect={() => assetInteraction.clearMultiselect()}
-  >
-    <SelectAllAssets {timelineManager} {assetInteraction} />
+{#if assetMultiSelectManager.selectionActive}
+  <AssetSelectControlBar>
+    <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
     <DeleteAssets
       force
       onAssetDelete={async (assetIds) => {
         timelineManager.removeAssets(assetIds);
         const assets = await timelineManager.getAssets();
-        if (assetInteraction.selectedAssets.length === assets.length) {
+        if (assetMultiSelectManager.selectedAssets.length === assets.length) {
           await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
         }
       }}
@@ -176,7 +84,7 @@
       onRestore={async (assetIds) => {
         timelineManager.removeAssets(assetIds);
         const assets = await timelineManager.getAssets();
-        if (assetInteraction.selectedAssets.length === assets.length) {
+        if (assetMultiSelectManager.selectedAssets.length === assets.length) {
           await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
         }
       }}

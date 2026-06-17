@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import path from 'node:path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import { defineConfig, type ProxyOptions, type UserConfig } from 'vite';
 
 const upstream = {
   target: process.env.IMMICH_SERVER_URL || 'http://immich-server:2283/',
@@ -12,6 +12,12 @@ const upstream = {
   changeOrigin: true,
   logLevel: 'info',
   ws: true,
+};
+
+const proxy: Record<string, string | ProxyOptions> = {
+  '/photos/api': upstream,
+  '/.well-known/immich': upstream,
+  '/custom.css': upstream,
 };
 
 export default defineConfig({
@@ -28,11 +34,7 @@ export default defineConfig({
   },
   server: {
     // connect to a remote backend during web-only development
-    proxy: {
-      '/photos/api': upstream,
-      '/.well-known/immich': upstream,
-      '/photos/custom.css': upstream,
-    },
+    proxy,
     allowedHosts: true,
   },
   plugins: [
@@ -60,6 +62,7 @@ export default defineConfig({
     entries: ['src/**/*.{svelte,ts,html}'],
   },
   test: {
+    name: 'web:unit',
     include: ['src/**/*.{test,spec}.{js,ts}'],
     globals: true,
     environment: 'happy-dom',
@@ -67,5 +70,8 @@ export default defineConfig({
     sequence: {
       hooks: 'list',
     },
+    env: {
+      TZ: 'UTC',
+    },
   },
-});
+} as UserConfig);

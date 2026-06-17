@@ -1,19 +1,16 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
   import emptyPeople from '$lib/assets/empty-people.svg';
   import emptyPlaces from '$lib/assets/empty-places.svg';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import SingleGridRow from '$lib/components/shared-components/single-grid-row.svelte';
-  import { AppRoute } from '$lib/constants';
-  import { websocketEvents } from '$lib/stores/websocket';
-  import { getAssetThumbnailUrl, getPeopleThumbnailUrl } from '$lib/utils';
-  import { getMetadataSearchQuery } from '$lib/utils/metadata-search';
+  import { Route } from '$lib/route';
+  import { getAssetMediaUrl, getPeopleThumbnailUrl } from '$lib/utils';
   import { AssetMediaSize, type SearchExploreResponseDto } from '@immich/sdk';
+  import { Icon } from '@immich/ui';
   import { mdiHeart } from '@mdi/js';
-  import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -33,23 +30,23 @@
 
   let hasPeople = $derived(data.response.total > 0);
 
-  onMount(() => {
-    return websocketEvents.on('on_person_thumbnail', (personId: string) => {
-      people.map((person) => {
-        if (person.id === personId) {
-          person.updatedAt = Date.now().toString();
-        }
-      });
-    });
-  });
+  const onPersonThumbnailReady = ({ id }: { id: string }) => {
+    for (const person of people) {
+      if (person.id === id) {
+        person.updatedAt = new Date().toISOString();
+      }
+    }
+  };
 </script>
+
+<OnEvents {onPersonThumbnailReady} />
 
 <UserPageLayout title={data.meta.title}>
   <div class="mt-2">
     <div class="flex justify-between pt-6 pb-8">
       <p class="font-medium dark:text-immich-dark-fg">{$t('people')}</p>
       <a
-        href={resolve(AppRoute.PEOPLE)}
+        href={Route.people()}
         class="pe-4 text-sm hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
         draggable="false"
       >
@@ -60,7 +57,7 @@
       <SingleGridRow class="grid grid-flow-col md:auto-cols-[7.25rem] auto-cols-[4.875rem] md:gap-x-4 gap-x-2">
         {#snippet children({ itemCount })}
           {#each people.slice(0, itemCount) as person (person.id)}
-            <a href={resolve(`${AppRoute.PEOPLE}/${person.id}`)} class="text-center relative md:max-w-29 max-w-19.5">
+            <a href={Route.viewPerson(person)} class="text-center relative">
               <ImageThumbnail
                 circle
                 shadow
@@ -70,7 +67,7 @@
               />
               {#if person.isFavorite}
                 <div class="absolute top-2 start-2">
-                  <Icon path={mdiHeart} size="24" class="text-white" />
+                  <Icon icon={mdiHeart} size="24" class="text-white" />
                 </div>
               {/if}
               <p class="mt-2 text-ellipsis text-sm dark:text-white whitespace-nowrap overflow-hidden">
@@ -89,7 +86,7 @@
     <div class="flex justify-between py-8">
       <p class="font-medium dark:text-immich-dark-fg">{$t('places')}</p>
       <a
-        href={resolve(AppRoute.PLACES)}
+        href={Route.places()}
         class="pe-4 text-sm hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
         draggable="false"
       >
@@ -100,14 +97,10 @@
       <SingleGridRow class="grid grid-flow-col md:auto-cols-[10rem] auto-cols-[6.625rem] md:gap-x-4 gap-x-[9px]">
         {#snippet children({ itemCount })}
           {#each places.slice(0, itemCount) as item (item.data.id)}
-            <a
-              class="relative md:w-40 w-26.5"
-              href={resolve(`${AppRoute.SEARCH}?${getMetadataSearchQuery({ city: item.value })}`)}
-              draggable="false"
-            >
+            <a class="relative md:w-40 w-26.5" href={Route.search({ city: item.value })} draggable="false">
               <div class="flex justify-center overflow-hidden rounded-xl brightness-75 filter">
                 <img
-                  src={getAssetThumbnailUrl({ id: item.data.id, size: AssetMediaSize.Thumbnail })}
+                  src={getAssetMediaUrl({ id: item.data.id, size: AssetMediaSize.Thumbnail })}
                   alt={item.value}
                   class="object-cover aspect-square w-full"
                 />

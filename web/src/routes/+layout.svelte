@@ -1,26 +1,41 @@
 <script lang="ts">
-  import { afterNavigate, beforeNavigate } from '$app/navigation';
-  import { resolve } from '$app/paths';
+  import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
   import { shortcut } from '$lib/actions/shortcut';
   import DownloadPanel from '$lib/components/asset-viewer/download-panel.svelte';
   import ErrorLayout from '$lib/components/layouts/ErrorLayout.svelte';
-  import AppleHeader from '$lib/components/shared-components/apple-header.svelte';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import NavigationLoadingBar from '$lib/components/shared-components/navigation-loading-bar.svelte';
-  import NotificationList from '$lib/components/shared-components/notification/notification-list.svelte';
   import UploadPanel from '$lib/components/shared-components/upload-panel.svelte';
-  import { AppRoute } from '$lib/constants';
+  import VersionAnnouncement from '$lib/components/VersionAnnouncement.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
+  import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
+  import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import ServerRestartingModal from '$lib/modals/ServerRestartingModal.svelte';
+  import { Route } from '$lib/route';
   import { albumPreviousRoute } from '$lib/stores/navigation.store';
-  import { serverConfig } from '$lib/stores/server-config.store';
+  import { locale } from '$lib/stores/preferences.store';
+  import { sidebarStore } from '$lib/stores/sidebar.svelte';
   import { user } from '$lib/stores/user.store';
-  import { closeWebsocketConnection, openWebsocketConnection } from '$lib/stores/websocket';
+  import { closeWebsocketConnection, openWebsocketConnection, websocketStore } from '$lib/stores/websocket';
   import { copyToClipboard } from '$lib/utils';
+  import { maintenanceShouldRedirect } from '$lib/utils/maintenance';
   import { isAssetViewerRoute } from '$lib/utils/navigation';
-  import { initializeTheme, setTranslations } from '@immich/ui';
+  import { getServerConfig } from '@immich/sdk';
+  import {
+    CommandPaletteDefaultProvider,
+    TooltipProvider,
+    initializeTheme,
+    modalManager,
+    setLocale,
+    setTranslations,
+    toastManager,
+    type ActionItem,
+  } from '@immich/ui';
+  import { mdiAccountMultipleOutline, mdiBookshelf, mdiCog, mdiServer, mdiSync, mdiThemeLightDark } from '@mdi/js';
   import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
-  import { run } from 'svelte/legacy';
+  import { get } from 'svelte/store';
   import '../app.css';
 
   interface Props {
@@ -29,11 +44,36 @@
 
   $effect(() => {
     setTranslations({
+      cancel: $t('cancel'),
       close: $t('close'),
-      showPassword: $t('show_password'),
-      hidePassword: $t('hide_password'),
+      confirm: $t('confirm'),
+      expand: $t('expand'),
+      collapse: $t('collapse'),
+      search_placeholder: $t('search'),
+      search_no_results: $t('no_results'),
+      prompt_default: $t('are_you_sure_to_do_this'),
+      show_password: $t('show_password'),
+      hide_password: $t('hide_password'),
+      dark_theme: themeManager.isDark ? $t('light_theme') : $t('dark_theme'),
+      open_menu: $t('open'),
+      command_palette_prompt_default: $t('command_palette_prompt'),
+      command_palette_to_select: $t('command_palette_to_select'),
+      command_palette_to_navigate: $t('command_palette_to_navigate'),
+      command_palette_to_close: $t('command_palette_to_close'),
+      command_palette_to_show_all: $t('command_palette_to_show_all'),
+      navigate_next: $t('next'),
+      navigate_previous: $t('previous'),
+      open_calendar: $t('open_calendar'),
+      toast_success_title: $t('success'),
+      toast_info_title: $t('info'),
+      toast_warning_title: $t('warning'),
+      toast_danger_title: $t('error'),
+      save: $t('save'),
+      supporter: $t('supporter'),
     });
   });
+
+  $effect(() => setLocale($locale));
 
   let { children }: Props = $props();
 
@@ -43,20 +83,29 @@
     return new URL(page.url.pathname + page.url.search, 'https://my.immich.app');
   };
 
+  toastManager.setOptions({ class: 'top-16 fixed' });
+
   onMount(() => {
     const element = document.querySelector('#stencil');
     element?.remove();
     // if the browser theme changes, changes the Immich theme too
   });
 
-  eventManager.emit('app.init');
+  eventManager.emit('AppInit');
 
   initializeTheme();
 
   beforeNavigate(({ from, to }) => {
+    if (sidebarStore.isOpen) {
+      sidebarStore.reset();
+    }
+
     if (isAssetViewerRoute(from) && isAssetViewerRoute(to)) {
       return;
     }
+
+    eventManager.emit('AppNavigate');
+
     showNavigationLoadingBar = true;
   });
 
@@ -65,28 +114,102 @@
 
   afterNavigate((nav) => {
     showNavigationLoadingBar = false;
-
-    if (hasNavigated && page.url.pathname.includes(`${resolve(AppRoute.ALBUMS)}/`)) {
+    if (hasNavigated && page.url.pathname.includes(Route.albums())) {
       albumPreviousRoute.set(current);
     }
 
     hasNavigated = true;
     current = nav.to?.url?.pathname ?? null;
   });
-  run(() => {
-    if ($user) {
+
+  const { serverRestarting } = websocketStore;
+
+  $effect.pre(() => {
+    if ($user || $serverRestarting || page.url.pathname.startsWith(Route.maintenanceMode())) {
       openWebsocketConnection();
     } else {
       closeWebsocketConnection();
     }
   });
+
+  serverRestarting.subscribe((isRestarting) => {
+    if (!isRestarting) {
+      return;
+    }
+
+    if (maintenanceShouldRedirect(isRestarting.isMaintenanceMode, location)) {
+      modalManager.show(ServerRestartingModal, {}).catch((error) => console.error('Error [ServerRestartBox]:', error));
+    }
+  });
+
+  const onWebsocketConnect = async () => {
+    const isRestarting = get(serverRestarting);
+    if (isRestarting && maintenanceShouldRedirect(isRestarting.isMaintenanceMode, location)) {
+      const { maintenanceMode } = await getServerConfig();
+      if (maintenanceMode === isRestarting.isMaintenanceMode) {
+        location.reload();
+      }
+    }
+  };
+
+  const userCommands: ActionItem[] = [
+    {
+      title: $t('theme'),
+      description: $t('toggle_theme_description'),
+      type: $t('command'),
+      icon: mdiThemeLightDark,
+      onAction: () => themeManager.toggleTheme(),
+      shortcuts: { shift: true, key: 't' },
+    },
+  ];
+
+  const adminCommands: ActionItem[] = [
+    {
+      title: $t('users'),
+      description: $t('admin.users_page_description'),
+      icon: mdiAccountMultipleOutline,
+      onAction: () => goto(Route.users()),
+    },
+    {
+      title: $t('settings'),
+      description: $t('admin.settings_page_description'),
+      icon: mdiCog,
+      onAction: () => goto(Route.systemSettings()),
+    },
+    {
+      title: $t('admin.queues'),
+      description: $t('admin.queues_page_description'),
+      icon: mdiSync,
+      type: $t('page'),
+      onAction: () => goto(Route.queues()),
+    },
+    {
+      title: $t('external_libraries'),
+      description: $t('admin.external_libraries_page_description'),
+      icon: mdiBookshelf,
+      onAction: () => goto(Route.libraries()),
+    },
+    {
+      title: $t('server_stats'),
+      description: $t('admin.server_stats_page_description'),
+      icon: mdiServer,
+      onAction: () => goto(Route.systemStatistics()),
+    },
+  ].map((route) => ({ ...route, type: $t('page'), $if: () => $user?.isAdmin }));
+
+  const commands = $derived([...userCommands, ...adminCommands]);
 </script>
+
+<OnEvents {onWebsocketConnect} />
+
+<CommandPaletteDefaultProvider name="Global" actions={commands} />
+<VersionAnnouncement />
 
 <svelte:head>
   <title>{page.data.meta?.title || 'Web'} - Personal Cloud Photos</title>
   <link rel="manifest" href="/photos/static/manifest.json" crossorigin="use-credentials" />
-  <meta name="theme-color" content="currentColor" />
-  <AppleHeader />
+  <meta name="theme-color" content="white" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="black" media="(prefers-color-scheme: dark)" />
 
   {#if page.data.meta}
     <meta name="description" content={page.data.meta.description} />
@@ -98,7 +221,10 @@
     {#if page.data.meta.imageUrl}
       <meta
         property="og:image"
-        content={new URL(page.data.meta.imageUrl, $serverConfig.externalDomain || globalThis.location.origin).href}
+        content={new URL(
+          page.data.meta.imageUrl,
+          serverConfigManager.value.externalDomain || globalThis.location.origin,
+        ).href}
       />
     {/if}
 
@@ -109,7 +235,10 @@
     {#if page.data.meta.imageUrl}
       <meta
         name="twitter:image"
-        content={new URL(page.data.meta.imageUrl, $serverConfig.externalDomain || globalThis.location.origin).href}
+        content={new URL(
+          page.data.meta.imageUrl,
+          serverConfigManager.value.externalDomain || globalThis.location.origin,
+        ).href}
       />
     {/if}
   {/if}
@@ -122,16 +251,17 @@
   }}
 />
 
-{#if page.data.error}
-  <ErrorLayout error={page.data.error}></ErrorLayout>
-{:else}
-  {@render children?.()}
-{/if}
+<TooltipProvider>
+  {#if page.data.error}
+    <ErrorLayout error={page.data.error}></ErrorLayout>
+  {:else}
+    {@render children?.()}
+  {/if}
 
-{#if showNavigationLoadingBar}
-  <NavigationLoadingBar />
-{/if}
+  {#if showNavigationLoadingBar}
+    <NavigationLoadingBar />
+  {/if}
 
-<DownloadPanel />
-<UploadPanel />
-<NotificationList />
+  <DownloadPanel />
+  <UploadPanel />
+</TooltipProvider>

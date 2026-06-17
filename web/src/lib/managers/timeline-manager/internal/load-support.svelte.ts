@@ -1,25 +1,21 @@
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { toISOYearMonthUTC } from '$lib/utils/timeline-util';
 import { getTimeBucket } from '@immich/sdk';
-
-import type { MonthGroup } from '../month-group.svelte';
-import type { TimelineManager } from '../timeline-manager.svelte';
+import { TimelineManager } from '../timeline-manager.svelte';
+import type { TimelineMonth } from '../timeline-month.svelte';
 import type { TimelineManagerOptions } from '../types';
-import { layoutMonthGroup } from './layout-support.svelte';
 
 export async function loadFromTimeBuckets(
   timelineManager: TimelineManager,
-  monthGroup: MonthGroup,
+  timelineMonth: TimelineMonth,
   options: TimelineManagerOptions,
   signal: AbortSignal,
 ): Promise<void> {
-  if (monthGroup.getFirstAsset()) {
-    const timeBucket = toISOYearMonthUTC(monthGroup.yearMonth);
+  if (timelineMonth.getFirstAsset()) {
     return;
   }
 
-  const timeBucket = toISOYearMonthUTC(monthGroup.yearMonth);
-
+  const timeBucket = toISOYearMonthUTC(timelineMonth.yearMonth);
   const bucketResponse = await getTimeBucket(
     {
       ...authManager.params,
@@ -42,15 +38,18 @@ export async function loadFromTimeBuckets(
       },
       { signal },
     );
+    if (!albumAssets) {
+      return;
+    }
     for (const id of albumAssets.id) {
       timelineManager.albumAssets.add(id);
     }
   }
 
-  const unprocessedAssets = monthGroup.addAssets(bucketResponse);
+  const unprocessedAssets = timelineMonth.addAssets(bucketResponse, true);
   if (unprocessedAssets.length > 0) {
     console.error(
-      `Warning: getTimeBucket API returning assets not in requested month: ${monthGroup.yearMonth.month}, ${JSON.stringify(
+      `Warning: getTimeBucket API returning assets not in requested month: ${timelineMonth.yearMonth.month}, ${JSON.stringify(
         unprocessedAssets.map((unprocessed) => ({
           id: unprocessed.id,
           localDateTime: unprocessed.localDateTime,
@@ -58,6 +57,4 @@ export async function loadFromTimeBuckets(
       )}`,
     );
   }
-
-  layoutMonthGroup(timelineManager, monthGroup);
 }

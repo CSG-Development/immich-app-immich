@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { shortcuts } from '$lib/actions/shortcut';
+  import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import ProgressBar from '$lib/components/shared-components/progress-bar/progress-bar.svelte';
   import { ProgressBarStatus } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import { languageManager } from '$lib/managers/language-manager.svelte';
   import SlideshowSettingsModal from '$lib/modals/SlideshowSettingsModal.svelte';
-  import { slideshowStore } from '$lib/stores/slideshow.store';
-  import { videoStore } from '$lib/stores/video.store';
-  import { IconButton } from '@immich/ui';
+  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
+  import { AssetTypeEnum } from '@immich/sdk';
+  import { IconButton, modalManager } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight, mdiClose, mdiCog, mdiFullscreen, mdiPause, mdiPlay } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
   import { useSwipe } from 'svelte-gestures';
@@ -15,6 +15,7 @@
 
   interface Props {
     isFullScreen: boolean;
+    assetType: AssetTypeEnum;
     onNext?: () => void;
     onPrevious?: () => void;
     onClose?: () => void;
@@ -23,13 +24,14 @@
 
   let {
     isFullScreen,
+    assetType,
     onNext = () => {},
     onPrevious = () => {},
     onClose = () => {},
     onSetToFullScreen = () => {},
   }: Props = $props();
 
-  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowAutoplay, slideshowNavigation } =
+  const { restartProgress, stopProgress, slideshowDelay, showProgressBar, slideshowNavigation, slideshowAutoplay } =
     slideshowStore;
 
   let progressBarStatus: ProgressBarStatus | undefined = $state();
@@ -37,6 +39,7 @@
   let showControls = $state(true);
   let timer: NodeJS.Timeout;
   let isOverControls = $state(false);
+  const isVideoSlide = $derived(assetType === AssetTypeEnum.Video);
 
   let unsubscribeRestart: () => void;
   let unsubscribeStop: () => void;
@@ -82,6 +85,7 @@
   });
 
   onDestroy(() => {
+    setCursorStyle('');
     if (unsubscribeRestart) {
       unsubscribeRestart();
     }
@@ -93,6 +97,11 @@
 
   const handleDone = async () => {
     await progressBar?.resetProgress();
+
+    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
+      onPrevious();
+      return;
+    }
     onNext();
   };
 
@@ -130,36 +139,33 @@
     true,
   );
 
-  $effect(() => {
-    if ($videoStore) {
-      if (progressBarStatus === ProgressBarStatus.Paused) {
-        $videoStore?.pause();
-      } else {
-        $videoStore?.play().catch((error) => console.error(error));
-      }
+  const shortcutBindings = $derived.by((): ShortcutOptions[] => {
+    const bindings: ShortcutOptions[] = [
+      { shortcut: { key: 'Escape' }, onShortcut: onClose },
+      { shortcut: { key: 'ArrowLeft' }, onShortcut: onPrevious },
+      { shortcut: { key: 'ArrowRight' }, onShortcut: onNext },
+    ];
+
+    // For videos, allow the native HTML5 element to handle space for play/pause
+    if (!isVideoSlide) {
+      bindings.push({
+        shortcut: { key: ' ' },
+        onShortcut: () => {
+          if (progressBarStatus === ProgressBarStatus.Paused) {
+            progressBar?.play();
+          } else {
+            progressBar?.pause();
+          }
+        },
+        preventDefault: true,
+      });
     }
+
+    return bindings;
   });
 </script>
 
-<svelte:document
-  onmousemove={showControlBar}
-  use:shortcuts={[
-    { shortcut: { key: 'Escape' }, onShortcut: onClose },
-    { shortcut: { key: 'ArrowLeft' }, onShortcut: onPrevious },
-    { shortcut: { key: 'ArrowRight' }, onShortcut: onNext },
-    {
-      shortcut: { key: ' ' },
-      onShortcut: () => {
-        if (progressBarStatus === ProgressBarStatus.Paused) {
-          progressBar?.play();
-        } else {
-          progressBar?.pause();
-        }
-      },
-      preventDefault: true,
-    },
-  ]}
-/>
+<svelte:document onmousemove={showControlBar} use:shortcuts={shortcutBindings} />
 
 {/* @ts-expect-error https://github.com/Rezi/svelte-gestures/issues/38#issuecomment-3315953573 */ null}
 <svelte:body {@attach swipe} {onswipe} {onswipedown} />
@@ -181,29 +187,21 @@
       aria-label={$t('exit_slideshow')}
     />
 
+    {#if !isVideoSlide}
+      <IconButton
+        variant="ghost"
+        shape="round"
+        color="secondary"
+        icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
+        onclick={() => (progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause())}
+        aria-label={progressBarStatus === ProgressBarStatus.Paused ? $t('play') : $t('pause')}
+      />
+    {/if}
     <IconButton
       variant="ghost"
       shape="round"
       color="secondary"
-      icon={progressBarStatus === ProgressBarStatus.Paused ? mdiPlay : mdiPause}
-      onclick={async () => {
-        if ($videoStore) {
-          if (progressBarStatus === ProgressBarStatus.Paused) {
-            await $videoStore?.play();
-          } else {
-            $videoStore?.pause();
-          }
-        }
-
-        return progressBarStatus === ProgressBarStatus.Paused ? progressBar?.play() : progressBar?.pause();
-      }}
-      aria-label={progressBarStatus === ProgressBarStatus.Paused ? $t('play') : $t('pause')}
-    />
-    <IconButton
-      variant="ghost"
-      shape="round"
-      color="secondary"
-      icon={mdiChevronLeft}
+      icon={languageManager.rtl ? mdiChevronRight : mdiChevronLeft}
       onclick={onPrevious}
       aria-label={$t('previous')}
     />
@@ -211,7 +209,7 @@
       variant="ghost"
       shape="round"
       color="secondary"
-      icon={mdiChevronRight}
+      icon={languageManager.rtl ? mdiChevronLeft : mdiChevronRight}
       onclick={onNext}
       aria-label={$t('next')}
     />
@@ -236,11 +234,13 @@
   </div>
 {/if}
 
-<ProgressBar
-  autoplay={$slideshowAutoplay}
-  hidden={!$showProgressBar}
-  duration={$slideshowDelay}
-  bind:this={progressBar}
-  bind:status={progressBarStatus}
-  onDone={handleDone}
-/>
+{#if !isVideoSlide}
+  <ProgressBar
+    autoplay={$slideshowAutoplay}
+    hidden={!$showProgressBar}
+    duration={$slideshowDelay}
+    bind:this={progressBar}
+    bind:status={progressBarStatus}
+    onDone={handleDone}
+  />
+{/if}

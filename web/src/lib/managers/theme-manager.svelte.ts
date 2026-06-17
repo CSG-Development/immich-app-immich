@@ -1,25 +1,26 @@
 import { browser } from '$app/environment';
-
+import { Theme } from '$lib/constants';
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import { PersistedLocalStorage } from '$lib/utils/persisted';
-import { Theme } from '@immich/ui';
+import { onThemeChange as onUiThemeChange, theme as uiTheme, type Theme as UiTheme } from '@immich/ui';
 
 export interface ThemeSetting {
   value: Theme;
+  system: boolean;
 }
 
 const getDefaultTheme = () => {
   if (!browser) {
-    return Theme.Dark;
+    return Theme.DARK;
   }
 
-  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? Theme.Dark : Theme.Light;
+  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? Theme.DARK : Theme.LIGHT;
 };
 
 class ThemeManager {
   #theme = new PersistedLocalStorage<ThemeSetting>(
-    'immich-ui-theme',
-    { value: getDefaultTheme() },
+    'color-theme',
+    { value: getDefaultTheme(), system: false },
     {
       valid: (value): value is ThemeSetting => {
         return Object.values(Theme).includes((value as ThemeSetting)?.value);
@@ -33,10 +34,16 @@ class ThemeManager {
 
   value = $derived(this.theme.value);
 
-  isDark = $derived(this.value === Theme.Dark);
+  isDark = $derived(this.value === Theme.DARK);
 
-  setSystem() {
-    this.#update(getDefaultTheme());
+  constructor() {
+    eventManager.on({
+      AppInit: () => this.#onAppInit(),
+    });
+  }
+
+  setSystem(system: boolean) {
+    this.#update(system ? 'system' : getDefaultTheme());
   }
 
   setTheme(theme: Theme) {
@@ -44,21 +51,32 @@ class ThemeManager {
   }
 
   toggleTheme() {
-    this.#update(this.value === Theme.Dark ? Theme.Light : Theme.Dark);
+    this.#update(this.value === Theme.DARK ? Theme.LIGHT : Theme.DARK);
   }
 
-  #update(value: Theme) {
-    const theme: ThemeSetting = { value };
+  #onAppInit() {
+    const syncSystemTheme = () => {
+      this.#update(this.theme.system ? 'system' : this.theme.value);
+    };
 
-    if (theme.value === Theme.Light) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
+    syncSystemTheme();
+    globalThis.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncSystemTheme, {
+      passive: true,
+    });
+  }
+
+  #update(value: Theme | 'system') {
+    const theme: ThemeSetting =
+      value === 'system' ? { system: true, value: getDefaultTheme() } : { system: false, value };
+
+    document.documentElement.classList.toggle('dark', !(theme.value === Theme.LIGHT));
 
     this.#theme.current = theme;
 
-    eventManager.emit('theme.change', theme);
+    uiTheme.value = theme.value as unknown as UiTheme;
+    onUiThemeChange();
+
+    eventManager.emit('ThemeChange', theme);
   }
 }
 

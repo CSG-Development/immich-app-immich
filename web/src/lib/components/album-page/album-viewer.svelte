@@ -1,27 +1,26 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { shortcut } from '$lib/actions/shortcut';
-  import CastButton from '$lib/cast/cast-button.svelte';
   import AlbumMap from '$lib/components/album-page/album-map.svelte';
   import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
-  import { AppRoute } from '$lib/constants';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
-  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { featureFlags } from '$lib/stores/server-config.store';
+  import { Route } from '$lib/route';
+  import { handleDownloadAlbum } from '$lib/services/album.service';
+  import { getGlobalActions } from '$lib/services/app.service';
+  import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
-  import { cancelMultiselect, downloadAlbum } from '$lib/utils/asset-utils';
-  import { openFileUploadDialog } from '$lib/utils/file-uploader';
-  import type { AlbumResponseDto, SharedLinkResponseDto, UserResponseDto } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
+  import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
+  import type { AlbumResponseDto, SharedLinkResponseDto } from '@immich/sdk';
+  import { ActionButton, IconButton } from '@immich/ui';
   import { mdiArrowLeft, mdiDownload, mdiFileImagePlusOutline, mdiPresentationPlay } from '@mdi/js';
-  import { onDestroy } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import ControlAppBar from '../shared-components/control-app-bar.svelte';
@@ -30,72 +29,76 @@
 
   interface Props {
     sharedLink: SharedLinkResponseDto;
-    user?: UserResponseDto | undefined;
   }
 
-  let { sharedLink, user = undefined }: Props = $props();
+  let { sharedLink }: Props = $props();
 
   const album = sharedLink.album as AlbumResponseDto;
 
-  let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
   let { slideshowState, slideshowNavigation } = slideshowStore;
 
-  let timelineManager = new TimelineManager();
-  $effect(() => void timelineManager.updateOptions({ albumId: album.id, order: album.order }));
-  onDestroy(() => timelineManager.destroy());
+  const options = $derived({ albumId: album.id, order: album.order });
+  let timelineManager = $state<TimelineManager>() as TimelineManager;
 
-  const assetInteraction = new AssetInteraction();
-
-  /* dragAndDropFilesStore.subscribe((value) => {
+  dragAndDropFilesStore.subscribe((value) => {
     if (value.isDragging && value.files.length > 0) {
       handlePromiseError(fileUploadHandler({ files: value.files, albumId: album.id }));
       dragAndDropFilesStore.set({ isDragging: false, files: [] });
     }
-  }); */
+  });
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = async () => {
-    assetInteraction.selectedAssets.sort(
+    assetMultiSelectManager.selectedAssets.sort(
       (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
     );
-    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
 
     const firstAsset =
       nav === SlideshowNavigation.Shuffle
         ? await timelineManager.getRandomAsset()
         : nav === SlideshowNavigation.AscendingOrder
-          ? timelineManager.months.at(-1)?.dayGroups.at(-1)?.viewerAssets.at(-1)?.asset
-          : timelineManager.months[0]?.dayGroups[0]?.viewerAssets[0]?.asset;
-    const firstSelectedAsset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+          ? timelineManager.months.at(-1)?.timelineDays.at(-1)?.viewerAssets.at(-1)?.asset
+          : timelineManager.months[0]?.timelineDays[0]?.viewerAssets[0]?.asset;
+    const firstSelectedAsset = getFirstSlideshowAsset(
+      assetMultiSelectManager.selectedAssets,
+      shuffledSelectedAssets,
+      nav,
+    );
 
-    const asset = assetInteraction.selectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
+    const asset = assetMultiSelectManager.selectedGroup.size > 0 ? firstSelectedAsset : firstAsset;
 
     if (asset) {
-      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+      handlePromiseError(
+        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
+      );
     }
   };
+
+  const { Cast } = $derived(getGlobalActions($t));
 </script>
 
 <svelte:document
   use:shortcut={{
     shortcut: { key: 'Escape' },
     onShortcut: () => {
-      if (!$showAssetViewer && assetInteraction.selectionActive) {
-        cancelMultiselect(assetInteraction);
+      if (!assetViewerManager.isViewing && assetMultiSelectManager.selectionActive) {
+        assetMultiSelectManager.clear();
       }
     },
   }}
 />
 
-<main class="relative h-dvh overflow-hidden px-3 md:px-6">
+<main class="relative h-dvh overflow-hidden px-2 md:px-6 max-md:pt-(--navbar-height-md) pt-(--navbar-height)">
   <Timeline
     enableRouting={true}
     {album}
-    {timelineManager}
-    {assetInteraction}
-    selectedAssets={assetInteraction.selectedAssets}
+    bind:timelineManager
+    {options}
+    assetInteraction={assetMultiSelectManager}
+    selectedAssets={assetMultiSelectManager.selectedAssets}
     {shuffledSelectedAssets}
   >
     <section class="pt-18 md:pt-24 px-2 md:px-0">
@@ -119,13 +122,9 @@
 </main>
 
 <header>
-  {#if assetInteraction.selectionActive}
-    <AssetSelectControlBar
-      ownerId={user?.id}
-      assets={assetInteraction.selectedAssets}
-      clearSelect={() => assetInteraction.clearMultiselect()}
-    >
-      <SelectAllAssets {timelineManager} {assetInteraction} />
+  {#if assetMultiSelectManager.selectionActive}
+    <AssetSelectControlBar>
+      <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
       {#if assetInteraction.selectedAssets.length > 1}
         <IconButton
           shape="round"
@@ -145,11 +144,11 @@
       showBackButton
       backIcon={mdiArrowLeft}
       onClose={async () => {
-        await goto(resolve(AppRoute.SHARED_LINKS));
+        await goto(Route.sharedLinks());
       }}
     >
       {#snippet trailing()}
-        <CastButton />
+        <ActionButton action={Cast} />
 
         {#if sharedLink.allowUpload}
           <IconButton
@@ -176,11 +175,11 @@
             color="secondary"
             variant="ghost"
             aria-label={$t('download')}
-            onclick={() => downloadAlbum(album)}
+            onclick={() => handleDownloadAlbum(album)}
             icon={mdiDownload}
           />
         {/if}
-        {#if sharedLink.showMetadata && $featureFlags.loaded && $featureFlags.map}
+        {#if sharedLink.showMetadata && featureFlagsManager.value.map}
           <AlbumMap {album} />
         {/if}
         <ThemeButton />

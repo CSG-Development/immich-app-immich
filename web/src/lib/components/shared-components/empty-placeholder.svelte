@@ -7,8 +7,8 @@
     text: string;
     fullWidth?: boolean;
     src?: string;
-    title?: string;
     descriptionText?: string;
+    title?: string;
     class?: string;
     truncate?: boolean;
   }

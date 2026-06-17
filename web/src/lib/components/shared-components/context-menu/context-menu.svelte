@@ -3,8 +3,6 @@
   import { languageManager } from '$lib/managers/language-manager.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import type { Snippet } from 'svelte';
-  import { quintOut } from 'svelte/easing';
-  import { slide } from 'svelte/transition';
 
   interface Props {
     isVisible?: boolean;
@@ -15,6 +13,7 @@
     ariaLabel?: string | undefined;
     ariaLabelledBy?: string | undefined;
     ariaActiveDescendant?: string | undefined;
+    menuScrollView?: HTMLDivElement | undefined;
     menuElement?: HTMLUListElement | undefined;
     onClose?: (() => void) | undefined;
     children?: Snippet;
@@ -29,42 +28,49 @@
     ariaLabel = undefined,
     ariaLabelledBy = undefined,
     ariaActiveDescendant = undefined,
+    menuScrollView = $bindable(),
     menuElement = $bindable(),
     onClose = undefined,
     children,
   }: Props = $props();
 
-  let left: number = $state(0);
-  let top: number = $state(0);
+  const swap = (direction: string) => (direction === 'left' ? 'right' : 'left');
 
-  // We need to bind clientHeight since the bounding box may return a height
-  // of zero when starting the 'slide' animation.
-  let height: number = $state(0);
+  const layoutDirection = $derived(languageManager.rtl ? swap(direction) : direction);
 
-  $effect(() => {
-    if (menuElement) {
-      let layoutDirection = direction;
-      if (languageManager.rtl) {
-        layoutDirection = direction === 'left' ? 'right' : 'left';
-      }
-
-      const rect = menuElement.getBoundingClientRect();
-      const directionWidth = layoutDirection === 'left' ? rect.width : 0;
-      const menuHeight = Math.min(menuElement.clientHeight, height) || 0;
-
-      left = Math.max(8, Math.min(window.innerWidth - rect.width, x - directionWidth));
-      top = Math.max(8, Math.min(window.innerHeight - menuHeight, y));
+  const position = $derived.by(() => {
+    if (!menuScrollView || !menuElement) {
+      return { left: 0, top: 0 };
     }
+
+    const rect = menuScrollView.getBoundingClientRect();
+    const directionWidth = layoutDirection === 'left' ? rect.width : 0;
+
+    const margin = 8;
+
+    const left = Math.max(margin, Math.min(windowInnerWidth - rect.width - margin, x - directionWidth));
+    const top = Math.max(margin, Math.min(windowInnerHeight - menuElement.clientHeight, y));
+    const maxHeight = windowInnerHeight - top - margin;
+
+    const needScrollBar = menuElement.clientHeight > maxHeight;
+
+    return { left, top, maxHeight, needScrollBar };
   });
+
+  let windowInnerHeight: number = $state(0);
+  let windowInnerWidth: number = $state(0);
 </script>
 
 <div
-  bind:clientHeight={height}
+  bind:clientHeight={menuScrollView}
   class="fixed min-w-[240px] w-max max-w-[300px] overflow-hidden rounded-lg shadow-lg z-2"
-  style:left="{left - (mobileDevice.maxMd ? 12 : 48)}px"
-  style:top="{top}px"
-  transition:slide={{ duration: 250, easing: quintOut }}
+  style:left="{position.left - (mobileDevice.maxMd ? 12 : 48)}px"
+  style:top="{position.top}px"
+  style:max-height={isVisible ? `${position.maxHeight}px` : '0px'}
+  style:transition-property="max-height"
+  style:scrollbar-color="rgba(85, 86, 87, 0.408) transparent"
   use:clickOutside={{ onOutclick: onClose }}
+  tabindex="-1"
 >
   <ul
     {id}
@@ -72,9 +78,7 @@
     aria-label={ariaLabel}
     aria-labelledby={ariaLabelledBy}
     bind:this={menuElement}
-    class="{isVisible
-      ? 'max-h-dvh'
-      : 'max-h-0'} flex flex-col transition-all duration-250 ease-in-out outline-none overflow-auto"
+    class="flex flex-col outline-none"
     role="menu"
     tabindex="-1"
   >
