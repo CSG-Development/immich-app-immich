@@ -1,4 +1,4 @@
-import { registerFunction } from 'src/sql-tools';
+import { registerFunction } from '@immich/sql-tools';
 
 export const immich_uuid_v7 = registerFunction({
   name: 'immich_uuid_v7',
@@ -29,7 +29,7 @@ export const album_user_after_insert = registerFunction({
   body: `
     BEGIN
       UPDATE album SET "updatedAt" = clock_timestamp(), "updateId" = immich_uuid_v7(clock_timestamp())
-      WHERE "id" IN (SELECT DISTINCT "albumsId" FROM inserted_rows);
+      WHERE "id" IN (SELECT DISTINCT "albumId" FROM inserted_rows);
       RETURN NULL;
     END`,
 });
@@ -139,8 +139,8 @@ export const album_asset_delete_audit = registerFunction({
   body: `
     BEGIN
       INSERT INTO album_asset_audit ("albumId", "assetId")
-      SELECT "albumsId", "assetsId" FROM OLD
-      WHERE "albumsId" IN (SELECT "id" FROM album WHERE "id" IN (SELECT "albumsId" FROM OLD));
+      SELECT "albumId", "assetId" FROM OLD
+      WHERE "albumId" IN (SELECT "id" FROM album WHERE "id" IN (SELECT "albumId" FROM OLD));
       RETURN NULL;
     END`,
 });
@@ -152,12 +152,12 @@ export const album_user_delete_audit = registerFunction({
   body: `
     BEGIN
       INSERT INTO album_audit ("albumId", "userId")
-      SELECT "albumsId", "usersId"
+      SELECT "albumId", "userId"
       FROM OLD;
 
       IF pg_trigger_depth() = 1 THEN
         INSERT INTO album_user_audit ("albumId", "userId")
-        SELECT "albumsId", "usersId"
+        SELECT "albumId", "userId"
         FROM OLD;
       END IF;
 
@@ -185,7 +185,7 @@ export const memory_asset_delete_audit = registerFunction({
   body: `
     BEGIN
       INSERT INTO memory_asset_audit ("memoryId", "assetId")
-      SELECT "memoriesId", "assetsId" FROM OLD
+      SELECT "memoriesId", "assetId" FROM OLD
       WHERE "memoriesId" IN (SELECT "id" FROM memory WHERE "id" IN (SELECT "memoriesId" FROM OLD));
       RETURN NULL;
     END`,
@@ -250,6 +250,50 @@ export const asset_face_audit = registerFunction({
   body: `
     BEGIN
       INSERT INTO asset_face_audit ("assetFaceId", "assetId")
+      SELECT "id", "assetId"
+      FROM OLD;
+      RETURN NULL;
+    END`,
+});
+
+export const asset_edit_insert = registerFunction({
+  name: 'asset_edit_insert',
+  returnType: 'TRIGGER',
+  language: 'PLPGSQL',
+  body: `
+    BEGIN
+      UPDATE asset
+      SET "isEdited" = true
+      FROM inserted_edit
+      WHERE asset.id = inserted_edit."assetId" AND NOT asset."isEdited";
+      RETURN NULL;
+    END
+  `,
+});
+
+export const asset_edit_delete = registerFunction({
+  name: 'asset_edit_delete',
+  returnType: 'TRIGGER',
+  language: 'PLPGSQL',
+  body: `
+    BEGIN
+      UPDATE asset
+      SET "isEdited" = false
+      FROM deleted_edit
+      WHERE asset.id = deleted_edit."assetId" AND asset."isEdited"
+        AND NOT EXISTS (SELECT FROM asset_edit edit WHERE edit."assetId" = asset.id);
+      RETURN NULL;
+    END
+  `,
+});
+
+export const asset_edit_audit = registerFunction({
+  name: 'asset_edit_audit',
+  returnType: 'TRIGGER',
+  language: 'PLPGSQL',
+  body: `
+    BEGIN
+      INSERT INTO asset_edit_audit ("editId", "assetId")
       SELECT "id", "assetId"
       FROM OLD;
       RETURN NULL;

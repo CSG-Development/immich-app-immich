@@ -44,7 +44,7 @@ While this guide focuses on VS Code, you have many options for Dev Container dev
 **Self-Hostable Options:**
 
 - [Coder](https://coder.com) - Enterprise-focused, requires Terraform knowledge, self-managed
-- [DevPod](https://devpod.sh) - Client-only tool with excellent devcontainer.json support, works with any provider (local, cloud, or on-premise)
+- [DevPod](https://devpod.sh) - Client-only tool with excellent devcontainer.json support, works with any provider (local, cloud, or on-premise). Check [quick-start guide](#quick-start-guide-for-devpod-with-docker)
   :::
 
 ## Dev Container Services
@@ -256,7 +256,7 @@ The Dev Container supports multiple ways to run tests:
 
 ```bash
 # Run tests for specific components
-make test-server         # Server unit tests
+make test-server        # Server unit tests
 make test-web           # Web unit tests
 make test-e2e           # End-to-end tests
 make test-cli           # CLI tests
@@ -268,12 +268,13 @@ make test-all           # Runs tests for all components
 make test-medium-dev    # End-to-end tests
 ```
 
-#### Using NPM Directly
+#### Using PNPM Directly
 
 ```bash
 # Server tests
 cd /workspaces/immich/server
-pnpm test                # Run all tests
+pnpm test               # Run all tests
+pnpm run test:medium    # Medium tests (integration tests)
 pnpm run test:watch     # Watch mode
 pnpm run test:cov       # Coverage report
 
@@ -293,21 +294,21 @@ pnpm run test:web       # Run web UI tests
 ```bash
 # Linting
 make lint-server        # Lint server code
-make lint-web          # Lint web code
-make lint-all          # Lint all components
+make lint-web           # Lint web code
+make lint-all           # Lint all components
 
 # Formatting
 make format-server      # Format server code
-make format-web        # Format web code
-make format-all        # Format all code
+make format-web         # Format web code
+make format-all         # Format all code
 
 # Type checking
 make check-server       # Type check server
-make check-web         # Type check web
-make check-all         # Check all components
+make check-web          # Type check web
+make check-all          # Check all components
 
 # Complete hygiene check
-make hygiene-all       # Runs lint, format, check, SQL sync, and audit
+make hygiene-all        # Run lint, format, check, SQL sync, and audit
 ```
 
 ### Additional Make Commands
@@ -315,21 +316,21 @@ make hygiene-all       # Runs lint, format, check, SQL sync, and audit
 ```bash
 # Build commands
 make build-server       # Build server
-make build-web         # Build web app
-make build-all         # Build everything
+make build-web          # Build web app
+make build-all          # Build everything
 
 # API generation
-make open-api          # Generate OpenAPI specs
+make open-api           # Generate OpenAPI specs
 make open-api-typescript # Generate TypeScript SDK
-make open-api-dart     # Generate Dart SDK
+make open-api-dart      # Generate Dart SDK
 
 # Database
-make sql               # Sync database schema
+make sql                # Sync database schema
 
 # Dependencies
-make install-server    # Install server dependencies
-make install-web      # Install web dependencies
-make install-all      # Install all dependencies
+make install-server     # Install server dependencies
+make install-web        # Install web dependencies
+make install-all        # Install all dependencies
 ```
 
 ### Debugging
@@ -407,7 +408,27 @@ If you encounter issues:
 1. Check container logs: View → Output → Select "Dev Containers"
 2. Rebuild without cache: "Dev Containers: Rebuild Container Without Cache"
 3. Review [common Docker issues](https://docs.docker.com/desktop/troubleshoot/)
-4. Ask in [Discord](https://discord.immich.app) `#help-desk-support` channel
+4. Ask in [Discord](https://discord.immich.app) `#contributing` channel
+
+### Quick-start guide for DevPod with docker
+
+You will need DevPod CLI (check [DevPod CLI installation guide](https://devpod.sh/docs/getting-started/install)) and Docker Desktop.
+
+```sh
+# Step 1: Clone the Repository
+git clone https://github.com/immich-app/immich.git
+cd immich
+
+# Step 2: Prepare DevPod (if you haven't already)
+devpod provider add docker
+devpod provider use docker
+
+# Step 3: Build 'immich-server-dev' docker image first manually
+docker build -f server/Dockerfile.dev -t immich-server-dev .
+
+# Step 4: Now you can start devcontainer
+devpod up .
+```
 
 ## Mobile Development
 

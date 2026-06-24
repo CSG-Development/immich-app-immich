@@ -39,6 +39,9 @@ const updatedConfig = Object.freeze<SystemConfig>({
     [QueueName.ThumbnailGeneration]: { concurrency: 3 },
     [QueueName.VideoConversion]: { concurrency: 1 },
     [QueueName.Notification]: { concurrency: 5 },
+    [QueueName.Ocr]: { concurrency: 1 },
+    [QueueName.Workflow]: { concurrency: 5 },
+    [QueueName.Editor]: { concurrency: 2 },
   },
   backup: {
     database: {
@@ -52,7 +55,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
     threads: 0,
     preset: 'ultrafast',
     targetAudioCodec: AudioCodec.Aac,
-    acceptedAudioCodecs: [AudioCodec.Aac, AudioCodec.Mp3, AudioCodec.LibOpus],
+    acceptedAudioCodecs: [AudioCodec.Aac, AudioCodec.Mp3, AudioCodec.Opus],
     targetResolution: '720',
     targetVideoCodec: VideoCodec.H264,
     acceptedVideoCodecs: [VideoCodec.H264],
@@ -101,6 +104,13 @@ const updatedConfig = Object.freeze<SystemConfig>({
       minScore: 0.7,
       maxDistance: 0.5,
       minFaces: 3,
+    },
+    ocr: {
+      enabled: true,
+      modelName: 'PP-OCRv5_mobile',
+      minDetectionScore: 0.5,
+      minRecognitionScore: 0.8,
+      maxResolution: 736,
     },
   },
   map: {
@@ -157,13 +167,15 @@ const updatedConfig = Object.freeze<SystemConfig>({
       size: 250,
       format: ImageFormat.Webp,
       quality: 80,
+      progressive: false,
     },
     preview: {
       size: 1440,
       format: ImageFormat.Jpeg,
       quality: 80,
+      progressive: false,
     },
-    fullsize: { enabled: false, format: ImageFormat.Jpeg, quality: 80 },
+    fullsize: { enabled: false, format: ImageFormat.Jpeg, quality: 80, progressive: false },
     colorspace: Colorspace.P3,
     extractEmbedded: false,
   },
@@ -197,6 +209,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
       transport: {
         host: '',
         port: 587,
+        secure: false,
         username: '',
         password: '',
         ignoreCert: false,

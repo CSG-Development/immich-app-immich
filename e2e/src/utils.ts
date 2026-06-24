@@ -1,5 +1,4 @@
 import {
-  AllJobStatusResponseDto,
   AssetMediaCreateDto,
   AssetMediaResponseDto,
   AssetResponseDto,
@@ -7,11 +6,15 @@ import {
   CheckExistingAssetsDto,
   CreateAlbumDto,
   CreateLibraryDto,
-  JobCommandDto,
-  JobName,
+  JobCreateDto,
+  MaintenanceAction,
+  ManualJobName,
   MetadataSearchDto,
   Permission,
   PersonCreateDto,
+  QueueCommandDto,
+  QueueName,
+  QueuesResponseLegacyDto,
   SharedLinkCreateDto,
   UpdateLibraryDto,
   UserAdminCreateDto,
@@ -20,6 +23,7 @@ import {
   checkExistingAssets,
   createAlbum,
   createApiKey,
+  createJob,
   createLibrary,
   createPartner,
   createPerson,
@@ -27,15 +31,18 @@ import {
   createStack,
   createUserAdmin,
   deleteAssets,
-  getAllJobsStatus,
+  deleteDatabaseBackup,
   getAssetInfo,
   getConfig,
   getConfigDefaults,
+  getQueuesLegacy,
+  listDatabaseBackups,
   login,
+  runQueueCommandLegacy,
   scanLibrary,
   searchAssets,
-  sendJobCommand,
   setBaseUrl,
+  setMaintenanceMode,
   signUpAdmin,
   tagAssets,
   updateAdminOnboarding,
@@ -50,16 +57,22 @@ import {
 import { BrowserContext } from '@playwright/test';
 import { exec, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import path, { dirname } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { setTimeout as setAsyncTimeout } from 'node:timers/promises';
 import { promisify } from 'node:util';
+import { createGzip } from 'node:zlib';
 import pg from 'pg';
 import { io, type Socket } from 'socket.io-client';
 import { loginDto, signupDto } from 'src/fixtures';
 import { makeRandomImage } from 'src/generators';
 import request from 'supertest';
+import { playwrightDbHost, playwrightHost, playwriteBaseUrl } from '../playwright.config';
+
 export type { Emitter } from '@socket.io/component-emitter';
 
 type CommandResponse = { stdout: string; stderr: string; exitCode: number | null };
@@ -68,20 +81,21 @@ type WaitOptions = { event: EventType; id?: string; total?: number; timeout?: nu
 type AdminSetupOptions = { onboarding?: boolean };
 type FileData = { bytes?: Buffer; filename: string };
 
-const dbUrl = 'postgres://postgres:postgres@127.0.0.1:5435/immich';
-export const baseUrl = 'http://127.0.0.1:2285';
+const dbUrl = `postgres://postgres:postgres@${playwrightDbHost}:5435/immich`;
+export const baseUrl = playwriteBaseUrl;
 export const shareUrl = `${baseUrl}/share`;
 export const app = `${baseUrl}/api`;
 // TODO move test assets into e2e/assets
-export const testAssetDir = path.resolve('./test-assets');
+export const testAssetDir = resolve(import.meta.dirname, '../test-assets');
 export const testAssetDirInternal = '/test-assets';
 export const tempDir = tmpdir();
 export const asBearerAuth = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
 export const asKeyAuth = (key: string) => ({ 'x-api-key': key });
 export const immichCli = (args: string[]) =>
   executeCommand('pnpm', ['exec', 'immich', '-d', `/${tempDir}/immich/`, ...args], { cwd: '../cli' }).promise;
-export const immichAdmin = (args: string[]) =>
-  executeCommand('docker', ['exec', '-i', 'immich-e2e-server', '/bin/bash', '-c', `immich-admin ${args.join(' ')}`]);
+export const dockerExec = (args: string[]) =>
+  executeCommand('docker', ['exec', '-i', 'immich-e2e-server', '/bin/bash', '-c', args.join(' ')]);
+export const immichAdmin = (args: string[]) => dockerExec([`immich-admin ${args.join(' ')}`]);
 export const specialCharStrings = ["'", '"', ',', '{', '}', '*'];
 export const TEN_TIMES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -145,44 +159,69 @@ const onEvent = ({ event, id }: { event: EventType; id: string }) => {
 };
 
 export const utils = {
+  connectDatabase: async () => {
+    if (!client) {
+      client = new pg.Client(dbUrl);
+      client.on('end', () => (client = null));
+      client.on('error', () => (client = null));
+      await client.connect();
+    }
+
+    return client;
+  },
+
+  disconnectDatabase: async () => {
+    if (client) {
+      await client.end();
+    }
+  },
+
   resetDatabase: async (tables?: string[]) => {
-    try {
-      if (!client) {
-        client = new pg.Client(dbUrl);
-        await client.connect();
-      }
+    client = await utils.connectDatabase();
 
-      tables = tables || [
-        // TODO e2e test for deleting a stack, since it is quite complex
-        'stack',
-        'library',
-        'shared_link',
-        'person',
-        'album',
-        'asset',
-        'asset_face',
-        'activity',
-        'api_key',
-        'session',
-        'user',
-        'system_metadata',
-        'tag',
-      ];
+    tables = tables || [
+      // TODO e2e test for deleting a stack, since it is quite complex
+      'stack',
+      'library',
+      'shared_link',
+      'person',
+      'album',
+      'asset',
+      'asset_face',
+      'activity',
+      'api_key',
+      'session',
+      'user',
+      'system_metadata',
+      'tag',
+    ];
 
-      const sql: string[] = [];
+    const truncateTables = tables.filter((table) => table !== 'system_metadata');
+    const sql: string[] = [];
 
-      for (const table of tables) {
-        if (table === 'system_metadata') {
-          sql.push(`DELETE FROM "system_metadata" where "key" NOT IN ('reverse-geocoding-state', 'system-flags');`);
-        } else {
-          sql.push(`DELETE FROM "${table}" CASCADE;`);
+    if (truncateTables.length > 0) {
+      sql.push(`TRUNCATE "${truncateTables.join('", "')}" CASCADE;`);
+    }
+
+    if (tables.includes('system_metadata')) {
+      sql.push(`DELETE FROM "system_metadata" where "key" NOT IN ('reverse-geocoding-state', 'system-flags');`);
+    }
+
+    const query = sql.join('\n');
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await client.query(query);
+        return;
+      } catch (error: any) {
+        if (error?.code === '40P01' && attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+          continue;
         }
+        console.error('Failed to reset database', error);
+        throw error;
       }
-
-      await client.query(sql.join('\n'));
-    } catch (error) {
-      console.error('Failed to reset database', error);
-      throw error;
     }
   },
 
@@ -471,16 +510,22 @@ export const utils = {
   createStack: (accessToken: string, assetIds: string[]) =>
     createStack({ stackCreateDto: { assetIds } }, { headers: asBearerAuth(accessToken) }),
 
+  setAssetDuplicateId: (accessToken: string, assetId: string, duplicateId: string | null) =>
+    updateAssets({ assetBulkUpdateDto: { ids: [assetId], duplicateId } }, { headers: asBearerAuth(accessToken) }),
+
   upsertTags: (accessToken: string, tags: string[]) =>
     upsertTags({ tagUpsertDto: { tags } }, { headers: asBearerAuth(accessToken) }),
 
   tagAssets: (accessToken: string, tagId: string, assetIds: string[]) =>
     tagAssets({ id: tagId, bulkIdsDto: { ids: assetIds } }, { headers: asBearerAuth(accessToken) }),
 
-  jobCommand: async (accessToken: string, jobName: JobName, jobCommandDto: JobCommandDto) =>
-    sendJobCommand({ id: jobName, jobCommandDto }, { headers: asBearerAuth(accessToken) }),
+  createJob: async (accessToken: string, jobCreateDto: JobCreateDto) =>
+    createJob({ jobCreateDto }, { headers: asBearerAuth(accessToken) }),
 
-  setAuthCookies: async (context: BrowserContext, accessToken: string, domain = '127.0.0.1') =>
+  queueCommand: async (accessToken: string, name: QueueName, queueCommandDto: QueueCommandDto) =>
+    runQueueCommandLegacy({ name, queueCommandDto }, { headers: asBearerAuth(accessToken) }),
+
+  setAuthCookies: async (context: BrowserContext, accessToken: string, domain = playwrightHost) =>
     await context.addCookies([
       {
         name: 'immich_access_token',
@@ -514,9 +559,84 @@ export const utils = {
       },
     ]),
 
+  setMaintenanceAuthCookie: async (context: BrowserContext, token: string, domain = '127.0.0.1') =>
+    await context.addCookies([
+      {
+        name: 'immich_maintenance_token',
+        value: token,
+        domain,
+        path: '/',
+        expires: 2_058_028_213,
+        httpOnly: true,
+        secure: false,
+        sameSite: 'Lax',
+      },
+    ]),
+
+  enterMaintenance: async (accessToken: string) => {
+    let setCookie: string[] | undefined;
+
+    await setMaintenanceMode(
+      {
+        setMaintenanceModeDto: {
+          action: MaintenanceAction.Start,
+        },
+      },
+      {
+        headers: asBearerAuth(accessToken),
+        fetch: (...args: Parameters<typeof fetch>) =>
+          fetch(...args).then((response) => {
+            setCookie = response.headers.getSetCookie();
+            return response;
+          }),
+      },
+    );
+
+    return setCookie;
+  },
+
   resetTempFolder: () => {
     rmSync(`${testAssetDir}/temp`, { recursive: true, force: true });
     mkdirSync(`${testAssetDir}/temp`, { recursive: true });
+  },
+
+  async move(source: string, dest: string) {
+    return executeCommand('docker', ['exec', 'immich-e2e-server', 'mv', source, dest]).promise;
+  },
+
+  createBackup: async (accessToken: string) => {
+    await utils.createJob(accessToken, {
+      name: ManualJobName.BackupDatabase,
+    });
+
+    return utils.poll(
+      () => request(app).get('/admin/database-backups').set('Authorization', `Bearer ${accessToken}`),
+      ({ status, body }) => status === 200 && body.backups.length === 1,
+      ({ body }) => body.backups[0].filename,
+    );
+  },
+
+  resetBackups: async (accessToken: string) => {
+    const { backups } = await listDatabaseBackups({ headers: asBearerAuth(accessToken) });
+
+    const backupFiles = backups.map((b) => b.filename);
+    await deleteDatabaseBackup(
+      { databaseBackupDeleteDto: { backups: backupFiles } },
+      { headers: asBearerAuth(accessToken) },
+    );
+  },
+
+  prepareTestBackup: async (generate: 'empty' | 'corrupted') => {
+    const dir = await mkdtemp(join(tmpdir(), 'test-'));
+    const fn = join(dir, 'file');
+
+    const sql = Readable.from(generate === 'corrupted' ? 'IM CORRUPTED;' : 'SELECT 1;');
+    const gzip = createGzip();
+    const writeStream = createWriteStream(fn);
+    await pipeline(sql, gzip, writeStream);
+
+    await executeCommand('docker', ['cp', fn, `immich-e2e-server:/data/backups/development-${generate}.sql.gz`])
+      .promise;
   },
 
   resetAdminConfig: async (accessToken: string) => {
@@ -524,13 +644,13 @@ export const utils = {
     await updateConfig({ systemConfigDto: defaultConfig }, { headers: asBearerAuth(accessToken) });
   },
 
-  isQueueEmpty: async (accessToken: string, queue: keyof AllJobStatusResponseDto) => {
-    const queues = await getAllJobsStatus({ headers: asBearerAuth(accessToken) });
+  isQueueEmpty: async (accessToken: string, queue: keyof QueuesResponseLegacyDto) => {
+    const queues = await getQueuesLegacy({ headers: asBearerAuth(accessToken) });
     const jobCounts = queues[queue].jobCounts;
     return !jobCounts.active && !jobCounts.waiting;
   },
 
-  waitForQueueFinish: (accessToken: string, queue: keyof AllJobStatusResponseDto, ms?: number) => {
+  waitForQueueFinish: (accessToken: string, queue: keyof QueuesResponseLegacyDto, ms?: number) => {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise<void>(async (resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Timed out waiting for queue to empty')), ms || 10_000);
@@ -560,6 +680,25 @@ export const utils = {
     await utils.waitForQueueFinish(accessToken, 'library');
     await utils.waitForQueueFinish(accessToken, 'sidecar');
     await utils.waitForQueueFinish(accessToken, 'metadataExtraction');
+  },
+
+  async poll<T>(cb: () => Promise<T>, validate: (value: T) => boolean, map?: (value: T) => any) {
+    let timeout = 0;
+    while (true) {
+      try {
+        const data = await cb();
+        if (validate(data)) {
+          return map ? map(data) : data;
+        }
+        timeout++;
+        if (timeout >= 10) {
+          throw 'Could not clean up test.';
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5e2));
+      } catch {
+        // no-op
+      }
+    }
   },
 };
 

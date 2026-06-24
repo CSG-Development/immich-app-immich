@@ -24,6 +24,11 @@ describe(MemoryController.name, () => {
       await request(ctx.getHttpServer()).get('/memories');
       expect(ctx.authenticate).toHaveBeenCalled();
     });
+
+    it('should not require any parameters', async () => {
+      await request(ctx.getHttpServer()).get('/memories').query({});
+      expect(service.search).toHaveBeenCalled();
+    });
   });
 
   describe('POST /memories', () => {
@@ -45,6 +50,20 @@ describe(MemoryController.name, () => {
       expect(body).toEqual(
         errorDto.badRequest(['data.year must be a positive number', 'data.year must be an integer number']),
       );
+    });
+
+    it('should accept showAt and hideAt', async () => {
+      const { status } = await request(ctx.getHttpServer())
+        .post('/memories')
+        .send({
+          type: 'on_this_day',
+          data: { year: 2020 },
+          memoryAt: new Date(2021).toISOString(),
+          showAt: new Date(2022).toISOString(),
+          hideAt: new Date(2023).toISOString(),
+        });
+
+      expect(status).toBe(201);
     });
   });
 

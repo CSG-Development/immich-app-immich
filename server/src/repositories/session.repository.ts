@@ -48,7 +48,7 @@ export class SessionRepository {
   }
 
   @GenerateSql({ params: [DummyValue.STRING] })
-  getByToken(token: string) {
+  getByToken(token: Buffer) {
     return this.db
       .selectFrom('session')
       .select((eb) => [
@@ -99,6 +99,15 @@ export class SessionRepository {
   @GenerateSql({ params: [DummyValue.UUID] })
   async delete(id: string) {
     await this.db.deleteFrom('session').where('id', '=', asUuid(id)).execute();
+  }
+
+  @GenerateSql({ params: [{ userId: DummyValue.UUID, excludeId: DummyValue.UUID }] })
+  async invalidate({ userId, excludeId }: { userId: string; excludeId?: string }) {
+    await this.db
+      .deleteFrom('session')
+      .where('userId', '=', userId)
+      .$if(!!excludeId, (qb) => qb.where('id', '!=', excludeId!))
+      .execute();
   }
 
   @GenerateSql({ params: [DummyValue.UUID] })

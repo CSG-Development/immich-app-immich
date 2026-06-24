@@ -2,6 +2,7 @@
   "name": "Immich - Mobile",
   "service": "immich-server",
   "runServices": [
+    "immich-init",
     "immich-server",
     "redis",
     "database",
@@ -35,12 +36,12 @@
   },
   "forwardPorts": [],
   "overrideCommand": true,
-  "workspaceFolder": "/workspaces/immich",
+  "workspaceFolder": "/usr/src/app",
   "remoteUser": "node",
   "userEnvProbe": "loginInteractiveShell",
   "remoteEnv": {
     // The location where your uploaded files are stored
-    "UPLOAD_LOCATION": "${localEnv:UPLOAD_LOCATION:./Library}",
+    "UPLOAD_LOCATION": "${localEnv:UPLOAD_LOCATION:./library}",
     //  Connection secret for postgres. You should change it to a random password
     //  Please use only the characters `A-Za-z0-9`, without special characters or spaces
     "DB_PASSWORD": "${localEnv:DB_PASSWORD:postgres}",
