@@ -9,7 +9,7 @@
 //   All other rights are expressly reserved by Seagate Technology LLC.
 //
 
-import 'dart:async' show unawaited;
+import 'dart:async' show Completer, unawaited;
 import 'dart:io' show HttpClient, SecurityContext;
 import 'package:http/io_client.dart' show IOClient;
 
@@ -108,6 +108,8 @@ class RemoteProvider extends Notifier<RemoteState>
   late final String? _currentSessionId;
   late final String? _lastProactiveRefreshSessionId;
   late final DateTime? _accessExpiryAt;
+  late final bool _isMainRuntime;
+  Completer<String>? _refreshCompleter;
 
   /// Determines whether a refresh failure is a hard authentication error
   /// (token expired/revoked) versus a transient failure (network, timeout, 5xx).
@@ -126,6 +128,7 @@ class RemoteProvider extends Notifier<RemoteState>
     _storageData = deps.storageData;
     _secureStorage = deps.secureStorage;
     _registerHostTrustedChain = deps.registerHostTrustedChain;
+    _isMainRuntime = deps.isMainRuntime;
     _authRepo = AuthRepository(_secureStorage);
     final secureData = deps.secureData;
     _currentSessionId = _readStorageString(currentSessionIdKey);
@@ -149,26 +152,28 @@ class RemoteProvider extends Notifier<RemoteState>
     );
     if (initial.isAuthenticated) {
       logger.debug(
-        '[Provider] Remote provider initialized with existing auth data',
+        '[Provider] Remote provider initialized with existing auth data '
+        'mainRuntime=$_isMainRuntime sessionId=${_currentSessionId ?? '-'}',
       );
       if (_shouldSkipProactiveRefresh()) {
-        logger.info('[Provider] Proactive remote refresh skipped on initialization');
+        logger.info(
+          '[Provider] Proactive remote refresh skipped on initialization '
+          'mainRuntime=$_isMainRuntime sessionId=${_currentSessionId ?? '-'}',
+        );
       } else {
-        // Delay refresh to the next microtask so this notifier state is fully initialized.
         unawaited(
           Future<void>(() async {
             try {
               await refreshAccessToken();
               await _markProactiveRefreshDoneForCurrentSession();
             } catch (e) {
+              final failure = RefreshFailureClassifier.describe(e);
               final shouldLogout = _shouldLogoutAfterRefreshFailure(e);
               logger.error(
-                '[Provider] Failed to refresh remote access token on initialization',
+                '[Provider] Failed to refresh remote access token on initialization '
+                'mainRuntime=$_isMainRuntime shouldLogout=$shouldLogout ${failure.logSuffix}',
                 e,
               );
-              // Keep existing refresh token on transient network failures
-              // (airplane mode/offline), so reconnect flows don't immediately
-              // fall into OTP due to forced logout.
               if (shouldLogout) {
                 await logOut();
               }
@@ -237,6 +242,10 @@ class RemoteProvider extends Notifier<RemoteState>
   }
 
   bool _shouldSkipProactiveRefresh() {
+    if (!_isMainRuntime) {
+      return true;
+    }
+
     final expiry = _accessExpiryAt;
     if (expiry != null) {
       final threshold = DateTime.now().add(refreshExpirySafetySkew);
@@ -286,9 +295,19 @@ class RemoteProvider extends Notifier<RemoteState>
 
   @override
   Future<String> refreshAccessToken() async {
+    if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+      return _refreshCompleter!.future;
+    }
+    _refreshCompleter = Completer<String>();
     try {
       final refreshToken = state.refreshToken;
       if (refreshToken == null || refreshToken.isEmpty) {
+        final failure = RefreshFailureClassifier.describe(
+          StateError('Refresh token is missing'),
+        );
+        logger.warning(
+          '[Auth/Refresh] failed mainRuntime=$_isMainRuntime ${failure.logSuffix}',
+        );
         throw StateError('Refresh token is missing');
       }
       final response = await _repo.refreshToken(
@@ -298,12 +317,29 @@ class RemoteProvider extends Notifier<RemoteState>
       if (response.isSuccessful) {
         final TokenResponse$Response data = response.body!;
         await setAuthToken(auth: data, notify: false);
-        return state.accessToken ?? '';
-      } else {
-        throw response.error ?? 'Refresh token error';
+        final accessToken = state.accessToken ?? '';
+        _refreshCompleter!.complete(accessToken);
+        return accessToken;
       }
+      final failure = RefreshFailureClassifier.describe(response);
+      logger.warning(
+        '[Auth/Refresh] failed mainRuntime=$_isMainRuntime ${failure.logSuffix}',
+      );
+      throw response;
     } catch (e) {
+      if (e is! Response && e is! StateError) {
+        final failure = RefreshFailureClassifier.describe(e);
+        logger.warning(
+          '[Auth/Refresh] failed mainRuntime=$_isMainRuntime ${failure.logSuffix}',
+          e,
+        );
+      }
+      if (!_refreshCompleter!.isCompleted) {
+        _refreshCompleter!.completeError(e);
+      }
       rethrow;
+    } finally {
+      _refreshCompleter = null;
     }
   }
 
@@ -338,11 +374,15 @@ class RemoteProvider extends Notifier<RemoteState>
   @override
   Future<void> logOut({bool notify = true}) async {
     _clearAuthState();
-    await _authRepo.deleteSecureString(refreshKey);
-    await _authRepo.deleteSecureString(referenceKey);
-    final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
-    await asyncPrefs.remove(accessExpiryEpochMsKey);
-    logger.debug('[Provider] Remote logged out');
+    if (_isMainRuntime) {
+      await _authRepo.deleteSecureString(refreshKey);
+      await _authRepo.deleteSecureString(referenceKey);
+      final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
+      await asyncPrefs.remove(accessExpiryEpochMsKey);
+      logger.debug('[Provider] Remote logged out');
+    } else {
+      logger.info('[Provider] Remote logout skipped secure storage clear (non-main runtime)');
+    }
   }
 
   /// Backward-compatible alias.

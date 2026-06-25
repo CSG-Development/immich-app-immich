@@ -8,8 +8,6 @@
   import { fly } from 'svelte/transition';
 
   type Props = {
-    inputType: SettingInputFieldType;
-    value: string | number | undefined | null;
     min?: number;
     max?: number;
     step?: string;
@@ -174,6 +172,7 @@
     -moz-appearance: none;
     appearance: none;
     width: 52px;
+    height: 52px;
     background-color: transparent;
     border: none;
     cursor: pointer;

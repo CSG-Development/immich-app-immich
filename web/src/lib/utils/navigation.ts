@@ -1,9 +1,9 @@
 import { goto } from '$app/navigation';
-import { resolve } from '$app/paths';
-import { page } from '$app/state';
-import { AppRoute } from '$lib/constants';
-import { getAssetInfo } from '@immich/sdk';
-import type { NavigationTarget } from '@sveltejs/kit';
+import { page } from '$app/stores';
+import type { RouteId } from '$app/types';
+import { assetCacheManager } from '$lib/managers/AssetCacheManager.svelte';
+import { Route } from '$lib/route';
+import { get } from 'svelte/store';
 
 export type AssetGridRouteSearchParams = {
   at: string | null | undefined;
@@ -20,36 +20,40 @@ export const isAlbumsRoute = (route?: string | null) => !!route?.startsWith('/(u
 export const isPeopleRoute = (route?: string | null) => !!route?.startsWith('/(user)/people/[personId]');
 export const isLockedFolderRoute = (route?: string | null) => !!route?.startsWith('/(user)/locked');
 
-export const isAssetViewerRoute = (target?: NavigationTarget | null) =>
-  !!(target?.route.id?.endsWith('/[[assetId=id]]') && 'assetId' in (target?.params || {}));
+export const isAssetViewerRoute = (
+  target?: { route?: { id?: RouteId | null }; params?: Record<string, string> | null } | null,
+) => !!(target?.route?.id?.endsWith('/[[assetId=id]]') && 'assetId' in (target?.params || {}));
 
 export function getAssetInfoFromParam({ assetId, slug, key }: { assetId?: string; key?: string; slug?: string }) {
-  return assetId ? getAssetInfo({ id: assetId, slug, key }) : undefined;
+  return assetId ? assetCacheManager.getAsset({ id: assetId, slug, key }, false) : undefined;
 }
 
 function currentUrlWithoutAsset() {
+  const $page = get(page);
   // This contains special casing for the /photos/:assetId route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
-  return isPhotosRoute(page.route.id)
-    ? resolve(AppRoute.PHOTOS) + page.url.search
-    : page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + page.url.search;
+  return isPhotosRoute($page.route.id)
+    ? Route.photos() + $page.url.search
+    : $page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1') + $page.url.search;
 }
 
 export function currentUrlReplaceAssetId(assetId: string) {
-  const params = new URLSearchParams(page.url.search);
+  const $page = get(page);
+  const params = new URLSearchParams($page.url.search);
   // always remove the assetGridScrollTargetParams
   params.delete('at');
   const paramsString = params.toString();
   const searchparams = paramsString == '' ? '' : '?' + params.toString();
   // this contains special casing for the /photos/:assetId photos route, which hangs directly
   // off / instead of a subpath, unlike every other asset-containing route.
-  return isPhotosRoute(page.route.id)
-    ? resolve(`${AppRoute.PHOTOS}/${assetId}${searchparams}`)
-    : `${page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
+  return isPhotosRoute($page.route.id)
+    ? `${Route.viewAsset({ id: assetId })}${searchparams}`
+    : `${$page.url.pathname.replace(/(\/photos\/[^/]+(?:\/[^/]+)*?)\/photos\/.*$/, '$1')}/photos/${assetId}${searchparams}`;
 }
 
 function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchParams | null) {
-  const parsed = new URL(url, page.url);
+  const $page = get(page);
+  const parsed = new URL(url, $page.url);
 
   const { at: assetId } = searchParams || { at: null };
 
@@ -57,7 +61,7 @@ function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchPar
     return parsed.pathname;
   }
 
-  const params = new URLSearchParams(page.url.search);
+  const params = new URLSearchParams($page.url.search);
   if (assetId) {
     params.set('at', assetId);
   }
@@ -65,7 +69,8 @@ function replaceScrollTarget(url: string, searchParams?: AssetGridRouteSearchPar
 }
 
 function currentUrl() {
-  const current = page.url;
+  const $page = get(page);
+  const current = $page.url;
   return current.pathname + current.search + current.hash;
 }
 

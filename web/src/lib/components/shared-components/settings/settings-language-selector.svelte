@@ -4,6 +4,7 @@
   import { defaultLang, langs } from '$lib/constants';
   import { lang } from '$lib/stores/preferences.store';
   import { getClosestAvailableLocale, langCodes } from '$lib/utils/i18n';
+  import { Label, Text } from '@immich/ui';
   import { locale as i18nLocale, t } from 'svelte-i18n';
 
   interface Props {
@@ -37,13 +38,11 @@
 <div class="md:max-w-80">
   {#if showSettingDescription}
     <div>
-      <div class="flex h-[26px] place-items-center gap-1">
-        <label class="font-medium text-primary text-sm" for={$t('language')}>
-          {$t('language')}
-        </label>
+      <div class="flex h-6.5 place-items-center gap-1">
+        <Label size="small">{$t('language')}</Label>
       </div>
 
-      <p class="text-sm dark:text-immich-dark-fg">{$t('language_setting_description')}</p>
+      <Text size="small" color="muted">{$t('language_setting_description')}</Text>
     </div>
   {/if}
 

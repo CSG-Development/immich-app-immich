@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import onboarding1DarkUrl from '$lib/assets/onboarding-1-dark.svg';
   import onboarding1Url from '$lib/assets/onboarding-1.svg';
   import onboarding3DarkUrl from '$lib/assets/onboarding-3-dark.svg';
@@ -8,11 +7,10 @@
   import onboarding4DarkUrl from '$lib/assets/onboarding-4-dark.svg';
   import onboarding4Url from '$lib/assets/onboarding-4.svg';
   import onboarding5Url from '$lib/assets/onboarding-5.svg';
-  import { AppRoute } from '$lib/constants';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import { Route } from '$lib/route';
   import { user } from '$lib/stores/user.store';
   import { setUserOnboarding, updateAdminOnboarding } from '@immich/sdk';
-  import { Button, IconButton, Theme } from '@immich/ui';
+  import { Button, IconButton, Theme, themeManager } from '@immich/ui';
   import { mdiChevronLeft, mdiChevronRight } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -85,7 +83,7 @@
       onboardingDto: { isOnboarded: true },
     });
 
-    await goto(resolve(AppRoute.PHOTOS));
+    await goto(Route.photos());
   };
 
   onMount(() => {

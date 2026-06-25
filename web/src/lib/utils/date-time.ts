@@ -15,30 +15,34 @@ export function timeToSeconds(time: string) {
 
   return Number.isNaN(seconds) ? 0 : seconds;
 }
-
 export function parseUtcDate(date: string) {
   return DateTime.fromISO(date, { zone: 'UTC' }).toUTC();
 }
 
-export const getShortDateRange = (startDate: string | Date, endDate: string | Date) => {
-  startDate = startDate instanceof Date ? startDate : new Date(startDate);
-  endDate = endDate instanceof Date ? endDate : new Date(endDate);
-
+export const getShortDateRange = (startTimestamp: string, endTimestamp: string) => {
   const userLocale = get(locale);
-  const endDateLocalized = endDate.toLocaleString(userLocale, {
+  let startDate = DateTime.fromISO(startTimestamp).setZone('UTC');
+  let endDate = DateTime.fromISO(endTimestamp).setZone('UTC');
+
+  if (userLocale) {
+    startDate = startDate.setLocale(userLocale);
+    endDate = endDate.setLocale(userLocale);
+  }
+
+  const endDateLocalized = endDate.toLocaleString({
     month: 'short',
     year: 'numeric',
   });
 
-  if (startDate.getFullYear() === endDate.getFullYear()) {
-    if (startDate.getMonth() === endDate.getMonth()) {
+  if (startDate.year === endDate.year) {
+    if (startDate.month === endDate.month) {
       // Same year and month.
       // e.g.: aug. 2024
       return endDateLocalized;
     } else {
       // Same year but different month.
       // e.g.: jul. - sept. 2024
-      const startMonthLocalized = startDate.toLocaleString(userLocale, {
+      const startMonthLocalized = startDate.toLocaleString({
         month: 'short',
       });
       return `${startMonthLocalized} - ${endDateLocalized}`;
@@ -46,7 +50,7 @@ export const getShortDateRange = (startDate: string | Date, endDate: string | Da
   } else {
     // Different year.
     // e.g.: feb. 2021 - sept. 2024
-    const startDateLocalized = startDate.toLocaleString(userLocale, {
+    const startDateLocalized = startDate.toLocaleString({
       month: 'short',
       year: 'numeric',
     });
@@ -86,33 +90,3 @@ export const getAlbumDateRange = (album: { startDate?: string; endDate?: string 
  */
 export const asLocalTimeISO = (date: DateTime<true>) =>
   (date.setZone('utc', { keepLocalTime: true }) as DateTime<true>).toISO();
-
-/**
- * Creates a date range for filtering assets based on year, month, and day parameters
- */
-export const buildDateRangeFromYearMonthAndDay = (year: number, month?: number, day?: number) => {
-  const baseDate = DateTime.fromObject({
-    year,
-    month: month || 1,
-    day: day || 1,
-  });
-
-  let from: DateTime;
-  let to: DateTime;
-
-  if (day) {
-    from = baseDate.startOf('day');
-    to = baseDate.plus({ days: 1 }).startOf('day');
-  } else if (month) {
-    from = baseDate.startOf('month');
-    to = baseDate.plus({ months: 1 }).startOf('month');
-  } else {
-    from = baseDate.startOf('year');
-    to = baseDate.plus({ years: 1 }).startOf('year');
-  }
-
-  return {
-    from: from.toISO() || undefined,
-    to: to.toISO() || undefined,
-  };
-};

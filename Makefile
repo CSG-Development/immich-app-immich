@@ -48,6 +48,18 @@ open-api-typescript:
 sql:
 	pnpm --filter immich run sync:sql
 
+IMAGE_EDITOR_WEB_APP_DIR = ./image_editor_web_app
+IMAGE_EDITOR_WEB_BUILD_DIR = $(IMAGE_EDITOR_WEB_APP_DIR)/build/web
+IMAGE_EDITOR_WEB_STATIC_DIR = ./web/static/flutter
+
+.PHONY: build-image-editor-web-app
+build-image-editor-web-app:
+	cd $(IMAGE_EDITOR_WEB_APP_DIR) && flutter pub get
+	cd $(IMAGE_EDITOR_WEB_APP_DIR) && flutter build web
+	rm -rf $(IMAGE_EDITOR_WEB_STATIC_DIR)
+	mkdir -p ./web/static
+	cp -R $(IMAGE_EDITOR_WEB_BUILD_DIR) $(IMAGE_EDITOR_WEB_STATIC_DIR)
+
 attach-server:
 	docker exec -it docker_immich-server_1 sh
 

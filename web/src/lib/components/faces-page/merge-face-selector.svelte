@@ -1,21 +1,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
-  import { page } from '$app/state';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { ActionQueryParameterValue, AppRoute, QueryParameter } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import { Route } from '$lib/route';
   import { handleError } from '$lib/utils/handle-error';
   import { getAllPeople, getPerson, mergePerson, type PersonResponseDto } from '@immich/sdk';
-  import { Button, IconButton } from '@immich/ui';
-  import { mdiCallMerge, mdiSwapHorizontal } from '@mdi/js';
+  import { Button, Icon, IconButton, modalManager, toastManager } from '@immich/ui';
+  import { mdiCallMerge, mdiMerge, mdiSwapHorizontal } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { flip } from 'svelte/animate';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
   import ControlAppBar from '../shared-components/control-app-bar.svelte';
-  import { NotificationType, notificationController } from '../shared-components/notification/notification';
   import FaceThumbnail from './face-thumbnail.svelte';
   import PeopleList from './people-list.svelte';
 
@@ -43,8 +38,7 @@
 
   const handleSwapPeople = async () => {
     [person, selectedPeople[0]] = [selectedPeople[0], person];
-    page.url.searchParams.set(QueryParameter.ACTION, ActionQueryParameterValue.MERGE);
-    await goto(resolve(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`));
+    await goto(Route.viewPerson(person, { previousRoute: Route.people(), action: 'merge' }));
   };
 
   const onSelect = async (selected: PersonResponseDto) => {
@@ -54,10 +48,7 @@
     }
 
     if (selectedPeople.length >= 5) {
-      notificationController.show({
-        message: $t('merge_people_limit'),
-        type: NotificationType.Warning,
-      });
+      toastManager.warning($t('merge_people_limit'));
       return;
     }
 
@@ -69,7 +60,7 @@
   };
 
   const handleMerge = async () => {
-    const isConfirm = await modalManager.showDialog({ prompt: $t('merge_people_prompt'), mdFullSize: false });
+    const isConfirm = await modalManager.showDialog({ prompt: $t('merge_people_prompt') });
     if (!isConfirm) {
       return;
     }
@@ -81,10 +72,7 @@
       });
       const mergedPerson = await getPerson({ id: person.id });
       const count = results.filter(({ success }) => success).length;
-      notificationController.show({
-        message: $t('merged_people_count', { values: { count } }),
-        type: NotificationType.Success,
-      });
+      toastManager.primary($t('merged_people_count', { values: { count } }));
       onMerge(mergedPerson);
     } catch (error) {
       handleError(error, $t('cannot_merge_people'));
@@ -109,7 +97,8 @@
     {/snippet}
     {#snippet trailing()}
       <Button
-        leadingIcon={mdiCallMerge}
+        leadingIcon={mdiMerge}
+        size="small"
         shape="round"
         disabled={!hasSelection}
         onclick={handleMerge}
@@ -121,7 +110,7 @@
   </ControlAppBar>
   <section class="px-3 md:px-6 pt-[100px]">
     <section id="merge-face-selector">
-      <div class="mb-3 h-[200px] place-content-center place-items-center">
+      <div class="mb-3 h-50 place-content-center place-items-center">
         <p class="mb-4 text-center uppercase text-immich-gray-text dark:text-immich-dark-gray-text md:font-medium">
           {$t('choose_matching_people_to_merge')}
         </p>
@@ -141,8 +130,9 @@
           {#if hasSelection}
             <div class="relative">
               <div class="flex flex-col h-full justify-between">
-                <Icon path={mdiCallMerge} size={48} class="rotate-90 dark:text-white" />
-
+                <div class="flex h-full items-center justify-center">
+                  <Icon icon={mdiCallMerge} size="48" class="rotate-90 dark:text-white" />
+                </div>
                 {#if selectedPeople.length === 1}
                   <IconButton
                     shape="round"

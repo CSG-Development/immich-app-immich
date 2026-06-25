@@ -1,18 +1,19 @@
 <script lang="ts">
   import type { ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import SettingCombobox from '$lib/components/shared-components/settings/setting-combobox.svelte';
-  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
   import SettingsLanguageSelector from '$lib/components/shared-components/settings/settings-language-selector.svelte';
   import { fallbackLocale, locales } from '$lib/constants';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import {
     alwaysLoadOriginalFile,
+    alwaysLoadOriginalVideo,
+    autoPlayVideo,
     locale,
     loopVideo,
     playVideoThumbnailOnHover,
     showDeleteModal,
   } from '$lib/stores/preferences.store';
   import { createDateFormatter, findLocale } from '$lib/utils';
+  import { Field, Switch, Text, Theme, themeManager, ThemePreference } from '@immich/ui';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
@@ -53,34 +54,30 @@
     value: findLocale(editedLocale).code || fallbackLocale.code,
     label: findLocale(editedLocale).name || fallbackLocale.name,
   });
+
+  const handleToggleSystemTheme = (checked: boolean) => {
+    const current = themeManager.value === Theme.Dark ? ThemePreference.Dark : ThemePreference.Light;
+    themeManager.setPreference(checked ? ThemePreference.System : current);
+  };
 </script>
 
 <section class="my-4">
   <div in:fade={{ duration: 500 }}>
     <div class="mt-4 flex flex-col gap-4">
-      <div class="ms-6">
-        <SettingSwitch
-          title={$t('theme_selection')}
-          subtitle={$t('theme_selection_description')}
-          checked={themeManager.theme.system}
-          onToggle={(isChecked) => themeManager.setSystem(isChecked)}
+      <Field class="ms-6" label={$t('theme_selection')} description={$t('theme_selection_description')}>
+        <Switch
+          checked={themeManager.preference === ThemePreference.System}
+          onCheckedChange={handleToggleSystemTheme}
         />
-      </div>
+      </Field>
 
-      <div class="ms-6">
-        <SettingsLanguageSelector showSettingDescription />
-      </div>
+      <SettingsLanguageSelector showSettingDescription />
 
-      <div class="ms-6">
-        <SettingSwitch
-          title={$t('default_locale')}
-          subtitle={$t('default_locale_description')}
-          checked={$locale == 'default'}
-          onToggle={handleToggleLocaleBrowser}
-        >
-          <p class="mt-2 dark:text-gray-400">{selectedDate}</p>
-        </SettingSwitch>
-      </div>
+      <Field class="ms-6" label={$t('use_browser_locale')} description={$t('use_browser_locale_description')}>
+        <Switch checked={$locale == 'default'} onCheckedChange={handleToggleLocaleBrowser} />
+        <Text size="small" class="mt-2 text-sm">{selectedDate}</Text>
+      </Field>
+
       {#if $locale !== 'default'}
         <div class="ms-6">
           <SettingCombobox
@@ -94,31 +91,40 @@
         </div>
       {/if}
 
-      <div class="ms-6">
-        <SettingSwitch
-          title={$t('display_original_photos')}
-          subtitle={$t('display_original_photos_setting_description')}
-          bind:checked={$alwaysLoadOriginalFile}
-        />
-      </div>
-      <div class="ms-6">
-        <SettingSwitch
-          title={$t('video_hover_setting')}
-          subtitle={$t('video_hover_setting_description')}
-          bind:checked={$playVideoThumbnailOnHover}
-        />
-      </div>
-      <div class="ms-6">
-        <SettingSwitch title={$t('loop_videos')} subtitle={$t('loop_videos_description')} bind:checked={$loopVideo} />
-      </div>
+      <Field
+        class="ms-6"
+        label={$t('display_original_photos')}
+        description={$t('display_original_photos_setting_description')}
+      >
+        <Switch bind:checked={$alwaysLoadOriginalFile} />
+      </Field>
 
-      <div class="ms-6">
-        <SettingSwitch
-          title={$t('permanent_deletion_warning')}
-          subtitle={$t('permanent_deletion_warning_setting_description')}
-          bind:checked={$showDeleteModal}
-        />
-      </div>
+      <Field class="ms-6" label={$t('video_hover_setting')} description={$t('video_hover_setting_description')}>
+        <Switch bind:checked={$playVideoThumbnailOnHover} />
+      </Field>
+
+      <Field
+        class="ms-6"
+        label={$t('setting_video_viewer_auto_play_title')}
+        description={$t('setting_video_viewer_auto_play_subtitle')}
+      >
+        <Switch bind:checked={$autoPlayVideo} />
+      </Field>
+
+      <Field class="ms-6" label={$t('loop_videos')} description={$t('loop_videos_description')}>
+        <Switch bind:checked={$loopVideo} />
+      </Field>
+
+      <Field class="ms-6" label={$t('play_original_video')} description={$t('play_original_video_setting_description')}>
+        <Switch bind:checked={$alwaysLoadOriginalVideo} />
+      </Field>
+
+      <Field
+        class="ms-6"
+        label={$t('permanent_deletion_warning')}
+        description={$t('permanent_deletion_warning_setting_description')}
+        ><Switch bind:checked={$showDeleteModal} />
+      </Field>
     </div>
   </div>
 </section>

@@ -78,6 +78,8 @@ class DriftSearchPage extends HookConsumerWidget {
 
     search() async {
       if (filter.value.isEmpty) {
+        ref.read(paginatedSearchProvider.notifier).clear();
+        previousFilter.value = null;
         return;
       }
 
@@ -86,8 +88,8 @@ class DriftSearchPage extends HookConsumerWidget {
       }
 
       isSearching.value = true;
-      ref.watch(paginatedSearchProvider.notifier).clear();
-      final hasResult = await ref.watch(paginatedSearchProvider.notifier).search(filter.value);
+      ref.read(paginatedSearchProvider.notifier).clear();
+      final hasResult = await ref.read(paginatedSearchProvider.notifier).search(filter.value);
 
       if (!hasResult) {
         context.showSnackBar(searchInfoSnackBar('search_no_result'.t(context: context)));
@@ -98,14 +100,11 @@ class DriftSearchPage extends HookConsumerWidget {
     }
 
     loadMoreSearchResult() async {
-      isSearching.value = true;
-      final hasResult = await ref.watch(paginatedSearchProvider.notifier).search(filter.value);
+      final hasResult = await ref.read(paginatedSearchProvider.notifier).search(filter.value);
 
       if (!hasResult) {
         context.showSnackBar(searchInfoSnackBar('search_no_more_result'.t(context: context)));
       }
-
-      isSearching.value = false;
     }
 
     searchPreFilter() {
@@ -678,9 +677,9 @@ class _SearchResultGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchResult = ref.watch(paginatedSearchProvider);
+    final assets = ref.watch(paginatedSearchProvider.select((s) => s.assets));
 
-    if (searchResult.totalAssets == 0) {
+    if (assets.isEmpty) {
       return const _SearchEmptyContent();
     }
 
@@ -694,6 +693,7 @@ class _SearchResultGrid extends ConsumerWidget {
 
         if (metrics.pixels >= metrics.maxScrollExtent && isVerticalScroll && !isBottomSheetNotification) {
           onScrollEnd();
+          ref.read(paginatedSearchProvider.notifier).setScrollOffset(metrics.maxScrollExtent);
         }
 
         return true;
@@ -702,17 +702,18 @@ class _SearchResultGrid extends ConsumerWidget {
         child: ProviderScope(
           overrides: [
             timelineServiceProvider.overrideWith((ref) {
-              final timelineService = ref.watch(timelineFactoryProvider).fromAssets(searchResult.assets);
+              final timelineService = ref.watch(timelineFactoryProvider).fromAssets(assets);
               ref.onDispose(timelineService.dispose);
               return timelineService;
             }),
           ],
           child: Timeline(
-            key: ValueKey(searchResult.totalAssets),
+            key: ValueKey(assets.length),
             groupBy: GroupAssetsBy.none,
             appBar: null,
             bottomSheet: const GeneralBottomSheet(minChildSize: 0.20),
             snapToMonth: false,
+            initialScrollOffset: ref.read(paginatedSearchProvider.select((s) => s.scrollOffset)),
           ),
         ),
       ),

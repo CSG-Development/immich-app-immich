@@ -541,7 +541,11 @@ class HcPathResolver {
       return true;
     }
     return switch (context.trigger) {
-      ResolveTrigger.connectivityChange || ResolveTrigger.splashWarmup || ResolveTrigger.unknown => false,
+      ResolveTrigger.connectivityChange ||
+      ResolveTrigger.splashWarmup ||
+      ResolveTrigger.appResume ||
+      ResolveTrigger.unknown =>
+        false,
       _ => true,
     };
   }
@@ -623,6 +627,16 @@ class HcPathResolver {
     if (_availablePath == endpoint) {
       _availablePath = null;
     }
+    await _persist();
+  }
+
+  /// Clears persisted resolver winners so a new photos session starts clean.
+  Future<void> clearPhotosSession() async {
+    _validPath = null;
+    _availablePath = null;
+    _lastResolveAt = null;
+    _lastMode = null;
+    _lastTrigger = null;
     await _persist();
   }
 

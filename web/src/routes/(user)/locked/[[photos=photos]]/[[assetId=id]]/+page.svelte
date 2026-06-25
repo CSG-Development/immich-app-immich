@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
@@ -13,17 +13,17 @@
   import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
-  import { AppRoute, AssetAction } from '$lib/constants';
+  import { AssetAction } from '$lib/constants';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
-  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { Route } from '$lib/route';
+  import { getUserActions } from '$lib/services/user.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
-  import { AssetVisibility, lockAuthSession } from '@immich/sdk';
-  import { Button } from '@immich/ui';
-  import { mdiDotsVertical, mdiLockOutline, mdiPresentationPlay } from '@mdi/js';
-  import { onDestroy } from 'svelte';
+  import { AssetVisibility } from '@immich/sdk';
+  import { mdiDotsVertical, mdiPresentationPlay } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import type { PageData } from './$types';
@@ -34,66 +34,62 @@
 
   let { data }: Props = $props();
 
-  const timelineManager = new TimelineManager();
-  void timelineManager.updateOptions({ visibility: AssetVisibility.Locked });
-  onDestroy(() => timelineManager.destroy());
-
-  const assetInteraction = new AssetInteraction();
+  let timelineManager = $state<TimelineManager>() as TimelineManager;
+  const options = { visibility: AssetVisibility.Locked };
 
   const handleEscape = () => {
-    if (assetInteraction.selectionActive) {
-      assetInteraction.clearMultiselect();
+    if (assetMultiSelectManager.selectionActive) {
+      assetMultiSelectManager.clear();
       return;
     }
   };
 
   const handleMoveOffLockedFolder = (assetIds: string[]) => {
-    assetInteraction.clearMultiselect();
+    assetMultiSelectManager.clear();
     timelineManager.removeAssets(assetIds);
   };
 
-  const handleLock = async () => {
-    await lockAuthSession();
-    await goto(resolve(AppRoute.PHOTOS));
+  const { LockSession } = $derived(getUserActions($t));
+
+  const onSessionLocked = async () => {
+    await goto(Route.photos());
   };
 
-  let { setAssetId } = assetViewingStore;
   let { slideshowState, slideshowNavigation } = slideshowStore;
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = () => {
-    assetInteraction.selectedAssets.sort(
+    assetMultiSelectManager.selectedAssets.sort(
       (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
     );
-    shuffledSelectedAssets = [...assetInteraction.selectedAssets].sort(() => Math.random() - 0.5);
+    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(assetInteraction.selectedAssets, shuffledSelectedAssets, nav);
+    const asset = getFirstSlideshowAsset(assetMultiSelectManager.selectedAssets, shuffledSelectedAssets, nav);
     if (asset) {
-      handlePromiseError(setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)));
+      handlePromiseError(
+        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
+      );
     }
   };
 </script>
 
+<OnEvents {onSessionLocked} />
+
 <UserPageLayout
-  hideNavbar={assetInteraction.selectionActive}
   title={data.meta.title}
-  description={$t('items_count', { values: { count: timelineManager.assetCount } })}
+  actions={[LockSession]}
+  hideNavbar={assetMultiSelectManager.selectionActive}
   scrollbar={false}
 >
-  {#snippet buttons()}
-    <Button size="small" variant="ghost" color="primary" leadingIcon={mdiLockOutline} onclick={handleLock}>
-      {$t('lock')}
-    </Button>
-  {/snippet}
-
   <Timeline
     enableRouting={true}
-    {timelineManager}
-    {assetInteraction}
+    bind:timelineManager
+    {options}
+    assetInteraction={assetMultiSelectManager}
     onEscape={handleEscape}
     removeAction={AssetAction.SET_VISIBILITY_TIMELINE}
-    selectedAssets={assetInteraction.selectedAssets}
+    selectedAssets={assetMultiSelectManager.selectedAssets}
     {shuffledSelectedAssets}
   >
     {#snippet empty()}
@@ -103,15 +99,12 @@
 </UserPageLayout>
 
 <!-- Multi-selection mode app bar -->
-{#if assetInteraction.selectionActive}
-  <AssetSelectControlBar
-    assets={assetInteraction.selectedAssets}
-    clearSelect={() => assetInteraction.clearMultiselect()}
-  >
-    <SelectAllAssets withText {timelineManager} {assetInteraction} />
+{#if assetMultiSelectManager.selectionActive}
+  <AssetSelectControlBar>
+    <SelectAllAssets withText {timelineManager} assetInteraction={assetMultiSelectManager} />
     <SetVisibilityAction unlock onVisibilitySet={handleMoveOffLockedFolder} />
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-      {#if assetInteraction.selectedAssets.length > 1}
+      {#if assetMultiSelectManager.selectedAssets.length > 1}
         <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
       {/if}
       <DownloadAction menuItem />

@@ -1,11 +1,14 @@
-import type { TimelineDate, TimelineDateTime } from '$lib/utils/timeline-util';
+import type { TimelineDate, TimelineDateTime, TimelineYearMonth } from '$lib/utils/timeline-util';
 import type { AssetStackResponseDto, AssetVisibility } from '@immich/sdk';
+
+export type ViewportTopMonth = TimelineYearMonth | undefined | 'lead-in' | 'lead-out';
 
 export type AssetApiGetTimeBucketsRequest = Parameters<typeof import('@immich/sdk').getTimeBuckets>[0];
 
 export type TimelineManagerOptions = Omit<AssetApiGetTimeBucketsRequest, 'size'> & {
   timelineAlbumId?: string;
   deferInit?: boolean;
+  assetFilter?: Set<string>;
 };
 
 export type AssetDescriptor = { id: string };
@@ -15,6 +18,7 @@ export type Direction = 'earlier' | 'later';
 export type TimelineAsset = {
   id: string;
   ownerId: string;
+  tags?: string[];
   ratio: number;
   thumbhash: string | null;
   localDateTime: TimelineDateTime;
@@ -31,11 +35,9 @@ export type TimelineAsset = {
   city: string | null;
   country: string | null;
   people: string[] | null;
-  longitude: number | null | undefined;
-  latitude: number | null | undefined;
+  latitude?: number | null;
+  longitude?: number | null;
 };
-
-export type AssetOperation = (asset: TimelineAsset) => { remove: boolean };
 
 export type MoveAsset = { asset: TimelineAsset; date: TimelineDate };
 

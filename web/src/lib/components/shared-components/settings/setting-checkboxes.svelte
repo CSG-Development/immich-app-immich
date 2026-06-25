@@ -30,7 +30,7 @@
 </script>
 
 <div class="mb-4 w-full">
-  <div class="flex h-[26px] place-items-center gap-1">
+  <div class="flex h-6.5 place-items-center gap-1">
     <label class="font-medium text-primary text-sm" for="{name}-select">
       {label}
     </label>
@@ -60,7 +60,7 @@
           {disabled}
           onCheckedChange={() => handleCheckboxChange(option.value)}
         />
-        <Label label={option.text} for="{option.value}-checkbox" />
+        <Label label={option.text} for="{option.value}-checkbox" size="small" />
       </div>
     {/each}
   </div>

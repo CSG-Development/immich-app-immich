@@ -6,13 +6,13 @@
 </script>
 
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/state';
-  import { handlePromiseError } from '$lib/utils';
-  import { createContext } from '$lib/utils/context';
-  import { type Snippet } from 'svelte';
-  import { SvelteURLSearchParams } from 'svelte/reactivity';
   import { writable, type Writable } from 'svelte/store';
+  import { createContext } from '$lib/utils/context';
+  import { page } from '$app/state';
+  import { goto } from '$app/navigation';
+  import type { Snippet } from 'svelte';
+  import { handlePromiseError } from '$lib/utils';
+  import { SvelteURLSearchParams } from 'svelte/reactivity';
 
   const getParamValues = (param: string) => {
     return new Set((page.url.searchParams.get(param) || '').split(' ').filter((x) => x !== ''));

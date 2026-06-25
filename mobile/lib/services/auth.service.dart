@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:hc_device/services/path_resolver/hc_path_resolver.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/utils/background_sync.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
+import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/repositories/auth.repository.dart';
 import 'package:immich_mobile/repositories/auth_api.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
@@ -21,6 +24,7 @@ final authServiceProvider = Provider(
     ref.watch(apiServiceProvider),
     ref.watch(backgroundSyncProvider),
     ref.watch(appSettingsServiceProvider),
+    ref.watch(hcPathResolverProvider),
   ),
 );
 
@@ -30,6 +34,7 @@ class AuthService {
   final ApiService _apiService;
   final BackgroundSyncManager _backgroundSyncManager;
   final AppSettingsService _appSettingsService;
+  final HcPathResolver _hcPathResolver;
   final _log = Logger("AuthService");
 
   AuthService(
@@ -38,6 +43,7 @@ class AuthService {
     this._apiService,
     this._backgroundSyncManager,
     this._appSettingsService,
+    this._hcPathResolver,
   );
 
   /// Validates the provided server URL by resolving and setting the endpoint.
@@ -97,11 +103,20 @@ class AuthService {
   Future<void> clearLocalData() async {
     // Cancel any ongoing background sync operations before clearing data
     await _backgroundSyncManager.cancel();
+    await _hcPathResolver.clearPhotosSession();
+    _apiService.setEndpoint('');
+    _apiService.notifyConnectionState(
+      const conn.ConnectionState(
+        status: conn.ConnectionStatus.disconnected,
+        connectionType: conn.ConnectionType.api,
+      ),
+    );
     await Future.wait([
       _authRepository.clearLocalData(),
       Store.delete(StoreKey.currentUser),
       Store.delete(StoreKey.accessToken),
       Store.delete(StoreKey.assetETag),
+      Store.delete(StoreKey.serverEndpoint),
       Store.delete(StoreKey.autoEndpointSwitching),
       Store.delete(StoreKey.preferredWifiName),
     ]);

@@ -1,16 +1,14 @@
 <script lang="ts">
   import type { Shortcut } from '$lib/actions/shortcut';
   import { shortcut as bindShortcut, shortcutLabel as computeShortcutLabel } from '$lib/actions/shortcut';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { optionClickCallbackStore, selectedIdStore } from '$lib/stores/context-menu.store';
   import { generateId } from '$lib/utils/generate-id';
-  import { Theme } from '@immich/ui';
+  import { Icon, Theme, themeManager, type IconLike } from '@immich/ui';
 
   interface Props {
     text: string;
     subtitle?: string;
-    icon?: string;
+    icon?: IconLike;
     activeColor?: string;
     textColor?: string;
     onClick: () => void;
@@ -23,7 +21,7 @@
   let {
     text,
     subtitle = '',
-    icon = '',
+    icon,
     activeColor = 'bg-immich-primary-12 dark:bg-immich-dark-primary-24',
     textColor = 'text-immich-fg dark:text-white/[.87]',
     onClick,
@@ -69,9 +67,9 @@
   role="menuitem"
 >
   {#if icon}
-    <Icon path={icon} ariaHidden={true} size="24" />
+    <Icon {icon} aria-hidden size="24" />
   {/if}
-  <div>
+  <div class="w-full">
     <div class="flex justify-between">
       {text}
       {#if shortcutLabel}

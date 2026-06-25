@@ -30,6 +30,7 @@ class CuratorNetworkMonitor {
     required this.pathResolveTriggerService,
     required this.callbacks,
     required this.notifyConnected,
+    this.onReconnectStarted,
     this.onTransportUsableChanged,
     this.onTransportLost,
   });
@@ -40,6 +41,9 @@ class CuratorNetworkMonitor {
   final PathResolveTriggerService pathResolveTriggerService;
   final CuratorNetworkMonitorCallbacks callbacks;
   final void Function() notifyConnected;
+
+  /// Published when a reconnect attempt begins so UI can show discovery state.
+  final void Function()? onReconnectStarted;
 
   /// Latest OS-level transport (Wi‑Fi/mobile/ethernet vs none). Used for UI truth.
   final void Function(bool hasUsableTransport)? onTransportUsableChanged;
@@ -170,7 +174,7 @@ class CuratorNetworkMonitor {
       return;
     }
     _pendingNetworkChange = false;
-    await reconnectDeviceEndpoint(fromConnectivityChange: true);
+    await reconnectDeviceEndpoint(fromConnectivityChange: true, suppressFindingToast: true);
   }
 
   void onAppLifecycleResumed() {
@@ -200,7 +204,7 @@ class CuratorNetworkMonitor {
 
   bool _isPhotosAuthenticated() => Store.get(StoreKey.accessToken, "").isNotEmpty;
 
-  Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false}) async {
+  Future<void> reconnectDeviceEndpoint({bool fromConnectivityChange = false, bool fromRemoteAuthRetry = false, bool suppressFindingToast = false}) async {
     final trigger = _deriveTrigger(
       fromConnectivityChange: fromConnectivityChange,
       fromRemoteAuthRetry: fromRemoteAuthRetry,
@@ -231,8 +235,8 @@ class CuratorNetworkMonitor {
       }
       return;
     }
-    final shouldSurfaceFindingToast = _shouldSurfaceFindingToast(trigger);
-    if (fromConnectivityChange) {
+    final shouldSurfaceFindingToast = !suppressFindingToast && _shouldSurfaceFindingToast(trigger);
+    if (fromConnectivityChange && !suppressFindingToast) {
       noteConnectivityDrivenReconnect();
     } else if (shouldSurfaceFindingToast && !_reconnectEpisodeService.hasActiveFailureEpisode) {
       _reconnectEpisodeService.startFailureEpisode(resetDismissedFindingToast: false);
@@ -241,6 +245,7 @@ class CuratorNetworkMonitor {
     _isReconnecting = true;
     _activeReconnectStartedAt = DateTime.now();
     _pendingNetworkChange = false;
+    onReconnectStarted?.call();
     if (shouldSurfaceFindingToast) {
       _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
     }
@@ -393,7 +398,9 @@ class CuratorNetworkMonitor {
   }
 
   bool _shouldSurfaceFindingToast(_ReconnectTrigger trigger) =>
-      trigger == _ReconnectTrigger.connectivityChange || _hasEstablishedConnectionSinceStart;
+      trigger == _ReconnectTrigger.connectivityChange ||
+      _hasEstablishedConnectionSinceStart ||
+      _reconnectEpisodeService.hasActiveFailureEpisode;
 
   Duration _cooldownForTrigger(_ReconnectTrigger trigger) {
     switch (trigger) {
@@ -463,7 +470,7 @@ class CuratorNetworkMonitor {
     required String endpoint,
     String? resolvedPathType,
   }) {
-    if (trigger != _ReconnectTrigger.connectivityChange) {
+    if (trigger != _ReconnectTrigger.connectivityChange && trigger != _ReconnectTrigger.apiError) {
       return;
     }
     if (_localUpgradeRetryScheduledForIdentity) {
@@ -572,30 +579,33 @@ class _ReconnectEpisodeController {
   }
 
   void scheduleFindingToastForActiveFailureEpisode() {
-    if (!_hasActiveFailureEpisode || _userDismissedFindingToast || _findingToastVisible) {
+    if (!_hasActiveFailureEpisode || _userDismissedFindingToast) {
       return;
     }
+    _hasShownFailureToastInActiveEpisode = false;
     _showReconnectingToast();
   }
 
   Future<void> handleReconnectionFailure({required Future<void> Function() onReconnectionFailed}) async {
     if (_hasShownFailureToastInActiveEpisode) {
-      _log.info('[Network] Failure toast already shown for current failure episode');
-      return;
+      _log.fine('[Network] Refreshing failure toast for active failure episode');
+    } else {
+      _hasShownFailureToastInActiveEpisode = true;
     }
-    _hasShownFailureToastInActiveEpisode = true;
 
     if (_findingToastVisible) {
       _hideReconnectingToast();
-      await onReconnectionFailed();
-      return;
     }
 
     await onReconnectionFailed();
   }
 
   void _showReconnectingToast() {
-    if (_findingToastVisible || _userDismissedFindingToast) {
+    if (_userDismissedFindingToast) {
+      return;
+    }
+    if (_findingToastVisible) {
+      onShowReconnecting();
       return;
     }
     _findingToastVisible = onShowReconnecting();

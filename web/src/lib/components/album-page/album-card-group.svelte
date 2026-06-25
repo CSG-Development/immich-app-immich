@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
   import AlbumCard from '$lib/components/album-page/album-card.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { AppRoute } from '$lib/constants';
+  import { Route } from '$lib/route';
   import { albumViewSettings } from '$lib/stores/preferences.store';
   import { type AlbumGroup, isAlbumGroupCollapsed, toggleAlbumGroupCollapsing } from '$lib/utils/album-utils';
   import type { ContextMenuPosition } from '$lib/utils/context-menu';
   import type { AlbumResponseDto } from '@immich/sdk';
+  import { Icon } from '@immich/ui';
   import { mdiChevronRight } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { flip } from 'svelte/animate';
@@ -52,7 +51,7 @@
       class="w-full text-start mt-2 pt-2 pe-2 pb-2 rounded-md transition-colors cursor-pointer dark:text-immich-dark-fg hover:text-primary hover:bg-subtle dark:hover:bg-immich-dark-gray flex items-center gap-1"
       aria-expanded={!isCollapsed}
     >
-      <Icon path={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
+      <Icon icon={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />
       <span class="font-bold text-3xl text-black dark:text-white">{group.name}</span>
       <span>({$t('albums_count', { values: { count: albums.length } })})</span>
     </button>
@@ -65,11 +64,10 @@
     <div class="grid md:[grid-template-columns:repeat(auto-fit,276px)] gap-y-4" transition:slide={{ duration: 300 }}>
       {#each albums as album, index (album.id)}
         <a
-          data-sveltekit-preload-data="hover"
-          href={resolve(`${AppRoute.ALBUMS}/${album.id}`)}
+          href={Route.viewAlbum(album)}
+          class="h-fit md:w-69"
           animate:flip={{ duration: 400 }}
           oncontextmenu={(event) => oncontextmenu(event, album)}
-          class="md:w-69"
         >
           <AlbumCard
             {album}
