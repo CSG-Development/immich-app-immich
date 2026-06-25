@@ -7,6 +7,7 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
+  import type { SlideshowState } from '$lib/stores/slideshow.store';
   import { websocketEvents } from '$lib/stores/websocket';
   import { handlePromiseError } from '$lib/utils';
   import { updateStackedAssetInTimeline, updateUnstackedAssetInTimeline } from '$lib/utils/actions';
@@ -26,17 +27,24 @@
     album?: AlbumResponseDto;
     person?: PersonResponseDto;
     removeAction?: AssetAction.UNARCHIVE | AssetAction.ARCHIVE | AssetAction.SET_VISIBILITY_TIMELINE | null;
+    onPrevious?: () => Promise<boolean>;
+    onNext?: () => Promise<boolean>;
+    onRandom?: () => Promise<AssetResponseDto | undefined>;
+    onPlaySlideshow?: () => Promise<SlideshowState>;
   }
 
   let {
     timelineManager,
-    // eslint-disable-next-line no-useless-assignment
     invisible = $bindable(false),
     removeAction,
     withStacked = false,
     isShared = false,
     album,
     person,
+    onPrevious,
+    onNext,
+    onRandom,
+    onPlaySlideshow,
   }: Props = $props();
 
   const getAsset = (id: string) => {
@@ -87,6 +95,9 @@
   });
 
   const handleRandom = async () => {
+    if (onRandom) {
+      return onRandom();
+    }
     const randomAsset = await timelineManager.getRandomAsset();
     if (!randomAsset) {
       return;
@@ -251,5 +262,8 @@
     onRandom={handleRandom}
     onRemoveFromAlbum={handleRemoveFromAlbum}
     onClose={handleClose}
+    {onPlaySlideshow}
+    {onPrevious}
+    {onNext}
   />
 {/await}

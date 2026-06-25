@@ -21,7 +21,6 @@
   import { user } from '$lib/stores/user.store';
   import { getSharedLink, handlePromiseError } from '$lib/utils';
   import type { OnUndoDelete } from '$lib/utils/actions';
-  import { navigateToAsset } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { InvocationTracker } from '$lib/utils/invocationTracker';
   import { SlideshowHistory } from '$lib/utils/slideshow-history';
@@ -73,6 +72,8 @@
     onRemoveFromAlbum?: (assetIds: string[]) => void;
     onRandom?: () => Promise<{ id: string } | undefined>;
     onPlaySlideshow?: () => void;
+    onPrevious?: () => Promise<boolean>;
+    onNext?: () => Promise<boolean>;
   }
 
   let {
@@ -90,6 +91,8 @@
     onRemoveFromAlbum,
     onRandom,
     onPlaySlideshow = () => {},
+    onPrevious,
+    onNext,
   }: Props = $props();
 
   const {
@@ -228,8 +231,7 @@
           }
         }
       } else {
-        hasNext =
-          order === 'previous' ? await navigateToAsset(cursor.previousAsset) : await navigateToAsset(cursor.nextAsset);
+        hasNext = order === 'previous' ? await onPrevious?.() : await onNext?.();
       }
 
       if ($slideshowState !== SlideshowState.PlaySlideshow) {
@@ -482,7 +484,7 @@
         preAction={handlePreAction}
         onAction={handleAction}
         {onUndoDelete}
-        onPlaySlideshow={() => ($slideshowState = SlideshowState.PlaySlideshow)}
+        {onPlaySlideshow}
         onClose={onClose ? () => onClose(asset) : undefined}
         {onRemoveFromAlbum}
         {playOriginalVideo}

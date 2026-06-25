@@ -115,8 +115,6 @@
       }
     }
   });
-
-  let renderedSelectedOption = $derived(renderOption(selectedOption));
 </script>
 
 <div

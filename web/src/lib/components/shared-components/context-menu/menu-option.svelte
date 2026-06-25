@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { Shortcut } from '$lib/actions/shortcut';
   import { shortcut as bindShortcut, shortcutLabel as computeShortcutLabel } from '$lib/actions/shortcut';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import { optionClickCallbackStore, selectedIdStore } from '$lib/stores/context-menu.store';
   import { generateId } from '$lib/utils/generate-id';
-  import { Icon, Theme, type IconLike } from '@immich/ui';
+  import { Icon, Theme, themeManager, type IconLike } from '@immich/ui';
 
   interface Props {
     text: string;

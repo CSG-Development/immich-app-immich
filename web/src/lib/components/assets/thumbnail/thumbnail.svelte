@@ -2,7 +2,6 @@
   import { thumbhash } from '$lib/actions/thumbhash';
   import { ProjectionType } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { locale, playVideoThumbnailOnHover } from '$lib/stores/preferences.store';
@@ -13,7 +12,7 @@
   import { getAltText } from '$lib/utils/thumbnail-util';
   import { TUNABLES } from '$lib/utils/tunables';
   import { AssetMediaSize, AssetVisibility, type UserResponseDto } from '@immich/sdk';
-  import { Icon, Theme } from '@immich/ui';
+  import { Icon, Theme, themeManager } from '@immich/ui';
   import {
     mdiArchiveArrowDownOutline,
     mdiCameraBurst,

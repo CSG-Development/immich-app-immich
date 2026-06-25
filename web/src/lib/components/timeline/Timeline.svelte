@@ -11,7 +11,7 @@
   import HotModuleReload from '$lib/elements/HotModuleReload.svelte';
   import Portal from '$lib/elements/Portal.svelte';
   import Skeleton from '$lib/elements/Skeleton.svelte';
-  import type { AssetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { type AssetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { isIntersecting } from '$lib/managers/timeline-manager/internal/intersection-support.svelte';
@@ -398,19 +398,19 @@
   const shuffleTimelineAssets = async () => {
     const assets = await timelineManager.getAssets();
 
-    const firstAsset = assets.find((asset) => asset.id === $viewingAsset.id);
+    const firstAsset = assets.find((asset) => asset.id === assetViewerManager.asset?.id);
     if (!firstAsset) {
       return;
     }
 
-    const rest = assets.filter((asset) => asset.id !== $viewingAsset.id);
+    const rest = assets.filter((asset) => asset.id !== assetViewerManager.asset?.id);
     const shuffledRest = rest.sort(() => Math.random() - 0.5);
 
     shuffledTimelineAssets = [firstAsset, ...shuffledRest];
   };
 
   $effect(() => {
-    if ($viewingAsset && $slideshowState === SlideshowState.PlaySlideshow && !$isShuffled) {
+    if ($assetViewerManager.asset?.id && $slideshowState === SlideshowState.PlaySlideshow && !$isShuffled) {
       shuffleTimelineAssets()
         .then(() => {
           $isShuffled = true;
@@ -422,7 +422,7 @@
   });
 
   const handlePreviousFromSelectedAssets = async () => {
-    const index = selectedAssets.findIndex((el) => el.id === $viewingAsset.id);
+    const index = selectedAssets.findIndex((el) => el.id === assetViewerManager.asset?.id);
     const previous = selectedAssets[index - 1];
     if (!previous) {
       return false;
@@ -887,7 +887,6 @@
       onPrevious={handlePrevious}
       onNext={handleNext}
       onRandom={handleRandom}
-      {assetInteraction}
       onPlaySlideshow={handlePlaySlideshow}
     />
   {/if}
