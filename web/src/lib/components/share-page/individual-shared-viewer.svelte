@@ -12,7 +12,7 @@
   import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
   import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
   import { handlePromiseError } from '$lib/utils';
-  import { cancelMultiselect, downloadArchive } from '$lib/utils/asset-utils';
+  import { downloadArchive } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
@@ -62,7 +62,7 @@
   };
 
   const handleCancel = () => {
-    cancelMultiselect(assetMultiSelectManager);
+    assetMultiSelectManager.clear();
   };
 
   const handleAction = async (action: Action) => {
@@ -93,7 +93,7 @@
 
     <header class="fixed top-0 inset-s-0 w-full">
       {#if assetMultiSelectManager.selectionActive}
-        <AssetSelectControlBar assets={assetMultiSelectManager.selectedAssets} clearSelect={handleCancel}>
+        <AssetSelectControlBar>
           <IconButton
             shape="round"
             color="secondary"
@@ -141,13 +141,13 @@
         bind:clientHeight={viewport.height}
         bind:clientWidth={viewport.width}
       >
-        <GalleryViewer {assets} {assetInteraction} {viewport} />
+        <GalleryViewer {assets} assetInteraction={assetMultiSelectManager} {viewport} />
       </section>
     </header>
   {:else if assets.length === 1}
     {#await getAssetInfo({ ...authManager.params, id: assets[0].id }) then asset}
       {#await import('$lib/components/asset-viewer/asset-viewer.svelte') then { default: AssetViewer }}
-        <AssetViewer cursor={{ current: asset }} onAction={handleAction} {assetInteraction} />
+        <AssetViewer cursor={{ current: asset }} onAction={handleAction} />
       {/await}
     {/await}
   {/if}

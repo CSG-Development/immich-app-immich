@@ -1,3 +1,4 @@
+import { OS } from '$lib/constants';
 import type { AssetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { downloadManager } from '$lib/managers/download-manager.svelte';
@@ -234,15 +235,27 @@ const supportedImageMimeTypes = new Set([
   'video/x-ms-asf',
 ]);
 
+export const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.includes('Firefox');
+
 /* const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); */ // https://stackoverflow.com/a/23522755
 export const getOS = () => {
   const userAgent = navigator.userAgent;
 
-  if (/Windows NT/i.test(userAgent)) return OS.WINDOWS;
-  if (/Mac/i.test(userAgent)) return OS.MACOS;
-  if (/Linux/i.test(userAgent)) return OS.LINUX;
-  if (/Android/i.test(userAgent)) return OS.ANDROID;
-  if (/iPhone|iPad|iPod/i.test(userAgent)) return OS.IOS;
+  if (/Windows NT/i.test(userAgent)) {
+    return OS.WINDOWS;
+  }
+  if (/Mac/i.test(userAgent)) {
+    return OS.MACOS;
+  }
+  if (/Linux/i.test(userAgent)) {
+    return OS.LINUX;
+  }
+  if (/Android/i.test(userAgent)) {
+    return OS.ANDROID;
+  }
+  if (/iPhone|iPad|iPod/i.test(userAgent)) {
+    return OS.IOS;
+  }
 
   return 'Unknown';
 };
@@ -260,7 +273,7 @@ export function isWebSupportedAssetMimeType(type: string): boolean {
     return false;
   }
 
-  return supportedAssetMimeTypes.has(type);
+  return supportedImageMimeTypes.has(type);
 }
 
 export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
@@ -469,7 +482,7 @@ export const canCopyImageToClipboard = (): boolean => {
 
 export const getFileExtension = (fileName: string) => {
   const dotIndex = fileName.lastIndexOf('.');
-  return dotIndex !== -1 ? fileName.slice(dotIndex) : '';
+  return dotIndex === -1 ? '' : fileName.slice(dotIndex);
 };
 
 export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasElement => {
@@ -484,7 +497,9 @@ export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasEleme
   const width = canvas.width;
   const height = canvas.height;
 
-  if (width < 2 || height < 2) return canvas;
+  if (width < 2 || height < 2) {
+    return canvas;
+  }
 
   const ts = Date.now(); // timestamp for some variability
 
@@ -521,8 +536,11 @@ export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasEleme
 export const canvasToBlob = async (canvas: HTMLCanvasElement) => {
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('Canvas conversion to Blob failed'));
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Canvas conversion to Blob failed'));
+      }
     });
   });
 };
