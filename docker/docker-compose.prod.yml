@@ -56,7 +56,7 @@ services:
 
   redis:
     container_name: immich_redis
-    image: docker.io/valkey/valkey:9@sha256:3b55fbaa0cd93cf0d9d961f405e4dfcc70efe325e2d84da207a0a8e6d8fde4f9
+    image: dhi.io/valkey:9@sha256:735bfb01bd66678e1393fca60710219e787ebeaf9c25a546f1438e7e782d9912
     command: ["valkey-server", "--protected-mode", "no"]
     healthcheck:
       test: redis-cli ping || exit 1
@@ -64,7 +64,7 @@ services:
 
   database:
     container_name: immich_postgres
-    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    image: ghcr.io/csg-development/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:5b3821e13cb95410607a9984225978df2bdcfbe4bf0a4b210b100f3117ee0d51
     env_file:
       - .env
     environment:
