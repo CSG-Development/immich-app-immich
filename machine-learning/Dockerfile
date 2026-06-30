@@ -1,6 +1,6 @@
 ARG DEVICE=cpu
 
-FROM dhi.io/python:3.11-debian13-dev AS builder-cpu
+FROM dhi.io/python:3.11-debian12-dev AS builder-cpu
 # upstream FROM python:3.11-bookworm@sha256:aa23850b91cb4c7faedac8ca9aa74ddc6eb03529a519145a589a7f35df4c5927 AS builder-cpu
 
 FROM python:3.13-slim-trixie@sha256:3de9a8d7aedbb7984dc18f2dff178a7850f16c1ae7c34ba9d7ecc23d0755e35f AS builder-openvino
@@ -40,13 +40,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --extra ${DEVICE} --no-dev --no-editable --no-install-project --compile-bytecode --no-progress --active --link-mode copy
 
-FROM dhi.io/python:3.11-debian13-dev AS prod-cpu
+FROM dhi.io/python:3.11-debian12-dev AS prod-cpu
 # upstream FROM python:3.11-slim-bookworm@sha256:04cd27899595a99dfe77709d96f08876bf2ee99139ee2f0fe9ac948005034e5b AS prod-cpu
 
 ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3 \
     MACHINE_LEARNING_MODEL_ARENA=false
 
-FROM dhi.io/python:3.11-debian13-dev AS prod-openvino
+FROM dhi.io/python:3.11-debian12-dev AS prod-openvino
 # upstream FROM python:3.13-slim-trixie@sha256:3de9a8d7aedbb7984dc18f2dff178a7850f16c1ae7c34ba9d7ecc23d0755e35f AS prod-openvino
 
 RUN apt-get update && \
