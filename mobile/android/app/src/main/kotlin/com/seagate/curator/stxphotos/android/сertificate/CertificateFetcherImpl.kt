@@ -8,10 +8,8 @@ import java.net.SocketTimeoutException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLException
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.TrustManager
-import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 /**
@@ -151,8 +149,7 @@ class CertificateFetcherApiImpl : CertificateFetcherApi {
         return
       }
 
-      val defaultTrustManager = defaultTrustManager()
-      val capturingTrustManager = CapturingTrustManager(defaultTrustManager)
+      val capturingTrustManager = CapturingTrustManager()
       val sslContext = SSLContext.getInstance("TLS")
       sslContext.init(null, arrayOf<TrustManager>(capturingTrustManager), SecureRandom())
       val socket = sslContext.socketFactory.createSocket() as SSLSocket
@@ -160,10 +157,7 @@ class CertificateFetcherApiImpl : CertificateFetcherApi {
       socket.use { sslSocket ->
         sslSocket.soTimeout = SOCKET_TIMEOUT_MS
         sslSocket.connect(InetSocketAddress(host, port), SOCKET_TIMEOUT_MS)
-        try {
-          sslSocket.startHandshake()
-        } catch (_: SSLException) {
-        }
+        sslSocket.startHandshake()
 
         val certificates = capturingTrustManager.capturedChain
           ?.map { cert -> Base64.encodeToString(cert.encoded, Base64.NO_WRAP) }
@@ -257,17 +251,9 @@ class CertificateFetcherApiImpl : CertificateFetcherApi {
 
   private fun failedSnapshot() =
     CertificateChainSnapshot(CertificateChainSnapshotStatus.FAILED, emptyList())
-
-  private fun defaultTrustManager(): X509TrustManager {
-    val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-    factory.init(null as java.security.KeyStore?)
-    return factory.trustManagers.filterIsInstance<X509TrustManager>().first()
-  }
 }
 
-private class CapturingTrustManager(
-  private val delegate: X509TrustManager,
-) : X509TrustManager {
+private class CapturingTrustManager : X509TrustManager {
 
   @Volatile
   var capturedChain: Array<X509Certificate>? = null
@@ -275,12 +261,9 @@ private class CapturingTrustManager(
 
   override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
     capturedChain = chain
-    delegate.checkServerTrusted(chain, authType)
   }
 
-  override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
-    delegate.checkClientTrusted(chain, authType)
-  }
+  override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
 
-  override fun getAcceptedIssuers(): Array<X509Certificate> = delegate.acceptedIssuers
+  override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
 }
