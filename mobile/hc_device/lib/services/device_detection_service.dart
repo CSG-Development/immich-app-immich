@@ -10,6 +10,7 @@
 //
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart'
     show Connectivity, ConnectivityResult;
@@ -27,7 +28,8 @@ import 'package:hc_device/utils/mdns_platform_support.dart';
 import 'package:nsd/nsd.dart' as nsd;
 
 const String serviceTypeDiscover = '_https._tcp';
-const String serviceNameDiscover = 'HomeCloud';
+const String serviceTxtKeyDiscover = 'seagate';
+const String serviceTxtValueDiscover = 'homecloud';
 const Duration defaultDurationLocalDetection = Duration(seconds: 5);
 const Duration timeoutLocalApiCall = Duration(seconds: 4);
 const Duration timeoutRemoteApiCall = Duration(seconds: 9);
@@ -197,14 +199,29 @@ class DeviceDetectionService {
       _discovery?.addServiceListener((service, status) {
         if (_isCancelled) return;
 
-        if (status == nsd.ServiceStatus.found &&
-            service.name!.contains(serviceNameDiscover)) {
+        final serviceTxtValue = service.txt?[serviceTxtKeyDiscover];
+        final hasExpectedTxtRecord =
+            serviceTxtValue != null &&
+            utf8
+                    .decode(serviceTxtValue, allowMalformed: true)
+                    .trim()
+                    .toLowerCase() ==
+                serviceTxtValueDiscover;
+        if (status == nsd.ServiceStatus.found && hasExpectedTxtRecord) {
+          final host = service.host;
+          final port = service.port;
+          if (host == null || port == null) {
+            logger.warning(
+              '[Network] Skipping mDNS service without host/port: ${service.name}',
+            );
+            return;
+          }
           logger.info(
             '[Network] Device discovered on local network by mDNS: ${service.name}',
           );
           // Get About info to obtain certificateCommonName and confirm it's a valid HomeCloud device before adding to the list
           getAbout(
-            DeviceProvider.createBaseUrl(service.host!, service.port),
+            DeviceProvider.createBaseUrl(host, port),
           ).then((about) {
             // If detection was cancelled while waiting for getAbout, do not add device or call callbacks
             if (about != null &&
@@ -213,8 +230,8 @@ class DeviceDetectionService {
               final device = DeviceItem(
                 hostname: service.name,
                 baseUrl: DeviceProvider.createBaseUrl(
-                  service.host!,
-                  service.port,
+                  host,
+                  port,
                 ),
                 debugHostType: "mDNS",
                 about: about,
