@@ -174,6 +174,7 @@ async def predict(
     image: bytes | None = File(default=None),
     text: str | None = Form(default=None),
 ) -> Any:
+    log.info("--------------------------------------------------------------------------------")
     reset_timer()
     log.info(f"[%.3f ms] predict:START", elapsed_ms())
 
