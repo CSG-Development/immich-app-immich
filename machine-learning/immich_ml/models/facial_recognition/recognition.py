@@ -32,6 +32,8 @@ class FaceRecognizer(InferenceModel):
         self.batch_size = max_batch_size if max_batch_size else self._batch_size_default
 
     def _load(self) -> ModelSession:
+        log.info(f"[%.3f ms] FaceRecognizer._load:START", elapsed_ms())
+
         # Path to ONNX model file
         model_path = self.model_path_for_format(ModelFormat.ONNX)
 
@@ -44,6 +46,8 @@ class FaceRecognizer(InferenceModel):
             session=session,
         )
 
+        log.info(f"[%.3f ms] FaceRecognizer._load:END", elapsed_ms())
+
         return session
 
     def download(self) -> None:
@@ -53,7 +57,7 @@ class FaceRecognizer(InferenceModel):
     def _predict(
         self, inputs: NDArray[np.uint8] | bytes | Image.Image, faces: FaceDetectionOutput, **kwargs: Any
     ) -> FacialRecognitionOutput:
-        log.info(f"[%.3f ms] FaceRecognizer._predict:START")
+        log.info(f"[%.3f ms] FaceRecognizer._predict:START", elapsed_ms())
         if faces["boxes"].shape[0] == 0:
             return []
         inputs = decode_cv2(inputs)
@@ -61,7 +65,7 @@ class FaceRecognizer(InferenceModel):
         embeddings = self._predict_batch(cropped_faces)
         #return self.postprocess(faces, embeddings)
         result = self.postprocess(faces, embeddings)
-        log.info(f"[%.3f ms] FaceRecognizer._predict:END")
+        log.info(f"[%.3f ms] FaceRecognizer._predict:END", elapsed_ms())
         return result
 
     def _predict_batch(self, cropped_faces: list[NDArray[np.uint8]]) -> NDArray[np.float32]:
@@ -77,7 +81,7 @@ class FaceRecognizer(InferenceModel):
         return np.concatenate(batch_embeddings, axis=0)
 
     def postprocess(self, faces: FaceDetectionOutput, embeddings: NDArray[np.float32]) -> FacialRecognitionOutput:
-        log.info(f"[%.3f ms] FaceRecognizer.postprocess:START")
+        log.info(f"[%.3f ms] FaceRecognizer.postprocess:START", elapsed_ms())
         #return [
         #    {
         #        "boundingBox": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
@@ -94,11 +98,11 @@ class FaceRecognizer(InferenceModel):
             }
             for (x1, y1, x2, y2), embedding, score in zip(faces["boxes"], embeddings, faces["scores"])
         ]
-        log.info(f"[%.3f ms] FaceRecognizer.postprocess:END")
+        log.info(f"[%.3f ms] FaceRecognizer.postprocess:END", elapsed_ms())
         return result
 
     def _crop(self, image: NDArray[np.uint8], faces: FaceDetectionOutput) -> list[NDArray[np.uint8]]:
-        log.info(f"[%.3f ms] FaceRecognizer._crop:START")
+        log.info(f"[%.3f ms] FaceRecognizer._crop:START", elapsed_ms())
         reference = np.array([
             [38.2946, 51.6963],
             [73.5318, 51.5014],
@@ -116,7 +120,7 @@ class FaceRecognizer(InferenceModel):
             aligned = cv2.warpAffine(image, transform, output_size, borderValue=0.0)
             aligned_faces.append(aligned)
 
-        log.info(f"[%.3f ms] FaceRecognizer._crop:END")
+        log.info(f"[%.3f ms] FaceRecognizer._crop:END", elapsed_ms())
         return aligned_faces
 
     @property

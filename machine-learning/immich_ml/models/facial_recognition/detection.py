@@ -20,9 +20,13 @@ class FaceDetector(InferenceModel):
         super().__init__(model_name, **model_kwargs)
 
     def _load(self) -> ModelSession:
+            log.info(f"[%.3f ms] FaceDetector._load:START", elapsed_ms())
+
             session = self._make_session(self.model_path)
             self.model = SCRFD(session=session)
             self.model.prepare(ctx_id=0, det_thresh=self.min_score, input_size=(640, 640))
+
+            log.info(f"[%.3f ms] FaceDetector._load:END", elapsed_ms())
 
             return session
 
