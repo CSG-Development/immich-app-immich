@@ -10,7 +10,7 @@
 //
 
 import 'dart:async' show Completer, unawaited;
-import 'dart:io' show HttpClient, SecurityContext;
+import 'dart:io' show HttpClient, SecurityContext, X509Certificate;
 import 'package:http/io_client.dart' show IOClient;
 
 import 'package:basic_utils/basic_utils.dart' show StringUtils;
@@ -138,7 +138,16 @@ class RemoteProvider extends Notifier<RemoteState>
     _accessExpiryAt = _readStorageDateTimeFromEpoch(accessExpiryEpochMsKey);
     _initClientId();
 
-    final HttpClient client = HttpClient(context: SecurityContext.defaultContext);
+    // TODO(security): Remove this override and restore proper TLS certificate
+    // validation for remote access requests.
+    final HttpClient client = HttpClient(context: SecurityContext.defaultContext)
+      ..badCertificateCallback = (
+        X509Certificate cert,
+        String host,
+        int port,
+      ) {
+        return true;
+      };
 
     _api = _apiClientFactory.create(
       baseUrl: Uri.parse(baseUrl),
