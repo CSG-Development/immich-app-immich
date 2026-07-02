@@ -25,17 +25,30 @@ class FaceDetector(InferenceModel):
             return session
 
     def _predict(self, inputs: NDArray[np.uint8] | bytes, **kwargs: Any) -> FaceDetectionOutput:
+            log.info(f"[%.3f ms] FaceDetector._predict:START", elapsed_ms())
+
             inputs = decode_cv2(inputs)
 
             bboxes, landmarks = self._detect(inputs)
-            return {
+            #return {
+            #    "boxes": bboxes[:, :4].round(),
+            #    "scores": bboxes[:, 4],
+            #    "landmarks": landmarks,
+            #}
+            result = {
                 "boxes": bboxes[:, :4].round(),
                 "scores": bboxes[:, 4],
                 "landmarks": landmarks,
             }
+            log.info(f"[%.3f ms] FaceDetector._predict:END", elapsed_ms())
+            return result
 
     def _detect(self, inputs: NDArray[np.uint8] | bytes) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
-        return self.model.detect(inputs)  # type: ignore
+        log.info(f"[%.3f ms] FaceDetector._detect:START", elapsed_ms())
+        #return self.model.detect(inputs)  # type: ignore
+        result = self.model.detect(inputs)
+        log.info(f"[%.3f ms] FaceDetector._detect:END", elapsed_ms())
+        return result
 
     def configure(self, **kwargs: Any) -> None:
         self.model.det_thresh = kwargs.pop("minScore", self.model.det_thresh)

@@ -20,6 +20,8 @@ from immich_ml.schemas import (
 )
 
 
+from immich_ml.timing import elapsed_ms
+
 class FaceRecognizer(InferenceModel):
     depends = [(ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)]
     identity = (ModelType.RECOGNITION, ModelTask.FACIAL_RECOGNITION)
@@ -51,12 +53,16 @@ class FaceRecognizer(InferenceModel):
     def _predict(
         self, inputs: NDArray[np.uint8] | bytes | Image.Image, faces: FaceDetectionOutput, **kwargs: Any
     ) -> FacialRecognitionOutput:
+        log.info(f"[%.3f ms] FaceRecognizer._predict:START")
         if faces["boxes"].shape[0] == 0:
             return []
         inputs = decode_cv2(inputs)
         cropped_faces = self._crop(inputs, faces)
         embeddings = self._predict_batch(cropped_faces)
-        return self.postprocess(faces, embeddings)
+        #return self.postprocess(faces, embeddings)
+        result = self.postprocess(faces, embeddings)
+        log.info(f"[%.3f ms] FaceRecognizer._predict:END")
+        return result
 
     def _predict_batch(self, cropped_faces: list[NDArray[np.uint8]]) -> NDArray[np.float32]:
         batch_embeddings: list[NDArray[np.float32]] = []
@@ -71,7 +77,16 @@ class FaceRecognizer(InferenceModel):
         return np.concatenate(batch_embeddings, axis=0)
 
     def postprocess(self, faces: FaceDetectionOutput, embeddings: NDArray[np.float32]) -> FacialRecognitionOutput:
-        return [
+        log.info(f"[%.3f ms] FaceRecognizer.postprocess:START")
+        #return [
+        #    {
+        #        "boundingBox": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
+        #        "embedding": serialize_np_array(embedding),
+        #        "score": score,
+        #    }
+        #    for (x1, y1, x2, y2), embedding, score in zip(faces["boxes"], embeddings, faces["scores"])
+        #]
+        result = [
             {
                 "boundingBox": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
                 "embedding": serialize_np_array(embedding),
@@ -79,8 +94,11 @@ class FaceRecognizer(InferenceModel):
             }
             for (x1, y1, x2, y2), embedding, score in zip(faces["boxes"], embeddings, faces["scores"])
         ]
+        log.info(f"[%.3f ms] FaceRecognizer.postprocess:END")
+        return result
 
     def _crop(self, image: NDArray[np.uint8], faces: FaceDetectionOutput) -> list[NDArray[np.uint8]]:
+        log.info(f"[%.3f ms] FaceRecognizer._crop:START")
         reference = np.array([
             [38.2946, 51.6963],
             [73.5318, 51.5014],
@@ -98,6 +116,7 @@ class FaceRecognizer(InferenceModel):
             aligned = cv2.warpAffine(image, transform, output_size, borderValue=0.0)
             aligned_faces.append(aligned)
 
+        log.info(f"[%.3f ms] FaceRecognizer._crop:END")
         return aligned_faces
 
     @property

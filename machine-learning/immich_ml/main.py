@@ -166,12 +166,17 @@ def ping() -> PlainTextResponse:
     return PlainTextResponse("pong")
 
 
+from .timing import reset_timer, elapsed_ms
+
 @app.post("/predict", dependencies=[Depends(update_state)])
 async def predict(
     entries: InferenceEntries = Depends(get_entries),
     image: bytes | None = File(default=None),
     text: str | None = Form(default=None),
 ) -> Any:
+    reset_timer()
+    log.info(f"[%.3f ms] predict:START", elapsed_ms())
+
     if image is not None:
         inputs: Image | str = await run(lambda: decode_pil(image))
     elif text is not None:
@@ -179,10 +184,15 @@ async def predict(
     else:
         raise HTTPException(400, "Either image or text must be provided")
     response = await run_inference(inputs, entries)
-    return ORJSONResponse(response)
+    #return ORJSONResponse(response)
+    result = ORJSONResponse(response)
+    log.info(f"[%.3f ms] predict:END", elapsed_ms())
+    return result
 
 
 async def run_inference(payload: Image | str, entries: InferenceEntries) -> InferenceResponse:
+    log.info(f"[%.3f ms] run_inference:START", elapsed_ms())
+
     outputs: dict[ModelIdentity, Any] = {}
     response: InferenceResponse = {}
 
@@ -212,6 +222,8 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
         await asyncio.gather(*[_run_inference(entry) for entry in with_deps])
     if isinstance(payload, Image):
         response["imageHeight"], response["imageWidth"] = payload.height, payload.width
+
+    log.info(f"[%.3f ms] run_inference:END", elapsed_ms())
 
     return response
 
