@@ -8,6 +8,8 @@ from immich_ml.models.base import InferenceModel
 from immich_ml.models.transforms import decode_cv2
 from immich_ml.schemas import FaceDetectionOutput, ModelSession, ModelTask, ModelType
 
+from immich_ml.config import log
+from immich_ml.timing import elapsed_ms
 
 class FaceDetector(InferenceModel):
     depends = []
