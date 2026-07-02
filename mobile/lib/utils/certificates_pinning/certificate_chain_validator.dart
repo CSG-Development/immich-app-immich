@@ -49,12 +49,6 @@ class CertificateChainValidator {
         'Certificate is not yet valid (valid from ${certificate.notBefore?.toIso8601String() ?? "unknown"})',
       );
     }
-
-    if (certificate.isExpired) {
-      throw CertificateValidationException(
-        'Certificate has expired (valid until ${certificate.notAfter?.toIso8601String() ?? "unknown"})',
-      );
-    }
   }
 
   /// Checks whether [certificate] is part of the [trustedChain] (directly or via
