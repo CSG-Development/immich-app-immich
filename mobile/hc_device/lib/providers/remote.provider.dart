@@ -103,7 +103,6 @@ class RemoteProvider extends Notifier<RemoteState>
 
   late final Map<String, dynamic> _storageData;
   late final FlutterSecureStorage _secureStorage;
-  late final http.Client _httpClient;
   late final String? _currentSessionId;
   late final String? _lastProactiveRefreshSessionId;
   late final DateTime? _accessExpiryAt;
@@ -126,7 +125,6 @@ class RemoteProvider extends Notifier<RemoteState>
     final deps = ref.read(remoteAccessDependenciesProvider);
     _storageData = deps.storageData;
     _secureStorage = deps.secureStorage;
-    _httpClient = deps.httpClient;
     _isMainRuntime = deps.isMainRuntime;
     _authRepo = AuthRepository(_secureStorage);
     final secureData = deps.secureData;
@@ -151,7 +149,7 @@ class RemoteProvider extends Notifier<RemoteState>
     _api = _apiClientFactory.create(
       baseUrl: Uri.parse(baseUrl),
       authProvider: this,
-      httpClient: _httpClient,
+      httpClient: IOClient(client),
     );
     _repo = RemoteRepository(() => _api);
     final initial = RemoteState(
