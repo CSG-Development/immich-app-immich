@@ -165,6 +165,8 @@ async def root() -> ORJSONResponse:
 def ping() -> PlainTextResponse:
     return PlainTextResponse("pong")
 
+DEFAULT_FACE_DETECTION_MODEL = FaceDetector(model_name="scrfd_10g_gnkps")
+DEFAULT_FACE_RECOGNITION_MODEL = FaceRecognizer(model_name="arcfaceresnet8-100")
 
 @app.post("/predict", dependencies=[Depends(update_state)])
 async def predict(
@@ -197,9 +199,11 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                 raise HTTPException(400, message)
         # TODO change placeholder below when detection model is replaced too
         if model.model_name == "scrfd_10g_gnkps" and entry["type"] == ModelType.DETECTION:
-            model = FaceDetector(model_name="scrfd_10g_gnkps")
+            # model = FaceDetector(model_name="scrfd_10g_gnkps")
+            model = DEFAULT_FACE_DETECTION_MODEL
         elif model.model_name == "arcfaceresnet8-100" and entry["type"] == ModelType.RECOGNITION:
-            model = FaceRecognizer(model_name=model.model_name)
+            # model = FaceRecognizer(model_name=model.model_name)
+            model = DEFAULT_FACE_RECOGNITION_MODEL
         else:
             model = await load(model)
         output = await run(model.predict, *inputs, **entry["options"])
