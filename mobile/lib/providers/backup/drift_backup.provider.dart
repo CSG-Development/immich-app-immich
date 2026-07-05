@@ -22,6 +22,9 @@ import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/extensions/string_extensions.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
+import 'package:immich_mobile/providers/sync_status.provider.dart';
+
+const _unset = Object();
 
 class EnqueueStatus {
   final int enqueueCount;
@@ -157,7 +160,7 @@ class DriftBackupState {
     bool? isHttpBackupActive,
     Map<String, DriftUploadStatus>? uploadItems,
     BackupError? error,
-    CancellationToken? cancelToken,
+    Object? cancelToken = _unset,
     Map<String, double>? iCloudDownloadProgress,
   }) {
     return DriftBackupState(
@@ -172,7 +175,7 @@ class DriftBackupState {
       isHttpBackupActive: isHttpBackupActive ?? this.isHttpBackupActive,
       uploadItems: uploadItems ?? this.uploadItems,
       error: error ?? this.error,
-      cancelToken: cancelToken ?? this.cancelToken,
+      cancelToken: identical(cancelToken, _unset) ? this.cancelToken : cancelToken as CancellationToken?,
       iCloudDownloadProgress: iCloudDownloadProgress ?? this.iCloudDownloadProgress,
     );
   }
@@ -268,11 +271,15 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   bool _handleBackupResumeInProgress = false;
 
   Map<String, Object?> _foregroundBackupStateSnapshot() => {
+    'totalCount': state.totalCount,
+    'backupCount': state.backupCount,
+    'remainderCount': state.remainderCount,
+    'processingCount': state.processingCount,
+    'readyForUploadCount': max(0, state.remainderCount - state.processingCount),
     'hasCancelToken': state.cancelToken != null,
     'cancelTokenCancelled': state.cancelToken?.isCancelled ?? false,
     'uploadItemsCount': state.uploadItems.length,
     'iCloudProgressCount': state.iCloudDownloadProgress.length,
-    'remainderCount': state.remainderCount,
     'isHttpBackupActive': state.isHttpBackupActive,
   };
 
@@ -710,6 +717,13 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
 
     try {
       await getBackupStatus(userId);
+      if (state.processingCount > 0 || _ref.read(syncStatusProvider).isHashing) {
+        await _ref.read(backgroundSyncProvider).hashAssets();
+        if (cancelToken.isCancelled) {
+          return;
+        }
+        await getBackupStatus(userId);
+      }
       logBackupTrace(
         _logger,
         level: Level.INFO,
@@ -724,7 +738,6 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
         runId: _runId,
         extra: {
           'userId': userId,
-          'remainderCount': state.remainderCount,
           'cancelTokenCancelled': cancelToken.isCancelled,
           ..._foregroundBackupStateSnapshot(),
         },
