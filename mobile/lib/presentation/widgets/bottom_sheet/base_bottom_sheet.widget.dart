@@ -8,6 +8,7 @@ class BaseBottomSheet extends ConsumerStatefulWidget {
   final List<Widget> actions;
   final DraggableScrollableController? controller;
   final List<Widget>? slivers;
+  final Widget? footer;
   final double initialChildSize;
   final double minChildSize;
   final double maxChildSize;
@@ -20,6 +21,7 @@ class BaseBottomSheet extends ConsumerStatefulWidget {
     super.key,
     required this.actions,
     this.slivers,
+    this.footer,
     this.controller,
     this.initialChildSize = 0.35,
     double? minChildSize,
@@ -73,24 +75,28 @@ class _BaseDraggableScrollableSheetState extends ConsumerState<BaseBottomSheet> 
           elevation: 3.0,
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
           margin: const EdgeInsets.symmetric(horizontal: 0),
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              const SliverPersistentHeader(delegate: _DragHandleDelegate(), pinned: true),
-              if (widget.actions.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 115,
-                        child: ListView(shrinkWrap: true, scrollDirection: Axis.horizontal, children: widget.actions),
+          child: Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    const SliverToBoxAdapter(child: _DragHandle()),
+                    if (widget.actions.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            _ActionsToolbar(actions: widget.actions),
+                            const Divider(indent: 16, endIndent: 16),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
-                      const Divider(indent: 16, endIndent: 16),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
+                    if (widget.slivers != null) ...widget.slivers!,
+                  ],
                 ),
-              if (widget.slivers != null) ...widget.slivers!,
+              ),
+              if (widget.footer != null) widget.footer!,
             ],
           ),
         );
@@ -99,22 +105,51 @@ class _BaseDraggableScrollableSheetState extends ConsumerState<BaseBottomSheet> 
   }
 }
 
-class _DragHandleDelegate extends SliverPersistentHeaderDelegate {
-  const _DragHandleDelegate();
+/// Horizontal action toolbar isolated from the parent [DraggableScrollableSheet]
+/// scroll controller to avoid gesture conflicts and layout jank during scrolling.
+class _ActionsToolbar extends StatefulWidget {
+  const _ActionsToolbar({required this.actions});
+
+  final List<Widget> actions;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return const _DragHandle();
+  State<_ActionsToolbar> createState() => _ActionsToolbarState();
+}
+
+class _ActionsToolbarState extends State<_ActionsToolbar> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
   }
 
   @override
-  bool shouldRebuild(_DragHandleDelegate oldDelegate) => false;
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
-  double get minExtent => 50.0;
-
-  @override
-  double get maxExtent => 50.0;
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => notification.metrics.axis == Axis.horizontal,
+        child: SizedBox(
+          height: 120,
+          child: ListView.builder(
+            controller: _scrollController,
+            primary: false,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            itemCount: widget.actions.length,
+            itemBuilder: (context, index) => widget.actions[index],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _DragHandle extends StatelessWidget {
@@ -123,7 +158,7 @@ class _DragHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 38,
       child: Center(
         child: SizedBox(
           width: 32,

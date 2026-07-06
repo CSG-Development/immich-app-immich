@@ -12,11 +12,22 @@ import 'package:pigeon/pigeon.dart';
     dartPackageName: 'personal_cloud_photos',
   ),
 )
+enum PlatformAssetPlaybackStyle {
+  unknown,
+  image,
+  video,
+  imageAnimated,
+  livePhoto,
+  videoLooping,
+}
+
 class PlatformAsset {
   final String id;
   final String name;
+
   // Follows AssetType enum from base_asset.model.dart
   final int type;
+
   // Seconds since epoch
   final int? createdAt;
   final int? updatedAt;
@@ -25,6 +36,12 @@ class PlatformAsset {
   final int durationInSeconds;
   final int orientation;
   final bool isFavorite;
+
+  final int? adjustmentTime;
+  final double? latitude;
+  final double? longitude;
+
+  final PlatformAssetPlaybackStyle playbackStyle;
 
   const PlatformAsset({
     required this.id,
@@ -37,12 +54,17 @@ class PlatformAsset {
     this.durationInSeconds = 0,
     this.orientation = 0,
     this.isFavorite = false,
+    this.adjustmentTime,
+    this.latitude,
+    this.longitude,
+    this.playbackStyle = PlatformAssetPlaybackStyle.unknown,
   });
 }
 
 class PlatformAlbum {
   final String id;
   final String name;
+
   // Seconds since epoch
   final int? updatedAt;
   final bool isCloud;
@@ -61,6 +83,7 @@ class SyncDelta {
   final bool hasChanges;
   final List<PlatformAsset> updates;
   final List<String> deletes;
+
   // Asset -> Album mapping
   final Map<String, List<String>> assetAlbums;
 
@@ -78,6 +101,14 @@ class HashResult {
   final String? hash;
 
   const HashResult({required this.assetId, this.error, this.hash});
+}
+
+class CloudIdResult {
+  final String assetId;
+  final String? error;
+  final String? cloudId;
+
+  const CloudIdResult({required this.assetId, this.error, this.cloudId});
 }
 
 @HostApi()
@@ -108,4 +139,10 @@ abstract class NativeSyncApi {
   List<HashResult> hashAssets(List<String> assetIds, {bool allowNetworkAccess = false});
 
   void cancelHashing();
+
+  @TaskQueue(type: TaskQueueType.serialBackgroundThread)
+  Map<String, List<PlatformAsset>> getTrashedAssets();
+
+  @TaskQueue(type: TaskQueueType.serialBackgroundThread)
+  List<CloudIdResult> getCloudIdForAssetIds(List<String> assetIds);
 }

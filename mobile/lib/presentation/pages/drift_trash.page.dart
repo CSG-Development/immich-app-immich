@@ -2,7 +2,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/generated/translations.g.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/trash_bottom_sheet.widget.dart';
+import 'package:immich_mobile/presentation/widgets/timeline/timeline.state.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
@@ -27,32 +29,35 @@ class DriftTrashPage extends StatelessWidget {
           return timelineService;
         }),
       ],
-      child: Timeline(
-        appBar: SliverAppBar(
-          title: Text('trash'.t(context: context)),
-          floating: true,
-          snap: true,
-          pinned: true,
-          centerTitle: true,
-          elevation: 0,
-        ),
-        topSliverWidgetHeight: 24,
-        topSliverWidget: Consumer(
-          builder: (context, ref, child) {
-            final trashDays = ref.watch(serverInfoProvider.select((v) => v.serverConfig.trashDays));
+      child: Consumer(
+        builder: (context, ref, _) {
+          final totalAssets = ref.watch(timelineTotalAssetsProvider).maybeWhen(data: (count) => count, orElse: () => 0);
+          final hasAssets = totalAssets > 0;
 
-            return SliverPadding(
-              padding: const EdgeInsets.all(16.0),
-              sliver: SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 24.0,
-                  child: const Text("trash_page_info").t(context: context, args: {"days": "$trashDays"}),
-                ),
-              ),
-            );
-          },
-        ),
-        bottomSheet: const TrashBottomBar(),
+          return Timeline(
+            appBar: SliverAppBar(
+              title: Text('trash'.t(context: context)),
+              floating: true,
+              snap: true,
+              pinned: true,
+              centerTitle: true,
+              elevation: 0,
+            ),
+            topSliverWidgetHeight: 24,
+            topSliverWidget: Consumer(
+              builder: (context, ref, child) {
+                final trashDays = ref.watch(serverInfoProvider.select((v) => v.serverConfig.trashDays));
+
+                return SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverToBoxAdapter(child: Text(context.t.trash_page_info(days: trashDays))),
+                );
+              },
+            ),
+            bottomSheet: hasAssets ? const TrashBottomBar() : null,
+            persistentBottomBar: hasAssets,
+          );
+        },
       ),
     );
   }

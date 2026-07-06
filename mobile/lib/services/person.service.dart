@@ -37,7 +37,18 @@ class PersonService {
   Future<List<Asset>> getPersonAssets(String id) async {
     try {
       final assets = await _assetApiRepository.search(personIds: [id]);
-      return await _assetRepository.getAllByRemoteId(assets.map((a) => a.remoteId!));
+      final localAssets = await _assetRepository.getAllByRemoteId(assets.map((a) => a.remoteId!));
+      final localIds = localAssets.map((a) => a.remoteId).whereType<String>().toSet();
+      final missingAssets = assets.where((asset) => !localIds.contains(asset.remoteId)).toList();
+
+      final assetsByRemoteId = <String, Asset>{
+        for (final asset in localAssets)
+          if (asset.remoteId != null) asset.remoteId!: asset,
+        for (final asset in missingAssets)
+          if (asset.remoteId != null) asset.remoteId!: asset,
+      };
+
+      return assets.map((asset) => assetsByRemoteId[asset.remoteId!]).whereType<Asset>().toList();
     } catch (error, stack) {
       _log.severe("Error while fetching person assets", error, stack);
     }

@@ -116,7 +116,7 @@ Future<void> stopDiscovery(nsd.Discovery discovery) async {
 }
 
 Future<RemoteAccessDependencies> initHCDevice({
-  dynamic registerHostTrustedChain,
+  required HttpClientProvider httpClientProvider,
   bool isMainRuntime = true,
 }) async {
   final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
@@ -150,7 +150,7 @@ Future<RemoteAccessDependencies> initHCDevice({
     secureData: secureData,
     secureStorage: secureStorage,
     storageData: storageData,
-    registerHostTrustedChain: registerHostTrustedChain,
+    httpClientProvider: httpClientProvider,
     isMainRuntime: isMainRuntime,
   );
 }

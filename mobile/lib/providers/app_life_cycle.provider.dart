@@ -9,9 +9,9 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
@@ -20,7 +20,6 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/backup/ios_background_settings.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
-import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/memory.provider.dart';
@@ -50,7 +49,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   Completer<void>? _resumeOperation;
   Completer<void>? _pauseOperation;
   final _log = Logger("AppLifeCycleNotifier");
-  static const Duration _resumeReconnectTimeout = Duration(seconds: 5);
 
   AppLifeCycleNotifier(this._ref) : super(AppLifeCycleEnum.active);
 
@@ -118,18 +116,31 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _performResume() async {
-    // no need to resume because app was never really paused
-    if (!_wasPaused) return;
+    final isAuthenticated = _ref.read(authProvider).isAuthenticated;
+    final isColdStart = !_wasPaused;
+
+    // On cold start, refresh server version as soon as auth is available.
+    if (isColdStart) {
+      if (isAuthenticated) {
+        unawaited(_ref.read(serverInfoProvider.notifier).getServerVersion());
+      }
+      return;
+    }
+
     _wasPaused = false;
 
     final routerStack = _ref.read(appRouterProvider).navigatorKey.currentContext?.router.stack;
 
-    final hasSplashScreenRoute = routerStack?.firstWhereOrNull((r) {
+    final hasSplashScreenRoute =
+        routerStack?.firstWhereOrNull((r) {
           return r.name == SplashScreenRoute.name;
-        }) != null;
-    final hasLockScreenRoute = routerStack?.firstWhereOrNull((r) {
+        }) !=
+        null;
+    final hasLockScreenRoute =
+        routerStack?.firstWhereOrNull((r) {
           return r.name == LockScreenRoute.name;
-        }) != null;
+        }) !=
+        null;
 
     final canShowLockScreen = !hasSplashScreenRoute && !hasLockScreenRoute;
 
@@ -143,26 +154,8 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       }
     }
 
-    final isAuthenticated = _ref.read(authProvider).isAuthenticated;
-
     // Needs to be logged in
     if (isAuthenticated) {
-      // In hc_device-driven resolver mode, trigger winner selection on resume.
-      // This allows switching public->local when local becomes available again.
-      await _ref
-          .read(curatorNetworkMonitorProvider)
-          .reconnectDeviceEndpoint(fromConnectivityChange: true, suppressFindingToast: true)
-          .timeout(
-            _resumeReconnectTimeout,
-            onTimeout: () {
-              _log.warning(
-                "Resume reconnect exceeded ${_resumeReconnectTimeout.inSeconds}s; continuing resume pipeline",
-              );
-            },
-          );
-      final endpoint = _ref.read(apiServiceProvider).apiClient.basePath;
-      _log.info("Using server URL: $endpoint");
-
       if (!Store.isBetaTimelineEnabled) {
         final permission = _ref.watch(galleryPermissionNotifier);
         if (permission.isGranted || permission.isLimited) {
@@ -215,6 +208,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _handleBetaTimelineResume() async {
+    await _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
     unawaited(_ref.read(backgroundWorkerLockServiceProvider).lock());
 
     // Give isolates time to complete any ongoing database transactions
@@ -226,21 +220,26 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     try {
       bool syncSuccess = false;
       await Future.wait([
-        _safeRun(backgroundManager.syncLocal(), "syncLocal"),
+        _safeRun(backgroundManager.syncLocal(full: CurrentPlatform.isAndroid ? true : false), "syncLocal"),
         _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemote"),
       ]);
       if (!syncSuccess) {
         // On app restart/resume reconnect can still be settling.
         // Retry once before surfacing syncFailed in the app bar badge.
         await Future<void>.delayed(const Duration(seconds: 2));
-        await _safeRun(
-          backgroundManager.syncRemote().then((success) => syncSuccess = success),
-          "syncRemoteRetry",
-        );
+        await _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemoteRetry");
       }
       final backupNotifier = _ref.read(driftBackupProvider.notifier);
       if (syncSuccess) {
         backupNotifier.updateError(BackupError.none);
+        await Future.wait([
+          _safeRun(backgroundManager.hashAssets(), "hashAssets").then((_) {
+            _resumeBackup();
+          }),
+          _resumeBackup(),
+          // TODO: Bring back when the soft freeze issue is addressed
+          // _safeRun(backgroundManager.syncCloudIds(), "syncCloudIds"),
+        ]);
       } else {
         backupNotifier.updateError(BackupError.syncFailed);
       }
@@ -336,21 +335,21 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     }
   }
 
-  Future<void> _performPause() async {
+  Future<void> _performPause() {
     if (_ref.read(authProvider).isAuthenticated) {
       if (Store.isBetaTimelineEnabled) {
         _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
       } else if (_ref.read(backupProvider.notifier).backupProgress != BackUpProgressEnum.manualInProgress) {
         // Do not cancel backup if manual upload is in progress
         _ref.read(backupProvider.notifier).cancelBackup();
+      } else {
+        _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
       }
 
       _ref.read(websocketProvider.notifier).disconnect();
     }
 
-    try {
-      LogService.I.flush();
-    } catch (_) {}
+    return LogService.I.flush().catchError((_) {});
   }
 
   Future<void> handleAppDetached() async {
@@ -362,7 +361,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
     // Flush logs before closing database
     try {
-      LogService.I.flush();
+      await LogService.I.flush();
     } catch (_) {}
 
     // Close Isar database safely

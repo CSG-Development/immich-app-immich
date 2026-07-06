@@ -8,9 +8,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
-import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
@@ -23,13 +23,12 @@ class DriftPeopleMergePage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final withClosestPersonId = useState(true);
+    final withClosestPersonId = useState(false);
     final sourcePersonId = useState<String>(person.id);
     final selectedPeopleIds = useState<List<String>>([]);
     final peopleAsync = ref.watch(
       getAllPeopleWithParamsProvider(withClosestPersonId.value ? sourcePersonId.value : null),
     );
-    final headers = ApiService.getRequestHeaders();
     final searchController = useTextEditingController();
     final searchFocus = useFocusNode();
     final searchQuery = useState<String?>(null);
@@ -144,7 +143,6 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                     ...selectedPeopleIds.value.map(
                       (personId) => _PersonCard(
                         personId: personId,
-                        headers: headers,
                         onTap: () => onPersonRemoved(personId),
                         size: 117.0,
                       ),
@@ -172,7 +170,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                             ),
                         ],
                       ),
-                    _PersonCard(personId: sourcePersonId.value, headers: headers, size: 156.0),
+                    _PersonCard(personId: sourcePersonId.value, size: 156.0),
                   ],
                 ),
               ),
@@ -262,7 +260,6 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                           final person = filteredPeople[index];
                           return _PersonCard(
                             personId: person.id,
-                            headers: headers,
                             onTap: () => onPersonSelected(person.id),
                           );
                         },
@@ -358,24 +355,32 @@ class DriftPeopleMergePage extends HookConsumerWidget {
 
 class _PersonCard extends StatelessWidget {
   final String personId;
-  final Map<String, String> headers;
   final VoidCallback? onTap;
   final double? size;
 
-  const _PersonCard({required this.personId, required this.headers, this.onTap, this.size});
+  const _PersonCard({required this.personId, this.onTap, this.size});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(width: 1.0, color: context.colorScheme.primary),
-        ),
-        child: CircleAvatar(backgroundImage: NetworkImage(getFaceThumbnailUrl(personId), headers: headers)),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final diameter = size ?? constraints.biggest.shortestSide;
+          return SizedBox(
+            width: diameter,
+            height: diameter,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(width: 1.0, color: context.colorScheme.primary),
+              ),
+              child: CircleAvatar(
+                backgroundImage: RemoteImageProvider(url: getFaceThumbnailUrl(personId)),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

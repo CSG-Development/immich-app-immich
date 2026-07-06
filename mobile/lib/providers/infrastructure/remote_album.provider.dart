@@ -5,10 +5,10 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/domain/services/remote_album.service.dart';
 import 'package:immich_mobile/models/albums/album_search.model.dart';
+import 'package:immich_mobile/providers/album/album_sort_by_options.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import 'album.provider.dart';
 
 class RemoteAlbumState {
   final List<RemoteAlbum> albums;
@@ -70,7 +70,7 @@ class RemoteAlbumNotifier extends Notifier<RemoteAlbumState> {
 
   Future<List<RemoteAlbum>> sortAlbums(
     List<RemoteAlbum> albums,
-    RemoteAlbumSortMode sortMode, {
+    AlbumSortMode sortMode, {
     bool isReverse = false,
   }) async {
     return await _remoteAlbumService.sortAlbums(albums, sortMode, isReverse: isReverse);

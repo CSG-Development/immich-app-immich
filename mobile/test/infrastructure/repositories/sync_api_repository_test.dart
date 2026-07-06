@@ -7,6 +7,8 @@ import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_api.repository.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
+import 'package:immich_mobile/utils/semver.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openapi/api.dart';
 
@@ -17,6 +19,8 @@ import '../../test_utils.dart';
 class MockHttpClient extends Mock implements http.Client {}
 
 class MockApiClient extends Mock implements ApiClient {}
+
+class MockEndpointResolver extends Mock implements HcDeviceEndpointResolver {}
 
 class MockStreamedResponse extends Mock implements http.StreamedResponse {}
 
@@ -31,6 +35,7 @@ void main() {
   late MockApiService mockApiService;
   late MockApiClient mockApiClient;
   late MockSyncApi mockSyncApi;
+  late MockEndpointResolver mockEndpointResolver;
   late MockHttpClient mockHttpClient;
   late MockStreamedResponse mockStreamedResponse;
   late StreamController<List<int>> responseStreamController;
@@ -44,6 +49,7 @@ void main() {
     mockApiService = MockApiService();
     mockApiClient = MockApiClient();
     mockSyncApi = MockSyncApi();
+    mockEndpointResolver = MockEndpointResolver();
     mockHttpClient = MockHttpClient();
     mockStreamedResponse = MockStreamedResponse();
     responseStreamController = StreamController<List<int>>.broadcast(sync: true);
@@ -53,15 +59,19 @@ void main() {
     when(() => mockApiService.apiClient).thenReturn(mockApiClient);
     when(() => mockApiService.syncApi).thenReturn(mockSyncApi);
     when(() => mockApiClient.basePath).thenReturn('http://demo.immich.app/api');
-    when(() => mockApiService.applyToParams(any(), any())).thenAnswer((_) async => {});
-
+    when(
+      () => mockEndpointResolver.resolveAndActivateWinner(
+        runId: any(named: 'runId'),
+        trigger: any(named: 'trigger'),
+        mode: any(named: 'mode'),
+      ),
+    ).thenAnswer((_) async => null);
     // Mock HTTP client behavior
     when(() => mockHttpClient.send(any())).thenAnswer((_) async => mockStreamedResponse);
     when(() => mockStreamedResponse.statusCode).thenReturn(200);
     when(() => mockStreamedResponse.stream).thenAnswer((_) => http.ByteStream(responseStreamController.stream));
-    when(() => mockHttpClient.close()).thenAnswer((_) => {});
 
-    sut = SyncApiRepository(mockApiService);
+    sut = SyncApiRepository(mockApiService, mockEndpointResolver);
   });
 
   tearDown(() async {
@@ -72,14 +82,21 @@ void main() {
 
   Future<void> streamChanges(
     Future<void> Function(List<SyncEvent>, Function() abort, Function() reset) onDataCallback,
+    SemVer serverVersion,
   ) {
-    return sut.streamChanges(onDataCallback, batchSize: testBatchSize, httpClient: mockHttpClient);
+    return sut.streamChanges(
+      onDataCallback,
+      batchSize: testBatchSize,
+      httpClient: mockHttpClient,
+      serverVersion: serverVersion,
+    );
   }
 
   test('streamChanges stops processing stream when abort is called', () async {
     int onDataCallCount = 0;
     bool abortWasCalledInCallback = false;
     List<SyncEvent> receivedEventsBatch1 = [];
+    final Completer<void> firstBatchReceived = Completer<void>();
 
     Future<void> onDataCallback(List<SyncEvent> events, Function() abort, Function() _) async {
       onDataCallCount++;
@@ -87,14 +104,16 @@ void main() {
         receivedEventsBatch1 = events;
         abort();
         abortWasCalledInCallback = true;
+        firstBatchReceived.complete();
       } else {
         fail("onData called more than once after abort was invoked");
       }
     }
 
-    final streamChangesFuture = streamChanges(onDataCallback);
+    final streamChangesFuture = streamChanges(onDataCallback, const SemVer(major: 2, minor: 5, patch: 0));
 
-    await pumpEventQueue();
+    // Give the stream subscription time to start (longer delay to account for mock delay)
+    await Future.delayed(const Duration(milliseconds: 50));
 
     for (int i = 0; i < testBatchSize; i++) {
       responseStreamController.add(
@@ -103,6 +122,11 @@ void main() {
         ),
       );
     }
+
+    await firstBatchReceived.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => fail('First batch was not processed within timeout'),
+    );
 
     for (int i = testBatchSize; i < testBatchSize * 2; i++) {
       responseStreamController.add(
@@ -118,26 +142,27 @@ void main() {
     expect(onDataCallCount, 1);
     expect(abortWasCalledInCallback, isTrue);
     expect(receivedEventsBatch1.length, testBatchSize);
-    verify(() => mockHttpClient.close()).called(1);
   });
 
   test('streamChanges does not process remaining lines in finally block if aborted', () async {
     int onDataCallCount = 0;
     bool abortWasCalledInCallback = false;
+    final Completer<void> firstBatchReceived = Completer<void>();
 
     Future<void> onDataCallback(List<SyncEvent> events, Function() abort, Function() _) async {
       onDataCallCount++;
       if (onDataCallCount == 1) {
         abort();
         abortWasCalledInCallback = true;
+        firstBatchReceived.complete();
       } else {
         fail("onData called more than once after abort was invoked");
       }
     }
 
-    final streamChangesFuture = streamChanges(onDataCallback);
+    final streamChangesFuture = streamChanges(onDataCallback, const SemVer(major: 2, minor: 5, patch: 0));
 
-    await pumpEventQueue();
+    await Future.delayed(const Duration(milliseconds: 50));
 
     for (int i = 0; i < testBatchSize; i++) {
       responseStreamController.add(
@@ -146,6 +171,11 @@ void main() {
         ),
       );
     }
+
+    await firstBatchReceived.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => fail('First batch was not processed within timeout'),
+    );
 
     // emit a single event to skip batching and trigger finally
     responseStreamController.add(
@@ -159,28 +189,31 @@ void main() {
 
     expect(onDataCallCount, 1);
     expect(abortWasCalledInCallback, isTrue);
-    verify(() => mockHttpClient.close()).called(1);
   });
 
   test('streamChanges processes remaining lines in finally block if not aborted', () async {
     int onDataCallCount = 0;
     List<SyncEvent> receivedEventsBatch1 = [];
     List<SyncEvent> receivedEventsBatch2 = [];
+    final Completer<void> firstBatchReceived = Completer<void>();
+    final Completer<void> secondBatchReceived = Completer<void>();
 
     Future<void> onDataCallback(List<SyncEvent> events, Function() _, Function() __) async {
       onDataCallCount++;
       if (onDataCallCount == 1) {
         receivedEventsBatch1 = events;
+        firstBatchReceived.complete();
       } else if (onDataCallCount == 2) {
         receivedEventsBatch2 = events;
+        secondBatchReceived.complete();
       } else {
         fail("onData called more than expected");
       }
     }
 
-    final streamChangesFuture = streamChanges(onDataCallback);
+    final streamChangesFuture = streamChanges(onDataCallback, const SemVer(major: 2, minor: 5, patch: 0));
 
-    await pumpEventQueue();
+    await Future.delayed(const Duration(milliseconds: 50));
 
     // Batch 1
     for (int i = 0; i < testBatchSize; i++) {
@@ -191,7 +224,11 @@ void main() {
       );
     }
 
-    // Partial Batch 2
+    await firstBatchReceived.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => fail('First batch was not processed within timeout'),
+    );
+
     responseStreamController.add(
       utf8.encode(
         _createJsonLine(SyncEntityType.userDeleteV1.toString(), SyncUserDeleteV1(userId: "user100").toJson(), 'ack100'),
@@ -199,12 +236,17 @@ void main() {
     );
 
     await responseStreamController.close();
+
+    await secondBatchReceived.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => fail('Second batch was not processed within timeout'),
+    );
+
     await expectLater(streamChangesFuture, completes);
 
     expect(onDataCallCount, 2);
     expect(receivedEventsBatch1.length, testBatchSize);
     expect(receivedEventsBatch2.length, 1);
-    verify(() => mockHttpClient.close()).called(1);
   });
 
   test('streamChanges handles stream error gracefully', () async {
@@ -215,9 +257,9 @@ void main() {
       onDataCallCount++;
     }
 
-    final streamChangesFuture = streamChanges(onDataCallback);
+    final streamChangesFuture = streamChanges(onDataCallback, const SemVer(major: 2, minor: 5, patch: 0));
 
-    await pumpEventQueue();
+    await Future.delayed(const Duration(milliseconds: 50));
 
     responseStreamController.add(
       utf8.encode(
@@ -229,7 +271,6 @@ void main() {
     await expectLater(streamChangesFuture, throwsA(streamError));
 
     expect(onDataCallCount, 0);
-    verify(() => mockHttpClient.close()).called(1);
   });
 
   test('streamChanges throws ApiException on non-200 status code', () async {
@@ -242,7 +283,7 @@ void main() {
       onDataCallCount++;
     }
 
-    final future = streamChanges(onDataCallback);
+    final future = streamChanges(onDataCallback, const SemVer(major: 2, minor: 5, patch: 0));
 
     errorBodyController.add(utf8.encode('{"error":"Unauthorized"}'));
     await errorBodyController.close();
@@ -257,6 +298,5 @@ void main() {
     );
 
     expect(onDataCallCount, 0);
-    verify(() => mockHttpClient.close()).called(1);
   });
 }

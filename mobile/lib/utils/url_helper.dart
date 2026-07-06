@@ -3,11 +3,32 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:punycode/punycode.dart';
 
 String sanitizeUrl(String url) {
-  // Add schema if none is set
-  final urlWithSchema = url.trimLeft().startsWith(RegExp(r"https?://")) ? url : "https://$url";
+  var normalized = url.trim();
 
-  // Remove trailing slash(es)
-  return urlWithSchema.trimRight().replaceFirst(RegExp(r"/+$"), "");
+  // Fix common scheme typos first (e.g. "https//host", "http//host").
+  normalized = normalized.replaceFirstMapped(
+    RegExp(r'^(https?)(//)', caseSensitive: false),
+    (m) => '${m.group(1)}://',
+  );
+
+  // Collapse accidentally duplicated/concatenated schemes
+  // (e.g. "https://https//host", "https://https://host").
+  normalized = normalized.replaceFirstMapped(
+    RegExp(r'^(https?):\/\/(https?):\/\/', caseSensitive: false),
+    (m) => '${m.group(2)}://',
+  );
+  normalized = normalized.replaceFirstMapped(
+    RegExp(r'^(https?):\/\/(https?)\/\/', caseSensitive: false),
+    (m) => '${m.group(2)}://',
+  );
+
+  // Add schema if none is set.
+  if (!normalized.startsWith(RegExp(r'https?://', caseSensitive: false))) {
+    normalized = 'https://$normalized';
+  }
+
+  // Remove trailing slash(es).
+  return normalized.replaceFirst(RegExp(r"/+$"), "");
 }
 
 String? getServerUrl() {

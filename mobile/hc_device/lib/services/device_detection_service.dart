@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart'
     show Connectivity, ConnectivityResult;
 import 'package:hc_device/services/logger_service.dart';
+import 'package:hc_device/services/request_timeout_interceptor.dart';
 import 'package:hc_device/api/api.swagger.dart' show Api, About;
 import 'package:hc_device/api/remote_access.enums.swagger.dart'
     show DevicePathType;
@@ -60,7 +61,7 @@ class PingResult {
   final bool success;
   final Uri? baseUrl;
   final About? about;
-  final String? pathType;
+  final DevicePathType? pathType;
   final String? debugHostType;
 
   PingResult({
@@ -234,6 +235,7 @@ class DeviceDetectionService {
                   port,
                 ),
                 debugHostType: "mDNS",
+                pathType: DevicePathType.local,
                 about: about,
               );
               final certificateCommonName = about.certificateCommonName;
@@ -387,16 +389,17 @@ class DeviceDetectionService {
     Duration timeoutDelay = timeoutLocalApiCall,
   }) async {
     try {
+      final timeoutInterceptor = CuratorRequestTimeoutInterceptor(timeoutDelay);
       final api = deviceProvider is DeviceProvider
           ? await (deviceProvider as DeviceProvider).createApi(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             )
           : Api.create(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             );
-      final response = await api.aboutGet().timeout(timeoutDelay);
+      final response = await api.aboutGet();
       if (response.isSuccessful) {
         return response.body!;
       }
@@ -431,6 +434,7 @@ class DeviceDetectionService {
           baseUrl: result.baseUrl!,
           about: result.about!,
           debugHostType: result.debugHostType,
+          pathType: result.pathType,
         );
         return result;
       }
@@ -459,10 +463,20 @@ class DeviceDetectionService {
       return PingResult.failed();
     }
 
-    // Try to use cached paths first
+    // Try to use cached paths first (strictly scoped to the selected remote device)
     DevicePaths? devicePaths;
     if (useCachedPaths) {
-      devicePaths = deviceProvider.getCachedDevicePaths();
+      final cachedPaths = deviceProvider.getCachedDevicePaths();
+      if (cachedPaths != null &&
+          cachedPaths.seagateDeviceID.isNotEmpty &&
+          cachedPaths.seagateDeviceID == remoteDeviceID) {
+        devicePaths = cachedPaths;
+      } else if (cachedPaths != null) {
+        logger.info(
+          '[Network] Ignoring cached paths for different device: '
+          'cached=${cachedPaths.seagateDeviceID} selected=$remoteDeviceID',
+        );
+      }
     }
 
     // If no cached paths or cache disabled, fetch from server
@@ -608,6 +622,7 @@ class DeviceDetectionService {
           baseUrl: result.baseUrl!,
           about: result.about!,
           debugHostType: result.debugHostType,
+          pathType: result.pathType,
         );
         return result;
       }
@@ -625,9 +640,9 @@ class DeviceDetectionService {
     DevicePath path, {
     String? debugHostType,
   }) async {
-    final pathType = debugHostType ?? path.type.value ?? 'unknown';
     final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
-    logger.info('[Network] Testing path: $pathType at $baseUrl');
+    final pathType = path.type;
+    logger.info('[Network] Testing path: ${pathType.value} at $baseUrl');
     final about = await getAbout(
       baseUrl,
       timeoutDelay: path.type == DevicePathType.local
@@ -644,7 +659,7 @@ class DeviceDetectionService {
         baseUrl: baseUrl,
         about: about,
         pathType: pathType,
-        debugHostType: debugHostType ?? "Remote Access > $pathType",
+        debugHostType: debugHostType ?? 'Remote Access > ${pathType.value}',
       );
       logger.info(
         '[Network] Path reachable: ${result.debugHostType} at $baseUrl',

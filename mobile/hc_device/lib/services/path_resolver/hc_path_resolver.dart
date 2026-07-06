@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/device_item.dart';
 import 'package:hc_device/providers/device.provider.dart';
 import 'package:hc_device/providers/remote.provider.dart';
 import 'package:hc_device/services/device_detection_service.dart';
 import 'package:hc_device/services/path_probe_mode.dart';
+import 'package:hc_device/services/path_type.dart';
 import 'package:hc_device/utils/mdns_platform_support.dart';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ResolveMode { foreground, background, terminatedBgTask }
@@ -42,6 +46,11 @@ class ExternalValidationResult {
 
 typedef ExternalEndpointValidator = Future<ExternalValidationResult> Function(
   Uri endpoint,
+  ResolveContext context,
+);
+
+typedef PathUpgradeHandler = Future<void> Function(
+  HcPathResolveResult result,
   ResolveContext context,
 );
 
@@ -83,18 +92,19 @@ class HcPathResolveResult {
 
 class HcPathResolverSnapshot {
   const HcPathResolverSnapshot({
-    this.validPath,
     this.availablePath,
     this.lastResolveAt,
     this.lastMode,
     this.lastTrigger,
   });
 
-  final String? validPath;
   final String? availablePath;
   final DateTime? lastResolveAt;
   final ResolveMode? lastMode;
   final ResolveTrigger? lastTrigger;
+
+  @Deprecated('Use availablePath')
+  String? get validPath => availablePath;
 }
 
 class HcPathResolver {
@@ -106,18 +116,22 @@ class HcPathResolver {
 
   static const String _validPathKey = 'hc_resolver_valid_path';
   static const String _availablePathKey = 'hc_resolver_available_path';
+  static const String _availablePathTypeKey = 'hc_resolver_available_path_type';
   static const String _lastResolveAtKey = 'hc_resolver_last_resolve_at';
   static const String _lastResolveModeKey = 'hc_resolver_last_resolve_mode';
   static const String _lastResolveTriggerKey = 'hc_resolver_last_resolve_trigger';
 
   final DeviceProvider _deviceProvider;
   final RemoteProvider _remoteProvider;
+  final Logger _log = Logger('HcPathResolver');
   final StreamController<HcPathResolveResult> _resolveEventsController =
       StreamController<HcPathResolveResult>.broadcast();
 
+  PathUpgradeHandler? onPathUpgrade;
+
   bool _isInitialized = false;
-  String? _validPath;
   String? _availablePath;
+  String? _availablePathType;
   DateTime? _lastResolveAt;
   ResolveMode? _lastMode;
   ResolveTrigger? _lastTrigger;
@@ -127,8 +141,11 @@ class HcPathResolver {
       return;
     }
     final prefs = await SharedPreferences.getInstance();
-    _validPath = prefs.getString(_validPathKey);
-    _availablePath = prefs.getString(_availablePathKey);
+    _availablePath = prefs.getString(_availablePathKey) ?? prefs.getString(_validPathKey);
+    _availablePathType = prefs.getString(_availablePathTypeKey);
+    if (!HcPathType.isKnown(_availablePathType)) {
+      _availablePathType = null;
+    }
     final ts = prefs.getInt(_lastResolveAtKey);
     if (ts != null) {
       _lastResolveAt = DateTime.fromMillisecondsSinceEpoch(ts);
@@ -151,22 +168,19 @@ class HcPathResolver {
     ExternalEndpointValidator? validateExternal,
   }) async {
     await init();
+    _log.info(
+      '[HcPathResolver] resolve start '
+      'mode=${mode.name} trigger=${trigger.name} localOnly=$localOnly '
+      'cachedPath=${_availablePath ?? '-'} cachedPathType=${_availablePathType ?? '-'} '
+      'deviceAuth=${_deviceProvider.isAuthenticated} remoteAuth=${_remoteProvider.isAuthenticated}',
+    );
     final stopwatch = Stopwatch()..start();
     final context = ResolveContext(mode: mode, trigger: trigger, localOnly: localOnly);
-    final result = switch (mode) {
-      ResolveMode.foreground => await _resolveForeground(
-          context: context,
-          validateExternal: validateExternal,
-        ),
-      ResolveMode.background => await _resolveBackground(
-          context: context,
-          validateExternal: validateExternal,
-        ),
-      ResolveMode.terminatedBgTask => await _resolveTerminatedBgTask(
-          context: context,
-          validateExternal: validateExternal,
-        ),
-    };
+    final result = await _resolveCore(
+      context: context,
+      validateExternal: validateExternal,
+      allowFallbackToAvailablePath: true,
+    );
     final finalized = HcPathResolveResult(
       success: result.success,
       endpoint: result.endpoint,
@@ -179,40 +193,14 @@ class HcPathResolver {
     );
     await _recordResolve(mode: mode, trigger: trigger, result: finalized);
     _resolveEventsController.add(finalized);
+    _log.info(
+      '[HcPathResolver] resolve end '
+      'mode=${mode.name} trigger=${trigger.name} '
+      'success=${finalized.success} reason=${finalized.reason ?? '-'} '
+      'selection=${finalized.selectionSource ?? '-'} pathType=${finalized.resolvedPathType ?? '-'} '
+      'endpoint=${finalized.endpoint ?? '-'} elapsedMs=${stopwatch.elapsedMilliseconds}',
+    );
     return finalized;
-  }
-
-  Future<HcPathResolveResult> _resolveForeground({
-    required ResolveContext context,
-    ExternalEndpointValidator? validateExternal,
-  }) async {
-    return _resolveCore(
-      context: context,
-      validateExternal: validateExternal,
-      allowFallbackToAvailablePath: true,
-    );
-  }
-
-  Future<HcPathResolveResult> _resolveBackground({
-    required ResolveContext context,
-    ExternalEndpointValidator? validateExternal,
-  }) async {
-    return _resolveCore(
-      context: context,
-      validateExternal: validateExternal,
-      allowFallbackToAvailablePath: true,
-    );
-  }
-
-  Future<HcPathResolveResult> _resolveTerminatedBgTask({
-    required ResolveContext context,
-    ExternalEndpointValidator? validateExternal,
-  }) async {
-    return _resolveCore(
-      context: context,
-      validateExternal: validateExternal,
-      allowFallbackToAvailablePath: true,
-    );
   }
 
   Future<HcPathResolveResult> _resolveCore({
@@ -231,11 +219,17 @@ class HcPathResolver {
         (deviceID != null && deviceID.isNotEmpty) ||
         (seagateDeviceID != null && seagateDeviceID.isNotEmpty);
     if (!deviceAuth && !hasKnownDeviceIdentity) {
+      _log.info('[HcPathResolver] resolveCore abort reason=not_authenticated');
       return const HcPathResolveResult(success: false, reason: 'not_authenticated');
     }
 
     try {
-      final plan = _resolvePlanFor(context);
+      final plan = await _resolvePlanFor(context);
+      _log.info(
+        '[HcPathResolver] resolveCore plan '
+        'probeMode=${plan.probeMode.name} skipDiscovery=${plan.skipDiscovery} '
+        'mode=${context.mode.name} trigger=${context.trigger.name} localOnly=${context.localOnly}',
+      );
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
         final ping = await DeviceDetectionService(
           deviceProvider: _deviceProvider,
@@ -257,9 +251,11 @@ class HcPathResolver {
           validateExternal: validateExternal,
         );
         if (fromSeagate != null) {
+          _log.info('[HcPathResolver] resolveCore success branch=seagate_device_id endpoint=${fromSeagate.endpoint}');
           return fromSeagate;
         }
         if (plan.skipDiscovery) {
+          _log.info('[HcPathResolver] resolveCore seagate probe failed, skipDiscovery=true → fallback');
           return _fallbackToAvailablePath(
             allowFallbackToAvailablePath: allowFallbackToAvailablePath,
             context: context,
@@ -269,6 +265,7 @@ class HcPathResolver {
       }
 
       if (deviceID == null || deviceID.isEmpty) {
+        _log.info('[HcPathResolver] resolveCore abort branch=no_device_id → fallback');
         return _fallbackToAvailablePath(
           allowFallbackToAvailablePath: allowFallbackToAvailablePath,
           context: context,
@@ -277,6 +274,44 @@ class HcPathResolver {
       }
 
       if (plan.skipDiscovery) {
+        // Safe recovery path for OTP/reconnect flows:
+        // when mDNS identity is known but remote id is missing, resolve remote
+        // device id by certificate CN and continue normal probing.
+        if (deviceID.isNotEmpty &&
+            (_deviceProvider.seagateDeviceID == null || _deviceProvider.seagateDeviceID!.isEmpty) &&
+            _remoteProvider.isAuthenticated) {
+          final recoveredRemoteDeviceID = await _recoverRemoteDeviceIdByCertificateCN(deviceID);
+          if (recoveredRemoteDeviceID != null) {
+            _log.info(
+              '[HcPathResolver] recovered remote device id from certificate CN '
+              'deviceID=$deviceID remoteDeviceID=$recoveredRemoteDeviceID',
+            );
+            final ping = await DeviceDetectionService(
+              deviceProvider: _deviceProvider,
+              remoteProvider: _remoteProvider,
+            ).findOptimalDeviceConnection(
+              seagateDeviceID: recoveredRemoteDeviceID,
+              pathProbeMode: plan.probeMode,
+              onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
+                ping: betterPing,
+                context: context,
+                validateExternal: validateExternal,
+                remoteDeviceID: recoveredRemoteDeviceID,
+              ),
+            );
+            final fromRecovered = await _tryCompleteFromPing(
+              ping: ping,
+              selectionSource: 'recovered_remote_device_id',
+              context: context,
+              validateExternal: validateExternal,
+              remoteDeviceID: recoveredRemoteDeviceID,
+            );
+            if (fromRecovered != null) {
+              return fromRecovered;
+            }
+          }
+        }
+        _log.info('[HcPathResolver] resolveCore skipDiscovery=true (no seagate success) → fallback');
         return _fallbackToAvailablePath(
           allowFallbackToAvailablePath: allowFallbackToAvailablePath,
           context: context,
@@ -285,11 +320,13 @@ class HcPathResolver {
       }
 
       final discovered = await _discoverDevices();
+      _log.info('[HcPathResolver] resolveCore discovery found=${discovered.length} devices');
       final selected = _findByConnectedDeviceId(
         devices: discovered,
         connectedDeviceId: deviceID,
       );
       if (selected == null) {
+        _log.info('[HcPathResolver] resolveCore no device match for deviceID=$deviceID → fallback');
         return _fallbackToAvailablePath(
           allowFallbackToAvailablePath: allowFallbackToAvailablePath,
           context: context,
@@ -323,6 +360,7 @@ class HcPathResolver {
           remoteDeviceID: remoteDeviceID,
         );
         if (fromRemote != null) {
+          _log.info('[HcPathResolver] resolveCore success branch=remote_device_paths endpoint=${fromRemote.endpoint}');
           return fromRemote;
         }
       }
@@ -330,6 +368,7 @@ class HcPathResolver {
       if (selected.baseUrl != null) {
         final endpoint = winnerEndpointFromBaseUrl(selected.baseUrl!);
         if (context.localOnly && endpoint.contains('remote')) {
+          _log.info('[HcPathResolver] resolveCore localOnly rejected remote endpoint → fallback');
           return _fallbackToAvailablePath(
             allowFallbackToAvailablePath: allowFallbackToAvailablePath,
             context: context,
@@ -338,6 +377,7 @@ class HcPathResolver {
         }
         final isValid = await _validate(endpoint, context, validateExternal);
         if (!isValid) {
+          _log.info('[HcPathResolver] resolveCore discovery baseUrl validation failed endpoint=$endpoint → fallback');
           return _fallbackToAvailablePath(
             allowFallbackToAvailablePath: allowFallbackToAvailablePath,
             context: context,
@@ -350,31 +390,54 @@ class HcPathResolver {
           seagateDeviceID: remoteDeviceID,
           debugHostType: selected.debugHostType,
         );
+        _log.info('[HcPathResolver] resolveCore success branch=discovery_selected_base_url endpoint=$endpoint');
         return HcPathResolveResult(
           success: true,
           endpoint: endpoint,
           baseUrl: selected.baseUrl,
-          pingResult: PingResult(
-            success: true,
-            baseUrl: selected.baseUrl,
-            about: selected.about,
-            pathType: selected.debugHostType,
-            debugHostType: selected.debugHostType,
-          ),
           selectionSource: 'discovery_selected_base_url',
-          resolvedPathType: _normalizePathType(
-            selected.debugHostType,
-            fallbackEndpoint: endpoint,
-          ),
+          resolvedPathType: HcPathType.fromDevicePathType(selected.pathType ?? DevicePathType.local),
         );
       }
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      _log.warning('[HcPathResolver] resolveCore unexpected error', error, stackTrace);
+    }
 
+    _log.info('[HcPathResolver] resolveCore exhausted all branches → fallback');
     return _fallbackToAvailablePath(
       allowFallbackToAvailablePath: allowFallbackToAvailablePath,
       context: context,
       validateExternal: validateExternal,
     );
+  }
+
+  Future<String?> _endpointFromValidatedPing({
+    required PingResult ping,
+    required ResolveContext context,
+    required ExternalEndpointValidator? validateExternal,
+    DeviceItem? selected,
+    String? remoteDeviceID,
+  }) async {
+    if (!ping.success || ping.baseUrl == null) {
+      return null;
+    }
+    final endpoint = winnerEndpointFromBaseUrl(ping.baseUrl!);
+    if (context.localOnly && endpoint.contains('remote')) {
+      return null;
+    }
+    if (!await _validate(endpoint, context, validateExternal)) {
+      return null;
+    }
+    await _deviceProvider.setHost(
+      baseUrl: ping.baseUrl!,
+      deviceID: selected?.id,
+      seagateDeviceID: remoteDeviceID,
+      debugHostType: ping.debugHostType,
+      devicePaths: remoteDeviceID != null
+          ? _deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID)?.paths
+          : null,
+    );
+    return endpoint;
   }
 
   Future<HcPathResolveResult?> _tryCompleteFromPing({
@@ -385,36 +448,23 @@ class HcPathResolver {
     DeviceItem? selected,
     String? remoteDeviceID,
   }) async {
-    if (!ping.success || ping.baseUrl == null) {
-      return null;
-    }
-    final endpoint = winnerEndpointFromBaseUrl(ping.baseUrl!);
-    if (context.localOnly && endpoint.contains('remote')) {
-      return null;
-    }
-    final isValid = await _validate(endpoint, context, validateExternal);
-    if (!isValid) {
-      return null;
-    }
-    await _deviceProvider.setHost(
-      baseUrl: ping.baseUrl!,
-      deviceID: selected?.id,
-      seagateDeviceID: remoteDeviceID,
-      debugHostType: ping.debugHostType,
-      devicePaths: remoteDeviceID != null
-          ? _deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID)?.paths
-          : null,
+    final endpoint = await _endpointFromValidatedPing(
+      ping: ping,
+      context: context,
+      validateExternal: validateExternal,
+      selected: selected,
+      remoteDeviceID: remoteDeviceID,
     );
+    if (endpoint == null) {
+      return null;
+    }
     return HcPathResolveResult(
       success: true,
       endpoint: endpoint,
       baseUrl: ping.baseUrl,
       pingResult: ping,
       selectionSource: selectionSource,
-      resolvedPathType: _normalizePathType(
-        ping.pathType ?? ping.debugHostType,
-        fallbackEndpoint: endpoint,
-      ),
+      resolvedPathType: HcPathType.fromDevicePathType(ping.pathType),
     );
   }
 
@@ -425,44 +475,39 @@ class HcPathResolver {
     DeviceItem? selected,
     String? remoteDeviceID,
   }) async {
-    if (!ping.success || ping.baseUrl == null) {
-      return;
-    }
-
-    final endpoint = winnerEndpointFromBaseUrl(ping.baseUrl!);
-    if (context.localOnly && endpoint.contains('remote')) {
-      return;
-    }
-
-    final isValid = await _validate(endpoint, context, validateExternal);
-    if (!isValid) {
-      return;
-    }
-
-    await _deviceProvider.setHost(
-      baseUrl: ping.baseUrl!,
-      deviceID: selected?.id,
-      seagateDeviceID: remoteDeviceID,
-      debugHostType: ping.debugHostType,
-      devicePaths: remoteDeviceID != null
-          ? _deviceProvider.getCachedDevicePathsForDevice(remoteDeviceID)?.paths
-          : null,
+    final endpoint = await _endpointFromValidatedPing(
+      ping: ping,
+      context: context,
+      validateExternal: validateExternal,
+      selected: selected,
+      remoteDeviceID: remoteDeviceID,
     );
-    await setAvailablePath(endpoint);
+    if (endpoint == null) {
+      return;
+    }
 
-    _resolveEventsController.add(
-      HcPathResolveResult(
-        success: true,
-        endpoint: endpoint,
-        baseUrl: ping.baseUrl,
-        pingResult: ping,
-        selectionSource: 'path_upgrade',
-        resolvedPathType: _normalizePathType(
-          ping.pathType ?? ping.debugHostType,
-          fallbackEndpoint: endpoint,
-        ),
-      ),
+    final pathType = HcPathType.fromDevicePathType(ping.pathType);
+    final upgradeResult = HcPathResolveResult(
+      success: true,
+      endpoint: endpoint,
+      baseUrl: ping.baseUrl,
+      pingResult: ping,
+      selectionSource: 'path_upgrade',
+      resolvedPathType: pathType,
     );
+    _log.info(
+      '[HcPathResolver] path upgrade '
+      'endpoint=$endpoint pathType=${pathType ?? '-'}',
+    );
+
+    final handler = onPathUpgrade;
+    if (handler != null) {
+      await handler(upgradeResult, context);
+      return;
+    }
+
+    await setAvailablePath(endpoint, pathType: pathType);
+    _resolveEventsController.add(upgradeResult);
   }
 
   Future<HcPathResolveResult> _fallbackToAvailablePath({
@@ -471,44 +516,85 @@ class HcPathResolver {
     required ExternalEndpointValidator? validateExternal,
   }) async {
     if (!allowFallbackToAvailablePath || _availablePath == null || _availablePath!.isEmpty) {
+      _log.info(
+        '[HcPathResolver] fallback abort reason=no_available_path '
+        'allowFallback=$allowFallbackToAvailablePath cachedPath=${_availablePath ?? '-'}',
+      );
       return const HcPathResolveResult(success: false, reason: 'no_available_path');
     }
     final endpoint = _availablePath!;
+    if (await shouldSkipStaleLocalFallback()) {
+      _log.info(
+        '[HcPathResolver] fallback abort reason=stale_local_path_offline '
+        'endpoint=$endpoint pathType=${_availablePathType ?? '-'}',
+      );
+      await invalidatePath(endpoint);
+      return const HcPathResolveResult(success: false, reason: 'stale_local_path_offline');
+    }
     if (!await _validate(endpoint, context, validateExternal)) {
+      _log.info('[HcPathResolver] fallback abort reason=fallback_path_invalid endpoint=$endpoint');
       return const HcPathResolveResult(success: false, reason: 'fallback_path_invalid');
     }
+    _log.info(
+      '[HcPathResolver] fallback success endpoint=$endpoint pathType=${_availablePathType ?? '-'}',
+    );
     return HcPathResolveResult(
       success: true,
       endpoint: endpoint,
       selectionSource: 'fallback_available',
-      resolvedPathType: _normalizePathType(
-        null,
-        fallbackEndpoint: endpoint,
-      ),
+      resolvedPathType: _availablePathType,
     );
   }
 
-  String _normalizePathType(String? rawPathType, {String? fallbackEndpoint}) {
-    final normalized = rawPathType?.toLowerCase().trim();
-    if (normalized != null && normalized.isNotEmpty) {
-      if (normalized == 'local' || normalized.endsWith('> local') || normalized.contains('mdns')) {
-        return 'local';
-      }
-      if (normalized == 'public' || normalized.endsWith('> public')) {
-        return 'public';
-      }
-      if (normalized == 'remote' || normalized.endsWith('> remote')) {
-        return 'remote';
-      }
+  Future<bool> shouldSkipStaleLocalFallback() async {
+    if (_availablePathType != HcPathType.local) {
+      return false;
     }
-    if (fallbackEndpoint == null || fallbackEndpoint.isEmpty) {
-      return 'unknown';
+    if (!await _hasWiFiConnectivity()) {
+      return true;
     }
-    final endpoint = fallbackEndpoint.toLowerCase();
-    if (endpoint.contains('.remote.')) {
-      return 'remote';
+    final endpoint = _availablePath;
+    if (endpoint == null || endpoint.isEmpty) {
+      return true;
     }
-    return 'unknown';
+    final uri = Uri.parse(endpoint.trim());
+    final baseUrl = Uri(
+      scheme: uri.scheme.isEmpty ? 'https' : uri.scheme,
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+    );
+    final about = await DeviceDetectionService(
+      deviceProvider: _deviceProvider,
+      remoteProvider: _remoteProvider,
+    ).getAbout(baseUrl);
+    return about == null;
+  }
+
+  Future<void> invalidateLocalPathIfOffline() async {
+    final endpoint = _availablePath;
+    if (endpoint == null || endpoint.isEmpty) {
+      return;
+    }
+    if (await shouldSkipStaleLocalFallback()) {
+      await invalidatePath(endpoint);
+    }
+  }
+
+  String? get availablePathType => _availablePathType;
+
+  void _persistPathType(String? candidate) {
+    if (HcPathType.isKnown(candidate)) {
+      _availablePathType = candidate;
+    }
+  }
+
+  Future<bool> _hasWiFiConnectivity() async {
+    try {
+      final connectivity = await Connectivity().checkConnectivity();
+      return connectivity.contains(ConnectivityResult.wifi);
+    } catch (_) {
+      return true;
+    }
   }
 
   Future<bool> _validate(
@@ -523,16 +609,37 @@ class HcPathResolver {
     return result.ok;
   }
 
-  _ResolvePlan _resolvePlanFor(ResolveContext context) {
-    final probeMode = context.localOnly
-        ? PathProbeMode.localOnly
-        : _usesRemoteOnlyProbe(context)
-        ? PathProbeMode.remoteOnly
-        : PathProbeMode.all;
-    final skipDiscovery =
-        !canUsePlatformMdnsDiscovery ||
-        probeMode == PathProbeMode.localOnly ||
-        (probeMode == PathProbeMode.remoteOnly && context.trigger != ResolveTrigger.connectivityChange);
+  Future<_ResolvePlan> _resolvePlanFor(ResolveContext context) async {
+    if (context.localOnly) {
+      _log.fine('[HcPathResolver] plan localOnly → probeMode=localOnly skipDiscovery=true');
+      return const _ResolvePlan(probeMode: PathProbeMode.localOnly, skipDiscovery: true);
+    }
+
+    final hasWifi = await _hasWiFiConnectivity();
+    if (!hasWifi) {
+      // Off WiFi (e.g. cellular/VPN) we cannot reach local mDNS paths. When remote
+      // access is authenticated, run remote discovery instead of falling back to a
+      // stale/cleared local endpoint (which yields no_available_path after OTP).
+      final canDiscoverRemote = _remoteProvider.isAuthenticated;
+      _log.info(
+        '[HcPathResolver] plan off-wifi '
+        'remoteAuth=$canDiscoverRemote probeMode=remoteOnly skipDiscovery=${!canDiscoverRemote}',
+      );
+      return _ResolvePlan(
+        probeMode: PathProbeMode.remoteOnly,
+        skipDiscovery: !canDiscoverRemote,
+      );
+    }
+
+    final remoteOnlyProbe = _usesRemoteOnlyProbe(context);
+    final probeMode = remoteOnlyProbe ? PathProbeMode.remoteOnly : PathProbeMode.all;
+    final skipDiscovery = !canUsePlatformMdnsDiscovery || probeMode != PathProbeMode.all;
+    _log.info(
+      '[HcPathResolver] plan on-wifi '
+      'remoteOnlyProbe=$remoteOnlyProbe probeMode=${probeMode.name} '
+      'skipDiscovery=$skipDiscovery mdns=$canUsePlatformMdnsDiscovery '
+      'remoteAuth=${_remoteProvider.isAuthenticated}',
+    );
     return _ResolvePlan(probeMode: probeMode, skipDiscovery: skipDiscovery);
   }
 
@@ -595,7 +702,32 @@ class HcPathResolver {
         device.remoteDevice?.certificateCommonName == connectedDeviceId;
   }
 
-  String? getValidPath() => _validPath;
+  Future<String?> _recoverRemoteDeviceIdByCertificateCN(String certificateCommonName) async {
+    try {
+      final response = await _remoteProvider.fetchDevices();
+      if (!response.isSuccessful || response.body == null) {
+        return null;
+      }
+
+      for (final remoteDevice in response.body!) {
+        if (remoteDevice.certificateCommonName == certificateCommonName) {
+          final seagateDeviceID = remoteDevice.seagateDeviceID;
+          if (seagateDeviceID.isNotEmpty) {
+            return seagateDeviceID;
+          }
+        }
+      }
+    } catch (error, stackTrace) {
+      _log.warning(
+        '[HcPathResolver] failed to recover remote device id by certificate CN',
+        error,
+        stackTrace,
+      );
+    }
+    return null;
+  }
+
+  String? getValidPath() => _availablePath;
 
   String? getAvailablePath() => _availablePath;
 
@@ -605,7 +737,6 @@ class HcPathResolver {
 
   HcPathResolverSnapshot getSnapshot() {
     return HcPathResolverSnapshot(
-      validPath: _validPath,
       availablePath: _availablePath,
       lastResolveAt: _lastResolveAt,
       lastMode: _lastMode,
@@ -615,25 +746,25 @@ class HcPathResolver {
 
   Stream<HcPathResolveResult> watchResolveEvents() => _resolveEventsController.stream;
 
-  Future<void> setAvailablePath(String endpoint) async {
+  Future<void> setAvailablePath(String endpoint, {String? pathType}) async {
     _availablePath = endpoint;
+    _persistPathType(pathType);
     await _persist();
   }
 
   Future<void> invalidatePath(String endpoint) async {
-    if (_validPath == endpoint) {
-      _validPath = null;
-    }
     if (_availablePath == endpoint) {
+      _log.info('[HcPathResolver] invalidatePath endpoint=$endpoint pathType=${_availablePathType ?? '-'}');
       _availablePath = null;
+      _availablePathType = null;
     }
     await _persist();
   }
 
-  /// Clears persisted resolver winners so a new photos session starts clean.
   Future<void> clearPhotosSession() async {
-    _validPath = null;
+    _log.info('[HcPathResolver] clearPhotosSession');
     _availablePath = null;
+    _availablePathType = null;
     _lastResolveAt = null;
     _lastMode = null;
     _lastTrigger = null;
@@ -657,8 +788,8 @@ class HcPathResolver {
     required HcPathResolveResult result,
   }) async {
     if (result.success && result.endpoint != null && result.endpoint!.isNotEmpty) {
-      _validPath = result.endpoint;
       _availablePath = result.endpoint;
+      _persistPathType(result.resolvedPathType);
     }
     _lastResolveAt = DateTime.now();
     _lastMode = mode;
@@ -668,15 +799,16 @@ class HcPathResolver {
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    if (_validPath == null || _validPath!.isEmpty) {
-      await prefs.remove(_validPathKey);
-    } else {
-      await prefs.setString(_validPathKey, _validPath!);
-    }
     if (_availablePath == null || _availablePath!.isEmpty) {
       await prefs.remove(_availablePathKey);
     } else {
       await prefs.setString(_availablePathKey, _availablePath!);
+    }
+    await prefs.remove(_validPathKey);
+    if (_availablePathType == null || _availablePathType!.isEmpty) {
+      await prefs.remove(_availablePathTypeKey);
+    } else {
+      await prefs.setString(_availablePathTypeKey, _availablePathType!);
     }
     if (_lastResolveAt == null) {
       await prefs.remove(_lastResolveAtKey);

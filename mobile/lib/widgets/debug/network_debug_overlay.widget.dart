@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
@@ -28,7 +29,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
   final List<String> _pendingLogLines = <String>[];
   StreamSubscription<LogRecord>? _logSubscription;
   Timer? _logFlushTimer;
-  static const int _maxLogBuffer = 200;
+  static const int _maxLogBuffer = kNetworkDebugLogBufferLimit;
   static const int _visibleLogRows = 5;
   _ResolveTimingState _resolveTiming = const _ResolveTimingState();
 
@@ -516,17 +517,29 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
   bool _isRelevantLog(LogRecord record) {
     const loggerAllow = <String>{
       'CuratorNetworkMonitor',
+      'CuratorAppNetworkMonitorCallbacks',
+      'CuratorReconnectEpisodeService',
       'PathResolveTriggerService',
       'HcDeviceEndpointResolver',
+      'HcPathResolver',
       'HcDevice',
       'ApiService',
+      'RemoteAccessAuthService',
+      'PromptRemoteAccessAuth',
+      'RemoteCodeDialog',
+      'SessionEndpointResolution',
     };
     if (loggerAllow.contains(record.loggerName)) {
       return true;
     }
     final msg = record.message;
-    return msg.contains('[Network]') ||
+    return msg.contains('[Network') ||
         msg.contains('[Resolver]') ||
+        msg.contains('[HcPathResolver]') ||
+        msg.contains('[Trigger]') ||
+        msg.contains('[OTP]') ||
+        msg.contains('[Session]') ||
+        msg.contains('endpoint_switch') ||
         msg.contains('endpoint_selection') ||
         msg.contains('endpoint selection');
   }

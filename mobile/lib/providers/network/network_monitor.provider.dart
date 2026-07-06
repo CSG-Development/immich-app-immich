@@ -1,5 +1,7 @@
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
@@ -30,14 +32,16 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
         ),
       );
     },
-    onReconnectStarted: () {
+    onReconnectStarted: (isConnectivityDriven) {
+      if (!isConnectivityDriven) {
+        return;
+      }
       ref.read(apiServiceProvider).notifyConnectionState(
         const conn.ConnectionState(
           status: conn.ConnectionStatus.reconnecting,
           connectionType: conn.ConnectionType.api,
         ),
       );
-      callbacks.syncNetworkToast();
     },
     onTransportUsableChanged: (usable) {
       ref.read(curatorOsTransportUsableProvider.notifier).state = usable;
@@ -54,6 +58,16 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
         );
       }
       callbacks.syncNetworkToast();
+    },
+    probeActiveEndpoint: () async {
+      final endpoint = Store.tryGet(StoreKey.serverEndpoint);
+      if (endpoint == null || endpoint.isEmpty) {
+        return true;
+      }
+      return ref.read(apiServiceProvider).checkEndpointAvailable(
+        endpoint,
+        timeout: const Duration(seconds: 5),
+      );
     },
     callbacks: callbacks,
   );

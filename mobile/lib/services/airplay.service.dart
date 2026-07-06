@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' as timeline;
+import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:logging/logging.dart';
 import 'package:image/image.dart' as img;
@@ -218,7 +219,6 @@ class AirplayService {
     return await convertPhotoToVideoForAirPlay(asset, ref);
   }
 
-  // Timeline (beta) viewer support using BaseAsset
   static Future<String?> preConvertTimelinePhotoForAirPlay(
     timeline.BaseAsset asset,
     WidgetRef ref,
@@ -236,6 +236,33 @@ class AirplayService {
     return await convertTimelinePhotoToVideoForAirPlay(asset, ref);
   }
 
+  /// Resolves a local file path for AirPlay playback of a timeline asset.
+  /// Returns null when AirPlay is inactive or a local file is not required.
+  static Future<String?> resolveTimelineLocalPlaybackPath(
+    timeline.BaseAsset asset,
+    WidgetRef ref, {
+    required bool airPlayActive,
+  }) async {
+    if (!Platform.isIOS) {
+      return null;
+    }
+
+    final airPlayConnected = airPlayActive || await isAirPlayConnected();
+    if (!airPlayConnected) {
+      return null;
+    }
+
+    if (asset.isVideo && !asset.hasLocal && asset is timeline.RemoteAsset) {
+      return preDownloadTimelineVideoForAirPlay(asset, ref);
+    }
+
+    if (asset.isImage && !asset.isMotionPhoto) {
+      return convertTimelinePhotoToVideoForAirPlay(asset, ref);
+    }
+
+    return null;
+  }
+
   static Future<String?> convertTimelinePhotoToVideoForAirPlay(
     timeline.BaseAsset asset,
     WidgetRef ref, {
@@ -246,12 +273,6 @@ class AirplayService {
       return null;
     }
 
-    // Only support remote or merged assets with a remote id in beta viewer
-    if (!asset.hasRemote || asset is! timeline.RemoteAsset) {
-      _log.warning('Timeline AirPlay conversion is only supported for remote images');
-      return null;
-    }
-
     final videoKey = '${asset.heroTag}_single_frame_video';
     final existingFile = _tempFiles[videoKey];
     if (existingFile != null && await existingFile.exists()) {
@@ -259,17 +280,8 @@ class AirplayService {
     }
 
     try {
-      // Download remote image bytes using OpenAPI
-      final apiService = ref.read(apiServiceProvider);
-      final res = await apiService.assetsApi.downloadAssetWithHttpInfo(asset.id);
-      if (res.statusCode != 200) {
-        _log.warning('Failed to download timeline image for AirPlay: ${res.statusCode}');
-        return null;
-      }
-
-      final image = img.decodeImage(res.bodyBytes);
+      final image = await _decodeTimelineImageBytes(asset, ref);
       if (image == null) {
-        _log.warning('Failed to decode timeline image for video conversion');
         return null;
       }
 
@@ -295,6 +307,39 @@ class AirplayService {
       _log.severe('Error converting timeline photo to video for AirPlay: $e');
       return null;
     }
+  }
+
+  static Future<img.Image?> _decodeTimelineImageBytes(
+    timeline.BaseAsset asset,
+    WidgetRef ref,
+  ) async {
+    Uint8List? imageBytes;
+
+    if (asset is timeline.LocalAsset) {
+      final file = await StorageRepository().getFileForAsset(asset.id);
+      if (file == null) {
+        _log.warning('Local file not found for timeline AirPlay photo conversion');
+        return null;
+      }
+      imageBytes = await file.readAsBytes();
+    } else if (asset is timeline.RemoteAsset) {
+      final apiService = ref.read(apiServiceProvider);
+      final res = await apiService.assetsApi.downloadAssetWithHttpInfo(asset.id);
+      if (res.statusCode != 200) {
+        _log.warning('Failed to download timeline image for AirPlay: ${res.statusCode}');
+        return null;
+      }
+      imageBytes = res.bodyBytes;
+    } else {
+      _log.warning('Unsupported timeline asset type for AirPlay photo conversion');
+      return null;
+    }
+
+    final image = img.decodeImage(imageBytes);
+    if (image == null) {
+      _log.warning('Failed to decode timeline image for video conversion');
+    }
+    return image;
   }
 
   static Future<String?> preDownloadTimelineVideoForAirPlay(
@@ -341,9 +386,9 @@ class AirplayService {
   ) async {
     for (final a in assets) {
       if (a.isImage) {
-        preConvertTimelinePhotoForAirPlay(a, ref);
+        await preConvertTimelinePhotoForAirPlay(a, ref);
       } else if (a.isVideo) {
-        preDownloadTimelineVideoForAirPlay(a, ref);
+        await preDownloadTimelineVideoForAirPlay(a, ref);
       }
     }
   }

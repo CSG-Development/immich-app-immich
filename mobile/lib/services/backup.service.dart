@@ -47,6 +47,7 @@ final backupServiceProvider = Provider(
 );
 
 class BackupService {
+  // Legacy backup uploads; prefer [UploadRepository] + [NetworkRepository.client].
   final httpClient = http.Client();
   final ApiService _apiService;
   final Logger _log = Logger("BackupService");

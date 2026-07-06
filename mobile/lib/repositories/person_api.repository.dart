@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
@@ -12,13 +14,25 @@ class PersonApiRepository extends ApiRepository {
   PersonApiRepository(this._api);
 
   Future<List<PersonDto>> getAll({String? closestPersonId}) async {
-    final dto = await checkNull(_api.getAllPeople(closestPersonId: closestPersonId));
-    return dto.people.map(_toPerson).toList();
+    try {
+      final dto = await checkNull(_api.getAllPeople(closestPersonId: closestPersonId));
+      return dto.people.map(_toPerson).toList();
+    } on ApiException catch (e) {
+      // The server returns 404 when closestPersonId is unknown or has no feature photo.
+      // Fall back to the default list so merge/search screens are not left empty.
+      if (closestPersonId != null && e.code == HttpStatus.notFound) {
+        final dto = await checkNull(_api.getAllPeople());
+        return dto.people.map(_toPerson).toList();
+      }
+      rethrow;
+    }
   }
 
   Future<PersonDto> update(String id, {String? name, DateTime? birthday}) async {
-    final dto = await checkNull(_api.updatePerson(id, PersonUpdateDto(name: name, birthDate: birthday)));
-    return _toPerson(dto);
+    final birthdayUtc = birthday == null ? null : DateTime.utc(birthday.year, birthday.month, birthday.day);
+    final dto = PersonUpdateDto(name: name, birthDate: birthdayUtc);
+    final response = await checkNull(_api.updatePerson(id, dto));
+    return _toPerson(response);
   }
 
   Future<List<BulkIdResponseDto>> mergePerson(String id, {required List<String> ids}) async {

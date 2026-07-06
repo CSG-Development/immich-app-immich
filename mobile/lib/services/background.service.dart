@@ -25,12 +25,12 @@ import 'package:immich_mobile/repositories/backup.repository.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/backup.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
-import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/secondary_runtime_api.bootstrap.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/diff.dart';
@@ -42,10 +42,8 @@ final backgroundServiceProvider = Provider((ref) => BackgroundService());
 /// Background backup service
 class BackgroundService {
   static const String _portNameLock = "stxphotosLock";
-  static const MethodChannel _foregroundChannel =
-      MethodChannel('stxphotos/foregroundChannel');
-  static const MethodChannel _backgroundChannel =
-      MethodChannel('stxphotos/backgroundChannel');
+  static const MethodChannel _foregroundChannel = MethodChannel('stxphotos/foregroundChannel');
+  static const MethodChannel _backgroundChannel = MethodChannel('stxphotos/backgroundChannel');
   static const notifyInterval = Duration(milliseconds: 400);
   bool _isBackgroundInitialized = false;
   CancellationToken? _cancellationToken;
@@ -301,7 +299,7 @@ class BackgroundService {
         try {
           _isShuttingDown = false;
           _canceledBySystem = false;
-          _clearErrorNotifications();
+          unawaited(_clearErrorNotifications());
 
           // iOS should time out after some threshold so it doesn't wait
           // indefinitely and can run later
@@ -343,21 +341,13 @@ class BackgroundService {
   Future<bool> _onAssetsChanged() async {
     final (isar, drift, logDb) = await Bootstrap.initDB();
     await Bootstrap.initDomain(isar, drift, logDb, shouldBufferLogs: false, listenStoreUpdates: false);
-
-    final certPinning = HttpCertPinningManager(
-      config: const CertPinningConfig(
-        allowFallback: false,
-        installRootsInSecurityContext: true
-      ),
-    );
-
-    await certPinning.initialize();
+    await HttpCertPinningManager.ensureInitialized();
 
     final remoteAccessDependencies = await initHCDevice(
-      registerHostTrustedChain: certPinning.registerHostTrustedChain,
+      httpClientProvider: () => NetworkRepository.client,
       isMainRuntime: false,
     );
-    final apiservice = ApiService(certPinning: certPinning);
+    final apiservice = ApiService();
 
     final ref = ProviderContainer(
       overrides: [
@@ -369,13 +359,12 @@ class BackgroundService {
       ],
     );
     try {
-      ref.read(apiServiceProvider).setAccessToken(Store.get(StoreKey.accessToken));
-      final resolvedEndpoint = await ref
-          .read(hcDeviceEndpointResolverProvider)
-          .resolveAndActivateWinner(
-            trigger: 'legacy_background_service',
-            mode: ResolveMode.terminatedBgTask,
-          );
+      await bootstrapSecondaryRuntimeApiSession(ref.read(apiServiceProvider));
+      final resolvedEndpoint = await bootstrapSecondaryRuntimeEndpoint(
+        ref,
+        trigger: 'legacy_background_service',
+        mode: ResolveMode.terminatedBgTask,
+      );
       if (resolvedEndpoint == null || resolvedEndpoint.isEmpty) {
         dPrint(() => '[BG UPLOAD] Skipping run: endpoint unresolved (BG_ENDPOINT_UNRESOLVED)');
         return false;
@@ -421,12 +410,11 @@ class BackgroundService {
           await ref.read(backupAlbumRepositoryProvider).deleteAll(toDelete);
           await ref.read(backupAlbumRepositoryProvider).updateAll(toUpsert);
         } else if (Store.tryGet(StoreKey.backupFailedSince) == null) {
-          Store.put(StoreKey.backupFailedSince, DateTime.now());
+          await Store.put(StoreKey.backupFailedSince, DateTime.now());
           return false;
         }
         // Android should check for new assets added while performing backup
-      } while (
-          Platform.isAndroid &&
+      } while (Platform.isAndroid &&
           !_isShuttingDown &&
           true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
       return true;
@@ -454,9 +442,11 @@ class BackgroundService {
     try {
       toUpload = await backupService.removeAlreadyUploadedAssets(toUpload);
     } catch (e) {
-      _showErrorNotification(
-        title: "backup_background_service_error_title".tr(),
-        content: "backup_background_service_connection_failed_message".tr(),
+      unawaited(
+        _showErrorNotification(
+          title: "backup_background_service_error_title".tr(),
+          content: "backup_background_service_connection_failed_message".tr(),
+        ),
       );
       return false;
     }
@@ -470,13 +460,15 @@ class BackgroundService {
     }
     _assetsToUploadCount = toUpload.length;
     _uploadedAssetsCount = 0;
-    _updateNotification(
-      title: "backup_background_service_in_progress_notification".tr(),
-      content: notifyTotalProgress ? formatAssetBackupProgress(_uploadedAssetsCount, _assetsToUploadCount) : null,
-      progress: 0,
-      max: notifyTotalProgress ? _assetsToUploadCount : 0,
-      indeterminate: !notifyTotalProgress,
-      onlyIfFG: !notifyTotalProgress,
+    unawaited(
+      _updateNotification(
+        title: "backup_background_service_in_progress_notification".tr(),
+        content: notifyTotalProgress ? formatAssetBackupProgress(_uploadedAssetsCount, _assetsToUploadCount) : null,
+        progress: 0,
+        max: notifyTotalProgress ? _assetsToUploadCount : 0,
+        indeterminate: !notifyTotalProgress,
+        onlyIfFG: !notifyTotalProgress,
+      ),
     );
 
     _cancellationToken = CancellationToken();
@@ -494,9 +486,11 @@ class BackgroundService {
     );
 
     if (!ok && !_cancellationToken!.isCancelled) {
-      _showErrorNotification(
-        title: "backup_background_service_error_title".tr(),
-        content: "backup_background_service_backup_failed_message".tr(),
+      unawaited(
+        _showErrorNotification(
+          title: "backup_background_service_error_title".tr(),
+          content: "backup_background_service_backup_failed_message".tr(),
+        ),
       );
     }
 

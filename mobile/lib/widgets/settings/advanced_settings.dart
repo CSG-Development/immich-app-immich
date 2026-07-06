@@ -3,20 +3,25 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/providers/user.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
+import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/repositories/local_files_manager.repository.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/bytes_units.dart';
 import 'package:immich_mobile/utils/hooks/app_settings_update_hook.dart';
 import 'package:immich_mobile/providers/protected_feature_visibility.provider.dart';
 import 'package:immich_mobile/widgets/settings/beta_timeline_list_tile.dart';
-import 'package:immich_mobile/widgets/settings/custom_proxy_headers_settings/custome_proxy_headers_settings.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:immich_mobile/widgets/settings/custom_proxy_headers_settings/custom_proxy_headers_settings.dart';
 import 'package:immich_mobile/widgets/settings/local_storage_settings.dart';
+import 'package:immich_mobile/widgets/settings/settings_action_tile.dart';
 import 'package:immich_mobile/widgets/settings/settings_slider_list_tile.dart';
 import 'package:immich_mobile/widgets/settings/settings_sub_page_scaffold.dart';
 import 'package:immich_mobile/widgets/settings/settings_switch_list_tile.dart';
@@ -25,12 +30,15 @@ import 'package:logging/logging.dart';
 
 class AdvancedSettings extends HookConsumerWidget {
   const AdvancedSettings({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     bool isLoggedIn = ref.read(currentUserProvider) != null;
 
     final advancedTroubleshooting = useAppSettingsState(AppSettingsEnum.advancedTroubleshooting);
     final manageLocalMediaAndroid = useAppSettingsState(AppSettingsEnum.manageLocalMediaAndroid);
+    final isManageMediaSupported = useState(false);
+    final manageMediaAndroidPermission = useState(false);
     final levelId = useAppSettingsState(AppSettingsEnum.logLevel);
     final preferRemote = useAppSettingsState(AppSettingsEnum.preferRemoteImage);
     final allowSelfSignedSSLCert = useAppSettingsState(AppSettingsEnum.allowSelfSignedSSLCert);
@@ -53,6 +61,18 @@ class AdvancedSettings extends HookConsumerWidget {
       return false;
     }
 
+    useEffect(() {
+      () async {
+        isManageMediaSupported.value = await checkAndroidVersion();
+        if (isManageMediaSupported.value) {
+          manageMediaAndroidPermission.value = await ref
+              .read(localFilesManagerRepositoryProvider)
+              .hasManageMediaPermission();
+        }
+      }();
+      return null;
+    }, []);
+
     final advancedSettings = [
       SettingsSwitchListTile(
         enabled: true,
@@ -60,11 +80,10 @@ class AdvancedSettings extends HookConsumerWidget {
         title: "advanced_settings_troubleshooting_title".tr(),
         subtitle: "advanced_settings_troubleshooting_subtitle".tr(),
       ),
-      FutureBuilder<bool>(
-        future: checkAndroidVersion(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data == true) {
-            return SettingsSwitchListTile(
+      if (isManageMediaSupported.value)
+        Column(
+          children: [
+            SettingsSwitchListTile(
               enabled: true,
               valueNotifier: manageLocalMediaAndroid,
               title: "advanced_settings_sync_remote_deletions_title".tr(),
@@ -73,14 +92,24 @@ class AdvancedSettings extends HookConsumerWidget {
                 if (value) {
                   final result = await ref.read(localFilesManagerRepositoryProvider).requestManageMediaPermission();
                   manageLocalMediaAndroid.value = result;
+                  manageMediaAndroidPermission.value = result;
                 }
               },
-            );
-          } else {
-            return const SizedBox.shrink();
-          }
-        },
-      ),
+            ),
+            SettingsActionTile(
+              title: "manage_media_access_title".tr(),
+              statusText: manageMediaAndroidPermission.value ? "allowed".tr() : "not_allowed".tr(),
+              subtitle: "manage_media_access_rationale".tr(),
+              statusColor: manageLocalMediaAndroid.value && !manageMediaAndroidPermission.value
+                  ? const Color.fromARGB(255, 243, 188, 106)
+                  : null,
+              onActionTap: () async {
+                final result = await ref.read(localFilesManagerRepositoryProvider).manageMediaPermission();
+                manageMediaAndroidPermission.value = result;
+              },
+            ),
+          ],
+        ),
       if (logLevelVisibility.isVisible)
         SettingsSliderListTile(
           text: "advanced_settings_log_level_title".tr(namedArgs: {'level': logLevel}),
@@ -107,15 +136,15 @@ class AdvancedSettings extends HookConsumerWidget {
         title: "advanced_settings_self_signed_ssl_title".tr(),
         subtitle: "advanced_settings_self_signed_ssl_subtitle".tr(),
       ),
-      const CustomeProxyHeaderSettings(),
-      SslClientCertSettings(isLoggedIn: isLoggedIn),
+      const CustomProxyHeaderSettings(),
+      SslClientCertSettings(isLoggedIn: ref.read(currentUserProvider) != null),
       if (!Store.isBetaTimelineEnabled)
         SettingsSwitchListTile(
           valueNotifier: useAlternatePMFilter,
           title: "advanced_settings_enable_alternate_media_filter_title".tr(),
           subtitle: "advanced_settings_enable_alternate_media_filter_subtitle".tr(),
         ),
-      const BetaTimelineListTile(),
+      if (!Store.isBetaTimelineEnabled) const BetaTimelineListTile(),
       if (Store.isBetaTimelineEnabled)
         SettingsSwitchListTile(
           valueNotifier: readonlyModeEnabled,
@@ -135,6 +164,41 @@ class AdvancedSettings extends HookConsumerWidget {
             );
           },
         ),
+      ListTile(
+        title: Text("advanced_settings_clear_image_cache".tr(), style: const TextStyle(fontWeight: FontWeight.w500)),
+        leading: const Icon(Icons.playlist_remove_rounded),
+        onTap: () async {
+          final int clearedBytes;
+          try {
+            clearedBytes = await remoteImageApi.clearCache();
+          } catch (e) {
+            if (!context.mounted) {
+              return;
+            }
+            ImmichToast.show(
+              context: context,
+              msg: "advanced_settings_clear_image_cache_error".tr(),
+              toastType: ToastType.error,
+              gravity: ToastGravity.BOTTOM,
+            );
+            return;
+          }
+
+          if (!context.mounted) {
+            return;
+          }
+
+          // iOS always returns a small non-zero value. Native returns -1 when a clear is already in progress.
+          final clearedMB = clearedBytes < (256 * 1024) ? "0 MB" : formatBytes(clearedBytes);
+          ImmichToast.show(
+            context: context,
+            msg: "advanced_settings_clear_image_cache_success".tr(namedArgs: {'size': clearedMB}),
+            toastType: ToastType.success,
+            gravity: ToastGravity.BOTTOM,
+          );
+        },
+      ),
+      const SizedBox(height: 60),
     ];
 
     return SettingsSubPageScaffold(settings: advancedSettings);

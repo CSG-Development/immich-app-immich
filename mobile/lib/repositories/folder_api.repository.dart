@@ -14,7 +14,7 @@ class FolderApiRepository extends ApiRepository {
 
   FolderApiRepository(this._apiService);
 
-  ViewApi get _api => _apiService.viewApi;
+  ViewsApi get _api => _apiService.viewApi;
 
   Future<List<String>> getAllUniquePaths() async {
     try {
