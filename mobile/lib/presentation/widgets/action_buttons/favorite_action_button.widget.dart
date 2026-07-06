@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 class FavoriteActionButton extends ConsumerWidget {
   final ActionSource source;
+  final bool iconOnly;
   final bool menuItem;
 
-  const FavoriteActionButton({super.key, required this.source, this.menuItem = false});
+  const FavoriteActionButton({super.key, required this.source, this.iconOnly = false, this.menuItem = false});
 
   void _onTap(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) {
@@ -22,7 +24,7 @@ class FavoriteActionButton extends ConsumerWidget {
 
     bool shouldFavorite;
     if (source == ActionSource.viewer) {
-      final asset = ref.read(currentAssetNotifier);
+      final asset = ref.read(assetViewerProvider).currentAsset;
       shouldFavorite = !(asset?.isFavorite ?? false);
     } else {
       final selection = ref.read(multiSelectProvider).selectedAssets;
@@ -34,6 +36,12 @@ class FavoriteActionButton extends ConsumerWidget {
         : await ref.read(actionProvider.notifier).unFavorite(source);
 
     if (source == ActionSource.viewer) {
+      if (result.success) {
+        final currentAsset = ref.read(assetViewerProvider).currentAsset;
+        if (currentAsset is RemoteAsset && !currentAsset.isFavorite) {
+          ref.read(assetViewerProvider.notifier).setAsset(currentAsset.copyWith(isFavorite: true));
+        }
+      }
       return;
     }
 
@@ -57,7 +65,7 @@ class FavoriteActionButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     bool shouldFavorite;
     if (source == ActionSource.viewer) {
-      final asset = ref.watch(currentAssetNotifier);
+      final asset = ref.watch(assetViewerProvider.select((state) => state.currentAsset));
       shouldFavorite = !(asset?.isFavorite ?? false);
     } else {
       final selection = ref.watch(multiSelectProvider).selectedAssets;
@@ -70,6 +78,7 @@ class FavoriteActionButton extends ConsumerWidget {
     return BaseActionButton(
       iconData: icon,
       label: label,
+      iconOnly: iconOnly,
       menuItem: menuItem,
       onPressed: () => _onTap(context, ref),
     );

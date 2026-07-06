@@ -12,24 +12,21 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/is_motion_video_playing.provider.dart';
-import 'package:immich_mobile/providers/asset_viewer/video_player_controls_provider.dart';
 import 'package:immich_mobile/providers/airplay.provider.dart';
-import 'package:immich_mobile/providers/asset_viewer/video_player_value_provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/video_player_provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/asset.service.dart';
 import 'package:immich_mobile/services/airplay.service.dart';
-import 'package:immich_mobile/utils/debounce.dart';
-import 'package:immich_mobile/utils/hooks/interval_hook.dart';
 import 'package:immich_mobile/widgets/asset_viewer/custom_video_player_controls.dart';
 import 'package:immich_mobile/widgets/asset_viewer/airplay_loader.dart';
 import 'package:logging/logging.dart';
 import 'package:native_video_player/native_video_player.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 @RoutePage()
 class NativeVideoViewerPage extends HookConsumerWidget {
+  static final log = Logger('NativeVideoViewer');
   final Asset asset;
   final bool showControls;
   final int playbackDelayFactor;
@@ -45,25 +42,15 @@ class NativeVideoViewerPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final videoId = asset.id.toString();
     final controller = useState<NativeVideoPlayerController?>(null);
-    final lastVideoPosition = useRef(-1);
-    final isBuffering = useRef(false);
-
-    // Used to track whether the video should play when the app
-    // is brought back to the foreground
     final shouldPlayOnForeground = useRef(true);
 
-    // When a video is opened through the timeline, `isCurrent` will immediately be true.
-    // When swiping from video A to video B, `isCurrent` will initially be true for video A and false for video B.
-    // If the swipe is completed, `isCurrent` will be true for video B after a delay.
-    // If the swipe is canceled, `currentAsset` will not have changed and video A will continue to play.
     final currentAsset = useState(ref.read(currentAssetProvider));
     final isCurrent = currentAsset.value == asset;
 
     // Used to show the placeholder during hero animations for remote videos to avoid a stutter
     final isVisible = useState(Platform.isIOS && asset.isLocal);
-
-    final log = Logger('NativeVideoViewerPage');
 
     final isCasting = ref.watch(castProvider.select((c) => c.isCasting));
     final isAirPlayEnabled = ref.watch(airplayProvider);
@@ -94,7 +81,7 @@ class NativeVideoViewerPage extends HookConsumerWidget {
         final isAirPlayConnected = airPlayActive ? true : await AirplayService.isAirPlayConnected();
         if (isAirPlayConnected) {
           String? localPath;
-          
+
           if (asset.isVideo) {
             // Download video for AirPlay (remote videos only)
             if (asset.isRemote && asset.local == null) {
@@ -108,12 +95,9 @@ class NativeVideoViewerPage extends HookConsumerWidget {
               ref.read(airplayProvider.notifier).disableAirPlayMode();
             }
           }
-          
+
           if (localPath != null) {
-            final source = await VideoSource.init(
-              path: localPath,
-              type: VideoSourceType.file,
-            );
+            final source = await VideoSource.init(path: localPath, type: VideoSourceType.file);
             return source;
           }
           // If download/conversion fails, fall back to network URL
@@ -148,14 +132,14 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       }
     }
 
-    final videoSource = useMemoized<Future<VideoSource?>>(
-      () => createSource(isAirPlayEnabled),
-      [isAirPlayEnabled],
-    );
+    final videoSource = useMemoized<Future<VideoSource?>>(() => createSource(isAirPlayEnabled), [isAirPlayEnabled]);
 
     // When AirPlay turns on, prepare local media (iOS only)
     useEffect(() {
-      final needsPreparation = Platform.isIOS && isAirPlayEnabled && ((asset.isVideo && asset.isRemote && asset.local == null) || asset.isImage);
+      final needsPreparation =
+          Platform.isIOS &&
+          isAirPlayEnabled &&
+          ((asset.isVideo && asset.isRemote && asset.local == null) || asset.isImage);
       if (needsPreparation) {
         isPreparingAirPlay.value = true;
         isSourceReady.value = false;
@@ -211,90 +195,34 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       }
     });
 
-    void checkIfBuffering() {
-      if (!context.mounted) {
-        return;
-      }
-
-      final videoPlayback = ref.read(videoPlaybackValueProvider);
-      if ((isBuffering.value || videoPlayback.state == VideoPlaybackState.initializing) &&
-          videoPlayback.state != VideoPlaybackState.buffering) {
-        ref.read(videoPlaybackValueProvider.notifier).value = videoPlayback.copyWith(
-          state: VideoPlaybackState.buffering,
-        );
-      }
-    }
-
-    // Timer to mark videos as buffering if the position does not change
-    useInterval(const Duration(seconds: 5), checkIfBuffering);
-
-    // When the position changes, seek to the position
-    // Debounce the seek to avoid seeking too often
-    // But also don't delay the seek too much to maintain visual feedback
-    final seekDebouncer = useDebouncer(
-      interval: const Duration(milliseconds: 100),
-      maxWaitTime: const Duration(milliseconds: 200),
-    );
-    ref.listen(videoPlayerControlsProvider, (oldControls, newControls) async {
-      final playerController = controller.value;
-      if (playerController == null) {
-        return;
-      }
-
-      final playbackInfo = playerController.playbackInfo;
-      if (playbackInfo == null) {
-        return;
-      }
-
-      final oldSeek = (oldControls?.position ?? 0) ~/ 1;
-      final newSeek = newControls.position ~/ 1;
-      if (oldSeek != newSeek || newControls.restarted) {
-        seekDebouncer.run(() => playerController.seekTo(newSeek));
-      }
-
-      if (oldControls?.pause != newControls.pause || newControls.restarted) {
-        // Make sure the last seek is complete before pausing or playing
-        // Otherwise, `onPlaybackPositionChanged` can receive outdated events
-        if (seekDebouncer.isActive) {
-          await seekDebouncer.drain();
-        }
-
-        try {
-          if (newControls.pause) {
-            await playerController.pause();
-          } else {
-            await playerController.play();
-          }
-        } catch (error) {
-          log.severe('Error pausing or playing video: $error');
-        }
-      }
-    });
-
     void onPlaybackReady() async {
       final videoController = controller.value;
       if (videoController == null || !isCurrent || !context.mounted) {
         return;
       }
 
-      final videoPlayback = VideoPlaybackValue.fromNativeController(videoController);
-      ref.read(videoPlaybackValueProvider.notifier).value = videoPlayback;
+      final notifier = ref.read(videoPlayerProvider(videoId).notifier);
+      notifier.onNativePlaybackReady();
 
       isVideoReady.value = true;
 
       try {
-        await videoController.play();
-        await videoController.setVolume(0.9);
+        final autoPlayVideo = ref.read(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.autoPlayVideo);
+        if (autoPlayVideo) {
+          await notifier.play();
+        }
+        await notifier.setVolume(1);
         isSourceReady.value = true;
         isPreparingAirPlay.value = false;
-        
+
         // For photos, pause immediately to show static frame
         if (asset.isImage) {
           // Small delay to ensure video starts, then pause
           Timer(const Duration(milliseconds: 500), () async {
             if (context.mounted) {
               try {
-                await videoController.pause();
+                final vc = controller.value;
+                if (vc != null) await vc.pause();
               } catch (e) {
                 // Ignore pause errors
               }
@@ -307,60 +235,30 @@ class NativeVideoViewerPage extends HookConsumerWidget {
     }
 
     void onPlaybackStatusChanged() {
+      if (!context.mounted) return;
+      ref.read(videoPlayerProvider(videoId).notifier).onNativeStatusChanged();
       final videoController = controller.value;
-      if (videoController == null || !context.mounted) {
-        return;
+      if (videoController != null) {
+        final isPlaying = videoController.isPlaying();
+        if (isPlaying != null) {
+          isSourceReady.value = true;
+          isPreparingAirPlay.value = false;
+        }
       }
-
-      final videoPlayback = VideoPlaybackValue.fromNativeController(videoController);
-      if (videoPlayback.state == VideoPlaybackState.playing) {
-        // Sync with the controls playing
-        WakelockPlus.enable();
-        isSourceReady.value = true;
-        isPreparingAirPlay.value = false;
-      } else {
-        // Sync with the controls pause
-        WakelockPlus.disable();
-      }
-
-      ref.read(videoPlaybackValueProvider.notifier).status = videoPlayback.state;
     }
 
     void onPlaybackPositionChanged() {
-      // When seeking, these events sometimes move the slider to an older position
-      if (seekDebouncer.isActive) {
-        return;
-      }
-
-      final videoController = controller.value;
-      if (videoController == null || !context.mounted) {
-        return;
-      }
-
-      final playbackInfo = videoController.playbackInfo;
-      if (playbackInfo == null) {
-        return;
-      }
-
-      ref.read(videoPlaybackValueProvider.notifier).position = Duration(seconds: playbackInfo.position);
-
-      // Check if the video is buffering
-      if (playbackInfo.status == PlaybackStatus.playing) {
-        isBuffering.value = lastVideoPosition.value == playbackInfo.position;
-        lastVideoPosition.value = playbackInfo.position;
-      } else {
-        isBuffering.value = false;
-        lastVideoPosition.value = -1;
-      }
+      if (!context.mounted) return;
+      ref.read(videoPlayerProvider(videoId).notifier).onNativePositionChanged();
     }
 
     void onPlaybackEnded() {
-      final videoController = controller.value;
-      if (videoController == null || !context.mounted) {
-        return;
-      }
+      if (!context.mounted) return;
 
-      if (videoController.playbackInfo?.status == PlaybackStatus.stopped &&
+      ref.read(videoPlayerProvider(videoId).notifier).onNativePlaybackEnded();
+
+      final videoController = controller.value;
+      if (videoController?.playbackInfo?.status == PlaybackStatus.stopped &&
           !ref.read(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.loopVideo)) {
         ref.read(isPlayingMotionVideoProvider.notifier).playing = false;
       }
@@ -377,51 +275,29 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       if (!context.mounted) {
         return;
       }
-        // If a controller already exists, re-bind listeners
-      if (controller.value != null) {
-        final old = controller.value!;
-        removeListeners(old);
-        controller.value = nc;
-        nc.onPlaybackPositionChanged.addListener(onPlaybackPositionChanged);
-        nc.onPlaybackStatusChanged.addListener(onPlaybackStatusChanged);
-        nc.onPlaybackReady.addListener(onPlaybackReady);
-        nc.onPlaybackEnded.addListener(onPlaybackEnded);
-
-        final loopVideo = ref
-            .read(appSettingsServiceProvider)
-            .getSetting<bool>(AppSettingsEnum.loopVideo);
-        nc.setLoop(loopVideo);
-
-        final source = await videoSource;
-        if (source != null) {
-          await nc.loadVideoSource(source).catchError((error) {
-            log.severe('Error loading video source (rebind): $error');
-          });
-        }
-        return;
-      }
-
-      ref.read(videoPlayerControlsProvider.notifier).reset();
-      ref.read(videoPlaybackValueProvider.notifier).reset();
 
       final source = await videoSource;
       if (source == null) {
         return;
       }
 
+      final notifier = ref.read(videoPlayerProvider(videoId).notifier);
+      notifier.attachController(nc);
+
       nc.onPlaybackPositionChanged.addListener(onPlaybackPositionChanged);
       nc.onPlaybackStatusChanged.addListener(onPlaybackStatusChanged);
       nc.onPlaybackReady.addListener(onPlaybackReady);
       nc.onPlaybackEnded.addListener(onPlaybackEnded);
 
-      nc.loadVideoSource(source).catchError((error) {
-        log.severe('Error loading video source: $error');
-      });
+      unawaited(
+        nc.loadVideoSource(source).catchError((error) {
+          log.severe('Error loading video source: $error');
+        }),
+      );
       final loopVideo = ref.read(appSettingsServiceProvider).getSetting<bool>(AppSettingsEnum.loopVideo);
-      nc.setLoop(loopVideo);
+      await notifier.setLoop(loopVideo);
 
       controller.value = nc;
-      Timer(const Duration(milliseconds: 200), checkIfBuffering);
     }
 
     ref.listen(currentAssetProvider, (_, value) {
@@ -445,10 +321,6 @@ class NativeVideoViewerPage extends HookConsumerWidget {
       }
 
       // Delay the video playback to avoid a stutter in the swipe animation
-      // Note, in some circumstances a longer delay is needed (eg: memories),
-      // the playbackDelayFactor can be used for this
-      // This delay seems like a hacky way to resolve underlying bugs in video
-      // playback, but other resolutions failed thus far
       Timer(
         Platform.isIOS
             ? Duration(milliseconds: 300 * playbackDelayFactor)
@@ -482,19 +354,18 @@ class NativeVideoViewerPage extends HookConsumerWidget {
         playerController.stop().catchError((error) {
           log.fine('Error stopping video: $error');
         });
-
-        WakelockPlus.disable();
       };
     }, const []);
 
     useOnAppLifecycleStateChange((_, state) async {
+      final notifier = ref.read(videoPlayerProvider(videoId).notifier);
       if (state == AppLifecycleState.resumed && shouldPlayOnForeground.value) {
-        controller.value?.play();
+        await notifier.play();
       } else if (state == AppLifecycleState.paused) {
         final videoPlaying = await controller.value?.isPlaying();
         if (videoPlaying ?? true) {
           shouldPlayOnForeground.value = true;
-          controller.value?.pause();
+          await notifier.pause();
         } else {
           shouldPlayOnForeground.value = false;
         }
@@ -517,8 +388,7 @@ class NativeVideoViewerPage extends HookConsumerWidget {
               child: AspectRatio(
                 key: ValueKey(asset),
                 aspectRatio: aspectRatio.value!,
-                child: isCurrent
-                    && (!Platform.isIOS || !isAirPlayEnabled || isSourceReady.value)
+                child: isCurrent && (!Platform.isIOS || !isAirPlayEnabled || isSourceReady.value)
                     ? NativeVideoPlayerView(
                         key: ValueKey('${asset.id}_${isAirPlayEnabled ? 'airplay' : 'direct'}'),
                         onViewReady: initController,
@@ -530,14 +400,10 @@ class NativeVideoViewerPage extends HookConsumerWidget {
         if (showAirplayOverlay)
           Positioned.fill(
             child: IgnorePointer(
-              child: Container(
-                color: Colors.black26,
-                child: const AirplayLoader(),
-              ),
+              child: Container(color: Colors.black26, child: const AirplayLoader()),
             ),
           ),
-        if (showControls && !showAirplayOverlay)
-          const Center(child: CustomVideoPlayerControls()),
+        if (showControls && !showAirplayOverlay) Center(child: CustomVideoPlayerControls(videoId: videoId)),
       ],
     );
   }

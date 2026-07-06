@@ -35,12 +35,8 @@ class AuthRepository extends DatabaseRepository {
     });
   }
 
-  String getAccessToken() {
-    return Store.get(StoreKey.accessToken);
-  }
-
   bool getEndpointSwitchingFeature() {
-    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? true;
+    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? false;
   }
 
   String? getPreferredWifiName() {

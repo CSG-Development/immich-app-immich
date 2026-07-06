@@ -1,15 +1,20 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
+import 'package:immich_mobile/pages/common/settings.page.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
@@ -30,6 +35,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
     final theme = context.themeData;
     final user = ref.watch(currentUserProvider);
     final isLoggingOut = useState(false);
+    final isReadonlyModeEnabled = ref.watch(readonlyModeProvider);
 
     useEffect(
       () {
@@ -47,11 +53,21 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       Widget? trailing,
     }) {
       return ListTile(
+        dense: true,
+        visualDensity: VisualDensity.standard,
+        contentPadding: const EdgeInsets.only(left: 16, right: 16),
+        minLeadingWidth: 40,
         leading: Icon(
           icon,
           color: theme.textTheme.labelLarge?.color?.withAlpha(250),
+          size: 20,
         ),
-        title: Text(text).tr(),
+        title: Text(
+          text,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.textTheme.labelLarge?.color?.withAlpha(250),
+          ),
+        ).tr(),
         onTap: onTap,
         trailing: trailing,
       );
@@ -68,11 +84,25 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       );
     }
 
-    buildAppLogButton() {
+    Widget buildFreeUpSpaceButton() {
+      return buildActionButton(
+        Icons.cleaning_services_outlined,
+        "free_up_space",
+        () {
+          context.pop();
+          context.pushRoute(SettingsSubRoute(section: SettingSection.freeUpSpace));
+        },
+      );
+    }
+
+    Widget buildAppLogButton() {
       return buildActionButton(
         Icons.assignment_outlined,
         "profile_drawer_app_logs",
-        () => context.pushRoute(const AppLogRoute()),
+        () {
+          context.pop();
+          context.pushRoute(const AppLogRoute());
+        },
       );
     }
 
@@ -85,57 +115,58 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             return;
           }
 
-          showDialog(
-            context: context,
-            builder: (BuildContext ctx) {
-              return ConfirmDialog(
-                title: "app_bar_signout_dialog_title",
-                content: "app_bar_signout_dialog_content",
-                ok: "yes",
-                onOk: () async {
-                  if (isLoggingOut.value) {
-                    return;
-                  }
-
-                  isLoggingOut.value = true;
-
-                  try {
-                    await ref
-                        .read(authProvider.notifier)
-                        .logout()
-                        .timeout(
-                          const Duration(seconds: 10),
-                          onTimeout: () {
-                            dPrint(() => "Logout timeout, continuing with cleanup");
-                          },
-                        );
-
-                    ref.read(manualUploadProvider.notifier).cancelBackup();
-                    ref.read(backupProvider.notifier).cancelBackup();
-
-                    ref.read(websocketProvider.notifier).disconnect();
-
-                    await ref
-                        .read(assetProvider.notifier)
-                        .clearAllAssets()
-                        .timeout(
-                          const Duration(seconds: 5),
-                          onTimeout: () {
-                            dPrint(() => "clearAllAssets timeout, continuing");
-                          },
-                        );
-                  } catch (error) {
-                    dPrint(() => "Error during logout: $error");
-                  } finally {
-                    isLoggingOut.value = false;
-
-                    if (context.mounted) {
-                      context.replaceRoute(const LoginRoute());
+          unawaited(
+            showDialog(
+              context: context,
+              builder: (BuildContext ctx) {
+                return ConfirmDialog(
+                  title: "app_bar_signout_dialog_title",
+                  content: "app_bar_signout_dialog_content",
+                  ok: "yes",
+                  onOk: () async {
+                    if (isLoggingOut.value) {
+                      return;
                     }
-                  }
-                },
-              );
-            },
+
+                    isLoggingOut.value = true;
+
+                    try {
+                      await ref
+                          .read(authProvider.notifier)
+                          .logout()
+                          .timeout(
+                            const Duration(seconds: 10),
+                            onTimeout: () {
+                              dPrint(() => "Logout timeout, continuing with cleanup");
+                            },
+                          );
+
+                      ref.read(manualUploadProvider.notifier).cancelBackup();
+                      ref.read(backupProvider.notifier).cancelBackup();
+                      ref.read(websocketProvider.notifier).disconnect();
+
+                      await ref
+                          .read(assetProvider.notifier)
+                          .clearAllAssets()
+                          .timeout(
+                            const Duration(seconds: 5),
+                            onTimeout: () {
+                              dPrint(() => "clearAllAssets timeout, continuing");
+                            },
+                          );
+                    } catch (error) {
+                      dPrint(() => "Error during logout: $error");
+                    } finally {
+                      isLoggingOut.value = false;
+
+                      if (context.mounted) {
+                        unawaited(context.replaceRoute(const LoginRoute()));
+                      }
+                    }
+                  },
+                );
+              },
+            ),
           );
         },
         trailing: isLoggingOut.value
@@ -144,6 +175,27 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : null,
+      );
+    }
+
+    Widget buildReadonlyMessage() {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: ListTile(
+          dense: true,
+          visualDensity: VisualDensity.standard,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+          minLeadingWidth: 20,
+          tileColor: theme.primaryColor.withAlpha(80),
+          title: Text(
+            "profile_drawer_readonly_mode",
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.textTheme.labelLarge?.color?.withAlpha(250),
+            ),
+            textAlign: TextAlign.center,
+          ).tr(),
+        ),
       );
     }
 
@@ -178,8 +230,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                   "backup_controller_page_server_storage",
                   style: context.textTheme.labelLarge?.copyWith(
                     fontSize: 16.0,
-                    color: context.textTheme.bodySmall?.color
-                        ?.withValues(alpha: 0.87),
+                    color: context.textTheme.bodySmall?.color?.withValues(alpha: 0.87),
                   ),
                 ).tr(),
                 Icon(
@@ -194,9 +245,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
               'backup_controller_page_storage_format',
               style: TextStyle(
                 fontSize: 16.0,
-                color: context.isDarkTheme
-                    ? const Color(0xFFB2B2B2)
-                    : const Color(0xFF7A7A7A),
+                color: context.isDarkTheme ? const Color(0xFFB2B2B2) : const Color(0xFF7A7A7A),
               ),
             ).tr(
               namedArgs: {
@@ -208,9 +257,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             LinearProgressIndicator(
               minHeight: 8.0,
               value: percentage,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(10.0),
-              ),
+              borderRadius: const BorderRadius.all(Radius.circular(10.0)),
               stopIndicatorColor: Colors.transparent,
               trackGap: 0,
             ),
@@ -248,7 +295,9 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             ),
           ),
         ),
+        if (Store.isBetaTimelineEnabled && isReadonlyModeEnabled) buildReadonlyMessage(),
         buildAppLogButton(),
+        buildFreeUpSpaceButton(),
         buildSettingButton(),
         buildSignOutButton(),
         Expanded(
@@ -271,15 +320,13 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       ],
     );
 
-    final isLandscape =
-        MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Drawer(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Container(
-          decoration:
-              BoxDecoration(color: context.colorScheme.surfaceContainer),
+          decoration: BoxDecoration(color: context.colorScheme.surfaceContainer),
           child: isLandscape
               ? SingleChildScrollView(
                   child: ConstrainedBox(

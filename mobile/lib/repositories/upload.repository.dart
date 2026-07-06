@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
-import 'package:cancellation_token_http/http.dart';
+import 'package:cancellation_token/cancellation_token.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:http/http.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -18,13 +21,22 @@ class UploadTaskWithFile {
   const UploadTaskWithFile({required this.file, required this.task});
 }
 
-final uploadRepositoryProvider = Provider((ref) => UploadRepository());
+typedef PhotosHttpClientProvider = Client Function();
+
+final uploadRepositoryProvider = Provider((ref) {
+  return UploadRepository(
+    httpClientProvider: () => ref.read(apiServiceProvider).httpClient,
+  );
+});
 
 class UploadRepository {
+  final Logger logger = Logger('UploadRepository');
+  final PhotosHttpClientProvider _httpClientProvider;
   void Function(TaskStatusUpdate)? onUploadStatus;
   void Function(TaskProgressUpdate)? onTaskProgress;
 
-  UploadRepository() {
+  UploadRepository({required PhotosHttpClientProvider httpClientProvider})
+    : _httpClientProvider = httpClientProvider {
     FileDownloader().registerCallbacks(
       group: kBackupGroup,
       taskStatusCallback: (update) => onUploadStatus?.call(update),
@@ -94,7 +106,7 @@ class UploadRepository {
   }
 
   /// Upload one backup asset via HTTP. Uses [StoreKey.serverEndpoint] per request (path resolver).
-  /// [Client] respects global [HttpOverrides] for certificate pinning.
+  /// [Client] uses the shared native HTTP client with certificate pinning.
   Future<({bool success, bool isDuplicate, String? remoteAssetId})> uploadBackupAsset(
     UploadTaskWithFile candidate,
     CancellationToken cancelToken,
@@ -116,12 +128,11 @@ class UploadRepository {
       final currentEndpoint = Store.get(StoreKey.serverEndpoint);
       final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
 
-      baseRequest.headers.addAll(ApiService.getRequestHeaders());
       baseRequest.headers.addAll(candidate.task.headers);
       baseRequest.fields.addAll(candidate.task.fields);
       baseRequest.files.add(assetRawUploadData);
 
-      final response = await Client().send(baseRequest, cancellationToken: cancelToken);
+      final response = await _httpClientProvider().send(baseRequest);
       final responseBody = jsonDecode(await response.stream.bytesToString()) as Map<String, dynamic>;
 
       if (![200, 201].contains(response.statusCode)) {
@@ -142,11 +153,7 @@ class UploadRepository {
   }
 
   Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
-    final httpClient = Client();
-    final stopwatch = Stopwatch()..start();
     final totalTasks = tasks.length;
-    int succeeded = 0;
-    int failed = 0;
     int processed = 0;
 
     Logger logger = Logger('UploadRepository');
@@ -179,14 +186,13 @@ class UploadRepository {
         baseRequest.fields.addAll(candidate.task.fields);
         baseRequest.files.add(assetRawUploadData);
 
-        final response = await httpClient.send(baseRequest, cancellationToken: cancelToken);
+        final response = await _httpClientProvider().send(baseRequest);
 
         final responseBody = jsonDecode(await response.stream.bytesToString());
         processed++;
 
         if (![200, 201].contains(response.statusCode)) {
           final error = responseBody;
-          failed++;
 
           logger.warning(
             "Error(${error['statusCode']}) uploading ${candidate.task.filename} | Created on ${candidate.task.fields["fileCreatedAt"]} | ${error['error']}",
@@ -198,7 +204,6 @@ class UploadRepository {
 
           continue;
         }
-        succeeded++;
         logger.info(
           'upload_telemetry source=dart_http stage=item_success index=$processed taskId=${candidate.task.taskId} '
           'status=${response.statusCode} endpoint=$currentEndpoint',
@@ -208,7 +213,6 @@ class UploadRepository {
         break;
       } catch (error, stackTrace) {
         processed++;
-        failed++;
         logger.warning("Error backup asset: ${error.toString()}: $stackTrace");
         logger.info(
           'upload_telemetry source=dart_http stage=item_exception index=$processed taskId=${candidate.task.taskId} '
@@ -217,10 +221,114 @@ class UploadRepository {
         continue;
       }
     }
-    stopwatch.stop();
-    logger.info(
-      'upload_telemetry source=dart_http stage=batch_end processed=$processed succeeded=$succeeded failed=$failed '
-      'elapsedMs=${stopwatch.elapsedMilliseconds}',
+  }
+
+  Future<UploadResult> uploadFile({
+    required File file,
+    required String originalFileName,
+    required Map<String, String> fields,
+    required CancellationToken cancelToken,
+    required void Function(int bytes, int totalBytes) onProgress,
+    required String logContext,
+  }) async {
+    final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
+    if (cancelToken.isCancelled) {
+      return UploadResult.cancelled();
+    }
+
+    try {
+      final fileStream = file.openRead();
+      final assetRawUploadData = MultipartFile("assetData", fileStream, file.lengthSync(), filename: originalFileName);
+
+      final baseRequest = _CustomMultipartRequest('POST', Uri.parse('$savedEndpoint/assets'), onProgress: onProgress);
+
+      baseRequest.headers.addAll(ApiService.getRequestHeaders());
+      baseRequest.fields.addAll(fields);
+      baseRequest.files.add(assetRawUploadData);
+
+      final response = await _httpClientProvider().send(baseRequest);
+      final responseBodyString = await response.stream.bytesToString();
+
+      if (![200, 201].contains(response.statusCode)) {
+        String? errorMessage;
+
+        if (response.statusCode == 413) {
+          errorMessage = 'Error(413) File is too large to upload';
+          return UploadResult.error(statusCode: response.statusCode, errorMessage: errorMessage);
+        }
+
+        try {
+          final error = jsonDecode(responseBodyString);
+          errorMessage = error['message'] ?? error['error'];
+        } catch (_) {
+          errorMessage = responseBodyString.isNotEmpty
+              ? responseBodyString
+              : 'Upload failed with status ${response.statusCode}';
+        }
+
+        return UploadResult.error(statusCode: response.statusCode, errorMessage: errorMessage);
+      }
+
+      try {
+        final responseBody = jsonDecode(responseBodyString);
+        return UploadResult.success(remoteAssetId: responseBody['id'] as String);
+      } catch (e) {
+        return UploadResult.error(errorMessage: 'Failed to parse server response');
+      }
+    } catch (error, stackTrace) {
+      logger.warning('Error uploading asset', error, stackTrace);
+      return UploadResult.error(errorMessage: error.toString());
+    }
+  }
+}
+
+class UploadResult {
+  final bool isSuccess;
+  final bool isCancelled;
+  final String? remoteAssetId;
+  final String? errorMessage;
+  final int? statusCode;
+
+  const UploadResult({
+    required this.isSuccess,
+    required this.isCancelled,
+    this.remoteAssetId,
+    this.errorMessage,
+    this.statusCode,
+  });
+
+  factory UploadResult.success({required String remoteAssetId}) {
+    return UploadResult(isSuccess: true, isCancelled: false, remoteAssetId: remoteAssetId);
+  }
+
+  factory UploadResult.error({String? errorMessage, int? statusCode}) {
+    return UploadResult(isSuccess: false, isCancelled: false, errorMessage: errorMessage, statusCode: statusCode);
+  }
+
+  factory UploadResult.cancelled() {
+    return const UploadResult(isSuccess: false, isCancelled: true);
+  }
+}
+
+class _CustomMultipartRequest extends MultipartRequest {
+  _CustomMultipartRequest(super.method, super.url, {required this.onProgress});
+
+  final void Function(int bytes, int totalBytes) onProgress;
+
+  @override
+  ByteStream finalize() {
+    final byteStream = super.finalize();
+    final total = contentLength;
+    var bytes = 0;
+
+    final t = StreamTransformer.fromHandlers(
+      handleData: (List<int> data, EventSink<List<int>> sink) {
+        bytes += data.length;
+        onProgress.call(bytes, total);
+        sink.add(data);
+      },
     );
+    final stream = byteStream.transform(t);
+    return ByteStream(stream);
   }
 }

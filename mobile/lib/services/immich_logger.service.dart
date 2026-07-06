@@ -9,8 +9,7 @@ import 'package:share_plus/share_plus.dart';
 /// [ImmichLogger] is a custom logger that is built on top of the [logging] package.
 /// The logs are written to the database and onto console, using `debugPrint` method.
 ///
-/// The logs are deleted when exceeding the `maxLogEntries` (default 500) property
-/// in the class.
+/// Persisted logs are trimmed to [kLogTruncateLimit] on app start.
 ///
 /// Logs can be shared by calling the `shareLogs` method, which will open a share dialog
 /// and generate a csv file.

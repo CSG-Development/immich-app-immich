@@ -28,7 +28,7 @@ class CodeInput extends StatelessWidget {
         return TextFormField(
           controller: controller,
           inputFormatters: const [TrimFormatter()],
-          decoration: LoginInputDecorations.baseDecoration(
+          decoration: InputDecorations.baseDecoration(
             context: context,
             labelText: 'curator.code'.tr(),
             hintText: 'curator.login_form_code_hint'.tr(),

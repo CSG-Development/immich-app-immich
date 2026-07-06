@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/server_info/server_version.model.dart';
@@ -88,16 +90,40 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
   final List<dynamic> _batchedAssetUploadReady = [];
   bool _isDisposing = false;
 
+  bool _isWebSocketUnauthorized(dynamic error) {
+    final message = error?.toString().toLowerCase() ?? '';
+    return message.contains('unauthorized');
+  }
+
+  bool _isWebSocketTransportError(dynamic error) {
+    final message = error?.toString().toLowerCase() ?? '';
+    return message.contains('certificate_verify_failed') || message.contains('handshakeexception');
+  }
+
   /// Notifies the endpoint recovery service about websocket connection errors
-  void _notifyEndpointRecovery() {
+  void _notifyEndpointRecovery({dynamic error}) {
+    if (_isWebSocketUnauthorized(error)) {
+      _log.warning('WebSocket unauthorized; skipping endpoint recovery reconnect');
+      return;
+    }
+
+    if (_isWebSocketTransportError(error)) {
+      _log.warning('WebSocket transport error; skipping endpoint path re-resolution');
+      return;
+    }
+
     try {
-      final serverEndpoint = Store.get(StoreKey.serverEndpoint);
+      final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+      if (serverEndpoint == null || serverEndpoint.isEmpty) {
+        return;
+      }
+
       final apiService = _ref.read(apiServiceProvider);
 
       apiService.notifyConnectionState(
         ConnectionState(
           status: ConnectionStatus.reconnecting,
-          lastErrorUrl: serverEndpoint.isNotEmpty ? serverEndpoint : null,
+          lastErrorUrl: serverEndpoint,
           lastErrorTime: DateTime.now(),
           connectionType: ConnectionType.websocket,
         ),
@@ -183,12 +209,14 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
   void _doConnect() {
     final authenticationState = _ref.read(authProvider);
 
-    if (authenticationState.isAuthenticated) {
+    final apiService = _ref.read(apiServiceProvider);
+    final accessToken = apiService.transientAccessToken ?? Store.tryGet(StoreKey.accessToken);
+    if (authenticationState.isAuthenticated && accessToken != null && accessToken.isNotEmpty) {
       try {
         // Use the full server endpoint URL from Store (updated by ApiService.setEndpoint)
         // instead of apiClient.basePath which is just the relative path component.
-        final serverEndpoint = Store.get(StoreKey.serverEndpoint);
-        if (serverEndpoint.isEmpty) {
+        final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+        if (serverEndpoint == null || serverEndpoint.isEmpty) {
           _log.warning('Cannot connect websocket: Server endpoint is empty');
           return;
         }
@@ -201,7 +229,10 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
         final endpoint = Uri.parse(serverEndpoint);
         dPrint(() => 'Creating websocket connection to: ${endpoint.origin}${endpoint.path}');
-        final headers = ApiService.getRequestHeaders();
+        final headers = ApiService.getAuthenticatedRequestHeaders();
+        if (!headers.containsKey('Authorization')) {
+          headers['Authorization'] = 'Bearer $accessToken';
+        }
         if (endpoint.userInfo.isNotEmpty) {
           headers["Authorization"] = "Basic ${base64.encode(utf8.encode(endpoint.userInfo))}";
         }
@@ -209,18 +240,26 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
         dPrint(() => "Attempting to connect to websocket at ${endpoint.origin}${endpoint.path}/socket.io");
         // Configure socket transports must be specified
         // Disable auto-connect to prevent duplicate event handlers and have manual control
-        Socket socket = io(
-          endpoint.origin,
-          OptionBuilder()
-              .setPath("${endpoint.path}/socket.io")
-              .setTransports(['websocket'])
-              .disableReconnection()
-              .enableForceNew()
-              .enableForceNewConnection()
-              .disableAutoConnect()
-              .setExtraHeaders(headers)
-              .build(),
-        );
+        final options = OptionBuilder()
+            .setPath("${endpoint.path}/socket.io")
+            .setTransports(['websocket'])
+            .disableReconnection()
+            .enableForceNew()
+            .enableForceNewConnection()
+            .disableAutoConnect()
+            .setExtraHeaders(headers);
+
+        if (Platform.isIOS || Platform.isAndroid) {
+          options.setWebSocketConnector(
+            (uri, {protocols, headers}) => NetworkRepository.createWebSocket(
+              uri,
+              protocols: protocols,
+              headers: headers,
+            ),
+          );
+        }
+
+        Socket socket = io(endpoint.origin, options.build());
 
         socket.onConnect((_) {
           dPrint(() => "Established Websocket Connection");
@@ -242,8 +281,9 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
           _log.severe("Websocket Error - $errorMessage");
           // Update state immediately to reflect connection failure
           state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
-          // Notify endpoint recovery service to attempt recovery
-          _notifyEndpointRecovery();
+          if (!_isWebSocketUnauthorized(errorMessage)) {
+            _notifyEndpointRecovery(error: errorMessage);
+          }
           // Dispose socket to clean up resources and stop any reconnection attempts
           disposeSocket();
         });
@@ -252,8 +292,9 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
           _log.severe("Websocket connect_error - $data");
           // Update state immediately to reflect connection failure
           state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
-          // Notify endpoint recovery service to attempt recovery
-          _notifyEndpointRecovery();
+          if (!_isWebSocketUnauthorized(data)) {
+            _notifyEndpointRecovery(error: data);
+          }
           // Dispose socket to stop automatic reconnection attempts
           disposeSocket();
         });
@@ -262,8 +303,7 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
           _log.severe("Websocket connect_timeout - $data");
           // Update state immediately to reflect connection failure
           state = WebsocketState(isConnected: false, socket: null, pendingChanges: state.pendingChanges);
-          // Notify endpoint recovery service to attempt recovery
-          _notifyEndpointRecovery();
+          _notifyEndpointRecovery(error: data);
           // Dispose socket to stop automatic reconnection attempts
           disposeSocket();
         });
@@ -278,6 +318,7 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
           socket.on('on_asset_hidden', _handleOnAssetHidden);
         } else {
           socket.on('AssetUploadReadyV1', _handleSyncAssetUploadReady);
+          socket.on('AssetEditReadyV1', _handleSyncAssetEditReady);
         }
 
         socket.on('on_config_update', _handleOnConfigUpdate);
@@ -332,10 +373,12 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
   void stopListeningToBetaEvents() {
     state.socket?.off('AssetUploadReadyV1');
+    state.socket?.off('AssetEditReadyV1');
   }
 
   void startListeningToBetaEvents() {
     state.socket?.on('AssetUploadReadyV1', _handleSyncAssetUploadReady);
+    state.socket?.on('AssetEditReadyV1', _handleSyncAssetEditReady);
   }
 
   void listenUploadEvent() {
@@ -447,12 +490,16 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
     final serverVersion = ServerVersion.fromDto(serverVersionDto);
     final releaseVersion = ServerVersion.fromDto(releaseVersionDto);
-    _ref.read(serverInfoProvider.notifier).handleNewRelease(serverVersion, releaseVersion);
+    _ref.read(serverInfoProvider.notifier).handleReleaseInfo(serverVersion, releaseVersion);
   }
 
   void _handleSyncAssetUploadReady(dynamic data) {
     _batchedAssetUploadReady.add(data);
     _batchDebouncer.run(_processBatchedAssetUploadReady);
+  }
+
+  void _handleSyncAssetEditReady(dynamic data) {
+    unawaited(_ref.read(backgroundSyncProvider).syncWebsocketEdit(data));
   }
 
   void _processBatchedAssetUploadReady() {

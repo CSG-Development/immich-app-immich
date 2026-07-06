@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:cancellation_token_http/http.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +14,7 @@ import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
-import 'package:immich_mobile/services/upload.service.dart';
+import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:logging/logging.dart';
@@ -37,10 +38,7 @@ class EditImagePage extends ConsumerWidget {
 
   Future<Uint8List> _imageToUint8List(BaseAsset asset) async {
     final Completer<Uint8List> completer = Completer<Uint8List>();
-    final imageProvider = getFullImageProvider(
-      asset,
-      originalOnly: true,
-    );
+    final imageProvider = getFullImageProvider(asset, originalOnly: true);
     final ImageStream stream = imageProvider.resolve(const ImageConfiguration());
 
     late final ImageStreamListener listener;
@@ -91,7 +89,7 @@ class EditImagePage extends ConsumerWidget {
         Logger("SaveEditedImage").warning("Failed to retrieve the saved image back from OS", e);
       }
 
-      ref.read(backgroundSyncProvider).syncLocal(full: true);
+      await ref.read(backgroundSyncProvider).syncLocal(full: true);
       context.navigator.popUntil((route) => route.isFirst);
       ImmichToast.show(
         durationInSecond: 3,
@@ -104,7 +102,7 @@ class EditImagePage extends ConsumerWidget {
         return;
       }
 
-      await ref.read(uploadServiceProvider).manualBackup([localAsset]);
+      await ref.read(foregroundUploadServiceProvider).uploadManual([localAsset], cancelToken: CancellationToken());
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,
@@ -117,11 +115,7 @@ class EditImagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    String trOr(
-      String primaryKey, {
-      String? fallbackKey,
-      String? fallbackText,
-    }) {
+    String trOr(String primaryKey, {String? fallbackKey, String? fallbackText}) {
       final primaryValue = primaryKey.tr();
       if (primaryValue != primaryKey) {
         return primaryValue;
@@ -210,18 +204,9 @@ class EditImagePage extends ConsumerWidget {
                     'image_editor.ai.lasso_min_points',
                     fallbackText: 'Lasso needs at least 3 points.',
                   ),
-                  aiSelectTargetShape: trOr(
-                    'image_editor.ai.select_target_shape',
-                    fallbackText: 'Select target shape',
-                  ),
-                  aiShapeRectangle: trOr(
-                    'image_editor.ai.shape.rectangle',
-                    fallbackText: 'Rectangle',
-                  ),
-                  aiShapeEllipse: trOr(
-                    'image_editor.ai.shape.ellipse',
-                    fallbackText: 'Ellipse',
-                  ),
+                  aiSelectTargetShape: trOr('image_editor.ai.select_target_shape', fallbackText: 'Select target shape'),
+                  aiShapeRectangle: trOr('image_editor.ai.shape.rectangle', fallbackText: 'Rectangle'),
+                  aiShapeEllipse: trOr('image_editor.ai.shape.ellipse', fallbackText: 'Ellipse'),
                   aiShapeLasso: trOr('image_editor.ai.shape.lasso', fallbackText: 'Lasso'),
                   aiSmart: trOr('image_editor.ai.smart', fallbackText: 'Smart'),
                   aiTarget: trOr('image_editor.ai.target', fallbackText: 'Target'),
@@ -240,19 +225,13 @@ class EditImagePage extends ConsumerWidget {
                     fallbackText:
                         'Try to remove detected artifacts automatically?\n\nWarning: automatic artifact cleanup can be unpredictable and may make the result worse in some cases.',
                   ),
-                  aiModelNotFoundTitle: trOr(
-                    'image_editor.ai.model_not_found_title',
-                    fallbackText: 'Model not found',
-                  ),
+                  aiModelNotFoundTitle: trOr('image_editor.ai.model_not_found_title', fallbackText: 'Model not found'),
                   aiModelNotFoundBody: trOr(
                     'image_editor.ai.model_not_found_body',
                     fallbackText:
                         'The required model was not found. Please provide a valid model asset/path and try again.',
                   ),
-                  aiDownloadModelTitle: trOr(
-                    'image_editor.ai.download_model_title',
-                    fallbackText: 'Download model?',
-                  ),
+                  aiDownloadModelTitle: trOr('image_editor.ai.download_model_title', fallbackText: 'Download model?'),
                   aiDownloadModelBody: trOr(
                     'image_editor.ai.download_model_body',
                     fallbackText:
@@ -266,49 +245,25 @@ class EditImagePage extends ConsumerWidget {
                     'image_editor.ai.failed_detect_subject',
                     fallbackText: 'Failed to detect subject',
                   ),
-                  watermarkDefaultText: trOr(
-                    'image_editor.watermark.default_text',
-                    fallbackText: 'Your Name',
-                  ),
-                  watermarkTextLabel: trOr(
-                    'image_editor.watermark.text_label',
-                    fallbackText: 'Watermark text',
-                  ),
-                  watermarkPickLogo: trOr(
-                    'image_editor.watermark.pick_logo',
-                    fallbackText: 'Pick logo',
-                  ),
-                  watermarkRemoveLogo: trOr(
-                    'image_editor.watermark.remove_logo',
-                    fallbackText: 'Remove logo',
-                  ),
+                  watermarkDefaultText: trOr('image_editor.watermark.default_text', fallbackText: 'Your Name'),
+                  watermarkTextLabel: trOr('image_editor.watermark.text_label', fallbackText: 'Watermark text'),
+                  watermarkPickLogo: trOr('image_editor.watermark.pick_logo', fallbackText: 'Pick logo'),
+                  watermarkRemoveLogo: trOr('image_editor.watermark.remove_logo', fallbackText: 'Remove logo'),
                   watermarkOpacity: trOr('image_editor.watermark.opacity', fallbackText: 'Opacity'),
                   watermarkAngle: trOr('image_editor.watermark.angle', fallbackText: 'Angle'),
                   watermarkSize: trOr('image_editor.watermark.size', fallbackText: 'Size'),
-                  watermarkPositionLabel: trOr(
-                    'image_editor.watermark.position_label',
-                    fallbackText: 'Position',
-                  ),
-                  watermarkModeLabel: trOr(
-                    'image_editor.watermark.mode_label',
-                    fallbackText: 'Mode',
-                  ),
+                  watermarkPositionLabel: trOr('image_editor.watermark.position_label', fallbackText: 'Position'),
+                  watermarkModeLabel: trOr('image_editor.watermark.mode_label', fallbackText: 'Mode'),
                   watermarkSelectPosition: trOr(
                     'image_editor.watermark.select_position',
                     fallbackText: 'Select position',
                   ),
-                  watermarkSelectMode: trOr(
-                    'image_editor.watermark.select_mode',
-                    fallbackText: 'Select mode',
-                  ),
+                  watermarkSelectMode: trOr('image_editor.watermark.select_mode', fallbackText: 'Select mode'),
                   watermarkLogoModesUnavailableWeb: trOr(
                     'image_editor.watermark.logo_modes_unavailable_web',
                     fallbackText: 'Logo modes are unavailable on web',
                   ),
-                  watermarkPositionTopLeft: trOr(
-                    'image_editor.watermark.position.top_left',
-                    fallbackText: 'Top Left',
-                  ),
+                  watermarkPositionTopLeft: trOr('image_editor.watermark.position.top_left', fallbackText: 'Top Left'),
                   watermarkPositionTopRight: trOr(
                     'image_editor.watermark.position.top_right',
                     fallbackText: 'Top Right',
@@ -321,26 +276,14 @@ class EditImagePage extends ConsumerWidget {
                     'image_editor.watermark.position.bottom_right',
                     fallbackText: 'Bottom Right',
                   ),
-                  watermarkPositionCenter: trOr(
-                    'image_editor.watermark.position.center',
-                    fallbackText: 'Center',
-                  ),
+                  watermarkPositionCenter: trOr('image_editor.watermark.position.center', fallbackText: 'Center'),
                   watermarkPositionPatternGrid: trOr(
                     'image_editor.watermark.position.pattern_grid',
                     fallbackText: 'Pattern Grid',
                   ),
-                  watermarkModeText: trOr(
-                    'image_editor.watermark.mode.text',
-                    fallbackText: 'Text',
-                  ),
-                  watermarkModeLogo: trOr(
-                    'image_editor.watermark.mode.logo',
-                    fallbackText: 'Logo',
-                  ),
-                  watermarkModeTextLogo: trOr(
-                    'image_editor.watermark.mode.text_logo',
-                    fallbackText: 'Text + Logo',
-                  ),
+                  watermarkModeText: trOr('image_editor.watermark.mode.text', fallbackText: 'Text'),
+                  watermarkModeLogo: trOr('image_editor.watermark.mode.logo', fallbackText: 'Logo'),
+                  watermarkModeTextLogo: trOr('image_editor.watermark.mode.text_logo', fallbackText: 'Text + Logo'),
                 ),
               ),
             );

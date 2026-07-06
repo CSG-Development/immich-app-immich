@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/android_device_asset.entity.dart';
@@ -17,19 +18,26 @@ import 'package:immich_mobile/infrastructure/entities/device_asset.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/local_album.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/local_asset.entity.drift.dart';
+import 'package:immich_mobile/infrastructure/entities/trashed_local_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/store.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
+import 'package:immich_mobile/platform/native_sync_api.g.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
+import 'package:immich_mobile/platform/network_api.g.dart';
+import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/datetime_helpers.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/diff.dart';
 import 'package:isar/isar.dart';
 // ignore: import_rule_photo_manager
 import 'package:photo_manager/photo_manager.dart';
 
-const int targetVersion = 17;
+const int targetVersion = 25;
 
 Future<void> migrateDatabaseIfNeeded(Isar db, Drift drift) async {
   final hasVersion = Store.tryGet(StoreKey.version) != null;
@@ -63,13 +71,58 @@ Future<void> migrateDatabaseIfNeeded(Isar db, Drift drift) async {
     await Store.populateCache();
   }
 
-  await handleBetaMigration(version, await _isNewInstallation(db, drift), SyncStreamRepository(drift));
+  final syncStreamRepository = SyncStreamRepository(drift);
+  await handleBetaMigration(version, await _isNewInstallation(db, drift), syncStreamRepository);
 
   if (version < 17 && Store.isBetaTimelineEnabled) {
     final delay = Store.get(StoreKey.backupTriggerDelay, AppSettingsEnum.backupTriggerDelay.defaultValue);
     if (delay >= 1000) {
       await Store.put(StoreKey.backupTriggerDelay, (delay / 1000).toInt());
     }
+  }
+
+  if (version < 18 && Store.isBetaTimelineEnabled) {
+    await syncStreamRepository.reset();
+    await Store.put(StoreKey.shouldResetSync, true);
+  }
+
+  if (version < 19 && Store.isBetaTimelineEnabled) {
+    if (!await _populateLocalAssetTime(drift)) {
+      return;
+    }
+  }
+
+  if (version < 20 && Store.isBetaTimelineEnabled) {
+    await _syncLocalAlbumIsIosSharedAlbum(drift);
+  }
+
+  if (version < 21) {
+    final certData = SSLClientCertStoreVal.load();
+    if (certData != null) {
+      await networkApi.addCertificate(ClientCertData(data: certData.data, password: certData.password ?? ""));
+    }
+  }
+
+  if (version < 23 && Store.isBetaTimelineEnabled) {
+    await _populateLocalAssetPlaybackStyle(drift);
+  }
+
+  if (version < 24 && Store.isBetaTimelineEnabled) {
+    await _applyLocalAssetOrientation(drift);
+  }
+
+  if (version < 25) {
+    final accessToken = Store.tryGet(StoreKey.accessToken);
+    if (accessToken != null && accessToken.isNotEmpty) {
+      final serverUrls = ApiService.getServerUrls();
+      if (serverUrls.isNotEmpty) {
+        await NetworkRepository.setHeaders(ApiService.getRequestHeaders(), serverUrls, token: accessToken);
+      }
+    }
+  }
+
+  if (version < 22 && !Store.isBetaTimelineEnabled) {
+    await Store.put(StoreKey.needBetaMigration, true);
   }
 
   if (targetVersion >= 12) {
@@ -215,6 +268,54 @@ Future<void> _migrateDeviceAsset(Isar db) async {
   });
 }
 
+Future<bool> _populateLocalAssetTime(Drift db) async {
+  try {
+    final nativeApi = NativeSyncApi();
+    final albums = await nativeApi.getAlbums();
+    for (final album in albums) {
+      final assets = await nativeApi.getAssetsForAlbum(album.id);
+      await db.batch((batch) async {
+        for (final asset in assets) {
+          batch.update(
+            db.localAssetEntity,
+            LocalAssetEntityCompanion(
+              longitude: Value(asset.longitude),
+              latitude: Value(asset.latitude),
+              adjustmentTime: Value(tryFromSecondsSinceEpoch(asset.adjustmentTime, isUtc: true)),
+              updatedAt: Value(tryFromSecondsSinceEpoch(asset.updatedAt, isUtc: true) ?? DateTime.timestamp()),
+            ),
+            where: (t) => t.id.equals(asset.id),
+          );
+        }
+      });
+    }
+
+    return true;
+  } catch (error) {
+    dPrint(() => "[MIGRATION] Error while populating asset time: $error");
+    return false;
+  }
+}
+
+Future<void> _syncLocalAlbumIsIosSharedAlbum(Drift db) async {
+  try {
+    final nativeApi = NativeSyncApi();
+    final albums = await nativeApi.getAlbums();
+    await db.batch((batch) {
+      for (final album in albums) {
+        batch.update(
+          db.localAlbumEntity,
+          LocalAlbumEntityCompanion(isIosSharedAlbum: Value(album.isCloud)),
+          where: (t) => t.id.equals(album.id),
+        );
+      }
+    });
+    dPrint(() => "[MIGRATION] Successfully updated isIosSharedAlbum for ${albums.length} albums");
+  } catch (error) {
+    dPrint(() => "[MIGRATION] Error while syncing local album isIosSharedAlbum: $error");
+  }
+}
+
 Future<void> migrateDeviceAssetToSqlite(Isar db, Drift drift) async {
   try {
     final isarDeviceAssets = await db.deviceAssetEntitys.where().findAll();
@@ -312,6 +413,68 @@ Future<void> migrateStoreToIsar(Isar db, Drift drift) async {
     dPrint(() => "[MIGRATION] Error while migrating store values to Isar: $error");
   }
 }
+
+Future<void> _populateLocalAssetPlaybackStyle(Drift db) async {
+  try {
+    final nativeApi = NativeSyncApi();
+
+    final albums = await nativeApi.getAlbums();
+    for (final album in albums) {
+      final assets = await nativeApi.getAssetsForAlbum(album.id);
+      await db.batch((batch) {
+        for (final asset in assets) {
+          batch.update(
+            db.localAssetEntity,
+            LocalAssetEntityCompanion(playbackStyle: Value(_toPlaybackStyle(asset.playbackStyle))),
+            where: (t) => t.id.equals(asset.id),
+          );
+        }
+      });
+    }
+
+    if (Platform.isAndroid) {
+      final trashedAssetMap = await nativeApi.getTrashedAssets();
+      for (final entry in trashedAssetMap.cast<String, List<Object?>>().entries) {
+        final assets = entry.value.cast<PlatformAsset>();
+        await db.batch((batch) {
+          for (final asset in assets) {
+            batch.update(
+              db.trashedLocalAssetEntity,
+              TrashedLocalAssetEntityCompanion(playbackStyle: Value(_toPlaybackStyle(asset.playbackStyle))),
+              where: (t) => t.id.equals(asset.id),
+            );
+          }
+        });
+      }
+      dPrint(() => "[MIGRATION] Successfully populated playbackStyle for local and trashed assets");
+    } else {
+      dPrint(() => "[MIGRATION] Successfully populated playbackStyle for local assets");
+    }
+  } catch (error) {
+    dPrint(() => "[MIGRATION] Error while populating playbackStyle: $error");
+  }
+}
+
+Future<void> _applyLocalAssetOrientation(Drift db) {
+  final query = db.localAssetEntity.update()
+    ..where((filter) => (filter.orientation.equals(90) | (filter.orientation.equals(270))));
+  return query.write(
+    LocalAssetEntityCompanion.custom(
+      width: db.localAssetEntity.height,
+      height: db.localAssetEntity.width,
+      orientation: const Variable(0),
+    ),
+  );
+}
+
+AssetPlaybackStyle _toPlaybackStyle(PlatformAssetPlaybackStyle style) => switch (style) {
+  PlatformAssetPlaybackStyle.unknown => AssetPlaybackStyle.unknown,
+  PlatformAssetPlaybackStyle.image => AssetPlaybackStyle.image,
+  PlatformAssetPlaybackStyle.video => AssetPlaybackStyle.video,
+  PlatformAssetPlaybackStyle.imageAnimated => AssetPlaybackStyle.imageAnimated,
+  PlatformAssetPlaybackStyle.livePhoto => AssetPlaybackStyle.livePhoto,
+  PlatformAssetPlaybackStyle.videoLooping => AssetPlaybackStyle.videoLooping,
+};
 
 class _DeviceAsset {
   final String assetId;

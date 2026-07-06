@@ -13,9 +13,11 @@ import 'package:immich_mobile/providers/infrastructure/cancel.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
-import 'package:immich_mobile/utils/certificates_pinning/cert_pinning_config.dart';
+import 'package:immich_mobile/utils/secondary_runtime_api.bootstrap.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/wm_executor.dart';
 import 'package:logging/logging.dart';
 import 'package:worker_manager/worker_manager.dart';
 
@@ -36,7 +38,7 @@ Cancelable<T?> runInIsolateGentle<T>({
     throw const InvalidIsolateUsageException();
   }
 
-  return workerManager.executeGentle((cancelledChecker) async {
+  return workerManagerPatch.executeGentle((cancelledChecker) async {
     T? result;
     await runZonedGuarded(
       () async {
@@ -46,20 +48,14 @@ Cancelable<T?> runInIsolateGentle<T>({
         final (isar, drift, logDb) = await Bootstrap.initDB();
         await Bootstrap.initDomain(isar, drift, logDb, shouldBufferLogs: false, listenStoreUpdates: false);
 
-        final certPinning = HttpCertPinningManager(
-          config: const CertPinningConfig(
-            allowFallback: false,
-            installRootsInSecurityContext: true
-          ),
-        );
-
-        await certPinning.initialize();
+        await HttpCertPinningManager.ensureInitialized();
 
         final remoteAccessDependencies = await initHCDevice(
-          registerHostTrustedChain: certPinning.registerHostTrustedChain,
+          httpClientProvider: () => NetworkRepository.client,
           isMainRuntime: false,
         );
-        final apiservice = ApiService(certPinning: certPinning);
+        final apiservice = ApiService();
+        await bootstrapSecondaryRuntimeApiSession(apiservice);
 
         final ref = ProviderContainer(
           overrides: [
@@ -69,7 +65,7 @@ Cancelable<T?> runInIsolateGentle<T>({
             cancellationProvider.overrideWithValue(cancelledChecker),
             driftProvider.overrideWith(driftOverride(drift)),
             remoteAccessDependenciesProvider.overrideWithValue(remoteAccessDependencies),
-            apiServiceProvider.overrideWithValue(apiservice)
+            apiServiceProvider.overrideWithValue(apiservice),
           ],
         );
 

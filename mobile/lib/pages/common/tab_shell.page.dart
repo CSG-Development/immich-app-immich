@@ -4,20 +4,19 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/timeline.model.dart';
+import 'package:immich_mobile/constants/constants.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/asset_viewer/scroll_notifier.provider.dart';
+import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
 import 'package:immich_mobile/providers/haptic_feedback.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/memory.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
-import 'package:immich_mobile/services/network/network_monitor.dart';
-import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/providers/tab.provider.dart';
-import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_drawer.dart';
 
@@ -30,21 +29,6 @@ class TabShellPage extends ConsumerStatefulWidget {
 }
 
 class _TabShellPageState extends ConsumerState<TabShellPage> {
-  late final CuratorNetworkMonitor _networkMonitor;
-
-  @override
-  void initState() {
-    super.initState();
-    _networkMonitor = ref.read(curatorNetworkMonitorProvider);
-    _networkMonitor.startMonitoring();
-  }
-
-  @override
-  void dispose() {
-    _networkMonitor.stopMonitoring();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final isScreenLandscape = context.orientation == Orientation.landscape;
@@ -77,7 +61,7 @@ class _TabShellPageState extends ConsumerState<TabShellPage> {
     ];
 
     return AutoTabsRouter(
-      routes: [const MainTimelineRoute(), DriftSearchRoute(), const DriftAlbumsRoute(), const DriftLibraryRoute()],
+      routes: const [MainTimelineRoute(), DriftSearchRoute(), DriftAlbumsRoute(), DriftLibraryRoute()],
       duration: const Duration(milliseconds: 600),
       transitionBuilder: (context, child, animation) => FadeTransition(opacity: animation, child: child),
       builder: (context, child) {
@@ -132,26 +116,30 @@ class CuratorShell extends StatelessWidget {
 
 void _onNavigationSelected(TabsRouter router, int index, WidgetRef ref) {
   // On Photos page menu tapped
-  if (router.activeIndex == 0 && index == 0) {
+  if (router.activeIndex == kPhotoTabIndex && index == kPhotoTabIndex) {
     EventStream.shared.emit(const ScrollToTopEvent());
   }
 
-  if (index == 0) {
+  if (index == kPhotoTabIndex) {
     ref.invalidate(driftMemoryFutureProvider);
   }
 
+  if (router.activeIndex != kSearchTabIndex && index == kSearchTabIndex) {
+    ref.read(searchPreFilterProvider.notifier).clear();
+  }
+
   // On Search page tapped
-  if (router.activeIndex == 1 && index == 1) {
+  if (router.activeIndex == kSearchTabIndex && index == kSearchTabIndex) {
     ref.read(searchInputFocusProvider).requestFocus();
   }
 
   // Album page
-  if (index == 2) {
+  if (index == kAlbumTabIndex) {
     ref.read(remoteAlbumProvider.notifier).refresh();
   }
 
   // Library page
-  if (index == 3) {
+  if (index == kLibraryTabIndex) {
     ref.invalidate(localAlbumProvider);
     ref.invalidate(driftGetAllPeopleProvider);
   }

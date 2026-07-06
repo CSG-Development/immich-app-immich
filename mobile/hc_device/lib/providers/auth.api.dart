@@ -98,11 +98,23 @@ class CuratorAuthenticator implements Authenticator {
           }
         }
       } else {
-        final failure = RefreshFailureClassifier.alreadyAttempted();
+        final isRefreshEndpointFailure = _provider.isRefreshRequest(originalRequest);
+        final failure = isRefreshEndpointFailure
+            ? RefreshFailureClassifier.describe(response)
+            : RefreshFailureClassifier.alreadyAttempted();
         logger.warning(
-          '[Auth] Unable to refresh token ${failure.logSuffix}',
+          '[Auth] Unable to refresh token '
+          'context=${isRefreshEndpointFailure ? 'refresh_endpoint' : 'retried_request'} '
+          '${failure.logSuffix}',
         );
-        await _provider.logOut(notify: true);
+        // Only clear RA session when the refresh endpoint itself rejects the token.
+        // A 401 on a retried business request after refresh must not force logout:
+        // that can happen during path switches while the refresh token is still valid.
+        if (isRefreshEndpointFailure &&
+            _provider.shouldLogoutOnRefreshFailure(response)) {
+          logger.warning('[Auth] Logging out after refresh endpoint auth failure');
+          await _provider.logOut(notify: true);
+        }
       }
       return null;
     }

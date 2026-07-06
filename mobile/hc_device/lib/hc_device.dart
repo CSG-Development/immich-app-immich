@@ -21,4 +21,5 @@ export 'package:hc_device/services/connection_info.dart';
 export 'package:hc_device/services/device_detection_service.dart'
     hide serviceTypeDiscover, timeoutLocalApiCall, timeoutRemoteApiCall;
 export 'package:hc_device/services/path_probe_mode.dart';
+export 'package:hc_device/services/path_type.dart';
 export 'package:hc_device/services/path_resolver/hc_path_resolver.dart';

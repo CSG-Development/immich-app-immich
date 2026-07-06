@@ -4,7 +4,10 @@ import 'dart:math' as math;
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' hide AssetType;
 import 'package:immich_mobile/domain/models/user.model.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/platform/native_clipboard_api.g.dart';
 import 'package:immich_mobile/utils/hash.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
@@ -14,13 +17,14 @@ import 'package:immich_mobile/providers/clipboard.provider.dart';
 import 'package:logging/logging.dart';
 
 import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
+import 'package:immich_mobile/extensions/translate_extensions.dart';
 
 class FilenameParts {
   final String baseName;
@@ -326,8 +330,8 @@ class ClipboardService {
     }
   }
 
-  /// Paste photos from clipboard and save them to the device
-  Future<ClipboardPasteResult> pasteFromClipboard() async {
+  /// Paste photos from clipboard and upload them to the server
+  Future<ClipboardPasteResult> pasteFromClipboard(Ref ref) async {
     try {
       final filePaths = await NativeClipboardApi().getPhotosFromClipboard();
       if (filePaths.isEmpty) {
@@ -356,7 +360,7 @@ class ClipboardService {
       }
 
       if (savedAssets.isNotEmpty) {
-        await _refreshUI();
+        await _refreshUI(ref);
       }
 
       try {
@@ -452,12 +456,16 @@ class ClipboardService {
 
         nextSuffixPerBase[baseAndSuffix.base] = startingSuffix + 1;
       } catch (e) {
-        errors.add('Error duplicating ${asset.fileName}: ${e.toString()}');
+        errors.add('Error duplicating ${asset.fileName}: $e');
       }
     }
 
     if (savedAssets.isNotEmpty) {
-      await ref.read(assetProvider.notifier).getAllAsset();
+      if (Store.isBetaTimelineEnabled) {
+        await ref.read(backgroundSyncProvider).syncRemote();
+      } else {
+        await ref.read(assetProvider.notifier).getAllAsset();
+      }
     }
 
     return ClipboardPasteResult(
@@ -500,7 +508,7 @@ class ClipboardService {
           await tempFile.writeAsBytes(res.bodyBytes);
           sourceFile = tempFile;
         } else {
-          throw Exception('Failed to download asset for duplication');
+          throw Exception('Failed to download asset for duplication: HTTP ${res.statusCode}');
         }
       } catch (e) {
         throw Exception('Failed to prepare asset for duplication: ${e.toString()}');
@@ -536,9 +544,7 @@ class ClipboardService {
     if (asset.isRemote && sourceFile.path.contains('duplicate_')) {
       try {
         await sourceFile.delete();
-      } catch (e) {
-        // Ignore cleanup errors
-      }
+      } catch (_) {}
     }
 
     return uploadResult;
@@ -599,7 +605,7 @@ class ClipboardService {
         'duration': '0',
       });
 
-      final response = await request.send();
+      final response = await NetworkRepository.client.send(request);
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -628,7 +634,7 @@ class ClipboardService {
         height: 0,
         remoteId: remoteId,
       );
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
@@ -715,9 +721,13 @@ class ClipboardService {
     return BaseSuffix(namePart, null);
   }
 
-  Future<void> _refreshUI() async {
-    await _albumNotifier.refreshDeviceAlbums();
-    await _assetNotifier.getAllAsset(clear: false);
+  Future<void> _refreshUI(Ref ref) async {
+    if (Store.isBetaTimelineEnabled) {
+      await ref.read(backgroundSyncProvider).syncRemote();
+    } else {
+      await _albumNotifier.refreshDeviceAlbums();
+      await _assetNotifier.getAllAsset(clear: false);
+    }
   }
 
   bool _isImageFile(String fileName) {
@@ -744,20 +754,90 @@ class ClipboardService {
     return sanitized;
   }
 
-  static bool isDuplicateSupportedForSelection(Set<Asset> assets) {
-    if (assets.isEmpty) return false;
+  static bool isDuplicateSupportedForBaseAssets(Set<BaseAsset> assets) {
+    return duplicateUnsupportedReasons(assets).isEmpty && assets.isNotEmpty;
+  }
 
+  static Map<String, String> duplicateUnsupportedReasons(Set<BaseAsset> assets) {
+    final reasons = <String, String>{};
+    if (assets.isEmpty) {
+      reasons['selection'] = 'no assets selected';
+      return reasons;
+    }
+
+    for (final asset in assets) {
+      final reason = _duplicateUnsupportedReason(asset);
+      if (reason != null) {
+        reasons[asset.name] = reason;
+      }
+    }
+    return reasons;
+  }
+
+  static String? _duplicateUnsupportedReason(BaseAsset asset) {
+    return _duplicateUnsupportedReasonForFile(asset.isImage, asset.name);
+  }
+
+  static String? _duplicateUnsupportedReasonForFile(bool isImage, String fileName) {
+    if (!isImage) {
+      return 'not an image';
+    }
+    if (!_isDuplicateSupportedFileName(fileName)) {
+      return 'unsupported format';
+    }
+    return null;
+  }
+
+  static Map<String, String> duplicateUnsupportedReasonsForAssets(Set<Asset> assets) {
+    final reasons = <String, String>{};
+    if (assets.isEmpty) {
+      reasons['selection'] = 'no assets selected';
+      return reasons;
+    }
+
+    for (final asset in assets) {
+      final reason = _duplicateUnsupportedReasonForFile(asset.isImage, asset.fileName);
+      if (reason != null) {
+        reasons[asset.fileName] = reason;
+      }
+    }
+    return reasons;
+  }
+
+  static String unsupportedSelectionMessage(BuildContext? context, Map<String, String> reasons) {
+    if (reasons.containsKey('selection')) {
+      return 'duplicate_error'.t(context: context);
+    }
+
+    for (final entry in reasons.entries) {
+      final reason = entry.value;
+      if (reason.contains('not an image')) {
+        return 'duplicate_error_video'.t(context: context);
+      }
+      if (reason.contains('unsupported format')) {
+        final match = RegExp(r'\.(\w+)$', caseSensitive: false).firstMatch(entry.key);
+        final type = (match?.group(1) ?? 'file').toUpperCase();
+        return 'duplicate_error_unsupported_type'.t(context: context, args: {'type': type});
+      }
+    }
+
+    return 'duplicate_error'.t(context: context);
+  }
+
+  static bool isDuplicateSupportedForSelection(Set<Asset> assets) {
+    return duplicateUnsupportedReasonsForAssets(assets).isEmpty;
+  }
+
+  static bool _isDuplicateSupportedFileName(String fileName) {
     const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm'];
     const unsupportedExtensions = ['.dng', '.heic', '.heif', '.avif'];
     final supportedExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp)");
+    final name = fileName.toLowerCase();
 
-    for (final asset in assets) {
-      final name = asset.fileName.toLowerCase();
-      if (videoExtensions.any((ext) => name.endsWith(ext)) ||
-          unsupportedExtensions.any((ext) => name.endsWith(ext)) ||
-          !supportedExtensions.hasMatch(name)) {
-        return false;
-      }
+    if (videoExtensions.any((ext) => name.endsWith(ext)) ||
+        unsupportedExtensions.any((ext) => name.endsWith(ext)) ||
+        !supportedExtensions.hasMatch(name)) {
+      return false;
     }
     return true;
   }

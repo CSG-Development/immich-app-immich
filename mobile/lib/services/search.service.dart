@@ -5,6 +5,7 @@ import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/models/search/search_result.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/search.provider.dart';
+import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
@@ -56,8 +57,23 @@ class SearchService {
         return null;
       }
 
+      final remoteIds = response.assets.items.map((e) => e.id).toList();
+      final localAssets = await _assetRepository.getAllByRemoteId(remoteIds);
+      final localIds = localAssets.map((a) => a.remoteId).whereType<String>().toSet();
+      final missingAssets = response.assets.items
+          .where((dto) => !localIds.contains(dto.id))
+          .map(Asset.remote)
+          .toList();
+
+      final assetsByRemoteId = <String, Asset>{
+        for (final asset in localAssets)
+          if (asset.remoteId != null) asset.remoteId!: asset,
+        for (final asset in missingAssets) asset.remoteId!: asset,
+      };
+      final assets = remoteIds.map((id) => assetsByRemoteId[id]).whereType<Asset>().toList();
+
       return SearchResult(
-        assets: await _assetRepository.getAllByRemoteId(response.assets.items.map((e) => e.id)),
+        assets: assets,
         nextPage: response.assets.nextPage?.toInt(),
       );
     } catch (error, stackTrace) {

@@ -27,7 +27,7 @@ class PasswordInput extends HookConsumerWidget {
       obscureText: !isPasswordVisible.value,
       controller: controller,
       inputFormatters: const [TrimFormatter()],
-      decoration: LoginInputDecorations.baseDecoration(
+      decoration: InputDecorations.baseDecoration(
         context: context,
         labelText: 'password'.tr(),
         hintText: 'curator.login_form_password_hint'.tr(),

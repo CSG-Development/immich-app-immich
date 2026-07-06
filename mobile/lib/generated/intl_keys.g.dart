@@ -36,6 +36,7 @@ abstract class IntlKeys {
   static const add_to_albums = 'add_to_albums';
   static const add_to_albums_count = 'add_to_albums_count';
   static const add_to_shared_album = 'add_to_shared_album';
+  static const add_upload_to_stack = 'add_upload_to_stack';
   static const add_url = 'add_url';
   static const added_to_archive = 'added_to_archive';
   static const added_to_favorites = 'added_to_favorites';
@@ -859,7 +860,6 @@ abstract class IntlKeys {
   static const curator_login_form_password_hint = 'curator.login.form.password.hint';
   static const curator_login_form_version_check_error = 'curator.login.form.version.check.error';
   static const curator_network_finding = 'curator.network.finding';
-  static const curator_network_no_internet = 'curator.network.no_internet';
   static const curator_onboarding_done = 'curator.onboarding.done';
   static const curator_onboarding_skip = 'curator.onboarding.skip';
   static const curator_onboarding_slide1_description = 'curator.onboarding.slide1.description';
@@ -1253,6 +1253,7 @@ abstract class IntlKeys {
   static const exif_bottom_sheet_description_error = 'exif_bottom_sheet_description_error';
   static const exif_bottom_sheet_details = 'exif_bottom_sheet_details';
   static const exif_bottom_sheet_location = 'exif_bottom_sheet_location';
+  static const exif_bottom_sheet_no_description = 'exif_bottom_sheet_no_description';
   static const exif_bottom_sheet_people = 'exif_bottom_sheet_people';
   static const exif_bottom_sheet_person_add_person = 'exif_bottom_sheet_person_add_person';
   static const exif_bottom_sheet_person_age_months = 'exif_bottom_sheet_person_age_months';

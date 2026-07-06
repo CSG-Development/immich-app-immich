@@ -21,17 +21,14 @@ class LoginSubmitButton extends ConsumerWidget {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        backgroundColor: isDisabled ? Colors.grey[300] : null,
-        foregroundColor: isDisabled ? Colors.grey[600] : null,
       ),
       onPressed: isDisabled ? null : onPressed,
       icon: withIcon ? const Icon(Icons.login_rounded) : null,
       label: Text(
         label,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: isDisabled ? Colors.grey[600] : null,
         ),
       ).tr(),
     );
