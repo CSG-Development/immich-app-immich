@@ -168,8 +168,8 @@ def ping() -> PlainTextResponse:
 
 from .timing import reset_timer, elapsed_ms
 
-DEFAULT_FACE_DETECTION_MODEL = FaceDetector(model_name="scrfd_10g_gnkps")
-DEFAULT_FACE_RECOGNITION_MODEL = FaceRecognizer(model_name="arcfaceresnet8-100")
+#DEFAULT_FACE_DETECTION_MODEL = FaceDetector(model_name="scrfd_10g_gnkps")
+#DEFAULT_FACE_RECOGNITION_MODEL = FaceRecognizer(model_name="arcfaceresnet8-100")
 
 @app.post("/predict", dependencies=[Depends(update_state)])
 async def predict(
@@ -210,14 +210,15 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                 message = f"Task {entry['task']} of type {entry['type']} depends on output of {dep}"
                 raise HTTPException(400, message)
         # TODO change placeholder below when detection model is replaced too
-        if model.model_name == "scrfd_10g_gnkps" and entry["type"] == ModelType.DETECTION:
-            # model = FaceDetector(model_name="scrfd_10g_gnkps")
-            model = DEFAULT_FACE_DETECTION_MODEL
-        elif model.model_name == "arcfaceresnet8-100" and entry["type"] == ModelType.RECOGNITION:
-            # model = FaceRecognizer(model_name=model.model_name)
-            model = DEFAULT_FACE_RECOGNITION_MODEL
-        else:
-            model = await load(model)
+        #if model.model_name == "scrfd_10g_gnkps" and entry["type"] == ModelType.DETECTION:
+        #    # model = FaceDetector(model_name="scrfd_10g_gnkps")
+        #    model = DEFAULT_FACE_DETECTION_MODEL
+        #elif model.model_name == "arcfaceresnet8-100" and entry["type"] == ModelType.RECOGNITION:
+        #    # model = FaceRecognizer(model_name=model.model_name)
+        #    model = DEFAULT_FACE_RECOGNITION_MODEL
+        #else:
+        #    model = await load(model)
+        model = await load(model)
         output = await run(model.predict, *inputs, **entry["options"])
         outputs[model.identity] = output
         response[entry["task"]] = output
@@ -251,11 +252,11 @@ async def load(model: InferenceModel) -> InferenceModel:
         with lock:
             try:
                 # Only download if needed
-                if model.model_name not in ["arcfaceresnet8-100", "scrfd_10g_gnkps"]:
-                    model.load()
-                else:
-                    log.info(f"Skipping download for internal model: '{model.model_name}'")
-                # model.load()
+                #if model.model_name not in ["arcfaceresnet8-100", "scrfd_10g_gnkps"]:
+                #    model.load()
+                #else:
+                #    log.info(f"Skipping download for internal model: '{model.model_name}'")
+                model.load()
             except FileNotFoundError as e:
                 if model.model_format == ModelFormat.ONNX:
                     raise e

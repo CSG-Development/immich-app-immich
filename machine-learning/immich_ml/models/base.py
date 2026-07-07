@@ -35,6 +35,8 @@ class InferenceModel(ABC):
         self.model_format = model_format if model_format is not None else self._model_format_default
         if session is not None:
             self.session = session
+        # For testing purposes only
+        self.cached = (self.model_name == "scrfd_10g_gnkps" or self.model_name == "arcfaceresnet8-100")
 
     def download(self) -> None:
         if not self.cached:
