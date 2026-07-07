@@ -232,6 +232,12 @@ class DriftTrashedLocalAssetRepository extends DriftDatabaseRepository {
     }
 
     if (trashedAssets.isEmpty) {
+      await _db.batch((batch) async {
+        for (final slice in idList.slices(kDriftMaxChunk)) {
+          batch.deleteWhere(_db.localAlbumAssetEntity, (row) => row.assetId.isIn(slice));
+          batch.deleteWhere(_db.localAssetEntity, (row) => row.id.isIn(slice));
+        }
+      });
       return;
     }
 

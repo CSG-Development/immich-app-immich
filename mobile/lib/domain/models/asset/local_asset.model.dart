@@ -78,6 +78,7 @@ class LocalAsset extends BaseAsset {
     if (identical(this, other)) return true;
     return super == other &&
         id == other.id &&
+        remoteId == other.remoteId &&
         cloudId == other.cloudId &&
         orientation == other.orientation &&
         playbackStyle == other.playbackStyle &&
