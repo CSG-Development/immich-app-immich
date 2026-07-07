@@ -36,7 +36,7 @@ class InferenceModel(ABC):
         if session is not None:
             self.session = session
         # For testing purposes only
-        self.cached = (self.model_name == "scrfd_10g_gnkps" or self.model_name == "arcfaceresnet8-100")
+        #self.cached = (self.model_name == "scrfd_10g_gnkps" or self.model_name == "arcfaceresnet8-100")
 
     def download(self) -> None:
         if not self.cached:
