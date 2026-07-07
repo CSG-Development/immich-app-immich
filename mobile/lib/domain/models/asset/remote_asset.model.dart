@@ -72,6 +72,7 @@ class RemoteAsset extends BaseAsset {
     if (identical(this, other)) return true;
     return super == other &&
         id == other.id &&
+        localId == other.localId &&
         ownerId == other.ownerId &&
         thumbHash == other.thumbHash &&
         visibility == other.visibility &&

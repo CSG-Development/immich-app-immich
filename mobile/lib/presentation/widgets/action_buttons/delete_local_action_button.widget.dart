@@ -1,12 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
-import 'package:immich_mobile/domain/models/events.model.dart';
-import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
@@ -32,12 +34,14 @@ class DeleteLocalActionButton extends ConsumerWidget {
     ref.read(multiSelectProvider.notifier).reset();
 
     if (source == ActionSource.viewer) {
-      EventStream.shared.emit(const ViewerReloadAssetEvent());
+      unawaited(ref.read(assetViewerProvider.notifier).refreshCurrentAsset());
     }
 
     if (result.count == 0) {
       return;
     }
+
+    ref.invalidate(localAlbumProvider);
 
     final successMessage = 'delete_local_action_prompt'.t(context: context, args: {'count': result.count.toString()});
 
