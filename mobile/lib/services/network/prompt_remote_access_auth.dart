@@ -27,6 +27,7 @@ Future<bool> promptRemoteAccessAuth({
     onEmailNotAllowed: onEmailNotAllowed,
     onSuccess: () async => remoteOk = true,
   );
+  remoteOk = remoteOk || remoteProvider.isAuthenticated;
   _log.info('[OTP] promptRemoteAccessAuth end email=$email success=$remoteOk');
   return remoteOk;
 }

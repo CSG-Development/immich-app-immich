@@ -13,6 +13,11 @@ final _otpLog = Logger('RemoteCodeDialog');
 
 const int defaultResendCooldownSeconds = 60;
 
+Future<void>? _activeRemoteCodeModalFuture;
+
+/// True while a remote code modal is being presented (including initial code send).
+bool get isRemoteCodeModalShowing => _activeRemoteCodeModalFuture != null;
+
 class RemoteCodeModal extends HookWidget {
   final Future<void> Function()? onSuccess;
   final String email;
@@ -364,6 +369,40 @@ Future<void> showRemoteCodeModal({
   /// When true, skips the automatic [sendCode] before the dialog (e.g. Remote Access
   /// session already present and an extra initiate request is unnecessary).
   bool skipInitialCodeSend = false,
+}) async {
+  final activeSession = _activeRemoteCodeModalFuture;
+  if (activeSession != null) {
+    _otpLog.info('[OTP] showRemoteCodeModal join existing session email=$email');
+    return activeSession;
+  }
+
+  final session = _presentRemoteCodeModal(
+    context: context,
+    remoteProvider: remoteProvider,
+    email: email,
+    onSuccess: onSuccess,
+    onEmailNotAllowed: onEmailNotAllowed,
+    onDialogPresented: onDialogPresented,
+    skipInitialCodeSend: skipInitialCodeSend,
+  );
+  _activeRemoteCodeModalFuture = session;
+  try {
+    await session;
+  } finally {
+    if (identical(_activeRemoteCodeModalFuture, session)) {
+      _activeRemoteCodeModalFuture = null;
+    }
+  }
+}
+
+Future<void> _presentRemoteCodeModal({
+  required BuildContext context,
+  required RemoteProvider remoteProvider,
+  required String email,
+  Future<void> Function()? onSuccess,
+  VoidCallback? onEmailNotAllowed,
+  VoidCallback? onDialogPresented,
+  required bool skipInitialCodeSend,
 }) async {
   _otpLog.info(
     '[OTP] showRemoteCodeModal start email=$email skipInitialCodeSend=$skipInitialCodeSend',

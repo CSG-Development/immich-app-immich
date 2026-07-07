@@ -5,6 +5,7 @@ import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
+import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 
 const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
@@ -207,6 +208,10 @@ class CuratorNetworkMonitor {
     _log.info('[Network] app lifecycle resumed foreground=true pendingNetworkChange=$_pendingNetworkChange');
     _isAppInForeground = true;
     _reconnectEpisodeService.onAppLifecycleResumed();
+    if (isRemoteCodeModalShowing) {
+      _log.info('[Network] app resume skipped reconnect reason=remote_code_modal_active');
+      return;
+    }
     if (!_canAttemptReconnect()) {
       return;
     }
@@ -532,6 +537,10 @@ class CuratorNetworkMonitor {
   }) async {
     if (remoteProvider.isAuthenticated) {
       _log.fine('[Network] OTP prompt skipped reason=already_authenticated');
+      return;
+    }
+    if (isRemoteCodeModalShowing) {
+      _log.info('[Network] OTP prompt skipped reason=remote_code_modal_active reason=${resolved.reason}');
       return;
     }
     _log.info('[Network] prompting remote access authentication reason=${resolved.reason}');
