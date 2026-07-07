@@ -20,8 +20,6 @@ from starlette.formparsers import MultiPartParser
 
 from immich_ml.models import get_model_deps
 from immich_ml.models.base import InferenceModel
-from immich_ml.models.facial_recognition.detection import FaceDetector
-from immich_ml.models.facial_recognition.recognition import FaceRecognizer
 from immich_ml.models.transforms import decode_pil
 
 from .config import PreloadModelData, log, settings
