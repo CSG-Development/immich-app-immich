@@ -252,7 +252,7 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     facialRecognition: {
       enabled: true,
-      modelName: 'arcfaceresnet8-100',
+      modelName: 'buffalo_l',
       minScore: 0.5,
       maxDistance: 0.5,
       minFaces: 3,

@@ -173,7 +173,7 @@ export class MachineLearningRepository {
   async detectFaces(imagePath: string, { modelName, minScore }: FaceDetectionOptions) {
     const request = {
       [ModelTask.FACIAL_RECOGNITION]: {
-        [ModelType.DETECTION]: { modelName: 'scrfd_10g_gnkps', options: { minScore } },
+        [ModelType.DETECTION]: { modelName: 'buffalo_l', options: { minScore } },
         [ModelType.RECOGNITION]: { modelName },
       },
     };
