@@ -1,5 +1,4 @@
 import FormatMsg from '$lib/components/shared-components/format-msg.svelte';
-import { ErrorTexts } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { addAssetsToAlbums } from '$lib/services/album.service';
@@ -105,17 +104,15 @@ export const fileUploadHandler = async ({
   albumId,
   isLockedAssets = false,
 }: FileUploadHandlerParams): Promise<string[]> => {
-  const extensions = uploadManager.getExtensions();
   const promises = [];
   for (const file of files) {
     const controller = new AbortController();
     const signal = controller.signal;
-    const name = file.name.toLowerCase();
     const deviceAssetId = getDeviceAssetId(file);
-    uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId, controller });
+    uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId });
     promises.push(
       uploadExecutionQueue.addTask(() =>
-        fileUploader({ assetFile: file, deviceAssetId, albumId, replaceAssetId, isLockedAssets, signal }),
+        fileUploader({ assetFile: file, deviceAssetId, albumId, isLockedAssets, signal }),
       ),
     );
   }
@@ -137,7 +134,6 @@ type FileUploaderParams = {
   signal?: AbortSignal;
 };
 
-// TODO: should probably use the @api SDK
 async function fileUploader({
   assetFile,
   deviceAssetId,
@@ -213,34 +209,22 @@ async function fileUploader({
       const queryParams = asQueryString(authManager.params);
 
       uploadAssetsStore.updateItem(deviceAssetId, { message: $t('asset_uploading') });
-      if (replaceAssetId) {
+      if (isWebSupportedAssetMimeType(assetFile.type) || isHEIC(assetFile)) {
         const response = await uploadRequest<AssetMediaResponseDto>({
-          url: getBaseUrl() + getAssetOriginalPath(replaceAssetId) + (queryParams ? `?${queryParams}` : ''),
-          method: 'PUT',
+          url: getBaseUrl() + '/assets' + (queryParams ? `?${queryParams}` : ''),
           data: formData,
           onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
           signal,
           onAbort,
         });
+
+        if (![200, 201].includes(response.status)) {
+          throw new Error($t('errors.unable_to_upload_file'));
+        }
+
         responseData = response.data;
       } else {
-        if (isWebSupportedAssetMimeType(assetFile.type) || isHEIC(assetFile)) {
-          const response = await uploadRequest<AssetMediaResponseDto>({
-            url: getBaseUrl() + '/assets' + (queryParams ? `?${queryParams}` : ''),
-            data: formData,
-            onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
-            signal,
-            onAbort,
-          });
-
-          if (![200, 201].includes(response.status)) {
-            throw new Error($t('errors.unable_to_upload_file'));
-          }
-
-          responseData = response.data;
-        } else {
-          throw new Error($t('errors.unable_to_upload_file_type'));
-        }
+        throw new Error($t('errors.unable_to_upload_file_type'));
       }
     }
 
@@ -275,6 +259,7 @@ async function fileUploader({
     if (wasInitiallyLoggedIn && !get(user)) {
       return;
     }
+
     if (!signal || !signal.aborted) {
       if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
         const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {

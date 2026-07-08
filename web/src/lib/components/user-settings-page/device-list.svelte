@@ -50,7 +50,7 @@
   };
 </script>
 
-<section class="ms-6 my-6">
+<section class="ps-6 my-6">
   <div in:fade={{ duration: 500 }}>
     <div class="sm:ms-8 flex flex-col gap-4">
       {#if currentSession}

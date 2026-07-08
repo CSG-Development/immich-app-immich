@@ -410,7 +410,7 @@
   };
 
   $effect(() => {
-    if ($assetViewerManager.asset?.id && $slideshowState === SlideshowState.PlaySlideshow && !$isShuffled) {
+    if (assetViewerManager.asset?.id && $slideshowState === SlideshowState.PlaySlideshow && !$isShuffled) {
       shuffleTimelineAssets()
         .then(() => {
           $isShuffled = true;

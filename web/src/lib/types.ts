@@ -25,6 +25,7 @@ export enum UploadState {
   DONE,
   ERROR,
   DUPLICATED,
+  UNSUPPORTED_TYPE,
 }
 
 export type UploadAsset = {
@@ -40,6 +41,7 @@ export type UploadAsset = {
   speed?: number;
   error?: unknown;
   message?: string;
+  controller?: AbortController;
 };
 
 export enum OnboardingRole {

@@ -4,7 +4,7 @@ import { authManager } from '$lib/managers/auth-manager.svelte';
 import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { alwaysLoadOriginalFile, lang } from '$lib/stores/preferences.store';
-import type { SlideshowNavigation } from '$lib/stores/slideshow.store';
+import { SlideshowNavigation } from '$lib/stores/slideshow.store';
 import { isWebCompatibleImage } from '$lib/utils/asset-utils';
 import { handleError } from '$lib/utils/handle-error';
 import type { TimelineDateTime } from '$lib/utils/timeline-util';
@@ -420,22 +420,30 @@ export const convertOrientationValue = (value: string) => {
   const $t = get(t);
 
   switch (value) {
-    case '1':
+    case '1': {
       return $t('metadata_orientaton.horizontal');
-    case '2':
+    }
+    case '2': {
       return $t('metadata_orientaton.flipped_horizontally');
-    case '3':
+    }
+    case '3': {
       return $t('metadata_orientaton.rotated_180');
-    case '4':
+    }
+    case '4': {
       return $t('metadata_orientaton.flipped_vertically');
-    case '5':
+    }
+    case '5': {
       return $t('metadata_orientaton.90_cw_flipped');
-    case '6':
+    }
+    case '6': {
       return $t('metadata_orientaton.90_cw');
-    case '7':
+    }
+    case '7': {
       return $t('metadata_orientaton.270_cw_flipped');
-    default:
+    }
+    default: {
       return $t('metadata_orientaton.270_cw');
+    }
   }
 };
 
