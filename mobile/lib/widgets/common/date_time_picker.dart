@@ -110,55 +110,67 @@ class _DateTimePicker extends HookWidget {
       context.pop(dtWithOffset);
     }
 
-    return AlertDialog(
-      contentPadding: const EdgeInsets.symmetric(vertical: 32, horizontal: 18),
-      actions: [
-        TextButton(
-          onPressed: () => context.pop(),
-          child: Text(
-            "cancel",
-            style: context.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: context.colorScheme.error,
-            ),
-          ).tr(),
-        ),
-        TextButton(
-          onPressed: popWithDateTime,
-          child: Text(
-            "action_common_update",
-            style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: context.primaryColor),
-          ).tr(),
-        ),
-      ],
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("date_and_time", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)).tr(),
-          const SizedBox(height: 32),
-          ListTile(
-            tileColor: context.colorScheme.surfaceContainerHighest,
-            shape: ShapeBorder.lerp(
-              const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-              const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-              1,
-            ),
-            trailing: Icon(Icons.edit_outlined, size: 18, color: context.primaryColor),
-            title: Text(DateFormat("dd-MM-yyyy hh:mm a").format(date.value), style: context.textTheme.bodyMedium),
-            onTap: pickDate,
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final hideExtras = context.isMobile && isLandscape && isKeyboardVisible;
+    final availableHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
+    final dialogMaxHeight = hideExtras ? availableHeight * 0.9 : mediaQuery.size.height * 0.9;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: dialogMaxHeight),
+      child: AlertDialog(
+        scrollable: isLandscape,
+        contentPadding: const EdgeInsets.symmetric(vertical: 32, horizontal: 18),
+        actions: hideExtras ? [] : [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: Text(
+              "cancel",
+              style: context.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: context.colorScheme.error,
+              ),
+            ).tr(),
           ),
-          const SizedBox(height: 24),
-          DropdownSearchMenu(
-            trailingIcon: Icon(Icons.arrow_drop_down, color: context.primaryColor),
-            hintText: "timezone".tr(),
-            label: const Text('timezone').tr(),
-            textStyle: context.textTheme.bodyMedium,
-            onSelected: (value) => tzOffset.value = value,
-            initialSelection: tzOffset.value,
-            dropdownMenuEntries: menuEntries,
+          TextButton(
+            onPressed: popWithDateTime,
+            child: Text(
+              "action_common_update",
+              style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: context.primaryColor),
+            ).tr(),
           ),
         ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!hideExtras) const Text("date_and_time", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)).tr(),
+            if (!hideExtras) const SizedBox(height: 32),
+            if (!hideExtras)
+              ListTile(
+                tileColor: context.colorScheme.surfaceContainerHighest,
+                shape: ShapeBorder.lerp(
+                  const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                  const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                  1,
+                ),
+                trailing: Icon(Icons.edit_outlined, size: 18, color: context.primaryColor),
+                title: Text(DateFormat("dd-MM-yyyy hh:mm a").format(date.value), style: context.textTheme.bodyMedium),
+                onTap: pickDate,
+              ),
+            if (!hideExtras) const SizedBox(height: 24),
+            DropdownSearchMenu(
+              trailingIcon: Icon(Icons.arrow_drop_down, color: context.primaryColor),
+              hintText: "timezone".tr(),
+              label: const Text('timezone').tr(),
+              textStyle: context.textTheme.bodyMedium,
+              onSelected: (value) => tzOffset.value = value,
+              initialSelection: tzOffset.value,
+              dropdownMenuEntries: menuEntries,
+            ),
+          ],
+        ),
       ),
     );
   }
