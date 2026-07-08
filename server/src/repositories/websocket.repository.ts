@@ -44,7 +44,7 @@ export type AuthFn = (client: Socket) => Promise<AuthDto>;
 
 @WebSocketGateway({
   cors: true,
-  path: '/api/socket.io',
+  path: '/photos/api/socket.io',
   transports: ['websocket'],
 })
 @Injectable()

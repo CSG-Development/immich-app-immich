@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { OnEvent } from 'src/decorators';
 import { mapAsset } from 'src/dtos/asset-response.dto';
 import { JobCreateDto } from 'src/dtos/job.dto';
-import { AssetType, AssetVisibility, JobName, JobStatus, ManualJobName } from 'src/enum';
+import { AssetType, AssetVisibility, JobName, JobStatus, ManualJobName, QueueName } from 'src/enum';
 import { ArgsOf } from 'src/repositories/event.repository';
 import { BaseService } from 'src/services/base.service';
 import { JobItem } from 'src/types';
@@ -67,8 +67,8 @@ export class JobService extends BaseService {
    */
   private async onDone(item: JobItem) {
     this.logger.log(`Job done: ${JSON.stringify(item)} at ${new Date().toISOString().slice(11, 23)}`);
-    const { jobCounts: detectionCount} = await this.getJobStatus(QueueName.FaceDetection);
-    const { jobCounts: recognitionCount} = await this.getJobStatus(QueueName.FacialRecognition);
+    const detectionCount = await this.jobRepository.getJobCounts(QueueName.FaceDetection);
+    const recognitionCount = await this.jobRepository.getJobCounts(QueueName.FacialRecognition);
     if (detectionCount.waiting === 0 && recognitionCount.waiting === 0) {
       this.logger.log(`Jobs queue empty at ${new Date().toISOString().slice(11, 23)}`);
     }
