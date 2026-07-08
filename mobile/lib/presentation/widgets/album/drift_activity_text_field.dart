@@ -9,7 +9,7 @@ class DriftActivityTextField extends ConsumerStatefulWidget {
   final bool isEnabled;
   final bool isBottomSheet;
   final String? likeId;
-  final Function(String) onSubmit;
+  final Future<bool> Function(String) onSubmit;
   final Function()? onKeyboardFocus;
 
   const DriftActivityTextField({
@@ -61,13 +61,15 @@ class _DriftActivityTextFieldState extends ConsumerState<DriftActivityTextField>
     final user = ref.watch(currentUserProvider);
 
     // Pass text to callback and reset controller
-    void onEditingComplete() {
+    Future<void> onEditingComplete() async {
       if (inputController.text.trim().isEmpty) {
         return;
       }
 
-      widget.onSubmit(inputController.text);
-      inputController.clear();
+      final success = await widget.onSubmit(inputController.text);
+      if (success) {
+        inputController.clear();
+      }
       inputFocusNode.unfocus();
     }
 

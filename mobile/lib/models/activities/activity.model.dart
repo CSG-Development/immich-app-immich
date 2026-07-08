@@ -9,6 +9,8 @@ class Activity {
   final DateTime createdAt;
   final ActivityType type;
   final UserDto user;
+  final bool isPending;
+  final bool isFailed;
 
   const Activity({
     required this.id,
@@ -17,6 +19,8 @@ class Activity {
     required this.createdAt,
     required this.type,
     required this.user,
+    this.isPending = false,
+    this.isFailed = false,
   });
 
   Activity copyWith({
@@ -26,6 +30,8 @@ class Activity {
     DateTime? createdAt,
     ActivityType? type,
     UserDto? user,
+    bool? isPending,
+    bool? isFailed,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -34,6 +40,8 @@ class Activity {
       createdAt: createdAt ?? this.createdAt,
       type: type ?? this.type,
       user: user ?? this.user,
+      isPending: isPending ?? this.isPending,
+      isFailed: isFailed ?? this.isFailed,
     );
   }
 

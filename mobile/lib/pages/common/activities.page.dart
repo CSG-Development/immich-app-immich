@@ -30,14 +30,18 @@ class ActivitiesPage extends HookConsumerWidget {
 
     final listViewScrollController = useScrollController();
 
-    Future<void> onAddComment(String comment) async {
+    Future<bool> onAddComment(String comment) async {
+      // Optimistic: addComment returns immediately after adding pending activity
       await activityNotifier.addComment(comment);
       // Scroll to the end of the list to show the newly added activity
-      await listViewScrollController.animateTo(
-        listViewScrollController.position.maxScrollExtent + 200,
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.fastOutSlowIn,
-      );
+      if (context.mounted) {
+        await listViewScrollController.animateTo(
+          listViewScrollController.position.maxScrollExtent + 200,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.fastOutSlowIn,
+        );
+      }
+      return true;
     }
 
     return Scaffold(

@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:immich_mobile/models/activities/activity.model.dart';
 import 'package:immich_mobile/providers/activity_service.provider.dart';
 import 'package:immich_mobile/providers/activity_statistics.provider.dart';
+import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'activity.provider.g.dart';
@@ -46,20 +47,82 @@ class AlbumActivity extends _$AlbumActivity {
   }
 
   Future<void> addComment(String comment) async {
+    // Optimistic: create a pending activity immediately and return right away
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      return;
+    }
+    final localId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
+    final pendingActivity = Activity(
+      id: localId,
+      assetId: assetId,
+      comment: comment,
+      createdAt: DateTime.now(),
+      type: ActivityType.comment,
+      user: user,
+      isPending: true,
+    );
+    _addToState(pendingActivity);
+    if (assetId != null) {
+      ref.read(albumActivityProvider(albumId).notifier)._addToState(pendingActivity);
+    }
+
+    // Fire-and-forget: send to server in the background
+    _sendToServer(localId, comment);
+  }
+
+  void _sendToServer(String localId, String comment) async {
     final activity = await ref
-        .watch(activityServiceProvider)
+        .read(activityServiceProvider)
         .addActivity(albumId, ActivityType.comment, assetId: assetId, comment: comment);
 
     if (activity.hasValue) {
-      _addToState(activity.requireValue);
+      _replaceActivity(localId, activity.requireValue);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._addToState(activity.requireValue);
+        ref.read(albumActivityProvider(albumId).notifier)._replaceActivity(localId, activity.requireValue);
+      }
+      ref.read(activityStatisticsProvider(albumId, assetId).notifier).addActivity();
+      if (assetId != null) {
+        ref.read(activityStatisticsProvider(albumId).notifier).addActivity();
+      }
+    } else {
+      _markFailed(localId);
+      if (assetId != null) {
+        ref.read(albumActivityProvider(albumId).notifier)._markFailed(localId);
+      }
+    }
+  }
+
+  /// Retry sending a failed activity
+  Future<void> retryFailedActivity(String id) async {
+    final activity = _getActivityById(id);
+    if (activity == null || !activity.isFailed || activity.type != ActivityType.comment) {
+      return;
+    }
+
+    // Set back to pending
+    _markPending(id);
+    if (assetId != null) {
+      ref.read(albumActivityProvider(albumId).notifier)._markPending(id);
+    }
+
+    final result = await ref
+        .watch(activityServiceProvider)
+        .addActivity(albumId, ActivityType.comment, assetId: assetId, comment: activity.comment);
+
+    if (result.hasValue) {
+      _replaceActivity(id, result.requireValue);
+      if (assetId != null) {
+        ref.read(albumActivityProvider(albumId).notifier)._replaceActivity(id, result.requireValue);
       }
       ref.watch(activityStatisticsProvider(albumId, assetId).notifier).addActivity();
-      // The previous addActivity call would increase the count of an asset if assetId != null
-      // To also increase the activity count of the album, calling it once again with assetId set to null
       if (assetId != null) {
         ref.watch(activityStatisticsProvider(albumId).notifier).addActivity();
+      }
+    } else {
+      _markFailed(id);
+      if (assetId != null) {
+        ref.read(albumActivityProvider(albumId).notifier)._markFailed(id);
       }
     }
   }
@@ -70,6 +133,29 @@ class AlbumActivity extends _$AlbumActivity {
       return;
     }
     state = AsyncData([...activities, activity]);
+  }
+
+  void _replaceActivity(String oldId, Activity replacement) {
+    final activities = state.valueOrNull ?? [];
+    final updated = activities.map((a) => a.id == oldId ? replacement : a).toList();
+    state = AsyncData(updated);
+  }
+
+  void _markFailed(String id) {
+    final activities = state.valueOrNull ?? [];
+    final updated = activities.map((a) => a.id == id ? a.copyWith(isPending: false, isFailed: true) : a).toList();
+    state = AsyncData(updated);
+  }
+
+  void _markPending(String id) {
+    final activities = state.valueOrNull ?? [];
+    final updated = activities.map((a) => a.id == id ? a.copyWith(isPending: true, isFailed: false) : a).toList();
+    state = AsyncData(updated);
+  }
+
+  Activity? _getActivityById(String id) {
+    final activities = state.valueOrNull ?? [];
+    return activities.firstWhereOrNull((a) => a.id == id);
   }
 
   Activity? _removeFromState(String id) {
