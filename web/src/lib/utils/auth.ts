@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { authManager } from '$lib/managers/auth-manager.svelte';
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import { Route } from '$lib/route';
 import { preferences as preferences$, user as user$ } from '$lib/stores/user.store';
@@ -22,6 +23,8 @@ export const loadUser = async () => {
       [user, preferences] = await Promise.all([getMyUser(), getMyPreferences()]);
       user$.set(user);
       preferences$.set(preferences);
+      authManager.setUser(user);
+      authManager.setPreferences(preferences);
       eventManager.emit('AuthUserLoaded', user);
     }
     return user;
