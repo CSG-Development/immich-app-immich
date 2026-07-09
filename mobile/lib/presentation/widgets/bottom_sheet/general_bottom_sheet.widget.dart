@@ -91,6 +91,9 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           context: context,
           msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {"album": album.name}),
         );
+        for (final asset in remoteAssets) {
+          ref.invalidate(albumsContainingAssetProvider(asset.id));
+        }
       }
 
       ref.read(multiSelectProvider.notifier).reset();
