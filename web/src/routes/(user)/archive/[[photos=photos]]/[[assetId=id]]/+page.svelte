@@ -67,12 +67,7 @@
   };
 </script>
 
-<UserPageLayout
-  hideNavbar={assetMultiSelectManager.selectionActive}
-  description={$t('items_count', { values: { count: timelineManager.assetCount } })}
-  title={data.meta.title}
-  scrollbar={false}
->
+<UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} title={data.meta.title} scrollbar={false}>
   <Timeline
     enableRouting={true}
     bind:timelineManager
