@@ -162,7 +162,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _apiService.setAccessToken(accessToken);
     var didRetryAfterPathRecovery = false;
 
-    final serverEndpoint = Store.get(StoreKey.serverEndpoint);
+    final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
+    if (serverEndpoint == null || serverEndpoint.isEmpty) {
+      _log.warning("Missing serverEndpoint while saving auth info");
+      return false;
+    }
     final customHeaders = Store.tryGet(StoreKey.customHeaders);
     await _widgetService.writeCredentials(serverEndpoint, accessToken, customHeaders);
 

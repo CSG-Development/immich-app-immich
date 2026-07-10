@@ -145,8 +145,8 @@ class AuthService {
       _authRepository.clearLocalData(),
       Store.delete(StoreKey.currentUser),
       Store.delete(StoreKey.assetETag),
-      Store.delete(StoreKey.serverEndpoint),
-      Store.delete(StoreKey.serverVersion),
+      // Keep serverEndpoint/serverVersion so in-flight UI (thumbnails, avatars)
+      // does not hit StoreKeyNotFoundException during logout navigation.
       Store.delete(StoreKey.autoEndpointSwitching),
       Store.delete(StoreKey.preferredWifiName),
     ]);

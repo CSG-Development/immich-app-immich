@@ -322,6 +322,13 @@ class ApiService implements Authentication {
       return;
     }
 
+    // Long asset uploads can time out without the endpoint being dead; do not
+    // treat POST /assets transport failures as a path-resolve signal.
+    if (_isAssetUploadUrl(failedUrl)) {
+      dPrint(() => '_handleConnectionError: Skipping reconnect for asset upload $failedUrl');
+      return;
+    }
+
     final isAuthenticated = Store.tryGet(StoreKey.currentUser) != null;
     if (!isAuthenticated) {
       dPrint(() => '_handleConnectionError: Skipping notification - not authenticated');
@@ -366,11 +373,21 @@ class ApiService implements Authentication {
   }
 
   void _handleSlowRequest(String requestUrl, Duration elapsed, bool isHard) {
+    // Asset uploads routinely exceed the hard slow threshold; ignore them so
+    // wifi-identity refresh does not flip local/remote mid-upload.
+    if (isHard && _isAssetUploadUrl(requestUrl)) {
+      return;
+    }
     try {
       curatorNetworkSlowRequestHandler?.call(requestUrl, elapsed, isHard);
     } catch (error, stackTrace) {
       _log.warning('curatorNetworkSlowRequestHandler failed', error, stackTrace);
     }
+  }
+
+  static bool _isAssetUploadUrl(String url) {
+    final path = Uri.tryParse(url)?.path ?? url;
+    return path.endsWith('/assets');
   }
 
   void notifyConnectionState(ConnectionState state) {

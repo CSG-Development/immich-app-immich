@@ -1,10 +1,9 @@
 import 'package:immich_mobile/domain/models/setting.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 
-// Singleton instance of SettingsService, to use in places
-// where reactivity is not required
+/// Resolves against the current [StoreService] singleton (see [Store] getter).
 // ignore: non_constant_identifier_names
-final AppSetting = SettingsService(storeService: StoreService.I);
+SettingsService get AppSetting => SettingsService(storeService: StoreService.I);
 
 class SettingsService {
   final StoreService _storeService;
