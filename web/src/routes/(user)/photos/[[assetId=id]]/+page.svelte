@@ -23,12 +23,21 @@
   import { AssetAction } from '$lib/constants';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { memoryManager } from '$lib/managers/memory-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
+  import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
-  import { getAssetOriginalUrl, getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import {
+    getAssetMediaUrl,
+    getAssetOriginalUrl,
+    getFirstSlideshowAsset,
+    handlePromiseError,
+    memoryLaneTitle,
+    toDate,
+  } from '$lib/utils';
   import {
     updateStackedAssetInTimeline,
     updateUnstackedAssetInTimeline,
@@ -38,6 +47,8 @@
   import { canvasToBlob, getFileExtension, isWebCompatibleImage, makeImageUnique } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
+  import { getAltText } from '$lib/utils/thumbnail-util';
+  import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo } from '@immich/sdk';
   import { ActionButton, CommandPaletteDefaultProvider, IconButton, ImageCarousel, toastManager } from '@immich/ui';
   import { mdiContentDuplicate, mdiDotsVertical, mdiPresentationPlay } from '@mdi/js';
@@ -142,6 +153,16 @@
       handleError(error, $t('duplicate_error'));
     }
   };
+
+  const items = $derived(
+    memoryManager.memories.map((memory) => ({
+      id: memory.id,
+      title: $memoryLaneTitle(memory),
+      href: Route.memories({ id: memory.assets[0].id }),
+      alt: $t('memory_lane_title', { values: { title: $getAltText(toTimelineAsset(memory.assets[0])) } }),
+      src: getAssetMediaUrl({ id: memory.assets[0].id }),
+    })),
+  );
 </script>
 
 <UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} scrollbar={false}>

@@ -3114,7 +3114,7 @@
             "api_key": []
           }
         ],
-        "summary": "Retrieve assets by device ID",
+        "summary": "Get all asset of a device that are in the database, ID only.",
         "tags": [
           "Assets",
           "Deprecated"
@@ -3243,6 +3243,41 @@
         ],
         "x-immich-permission": "job.create",
         "x-immich-state": "Stable"
+      }
+    },
+    "/assets/jobs-all": {
+      "post": {
+        "operationId": "runAssetJobsAll",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetJobsAllDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Assets"
+        ]
       }
     },
     "/assets/metadata": {
@@ -4520,67 +4555,6 @@
           }
         ],
         "x-immich-state": "Stable"
-      }
-    },
-    "/auth/change-password": {
-      "post": {
-        "description": "Change the password of the current user.",
-        "operationId": "changePassword",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangePasswordDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserAdminResponseDto"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Change password",
-        "tags": [
-          "Authentication"
-        ],
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "auth.changePassword",
-        "x-immich-state": "Stable"
-        ]
       }
     },
     "/auth/login": {
@@ -10353,161 +10327,6 @@
         "x-immich-state": "Stable"
       }
     },
-    "/server/license": {
-      "delete": {
-        "description": "Delete the currently set server product key.",
-        "operationId": "deleteServerLicense",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Delete server product key",
-        "tags": [
-          "Server"
-        ],
-        "x-immich-admin-only": true,
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "serverLicense.delete",
-        "x-immich-state": "Stable"
-      },
-      "get": {
-        "description": "Retrieve information about whether the server currently has a product key registered.",
-        "operationId": "getServerLicense",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseResponseDto"
-                }
-              }
-            },
-            "description": ""
-          },
-          "404": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Get product key",
-        "tags": [
-          "Server"
-        ],
-        "x-immich-admin-only": true,
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "serverLicense.read",
-        "x-immich-state": "Stable"
-      },
-      "put": {
-        "description": "Validate and set the server product key if successful.",
-        "operationId": "setServerLicense",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LicenseKeyDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseResponseDto"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Set server product key",
-        "tags": [
-          "Server"
-        ],
-        "x-immich-admin-only": true,
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "serverLicense.update",
-        "x-immich-state": "Stable"
-      }
-    },
     "/server/media-types": {
       "get": {
         "description": "Retrieve all media types supported by the server.",
@@ -14209,47 +14028,6 @@
       }
     },
     "/users/me/license": {
-      "delete": {
-        "description": "Delete the registered product key for the current user.",
-        "operationId": "deleteUserLicense",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Delete user product key",
-        "tags": [
-          "Users"
-        ],
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "userLicense.delete",
-        "x-immich-state": "Stable"
-      },
       "get": {
         "description": "Retrieve information about whether the current user has a registered product key.",
         "operationId": "getUserLicense",
@@ -14296,64 +14074,6 @@
           }
         ],
         "x-immich-permission": "userLicense.read",
-        "x-immich-state": "Stable"
-      },
-      "put": {
-        "description": "Register a product key for the current user.",
-        "operationId": "setUserLicense",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LicenseKeyDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseResponseDto"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "summary": "Set user product key",
-        "tags": [
-          "Users"
-        ],
-        "x-immich-history": [
-          {
-            "version": "v1",
-            "state": "Added"
-          },
-          {
-            "version": "v1",
-            "state": "Beta"
-          },
-          {
-            "version": "v2",
-            "state": "Stable"
-          }
-        ],
-        "x-immich-permission": "userLicense.update",
         "x-immich-state": "Stable"
       }
     },
@@ -16569,9 +16289,25 @@
           "refresh-faces",
           "refresh-metadata",
           "regenerate-thumbnail",
-          "transcode-video"
+          "transcode-video",
+          "smart-search"
         ],
         "type": "string"
+      },
+      "AssetJobsAllDto": {
+        "properties": {
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssetJobName"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
       },
       "AssetJobsDto": {
         "properties": {
@@ -17420,11 +17156,18 @@
           "modelName": {
             "description": "Name of the model to use",
             "type": "string"
+          },
+          "probabilityThreshold": {
+            "default": 0.5,
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
           }
         },
         "required": [
           "enabled",
-          "modelName"
+          "modelName",
+          "probabilityThreshold"
         ],
         "type": "object"
       },
@@ -17457,31 +17200,6 @@
             "type": "boolean"
           }
         },
-        "type": "object"
-      },
-      "ChangePasswordDto": {
-        "properties": {
-          "invalidateSessions": {
-            "default": false,
-            "description": "Invalidate all other sessions",
-            "type": "boolean"
-          },
-          "newPassword": {
-            "description": "New password (min 8 characters)",
-            "example": "password",
-            "minLength": 8,
-            "type": "string"
-          },
-          "password": {
-            "description": "Current password",
-            "example": "password",
-            "type": "string"
-          }
-        },
-        "required": [
-          "newPassword",
-          "password"
-        ],
         "type": "object"
       },
       "CheckExistingAssetsDto": {
@@ -18425,24 +18143,6 @@
           "total",
           "usage",
           "videos"
-        ],
-        "type": "object"
-      },
-      "LicenseKeyDto": {
-        "properties": {
-          "activationKey": {
-            "description": "Activation key",
-            "type": "string"
-          },
-          "licenseKey": {
-            "description": "License key (format: IM(SV|CL)(-XXXX){8})",
-            "pattern": "/IM(SV|CL)(-[\\dA-Za-z]{4}){8}/",
-            "type": "string"
-          }
-        },
-        "required": [
-          "activationKey",
-          "licenseKey"
         ],
         "type": "object"
       },

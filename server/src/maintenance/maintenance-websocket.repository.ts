@@ -27,7 +27,7 @@ type StatusUpdateFn = (status: MaintenanceStatusResponseDto) => void;
 
 @WebSocketGateway({
   cors: true,
-  path: '/api/socket.io',
+  path: '/photos/api/socket.io',
   transports: ['websocket'],
 })
 @Injectable()

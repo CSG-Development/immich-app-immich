@@ -64,7 +64,7 @@
 <section class="my-4">
   <div in:fade={{ duration: 500 }}>
     <div class="mt-4 flex flex-col gap-4">
-      <Field class="ms-6" label={$t('theme_selection')} description={$t('theme_selection_description')}>
+      <Field class="ps-6" label={$t('theme_selection')} description={$t('theme_selection_description')}>
         <Switch
           checked={themeManager.preference === ThemePreference.System}
           onCheckedChange={handleToggleSystemTheme}
@@ -73,13 +73,13 @@
 
       <SettingsLanguageSelector showSettingDescription />
 
-      <Field class="ms-6" label={$t('use_browser_locale')} description={$t('use_browser_locale_description')}>
+      <Field class="ps-6" label={$t('use_browser_locale')} description={$t('use_browser_locale_description')}>
         <Switch checked={$locale == 'default'} onCheckedChange={handleToggleLocaleBrowser} />
         <Text size="small" class="mt-2 text-sm">{selectedDate}</Text>
       </Field>
 
       {#if $locale !== 'default'}
-        <div class="ms-6">
+        <div class="ps-6">
           <SettingCombobox
             comboboxPlaceholder={$t('searching_locales')}
             {selectedOption}
@@ -92,35 +92,35 @@
       {/if}
 
       <Field
-        class="ms-6"
+        class="ps-6"
         label={$t('display_original_photos')}
         description={$t('display_original_photos_setting_description')}
       >
         <Switch bind:checked={$alwaysLoadOriginalFile} />
       </Field>
 
-      <Field class="ms-6" label={$t('video_hover_setting')} description={$t('video_hover_setting_description')}>
+      <Field class="ps-6" label={$t('video_hover_setting')} description={$t('video_hover_setting_description')}>
         <Switch bind:checked={$playVideoThumbnailOnHover} />
       </Field>
 
       <Field
-        class="ms-6"
+        class="ps-6"
         label={$t('setting_video_viewer_auto_play_title')}
         description={$t('setting_video_viewer_auto_play_subtitle')}
       >
         <Switch bind:checked={$autoPlayVideo} />
       </Field>
 
-      <Field class="ms-6" label={$t('loop_videos')} description={$t('loop_videos_description')}>
+      <Field class="ps-6" label={$t('loop_videos')} description={$t('loop_videos_description')}>
         <Switch bind:checked={$loopVideo} />
       </Field>
 
-      <Field class="ms-6" label={$t('play_original_video')} description={$t('play_original_video_setting_description')}>
+      <Field class="ps-6" label={$t('play_original_video')} description={$t('play_original_video_setting_description')}>
         <Switch bind:checked={$alwaysLoadOriginalVideo} />
       </Field>
 
       <Field
-        class="ms-6"
+        class="ps-6"
         label={$t('permanent_deletion_warning')}
         description={$t('permanent_deletion_warning_setting_description')}
         ><Switch bind:checked={$showDeleteModal} />

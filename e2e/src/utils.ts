@@ -233,7 +233,7 @@ export const utils = {
 
   connectWebsocket: async (accessToken: string) => {
     const websocket = io(baseUrl, {
-      path: '/api/socket.io',
+      path: '/photos/api/socket.io',
       transports: ['websocket'],
       extraHeaders: { Authorization: `Bearer ${accessToken}` },
       autoConnect: true,

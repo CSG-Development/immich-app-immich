@@ -35,7 +35,7 @@
   let closestLanguage = $derived(getClosestAvailableLocale([$lang], langCodes));
 </script>
 
-<div class="md:max-w-80">
+<div class="ps-6 md:max-w-80">
   {#if showSettingDescription}
     <div>
       <div class="flex h-6.5 place-items-center gap-1">

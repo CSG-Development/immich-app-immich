@@ -231,7 +231,7 @@ export class SharedLinkService extends BaseService {
     const assetId = sharedLink.album?.albumThumbnailAssetId || sharedLink.assets[0]?.id;
     const assetCount = sharedLink.assets.length > 0 ? sharedLink.assets.length : sharedLink.album?.assets?.length || 0;
     const imagePath = assetId
-      ? `/api/assets/${assetId}/thumbnail?key=${sharedLink.key.toString('base64url')}`
+      ? `/photos/api/assets/${assetId}/thumbnail?key=${sharedLink.key.toString('base64url')}`
       : '/feature-panel.png';
 
     return {

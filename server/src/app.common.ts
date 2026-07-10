@@ -61,7 +61,7 @@ export async function configureExpress(
     app.enableCors();
   }
 
-  app.setGlobalPrefix('api', { exclude: excludePaths });
+  app.setGlobalPrefix('photos/api', { exclude: excludePaths });
   app.useWebSocketAdapter(new WebSocketAdapter(app));
 
   useSwagger(app, { write: configRepository.isDev() && permitSwaggerWrite });
