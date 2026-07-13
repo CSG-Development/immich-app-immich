@@ -97,6 +97,10 @@ import Foundation
     RemoteImageApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: RemoteImageApiImpl())
     BackgroundWorkerFgHostApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: BackgroundWorkerApiImpl())
     ConnectivityApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ConnectivityApiImpl())
+    NetworkMonitorApiSetup.setUp(
+      binaryMessenger: engine.binaryMessenger,
+      api: NetworkMonitorApiImpl(events: NetworkMonitorEvents(binaryMessenger: engine.binaryMessenger))
+    )
     NativeClipboardApiSetup.setUp(binaryMessenger: engine.binaryMessenger, api: ClipboardApiImpl())
     let fetcher = CertificateFetcherApiImplSimple()
     certificateFetchersLock.lock()

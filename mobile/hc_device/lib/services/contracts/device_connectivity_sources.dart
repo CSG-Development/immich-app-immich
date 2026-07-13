@@ -5,8 +5,6 @@ import 'package:hc_device/api/remote_access.swagger.dart'
 abstract class DeviceConnectivitySource {
   DevicePaths? getCachedDevicePaths();
   void setCachedDevicePaths(DevicePaths paths);
-  void touchCachedDevicePathsTimestamp();
-  bool isCacheExpired();
 }
 
 abstract class RemoteConnectivitySource {

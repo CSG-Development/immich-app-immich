@@ -22,18 +22,12 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   final Client _inner;
   final Function(String) _onConnectionError;
   final Function(String)? _onRequestSuccess;
-  final void Function(String, Duration, bool isHard)? _onSlowRequest;
 
   ConnectionRecoveryInterceptor(
     this._inner,
     this._onConnectionError, {
     Function(String)? onRequestSuccess,
-    void Function(String, Duration, bool isHard)? onSlowRequest,
-  }) : _onRequestSuccess = onRequestSuccess,
-       _onSlowRequest = onSlowRequest;
-
-  static const Duration _slowRequestSoftThreshold = Duration(seconds: 8);
-  static const Duration _slowRequestHardThreshold = Duration(seconds: 15);
+  }) : _onRequestSuccess = onRequestSuccess;
 
   static const String _nsUrlErrorDomain = 'NSURLErrorDomain';
 
@@ -106,18 +100,6 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
-    final startedAt = DateTime.now();
-    var softReported = false;
-    var hardReported = false;
-    final softTimer = Timer(_slowRequestSoftThreshold, () {
-      softReported = true;
-      _onSlowRequest?.call(request.url.toString(), _slowRequestSoftThreshold, false);
-    });
-    final hardTimer = Timer(_slowRequestHardThreshold, () {
-      hardReported = true;
-      _onSlowRequest?.call(request.url.toString(), _slowRequestHardThreshold, true);
-    });
-
     try {
       final response = await _inner.send(request);
       _onRequestSuccess?.call(request.url.toString());
@@ -127,16 +109,6 @@ class ConnectionRecoveryInterceptor extends BaseClient {
         _onConnectionError(request.url.toString());
       }
       rethrow;
-    } finally {
-      softTimer.cancel();
-      hardTimer.cancel();
-      final elapsed = DateTime.now().difference(startedAt);
-      if (!softReported && elapsed >= _slowRequestSoftThreshold) {
-        _onSlowRequest?.call(request.url.toString(), elapsed, false);
-      }
-      if (!hardReported && elapsed >= _slowRequestHardThreshold) {
-        _onSlowRequest?.call(request.url.toString(), elapsed, true);
-      }
     }
   }
 
@@ -264,7 +236,6 @@ class ApiService implements Authentication {
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
   void Function()? curatorNetworkForceReconnectHandler;
-  void Function(String, Duration, bool isHard)? curatorNetworkSlowRequestHandler;
 
   ApiService() {
     _initHttpClient();
@@ -287,7 +258,6 @@ class ApiService implements Authentication {
       _baseClient,
       _handleConnectionError,
       onRequestSuccess: _handleRequestSuccess,
-      onSlowRequest: _handleSlowRequest,
     );
     _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
   }
@@ -370,19 +340,6 @@ class ApiService implements Authentication {
     notifyConnectionState(
       const ConnectionState(status: ConnectionStatus.connected, connectionType: ConnectionType.api),
     );
-  }
-
-  void _handleSlowRequest(String requestUrl, Duration elapsed, bool isHard) {
-    // Asset uploads routinely exceed the hard slow threshold; ignore them so
-    // wifi-identity refresh does not flip local/remote mid-upload.
-    if (isHard && _isAssetUploadUrl(requestUrl)) {
-      return;
-    }
-    try {
-      curatorNetworkSlowRequestHandler?.call(requestUrl, elapsed, isHard);
-    } catch (error, stackTrace) {
-      _log.warning('curatorNetworkSlowRequestHandler failed', error, stackTrace);
-    }
   }
 
   static bool _isAssetUploadUrl(String url) {

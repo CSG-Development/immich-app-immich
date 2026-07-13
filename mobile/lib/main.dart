@@ -31,7 +31,6 @@ import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 import 'package:immich_mobile/providers/debug/network_debug_overlay_visibility.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
@@ -296,13 +295,6 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     api.curatorNetworkForceReconnectHandler = () {
       ref.read(curatorNetworkMonitorProvider).forceNetworkChangeHandling();
     };
-    api.curatorNetworkSlowRequestHandler = (requestUrl, elapsed, isHard) {
-      unawaited(
-        ref
-            .read(curatorNetworkMonitorProvider)
-            .onSlowForegroundRequest(requestUrl: requestUrl, elapsed: elapsed, isHard: isHard),
-      );
-    };
     _connectionStateSubscription = api.connectionStateChanges.listen((state) {
       if (state.status == conn.ConnectionStatus.connected) {
         ref.read(curatorNetworkMonitorProvider).onConnectionRestored();
@@ -324,7 +316,6 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
   void dispose() {
     ref.read(curatorNetworkMonitorProvider).stopMonitoring();
     ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler = null;
-    ref.read(apiServiceProvider).curatorNetworkSlowRequestHandler = null;
     _connectionStateSubscription?.cancel();
     _connectionStateSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
