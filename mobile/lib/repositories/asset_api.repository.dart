@@ -52,6 +52,16 @@ class AssetApiRepository extends ApiRepository {
     await _trashApi.restoreAssets(BulkIdsDto(ids: ids));
   }
 
+  Future<int> emptyTrash() async {
+    final response = await _trashApi.emptyTrash();
+    return response?.count ?? 0;
+  }
+
+  Future<int> restoreAllTrash() async {
+    final response = await _trashApi.restoreTrash();
+    return response?.count ?? 0;
+  }
+
   Future<void> updateVisibility(List<String> ids, AssetVisibilityEnum visibility) async {
     return _api.updateAssets(AssetBulkUpdateDto(ids: ids, visibility: _mapVisibility(visibility)));
   }
@@ -78,8 +88,8 @@ class AssetApiRepository extends ApiRepository {
     return _stacksApi.deleteStacks(BulkIdsDto(ids: ids));
   }
 
-  Future<Response> downloadAsset(String id) {
-    return _api.downloadAssetWithHttpInfo(id);
+  Future<Response> downloadAsset(String id, {required bool edited}) {
+    return _api.downloadAssetWithHttpInfo(id, edited: edited);
   }
 
   _mapVisibility(AssetVisibilityEnum visibility) => switch (visibility) {
@@ -103,6 +113,10 @@ class AssetApiRepository extends ApiRepository {
 
   Future<void> updateDescription(String assetId, String description) {
     return _api.updateAsset(assetId, UpdateAssetDto(description: description));
+  }
+
+  Future<void> updateRating(String assetId, int rating) {
+    return _api.updateAsset(assetId, UpdateAssetDto(rating: rating));
   }
 }
 

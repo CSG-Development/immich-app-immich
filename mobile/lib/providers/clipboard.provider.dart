@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
 
 final clipboardProvider = StateNotifierProvider<ClipboardNotifier, ClipboardState>(
-  (ref) => ClipboardNotifier(ref.watch(clipboardServiceProvider)),
+  (ref) => ClipboardNotifier(ref.watch(clipboardServiceProvider), ref),
 );
 
 final clipboardStatusProvider = StreamProvider.autoDispose<bool>((ref) {
@@ -13,10 +13,19 @@ final clipboardStatusProvider = StreamProvider.autoDispose<bool>((ref) {
 
 class ClipboardNotifier extends StateNotifier<ClipboardState> {
   final ClipboardService _clipboardService;
+  final Ref _ref;
   final StreamController<bool> _clipboardStatusController = StreamController<bool>.broadcast();
   bool _isDisposed = false;
 
-  ClipboardNotifier(this._clipboardService) : super(const ClipboardState());
+  ClipboardNotifier(this._clipboardService, this._ref) : super(const ClipboardState());
+
+  bool get isProcessing => state.isProcessing;
+
+  ClipboardPasteResult? get lastPasteResult => state.lastPasteResult;
+
+  void clearClipboardStatus() {
+    state = state.copyWith(hasPhotosInClipboard: false);
+  }
 
   Stream<bool> get clipboardStatusStream => _clipboardStatusController.stream;
 
@@ -52,7 +61,7 @@ class ClipboardNotifier extends StateNotifier<ClipboardState> {
     state = state.copyWith(isProcessing: true);
     
     try {
-      final result = await _clipboardService.pasteFromClipboard();
+      final result = await _clipboardService.pasteFromClipboard(_ref);
       
       state = state.copyWith(
         lastPasteResult: result,

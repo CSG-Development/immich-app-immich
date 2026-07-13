@@ -10,10 +10,12 @@
 //
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart'
     show Connectivity, ConnectivityResult;
 import 'package:hc_device/services/logger_service.dart';
+import 'package:hc_device/services/request_timeout_interceptor.dart';
 import 'package:hc_device/api/api.swagger.dart' show Api, About;
 import 'package:hc_device/api/remote_access.enums.swagger.dart'
     show DevicePathType;
@@ -27,7 +29,8 @@ import 'package:hc_device/utils/mdns_platform_support.dart';
 import 'package:nsd/nsd.dart' as nsd;
 
 const String serviceTypeDiscover = '_https._tcp';
-const String serviceNameDiscover = 'HomeCloud';
+const String serviceTxtKeyDiscover = 'seagate';
+const String serviceTxtValueDiscover = 'homecloud';
 const Duration defaultDurationLocalDetection = Duration(seconds: 5);
 const Duration timeoutLocalApiCall = Duration(seconds: 4);
 const Duration timeoutRemoteApiCall = Duration(seconds: 9);
@@ -58,7 +61,7 @@ class PingResult {
   final bool success;
   final Uri? baseUrl;
   final About? about;
-  final String? pathType;
+  final DevicePathType? pathType;
   final String? debugHostType;
 
   PingResult({
@@ -197,14 +200,29 @@ class DeviceDetectionService {
       _discovery?.addServiceListener((service, status) {
         if (_isCancelled) return;
 
-        if (status == nsd.ServiceStatus.found &&
-            service.name!.contains(serviceNameDiscover)) {
+        final serviceTxtValue = service.txt?[serviceTxtKeyDiscover];
+        final hasExpectedTxtRecord =
+            serviceTxtValue != null &&
+            utf8
+                    .decode(serviceTxtValue, allowMalformed: true)
+                    .trim()
+                    .toLowerCase() ==
+                serviceTxtValueDiscover;
+        if (status == nsd.ServiceStatus.found && hasExpectedTxtRecord) {
+          final host = service.host;
+          final port = service.port;
+          if (host == null || port == null) {
+            logger.warning(
+              '[Network] Skipping mDNS service without host/port: ${service.name}',
+            );
+            return;
+          }
           logger.info(
             '[Network] Device discovered on local network by mDNS: ${service.name}',
           );
           // Get About info to obtain certificateCommonName and confirm it's a valid HomeCloud device before adding to the list
           getAbout(
-            DeviceProvider.createBaseUrl(service.host!, service.port),
+            DeviceProvider.createBaseUrl(host, port),
           ).then((about) {
             // If detection was cancelled while waiting for getAbout, do not add device or call callbacks
             if (about != null &&
@@ -213,10 +231,11 @@ class DeviceDetectionService {
               final device = DeviceItem(
                 hostname: service.name,
                 baseUrl: DeviceProvider.createBaseUrl(
-                  service.host!,
-                  service.port,
+                  host,
+                  port,
                 ),
                 debugHostType: "mDNS",
+                pathType: DevicePathType.local,
                 about: about,
               );
               final certificateCommonName = about.certificateCommonName;
@@ -370,16 +389,17 @@ class DeviceDetectionService {
     Duration timeoutDelay = timeoutLocalApiCall,
   }) async {
     try {
+      final timeoutInterceptor = CuratorRequestTimeoutInterceptor(timeoutDelay);
       final api = deviceProvider is DeviceProvider
           ? await (deviceProvider as DeviceProvider).createApi(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             )
           : Api.create(
               baseUrl: baseUrl,
-              interceptors: [httpLogger],
+              interceptors: [timeoutInterceptor, httpLogger],
             );
-      final response = await api.aboutGet().timeout(timeoutDelay);
+      final response = await api.aboutGet();
       if (response.isSuccessful) {
         return response.body!;
       }
@@ -414,6 +434,7 @@ class DeviceDetectionService {
           baseUrl: result.baseUrl!,
           about: result.about!,
           debugHostType: result.debugHostType,
+          pathType: result.pathType,
         );
         return result;
       }
@@ -442,10 +463,20 @@ class DeviceDetectionService {
       return PingResult.failed();
     }
 
-    // Try to use cached paths first
+    // Try to use cached paths first (strictly scoped to the selected remote device)
     DevicePaths? devicePaths;
     if (useCachedPaths) {
-      devicePaths = deviceProvider.getCachedDevicePaths();
+      final cachedPaths = deviceProvider.getCachedDevicePaths();
+      if (cachedPaths != null &&
+          cachedPaths.seagateDeviceID.isNotEmpty &&
+          cachedPaths.seagateDeviceID == remoteDeviceID) {
+        devicePaths = cachedPaths;
+      } else if (cachedPaths != null) {
+        logger.info(
+          '[Network] Ignoring cached paths for different device: '
+          'cached=${cachedPaths.seagateDeviceID} selected=$remoteDeviceID',
+        );
+      }
     }
 
     // If no cached paths or cache disabled, fetch from server
@@ -591,6 +622,7 @@ class DeviceDetectionService {
           baseUrl: result.baseUrl!,
           about: result.about!,
           debugHostType: result.debugHostType,
+          pathType: result.pathType,
         );
         return result;
       }
@@ -608,9 +640,9 @@ class DeviceDetectionService {
     DevicePath path, {
     String? debugHostType,
   }) async {
-    final pathType = debugHostType ?? path.type.value ?? 'unknown';
     final Uri baseUrl = DeviceProvider.createBaseUrl(path.address, path.port);
-    logger.info('[Network] Testing path: $pathType at $baseUrl');
+    final pathType = path.type;
+    logger.info('[Network] Testing path: ${pathType.value} at $baseUrl');
     final about = await getAbout(
       baseUrl,
       timeoutDelay: path.type == DevicePathType.local
@@ -627,7 +659,7 @@ class DeviceDetectionService {
         baseUrl: baseUrl,
         about: about,
         pathType: pathType,
-        debugHostType: debugHostType ?? "Remote Access > $pathType",
+        debugHostType: debugHostType ?? 'Remote Access > ${pathType.value}',
       );
       logger.info(
         '[Network] Path reachable: ${result.debugHostType} at $baseUrl',

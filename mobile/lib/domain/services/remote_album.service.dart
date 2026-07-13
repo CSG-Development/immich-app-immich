@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/remote_album.repository.dart';
 import 'package:immich_mobile/models/albums/album_search.model.dart';
 import 'package:immich_mobile/repositories/drift_album_api_repository.dart';
+import 'package:immich_mobile/providers/album/album_sort_by_options.provider.dart';
 
 class RemoteAlbumService {
   final DriftRemoteAlbumRepository _repository;
@@ -32,19 +34,21 @@ class RemoteAlbumService {
 
   Future<List<RemoteAlbum>> sortAlbums(
     List<RemoteAlbum> albums,
-    RemoteAlbumSortMode sortMode, {
+    AlbumSortMode sortMode, {
     bool isReverse = false,
   }) async {
+    // list of albums sorted ascendingly according to the selected sort mode
     final List<RemoteAlbum> sorted = switch (sortMode) {
-      RemoteAlbumSortMode.created => albums.sortedBy((album) => album.createdAt),
-      RemoteAlbumSortMode.title => albums.sortedBy((album) => album.name),
-      RemoteAlbumSortMode.lastModified => albums.sortedBy((album) => album.updatedAt),
-      RemoteAlbumSortMode.assetCount => albums.sortedBy((album) => album.assetCount),
-      RemoteAlbumSortMode.mostRecent => await _sortByNewestAsset(albums),
-      RemoteAlbumSortMode.mostOldest => await _sortByOldestAsset(albums),
+      AlbumSortMode.created => albums.sortedBy((album) => album.createdAt),
+      AlbumSortMode.title => albums.sortedBy((album) => album.name),
+      AlbumSortMode.lastModified => albums.sortedBy((album) => album.updatedAt),
+      AlbumSortMode.assetCount => albums.sortedBy((album) => album.assetCount),
+      AlbumSortMode.mostRecent => await _sortByAssetDate(albums, aggregation: AssetDateAggregation.end),
+      AlbumSortMode.mostOldest => await _sortByAssetDate(albums, aggregation: AssetDateAggregation.start),
     };
+    final effectiveOrder = isReverse ? sortMode.defaultOrder.reverse() : sortMode.defaultOrder;
 
-    return (isReverse ? sorted.reversed : sorted).toList();
+    return (effectiveOrder == SortOrder.asc ? sorted : sorted.reversed).toList();
   }
 
   List<RemoteAlbum> searchAlbums(
@@ -129,6 +133,10 @@ class RemoteAlbumService {
     return _repository.getSharedUsers(albumId);
   }
 
+  Future<AlbumUserRole?> getUserRole(String albumId, String userId) {
+    return _repository.getUserRole(albumId, userId);
+  }
+
   Future<List<RemoteAsset>> getAssets(String albumId) {
     return _repository.getAssets(albumId);
   }
@@ -169,59 +177,29 @@ class RemoteAlbumService {
     return _repository.getCount();
   }
 
-  Future<List<RemoteAlbum>> _sortByNewestAsset(List<RemoteAlbum> albums) async {
-    // map album IDs to their newest asset dates
-    final Map<String, Future<DateTime?>> assetTimestampFutures = {};
-    for (final album in albums) {
-      assetTimestampFutures[album.id] = _repository.getNewestAssetTimestamp(album.id);
+  Future<List<RemoteAlbum>> getAlbumsContainingAsset(String assetId) {
+    return _repository.getAlbumsContainingAsset(assetId);
+  }
+
+  Future<List<RemoteAlbum>> _sortByAssetDate(
+    List<RemoteAlbum> albums, {
+    required AssetDateAggregation aggregation,
+  }) async {
+    if (albums.isEmpty) return [];
+
+    final albumIds = albums.map((e) => e.id).toList();
+    final sortedIds = await _repository.getSortedAlbumIds(albumIds, aggregation: aggregation);
+
+    final albumMap = Map<String, RemoteAlbum>.fromEntries(albums.map((a) => MapEntry(a.id, a)));
+
+    final sortedAlbums = sortedIds.map((id) => albumMap[id]).whereType<RemoteAlbum>().toList();
+
+    if (sortedAlbums.length < albums.length) {
+      final returnedIdSet = sortedIds.toSet();
+      final emptyAlbums = albums.where((a) => !returnedIdSet.contains(a.id));
+      sortedAlbums.addAll(emptyAlbums);
     }
 
-    // await all database queries
-    final entries = await Future.wait(
-      assetTimestampFutures.entries.map((entry) async => MapEntry(entry.key, await entry.value)),
-    );
-    final assetTimestamps = Map.fromEntries(entries);
-
-    final sorted = albums.sorted((a, b) {
-      final aDate = assetTimestamps[a.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bDate = assetTimestamps[b.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return aDate.compareTo(bDate);
-    });
-
-    return sorted;
+    return sortedAlbums;
   }
-
-  Future<List<RemoteAlbum>> _sortByOldestAsset(List<RemoteAlbum> albums) async {
-    // map album IDs to their oldest asset dates
-    final Map<String, Future<DateTime?>> assetTimestampFutures = {
-      for (final album in albums) album.id: _repository.getOldestAssetTimestamp(album.id),
-    };
-
-    // await all database queries
-    final entries = await Future.wait(
-      assetTimestampFutures.entries.map((entry) async => MapEntry(entry.key, await entry.value)),
-    );
-    final assetTimestamps = Map.fromEntries(entries);
-
-    final sorted = albums.sorted((a, b) {
-      final aDate = assetTimestamps[a.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bDate = assetTimestamps[b.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return aDate.compareTo(bDate);
-    });
-
-    return sorted.reversed.toList();
-  }
-}
-
-enum RemoteAlbumSortMode {
-  title("library_page_sort_title"),
-  assetCount("library_page_sort_asset_count"),
-  lastModified("library_page_sort_last_modified"),
-  created("library_page_sort_created"),
-  mostRecent("sort_newest"),
-  mostOldest("sort_oldest");
-
-  final String key;
-
-  const RemoteAlbumSortMode(this.key);
 }

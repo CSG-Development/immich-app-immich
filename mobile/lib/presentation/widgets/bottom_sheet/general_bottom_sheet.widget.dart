@@ -29,8 +29,10 @@ import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_shee
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/setting.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/duplicate.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 class GeneralBottomSheet extends ConsumerStatefulWidget {
   final double? minChildSize;
@@ -57,6 +59,7 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final multiselect = ref.watch(multiSelectProvider);
+    final duplicateInProgress = ref.watch(duplicateInProgressProvider);
     final isTrashEnable = ref.watch(serverInfoProvider.select((state) => state.serverFeatures.trash));
     final advancedTroubleshooting = ref.watch(settingsProvider.notifier).get(Setting.advancedTroubleshooting);
 
@@ -113,7 +116,7 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
         const DuplicateActionButton(source: ActionSource.timeline),
         if (multiselect.hasRemote) ...[
           const ShareLinkActionButton(source: ActionSource.timeline),
-          const DownloadActionButton(source: ActionSource.timeline),
+          if (multiselect.onlyRemote) const DownloadActionButton(source: ActionSource.timeline),
           isTrashEnable
               ? const TrashActionButton(source: ActionSource.timeline)
               : const DeletePermanentActionButton(source: ActionSource.timeline),
@@ -124,15 +127,27 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
           const MoveToLockFolderActionButton(source: ActionSource.timeline),
           if (multiselect.selectedAssets.length > 1) const StackActionButton(source: ActionSource.timeline),
           if (multiselect.hasStacked) const UnStackActionButton(source: ActionSource.timeline),
-          const DeleteActionButton(source: ActionSource.timeline),
+          if (multiselect.onlyLocal || multiselect.hasMerged) const DeleteActionButton(source: ActionSource.timeline),
         ],
-        if (multiselect.hasLocal || multiselect.hasMerged) const DeleteLocalActionButton(source: ActionSource.timeline),
-        if (multiselect.hasLocal) const UploadActionButton(source: ActionSource.timeline),
+        if (multiselect.onlyLocal || multiselect.hasMerged)
+          const DeleteLocalActionButton(source: ActionSource.timeline),
+        if (multiselect.onlyLocal) const UploadActionButton(source: ActionSource.timeline),
       ],
       slivers: multiselect.hasRemote
           ? [
-              const AddToAlbumHeader(),
-              AlbumSelector(onAlbumSelected: addAssetsToAlbum, onKeyboardExpanded: onKeyboardExpand),
+              if (duplicateInProgress)
+                SliverIgnorePointer(
+                  sliver: MultiSliver(
+                    children: [
+                      const AddToAlbumHeader(),
+                      AlbumSelector(onAlbumSelected: addAssetsToAlbum, onKeyboardExpanded: onKeyboardExpand),
+                    ],
+                  ),
+                )
+              else ...[
+                const AddToAlbumHeader(),
+                AlbumSelector(onAlbumSelected: addAssetsToAlbum, onKeyboardExpanded: onKeyboardExpand),
+              ],
             ]
           : [],
     );

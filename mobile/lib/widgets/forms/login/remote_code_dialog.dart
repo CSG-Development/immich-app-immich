@@ -6,7 +6,10 @@ import 'package:hc_device/data/errors/domain_errors.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/services/client_device_name.helper.dart';
 import 'package:immich_mobile/widgets/forms/pin_input.dart';
+import 'package:logging/logging.dart';
 import 'package:pinput/pinput.dart';
+
+final _otpLog = Logger('RemoteCodeDialog');
 
 const int defaultResendCooldownSeconds = 60;
 
@@ -130,12 +133,14 @@ class RemoteCodeModal extends HookWidget {
               await onSuccess!();
             }
             if (context.mounted) Navigator.of(context).pop();
-          } catch (_) {
+          } catch (error, stackTrace) {
             // Keep the modal usable when post-OTP flows (discovery/reconnect)
             // fail after successful token validation.
+            _otpLog.warning('[OTP] post-success callback failed', error, stackTrace);
             remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
           }
         } else {
+          _otpLog.info('[OTP] code validation failed type=${result.type.name} message=${result.message}');
           switch (result.type) {
             case RemoteCodeFailureType.invalidCode:
               remoteCodeErrorText.value = 'curator.sign_in_screen_field_remote_code_error_invalid'.tr();
@@ -273,7 +278,7 @@ class RemoteCodeModal extends HookWidget {
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.all(Radius.circular(19)),
                         border: Border.all(
-                          color: context.isDarkTheme ? const Color(0xFF616161) : const Color(0xFFCBCDD3),
+                          color: context.colorScheme.outlineVariant,
                         ),
                         color: Colors.transparent,
                       ),
@@ -360,6 +365,9 @@ Future<void> showRemoteCodeModal({
   /// session already present and an extra initiate request is unnecessary).
   bool skipInitialCodeSend = false,
 }) async {
+  _otpLog.info(
+    '[OTP] showRemoteCodeModal start email=$email skipInitialCodeSend=$skipInitialCodeSend',
+  );
   int extractRetryAfterSeconds(dynamic response) {
     final message = (response.error ?? '').toString();
     final match = RegExp(r'after\s+(\d+)\s+seconds', caseSensitive: false)
@@ -368,6 +376,7 @@ Future<void> showRemoteCodeModal({
   }
 
   Future<RemoteCodeInitiateResult> sendCode() async {
+    _otpLog.info('[OTP] sendCode start email=$email');
     try {
       final clientFriendlyName = await ClientDeviceNameHelper.getClientFriendlyName();
       await remoteProvider.getPinnedApi();
@@ -377,28 +386,34 @@ Future<void> showRemoteCodeModal({
       );
       if (response.isSuccessful) {
         await remoteProvider.setReference(response.body?.reference);
+        _otpLog.info('[OTP] sendCode success email=$email');
         return const RemoteCodeInitiateResult(
           success: true,
           retryAfterSeconds: defaultResendCooldownSeconds,
         );
       }
       if (response.statusCode == 401 || response.statusCode == 403) {
+        _otpLog.warning('[OTP] sendCode not allowed status=${response.statusCode} email=$email');
         return const RemoteCodeInitiateResult(
           success: false,
           error: RemoteCodeModalError.notAllowed,
         );
       }
       if (response.statusCode == 429) {
+        final retryAfter = extractRetryAfterSeconds(response);
+        _otpLog.info('[OTP] sendCode rate-limited retryAfter=${retryAfter}s email=$email');
         return RemoteCodeInitiateResult(
           success: true,
-          retryAfterSeconds: extractRetryAfterSeconds(response),
+          retryAfterSeconds: retryAfter,
         );
       }
+      _otpLog.warning('[OTP] sendCode server error status=${response.statusCode} email=$email');
       return const RemoteCodeInitiateResult(
         success: false,
         error: RemoteCodeModalError.server,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _otpLog.warning('[OTP] sendCode exception email=$email', error, stackTrace);
       return const RemoteCodeInitiateResult(
         success: false,
         error: RemoteCodeModalError.server,
@@ -407,10 +422,12 @@ Future<void> showRemoteCodeModal({
   }
 
   Future<RemoteCodeValidationResult> validateCode(String code) async {
+    _otpLog.info('[OTP] validateCode start email=$email');
     try {
       await remoteProvider.getPinnedApi();
       final reference = remoteProvider.reference;
       if (reference == null || reference.isEmpty) {
+        _otpLog.warning('[OTP] validateCode abort reason=missing_reference email=$email');
         return const RemoteCodeValidationResult(
           success: false,
           type: RemoteCodeFailureType.unknown,
@@ -422,15 +439,20 @@ Future<void> showRemoteCodeModal({
       );
       if (response.isSuccessful) {
         await remoteProvider.setAuthToken(auth: response.body!);
+        _otpLog.info('[OTP] validateCode success email=$email');
         return const RemoteCodeValidationResult(success: true);
       }
       final classified = remoteProvider.classifyCodeFailure(response);
+      _otpLog.warning(
+        '[OTP] validateCode failed email=$email status=${response.statusCode} type=${classified.type.name}',
+      );
       return RemoteCodeValidationResult(
         success: false,
         type: classified.type,
         message: classified.message,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _otpLog.warning('[OTP] validateCode exception email=$email', error, stackTrace);
       return const RemoteCodeValidationResult(
         success: false,
         type: RemoteCodeFailureType.unknown,
@@ -441,9 +463,16 @@ Future<void> showRemoteCodeModal({
   RemoteCodeInitiateResult? initialInitiateResult;
   if (!skipInitialCodeSend) {
     initialInitiateResult = await sendCode();
+    _otpLog.info(
+      '[OTP] initial sendCode result success=${initialInitiateResult.success} '
+      'error=${initialInitiateResult.error?.name ?? '-'}',
+    );
+  } else {
+    _otpLog.info('[OTP] skipping initial sendCode email=$email');
   }
 
   onDialogPresented?.call();
+  _otpLog.info('[OTP] presenting modal email=$email');
   return showDialog(
     context: context,
     barrierDismissible: false,
@@ -456,7 +485,9 @@ Future<void> showRemoteCodeModal({
         onEmailNotAllowed: onEmailNotAllowed,
         email: email,
         ),
-  );
+  ).whenComplete(() {
+    _otpLog.info('[OTP] modal dismissed email=$email remoteAuth=${remoteProvider.isAuthenticated}');
+  });
 }
 
 enum RemoteCodeModalError { notAllowed, tooManyRequests, server }

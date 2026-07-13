@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:immich_mobile/constants/colors.dart';
+import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 
 class ImmichTheme {
@@ -10,41 +12,51 @@ class ImmichTheme {
   const ImmichTheme({required this.light, required this.dark});
 }
 
-ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale}) {
+ColorScheme normalizeColorScheme(ColorScheme colorScheme) {
   final isDark = colorScheme.brightness == Brightness.dark;
+
+  return colorScheme.copyWith(
+    outlineVariant: isDark ? greyBorderDark : greyBorder,
+  );
+}
+
+ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale}) {
+  final normalizedColorScheme = normalizeColorScheme(colorScheme);
+  final isDark = normalizedColorScheme.brightness == Brightness.dark;
 
   return ThemeData(
     useMaterial3: true,
-    brightness: colorScheme.brightness,
-    colorScheme: colorScheme,
-    primaryColor: colorScheme.primary,
-    hintColor: colorScheme.onSurfaceSecondary,
-    focusColor: colorScheme.primary,
-    scaffoldBackgroundColor: colorScheme.surface,
-    splashColor: colorScheme.primary.withValues(alpha: 0.1),
-    highlightColor: colorScheme.primary.withValues(alpha: 0.1),
-    bottomSheetTheme: BottomSheetThemeData(backgroundColor: colorScheme.surfaceContainer),
+    brightness: normalizedColorScheme.brightness,
+    colorScheme: normalizedColorScheme,
+    primaryColor: normalizedColorScheme.primary,
+    hintColor: normalizedColorScheme.onSurfaceSecondary,
+    focusColor: normalizedColorScheme.primary,
+    scaffoldBackgroundColor: normalizedColorScheme.surface,
+    splashColor: normalizedColorScheme.primary.withValues(alpha: 0.1),
+    highlightColor: normalizedColorScheme.primary.withValues(alpha: 0.1),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: normalizedColorScheme.surfaceContainer),
+    fontFamily: _getFontFamilyFromLocale(locale),
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
-        color: colorScheme.primary,
+        fontFamily: _getFontFamilyFromLocale(locale),
+        color: normalizedColorScheme.primary,
         fontWeight: FontWeight.bold,
       ),
-      backgroundColor: colorScheme.surfaceContainerHighest,
+      backgroundColor: normalizedColorScheme.surfaceContainerHighest,
     ),
     appBarTheme: AppBarTheme(
       titleTextStyle: TextStyle(
-        color: colorScheme.primary,
+        color: normalizedColorScheme.primary,
+        fontFamily: _getFontFamilyFromLocale(locale),
         fontWeight: FontWeight.w600,
         fontSize: 18,
       ),
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      foregroundColor: colorScheme.primary,
+      backgroundColor: normalizedColorScheme.surface,
+      foregroundColor: normalizedColorScheme.primary,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
-      systemOverlayStyle: isDark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+      systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -56,51 +68,51 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
+        backgroundColor: normalizedColorScheme.primary,
         foregroundColor: isDark ? Colors.black87 : Colors.white,
+        disabledBackgroundColor: isDark ? greyBorderDark : grey200,
+        disabledForegroundColor: grey500,
       ),
     ),
     chipTheme: const ChipThemeData(side: BorderSide.none),
-    sliderTheme: const SliderThemeData(thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7), trackHeight: 2.0),
+    sliderTheme: const SliderThemeData(
+      trackHeight: 12,
+      // ignore: deprecated_member_use
+      year2023: false,
+    ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(type: BottomNavigationBarType.fixed),
     popupMenuTheme: const PopupMenuThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: colorScheme.surfaceContainerLowest,
+      backgroundColor: isDark ? normalizedColorScheme.surfaceContainer : normalizedColorScheme.surface,
       height: 68.0,
-      labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      labelTextStyle: const WidgetStatePropertyAll(
+        TextStyle(fontSize: 14, fontWeight: FontWeight.w500, overflow: TextOverflow.ellipsis),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colorScheme.primary),
+        borderSide: BorderSide(color: normalizedColorScheme.primary),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-        ),
+        borderSide: BorderSide(color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-        ),
+        borderSide: BorderSide(color: isDark ? const Color(0xFFF28F8C) : const Color(0xFFF44336)),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colorScheme.outlineVariant),
+        borderSide: BorderSide(color: normalizedColorScheme.outlineVariant),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
-      labelStyle: TextStyle(
-        color: isDark ? const Color(0xDEFFFFFF) : const Color(0xDE000000),
-      ),
-      floatingLabelStyle: TextStyle(
-        color: colorScheme.primary,
-      ),
+      labelStyle: TextStyle(color: isDark ? const Color(0xDEFFFFFF) : const Color(0xDE000000)),
+      floatingLabelStyle: TextStyle(color: normalizedColorScheme.primary),
       hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
     ),
-    textSelectionTheme: TextSelectionThemeData(cursorColor: colorScheme.primary),
+    textSelectionTheme: TextSelectionThemeData(cursorColor: normalizedColorScheme.primary),
     dropdownMenuTheme: DropdownMenuThemeData(
       menuStyle: const MenuStyle(
         shape: WidgetStatePropertyAll<OutlinedBorder>(
@@ -109,20 +121,19 @@ ThemeData getThemeData({required ColorScheme colorScheme, required Locale locale
       ),
       inputDecorationTheme: InputDecorationTheme(
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.primary),
+          borderSide: BorderSide(color: normalizedColorScheme.primary),
           borderRadius: const BorderRadius.all(Radius.circular(15)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
+          borderSide: BorderSide(color: normalizedColorScheme.outlineVariant),
           borderRadius: const BorderRadius.all(Radius.circular(15)),
         ),
-        labelStyle: TextStyle(color: colorScheme.primary),
+        labelStyle: TextStyle(color: normalizedColorScheme.primary),
         hintStyle: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.normal),
       ),
     ),
-    drawerTheme:
-        DrawerThemeData(backgroundColor: colorScheme.surfaceContainerLowest),
-    dialogTheme: DialogThemeData(backgroundColor: colorScheme.surfaceContainer),
+    drawerTheme: DrawerThemeData(backgroundColor: normalizedColorScheme.surfaceContainerLowest),
+    dialogTheme: DialogThemeData(backgroundColor: normalizedColorScheme.surfaceContainer),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       // ignore: deprecated_member_use
       year2023: false,
@@ -155,6 +166,7 @@ ImmichTheme decolorizeSurfaces({required ImmichTheme theme}) {
       surfaceDim: const Color(0xFFdadada),
       surfaceBright: const Color(0xFFf9f9f9),
       onSurfaceVariant: const Color(0xFF4c4546),
+      outlineVariant: greyBorder,
       inverseSurface: const Color(0xFF303030),
       onInverseSurface: const Color(0xFFf1f1f1),
     ),
@@ -169,8 +181,17 @@ ImmichTheme decolorizeSurfaces({required ImmichTheme theme}) {
       surfaceDim: const Color(0xFF131313),
       surfaceBright: const Color(0xFF353535),
       onSurfaceVariant: const Color(0xFFCfC4C5),
+      outlineVariant: greyBorderDark,
       inverseSurface: const Color(0xFFE2E2E2),
       onInverseSurface: const Color(0xFF303030),
     ),
   );
+}
+
+String? _getFontFamilyFromLocale(Locale locale) {
+  if (localesNotSupportedByAppFont.contains(locale)) {
+    // Let Flutter use the default font
+    return null;
+  }
+  return null;
 }

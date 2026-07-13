@@ -14,7 +14,6 @@
   "add_a_name": "Ятне хуш",
   "add_a_title": "Ят хуш",
   "add_exclusion_pattern": "Кӑларса пӑрахмалли йӗрке хуш",
-  "add_import_path": "Импорт ҫулне хуш",
   "add_location": "Вырӑн хуш",
   "add_more_users": "Усӑҫсем ытларах хуш",
   "add_partner": "Мӑшӑр хуш",
@@ -66,6 +65,7 @@
   "map_settings": "Карттӑ ĕнерленĕвĕ",
   "no_explore_results_message": "Хӑвӑр коллекципе киленмешкӗн сӑнӳкерчӗксем ытларах тийӗр.",
   "open_in_openstreetmap": "OpenStreetMap-па уҫ",
+  "organize_your_library": "Хӑвӑн вулавӑшна йӗркеле",
   "partner_sharing": "Партнер пайланӑвӗ",
   "people": "Ҫынсем",
   "photos": "Сӑнӳкерчӗксем",
@@ -81,5 +81,6 @@
   "sharing": "Пайлани",
   "sharing_enter_password": "Ку питне курма пароль кӗртӗр.",
   "user_usage_stats": "Шута ҫырни усӑ курмалли статистика",
-  "user_usage_stats_description": "Шута ҫырни усӑ курмалли статистикӑна пӑхасси"
+  "user_usage_stats_description": "Шута ҫырни усӑ курмалли статистикӑна пӑхасси",
+  "utilities": "Пулӑшакансем"
 }

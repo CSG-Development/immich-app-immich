@@ -5,8 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
+import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:immich_mobile/utils/people.utils.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
@@ -32,7 +32,6 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
   @override
   Widget build(BuildContext context) {
     final people = ref.watch(driftGetAllPeopleProvider);
-    final headers = ApiService.getRequestHeaders();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -71,7 +70,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                 }
                 return GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isTablet ? 4 : 2,
+                    crossAxisCount: isTablet ? 6 : 3,
                     childAspectRatio: 0.85,
                     mainAxisSpacing: isPortrait && isTablet ? 36 : 0,
                   ),
@@ -81,19 +80,30 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                     final person = people[index];
 
                     return Column(
+                      key: ValueKey(person.id),
                       children: [
                         Stack(
+                          alignment: Alignment.center,
                           children: [
                             GestureDetector(
                               onTap: () {
                                 context.pushRoute(DriftPersonRoute(person: person));
                               },
-                              child: Material(
-                                shape: const CircleBorder(side: BorderSide.none),
-                                elevation: 3,
-                                child: CircleAvatar(
-                                  maxRadius: 156 / 2,
-                                  backgroundImage: NetworkImage(getFaceThumbnailUrl(person.id), headers: headers),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final avatarDiameter = constraints.maxWidth * 0.85;
+                                    return Material(
+                                      shape: const CircleBorder(side: BorderSide.none),
+                                      elevation: 3,
+                                      child: CircleAvatar(
+                                        key: ValueKey('avatar-${person.id}'),
+                                        radius: avatarDiameter / 2,
+                                        backgroundImage: RemoteImageProvider(url: getFaceThumbnailUrl(person.id)),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),

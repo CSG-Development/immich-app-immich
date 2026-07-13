@@ -60,8 +60,5 @@ default.isar
 default.isar.lock
 libisar.so
 
-# FVM Version
-.fvm/
-
 # Translation file
-# lib/generated/
+lib/generated/

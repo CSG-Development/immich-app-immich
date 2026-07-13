@@ -71,6 +71,12 @@ enum StoreKey<T> {
   readonlyModeEnabled<bool>._(138),
   backupUploadTelemetry<bool>._(139),
 
+  autoPlayVideo<bool>._(139),
+  albumGridView<bool>._(140),
+
+  // Image viewer navigation settings
+  tapToNavigate<bool>._(141),
+
   // Experimental stuff
   photoManagerCustomFilter<bool>._(1000),
   betaPromptShown<bool>._(1001),
@@ -82,6 +88,16 @@ enum StoreKey<T> {
   // TODO: Remove this after patching open-api
   shouldResetSync<bool>._(1007),
 
+  // Free up space
+  cleanupKeepFavorites<bool>._(1008),
+  cleanupKeepMediaType<int>._(1009),
+  cleanupKeepAlbumIds<String>._(1010),
+  cleanupCutoffDaysAgo<int>._(1011),
+  cleanupDefaultsInitialized<bool>._(1012),
+
+  // Sync migration
+  syncMigrationStatus<String>._(1013),
+
   // Curator
   enableBiometric<bool>._(2000),
   onboardingWasShown<bool>._(2001),
@@ -89,7 +105,8 @@ enum StoreKey<T> {
   appLockTimeoutIndex<int>._(2003),
   devEnableSettingsOnLogin<bool>._(2004),
   devStaticDeviceUrl<String>._(2005),
-  rootCerts<String>._(2006);
+  rootCerts<String>._(2006),
+  serverVersion<String>._(2007);
 
   const StoreKey._(this.id);
   final int id;

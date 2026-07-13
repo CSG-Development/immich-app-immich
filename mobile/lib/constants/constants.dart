@@ -4,8 +4,13 @@ const int noDbId = -9223372036854775808; // from Isar
 const double downloadCompleted = -1;
 const double downloadFailed = -2;
 
-// Number of log entries to retain on app start
-const int kLogTruncateLimit = 2000;
+const String kMobileMetadataKey = "mobile-app";
+
+// Number of log entries retained in the log DB (trimmed on app start).
+const int kLogTruncateLimit = 10000;
+
+// In-memory ring buffer for the network debug overlay (resolver / monitor / OTP).
+const int kNetworkDebugLogBufferLimit = 5000;
 
 // Sync
 const int kSyncEventBatchSize = 5000;
@@ -52,3 +57,16 @@ const double kUploadStatusFailed = -1.0;
 const double kUploadStatusCanceled = -2.0;
 
 const int kMinMonthsToEnableScrubberSnap = 12;
+
+const String kImmichAppStoreLink = "https://apps.apple.com/app/immich/id1613945652";
+const String kImmichPlayStoreLink =
+    "https://play.google.com/store/apps/details?id=com.seagate.curator.stxphotos.android";
+const String kImmichLatestRelease = "https://github.com/immich-app/immich/releases/latest";
+
+const int kPhotoTabIndex = 0;
+const int kSearchTabIndex = 1;
+const int kAlbumTabIndex = 2;
+const int kLibraryTabIndex = 3;
+
+// Workaround for SQLite's variable limit (SQLITE_MAX_VARIABLE_NUMBER = 32766)
+const int kDriftMaxChunk = 32000;

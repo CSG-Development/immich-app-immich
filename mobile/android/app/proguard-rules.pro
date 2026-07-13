@@ -37,7 +37,15 @@
 
 # Keep all widget model classes and their fields for Gson
 -keep class com.seagate.curator.stxphotos.android.widget.model.** { *; }
- 
+
+##---------------Begin: proguard configuration for ok_http JNI ----------
+# The ok_http Dart plugin accesses OkHttp and Okio classes via JNI
+# string-based reflection (JClass.forName), which R8 cannot trace.
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
+-keep class com.example.ok_http.** { *; }
+##---------------End: proguard configuration for ok_http JNI ----------
+
 ##---------------Begin: ffmpeg-kit keep rules  ----------
 # Keep all ffmpeg-kit classes to prevent R8/ProGuard from stripping JNI entry points
 -keep class com.antonkarpenko.ffmpegkit.** { *; }

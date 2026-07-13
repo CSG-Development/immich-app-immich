@@ -38,6 +38,7 @@ class PathResolveTriggerService {
   String? _lastSelectionSource;
 
   bool get isResolving => _isResolving;
+  Future<EndpointResolutionResult>? get activeRunFuture => _activeRunFuture;
   Stream<bool> get resolveStateChanges => _resolveStateController.stream;
   DateTime? get lastResolveAt => _lastResolveAt;
   Duration? get lastResolveDuration => _lastResolveDuration;
@@ -64,28 +65,6 @@ class PathResolveTriggerService {
 
   Future<EndpointResolutionResult> onManualRetry({required ResolveMode mode, String trigger = 'manual_retry'}) =>
       _trigger(_PendingResolveRequest(type: PathResolveTriggerType.manualRetry, mode: mode, trigger: trigger));
-
-  Future<EndpointResolutionResult> probeLocalUpgrade({
-    required ResolveMode mode,
-    String trigger = 'connectivity_change_local_upgrade',
-  }) async {
-    _log.info('[Trigger] local-upgrade probe start trigger=$trigger');
-    final result = await _endpointResolver.resolveWithDetails(
-      mode: mode,
-      trigger: trigger,
-      localOnly: true,
-      allowFallbackToPreviousEndpoint: false,
-    );
-    _log.info(
-      '[Trigger] local-upgrade probe result '
-      'trigger=$trigger '
-      'success=${result.success} '
-      'reason=${result.reason} '
-      'selection=${result.selectionSource} '
-      'endpoint=${result.endpoint}',
-    );
-    return result;
-  }
 
   Future<EndpointResolutionResult> _trigger(_PendingResolveRequest request) async {
     if (_isResolving) {
@@ -140,7 +119,9 @@ class PathResolveTriggerService {
     }
     _lastResolveAt = DateTime.now();
     _lastTriggerType = request.type;
-    _log.info('[Trigger] resolve start type=${request.type.name} trigger=${request.trigger}');
+    _log.info(
+      '[Trigger] resolve start type=${request.type.name} trigger=${request.trigger} mode=${request.mode.name}',
+    );
 
     try {
       final result = await _endpointResolver.resolveWithDetails(trigger: request.trigger, mode: request.mode);
@@ -152,9 +133,12 @@ class PathResolveTriggerService {
         '[Trigger] resolve result '
         'type=${request.type.name} '
         'trigger=${request.trigger} '
+        'mode=${request.mode.name} '
         'success=${result.success} '
         'reason=${result.reason} '
-        'selection=${result.selectionSource}',
+        'selection=${result.selectionSource} '
+        'pathType=${result.resolvedPathType} '
+        'endpoint=${result.endpoint}',
       );
       return result;
     } finally {

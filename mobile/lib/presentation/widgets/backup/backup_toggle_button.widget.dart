@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
@@ -71,7 +71,13 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
 
     final hasLegacyUploadTasks = ref.watch(driftBackupProvider.select((state) => state.uploadItems.isNotEmpty));
 
-    final isProcessing = isSyncing || isHttpBackupActive || hasLegacyUploadTasks;
+    final uploadTasks = ref.watch(driftBackupProvider.select((state) => state.uploadItems));
+
+    final iCloudProgress = ref.watch(driftBackupProvider.select((state) => state.iCloudDownloadProgress));
+
+    final errorCount = ref.watch(driftBackupProvider.select((state) => state.errorCount));
+
+    final isProcessing = isSyncing || isHttpBackupActive || hasLegacyUploadTasks || iCloudProgress.isNotEmpty;
 
     final showUploadProgress = isHttpBackupActive && enqueueTotalCount > 0 && !isCanceling;
 
@@ -121,7 +127,7 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
               borderRadius: const BorderRadius.all(Radius.circular(20.5)),
               child: InkWell(
                 borderRadius: const BorderRadius.all(Radius.circular(20.5)),
-                onTap: () => isCanceling ? null : _onToggle(!_isEnabled),
+                onTap: () => _onToggle(!_isEnabled),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Row(
@@ -149,15 +155,25 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  "enable_backup".t(context: context),
-                                  style: context.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: context.primaryColor,
+                                Flexible(
+                                  child: Text(
+                                    "enable_backup".t(context: context),
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: context.primaryColor,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
+                            if (errorCount > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  "upload_error_with_count".t(context: context, args: {'count': '$errorCount'}),
+                                  style: context.textTheme.labelMedium?.copyWith(color: context.colorScheme.error),
+                                ),
+                              ),
                             if (showUploadProgress)
                               Text(
                                 "queue_status".t(
@@ -186,7 +202,7 @@ class BackupToggleButtonState extends ConsumerState<BackupToggleButton> with Sin
                           ],
                         ),
                       ),
-                      Switch.adaptive(value: _isEnabled, onChanged: (value) => isCanceling ? null : _onToggle(value)),
+                      Switch.adaptive(value: _isEnabled, onChanged: (value) => _onToggle(value)),
                     ],
                   ),
                 ),

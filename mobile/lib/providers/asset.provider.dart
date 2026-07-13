@@ -111,7 +111,7 @@ class AssetNotifier extends StateNotifier<bool> {
 
   Future<void> onNewAssetUploaded(Asset newAsset) async {
     // eTag on device is not valid after partially modifying the assets
-    Store.delete(StoreKey.assetETag);
+    await Store.delete(StoreKey.assetETag);
     await _syncService.syncNewAssetToDb(newAsset);
   }
 

@@ -4,19 +4,37 @@ import 'dart:math' as math;
 import 'package:collection/collection.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/domain/models/setting.model.dart';
 import 'package:immich_mobile/domain/models/timeline.model.dart';
 import 'package:immich_mobile/domain/services/setting.service.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/infrastructure/repositories/timeline.repository.dart';
 import 'package:immich_mobile/utils/async_mutex.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
 
 typedef TimelineAssetSource = Future<List<BaseAsset>> Function(int index, int count);
 
 typedef TimelineBucketSource = Stream<List<Bucket>> Function();
 
-typedef TimelineQuery = ({TimelineAssetSource assetSource, TimelineBucketSource bucketSource});
+typedef TimelineQuery = ({TimelineAssetSource assetSource, TimelineBucketSource bucketSource, TimelineOrigin origin});
+
+enum TimelineOrigin {
+  main,
+  localAlbum,
+  remoteAlbum,
+  remoteAssets,
+  favorite,
+  trash,
+  archive,
+  lockedFolder,
+  video,
+  place,
+  person,
+  map,
+  search,
+  deepLink,
+  albumActivities,
+}
 
 class TimelineFactory {
   final DriftTimelineRepository _timelineRepository;
@@ -57,14 +75,23 @@ class TimelineFactory {
   TimelineService person(String userId, String personId) =>
       TimelineService(_timelineRepository.person(userId, personId, groupBy));
 
-  TimelineService fromAssets(List<BaseAsset> assets) => TimelineService(_timelineRepository.fromAssets(assets));
+  TimelineService fromAssets(List<BaseAsset> assets, TimelineOrigin type) =>
+      TimelineService(_timelineRepository.fromAssets(assets, type));
 
-  TimelineService map(LatLngBounds bounds) => TimelineService(_timelineRepository.map(bounds, groupBy));
+  TimelineService fromAssetStream(List<BaseAsset> Function() getAssets, Stream<int> assetCount, TimelineOrigin type) =>
+      TimelineService(_timelineRepository.fromAssetStream(getAssets, assetCount, type));
+
+  TimelineService fromAssetsWithBuckets(List<BaseAsset> assets, TimelineOrigin type) =>
+      TimelineService(_timelineRepository.fromAssetsWithBuckets(assets, type));
+
+  TimelineService map(List<String> userIds, TimelineMapOptions options) =>
+      TimelineService(_timelineRepository.map(userIds, options, groupBy));
 }
 
 class TimelineService {
   final TimelineAssetSource _assetSource;
   final TimelineBucketSource _bucketSource;
+  final TimelineOrigin origin;
   final AsyncMutex _mutex = AsyncMutex();
   int _bufferOffset = 0;
   List<BaseAsset> _buffer = [];
@@ -73,11 +100,15 @@ class TimelineService {
   int _totalAssets = 0;
   int get totalAssets => _totalAssets;
 
-  TimelineService(TimelineQuery query) : this._(assetSource: query.assetSource, bucketSource: query.bucketSource);
+  TimelineService(TimelineQuery query)
+    : this._(assetSource: query.assetSource, bucketSource: query.bucketSource, origin: query.origin);
 
-  TimelineService._({required TimelineAssetSource assetSource, required TimelineBucketSource bucketSource})
-    : _assetSource = assetSource,
-      _bucketSource = bucketSource {
+  TimelineService._({
+    required TimelineAssetSource assetSource,
+    required TimelineBucketSource bucketSource,
+    required this.origin,
+  }) : _assetSource = assetSource,
+       _bucketSource = bucketSource {
     _bucketSubscription = _bucketSource().listen((buckets) {
       _mutex.run(() async {
         final totalAssets = buckets.fold<int>(0, (acc, bucket) => acc + bucket.assetCount);
@@ -155,8 +186,8 @@ class TimelineService {
     return _buffer.slice(start, start + count);
   }
 
-  // Pre-cache assets around the given index for asset viewer
-  Future<void> preCacheAssets(int index) => _mutex.run(() => _loadAssets(index, math.min(5, _totalAssets - index)));
+  // Preload assets around the given index for asset viewer
+  Future<void> preloadAssets(int index) => _mutex.run(() => _loadAssets(index, math.min(5, _totalAssets - index)));
 
   BaseAsset getRandomAsset() => _buffer.elementAt(math.Random().nextInt(_buffer.length));
 
@@ -222,6 +253,13 @@ class TimelineService {
       return null;
     }
     return _buffer.elementAt(index - _bufferOffset);
+  }
+
+  /// Finds the index of an asset by its heroTag within the current buffer.
+  /// Returns null if the asset is not found in the buffer.
+  int? getIndex(String heroTag) {
+    final index = _buffer.indexWhere((a) => a.heroTag == heroTag);
+    return index >= 0 ? _bufferOffset + index : null;
   }
 
   Future<void> dispose() async {

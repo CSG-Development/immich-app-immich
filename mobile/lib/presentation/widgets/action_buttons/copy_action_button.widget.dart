@@ -6,7 +6,7 @@ import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/action_button_helpers.dart';
-import 'package:immich_mobile/providers/infrastructure/asset_viewer/current_asset.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -20,7 +20,7 @@ class CopyActionButton extends ConsumerWidget {
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
     final selection = source == ActionSource.timeline
         ? ref.read(multiSelectProvider).selectedAssets
-        : switch (ref.read(currentAssetNotifier)) {
+        : switch (ref.read(assetViewerProvider).currentAsset) {
             BaseAsset asset => {asset},
             null => const <BaseAsset>{},
           };
@@ -61,7 +61,7 @@ class CopyActionButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selection = source == ActionSource.timeline
         ? ref.watch(multiSelectProvider).selectedAssets
-        : switch (ref.watch(currentAssetNotifier)) {
+        : switch (ref.watch(assetViewerProvider.select((state) => state.currentAsset))) {
             BaseAsset asset => {asset},
             null => const <BaseAsset>{},
           };
@@ -69,7 +69,7 @@ class CopyActionButton extends ConsumerWidget {
 
     return BaseActionButton(
       iconData: Icons.copy_outlined,
-      label: 'Copy',
+      label: 'copy_to_clipboard'.t(context: context),
       menuItem: menuItem,
       onPressed: enabled ? () => _onTap(context, ref) : null,
     );

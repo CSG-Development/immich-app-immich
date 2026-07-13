@@ -11,6 +11,7 @@
 
 import 'package:hc_device/api/api.enums.swagger.dart' as api_enums;
 import 'package:hc_device/api/api.swagger.dart' show About, Status;
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/api/remote_access.swagger.dart' show Device;
 
 class DeviceItem {
@@ -20,6 +21,7 @@ class DeviceItem {
   Status? status;
   Device? remoteDevice;
   String? debugHostType;
+  DevicePathType? pathType;
 
   DeviceItem({
     this.hostname,
@@ -28,6 +30,7 @@ class DeviceItem {
     this.status,
     this.remoteDevice,
     this.debugHostType,
+    this.pathType,
   });
 
   void update({
@@ -35,6 +38,7 @@ class DeviceItem {
     About? about,
     Status? status,
     String? debugHostType,
+    DevicePathType? pathType,
     Device? remoteDevice,
   }) {
     if (baseUrl != null) {
@@ -48,6 +52,9 @@ class DeviceItem {
     }
     if (debugHostType != null) {
       this.debugHostType = debugHostType;
+    }
+    if (pathType != null) {
+      this.pathType = pathType;
     }
     if (remoteDevice != null) {
       this.remoteDevice = remoteDevice;

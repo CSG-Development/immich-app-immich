@@ -9,6 +9,32 @@ class DeviceEndpointUtils {
         : 'https://${devicePath.address}/photos';
   }
 
+  /// Base URL for shared links. Only [DevicePathType.remote] is allowed; local and
+  /// public paths must not be used for share links.
+  static String? buildSharedLinkBaseUrl(List<DevicePath>? paths) {
+    if (paths == null) {
+      return null;
+    }
+
+    DevicePath? remotePath;
+    for (final path in paths) {
+      if (path.type == DevicePathType.remote) {
+        remotePath = path;
+        break;
+      }
+    }
+
+    if (remotePath == null) {
+      return null;
+    }
+
+    var url = buildDevicePathUrl(remotePath);
+    if (!url.endsWith('/')) {
+      url += '/';
+    }
+    return url;
+  }
+
   static List<DevicePath> sortPathsForConnectionProbe(List<DevicePath> paths) {
     final locals = <DevicePath>[];
     final publics = <DevicePath>[];

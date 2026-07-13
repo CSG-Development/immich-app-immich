@@ -5,7 +5,6 @@ import 'package:hc_device/api/remote_access.swagger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/services/device_detection.service.dart';
-import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:logging/logging.dart';
 
 /// Service that handles refreshing device paths from hc_device.
@@ -135,7 +134,7 @@ class DevicePathRefreshService {
         debugHostType: ping.debugHostType,
         devicePaths: dp.getCachedDevicePathsForDevice(seagate)?.paths,
       );
-      if (ping.pathType == DevicePathType.local.value || (ping.debugHostType ?? '').contains('mDNS')) {
+      if (ping.pathType == DevicePathType.local) {
         preferredLocalEndpoint = _toPhotosEndpoint(ping.baseUrl!);
       }
     } else if (device.about != null) {
@@ -166,29 +165,16 @@ class DevicePathRefreshService {
     List<dynamic> paths, {
     String? preferredLocalEndpoint,
   }) async {
-    _log.fine('Processing ${paths.length} device paths for saving');
-    final localPaths = <String>[];
-
-    for (final dynamic item in paths) {
-      final devicePath = item as DevicePath;
-      final path = DeviceEndpointUtils.buildDevicePathUrl(devicePath);
-
-      if (devicePath.type == DevicePathType.local) {
-        localPaths.add(path);
-      }
-    }
-
-    if (preferredLocalEndpoint != null && preferredLocalEndpoint.isNotEmpty) {
-      _log.finer('Resolved preferred local endpoint from hc_device: $preferredLocalEndpoint');
+    if (paths.isEmpty) {
+      _log.fine('No device paths to save');
       return;
     }
 
-    if (localPaths.isNotEmpty) {
-      // Fallback to RA-provided local path only when no verified mDNS path is available.
-      final fallbackLocal = localPaths.first;
-      _log.finer('Resolved fallback local endpoint from hc_device paths: $fallbackLocal');
-      return;
-    }
+    _log.fine('Persisting ${paths.length} device paths');
+    final devicePaths = paths.cast<DevicePath>().toList(growable: false);
+    final dp = _ref.read(deviceProvider.notifier);
+    await dp.setHost(devicePaths: devicePaths, save: true);
+    _log.info('Saved ${devicePaths.length} device paths for networking settings');
   }
 
   String _toPhotosEndpoint(Uri baseUrl) {

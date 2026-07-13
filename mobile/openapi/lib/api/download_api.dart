@@ -16,23 +16,25 @@ class DownloadApi {
 
   final ApiClient apiClient;
 
-  /// This endpoint requires the `asset.download` permission.
+  /// Download asset archive
+  ///
+  /// Download a ZIP archive containing the specified assets. The assets must have been previously requested via the \"getDownloadInfo\" endpoint.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [AssetIdsDto] assetIdsDto (required):
+  /// * [DownloadArchiveDto] downloadArchiveDto (required):
   ///
   /// * [String] key:
   ///
   /// * [String] slug:
-  Future<Response> downloadArchiveWithHttpInfo(AssetIdsDto assetIdsDto, { String? key, String? slug, }) async {
+  Future<Response> downloadArchiveWithHttpInfo(DownloadArchiveDto downloadArchiveDto, { String? key, String? slug, }) async {
     // ignore: prefer_const_declarations
     final apiPath = r'/download/archive';
 
     // ignore: prefer_final_locals
-    Object? postBody = assetIdsDto;
+    Object? postBody = downloadArchiveDto;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
@@ -59,17 +61,19 @@ class DownloadApi {
     );
   }
 
-  /// This endpoint requires the `asset.download` permission.
+  /// Download asset archive
+  ///
+  /// Download a ZIP archive containing the specified assets. The assets must have been previously requested via the \"getDownloadInfo\" endpoint.
   ///
   /// Parameters:
   ///
-  /// * [AssetIdsDto] assetIdsDto (required):
+  /// * [DownloadArchiveDto] downloadArchiveDto (required):
   ///
   /// * [String] key:
   ///
   /// * [String] slug:
-  Future<MultipartFile?> downloadArchive(AssetIdsDto assetIdsDto, { String? key, String? slug, }) async {
-    final response = await downloadArchiveWithHttpInfo(assetIdsDto,  key: key, slug: slug, );
+  Future<MultipartFile?> downloadArchive(DownloadArchiveDto downloadArchiveDto, { String? key, String? slug, }) async {
+    final response = await downloadArchiveWithHttpInfo(downloadArchiveDto,  key: key, slug: slug, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -83,7 +87,9 @@ class DownloadApi {
     return null;
   }
 
-  /// This endpoint requires the `asset.download` permission.
+  /// Retrieve download information
+  ///
+  /// Retrieve information about how to request a download for the specified assets or album. The response includes groups of assets that can be downloaded together.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -126,7 +132,9 @@ class DownloadApi {
     );
   }
 
-  /// This endpoint requires the `asset.download` permission.
+  /// Retrieve download information
+  ///
+  /// Retrieve information about how to request a download for the specified assets or album. The response includes groups of assets that can be downloaded together.
   ///
   /// Parameters:
   ///

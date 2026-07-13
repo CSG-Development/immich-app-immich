@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +17,7 @@ import 'package:immich_mobile/providers/infrastructure/remote_album.provider.dar
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/input_decorations.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/remote_album_sliver_app_bar.dart';
 
@@ -139,7 +142,7 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
           toastType: ToastType.success,
         );
 
-        context.pushRoute(const DriftAlbumsRoute());
+        unawaited(context.pushRoute(const DriftAlbumsRoute()));
       } catch (e) {
         ImmichToast.show(
           context: context,
@@ -161,71 +164,25 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
       setState(() {
         _album = _album.copyWith(name: result.name, description: result.description ?? '');
       });
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     }
   }
 
   Future<void> showActivity(BuildContext context) async {
-    context.pushRoute(const DriftActivitiesRoute());
-  }
-
-  void showOptionSheet(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final isOwner = user != null ? user.id == _album.ownerId : false;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.colorScheme.surface,
-      isScrollControlled: false,
-      builder: (context) {
-        return DriftRemoteAlbumOption(
-          onDeleteAlbum: isOwner
-              ? () async {
-                  await deleteAlbum(context);
-                  if (context.mounted) {
-                    context.pop();
-                  }
-                }
-              : null,
-          onAddUsers: isOwner
-              ? () async {
-                  await addUsers(context);
-                  context.pop();
-                }
-              : null,
-          onAddPhotos: () async {
-            await addAssets(context);
-            context.pop();
-          },
-          onToggleAlbumOrder: () async {
-            await toggleAlbumOrder();
-            context.pop();
-          },
-          onEditAlbum: () async {
-            context.pop();
-            await showEditTitleAndDescription(context);
-          },
-          onCreateSharedLink: () async {
-            context.pop();
-            context.pushRoute(SharedLinkEditRoute(albumId: _album.id));
-          },
-          onShowOptions: () {
-            context.pop();
-            context.pushRoute(const DriftAlbumOptionsRoute());
-          },
-        );
-      },
-    );
+    unawaited(context.pushRoute(DriftActivitiesRoute(album: _album)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+    final isOwner = user != null ? user.id == _album.ownerId : false;
+
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
           Future.microtask(() {
             if (mounted) {
-              ref.read(currentRemoteAlbumProvider.notifier).dispose();
+              ref.invalidate(currentRemoteAlbumProvider);
               ref.read(remoteAlbumProvider.notifier).refresh();
               ref.read(remoteAlbumProvider.notifier).refreshAlbum(widget.album.id);
             }
@@ -239,13 +196,22 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
             ref.onDispose(timelineService.dispose);
             return timelineService;
           }),
+          currentRemoteAlbumScopedProvider.overrideWithValue(_album),
         ],
         child: Timeline(
           appBar: RemoteAlbumSliverAppBar(
             icon: Icons.photo_album_outlined,
-            onShowOptions: () => showOptionSheet(context),
-            onToggleAlbumOrder: () => toggleAlbumOrder(),
-            onEditTitle: () => showEditTitleAndDescription(context),
+            kebabMenu: _AlbumKebabMenu(
+              album: _album,
+              onDeleteAlbum: () => deleteAlbum(context),
+              onAddUsers: () => addUsers(context),
+              onAddPhotos: () => addAssets(context),
+              onToggleAlbumOrder: () => toggleAlbumOrder(),
+              onEditAlbum: () => showEditTitleAndDescription(context),
+              onCreateSharedLink: () => unawaited(context.pushRoute(SharedLinkEditRoute(albumId: _album.id))),
+              onShowOptions: () => context.pushRoute(DriftAlbumOptionsRoute(album: _album)),
+            ),
+            onEditTitle: isOwner ? () => showEditTitleAndDescription(context) : null,
             onActivity: () => showActivity(context),
           ),
           bottomSheet: RemoteAlbumBottomSheet(album: _album),
@@ -301,7 +267,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
 
       await ref
           .read(remoteAlbumProvider.notifier)
-          .updateAlbum(widget.album.id, name: newTitle, description: newDescription.isEmpty ? null : newDescription);
+          .updateAlbum(widget.album.id, name: newTitle, description: newDescription);
 
       if (mounted) {
         Navigator.of(
@@ -353,11 +319,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
                   controller: titleController,
                   maxLines: 1,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                    filled: true,
-                    fillColor: context.colorScheme.surface,
-                  ),
+                  decoration: InputDecorations.outlineDecoration(context: context),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'album_name_required'.t(context: context);
@@ -378,11 +340,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
                   controller: descriptionController,
                   maxLines: 4,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                    filled: true,
-                    fillColor: context.colorScheme.surface,
-                  ),
+                  decoration: InputDecorations.outlineDecoration(context: context),
                 ),
                 const SizedBox(height: 24),
 
@@ -406,6 +364,80 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AlbumKebabMenu extends ConsumerWidget {
+  final RemoteAlbum album;
+  final VoidCallback? onDeleteAlbum;
+  final VoidCallback? onAddUsers;
+  final VoidCallback? onAddPhotos;
+  final VoidCallback? onToggleAlbumOrder;
+  final VoidCallback? onEditAlbum;
+  final VoidCallback? onCreateSharedLink;
+  final VoidCallback? onShowOptions;
+
+  const _AlbumKebabMenu({
+    required this.album,
+    this.onDeleteAlbum,
+    this.onAddUsers,
+    this.onAddPhotos,
+    this.onToggleAlbumOrder,
+    this.onEditAlbum,
+    this.onCreateSharedLink,
+    this.onShowOptions,
+  });
+
+  double _calculateScrollProgress(FlexibleSpaceBarSettings? settings) {
+    if (settings?.maxExtent == null || settings?.minExtent == null) {
+      return 1.0;
+    }
+
+    final deltaExtent = settings!.maxExtent - settings.minExtent;
+    if (deltaExtent <= 0.0) {
+      return 1.0;
+    }
+
+    return (1.0 - (settings.currentExtent - settings.minExtent) / deltaExtent).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    final scrollProgress = _calculateScrollProgress(settings);
+
+    final iconColor = Color.lerp(Colors.white, context.primaryColor, scrollProgress);
+    final iconShadows = [
+      if (scrollProgress < 0.95)
+        Shadow(offset: const Offset(0, 2), blurRadius: 5, color: Colors.black.withValues(alpha: 0.5))
+      else
+        const Shadow(offset: Offset(0, 2), blurRadius: 0, color: Colors.transparent),
+    ];
+
+    final user = ref.watch(currentUserProvider);
+    final isOwner = user != null && user.id == album.ownerId;
+
+    return FutureBuilder<bool>(
+      future: ref
+          .read(remoteAlbumServiceProvider)
+          .getUserRole(album.id, user?.id ?? '')
+          .then((role) => role == AlbumUserRole.editor),
+      builder: (context, snapshot) {
+        final canAddPhotos = snapshot.data ?? false;
+
+        return DriftRemoteAlbumOption(
+          iconColor: iconColor,
+          iconShadows: iconShadows,
+          onDeleteAlbum: isOwner ? onDeleteAlbum : null,
+          onAddUsers: isOwner ? onAddUsers : null,
+          onAddPhotos: isOwner || canAddPhotos ? onAddPhotos : null,
+          onToggleAlbumOrder: isOwner ? onToggleAlbumOrder : null,
+          onEditAlbum: isOwner ? onEditAlbum : null,
+          onCreateSharedLink: isOwner ? onCreateSharedLink : null,
+          onShowOptions: onShowOptions,
+        );
+      },
     );
   }
 }

@@ -1,5 +1,4 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
@@ -10,9 +9,10 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/pages/common/large_leading_tile.dart';
+import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
+import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart';
 import 'package:immich_mobile/providers/search/search_page_state.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 import 'package:immich_mobile/widgets/map/map_thumbnail.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -60,17 +60,11 @@ class PlacesCollectionPage extends HookConsumerWidget {
                   height: 200,
                   width: context.width,
                   child: MapThumbnail(
-                    onTap: (_, __) => context
-                        .pushRoute(MapRoute(initialLocation: currentLocation)),
+                    onTap: (_, __) => context.pushRoute(MapRoute(initialLocation: currentLocation)),
                     zoom: 8,
-                    centre: currentLocation ??
-                        const LatLng(
-                          21.44950,
-                          -157.91959,
-                        ),
+                    centre: currentLocation ?? const LatLng(21.44950, -157.91959),
                     showAttribution: false,
-                    themeMode:
-                        context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+                    themeMode: context.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
                   ),
                 ),
               ),
@@ -78,9 +72,7 @@ class PlacesCollectionPage extends HookConsumerWidget {
               data: (places) {
                 if (search.value != null) {
                   places = places.where((place) {
-                    return place.label
-                        .toLowerCase()
-                        .contains(search.value!.toLowerCase());
+                    return place.label.toLowerCase().contains(search.value!.toLowerCase());
                   }).toList();
                 }
                 return ListView.builder(
@@ -89,7 +81,7 @@ class PlacesCollectionPage extends HookConsumerWidget {
                   itemCount: places.length,
                   itemBuilder: (context, index) {
                     final place = places[index];
-        
+
                     return PlaceTile(id: place.id, name: place.label);
                   },
                 );
@@ -123,6 +115,7 @@ class PlaceTile extends StatelessWidget {
             camera: SearchCameraFilter(),
             date: SearchDateFilter(),
             display: SearchDisplayFilters(isNotInAlbum: false, isArchive: false, isFavorite: false),
+            rating: SearchRatingFilter(),
             exifFilters: const [],
             mediaType: AssetType.other,
           ),
@@ -135,13 +128,10 @@ class PlaceTile extends StatelessWidget {
       title: Text(name, style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
       leading: ClipRRect(
         borderRadius: const BorderRadius.all(Radius.circular(20)),
-        child: CachedNetworkImage(
+        child: SizedBox(
           width: 80,
           height: 80,
-          fit: BoxFit.cover,
-          imageUrl: thumbnailUrl,
-          httpHeaders: ApiService.getRequestHeaders(),
-          errorWidget: (context, url, error) => const Icon(Icons.image_not_supported_outlined),
+          child: Thumbnail(imageProvider: RemoteImageProvider(url: thumbnailUrl)),
         ),
       ),
     );

@@ -14,7 +14,7 @@ class LogRepository {
     return true;
   }
 
-  Future<List<LogMessage>> getAll({int limit = 250}) async {
+  Future<List<LogMessage>> getAll({int limit = kLogTruncateLimit}) async {
     final query = _db.logMessageEntity.select()
       ..orderBy([(row) => OrderingTerm.desc(row.createdAt)])
       ..limit(limit);
