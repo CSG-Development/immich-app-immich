@@ -13,6 +13,9 @@ import com.seagate.curator.stxphotos.android.background.BackgroundWorkerFgHostAp
 import com.seagate.curator.stxphotos.android.background.BackgroundWorkerLockApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApi
 import com.seagate.curator.stxphotos.android.connectivity.ConnectivityApiImpl
+import com.seagate.curator.stxphotos.android.networkmonitor.NetworkMonitorApi
+import com.seagate.curator.stxphotos.android.networkmonitor.NetworkMonitorApiImpl
+import com.seagate.curator.stxphotos.android.networkmonitor.NetworkMonitorEvents
 import com.seagate.curator.stxphotos.android.images.LocalImageApi
 import com.seagate.curator.stxphotos.android.images.LocalImagesImpl
 import com.seagate.curator.stxphotos.android.images.RemoteImageApi
@@ -68,6 +71,7 @@ class MainActivity : FlutterFragmentActivity() {
       NativeSyncApi.setUp(messenger, nativeSyncApiImpl)
       BackgroundWorkerFgHostApi.setUp(messenger, BackgroundWorkerApiImpl(ctx))
       ConnectivityApi.setUp(messenger, ConnectivityApiImpl(ctx))
+      NetworkMonitorApi.setUp(messenger, NetworkMonitorApiImpl(ctx, NetworkMonitorEvents(messenger)))
       NativeClipboardApi.setUp(messenger, ClipboardMessagesImpl(ctx))
       UpdateApi.setUp(messenger, UpdateApiImpl(ctx, messenger))
       val certificateFetcher = CertificateFetcherApiImpl()

@@ -125,7 +125,6 @@ class DeviceState {
   final Status? deviceStatus;
   final List<DevicePath>? devicePaths;
   final DevicePaths? cachedDevicePaths;
-  final DateTime? cachedDevicePathsTimestamp;
   final bool forceDetectFavoriteDevice;
 
   const DeviceState({
@@ -140,7 +139,6 @@ class DeviceState {
     this.deviceStatus,
     this.devicePaths,
     this.cachedDevicePaths,
-    this.cachedDevicePathsTimestamp,
     this.forceDetectFavoriteDevice = false,
   });
 
@@ -159,14 +157,12 @@ class DeviceState {
     Status? deviceStatus,
     List<DevicePath>? devicePaths,
     DevicePaths? cachedDevicePaths,
-    DateTime? cachedDevicePathsTimestamp,
     bool? forceDetectFavoriteDevice,
     bool clearBaseUrl = false,
     bool clearApi = false,
     bool clearAccessToken = false,
     bool clearRefreshToken = false,
     bool clearCachedDevicePaths = false,
-    bool clearCachedDevicePathsTimestamp = false,
     bool clearDeviceStatus = false,
     bool clearDeviceId = false,
     bool clearSeagateDeviceId = false,
@@ -187,9 +183,6 @@ class DeviceState {
       devicePaths: clearDevicePaths ? null : (devicePaths ?? this.devicePaths),
       cachedDevicePaths:
           clearCachedDevicePaths ? null : (cachedDevicePaths ?? this.cachedDevicePaths),
-      cachedDevicePathsTimestamp: clearCachedDevicePathsTimestamp
-          ? null
-          : (cachedDevicePathsTimestamp ?? this.cachedDevicePathsTimestamp),
       forceDetectFavoriteDevice:
           forceDetectFavoriteDevice ?? this.forceDetectFavoriteDevice,
     );
@@ -204,10 +197,11 @@ class DeviceProvider extends Notifier<DeviceState>
   static const String seagateDeviceIDKey = "curator_seagate_device_id";
   static const String favoriteDevicePathsKey = "curator_favorite_paths";
   static const String cachedDevicePathsKey = "curator_cached_device_paths";
+  // Legacy key, kept only so existing installs get it cleaned from prefs.
+  // The paths cache has no TTL: it lives until the next refresh.
   static const String cachedDevicePathsTimestampKey =
       "curator_cached_device_paths_timestamp";
   static const String refreshTokenKey = "curator_refresh_token";
-  static const Duration cachedDevicePathsTtl = Duration(hours: 1);
 
   static String productName = const String.fromEnvironment(
     'PRODUCT_NAME',
@@ -256,17 +250,6 @@ class DeviceProvider extends Notifier<DeviceState>
       } catch (_) {}
     }
 
-    DateTime? initialCachedTimestamp;
-    final cachedPathsTimestamp = _storageData[cachedDevicePathsTimestampKey];
-    if (cachedPathsTimestamp is int) {
-      initialCachedTimestamp = DateTime.fromMillisecondsSinceEpoch(cachedPathsTimestamp);
-    } else if (cachedPathsTimestamp is String) {
-      final parsed = int.tryParse(cachedPathsTimestamp);
-      if (parsed != null) {
-        initialCachedTimestamp = DateTime.fromMillisecondsSinceEpoch(parsed);
-      }
-    }
-
     return DeviceState(
       login: _storageData[loginKey] as String?,
       deviceID: _storageData[favoriteDeviceKey] as String?,
@@ -274,7 +257,6 @@ class DeviceProvider extends Notifier<DeviceState>
       refreshToken: deps.secureData[refreshTokenKey],
       devicePaths: initialDevicePaths,
       cachedDevicePaths: initialCachedDevicePaths,
-      cachedDevicePathsTimestamp: initialCachedTimestamp,
     );
   }
 
@@ -291,7 +273,6 @@ class DeviceProvider extends Notifier<DeviceState>
   Status? get deviceStatus => state.deviceStatus;
   List<DevicePath>? get devicePaths => state.devicePaths;
   DevicePaths? get cachedDevicePaths => state.cachedDevicePaths;
-  DateTime? get cachedDevicePathsTimestamp => state.cachedDevicePathsTimestamp;
   String? get debugHostType => state.debugHostType;
   bool get forceDetectFavoriteDevice => state.forceDetectFavoriteDevice;
 
@@ -314,19 +295,6 @@ class DeviceProvider extends Notifier<DeviceState>
   DevicePaths? getCachedDevicePathsForSeagate(String seagateDeviceID) {
     return getCachedDevicePathsForDevice(seagateDeviceID);
   }
-
-  bool isCachedPathsExpired({
-    Duration ttl = cachedDevicePathsTtl,
-  }) {
-    if (state.cachedDevicePathsTimestamp == null) {
-      return true;
-    }
-    return DateTime.now().difference(state.cachedDevicePathsTimestamp!) > ttl;
-  }
-
-  /// Name for TTL check on cached Remote Access paths.
-  @override
-  bool isCacheExpired() => isCachedPathsExpired();
 
   /// Returns active in-memory device paths only when they belong to the
   /// provided remote device identity (if any).
@@ -356,15 +324,9 @@ class DeviceProvider extends Notifier<DeviceState>
   }
 
   @override
-  void setCachedDevicePaths(
-    DevicePaths paths, {
-    DateTime? cachedAt,
-  }) {
+  void setCachedDevicePaths(DevicePaths paths) {
     final sanitized = dedupeDevicePaths(paths);
-    state = state.copyWith(
-      cachedDevicePaths: sanitized,
-      cachedDevicePathsTimestamp: cachedAt ?? DateTime.now(),
-    );
+    state = state.copyWith(cachedDevicePaths: sanitized);
 
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     asyncPrefs.setString(
@@ -375,31 +337,12 @@ class DeviceProvider extends Notifier<DeviceState>
         },
       ),
     );
-    asyncPrefs.setInt(
-      cachedDevicePathsTimestampKey,
-      state.cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
-    );
-  }
-
-  @override
-  void touchCachedDevicePathsTimestamp() {
-    if (state.cachedDevicePaths == null) {
-      return;
-    }
-    state = state.copyWith(cachedDevicePathsTimestamp: DateTime.now());
-    final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
-    asyncPrefs.setInt(
-      cachedDevicePathsTimestampKey,
-      state.cachedDevicePathsTimestamp!.millisecondsSinceEpoch,
-    );
+    asyncPrefs.remove(cachedDevicePathsTimestampKey);
   }
 
   /// Clears Remote Access path cache only.
   void clearCachedDevicePaths() {
-    state = state.copyWith(
-      clearCachedDevicePaths: true,
-      clearCachedDevicePathsTimestamp: true,
-    );
+    state = state.copyWith(clearCachedDevicePaths: true);
     final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
     asyncPrefs.remove(cachedDevicePathsKey);
     asyncPrefs.remove(cachedDevicePathsTimestampKey);
@@ -606,7 +549,6 @@ class DeviceProvider extends Notifier<DeviceState>
       clearDevicePaths: true,
       clearDebugHostType: true,
       clearCachedDevicePaths: true,
-      clearCachedDevicePathsTimestamp: true,
     );
   }
 

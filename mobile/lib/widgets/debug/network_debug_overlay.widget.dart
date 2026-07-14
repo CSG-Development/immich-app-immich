@@ -9,7 +9,6 @@ import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
-import 'package:immich_mobile/services/network/resolve_trigger_service.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 
@@ -55,6 +54,9 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     final resolverInProgress = ref.watch(pathResolveInProgressProvider).value ?? false;
     final triggerService = ref.watch(pathResolveTriggerServiceProvider);
     final endpointResolver = ref.watch(hcDeviceEndpointResolverProvider);
+    final networkMonitor = ref.watch(curatorNetworkMonitorProvider);
+    final recoveryPlan = networkMonitor.lastPlanDebugReason ?? '-';
+    final recoverySnapshot = networkMonitor.lastSnapshot?.toString() ?? '-';
     final device = ref.watch(deviceProvider);
     final remoteDeviceId = (device.seagateDeviceID ?? device.deviceID ?? '').trim();
     final possiblePaths = remoteDeviceId.isEmpty ? const [] : endpointResolver.getDevicePaths(remoteDeviceId);
@@ -142,6 +144,14 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
                         const _DebugInfoLine(label: 'Mode', value: 'WIFI'),
                         _DebugInfoLine(label: 'Status', value: resolverInProgress ? 'resolving' : 'stable'),
                         _DebugInfoLine(label: 'Err URL', value: getServerUrl() ?? state.lastErrorUrl ?? '-'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const _DebugSectionHeader(title: 'Recovery'),
+                    _DebugSection(
+                      children: [
+                        _DebugInfoLine(label: 'Plan', value: recoveryPlan),
+                        _DebugInfoLine(label: 'Snapshot', value: recoverySnapshot),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -442,23 +452,19 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     }
 
     var next = current;
-    if (record.loggerName == 'HcDevice' && message.contains('Path reachable:')) {
+    if (record.loggerName == 'HcDevice' && message.contains('Testing all paths in parallel')) {
+      next = next.copyWith(parallelStartAt: next.parallelStartAt ?? record.time);
+    } else if (record.loggerName == 'HcDevice' &&
+        (message.contains('First reachable path selected') || message.contains('Path reachable:'))) {
       next = next.copyWith(firstReachableAt: next.firstReachableAt ?? record.time);
-    } else if (record.loggerName == 'HcDevice' &&
-        (message.contains('Path not reachable: local') ||
-            message.contains('Path reachable:') && message.contains('local'))) {
-      next = next.copyWith(localProbeDoneAt: next.localProbeDoneAt ?? record.time);
-    } else if (record.loggerName == 'HcDevice' &&
-        (message.contains('Path not reachable: public') ||
-            message.contains('Path reachable:') && message.contains('public'))) {
-      next = next.copyWith(publicProbeDoneAt: next.publicProbeDoneAt ?? record.time);
-    } else if (record.loggerName == 'HcDevice' && message.contains('All priority paths tested')) {
-      next = next.copyWith(priorityPhaseDoneAt: next.priorityPhaseDoneAt ?? record.time);
+    } else if (record.loggerName == 'HcDevice' && message.contains('Higher-priority path resolved')) {
+      // Local path won after a remote/public path was already selected.
+      next = next.copyWith(upgradeAt: next.upgradeAt ?? record.time);
     } else if (record.loggerName == 'HcDeviceEndpointResolver' &&
         (message.contains('endpoint_selection') || message.contains('[Resolver] endpoint selection'))) {
       next = next.copyWith(selectedAt: next.selectedAt ?? record.time, selectedEndpoint: _extractEndpoint(message));
     } else if (record.loggerName == 'PathResolveTriggerService' &&
-        (message.contains('[Trigger] Running queued resolve') || message.contains('[Trigger] resolve run queued'))) {
+        message.contains('[Trigger] resolve run queued')) {
       next = next.copyWith(hasQueuedFollowup: true);
     }
 
@@ -495,10 +501,9 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
 
     timeline.add(('Trigger', _resolveTiming.triggerLabel ?? triggerService.activeTriggerType?.name ?? '-'));
     timeline.add(('Started', startedAt == null ? '-' : _formatTime(startedAt)));
+    timeline.add(('Probing', fromStart(_resolveTiming.parallelStartAt)));
     timeline.add(('First ok', fromStart(_resolveTiming.firstReachableAt)));
-    timeline.add(('Local done', fromStart(_resolveTiming.localProbeDoneAt)));
-    timeline.add(('Public done', fromStart(_resolveTiming.publicProbeDoneAt)));
-    timeline.add(('Priority done', fromStart(_resolveTiming.priorityPhaseDoneAt)));
+    timeline.add(('Upgrade', fromStart(_resolveTiming.upgradeAt)));
     timeline.add(('Selected', fromStart(_resolveTiming.selectedAt)));
     timeline.add(('Endpoint', getServerUrl() ?? _resolveTiming.selectedEndpoint ?? triggerService.lastResolvedEndpoint ?? '-'));
 
@@ -518,7 +523,8 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     const loggerAllow = <String>{
       'CuratorNetworkMonitor',
       'CuratorAppNetworkMonitorCallbacks',
-      'CuratorReconnectEpisodeService',
+      'ReconnectEpisodeController',
+      'RecoveryExecutor',
       'PathResolveTriggerService',
       'HcDeviceEndpointResolver',
       'HcPathResolver',
@@ -534,6 +540,7 @@ class _NetworkDebugOverlayState extends ConsumerState<NetworkDebugOverlay> {
     }
     final msg = record.message;
     return msg.contains('[Network') ||
+        msg.contains('[Recovery]') ||
         msg.contains('[Resolver]') ||
         msg.contains('[HcPathResolver]') ||
         msg.contains('[Trigger]') ||
@@ -604,10 +611,9 @@ class _ResolveTimingState {
   const _ResolveTimingState({
     this.startedAt,
     this.triggerLabel,
+    this.parallelStartAt,
     this.firstReachableAt,
-    this.localProbeDoneAt,
-    this.publicProbeDoneAt,
-    this.priorityPhaseDoneAt,
+    this.upgradeAt,
     this.selectedAt,
     this.selectedEndpoint,
     this.hasQueuedFollowup = false,
@@ -615,10 +621,9 @@ class _ResolveTimingState {
 
   final DateTime? startedAt;
   final String? triggerLabel;
+  final DateTime? parallelStartAt;
   final DateTime? firstReachableAt;
-  final DateTime? localProbeDoneAt;
-  final DateTime? publicProbeDoneAt;
-  final DateTime? priorityPhaseDoneAt;
+  final DateTime? upgradeAt;
   final DateTime? selectedAt;
   final String? selectedEndpoint;
   final bool hasQueuedFollowup;
@@ -626,10 +631,9 @@ class _ResolveTimingState {
   _ResolveTimingState copyWith({
     DateTime? startedAt,
     String? triggerLabel,
+    DateTime? parallelStartAt,
     DateTime? firstReachableAt,
-    DateTime? localProbeDoneAt,
-    DateTime? publicProbeDoneAt,
-    DateTime? priorityPhaseDoneAt,
+    DateTime? upgradeAt,
     DateTime? selectedAt,
     String? selectedEndpoint,
     bool? hasQueuedFollowup,
@@ -637,10 +641,9 @@ class _ResolveTimingState {
     return _ResolveTimingState(
       startedAt: startedAt ?? this.startedAt,
       triggerLabel: triggerLabel ?? this.triggerLabel,
+      parallelStartAt: parallelStartAt ?? this.parallelStartAt,
       firstReachableAt: firstReachableAt ?? this.firstReachableAt,
-      localProbeDoneAt: localProbeDoneAt ?? this.localProbeDoneAt,
-      publicProbeDoneAt: publicProbeDoneAt ?? this.publicProbeDoneAt,
-      priorityPhaseDoneAt: priorityPhaseDoneAt ?? this.priorityPhaseDoneAt,
+      upgradeAt: upgradeAt ?? this.upgradeAt,
       selectedAt: selectedAt ?? this.selectedAt,
       selectedEndpoint: selectedEndpoint ?? this.selectedEndpoint,
       hasQueuedFollowup: hasQueuedFollowup ?? this.hasQueuedFollowup,

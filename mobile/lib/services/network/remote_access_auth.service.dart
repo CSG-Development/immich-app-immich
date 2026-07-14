@@ -1,14 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/services/network/prompt_remote_access_auth.dart';
+import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
-
-final remoteAccessAuthServiceProvider = Provider<RemoteAccessAuthService>(
-  (ref) => RemoteAccessAuthService(ref),
-);
 
 class RemoteAccessAuthService {
   RemoteAccessAuthService(this._ref);
@@ -72,4 +69,33 @@ class RemoteAccessAuthService {
       return false;
     }
   }
+}
+
+final _promptLog = Logger('PromptRemoteAccessAuth');
+
+Future<bool> promptRemoteAccessAuth({
+  required BuildContext context,
+  required RemoteProvider remoteProvider,
+  required String email,
+  bool skipInitialCodeSend = false,
+  VoidCallback? onEmailNotAllowed,
+}) async {
+  if (remoteProvider.isAuthenticated) {
+    _promptLog.info('[OTP] promptRemoteAccessAuth skip reason=already_authenticated email=$email');
+    return true;
+  }
+
+  _promptLog.info('[OTP] promptRemoteAccessAuth start email=$email skipInitialCodeSend=$skipInitialCodeSend');
+  var remoteOk = false;
+  await showRemoteCodeModal(
+    context: context,
+    remoteProvider: remoteProvider,
+    email: email,
+    skipInitialCodeSend: skipInitialCodeSend,
+    onEmailNotAllowed: onEmailNotAllowed,
+    onSuccess: () async => remoteOk = true,
+  );
+  remoteOk = remoteOk || remoteProvider.isAuthenticated;
+  _promptLog.info('[OTP] promptRemoteAccessAuth end email=$email success=$remoteOk');
+  return remoteOk;
 }

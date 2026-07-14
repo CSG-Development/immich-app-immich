@@ -32,6 +32,7 @@ import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:immich_mobile/services/network/recovery/recovery_policy.dart';
 import 'package:immich_mobile/utils/env_config.dart';
 
 import 'package:hc_device/hc_device.dart';
@@ -172,19 +173,19 @@ class CuratorLoginForm extends HookConsumerWidget {
       required bool hasMdnsDevices,
     }) async {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
-      // Auto OTP is allowed only when mDNS did not find any device and
-      // Remote Access is not authenticated yet.
-      if (hasMdnsDevices || isAuthenticated) {
-        return;
-      }
-
       final emailAddress = email.value;
-      if (emailAddress.isEmpty) {
-        warningMessage.value = 'login_form_err_invalid_email'.tr();
+      if (!RecoveryPolicy.shouldPromptLoginOtp(
+        hasMdnsDevices: hasMdnsDevices,
+        remoteAuth: isAuthenticated,
+        hasEmail: emailAddress.isNotEmpty,
+        otpModalShowing: isRemoteCodeModalActive.value == true,
+      )) {
+        if (!hasMdnsDevices && !isAuthenticated && emailAddress.isEmpty) {
+          warningMessage.value = 'login_form_err_invalid_email'.tr();
+        }
         return;
       }
 
-      if (isRemoteCodeModalActive.value == true) return;
       isRemoteCodeModalActive.value = true;
       await showRemoteCodeModal(
         context: context,

@@ -52823,7 +52823,8 @@ class CodegenLoader extends AssetLoader {
       "network": {
         "finding": "Finding network...",
         "no_internet": "No internet",
-        "unable_to_connect": "Unable to connect",
+        "unable_to_connect": "Connection lost with Home Cloud",
+        "unable_to_connect_description": "Please check the device is powered on and connected to the network.",
       },
       "onboarding": {
         "done": "Done",

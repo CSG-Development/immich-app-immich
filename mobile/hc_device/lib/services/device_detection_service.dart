@@ -566,51 +566,43 @@ class DeviceDetectionService {
         );
       }
 
-      // All priority paths failed — only refresh from server if cache is expired (older than 1 hour)
-      // to avoid unnecessary API calls on every temporary connection failure.
-      // When refreshing, compare new paths with old ones to avoid re-testing identical paths.
+      // All priority paths failed - refresh the list from the server. The
+      // cache has no TTL: it lives until the next refresh, and a full miss
+      // is exactly the moment to refresh. Comparing new paths with old ones
+      // avoids re-testing an identical list.
       if (result == null && useCachedPaths) {
-        if (deviceProvider.isCacheExpired()) {
-          logger.info(
-            '[Network] All cached paths failed and cache is expired, fetching fresh paths',
+        logger.info(
+          '[Network] All cached paths failed, fetching fresh paths',
+        );
+        try {
+          final responseInfo = await remoteProvider.fetchDevicePaths(
+            deviceID: remoteDeviceID,
           );
-          try {
-            final responseInfo = await remoteProvider.fetchDevicePaths(
-              deviceID: remoteDeviceID,
-            );
-            if (responseInfo.isSuccessful) {
-              final freshPaths = responseInfo.body!;
-              if (_sameDedupedDevicePathMultiset(
-                freshPaths.paths,
-                devicePaths.paths,
-              )) {
-                // Server returned identical paths — no point re-testing them.
-                // Refresh the cache timestamp so we don't re-fetch for another hour.
-                deviceProvider.touchCachedDevicePathsTimestamp();
-                logger.info(
-                  '[Network] Fresh paths are identical to cached paths, skipping re-test',
-                );
-              } else {
-                // Paths changed — cache & retry with the new ones
-                deviceProvider.setCachedDevicePaths(freshPaths);
-                logger.info(
-                  '[Network] Fresh paths differ from cache, retrying with new paths',
-                );
-                return findOptimalDeviceConnection(
-                  device: device,
-                  seagateDeviceID: remoteDeviceID,
-                  useCachedPaths: true,
-                  pathProbeMode: pathProbeMode,
-                );
-              }
+          if (responseInfo.isSuccessful) {
+            final freshPaths = responseInfo.body!;
+            if (_sameDedupedDevicePathMultiset(
+              freshPaths.paths,
+              devicePaths.paths,
+            )) {
+              logger.info(
+                '[Network] Fresh paths are identical to cached paths, skipping re-test',
+              );
+            } else {
+              // Paths changed — cache & retry with the new ones
+              deviceProvider.setCachedDevicePaths(freshPaths);
+              logger.info(
+                '[Network] Fresh paths differ from cache, retrying with new paths',
+              );
+              return findOptimalDeviceConnection(
+                device: device,
+                seagateDeviceID: remoteDeviceID,
+                useCachedPaths: true,
+                pathProbeMode: pathProbeMode,
+              );
             }
-          } catch (error) {
-            logger.error('[Network] Error fetching fresh paths', error);
           }
-        } else {
-          logger.info(
-            '[Network] All cached paths failed but cache is still fresh, skipping refresh',
-          );
+        } catch (error) {
+          logger.error('[Network] Error fetching fresh paths', error);
         }
       }
 
