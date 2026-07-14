@@ -43,6 +43,7 @@ const asQueryString = (
 };
 
 const DOCS_BASE = 'https://docs.immich.app';
+const base = '/photos';
 
 export const Docs = {
   duplicates: () => `${DOCS_BASE}/features/duplicates-utility`,
@@ -50,119 +51,121 @@ export const Docs = {
 
 export const Route = {
   // auth
-  login: (params?: { continue?: string; autoLaunch?: 0 | 1 }) => '/auth/login' + asQueryString(params),
-  logout: (params?: { continue?: string }) => '/auth/logout' + asQueryString(params),
-  register: () => '/auth/register',
-  changePassword: () => '/auth/change-password',
-  onboarding: (params?: { step?: string }) => '/auth/onboarding' + asQueryString(params),
-  pinPrompt: (params?: { continue?: string }) => '/auth/pin-prompt' + asQueryString({ continue: params?.continue }),
+  login: (params?: { continue?: string; autoLaunch?: 0 | 1 }) => `${base}/auth/login` + asQueryString(params),
+  logout: (params?: { continue?: string }) => `${base}/auth/logout` + asQueryString(params),
+  register: () => `${base}/auth/register`,
+  changePassword: () => `${base}/auth/change-password`,
+  onboarding: (params?: { step?: string }) => `${base}/auth/onboarding` + asQueryString(params),
+  pinPrompt: (params?: { continue?: string }) =>
+    `${base}/auth/pin-prompt` + asQueryString({ continue: params?.continue }),
 
   // albums
-  albums: () => '/albums',
-  viewAlbum: ({ id }: { id: string }) => `/albums/${id}`,
+  albums: () => `${base}/albums`,
+  viewAlbum: ({ id }: { id: string }) => `${base}/albums/${id}`,
   viewAlbumAsset: ({ albumId, assetId }: { albumId: string; assetId: string }) =>
-    `/albums/${albumId}/photos/${assetId}`,
+    `${base}/albums/${albumId}/photos/${assetId}`,
 
   // buy
-  buy: () => '/buy',
+  buy: () => `${base}/buy`,
 
   // explore
-  explore: () => '/explore',
-  places: () => '/places',
+  explore: () => `${base}/explore`,
+  places: () => `${base}/places`,
 
   // folders
-  folders: (params?: { path?: string }) => '/folders' + asQueryString(params),
+  folders: (params?: { path?: string }) => `${base}/folders` + asQueryString(params),
 
   // libraries
-  libraries: () => '/admin/library-management',
-  newLibrary: () => '/admin/library-management/new',
-  viewLibrary: ({ id }: { id: string }) => `/admin/library-management/${id}`,
-  editLibrary: ({ id }: { id: string }) => `/admin/library-management/${id}/edit`,
+  libraries: () => `${base}/admin/library-management`,
+  newLibrary: () => `${base}/admin/library-management/new`,
+  viewLibrary: ({ id }: { id: string }) => `${base}/admin/library-management/${id}`,
+  editLibrary: ({ id }: { id: string }) => `${base}/admin/library-management/${id}/edit`,
 
   // maintenance
-  maintenanceMode: (params?: { continue?: string }) => '/maintenance' + asQueryString(params),
+  maintenanceMode: (params?: { continue?: string }) => `${base}/maintenance` + asQueryString(params),
 
   // map
   map: (point?: { zoom: number; lat: number; lng: number }) =>
-    '/map' + (point ? `#${point.zoom}/${point.lat}/${point.lng}` : ''),
+    `${base}/map` + (point ? `#${point.zoom}/${point.lat}/${point.lng}` : ''),
 
   // memories
-  memories: (params?: { id?: string }) => '/memory' + asQueryString(params),
+  memories: (params?: { id?: string }) => `${base}/memory` + asQueryString(params),
 
   // partners
-  viewPartner: ({ id }: { id: string }) => `/partners/${id}`,
+  viewPartner: ({ id }: { id: string }) => `${base}/partners/${id}`,
 
   // people
-  people: () => '/people',
+  people: () => `${base}/people`,
   viewPerson: ({ id }: { id: string }, params?: { previousRoute?: string; action?: 'merge' }) =>
-    `/people/${id}` + asQueryString(params),
+    `${base}/people/${id}` + asQueryString(params),
 
   // photos
-  photos: (params?: { at?: string }) => '/photos' + asQueryString(params),
-  viewAsset: ({ id }: { id: string }) => `/photos/${id}`,
-  archive: () => '/archive',
-  favorites: () => '/favorites',
-  locked: () => '/locked',
-  trash: () => '/trash',
-  viewTrashedAsset: ({ id }: { id: string }) => `/trash/photos/${id}`,
+  photos: (params?: { at?: string }) => `${base}/photos` + asQueryString(params),
+  viewAsset: ({ id }: { id: string }) => `${base}/photos/${id}`,
+  archive: () => `${base}/archive`,
+  favorites: () => `${base}/favorites`,
+  locked: () => `${base}/locked`,
+  trash: () => `${base}/trash`,
+  viewTrashedAsset: ({ id }: { id: string }) => `${base}/trash/photos/${id}`,
 
   // search
   search: (dto?: MetadataSearchDto | SmartSearchDto) => {
     const metadata = omitBy(dto ?? {}, (value) => value === undefined);
     const query = Object.keys(metadata).length === 0 ? undefined : JSON.stringify(metadata);
-    return `/search` + asQueryString({ query });
+    return `${base}/search` + asQueryString({ query });
   },
 
   // sharing
-  sharing: () => '/sharing',
+  sharing: () => `${base}/sharing`,
 
   // shared links
-  sharedLinks: (params?: { filter?: SharedLinkTab }) => '/shared-links' + asQueryString(params),
-  editSharedLink: ({ id }: { id: string }) => `/shared-links/${id}/edit`,
-  viewSharedLink: ({ slug, key }: { slug?: string | null; key: string }) => (slug ? `/s/${slug}` : `/share/${key}`),
+  sharedLinks: (params?: { filter?: SharedLinkTab }) => `${base}/shared-links` + asQueryString(params),
+  editSharedLink: ({ id }: { id: string }) => `${base}/shared-links/${id}/edit`,
+  viewSharedLink: ({ slug, key }: { slug?: string | null; key: string }) =>
+    slug ? `${base}/s/${slug}` : `${base}/share/${key}`,
 
   // settings
-  userSettings: (params?: { isOpen?: OpenQueryParam }) => '/user-settings' + asQueryString(params),
+  userSettings: (params?: { isOpen?: OpenQueryParam }) => `${base}/user-settings` + asQueryString(params),
 
   // system
-  systemSettings: (params?: { isOpen?: OpenQueryParam }) => '/admin/system-settings' + asQueryString(params),
-  systemStatistics: () => '/admin/server-status',
-  systemMaintenance: (params?: { continue?: string }) => '/admin/maintenance' + asQueryString(params),
+  systemSettings: (params?: { isOpen?: OpenQueryParam }) => `${base}/admin/system-settings` + asQueryString(params),
+  systemStatistics: () => `${base}/admin/server-status`,
+  systemMaintenance: (params?: { continue?: string }) => `${base}/admin/maintenance` + asQueryString(params),
 
   // tags
-  tags: (params?: { path?: string }) => '/tags' + asQueryString(params),
+  tags: (params?: { path?: string }) => `${base}/tags` + asQueryString(params),
 
   // users
-  users: () => '/admin/users',
-  newUser: () => `/admin/users/new`,
-  viewUser: ({ id }: { id: string }) => `/admin/users/${id}`,
-  editUser: ({ id }: { id: string }) => `/admin/users/${id}/edit`,
+  users: () => `${base}/admin/users`,
+  newUser: () => `${base}/admin/users/new`,
+  viewUser: ({ id }: { id: string }) => `${base}/admin/users/${id}`,
+  editUser: ({ id }: { id: string }) => `${base}/admin/users/${id}/edit`,
 
   // utilities
-  utilities: () => '/utilities',
-  duplicatesUtility: (params?: { index?: number }) => '/utilities/duplicates' + asQueryString(params),
-  largeFileUtility: () => '/utilities/large-files',
-  geolocationUtility: () => '/utilities/geolocation',
+  utilities: () => `${base}/utilities`,
+  duplicatesUtility: (params?: { index?: number }) => `${base}/utilities/duplicates` + asQueryString(params),
+  largeFileUtility: () => `${base}/utilities/large-files`,
+  geolocationUtility: () => `${base}/utilities/geolocation`,
 
   // workflows
-  workflows: () => '/utilities/workflows',
-  viewWorkflow: ({ id }: { id: string }) => `/utilities/workflows/${id}`,
+  workflows: () => `${base}/utilities/workflows`,
+  viewWorkflow: ({ id }: { id: string }) => `${base}/utilities/workflows/${id}`,
 
   // queues
-  queues: () => '/admin/queues',
-  viewQueue: ({ name }: { name: QueueName }) => `/admin/queues/${asQueueSlug(name)}`,
+  queues: () => `${base}/admin/queues`,
+  viewQueue: ({ name }: { name: QueueName }) => `${base}/admin/queues/${asQueueSlug(name)}`,
 
   // editor
-  editor: (params?: { assetId?: string }) => '/editor' + asQueryString(params),
+  editor: (params?: { assetId?: string }) => `${base}/editor` + asQueryString(params),
 
   // integrity checks
   integrityReportFile: (reportId: string) => `${getBaseUrl()}/admin/integrity/report/${reportId}/file`,
 
   // continue helper for ensuring same-origin URLs
   continue: (url: string | null, fallback: string): string | URL => {
-    const resolved = new URL(url ?? fallback, document.baseURI);
+    const resolved = new URL(url ?? fallback, globalThis.location.href);
 
-    if (resolved.origin !== location.origin) {
+    if (resolved.origin !== globalThis.location.origin) {
       return fallback;
     }
 
