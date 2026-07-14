@@ -17,7 +17,17 @@ import {
   ValidateLibraryImportPathResponseDto,
   ValidateLibraryResponseDto,
 } from 'src/dtos/library.dto';
-import { AssetStatus, AssetType, CronJob, DatabaseLock, ImmichWorker, JobName, JobStatus, QueueName } from 'src/enum';
+import {
+  AssetStatus,
+  AssetType,
+  ChecksumAlgorithm,
+  CronJob,
+  DatabaseLock,
+  ImmichWorker,
+  JobName,
+  JobStatus,
+  QueueName,
+} from 'src/enum';
 import { ArgOf } from 'src/repositories/event.repository';
 import { AssetSyncResult } from 'src/repositories/library.repository';
 import { AssetTable } from 'src/schema/tables/asset.table';
@@ -223,7 +233,14 @@ export class LibraryService extends BaseService {
       ownerId: dto.ownerId,
       name: dto.name ?? 'New External Library',
       importPaths: dto.importPaths ?? [],
-      exclusionPatterns: dto.exclusionPatterns ?? ['**/@eaDir/**', '**/._*', '**/#recycle/**', '**/#snapshot/**'],
+      exclusionPatterns: dto.exclusionPatterns ?? [
+        '**/@eaDir/**',
+        '**/._*',
+        '**/#recycle/**',
+        '**/#snapshot/**',
+        '**/.stversions/**',
+        '**/.stfolder/**',
+      ],
     });
     return mapLibrary(library);
   }
@@ -249,13 +266,7 @@ export class LibraryService extends BaseService {
       ),
     );
 
-    const assetIds: string[] = [];
-
-    for (let i = 0; i < assetImports.length; i += 5000) {
-      // Chunk the imports to avoid the postgres limit of max parameters at once
-      const chunk = assetImports.slice(i, i + 5000);
-      await this.assetRepository.createAll(chunk).then((assets) => assetIds.push(...assets.map((asset) => asset.id)));
-    }
+    const assetIds = await this.assetRepository.createAll(assetImports);
 
     const progressMessage =
       job.progressCounter && job.totalAssets
@@ -393,6 +404,7 @@ export class LibraryService extends BaseService {
       ownerId,
       libraryId,
       checksum: this.cryptoRepository.hashSha1(`path:${assetPath}`),
+      checksumAlgorithm: ChecksumAlgorithm.sha1Path,
       originalPath: assetPath,
 
       fileCreatedAt: stat.mtime,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
-  import type { ScrubberMonth } from '$lib/managers/timeline-manager/types';
-  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
+  import type { ScrubberMonth, ViewportTopMonth } from '$lib/managers/timeline-manager/types';
+  import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { getTabbable } from '$lib/utils/focus-util';
   import { type ScrubberListener } from '$lib/utils/timeline-util';
   import { Icon } from '@immich/ui';
@@ -11,18 +11,30 @@
   import { fade, fly } from 'svelte/transition';
 
   interface Props {
+    /** Offset from the top of the timeline (e.g., for headers) */
     timelineTopOffset?: number;
+    /** Offset from the bottom of the timeline (e.g., for footers) */
     timelineBottomOffset?: number;
+    /** Total height of the scrubber component */
     height?: number;
+    /** Timeline manager instance that controls the timeline state */
     timelineManager: TimelineManager;
-    scrubOverallPercent?: number;
-    scrubberMonthPercent?: number;
-    scrubberMonth?: { year: number; month: number };
-    leadout?: boolean;
+    /** Overall scroll percentage through the entire timeline (0-1), used when no specific month is targeted */
+    timelineScrollPercent?: number;
+    /** The percentage of scroll through the month that is currently intersecting the top boundary of the viewport */
+    viewportTopMonthScrollPercent?: number;
+    /** The year/month of the timeline month at the top of the viewport */
+    viewportTopMonth?: ViewportTopMonth;
+
+    /** Width of the scrubber component in pixels (bindable for parent component margin adjustments) */
     scrubberWidth?: number;
+    /** Callback fired when user interacts with the scrubber to navigate */
     onScrub?: ScrubberListener;
+    /** Callback fired when keyboard events occur on the scrubber */
     onScrubKeyDown?: (event: KeyboardEvent, element: HTMLElement) => void;
+    /** Callback fired when scrubbing starts */
     startScrub?: ScrubberListener;
+    /** Callback fired when scrubbing stops */
     stopScrub?: ScrubberListener;
   }
 
@@ -31,14 +43,14 @@
     timelineBottomOffset = 0,
     height = 0,
     timelineManager,
-    scrubOverallPercent = 0,
-    scrubberMonthPercent = 0,
-    scrubberMonth = undefined,
-    leadout = false,
+    timelineScrollPercent = 0,
+    viewportTopMonthScrollPercent = 0,
+    viewportTopMonth = undefined,
     onScrub = undefined,
     onScrubKeyDown = undefined,
     startScrub = undefined,
     stopScrub = undefined,
+
     scrubberWidth = $bindable(),
   }: Props = $props();
 
@@ -54,7 +66,7 @@
   const toScrollY = (percent: number) => percent * (height - (PADDING_TOP + PADDING_BOTTOM));
   const toTimelineY = (scrollY: number) => scrollY / (height - (PADDING_TOP + PADDING_BOTTOM));
 
-  const usingMobileDevice = $derived(mobileDevice.pointerCoarse);
+  const usingMobileDevice = $derived(mediaQueryManager.pointerCoarse);
 
   const MOBILE_WIDTH = 20;
   const DESKTOP_WIDTH = 60;
@@ -80,12 +92,20 @@
     scrubberWidth = usingMobileDevice ? MOBILE_WIDTH : DESKTOP_WIDTH;
   });
 
-  const toScrollFromMonthGroupPercentage = (
-    scrubberMonth: { year: number; month: number } | undefined,
+  const toScrollFromTimelineMonthPercentage = (
+    scrubberMonth: ViewportTopMonth,
     scrubberMonthPercent: number,
     scrubOverallPercent: number,
   ) => {
-    if (scrubberMonth) {
+    if (scrubberMonth === 'lead-in') {
+      return relativeTopOffset * scrubberMonthPercent;
+    } else if (scrubberMonth === 'lead-out') {
+      let offset = relativeTopOffset;
+      for (const segment of segments) {
+        offset += segment.height;
+      }
+      return offset + relativeBottomOffset * scrubberMonthPercent;
+    } else if (scrubberMonth) {
       let offset = relativeTopOffset;
       let match = false;
       for (const segment of segments) {
@@ -100,21 +120,16 @@
         offset += scrubberMonthPercent * relativeBottomOffset;
       }
       return offset;
-    } else if (leadout) {
-      let offset = relativeTopOffset;
-      for (const segment of segments) {
-        offset += segment.height;
-      }
-      offset += scrubOverallPercent * relativeBottomOffset;
-      return offset;
     } else {
       return scrubOverallPercent * (height - (PADDING_TOP + PADDING_BOTTOM));
     }
   };
-  let scrollY = $derived(toScrollFromMonthGroupPercentage(scrubberMonth, scrubberMonthPercent, scrubOverallPercent));
-  let timelineFullHeight = $derived(timelineManager.scrubberTimelineHeight + timelineTopOffset + timelineBottomOffset);
-  let relativeTopOffset = $derived(toScrollY(timelineTopOffset / timelineFullHeight));
-  let relativeBottomOffset = $derived(toScrollY(timelineBottomOffset / timelineFullHeight));
+  const scrollY = $derived(
+    toScrollFromTimelineMonthPercentage(viewportTopMonth, viewportTopMonthScrollPercent, timelineScrollPercent),
+  );
+  const timelineFullHeight = $derived(timelineManager.scrubberTimelineHeight);
+  const relativeTopOffset = $derived(toScrollY(timelineTopOffset / timelineFullHeight));
+  const relativeBottomOffset = $derived(toScrollY(timelineBottomOffset / timelineFullHeight));
 
   type Segment = {
     count: number;
@@ -127,14 +142,18 @@
   };
 
   const calculateSegments = (months: ScrubberMonth[]) => {
-    let height = 0;
-    let dotHeight = 0;
+    let verticalSpanWithoutLabel = 0;
+    let verticalSpanWithoutDot = 0;
 
     let segments: Segment[] = [];
     let previousLabeledSegment: Segment | undefined;
 
     let top = 0;
-    for (const [i, scrubMonth] of months.entries()) {
+
+    // Process months in reverse order to pick labels, then reverse for display
+    const reversed = [...months].reverse();
+
+    for (const scrubMonth of reversed) {
       const scrollBarPercentage = scrubMonth.height / timelineFullHeight;
 
       const segment = {
@@ -148,26 +167,26 @@
         hasDot: false,
       };
       top += segment.height;
-      if (i === 0) {
-        segment.hasDot = true;
-        segment.hasLabel = true;
-        previousLabeledSegment = segment;
-      } else {
-        if (previousLabeledSegment?.year !== segment.year && height > MIN_YEAR_LABEL_DISTANCE) {
-          height = 0;
+      if (previousLabeledSegment) {
+        if (previousLabeledSegment.year !== segment.year && verticalSpanWithoutLabel > MIN_YEAR_LABEL_DISTANCE) {
+          verticalSpanWithoutLabel = 0;
           segment.hasLabel = true;
           previousLabeledSegment = segment;
         }
-        if (i !== 1 && segment.height > 5 && dotHeight > MIN_DOT_DISTANCE) {
+        if (segment.height > 5 && verticalSpanWithoutDot > MIN_DOT_DISTANCE) {
           segment.hasDot = true;
-          dotHeight = 0;
+          verticalSpanWithoutDot = 0;
         }
-
-        height += segment.height;
-        dotHeight += segment.height;
+      } else {
+        segment.hasDot = true;
+        segment.hasLabel = true;
+        previousLabeledSegment = segment;
       }
+      verticalSpanWithoutLabel += segment.height;
+      verticalSpanWithoutDot += segment.height;
       segments.push(segment);
     }
+    segments.reverse();
 
     return segments;
   };
@@ -182,7 +201,13 @@
     }
     return activeSegment?.dataset.label;
   });
-  const segmentDate = $derived.by(() => {
+  const segmentDate: ViewportTopMonth = $derived.by(() => {
+    if (activeSegment?.dataset.id === 'lead-in') {
+      return 'lead-in';
+    }
+    if (activeSegment?.dataset.id === 'lead-out') {
+      return 'lead-out';
+    }
     if (!activeSegment?.dataset.segmentYearMonth) {
       return undefined;
     }
@@ -200,7 +225,22 @@
     }
     return null;
   });
-  const scrollHoverLabel = $derived(scrollSegment?.dateFormatted || '');
+  const scrollHoverLabel = $derived.by(() => {
+    if (scrollY !== undefined) {
+      if (scrollY < relativeTopOffset) {
+        return segments.at(0)?.dateFormatted;
+      } else {
+        let offset = relativeTopOffset;
+        for (const segment of segments) {
+          offset += segment.height;
+        }
+        if (scrollY > offset) {
+          return segments.at(-1)?.dateFormatted;
+        }
+      }
+    }
+    return scrollSegment?.dateFormatted || '';
+  });
 
   const findElementBestY = (elements: Element[], y: number, ...ids: string[]) => {
     if (ids.length === 0) {
@@ -241,12 +281,12 @@
       const boundingClientRect = bestElement.boundingClientRect;
       const sy = boundingClientRect.y;
       const relativeY = y - sy;
-      const monthGroupPercentY = relativeY / boundingClientRect.height;
+      const timelineMonthPercentY = relativeY / boundingClientRect.height;
       return {
         isOnPaddingTop: false,
         isOnPaddingBottom: false,
         segment,
-        monthGroupPercentY,
+        timelineMonthPercentY,
       };
     }
 
@@ -269,7 +309,7 @@
       isOnPaddingTop,
       isOnPaddingBottom,
       segment: undefined,
-      monthGroupPercentY: 0,
+      timelineMonthPercentY: 0,
     };
   };
 
@@ -288,31 +328,34 @@
     const upper = rect?.height - (PADDING_TOP + PADDING_BOTTOM);
     hoverY = clamp(clientY - rect?.top - PADDING_TOP, lower, upper);
     const x = rect!.left + rect!.width / 2;
-    const { segment, monthGroupPercentY, isOnPaddingTop, isOnPaddingBottom } = getActive(x, clientY);
+    const { segment, timelineMonthPercentY, isOnPaddingTop, isOnPaddingBottom } = getActive(x, clientY);
     activeSegment = segment;
     isHoverOnPaddingTop = isOnPaddingTop;
     isHoverOnPaddingBottom = isOnPaddingBottom;
 
-    const scrollPercent = toTimelineY(hoverY);
+    const scrubData = {
+      scrubberMonth: segmentDate,
+      overallScrollPercent: toTimelineY(hoverY),
+      scrubberMonthScrollPercent: timelineMonthPercentY,
+    };
     if (wasDragging === false && isDragging) {
-      void startScrub?.(segmentDate!, scrollPercent, monthGroupPercentY);
-      void onScrub?.(segmentDate!, scrollPercent, monthGroupPercentY);
+      void startScrub?.(scrubData);
+      void onScrub?.(scrubData);
     }
-
     if (wasDragging && !isDragging) {
-      void stopScrub?.(segmentDate!, scrollPercent, monthGroupPercentY);
+      void stopScrub?.(scrubData);
       return;
     }
-
     if (!isDragging) {
       return;
     }
-
-    void onScrub?.(segmentDate!, scrollPercent, monthGroupPercentY);
+    void onScrub?.(scrubData);
   };
-  /* eslint-disable tscompat/tscompat */
   const getTouch = (event: TouchEvent) => {
+    // desktop safari does not support this since Apple does not have desktop touch devices
+    // eslint-disable-next-line tscompat/tscompat
     if (event.touches.length === 1) {
+      // eslint-disable-next-line tscompat/tscompat
       return event.touches[0];
     }
     return null;
@@ -323,6 +366,8 @@
       isHover = false;
       return;
     }
+    // desktop safari does not support this since Apple does not have desktop touch devices
+
     const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
     const isHoverScrollbar =
       findElementBestY(elements, 0, 'scrubber', 'time-label', 'lead-in', 'lead-out') !== undefined;
@@ -355,7 +400,6 @@
       isHover = false;
     }
   };
-  /* eslint-enable tscompat/tscompat */
   onMount(() => {
     document.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
     return () => {
@@ -412,7 +456,11 @@
       }
       if (next) {
         event.preventDefault();
-        void onScrub?.({ year: next.year, month: next.month }, -1, 0);
+        void onScrub?.({
+          scrubberMonth: { year: next.year, month: next.month },
+          overallScrollPercent: -1,
+          scrubberMonthScrollPercent: 0,
+        });
         return true;
       }
     }
@@ -422,7 +470,11 @@
         const next = segments[idx + 1];
         if (next) {
           event.preventDefault();
-          void onScrub?.({ year: next.year, month: next.month }, -1, 0);
+          void onScrub?.({
+            scrubberMonth: { year: next.year, month: next.month },
+            overallScrollPercent: -1,
+            scrubberMonthScrollPercent: 0,
+          });
           return true;
         }
       }
@@ -472,7 +524,7 @@
       class={[
         { 'border-b-2': isDragging },
         { 'rounded-bl-md': !isDragging },
-        'bg-light truncate opacity-85 pointer-events-none absolute end-0 min-w-20 max-w-64 w-fit rounded-ss-md  border-immich-primary py-1 px-1 text-sm font-medium shadow-[0_0_8px_rgba(0,0,0,0.25)] dark:border-immich-dark-primary dark:text-immich-dark-fg z-1',
+        'bg-light truncate opacity-85 pointer-events-none absolute end-0 min-w-20 max-w-64 w-fit rounded-ss-md border-b-2 border-primary py-1 px-1 text-sm font-medium shadow-[0_0_8px_rgba(0,0,0,0.25)] z-1',
       ]}
       style:top="{hoverY + 2}px"
     >
@@ -482,7 +534,7 @@
   {#if usingMobileDevice && ((timelineManager.scrolling && scrollHoverLabel) || isHover || isDragging)}
     <div
       id="time-label"
-      class="rounded-s-full w-[32px] ps-2 text-white bg-immich-primary dark:bg-gray-600 hover:cursor-pointer select-none"
+      class="rounded-s-full w-8 ps-2 text-white bg-immich-primary dark:bg-gray-600 hover:cursor-pointer select-none"
       style:top="{PADDING_TOP + (scrollY - 50 / 2)}px"
       style:height="50px"
       style:right="0"
@@ -490,15 +542,15 @@
       in:fade={{ duration: 200 }}
       out:fade={{ duration: 200 }}
     >
-      <Icon icon={mdiPlay} size="20" class="-rotate-90 relative top-[9px] -end-[2px]" />
-      <Icon icon={mdiPlay} size="20" class="rotate-90 relative top-px -end-[2px]" />
+      <Icon icon={mdiPlay} size="20" class="-rotate-90 relative top-2.25 -end-0.5" />
+      <Icon icon={mdiPlay} size="20" class="rotate-90 relative top-px -end-0.5" />
       {#if (timelineManager.scrolling && scrollHoverLabel) || isHover || isDragging}
         <p
           transition:fade={{ duration: 200 }}
           style:bottom={50 / 2 - 30 / 2 + 'px'}
           style:right="36px"
           style:width="fit-content"
-          class="truncate pointer-events-none absolute text-sm rounded-full w-[32px] py-2 px-4 text-white bg-immich-primary/90 dark:bg-gray-500 hover:cursor-pointer select-none font-semibold"
+          class="truncate pointer-events-none absolute text-sm rounded-full w-8 py-2 px-4 text-white bg-immich-primary/90 dark:bg-gray-500 hover:cursor-pointer select-none font-semibold"
         >
           {scrollHoverLabel}
         </p>
@@ -507,7 +559,7 @@
   {/if}
   <!-- Scroll Position Indicator Line -->
   {#if !usingMobileDevice && !isDragging}
-    <div class="absolute end-0 h-[2px] w-10 bg-primary" style:top="{scrollY + PADDING_TOP - 2}px">
+    <div class="absolute end-0 h-0.5 w-10 bg-primary" style:top="{scrollY + PADDING_TOP - 2}px">
       {#if timelineManager.scrolling && scrollHoverLabel && !isHover}
         <p
           transition:fade={{ duration: 200 }}
@@ -522,13 +574,8 @@
     class="relative"
     style:height={relativeTopOffset + 'px'}
     data-id="lead-in"
-    data-segment-year-month={segments.at(0)?.year + '-' + segments.at(0)?.month}
     data-label={segments.at(0)?.dateFormatted}
-  >
-    {#if relativeTopOffset > 6}
-      <div class="absolute end-3 h-[4px] w-[4px] rounded-full bg-gray-300"></div>
-    {/if}
-  </div>
+  ></div>
   <!-- Time Segment -->
   {#each segments as segment (segment.year + '-' + segment.month)}
     <div
@@ -540,9 +587,7 @@
     >
       {#if !usingMobileDevice}
         {#if segment.hasLabel}
-          <div
-            class="absolute end-5 top-[-16px] text-sm dark:text-immich-dark-fg font-immich-mono dark:text-white/[.87]"
-          >
+          <div class="absolute end-5 top-[-16px] text-sm dark:text-immich-dark-fg font-immich-mono dark:text-white/87">
             {segment.year}
           </div>
         {/if}
@@ -554,5 +599,10 @@
       {/if}
     </div>
   {/each}
-  <div data-id="lead-out" class="relative" style:height={relativeBottomOffset + 'px'}></div>
+  <div
+    data-id="lead-out"
+    class="relative"
+    style:height={relativeBottomOffset + 'px'}
+    data-label={segments.at(-1)?.dateFormatted}
+  ></div>
 </div>

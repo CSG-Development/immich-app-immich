@@ -41,6 +41,7 @@ function createSlideshowStore() {
   const slideshowDelay = persisted<number>('slideshow-delay', 5, {});
   const slideshowTransition = persisted<boolean>('slideshow-transition', true);
   const slideshowAutoplay = persisted<boolean>('slideshow-autoplay', true, {});
+  const slideshowRepeat = persisted<boolean>('slideshow-repeat', false);
 
   return {
     restartProgress: {
@@ -72,6 +73,7 @@ function createSlideshowStore() {
     showProgressBar,
     slideshowTransition,
     slideshowAutoplay,
+    slideshowRepeat,
     isShuffled,
   };
 }

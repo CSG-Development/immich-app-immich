@@ -1,67 +1,76 @@
 <script lang="ts">
-  import SettingButtonsRow from '$lib/components/shared-components/settings/setting-buttons-row.svelte';
+  import SettingButtonsRow from '$lib/components/shared-components/settings/SystemConfigButtonRow.svelte';
   import SettingInputField from '$lib/components/shared-components/settings/setting-input-field.svelte';
   import { SettingInputFieldType } from '$lib/constants';
-  import { getJobName } from '$lib/utils';
-  import { JobName, type SystemConfigDto, type SystemConfigJobDto } from '@immich/sdk';
-  import { isEqual } from 'lodash-es';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
+  import { systemConfigManager } from '$lib/managers/system-config-manager.svelte';
+  import { QueueName, type SystemConfigJobDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
-  import type { SettingsResetEvent, SettingsSaveEvent } from './admin-settings';
 
-  interface Props {
-    savedConfig: SystemConfigDto;
-    defaultConfig: SystemConfigDto;
-    config: SystemConfigDto;
-    disabled?: boolean;
-    onReset: SettingsResetEvent;
-    onSave: SettingsSaveEvent;
-  }
+  const disabled = $derived(featureFlagsManager.value.configFile);
+  const config = $derived(systemConfigManager.value);
+  let configToEdit = $state(systemConfigManager.cloneValue());
 
-  let { savedConfig, defaultConfig, config = $bindable(), disabled = false, onReset, onSave }: Props = $props();
-
-  const jobNames = [
-    JobName.ThumbnailGeneration,
-    JobName.MetadataExtraction,
-    JobName.Library,
-    JobName.Sidecar,
-    JobName.SmartSearch,
-    JobName.FaceDetection,
-    JobName.FacialRecognition,
-    JobName.VideoConversion,
-    JobName.StorageTemplateMigration,
-    JobName.Migration,
+  const queueNames = [
+    QueueName.ThumbnailGeneration,
+    QueueName.MetadataExtraction,
+    QueueName.Library,
+    QueueName.Sidecar,
+    QueueName.SmartSearch,
+    QueueName.FaceDetection,
+    QueueName.FacialRecognition,
+    QueueName.VideoConversion,
+    QueueName.StorageTemplateMigration,
+    QueueName.Migration,
+    QueueName.Ocr,
   ];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function isSystemConfigJobDto(jobName: any): jobName is keyof SystemConfigJobDto {
-    return jobName in config.job;
+  function isSystemConfigJobDto(jobName: string): jobName is keyof SystemConfigJobDto {
+    return jobName in configToEdit.job;
   }
 
-  const onsubmit = (event: Event) => {
-    event.preventDefault();
-  };
+  const queueTitles: Record<QueueName, string> = $derived({
+    [QueueName.ThumbnailGeneration]: $t('admin.thumbnail_generation_job'),
+    [QueueName.MetadataExtraction]: $t('admin.metadata_extraction_job'),
+    [QueueName.Sidecar]: $t('admin.sidecar_job'),
+    [QueueName.SmartSearch]: $t('admin.machine_learning_smart_search'),
+    [QueueName.DuplicateDetection]: $t('admin.machine_learning_duplicate_detection'),
+    [QueueName.FaceDetection]: $t('admin.face_detection'),
+    [QueueName.FacialRecognition]: $t('admin.machine_learning_facial_recognition'),
+    [QueueName.VideoConversion]: $t('admin.video_conversion_job'),
+    [QueueName.StorageTemplateMigration]: $t('admin.storage_template_migration'),
+    [QueueName.Migration]: $t('admin.migration_job'),
+    [QueueName.BackgroundTask]: $t('admin.background_task_job'),
+    [QueueName.Search]: $t('search'),
+    [QueueName.Library]: $t('external_libraries'),
+    [QueueName.Notifications]: $t('notifications'),
+    [QueueName.BackupDatabase]: $t('admin.backup_database'),
+    [QueueName.Ocr]: $t('admin.machine_learning_ocr'),
+    [QueueName.Workflow]: $t('workflows'),
+    [QueueName.Editor]: $t('editor'),
+  });
 </script>
 
 <div>
   <div in:fade={{ duration: 500 }}>
-    <form autocomplete="off" {onsubmit}>
-      {#each jobNames as jobName (jobName)}
+    <form autocomplete="off" onsubmit={(event) => event.preventDefault()}>
+      {#each queueNames as queueName (queueName)}
         <div class="ms-4 mt-4 flex flex-col gap-4">
-          {#if isSystemConfigJobDto(jobName)}
+          {#if isSystemConfigJobDto(queueName)}
             <SettingInputField
               inputType={SettingInputFieldType.NUMBER}
               {disabled}
-              label={$t('admin.job_concurrency', { values: { job: $getJobName(jobName) } })}
+              label={$t('admin.job_concurrency', { values: { job: queueTitles[queueName] } })}
               description=""
-              bind:value={config.job[jobName].concurrency}
+              bind:value={configToEdit.job[queueName].concurrency}
               required={true}
-              isEdited={!(config.job[jobName].concurrency == savedConfig.job[jobName].concurrency)}
+              isEdited={!(configToEdit.job[queueName].concurrency == config.job[queueName].concurrency)}
             />
           {:else}
             <SettingInputField
               inputType={SettingInputFieldType.NUMBER}
-              label={$t('admin.job_concurrency', { values: { job: $getJobName(jobName) } })}
+              label={$t('admin.job_concurrency', { values: { job: queueTitles[queueName] } })}
               description=""
               value={1}
               disabled={true}
@@ -72,12 +81,7 @@
       {/each}
 
       <div class="ms-4">
-        <SettingButtonsRow
-          onReset={(options) => onReset({ ...options, configKeys: ['job'] })}
-          onSave={() => onSave({ job: config.job })}
-          showResetToDefault={!isEqual(savedConfig.job, defaultConfig.job)}
-          {disabled}
-        />
+        <SettingButtonsRow bind:configToEdit keys={['job']} {disabled} />
       </div>
     </form>
   </div>

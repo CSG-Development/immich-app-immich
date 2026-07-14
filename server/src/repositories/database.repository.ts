@@ -1,3 +1,4 @@
+import { schemaDiff, schemaFromCode, schemaFromDatabase } from '@immich/sql-tools';
 import { Injectable } from '@nestjs/common';
 import AsyncLock from 'async-lock';
 import { FileMigrationProvider, Kysely, Migrator, sql, Transaction } from 'kysely';
@@ -19,7 +20,9 @@ import { GenerateSql } from 'src/decorators';
 import { DatabaseExtension, DatabaseLock, VectorIndex } from 'src/enum';
 import { ConfigRepository } from 'src/repositories/config.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
+import 'src/schema'; // make sure all schema definitions are imported for schemaFromCode
 import { DB } from 'src/schema';
+import { immich_uuid_v7 } from 'src/schema/functions';
 import { ExtensionVersion, VectorExtension, VectorUpdateResult } from 'src/types';
 import { vectorIndexQuery } from 'src/utils/database';
 import { isValidInteger } from 'src/validation';
@@ -231,7 +234,7 @@ export class DatabaseRepository {
   }
 
   private async reindexVectors(indexName: VectorIndex, { lists }: { lists?: number } = {}): Promise<void> {
-    this.logger.log(`Reindexing ${indexName}`);
+    this.logger.log(`Reindexing ${indexName} (This may take a while, do not restart)`);
     const table = VECTOR_INDEX_TABLES[indexName];
     const vectorExtension = await getVectorExtension(this.db);
 
@@ -246,11 +249,11 @@ export class DatabaseRepository {
     }
     const dimSize = await this.getDimensionSize(table);
     lists ||= this.targetListCount(await this.getRowCount(table));
-    await this.db.schema.dropIndex(indexName).ifExists().execute();
-    if (table === 'smart_search') {
-      await this.db.schema.alterTable(table).dropConstraint('dim_size_constraint').ifExists().execute();
-    }
     await this.db.transaction().execute(async (tx) => {
+      await sql`DROP INDEX IF EXISTS ${sql.raw(indexName)}`.execute(tx);
+      if (table === 'smart_search') {
+        await sql`ALTER TABLE ${sql.raw(table)} DROP CONSTRAINT IF EXISTS dim_size_constraint`.execute(tx);
+      }
       if (!rows.some((row) => row.columnName === 'embedding')) {
         this.logger.warn(`Column 'embedding' does not exist in table '${table}', truncating and adding column.`);
         await sql`TRUNCATE TABLE ${sql.raw(table)}`.execute(tx);
@@ -279,6 +282,32 @@ export class DatabaseRepository {
   private async getDatabaseName(): Promise<string> {
     const { rows } = await sql<{ db: string }>`SELECT current_database() as db`.execute(this.db);
     return rows[0].db;
+  }
+
+  getMigrations() {
+    return this.db.selectFrom('kysely_migrations').select(['name', 'timestamp']).orderBy('name', 'asc').execute();
+  }
+
+  async getSchemaDrift() {
+    const source = schemaFromCode({
+      overrides: true,
+      namingStrategy: 'default',
+      uuidFunction: (version) => (version === 7 ? `${immich_uuid_v7.name}()` : 'uuid_generate_v4()'),
+    });
+    const { database } = this.configRepository.getEnv();
+    const target = await schemaFromDatabase({ connection: database.config });
+
+    const drift = schemaDiff(source, target, {
+      tables: { ignoreExtra: true },
+      constraints: { ignoreExtra: false },
+      indexes: { ignoreExtra: true },
+      triggers: { ignoreExtra: true },
+      columns: { ignoreExtra: true },
+      functions: { ignoreExtra: false },
+      parameters: { ignoreExtra: true },
+    });
+
+    return drift;
   }
 
   async getDimensionSize(table: string, column = 'embedding'): Promise<number> {
@@ -358,20 +387,9 @@ export class DatabaseRepository {
   }
 
   async runMigrations(): Promise<void> {
-    this.logger.debug('Running migrations');
+    this.logger.log('Running migrations');
 
-    const migrator = new Migrator({
-      db: this.db,
-      migrationLockTableName: 'kysely_migrations_lock',
-      allowUnorderedMigrations: this.configRepository.isDev(),
-      migrationTableName: 'kysely_migrations',
-      provider: new FileMigrationProvider({
-        fs: { readdir },
-        path: { join },
-        // eslint-disable-next-line unicorn/prefer-module
-        migrationFolder: join(__dirname, '..', 'schema/migrations'),
-      }),
-    });
+    const migrator = this.createMigrator();
 
     const { error, results } = await migrator.migrateToLatest();
 
@@ -390,7 +408,7 @@ export class DatabaseRepository {
       throw error;
     }
 
-    this.logger.debug('Finished running migrations');
+    this.logger.log('Finished running migrations');
   }
 
   async migrateFilePaths(sourceFolder: string, targetFolder: string): Promise<void> {
@@ -413,8 +431,6 @@ export class DatabaseRepository {
         .updateTable('asset')
         .set((eb) => ({
           originalPath: eb.fn('REGEXP_REPLACE', ['originalPath', source, target]),
-          encodedVideoPath: eb.fn('REGEXP_REPLACE', ['encodedVideoPath', source, target]),
-          sidecarPath: eb.fn('REGEXP_REPLACE', ['sidecarPath', source, target]),
         }))
         .execute();
 
@@ -476,5 +492,51 @@ export class DatabaseRepository {
 
   private async releaseLock(lock: DatabaseLock, connection: Kysely<DB>): Promise<void> {
     await sql`SELECT pg_advisory_unlock(${lock})`.execute(connection);
+  }
+
+  async revertLastMigration(): Promise<string | undefined> {
+    this.logger.debug('Reverting last migration');
+
+    const migrator = this.createMigrator();
+    const { error, results } = await migrator.migrateDown();
+
+    for (const result of results ?? []) {
+      if (result.status === 'Success') {
+        this.logger.log(`Reverted migration "${result.migrationName}"`);
+      }
+
+      if (result.status === 'Error') {
+        this.logger.warn(`Failed to revert migration "${result.migrationName}"`);
+      }
+    }
+
+    if (error) {
+      this.logger.error(`Failed to revert migrations: ${error}`);
+      throw error;
+    }
+
+    const reverted = results?.find((result) => result.direction === 'Down' && result.status === 'Success');
+    if (!reverted) {
+      this.logger.debug('No migrations to revert');
+      return undefined;
+    }
+
+    this.logger.debug('Finished reverting migration');
+    return reverted.migrationName;
+  }
+
+  private createMigrator(): Migrator {
+    return new Migrator({
+      db: this.db,
+      migrationLockTableName: 'kysely_migrations_lock',
+      allowUnorderedMigrations: this.configRepository.isDev(),
+      migrationTableName: 'kysely_migrations',
+      provider: new FileMigrationProvider({
+        fs: { readdir },
+        path: { join },
+        // eslint-disable-next-line unicorn/prefer-module
+        migrationFolder: join(__dirname, '..', 'schema/migrations'),
+      }),
+    });
   }
 }

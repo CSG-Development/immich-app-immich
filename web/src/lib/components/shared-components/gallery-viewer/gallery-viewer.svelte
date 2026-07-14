@@ -1,179 +1,123 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
+  import type { AssetCursor } from '$lib/components/asset-viewer/asset-viewer.svelte';
   import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
-  import { AppRoute, AssetAction } from '$lib/constants';
+  import { AssetAction } from '$lib/constants';
   import Portal from '$lib/elements/Portal.svelte';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
+  import type { AssetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
+  import AssetDeleteConfirmModal from '$lib/modals/AssetDeleteConfirmModal.svelte';
   import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';
-  import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { Route } from '$lib/route';
   import { showDeleteModal } from '$lib/stores/preferences.store';
-  import { featureFlags } from '$lib/stores/server-config.store';
-  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { handlePromiseError } from '$lib/utils';
   import { deleteAssets } from '$lib/utils/actions';
-  import { archiveAssets, cancelMultiselect } from '$lib/utils/asset-utils';
+  import { archiveAssets, getNextAsset, getPreviousAsset, navigateToAsset } from '$lib/utils/asset-utils';
   import { moveFocus } from '$lib/utils/focus-util';
   import { handleError } from '$lib/utils/handle-error';
-  import { getJustifiedLayoutFromAssets, type CommonJustifiedLayout } from '$lib/utils/layout-utils';
+  import { getJustifiedLayoutFromAssets } from '$lib/utils/layout-utils';
   import { navigate } from '$lib/utils/navigation';
   import { isTimelineAsset, toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, type AssetResponseDto } from '@immich/sdk';
+  import { modalManager } from '@immich/ui';
   import { debounce } from 'lodash-es';
   import { t } from 'svelte-i18n';
-  import AssetViewer from '../../asset-viewer/asset-viewer.svelte';
-  import DeleteAssetDialog from '../../photos-page/delete-asset-dialog.svelte';
 
-  interface Props {
-    initialAssetId?: string;
-    assets: (TimelineAsset | AssetResponseDto)[];
-    assetInteraction: AssetInteraction;
+  type Props = {
+    assets: AssetResponseDto[];
+    viewerAssets?: AssetResponseDto[];
+    assetInteraction: AssetMultiSelectManager;
     disableAssetSelect?: boolean;
     showArchiveIcon?: boolean;
     viewport: Viewport;
     onIntersected?: (() => void) | undefined;
     showAssetName?: boolean;
-    isShowDeleteConfirmation?: boolean;
-    onPrevious?: (() => Promise<{ id: string } | undefined>) | undefined;
-    onNext?: (() => Promise<{ id: string } | undefined>) | undefined;
-    onRandom?: (() => Promise<{ id: string } | undefined>) | undefined;
     onReload?: (() => void) | undefined;
     pageHeaderOffset?: number;
     slidingWindowOffset?: number;
     arrowNavigation?: boolean;
-    currentIndex?: number;
-    shuffledSelectedAssets?: TimelineAsset[];
-  }
+    allowDeletion?: boolean;
+  };
 
   let {
-    initialAssetId = undefined,
     assets = $bindable(),
+    viewerAssets,
     assetInteraction,
     disableAssetSelect = false,
     showArchiveIcon = false,
     viewport,
     onIntersected = undefined,
     showAssetName = false,
-    isShowDeleteConfirmation = $bindable(false),
-    onPrevious = undefined,
-    onNext = undefined,
-    onRandom = undefined,
     onReload = undefined,
     slidingWindowOffset = 0,
     pageHeaderOffset = 0,
     arrowNavigation = true,
-    currentIndex = 0,
-    shuffledSelectedAssets = [],
+    allowDeletion = true,
   }: Props = $props();
 
-  let { isViewing: isViewerOpen, asset: viewingAsset, setAssetId } = assetViewingStore;
+  const navigationAssets = $derived(viewerAssets ?? assets);
 
-  let geometry: CommonJustifiedLayout | undefined = $state();
+  const geometry = $derived(
+    getJustifiedLayoutFromAssets(assets, {
+      spacing: 2,
+      heightTolerance: 0.5,
+      rowHeight: Math.floor(viewport.width) < 850 ? 100 : 235,
+      rowWidth: Math.floor(viewport.width),
+    }),
+  );
 
-  $effect(() => {
-    const _assets = assets;
-    updateSlidingWindow();
+  const getStyle = (i: number) => {
+    const geo = geometry;
+    return `top: ${geo.getTop(i)}px; left: ${geo.getLeft(i)}px; width: ${geo.getWidth(i)}px; height: ${geo.getHeight(i)}px;`;
+  };
 
-    const rowWidth = Math.floor(viewport.width);
-    const rowHeight = rowWidth < 850 ? 190 : 235;
-
-    geometry = getJustifiedLayoutFromAssets(_assets, {
-      spacing: 4,
-      heightTolerance: 0.15,
-      rowHeight,
-      rowWidth,
-    });
-  });
-
-  let assetLayouts = $derived.by(() => {
-    const assetLayout = [];
-    let containerHeight = 0;
-    let containerWidth = 0;
-    if (geometry) {
-      containerHeight = geometry.containerHeight;
-      containerWidth = geometry.containerWidth;
-      for (const [index, asset] of assets.entries()) {
-        const top = geometry.getTop(index);
-        const left = geometry.getLeft(index);
-        const width = geometry.getWidth(index);
-        const height = geometry.getHeight(index);
-
-        const layoutTopWithOffset = top + pageHeaderOffset;
-        const layoutBottom = layoutTopWithOffset + height;
-
-        const display = layoutTopWithOffset < slidingWindow.bottom && layoutBottom > slidingWindow.top;
-
-        const layout = {
-          asset,
-          top,
-          left,
-          width,
-          height,
-          display,
-        };
-
-        assetLayout.push(layout);
-      }
-    }
-
-    return {
-      assetLayout,
-      containerHeight,
-      containerWidth,
-    };
-  });
-
-  if (initialAssetId && assets.length > 0) {
-    const index = assets.findIndex(({ id }) => id === initialAssetId);
-    if (index !== -1) {
-      currentIndex = index;
-    }
-  }
+  const isIntersecting = (i: number) => {
+    const geo = geometry;
+    const window = slidingWindow;
+    const top = geo.getTop(i);
+    return top + pageHeaderOffset < window.bottom && top + geo.getHeight(i) > window.top;
+  };
 
   let shiftKeyIsDown = $state(false);
   let lastAssetMouseEvent: TimelineAsset | null = $state(null);
-  let slidingWindow = $state({ top: 0, bottom: 0 });
-
-  const updateSlidingWindow = () => {
-    const v = $state.snapshot(viewport);
-    const top = (document.scrollingElement?.scrollTop || 0) - slidingWindowOffset;
-    const bottom = top + v.height;
-    const w = {
+  let scrollTop = $state(0);
+  let slidingWindow = $derived.by(() => {
+    const top = (scrollTop || 0) - slidingWindowOffset;
+    const bottom = top + viewport.height + slidingWindowOffset;
+    return {
       top,
       bottom,
     };
-    slidingWindow = w;
+  });
+
+  const updateCurrentAsset = (asset: AssetResponseDto) => {
+    const index = assets.findIndex((oldAsset) => oldAsset.id === asset.id);
+    assets[index] = asset;
   };
+
+  const updateSlidingWindow = () => (scrollTop = document.scrollingElement?.scrollTop ?? 0);
+
   const debouncedOnIntersected = debounce(() => onIntersected?.(), 750, { maxWait: 100, leading: true });
 
   let lastIntersectedHeight = 0;
   $effect(() => {
     // Intersect if there's only one viewport worth of assets left to scroll.
-    if (assetLayouts.containerHeight - slidingWindow.bottom <= viewport.height) {
+    if (geometry.containerHeight - slidingWindow.bottom <= viewport.height) {
       // Notify we got to (near) the end of scroll.
-      const intersectedHeight = assetLayouts.containerHeight;
+      const intersectedHeight = geometry.containerHeight;
       if (lastIntersectedHeight !== intersectedHeight) {
         debouncedOnIntersected();
         lastIntersectedHeight = intersectedHeight;
       }
     }
   });
-  const viewAssetHandler = async (asset: TimelineAsset) => {
-    currentIndex = assets.findIndex((a) => a.id == asset.id);
-    await setAssetId(assets[currentIndex].id);
-    await navigate({ targetRoute: 'current', assetId: $viewingAsset.id });
-  };
 
   const selectAllAssets = () => {
     assetInteraction.selectAssets(assets.map((a) => toTimelineAsset(a)));
-  };
-
-  const deselectAllAssets = () => {
-    cancelMultiselect(assetInteraction);
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -199,18 +143,18 @@
 
     // Select/deselect already loaded assets
     if (deselect) {
-      for (const candidate of assetInteraction.assetSelectionCandidates) {
+      for (const candidate of assetInteraction.candidates) {
         assetInteraction.removeAssetFromMultiselectGroup(candidate.id);
       }
       assetInteraction.removeAssetFromMultiselectGroup(asset.id);
     } else {
-      for (const candidate of assetInteraction.assetSelectionCandidates) {
+      for (const candidate of assetInteraction.candidates) {
         assetInteraction.selectAsset(candidate);
       }
       assetInteraction.selectAsset(asset);
     }
 
-    assetInteraction.clearAssetSelectionCandidates();
+    assetInteraction.clearCandidates();
     assetInteraction.setAssetSelectionStart(deselect ? null : asset);
   };
 
@@ -226,7 +170,7 @@
       return;
     }
 
-    const startAsset = assetInteraction.assetSelectionStart;
+    const startAsset = assetInteraction.startAsset;
     if (!startAsset) {
       return;
     }
@@ -248,42 +192,39 @@
   };
 
   const onDelete = () => {
-    const hasTrashedAsset = assetInteraction.selectedAssets.some((asset) => asset.isTrashed);
-
-    if ($showDeleteModal && (!isTrashEnabled || hasTrashedAsset)) {
-      isShowDeleteConfirmation = true;
-      return;
-    }
+    const hasTrashedAsset = assetInteraction.assets.some((asset) => asset.isTrashed);
     handlePromiseError(trashOrDelete(hasTrashedAsset));
   };
 
-  const onForceDelete = () => {
-    if ($showDeleteModal) {
-      isShowDeleteConfirmation = true;
-      return;
-    }
-    handlePromiseError(trashOrDelete(true));
-  };
-
   const trashOrDelete = async (force: boolean = false) => {
-    isShowDeleteConfirmation = false;
+    const forceOrNoTrash = force || !featureFlagsManager.value.trash;
+    const selectedAssets = assetInteraction.assets;
+
+    if ($showDeleteModal && forceOrNoTrash) {
+      const confirmed = await modalManager.show(AssetDeleteConfirmModal, { size: selectedAssets.length });
+      if (!confirmed) {
+        return;
+      }
+    }
+
     await deleteAssets(
-      !(isTrashEnabled && !force),
+      forceOrNoTrash,
       (assetIds) => (assets = assets.filter((asset) => !assetIds.includes(asset.id))),
-      assetInteraction.selectedAssets,
+      selectedAssets,
       onReload,
     );
-    assetInteraction.clearMultiselect();
+
+    assetInteraction.clear();
   };
 
   const toggleArchive = async () => {
     const ids = await archiveAssets(
-      assetInteraction.selectedAssets,
+      assetInteraction.assets,
       assetInteraction.isAllArchived ? AssetVisibility.Timeline : AssetVisibility.Archive,
     );
     if (ids) {
       assets = assets.filter((asset) => !ids.includes(asset.id));
-      deselectAllAssets();
+      assetInteraction.clear();
     }
   };
 
@@ -305,13 +246,13 @@
 
   const shortcutList = $derived(
     (() => {
-      if ($isViewerOpen) {
+      if (assetViewerManager.isViewing) {
         return [];
       }
 
       const shortcuts: ShortcutOptions[] = [
         { shortcut: { key: '?', shift: true }, onShortcut: handleOpenShortcutModal },
-        { shortcut: { key: '/' }, onShortcut: () => goto(resolve(AppRoute.EXPLORE)) },
+        { shortcut: { key: '/' }, onShortcut: () => goto(Route.explore()) },
         { shortcut: { key: 'A', ctrl: true }, onShortcut: () => selectAllAssets() },
         ...(arrowNavigation
           ? [
@@ -319,82 +260,33 @@
               { shortcut: { key: 'ArrowLeft' }, preventDefault: false, onShortcut: focusPreviousAsset },
             ]
           : []),
-        { shortcut: { key: 'ArrowRight' }, preventDefault: false, onShortcut: focusNextAsset },
-        { shortcut: { key: 'ArrowLeft' }, preventDefault: false, onShortcut: focusPreviousAsset },
       ];
 
       if (assetInteraction.selectionActive) {
         shortcuts.push(
-          { shortcut: { key: 'Escape' }, onShortcut: deselectAllAssets },
-          { shortcut: { key: 'Delete' }, onShortcut: onDelete },
-          { shortcut: { key: 'Delete', shift: true }, onShortcut: onForceDelete },
-          { shortcut: { key: 'D', ctrl: true }, onShortcut: () => deselectAllAssets() },
-          { shortcut: { key: 'a', shift: true }, onShortcut: toggleArchive },
+          { shortcut: { key: 'Escape' }, onShortcut: () => assetInteraction.clear() },
+          { shortcut: { key: 'D', ctrl: true }, onShortcut: () => assetInteraction.clear() },
         );
+        if (allowDeletion) {
+          shortcuts.push(
+            { shortcut: { key: 'Delete' }, onShortcut: onDelete },
+            { shortcut: { key: 'Delete', shift: true }, onShortcut: () => trashOrDelete(true) },
+            { shortcut: { key: 'a', shift: true }, onShortcut: toggleArchive },
+          );
+        }
       }
 
       return shortcuts;
     })(),
   );
 
-  let { slideshowNavigation, slideshowState } = slideshowStore;
-
-  const handleNext = async (): Promise<boolean> => {
-    try {
-      let asset: { id: string } | undefined;
-      if (onNext) {
-        asset = await onNext();
-      } else {
-        if (currentIndex >= assets.length - 1) {
-          return false;
-        }
-
-        currentIndex = currentIndex + 1;
-
-        asset =
-          currentIndex < assets.length
-            ? assetInteraction.selectedAssets.length > 0
-              ? assetInteraction.selectedAssets[currentIndex]
-              : assets[currentIndex]
-            : undefined;
-      }
-
-      if (!asset) {
-        currentIndex = 0;
-        return false;
-      }
-
-      await navigateToAsset(asset);
-      return true;
-    } catch (error) {
-      handleError(error, $t('errors.cannot_navigate_next_asset'));
-      return false;
-    }
-  };
-
   const handleRandom = async (): Promise<{ id: string } | undefined> => {
+    if (navigationAssets.length === 0) {
+      return;
+    }
     try {
-      let asset: { id: string } | undefined;
-      if (onRandom) {
-        asset = await onRandom();
-      } else {
-        const index =
-          assetInteraction.selectedAssets.length > 0
-            ? shuffledSelectedAssets.findIndex((el) => el.id === $viewingAsset.id)
-            : shuffledTimelineAssets.findIndex((el) => el.id === $viewingAsset.id);
-
-        asset =
-          assetInteraction.selectedAssets.length > 0
-            ? shuffledSelectedAssets[index + 1]
-            : shuffledTimelineAssets[index + 1];
-
-        currentIndex = assets.findIndex((el) => el.id === asset?.id);
-      }
-
-      if (!asset) {
-        currentIndex = 0;
-        return;
-      }
+      const randomIndex = Math.floor(Math.random() * navigationAssets.length);
+      const asset = navigationAssets[randomIndex];
 
       await navigateToAsset(asset);
       return asset;
@@ -404,78 +296,21 @@
     }
   };
 
-  const handlePrevious = async (): Promise<boolean> => {
-    try {
-      let asset: { id: string } | undefined;
-      if (onPrevious) {
-        asset = await onPrevious();
-      } else {
-        if (currentIndex <= 0) {
-          return false;
-        }
-
-        currentIndex = currentIndex - 1;
-
-        asset =
-          currentIndex >= 0
-            ? assetInteraction.selectedAssets.length > 0
-              ? assetInteraction.selectedAssets[currentIndex]
-              : assets[currentIndex]
-            : undefined;
-      }
-
-      if (!asset) {
-        currentIndex = 0;
-        return false;
-      }
-
-      await navigateToAsset(asset);
-      return true;
-    } catch (error) {
-      handleError(error, $t('errors.cannot_navigate_previous_asset'));
-      return false;
-    }
-  };
-
-  let shuffledTimelineAssets: TimelineAsset[] = $state([]);
-
-  const handlePlaySlideshow = () => {
-    const first = assets.find((a) => a.id === $viewingAsset.id);
-    if (!first) {
-      return;
-    }
-
-    const rest = assets.filter((a) => a.id !== $viewingAsset.id);
-
-    const shuffledRest = rest.sort(() => Math.random() - 0.5);
-
-    shuffledTimelineAssets = [first, ...shuffledRest] as TimelineAsset[];
-
-    return ($slideshowState = SlideshowState.PlaySlideshow);
-  };
-
-  const navigateToAsset = async (asset?: { id: string }) => {
-    if (asset && asset.id !== $viewingAsset.id) {
-      await setAssetId(asset.id);
-      await navigate({ targetRoute: 'current', assetId: $viewingAsset.id });
-    }
-  };
-
   const handleAction = async (action: Action) => {
     switch (action.type) {
       case AssetAction.ARCHIVE:
       case AssetAction.DELETE:
       case AssetAction.TRASH: {
+        const nextAsset = assetCursor.nextAsset ?? assetCursor.previousAsset;
         assets.splice(
           assets.findIndex((currentAsset) => currentAsset.id === action.asset.id),
           1,
         );
         if (assets.length === 0) {
-          await goto(resolve(AppRoute.PHOTOS));
-        } else if (currentIndex === assets.length) {
-          await handlePrevious();
-        } else {
-          await setAssetId(assets[currentIndex].id);
+          return await goto(Route.photos());
+        }
+        if (nextAsset) {
+          await navigateToAsset(nextAsset);
         }
         break;
       }
@@ -488,17 +323,15 @@
     }
   };
 
-  let isTrashEnabled = $derived($featureFlags.loaded && $featureFlags.trash);
-
   $effect(() => {
     if (!lastAssetMouseEvent) {
-      assetInteraction.clearAssetSelectionCandidates();
+      assetInteraction.clearCandidates();
     }
   });
 
   $effect(() => {
     if (!shiftKeyIsDown) {
-      assetInteraction.clearAssetSelectionCandidates();
+      assetInteraction.clearCandidates();
     }
   });
 
@@ -506,6 +339,12 @@
     if (shiftKeyIsDown && lastAssetMouseEvent) {
       selectAssetCandidates(lastAssetMouseEvent);
     }
+  });
+
+  const assetCursor = $derived<AssetCursor>({
+    current: assetViewerManager.asset!,
+    nextAsset: getNextAsset(navigationAssets, assetViewerManager.asset),
+    previousAsset: getPreviousAsset(navigationAssets, assetViewerManager.asset),
   });
 </script>
 
@@ -517,51 +356,40 @@
   onscroll={() => updateSlidingWindow()}
 />
 
-{#if isShowDeleteConfirmation}
-  <DeleteAssetDialog
-    size={assetInteraction.selectedAssets.length}
-    onCancel={() => (isShowDeleteConfirmation = false)}
-    onConfirm={() => handlePromiseError(trashOrDelete(true))}
-  />
-{/if}
-
 {#if assets.length > 0}
   <div
     style:position="relative"
-    style:height={assetLayouts.containerHeight + 'px'}
-    style:width={assetLayouts.containerWidth - 1 + 'px'}
+    style:height={geometry.containerHeight + 'px'}
+    style:width={geometry.containerWidth + 'px'}
   >
-    {#each assetLayouts.assetLayout as layout, layoutIndex (layout.asset.id + '-' + layoutIndex)}
-      {@const currentAsset = layout.asset}
-
-      {#if layout.display}
-        <div
-          class="absolute"
-          style="width: {layout.width}px; height: {layout.height}px; top: {layout.top}px; left: {layout.left}px"
-        >
+    {#each assets as asset, i (asset.id + '-' + i)}
+      {#if isIntersecting(i)}
+        {@const currentAsset = toTimelineAsset(asset)}
+        <div class="absolute" style:overflow="clip" style={getStyle(i)}>
           <Thumbnail
             readonly={disableAssetSelect}
             onClick={() => {
               if (assetInteraction.selectionActive) {
-                handleSelectAssets(toTimelineAsset(currentAsset));
+                handleSelectAssets(currentAsset);
                 return;
               }
-              void viewAssetHandler(toTimelineAsset(currentAsset));
+              void navigateToAsset(asset);
             }}
-            onSelect={() => handleSelectAssets(toTimelineAsset(currentAsset))}
-            onMouseEvent={() => assetMouseEventHandler(toTimelineAsset(currentAsset))}
+            onSelect={() => handleSelectAssets(currentAsset)}
+            onPreview={assetInteraction.selectionActive ? () => void navigateToAsset(asset) : undefined}
+            onMouseEvent={() => assetMouseEventHandler(currentAsset)}
             {showArchiveIcon}
-            asset={toTimelineAsset(currentAsset)}
+            asset={currentAsset}
             selected={assetInteraction.hasSelectedAsset(currentAsset.id)}
             selectionCandidate={assetInteraction.hasSelectionCandidate(currentAsset.id)}
-            thumbnailWidth={layout.width}
-            thumbnailHeight={layout.height}
+            thumbnailWidth={geometry.getWidth(i)}
+            thumbnailHeight={geometry.getHeight(i)}
           />
-          {#if showAssetName && !isTimelineAsset(currentAsset)}
+          {#if showAssetName && !isTimelineAsset(asset)}
             <div
-              class="absolute text-center p-1 text-xs font-semibold w-full bottom-0 bg-linear-to-t bg-slate-50/75 dark:bg-slate-800/75 overflow-clip text-ellipsis whitespace-pre-wrap"
+              class="absolute text-center p-1 text-xs font-mono font-semibold w-full bottom-0 bg-linear-to-t bg-slate-50/75 dark:bg-slate-800/75 overflow-clip text-ellipsis whitespace-pre-wrap"
             >
-              {currentAsset.originalFileName}
+              {asset.originalFileName}
             </div>
           {/if}
         </div>
@@ -571,21 +399,19 @@
 {/if}
 
 <!-- Overlay Asset Viewer -->
-{#if $isViewerOpen}
+{#if assetViewerManager.isViewing}
   <Portal target="body">
-    <AssetViewer
-      asset={$viewingAsset}
-      onAction={handleAction}
-      onPrevious={$slideshowNavigation === SlideshowNavigation.AscendingOrder ? handleNext : handlePrevious}
-      onNext={$slideshowNavigation === SlideshowNavigation.AscendingOrder ? handlePrevious : handleNext}
-      onRandom={handleRandom}
-      onClose={() => {
-        currentIndex = 0;
-        assetViewingStore.showAssetViewer(false);
-        handlePromiseError(navigate({ targetRoute: 'current', assetId: null }));
-      }}
-      {assetInteraction}
-      onPlaySlideshow={handlePlaySlideshow}
-    />
+    {#await import('$lib/components/asset-viewer/asset-viewer.svelte') then { default: AssetViewer }}
+      <AssetViewer
+        cursor={assetCursor}
+        onAction={handleAction}
+        onRandom={handleRandom}
+        onAssetChange={updateCurrentAsset}
+        onClose={() => {
+          assetViewerManager.showAssetViewer(false);
+          handlePromiseError(navigate({ targetRoute: 'current', assetId: null }));
+        }}
+      />
+    {/await}
   </Portal>
 {/if}

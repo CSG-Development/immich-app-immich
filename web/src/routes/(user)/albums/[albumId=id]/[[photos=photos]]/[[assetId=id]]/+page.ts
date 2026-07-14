@@ -1,9 +1,7 @@
-import { resolve } from '$app/paths';
-import { AppRoute } from '$lib/constants';
+import { Route } from '$lib/route';
 import { albumPreviousRoute } from '$lib/stores/navigation.store';
 import { authenticate } from '$lib/utils/auth';
-import { getAssetInfoFromParam } from '$lib/utils/navigation';
-import { getAlbumInfo, type AlbumResponseDto, type AssetResponseDto } from '@immich/sdk';
+import { getAlbumInfo, type AlbumResponseDto } from '@immich/sdk';
 import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
@@ -12,18 +10,14 @@ export const load = (async ({ params, url }) => {
   await authenticate(url);
 
   let album: AlbumResponseDto;
-  let asset: AssetResponseDto | undefined;
 
   try {
-    [album, asset] = await Promise.all([
-      getAlbumInfo({ id: params.albumId, withoutAssets: true }),
-      getAssetInfoFromParam(params),
-    ]);
+    album = await getAlbumInfo({ id: params.albumId, withoutAssets: true });
   } catch (error) {
     const prev = get(albumPreviousRoute);
 
     if (!prev) {
-      redirect(302, resolve(AppRoute.PHOTOS));
+      redirect(302, Route.albums());
     }
 
     redirect(302, prev);
@@ -31,7 +25,6 @@ export const load = (async ({ params, url }) => {
 
   return {
     album,
-    asset,
     meta: {
       title: album.albumName,
     },

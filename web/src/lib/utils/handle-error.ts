@@ -1,6 +1,6 @@
 import { isHttpError } from '@immich/sdk';
+import { toastManager } from '@immich/ui';
 import type { Component } from 'svelte';
-import { notificationController, NotificationType } from '../components/shared-components/notification/notification';
 
 export function getServerErrorMessage(error: unknown) {
   if (!isHttpError(error)) {
@@ -24,12 +24,23 @@ export interface ApiError extends Error {
   status: number;
 }
 
-export function handleError(error: unknown, message: string, component?: Component) {
-  if ((error as ApiError)?.name === 'AbortError') {
+export function standardizeError(error: unknown) {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+export function handleError(
+  error: unknown,
+  localizedMessage: string,
+  component?: Component,
+  options?: { notify?: boolean },
+) {
+  const { notify = true } = options ?? {};
+  const standardizedError = standardizeError(error);
+  if (standardizedError.name === 'AbortError') {
     return;
   }
 
-  console.error(`[handleError]: ${message}`, error, (error as ApiError)?.stack);
+  console.error(`[handleError]: ${standardizedError}`, error, standardizedError.stack);
 
   try {
     let serverMessage = getServerErrorMessage(error);
@@ -37,17 +48,24 @@ export function handleError(error: unknown, message: string, component?: Compone
       serverMessage = `${String(serverMessage).slice(0, 75)}\n${(error as ApiError)?.status >= 500 ? '(Personal Cloud Photos Server Error)' : ''}`;
     }
 
-    const errorMessage = serverMessage || message;
+    const errorMessage = serverMessage || localizedMessage;
 
-    notificationController.show({
-      message: errorMessage,
-      type: NotificationType.Error,
-      ...(!!component ? { component } : {}),
-    });
+    if (notify) {
+      toastManager.danger(errorMessage);
+    }
 
     return errorMessage;
   } catch (error) {
     console.error(error);
-    return message;
+    return localizedMessage;
+  }
+}
+
+export async function handleErrorAsync<T>(fn: () => Promise<T>, localizedMessage: string): Promise<T | undefined> {
+  try {
+    return await fn();
+  } catch (error: unknown) {
+    handleError(error, localizedMessage);
+    return;
   }
 }

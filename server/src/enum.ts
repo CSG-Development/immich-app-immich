@@ -5,6 +5,7 @@ export enum AuthType {
 
 export enum ImmichCookie {
   AccessToken = 'immich_access_token',
+  MaintenanceToken = 'immich_maintenance_token',
   AuthType = 'immich_auth_type',
   IsAuthenticated = 'immich_is_authenticated',
   SharedLinkToken = 'immich_shared_link_token',
@@ -36,6 +37,11 @@ export enum AssetType {
   Other = 'OTHER',
 }
 
+export enum ChecksumAlgorithm {
+  sha1File = 'sha1', // sha1 checksum of the whole file contents
+  sha1Path = 'sha1-path', // sha1 checksum of "path:" plus the file path, currently used in external libraries, deprecated
+}
+
 export enum AssetFileType {
   /**
    * An full/large-size image extracted/converted from RAW photos
@@ -43,6 +49,8 @@ export enum AssetFileType {
   FullSize = 'fullsize',
   Preview = 'preview',
   Thumbnail = 'thumbnail',
+  Sidecar = 'sidecar',
+  EncodedVideo = 'encoded_video',
 }
 
 export enum AlbumUserRole {
@@ -71,6 +79,14 @@ export enum MemoryType {
   OnThisDay = 'on_this_day',
 }
 
+export enum AssetOrderWithRandom {
+  // Include existing values
+  Asc = AssetOrder.Asc,
+  Desc = AssetOrder.Desc,
+  /** Randomly Ordered */
+  Random = 'random',
+}
+
 export enum Permission {
   All = 'all',
 
@@ -95,6 +111,12 @@ export enum Permission {
   AssetDownload = 'asset.download',
   AssetUpload = 'asset.upload',
   AssetReplace = 'asset.replace',
+  AssetCopy = 'asset.copy',
+  AssetDerive = 'asset.derive',
+
+  AssetEditGet = 'asset.edit.get',
+  AssetEditCreate = 'asset.edit.create',
+  AssetEditDelete = 'asset.edit.delete',
 
   AlbumCreate = 'album.create',
   AlbumRead = 'album.read',
@@ -117,6 +139,11 @@ export enum Permission {
 
   ArchiveRead = 'archive.read',
 
+  BackupList = 'backup.list',
+  BackupDownload = 'backup.download',
+  BackupUpload = 'backup.upload',
+  BackupDelete = 'backup.delete',
+
   DuplicateRead = 'duplicate.read',
   DuplicateDelete = 'duplicate.delete',
 
@@ -124,6 +151,8 @@ export enum Permission {
   FaceRead = 'face.read',
   FaceUpdate = 'face.update',
   FaceDelete = 'face.delete',
+
+  FolderRead = 'folder.read',
 
   JobCreate = 'job.create',
   JobRead = 'job.read',
@@ -136,6 +165,11 @@ export enum Permission {
 
   TimelineRead = 'timeline.read',
   TimelineDownload = 'timeline.download',
+
+  Maintenance = 'maintenance',
+
+  MapRead = 'map.read',
+  MapSearch = 'map.search',
 
   MemoryCreate = 'memory.create',
   MemoryRead = 'memory.read',
@@ -167,6 +201,11 @@ export enum Permission {
   PinCodeCreate = 'pinCode.create',
   PinCodeUpdate = 'pinCode.update',
   PinCodeDelete = 'pinCode.delete',
+
+  PluginCreate = 'plugin.create',
+  PluginRead = 'plugin.read',
+  PluginUpdate = 'plugin.update',
+  PluginDelete = 'plugin.delete',
 
   ServerAbout = 'server.about',
   ServerApkLinks = 'server.apkLinks',
@@ -231,10 +270,25 @@ export enum Permission {
   UserProfileImageUpdate = 'userProfileImage.update',
   UserProfileImageDelete = 'userProfileImage.delete',
 
+  QueueRead = 'queue.read',
+  QueueUpdate = 'queue.update',
+
+  QueueJobCreate = 'queueJob.create',
+  QueueJobRead = 'queueJob.read',
+  QueueJobUpdate = 'queueJob.update',
+  QueueJobDelete = 'queueJob.delete',
+
+  WorkflowCreate = 'workflow.create',
+  WorkflowRead = 'workflow.read',
+  WorkflowUpdate = 'workflow.update',
+  WorkflowDelete = 'workflow.delete',
+
   AdminUserCreate = 'adminUser.create',
   AdminUserRead = 'adminUser.read',
   AdminUserUpdate = 'adminUser.update',
   AdminUserDelete = 'adminUser.delete',
+
+  AdminSessionRead = 'adminSession.read',
 
   AdminAuthUnlinkAll = 'adminAuth.unlinkAll',
 }
@@ -264,6 +318,7 @@ export enum SystemMetadataKey {
   FacialRecognitionState = 'facial-recognition-state',
   MemoriesState = 'memories-state',
   AdminOnboarding = 'admin-onboarding',
+  MaintenanceMode = 'maintenance-mode',
   SystemConfig = 'system-config',
   SystemFlags = 'system-flags',
   VersionCheckState = 'version-check-state',
@@ -322,11 +377,7 @@ export enum ManualJobName {
 
 export enum AssetPathType {
   Original = 'original',
-  FullSize = 'fullsize',
-  Preview = 'preview',
-  Thumbnail = 'thumbnail',
   EncodedVideo = 'encoded_video',
-  Sidecar = 'sidecar',
 }
 
 export enum PersonPathType {
@@ -337,7 +388,7 @@ export enum UserPathType {
   Profile = 'profile',
 }
 
-export type PathType = AssetPathType | PersonPathType | UserPathType;
+export type PathType = AssetFileType | AssetPathType | PersonPathType | UserPathType;
 
 export enum TranscodePolicy {
   All = 'all',
@@ -364,7 +415,9 @@ export enum VideoCodec {
 export enum AudioCodec {
   Mp3 = 'mp3',
   Aac = 'aac',
-  LibOpus = 'libopus',
+  /** @deprecated Use `Opus` instead */
+  Libopus = 'libopus',
+  Opus = 'opus',
   PcmS16le = 'pcm_s16le',
 }
 
@@ -420,9 +473,16 @@ export enum LogLevel {
   Fatal = 'fatal',
 }
 
+export enum LogFormat {
+  Console = 'console',
+  Json = 'json',
+}
+
 export enum ApiCustomExtension {
   Permission = 'x-immich-permission',
   AdminOnly = 'x-immich-admin-only',
+  History = 'x-immich-history',
+  State = 'x-immich-state',
 }
 
 export enum MetadataKey {
@@ -454,6 +514,7 @@ export enum ImmichEnvironment {
 
 export enum ImmichWorker {
   Api = 'api',
+  Maintenance = 'maintenance',
   Microservices = 'microservices',
 }
 
@@ -511,6 +572,18 @@ export enum QueueName {
   Library = 'library',
   Notification = 'notifications',
   BackupDatabase = 'backupDatabase',
+  Ocr = 'ocr',
+  Workflow = 'workflow',
+  Editor = 'editor',
+}
+
+export enum QueueJobStatus {
+  Active = 'active',
+  Failed = 'failed',
+  Complete = 'completed',
+  Delayed = 'delayed',
+  Waiting = 'waiting',
+  Paused = 'paused',
 }
 
 export enum JobName {
@@ -520,6 +593,7 @@ export enum JobName {
   AssetDetectFaces = 'AssetDetectFaces',
   AssetDetectDuplicatesQueueAll = 'AssetDetectDuplicatesQueueAll',
   AssetDetectDuplicates = 'AssetDetectDuplicates',
+  AssetEditThumbnailGeneration = 'AssetEditThumbnailGeneration',
   AssetEncodeVideoQueueAll = 'AssetEncodeVideoQueueAll',
   AssetEncodeVideo = 'AssetEncodeVideo',
   AssetEmptyTrash = 'AssetEmptyTrash',
@@ -583,13 +657,24 @@ export enum JobName {
   TagCleanup = 'TagCleanup',
 
   VersionCheck = 'VersionCheck',
+
+  // OCR
+  OcrQueueAll = 'OcrQueueAll',
+  Ocr = 'Ocr',
+
+  // Workflow
+  WorkflowRun = 'WorkflowRun',
 }
 
-export enum JobCommand {
+export enum QueueCommand {
   Start = 'start',
+  /** @deprecated Use `updateQueue` instead */
   Pause = 'pause',
+  /** @deprecated Use `updateQueue` instead */
   Resume = 'resume',
+  /** @deprecated Use `emptyQueue` instead */
   Empty = 'empty',
+  /** @deprecated Use `emptyQueue` instead */
   ClearFailed = 'clear-failed',
 }
 
@@ -620,7 +705,20 @@ export enum DatabaseLock {
   MediaLocation = 700,
   GetSystemConfig = 69,
   BackupDatabase = 42,
+  MaintenanceOperation = 621,
   MemoryCreation = 777,
+  VersionCheck = 800,
+}
+
+export enum MaintenanceAction {
+  Start = 'start',
+  End = 'end',
+  SelectDatabaseRestore = 'select_database_restore',
+  RestoreDatabase = 'restore_database',
+}
+
+export enum ExitCode {
+  AppRestart = 7,
 }
 
 export enum SyncRequestType {
@@ -631,6 +729,7 @@ export enum SyncRequestType {
   AlbumAssetExifsV1 = 'AlbumAssetExifsV1',
   AssetsV1 = 'AssetsV1',
   AssetExifsV1 = 'AssetExifsV1',
+  AssetEditsV1 = 'AssetEditsV1',
   AssetMetadataV1 = 'AssetMetadataV1',
   AuthUsersV1 = 'AuthUsersV1',
   MemoriesV1 = 'MemoriesV1',
@@ -643,6 +742,7 @@ export enum SyncRequestType {
   UsersV1 = 'UsersV1',
   PeopleV1 = 'PeopleV1',
   AssetFacesV1 = 'AssetFacesV1',
+  AssetFacesV2 = 'AssetFacesV2',
   UserMetadataV1 = 'UserMetadataV1',
 }
 
@@ -655,6 +755,8 @@ export enum SyncEntityType {
   AssetV1 = 'AssetV1',
   AssetDeleteV1 = 'AssetDeleteV1',
   AssetExifV1 = 'AssetExifV1',
+  AssetEditV1 = 'AssetEditV1',
+  AssetEditDeleteV1 = 'AssetEditDeleteV1',
   AssetMetadataV1 = 'AssetMetadataV1',
   AssetMetadataDeleteV1 = 'AssetMetadataDeleteV1',
 
@@ -701,6 +803,7 @@ export enum SyncEntityType {
   PersonDeleteV1 = 'PersonDeleteV1',
 
   AssetFaceV1 = 'AssetFaceV1',
+  AssetFaceV2 = 'AssetFaceV2',
   AssetFaceDeleteV1 = 'AssetFaceDeleteV1',
 
   UserMetadataV1 = 'UserMetadataV1',
@@ -722,20 +825,14 @@ export enum NotificationType {
   JobFailed = 'JobFailed',
   BackupFailed = 'BackupFailed',
   SystemMessage = 'SystemMessage',
+  AlbumInvite = 'AlbumInvite',
+  AlbumUpdate = 'AlbumUpdate',
   Custom = 'Custom',
 }
 
 export enum OAuthTokenEndpointAuthMethod {
   ClientSecretPost = 'client_secret_post',
   ClientSecretBasic = 'client_secret_basic',
-}
-
-export enum DatabaseSslMode {
-  Disable = 'disable',
-  Allow = 'allow',
-  Prefer = 'prefer',
-  Require = 'require',
-  VerifyFull = 'verify-full',
 }
 
 export enum AssetVisibility {
@@ -752,4 +849,56 @@ export enum AssetVisibility {
 export enum CronJob {
   LibraryScan = 'LibraryScan',
   NightlyJobs = 'NightlyJobs',
+  VersionCheck = 'VersionCheck',
+}
+
+export enum ApiTag {
+  Activities = 'Activities',
+  Albums = 'Albums',
+  ApiKeys = 'API keys',
+  Authentication = 'Authentication',
+  AuthenticationAdmin = 'Authentication (admin)',
+  Assets = 'Assets',
+  DatabaseBackups = 'Database Backups (admin)',
+  Deprecated = 'Deprecated',
+  Download = 'Download',
+  Duplicates = 'Duplicates',
+  Faces = 'Faces',
+  Jobs = 'Jobs',
+  Libraries = 'Libraries',
+  Maintenance = 'Maintenance (admin)',
+  Map = 'Map',
+  Memories = 'Memories',
+  Notifications = 'Notifications',
+  NotificationsAdmin = 'Notifications (admin)',
+  Partners = 'Partners',
+  People = 'People',
+  Plugins = 'Plugins',
+  Queues = 'Queues',
+  Search = 'Search',
+  Server = 'Server',
+  Sessions = 'Sessions',
+  SharedLinks = 'Shared links',
+  Stacks = 'Stacks',
+  Sync = 'Sync',
+  SystemConfig = 'System config',
+  SystemMetadata = 'System metadata',
+  Tags = 'Tags',
+  Timeline = 'Timeline',
+  Trash = 'Trash',
+  UsersAdmin = 'Users (admin)',
+  Users = 'Users',
+  Views = 'Views',
+  Workflows = 'Workflows',
+}
+
+export enum PluginContext {
+  Asset = 'asset',
+  Album = 'album',
+  Person = 'person',
+}
+
+export enum PluginTriggerType {
+  AssetCreate = 'AssetCreate',
+  PersonRecognized = 'PersonRecognized',
 }

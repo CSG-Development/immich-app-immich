@@ -1,58 +1,52 @@
 <script lang="ts">
-  /* import { page } from '$app/stores'; */
+  import { page } from '$app/stores';
   import ChangePinCodeSettings from '$lib/components/user-settings-page/PinCodeSettings.svelte';
-  /*   import DownloadSettings from '$lib/components/user-settings-page/download-settings.svelte'; */
+  import DownloadSettings from '$lib/components/user-settings-page/download-settings.svelte';
   import FeatureSettings from '$lib/components/user-settings-page/feature-settings.svelte';
   import NotificationsSettings from '$lib/components/user-settings-page/notifications-settings.svelte';
-  /* import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte'; */
+  import UserPurchaseSettings from '$lib/components/user-settings-page/user-purchase-settings.svelte';
   import UserUsageStatistic from '$lib/components/user-settings-page/user-usage-statistic.svelte';
-  import { /* OpenSettingQueryParameterValue, */ QueryParameter } from '$lib/constants';
+  import { OpenQueryParam, QueryParameter } from '$lib/constants';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import { user } from '$lib/stores/user.store';
-  /* import { oauth } from '$lib/utils'; */
-  import { type ApiKeyResponseDto, type SessionResponseDto, type SystemConfigDto } from '@immich/sdk';
+  import { oauth } from '$lib/utils';
+  import { type ApiKeyResponseDto, type SessionResponseDto } from '@immich/sdk';
   import {
     mdiAccountGroupOutline,
+    mdiAccountOutline,
     mdiApi,
-    /* mdiAccountOutline, */
-    /* mdiApi, */
     mdiBellOutline,
     mdiCogOutline,
     mdiDevices,
-    /* mdiDownload, */
+    mdiDownload,
     mdiFeatureSearchOutline,
-    mdiFileDocumentOutline,
-    /* mdiKeyOutline, */
+    mdiFormTextboxPassword,
+    mdiKeyOutline,
     mdiLockSmart,
-    /* mdiOnepassword, */
     mdiServerOutline,
+    mdiTwoFactorAuthentication,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import SettingAccordionState from '../shared-components/settings/setting-accordion-state.svelte';
   import SettingAccordion from '../shared-components/settings/setting-accordion.svelte';
   import AppSettings from './app-settings.svelte';
-  /* import ChangePasswordSettings from './change-password-settings.svelte'; */
+  import ChangePasswordSettings from './change-password-settings.svelte';
   import DeviceList from './device-list.svelte';
-  /* import OAuthSettings from './oauth-settings.svelte'; */
-  import AdminSettings from '$lib/components/admin-settings/AdminSettings.svelte';
-  import LoggingSettings from '$lib/components/admin-settings/LoggingSettings.svelte';
+  import OAuthSettings from './oauth-settings.svelte';
   import PartnerSettings from './partner-settings.svelte';
-  /* import UserAPIKeyList from './user-api-key-list.svelte'; */
-  /* import UserProfileSettings from './user-profile-settings.svelte'; */
-  import UserApiKeyList from '$lib/components/user-settings-page/user-api-key-list.svelte';
-  import { featureFlags } from '$lib/stores/server-config.store';
+  import UserAPIKeyList from './user-api-key-list.svelte';
+  import UserProfileSettings from './user-profile-settings.svelte';
 
   interface Props {
-    config?: SystemConfigDto;
     keys?: ApiKeyResponseDto[];
     sessions?: SessionResponseDto[];
   }
 
-  let { keys = $bindable([]), sessions = $bindable([]), config = $bindable() }: Props = $props();
-  let adminSettingElement = $state<ReturnType<typeof AdminSettings>>();
+  let { keys = $bindable([]), sessions = $bindable([]) }: Props = $props();
 
-  /* let oauthOpen =
+  let oauthOpen =
     oauth.isCallback(globalThis.location) ||
-    $page.url.searchParams.get(QueryParameter.OPEN_SETTING) === OpenSettingQueryParameterValue.OAUTH; */
+    $page.url.searchParams.get(QueryParameter.OPEN_SETTING) === OpenQueryParam.OAUTH;
 </script>
 
 <SettingAccordionState queryParam={QueryParameter.IS_OPEN}>
@@ -66,9 +60,9 @@
     <AppSettings />
   </SettingAccordion>
 
-  <!--  <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>-->
-  <!--    <UserProfileSettings />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>
+    <UserProfileSettings />
+  </SettingAccordion>
 
   <SettingAccordion
     child={false}
@@ -81,7 +75,7 @@
   </SettingAccordion>
 
   <SettingAccordion icon={mdiApi} key="api-keys" title={$t('api_keys')} subtitle={$t('manage_your_api_keys')}>
-    <UserApiKeyList bind:keys />
+    <UserAPIKeyList bind:keys />
   </SettingAccordion>
 
   <SettingAccordion
@@ -94,14 +88,15 @@
     <DeviceList bind:devices={sessions} />
   </SettingAccordion>
 
-  <!--  <SettingAccordion-->
-  <!--    icon={mdiDownload}-->
-  <!--    key="download-settings"-->
-  <!--    title={$t('download_settings')}-->
-  <!--    subtitle={$t('download_settings_description')}-->
-  <!--  >-->
-  <!--    <DownloadSettings />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion
+    child={false}
+    icon={mdiDownload}
+    key="download-settings"
+    title={$t('download_settings')}
+    subtitle={$t('download_settings_description')}
+  >
+    <DownloadSettings />
+  </SettingAccordion>
 
   <SettingAccordion
     child={false}
@@ -116,28 +111,33 @@
   <SettingAccordion
     child={false}
     icon={mdiBellOutline}
-    key="notifications"
+    key={OpenQueryParam.NOTIFICATIONS}
     title={$t('notifications')}
     subtitle={$t('notifications_setting_description')}
   >
     <NotificationsSettings />
   </SettingAccordion>
 
-  <!--{#if $featureFlags.loaded && $featureFlags.oauth}-->
-  <!--  <SettingAccordion-->
-  <!--    icon={mdiTwoFactorAuthentication}-->
-  <!--    key="oauth"-->
-  <!--    title={$t('oauth')}-->
-  <!--    subtitle={$t('manage_your_oauth_connection')}-->
-  <!--    isOpen={oauthOpen || undefined}-->
-  <!--  >-->
-  <!--    <OAuthSettings user={$user} />-->
-  <!--  </SettingAccordion>-->
-  <!--{/if}-->
+  {#if featureFlagsManager.value.oauth}
+    <SettingAccordion
+      icon={mdiTwoFactorAuthentication}
+      key={OpenQueryParam.OAUTH}
+      title={$t('oauth')}
+      subtitle={$t('manage_your_oauth_connection')}
+      isOpen={oauthOpen || undefined}
+    >
+      <OAuthSettings user={$user} />
+    </SettingAccordion>
+  {/if}
 
-  <!--  <SettingAccordion icon={mdiOnepassword} key="password" title={$t('password')} subtitle={$t('change_your_password')}>-->
-  <!--    <ChangePasswordSettings />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion
+    icon={mdiFormTextboxPassword}
+    key="password"
+    title={$t('password')}
+    subtitle={$t('change_your_password')}
+  >
+    <ChangePasswordSettings />
+  </SettingAccordion>
 
   <SettingAccordion
     child={false}
@@ -160,38 +160,13 @@
     <ChangePinCodeSettings />
   </SettingAccordion>
 
-  {#if config}
-    <AdminSettings {config} bind:this={adminSettingElement}>
-      {#snippet children({ savedConfig, defaultConfig })}
-        <SettingAccordion
-          child={false}
-          icon={mdiFileDocumentOutline}
-          key="user-logging-settings"
-          title={$t('admin.logging_settings')}
-          subtitle={$t('admin.manage_log_settings')}
-        >
-          {#if config}
-            <LoggingSettings
-              onSave={(config) => adminSettingElement?.handleSave(config)}
-              onReset={(options) => adminSettingElement?.handleReset(options)}
-              disabled={$featureFlags.configFile}
-              {config}
-              {defaultConfig}
-              {savedConfig}
-            />
-          {/if}
-        </SettingAccordion>
-      {/snippet}
-    </AdminSettings>
-  {/if}
-
-  <!--  <SettingAccordion-->
-  <!--    icon={mdiKeyOutline}-->
-  <!--    key="user-purchase-settings"-->
-  <!--    title={$t('user_purchase_settings')}-->
-  <!--    subtitle={$t('user_purchase_settings_description')}-->
-  <!--    autoScrollTo={true}-->
-  <!--  >-->
-  <!--    <UserPurchaseSettings />-->
-  <!--  </SettingAccordion>-->
+  <SettingAccordion
+    icon={mdiKeyOutline}
+    key={OpenQueryParam.PURCHASE_SETTINGS}
+    title={$t('user_purchase_settings')}
+    subtitle={$t('user_purchase_settings_description')}
+    autoScrollTo={true}
+  >
+    <UserPurchaseSettings />
+  </SettingAccordion>
 </SettingAccordionState>

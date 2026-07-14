@@ -1,3 +1,4 @@
+import { AUDIO_ENCODER } from 'src/constants';
 import { SystemConfigFFmpegDto } from 'src/dtos/system-config.dto';
 import { CQMode, ToneMapping, TranscodeHardwareAcceleration, TranscodeTarget, VideoCodec } from 'src/enum';
 import {
@@ -117,7 +118,7 @@ export class BaseConfig implements VideoCodecSWConfig {
 
   getBaseOutputOptions(target: TranscodeTarget, videoStream: VideoStreamInfo, audioStream?: AudioStreamInfo) {
     const videoCodec = [TranscodeTarget.All, TranscodeTarget.Video].includes(target) ? this.getVideoCodec() : 'copy';
-    const audioCodec = [TranscodeTarget.All, TranscodeTarget.Audio].includes(target) ? this.getAudioCodec() : 'copy';
+    const audioCodec = [TranscodeTarget.All, TranscodeTarget.Audio].includes(target) ? this.getAudioEncoder() : 'copy';
 
     const options = [
       `-c:v ${videoCodec}`,
@@ -305,8 +306,8 @@ export class BaseConfig implements VideoCodecSWConfig {
     return [options];
   }
 
-  getAudioCodec(): string {
-    return this.config.targetAudioCodec;
+  getAudioEncoder(): string {
+    return AUDIO_ENCODER[this.config.targetAudioCodec];
   }
 
   getVideoCodec(): string {
@@ -392,9 +393,30 @@ export class ThumbnailConfig extends BaseConfig {
 
   getBaseInputOptions(videoStream: VideoStreamInfo, format?: VideoFormat): string[] {
     // skip_frame nointra skips all frames for some MPEG-TS files. Look at ffmpeg tickets 7950 and 7895 for more details.
-    return format?.formatName === 'mpegts'
-      ? ['-sws_flags accurate_rnd+full_chroma_int']
-      : ['-skip_frame nointra', '-sws_flags accurate_rnd+full_chroma_int'];
+    const options =
+      format?.formatName === 'mpegts'
+        ? ['-sws_flags accurate_rnd+full_chroma_int']
+        : ['-skip_frame nointra', '-sws_flags accurate_rnd+full_chroma_int'];
+
+    const metadataOverrides = [];
+    if (videoStream.colorPrimaries === 'reserved') {
+      metadataOverrides.push('colour_primaries=1');
+    }
+
+    if (videoStream.colorSpace === 'reserved') {
+      metadataOverrides.push('matrix_coefficients=1');
+    }
+
+    if (videoStream.colorTransfer === 'reserved') {
+      metadataOverrides.push('transfer_characteristics=1');
+    }
+
+    if (metadataOverrides.length > 0) {
+      // workaround for https://fftrac-bg.ffmpeg.org/ticket/11020
+      options.push(`-bsf:v ${videoStream.codecName}_metadata=${metadataOverrides.join(':')}`);
+    }
+
+    return options;
   }
 
   getBaseOutputOptions() {
@@ -683,8 +705,7 @@ export class QsvSwDecodeConfig extends BaseHWConfig {
   }
 
   getBitrateOptions() {
-    const options = [];
-    options.push(`-${this.useCQP() ? 'q:v' : 'global_quality:v'} ${this.config.crf}`);
+    const options = [`-${this.useCQP() ? 'q:v' : 'global_quality:v'} ${this.config.crf}`];
     const bitrates = this.getBitrateDistribution();
     if (bitrates.max > 0) {
       options.push(`-maxrate ${bitrates.max}${bitrates.unit}`, `-bufsize ${bitrates.max * 2}${bitrates.unit}`);

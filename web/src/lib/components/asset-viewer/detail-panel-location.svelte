@@ -1,24 +1,20 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
-  import ChangeLocation from '$lib/components/shared-components/change-location.svelte';
-  import Portal from '$lib/elements/Portal.svelte';
+  import GeolocationPointPickerModal from '$lib/modals/GeolocationPointPickerModal.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
+  import { Icon, modalManager } from '@immich/ui';
   import { mdiMapMarkerOutline, mdiPencilOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
-  interface Props {
+  type Props = {
     isOwner: boolean;
     asset: AssetResponseDto;
-  }
+  };
 
   let { isOwner, asset = $bindable() }: Props = $props();
 
-  let isShowChangeLocation = $state(false);
-
-  const onClose = async (point?: { lng: number; lat: number }) => {
-    isShowChangeLocation = false;
-
+  const onAction = async () => {
+    const point = await modalManager.show(GeolocationPointPickerModal, { asset });
     if (!point) {
       return;
     }
@@ -38,12 +34,12 @@
   <button
     type="button"
     class="flex w-full text-start justify-between place-items-start gap-4 py-4"
-    onclick={() => (isOwner ? (isShowChangeLocation = true) : null)}
+    onclick={isOwner ? onAction : undefined}
     title={isOwner ? $t('edit_location') : ''}
     class:hover:text-primary={isOwner}
   >
     <div class="flex gap-4">
-      <div><Icon path={mdiMapMarkerOutline} size="24" /></div>
+      <div><Icon icon={mdiMapMarkerOutline} size="24" /></div>
 
       <div>
         {#if asset.exifInfo?.city}
@@ -64,30 +60,23 @@
 
     {#if isOwner}
       <div>
-        <Icon path={mdiPencilOutline} size="24" />
+        <Icon icon={mdiPencilOutline} size="24" />
       </div>
     {/if}
   </button>
 {:else if !asset.exifInfo?.city && isOwner}
   <button
     type="button"
-    class="flex w-full text-start justify-between place-items-start gap-4 py-4 rounded-lg hover:dark:text-immich-dark-primary hover:text-immich-primary"
-    onclick={() => (isShowChangeLocation = true)}
+    class="flex w-full text-start justify-between place-items-start gap-4 py-4 rounded-lg hover:text-primary"
+    onclick={onAction}
     title={$t('add_location')}
   >
     <div class="flex gap-4">
-      <div><Icon path={mdiMapMarkerOutline} size="24" /></div>
-
+      <div><Icon icon={mdiMapMarkerOutline} size="24" /></div>
       <p>{$t('add_a_location')}</p>
     </div>
     <div class="focus:outline-none p-1">
-      <Icon path={mdiPencilOutline} size="24" />
+      <Icon icon={mdiPencilOutline} size="24" />
     </div>
   </button>
-{/if}
-
-{#if isShowChangeLocation}
-  <Portal>
-    <ChangeLocation {asset} {onClose} />
-  </Portal>
 {/if}

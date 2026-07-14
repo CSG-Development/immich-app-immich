@@ -7,6 +7,7 @@
     type AlbumStatisticsResponseDto,
     type AssetStatsResponseDto,
   } from '@immich/sdk';
+  import { Heading, Table, TableBody, TableCell, TableHeader, TableHeading, TableRow } from '@immich/ui';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
 
@@ -56,60 +57,42 @@
 </script>
 
 {#snippet row(viewName: string, stats: AssetStatsResponseDto)}
-  <tr
-    class="flex h-14 w-full place-items-center text-center dark:text-immich-dark-fg odd:bg-white odd:dark:bg-immich-dark-gray-card even:bg-immich-bg-gray/75 even:dark:bg-immich-dark-bg-gray/75"
-  >
-    <td class="w-1/4 px-4 text-sm">{viewName}</td>
-    <td class="w-1/4 px-4 text-sm">{stats.images.toLocaleString($locale)}</td>
-    <td class="w-1/4 px-4 text-sm">{stats.videos.toLocaleString($locale)}</td>
-    <td class="w-1/4 px-4">{stats.total.toLocaleString($locale)}</td>
-  </tr>
+  <TableRow>
+    <TableCell class="w-1/4">{viewName}</TableCell>
+    <TableCell class="w-1/4">{stats.images.toLocaleString($locale)}</TableCell>
+    <TableCell class="w-1/4">{stats.videos.toLocaleString($locale)}</TableCell>
+    <TableCell class="w-1/4">{stats.total.toLocaleString($locale)}</TableCell>
+  </TableRow>
 {/snippet}
 
-<section class="ms-6 my-6">
-  <p class="font-medium text-primary">{$t('photos_and_videos')}</p>
-  <div class="overflow-x-auto">
-    <table class="w-full text-start mt-4">
-      <thead
-        class="mb-4 flex h-11 w-full rounded-md border immich-border bg-immich-bg-gray-mt text-primary dark:bg-immich-dark-bg-gray-mt"
-      >
-        <tr class="flex w-full place-items-center text-sm font-medium text-center">
-          <th class="w-1/4">{$t('view_name')}</th>
-          <th class="w-1/4">{$t('photos')}</th>
-          <th class="w-1/4">{$t('videos')}</th>
-          <th class="w-1/4">{$t('total')}</th>
-        </tr>
-      </thead>
-      <tbody class="block w-full overflow-y-auto rounded-md border immich-border">
-        {@render row($t('timeline'), timelineStats)}
-        {@render row($t('favorites'), favoriteStats)}
-        {@render row($t('archive'), archiveStats)}
-        {@render row($t('trash'), trashStats)}
-      </tbody>
-    </table>
-  </div>
+<section class="my-4 w-full">
+  <Heading size="tiny">{$t('photos_and_videos')}</Heading>
+  <Table striped spacing="small" class="mt-4" size="small">
+    <TableHeader>
+      <TableHeading class="w-1/4">{$t('view_name')}</TableHeading>
+      <TableHeading class="w-1/4">{$t('photos')}</TableHeading>
+      <TableHeading class="w-1/4">{$t('videos')}</TableHeading>
+      <TableHeading class="w-1/4">{$t('total')}</TableHeading>
+    </TableHeader>
+    <TableBody>
+      {@render row($t('timeline'), timelineStats)}
+      {@render row($t('favorites'), favoriteStats)}
+      {@render row($t('archive'), archiveStats)}
+      {@render row($t('trash'), trashStats)}
+    </TableBody>
+  </Table>
 
-  <div class="mt-6">
-    <p class="text-primary">{$t('albums')}</p>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-start mt-4">
-      <thead
-        class="mb-4 flex h-11 w-full rounded-md border immich-border bg-immich-bg-gray-mt text-primary dark:bg-immich-dark-bg-gray-mt"
-      >
-        <tr class="flex w-full place-items-center text-sm font-medium text-center">
-          <th class="w-1/2">{$t('owned')}</th>
-          <th class="w-1/2">{$t('shared')}</th>
-        </tr>
-      </thead>
-      <tbody class="block w-full overflow-y-auto rounded-md border immich-border">
-        <tr
-          class="flex h-11 w-full place-items-center text-center dark:text-immich-dark-fg bg-white dark:bg-immich-dark-gray-card"
-        >
-          <td class="w-1/2 px-4 text-sm">{albumStats.owned.toLocaleString($locale)}</td>
-          <td class="w-1/2 px-4 text-sm">{albumStats.shared.toLocaleString($locale)}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <Heading size="tiny" class="mt-8">{$t('albums')}</Heading>
+  <Table striped spacing="small" class="mt-4" size="small">
+    <TableHeader>
+      <TableHeading class="w-1/2">{$t('owned')}</TableHeading>
+      <TableHeading class="w-1/2">{$t('shared')}</TableHeading>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell class="w-1/2">{albumStats.owned.toLocaleString($locale)}</TableCell>
+        <TableCell class="w-1/2">{albumStats.shared.toLocaleString($locale)}</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
 </section>

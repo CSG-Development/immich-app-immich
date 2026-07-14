@@ -1,12 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { ExpressionBuilder, Insertable, Kysely, NotNull, sql, Updateable } from 'kysely';
+import {
+  ExpressionBuilder,
+  Insertable,
+  Kysely,
+  NotNull,
+  Selectable,
+  ShallowDehydrateObject,
+  sql,
+  Updateable,
+} from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
 import { InjectKysely } from 'nestjs-kysely';
-import { columns, Exif } from 'src/database';
+import { columns } from 'src/database';
 import { Chunked, ChunkedArray, ChunkedSet, DummyValue, GenerateSql } from 'src/decorators';
 import { AlbumUserCreateDto } from 'src/dtos/album.dto';
 import { DB } from 'src/schema';
 import { AlbumTable } from 'src/schema/tables/album.table';
+import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
 import { withDefaultVisibility } from 'src/utils/database';
 
 export interface AlbumAssetCount {
@@ -33,20 +43,20 @@ const withAlbumUsers = (eb: ExpressionBuilder<DB, 'album'>) => {
       .selectFrom('album_user')
       .select('album_user.role')
       .select((eb) =>
-        jsonObjectFrom(eb.selectFrom('user').select(columns.user).whereRef('user.id', '=', 'album_user.usersId'))
+        jsonObjectFrom(eb.selectFrom('user').select(columns.user).whereRef('user.id', '=', 'album_user.userId'))
           .$notNull()
           .as('user'),
       )
-      .whereRef('album_user.albumsId', '=', 'album.id'),
+      .whereRef('album_user.albumId', '=', 'album.id'),
   )
     .$notNull()
     .as('albumUsers');
 };
 
 const withSharedLink = (eb: ExpressionBuilder<DB, 'album'>) => {
-  return jsonArrayFrom(eb.selectFrom('shared_link').selectAll().whereRef('shared_link.albumId', '=', 'album.id')).as(
-    'sharedLinks',
-  );
+  return jsonArrayFrom(
+    eb.selectFrom('shared_link').selectAll('shared_link').whereRef('shared_link.albumId', '=', 'album.id'),
+  ).as('sharedLinks');
 };
 
 const withAssets = (eb: ExpressionBuilder<DB, 'album'>) => {
@@ -56,9 +66,11 @@ const withAssets = (eb: ExpressionBuilder<DB, 'album'>) => {
         .selectFrom('asset')
         .selectAll('asset')
         .leftJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
-        .select((eb) => eb.table('asset_exif').$castTo<Exif>().as('exifInfo'))
-        .innerJoin('album_asset', 'album_asset.assetsId', 'asset.id')
-        .whereRef('album_asset.albumsId', '=', 'album.id')
+        .select((eb) =>
+          eb.table('asset_exif').$castTo<ShallowDehydrateObject<Selectable<AssetExifTable>>>().as('exifInfo'),
+        )
+        .innerJoin('album_asset', 'album_asset.assetId', 'asset.id')
+        .whereRef('album_asset.albumId', '=', 'album.id')
         .where('asset.deletedAt', 'is', null)
         .$call(withDefaultVisibility)
         .orderBy('asset.fileCreatedAt', 'desc')
@@ -92,25 +104,63 @@ export class AlbumRepository {
     return this.db
       .selectFrom('album')
       .selectAll('album')
-      .innerJoin('album_asset', 'album_asset.albumsId', 'album.id')
+      .innerJoin('album_asset', 'album_asset.albumId', 'album.id')
       .where((eb) =>
         eb.or([
           eb('album.ownerId', '=', ownerId),
           eb.exists(
             eb
               .selectFrom('album_user')
-              .whereRef('album_user.albumsId', '=', 'album.id')
-              .where('album_user.usersId', '=', ownerId),
+              .whereRef('album_user.albumId', '=', 'album.id')
+              .where('album_user.userId', '=', ownerId),
           ),
         ]),
       )
-      .where('album_asset.assetsId', '=', assetId)
+      .where('album_asset.assetId', '=', assetId)
       .where('album.deletedAt', 'is', null)
       .orderBy('album.createdAt', 'desc')
       .select(withOwner)
       .select(withAlbumUsers)
       .orderBy('album.createdAt', 'desc')
       .execute();
+  }
+
+  @GenerateSql({ params: [DummyValue.UUID, [DummyValue.UUID]] })
+  @ChunkedSet({ paramIndex: 1 })
+  async getByAssetIds(ownerId: string, assetIds: string[]): Promise<Map<string, string[]>> {
+    if (assetIds.length === 0) {
+      return new Map();
+    }
+
+    const results = await this.db
+      .selectFrom('album')
+      .select('album.id')
+      .innerJoin('album_asset', 'album_asset.albumId', 'album.id')
+      .where((eb) =>
+        eb.or([
+          eb('album.ownerId', '=', ownerId),
+          eb.exists(
+            eb
+              .selectFrom('album_user')
+              .whereRef('album_user.albumId', '=', 'album.id')
+              .where('album_user.userId', '=', ownerId),
+          ),
+        ]),
+      )
+      .where('album_asset.assetId', 'in', assetIds)
+      .where('album.deletedAt', 'is', null)
+      .select('album_asset.assetId')
+      .execute();
+
+    // Group by assetId
+    const map = new Map<string, string[]>();
+    for (const row of results) {
+      const existing = map.get(row.assetId) ?? [];
+      existing.push(row.id);
+      map.set(row.assetId, existing);
+    }
+
+    return map;
   }
 
   @GenerateSql({ params: [[DummyValue.UUID]] })
@@ -125,16 +175,16 @@ export class AlbumRepository {
       this.db
         .selectFrom('asset')
         .$call(withDefaultVisibility)
-        .innerJoin('album_asset', 'album_asset.assetsId', 'asset.id')
-        .select('album_asset.albumsId as albumId')
+        .innerJoin('album_asset', 'album_asset.assetId', 'asset.id')
+        .select('album_asset.albumId as albumId')
         .select((eb) => eb.fn.min(sql<Date>`("asset"."localDateTime" AT TIME ZONE 'UTC'::text)::date`).as('startDate'))
         .select((eb) => eb.fn.max(sql<Date>`("asset"."localDateTime" AT TIME ZONE 'UTC'::text)::date`).as('endDate'))
         // lastModifiedAssetTimestamp is only used in mobile app, please remove if not need
         .select((eb) => eb.fn.max('asset.updatedAt').as('lastModifiedAssetTimestamp'))
         .select((eb) => sql<number>`${eb.fn.count('asset.id')}::int`.as('assetCount'))
-        .where('album_asset.albumsId', 'in', ids)
+        .where('album_asset.albumId', 'in', ids)
         .where('asset.deletedAt', 'is', null)
-        .groupBy('album_asset.albumsId')
+        .groupBy('album_asset.albumId')
         .execute()
     );
   }
@@ -166,8 +216,8 @@ export class AlbumRepository {
           eb.exists(
             eb
               .selectFrom('album_user')
-              .whereRef('album_user.albumsId', '=', 'album.id')
-              .where((eb) => eb.or([eb('album.ownerId', '=', ownerId), eb('album_user.usersId', '=', ownerId)])),
+              .whereRef('album_user.albumId', '=', 'album.id')
+              .where((eb) => eb.or([eb('album.ownerId', '=', ownerId), eb('album_user.userId', '=', ownerId)])),
           ),
           eb.exists(
             eb
@@ -195,7 +245,7 @@ export class AlbumRepository {
       .selectAll('album')
       .where('album.ownerId', '=', ownerId)
       .where('album.deletedAt', 'is', null)
-      .where((eb) => eb.not(eb.exists(eb.selectFrom('album_user').whereRef('album_user.albumsId', '=', 'album.id'))))
+      .where((eb) => eb.not(eb.exists(eb.selectFrom('album_user').whereRef('album_user.albumId', '=', 'album.id'))))
       .where((eb) => eb.not(eb.exists(eb.selectFrom('shared_link').whereRef('shared_link.albumId', '=', 'album.id'))))
       .select(withOwner)
       .orderBy('album.createdAt', 'desc')
@@ -217,7 +267,7 @@ export class AlbumRepository {
   @GenerateSql({ params: [[DummyValue.UUID]] })
   @Chunked()
   async removeAssetsFromAll(assetIds: string[]): Promise<void> {
-    await this.db.deleteFrom('album_asset').where('album_asset.assetsId', 'in', assetIds).execute();
+    await this.db.deleteFrom('album_asset').where('album_asset.assetId', 'in', assetIds).execute();
   }
 
   @Chunked({ paramIndex: 1 })
@@ -228,8 +278,8 @@ export class AlbumRepository {
 
     await this.db
       .deleteFrom('album_asset')
-      .where('album_asset.albumsId', '=', albumId)
-      .where('album_asset.assetsId', 'in', assetIds)
+      .where('album_asset.albumId', '=', albumId)
+      .where('album_asset.assetId', 'in', assetIds)
       .execute();
   }
 
@@ -250,10 +300,10 @@ export class AlbumRepository {
     return this.db
       .selectFrom('album_asset')
       .selectAll()
-      .where('album_asset.albumsId', '=', albumId)
-      .where('album_asset.assetsId', 'in', assetIds)
+      .where('album_asset.albumId', '=', albumId)
+      .where('album_asset.assetId', 'in', assetIds)
       .execute()
-      .then((results) => new Set(results.map(({ assetsId }) => assetsId)));
+      .then((results) => new Set(results.map(({ assetId }) => assetId)));
   }
 
   async addAssetIds(albumId: string, assetIds: string[]): Promise<void> {
@@ -276,14 +326,14 @@ export class AlbumRepository {
         await tx
           .insertInto('album_user')
           .values(
-            albumUsers.map((albumUser) => ({ albumsId: newAlbum.id, usersId: albumUser.userId, role: albumUser.role })),
+            albumUsers.map((albumUser) => ({ albumId: newAlbum.id, userId: albumUser.userId, role: albumUser.role })),
           )
           .execute();
       }
 
       return tx
         .selectFrom('album')
-        .selectAll()
+        .selectAll('album')
         .where('id', '=', newAlbum.id)
         .select(withOwner)
         .select(withAssets)
@@ -317,16 +367,22 @@ export class AlbumRepository {
 
     await db
       .insertInto('album_asset')
-      .values(assetIds.map((assetId) => ({ albumsId: albumId, assetsId: assetId })))
+      .values(assetIds.map((assetId) => ({ albumId, assetId })))
+      .onConflict((oc) => oc.doNothing())
       .execute();
   }
 
   @Chunked({ chunkSize: 30_000 })
-  async addAssetIdsToAlbums(values: { albumsId: string; assetsId: string }[]): Promise<void> {
+  async addAssetIdsToAlbums(values: { albumId: string; assetId: string }[]): Promise<void> {
     if (values.length === 0) {
       return;
     }
-    await this.db.insertInto('album_asset').values(values).execute();
+    await this.db
+      .insertInto('album_asset')
+      .values(values)
+      // Allow idempotent album sync without failing on existing album memberships.
+      .onConflict((oc) => oc.columns(['albumId', 'assetId']).doNothing())
+      .execute();
   }
 
   /**
@@ -344,7 +400,7 @@ export class AlbumRepository {
       .updateTable('album')
       .set((eb) => ({
         albumThumbnailAssetId: this.updateThumbnailBuilder(eb)
-          .select('album_asset.assetsId')
+          .select('album_asset.assetId')
           .orderBy('asset.fileCreatedAt', 'desc')
           .limit(1),
       }))
@@ -360,7 +416,7 @@ export class AlbumRepository {
               eb.exists(
                 this.updateThumbnailBuilder(eb)
                   .select(sql`1`.as('1'))
-                  .whereRef('album.albumThumbnailAssetId', '=', 'album_asset.assetsId'), // Has invalid assets
+                  .whereRef('album.albumThumbnailAssetId', '=', 'album_asset.assetId'), // Has invalid assets
               ),
             ),
           ]),
@@ -375,8 +431,40 @@ export class AlbumRepository {
     return eb
       .selectFrom('album_asset')
       .innerJoin('asset', (join) =>
-        join.onRef('album_asset.assetsId', '=', 'asset.id').on('asset.deletedAt', 'is', null),
+        join.onRef('album_asset.assetId', '=', 'asset.id').on('asset.deletedAt', 'is', null),
       )
-      .whereRef('album_asset.albumsId', '=', 'album.id');
+      .whereRef('album_asset.albumId', '=', 'album.id');
+  }
+
+  /**
+   * Get per-user asset contribution counts for a single album.
+   * Excludes deleted assets, orders by count desc.
+   */
+  @GenerateSql({ params: [DummyValue.UUID] })
+  getContributorCounts(id: string) {
+    return this.db
+      .selectFrom('album_asset')
+      .innerJoin('asset', 'asset.id', 'assetId')
+      .where('asset.deletedAt', 'is', sql.lit(null))
+      .where('album_asset.albumId', '=', id)
+      .select('asset.ownerId as userId')
+      .select((eb) => eb.fn.countAll<number>().as('assetCount'))
+      .groupBy('asset.ownerId')
+      .orderBy('assetCount', 'desc')
+      .execute();
+  }
+
+  @GenerateSql({ params: [{ sourceAssetId: DummyValue.UUID, targetAssetId: DummyValue.UUID }] })
+  async copyAlbums({ sourceAssetId, targetAssetId }: { sourceAssetId: string; targetAssetId: string }) {
+    return this.db
+      .insertInto('album_asset')
+      .expression((eb) =>
+        eb
+          .selectFrom('album_asset')
+          .select((eb) => ['album_asset.albumId', eb.val(targetAssetId).as('assetId')])
+          .where('album_asset.assetId', '=', sourceAssetId),
+      )
+      .onConflict((oc) => oc.doNothing())
+      .execute();
   }
 }

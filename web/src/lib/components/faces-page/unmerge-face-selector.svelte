@@ -8,14 +8,13 @@
     type AssetFaceUpdateItem,
     type PersonResponseDto,
   } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, toastManager } from '@immich/ui';
   import { mdiMerge, mdiPlus } from '@mdi/js';
   import { onMount, type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
   import ControlAppBar from '../shared-components/control-app-bar.svelte';
-  import { NotificationType, notificationController } from '../shared-components/notification/notification';
   import FaceThumbnail from './face-thumbnail.svelte';
   import PeopleList from './people-list.svelte';
 
@@ -72,11 +71,7 @@
       disableButtons = true;
       const data = await createPerson({ personCreateDto: {} });
       await reassignFaces({ id: data.id, assetFaceUpdateDto: { data: selectedPeople } });
-
-      notificationController.show({
-        message: $t('reassigned_assets_to_new_person', { values: { count: assetIds.length } }),
-        type: NotificationType.Success,
-      });
+      toastManager.primary($t('reassigned_assets_to_new_person', { values: { count: assetIds.length } }));
     } catch (error) {
       handleError(error, $t('errors.unable_to_reassign_assets_new_person'));
     } finally {
@@ -93,12 +88,11 @@
       disableButtons = true;
       if (selectedPerson) {
         await reassignFaces({ id: selectedPerson.id, assetFaceUpdateDto: { data: selectedPeople } });
-        notificationController.show({
-          message: $t('reassigned_assets_to_existing_person', {
+        toastManager.primary(
+          $t('reassigned_assets_to_existing_person', {
             values: { count: assetIds.length, name: selectedPerson.name || null },
           }),
-          type: NotificationType.Success,
-        });
+        );
       }
     } catch (error) {
       handleError(
@@ -158,7 +152,7 @@
       {#if selectedPerson !== null}
         <div class="mb-3 h-[200px] place-content-center place-items-center">
           <p class="mb-4 text-center uppercase text-immich-gray-text dark:text-immich-dark-gray-text md:font-medium">
-            Choose matching faces to reassign
+            Choose matching faces to re assign
           </p>
 
           <div class="grid grid-flow-col-dense place-content-center place-items-center gap-4">

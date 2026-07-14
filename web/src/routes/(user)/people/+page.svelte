@@ -1,8 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
-  import { page } from '$app/state';
-  import { focusTrap } from '$lib/actions/focus-trap';
+  import { page } from '$app/stores';
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import { shortcut } from '$lib/actions/shortcut';
   import emptyPeople from '$lib/assets/empty-people.svg';
@@ -11,15 +9,11 @@
   import PeopleInfiniteScroll from '$lib/components/faces-page/people-infinite-scroll.svelte';
   import SearchPeople from '$lib/components/faces-page/people-search.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import {
-    notificationController,
-    NotificationType,
-  } from '$lib/components/shared-components/notification/notification';
-  import { ActionQueryParameterValue, AppRoute, QueryParameter, SessionStorageKey } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import PersonEditBirthDateModal from '$lib/modals/PersonEditBirthDateModal.svelte';
+  import { QueryParameter, SessionStorageKey } from '$lib/constants';
   import PersonMergeSuggestionModal from '$lib/modals/PersonMergeSuggestionModal.svelte';
+  import { Route } from '$lib/route';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import { websocketEvents } from '$lib/stores/websocket';
@@ -27,7 +21,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { clearQueryParam } from '$lib/utils/navigation';
   import { getAllPeople, getPerson, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, modalManager, toastManager } from '@immich/ui';
   import { mdiEyeOutline } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -55,7 +49,7 @@
   let searchPeopleElement = $state<ReturnType<typeof SearchPeople>>();
 
   onMount(() => {
-    const getSearchedPeople = page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
+    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
     if (getSearchedPeople) {
       searchName = getSearchedPeople;
       if (searchPeopleElement) {
@@ -120,10 +114,10 @@
   };
 
   const handleSearch = async () => {
-    const getSearchedPeople = page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
+    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
     if (getSearchedPeople !== searchName) {
-      page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchName);
-      await goto(page.url, { keepFocus: true });
+      $page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchName);
+      await goto($page.url, { keepFocus: true });
     }
   };
 
@@ -166,10 +160,7 @@
             break;
           }
         }
-        notificationController.show({
-          message: $t('change_name_successfully'),
-          type: NotificationType.Success,
-        });
+        toastManager.primary($t('change_name_successfully'));
       } catch (error) {
         handleError(error, $t('errors.unable_to_save_name'));
       }
@@ -190,10 +181,7 @@
         return person;
       });
 
-      notificationController.show({
-        message: $t('changed_visibility_successfully'),
-        type: NotificationType.Success,
-      });
+      toastManager.primary($t('changed_visibility_successfully'));
     } catch (error) {
       handleError(error, $t('errors.unable_to_hide_person'));
     }
@@ -213,38 +201,18 @@
         return person;
       });
 
-      notificationController.show({
-        message: updatedPerson.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'),
-        type: NotificationType.Success,
-      });
+      toastManager.primary(updatedPerson.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'));
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_remove_favorites', { values: { favorite: detail.isFavorite } }));
     }
   };
 
   const handleMergePeople = async (detail: PersonResponseDto) => {
-    await goto(
-      `${resolve(AppRoute.PEOPLE)}/${detail.id}?${QueryParameter.ACTION}=${ActionQueryParameterValue.MERGE}&${QueryParameter.PREVIOUS_ROUTE}=${resolve(AppRoute.PEOPLE)}`,
-    );
-  };
-
-  const handleChangeBirthDate = async (person: PersonResponseDto) => {
-    const updatedPerson = await modalManager.show(PersonEditBirthDateModal, { person });
-
-    if (!updatedPerson) {
-      return;
-    }
-
-    people = people.map((person: PersonResponseDto) => {
-      if (person.id === updatedPerson.id) {
-        return updatedPerson;
-      }
-      return person;
-    });
+    await goto(Route.viewPerson(detail, { previousRoute: Route.people(), action: 'merge' }));
   };
 
   const onResetSearchBar = async () => {
-    await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, page.url);
+    await clearQueryParam(QueryParameter.SEARCHED_PEOPLE, $page.url);
   };
 
   let people = $state(data.people.people);
@@ -313,9 +281,20 @@
       (person) => person.name.toLowerCase() === name.toLowerCase() && person.id !== personId && person.name,
     );
   };
+
+  const onPersonUpdate = (response: PersonResponseDto) => {
+    people = people.map((person: PersonResponseDto) => {
+      if (person.id === response.id) {
+        return response;
+      }
+      return person;
+    });
+  };
 </script>
 
 <svelte:window bind:innerHeight />
+
+<OnEvents {onPersonUpdate} />
 
 <UserPageLayout
   hideSection={selectHidden}
@@ -327,7 +306,7 @@
     [
       scrollMemory,
       {
-        routeStartsWith: AppRoute.PEOPLE,
+        routeStartsWith: Route.people(),
         beforeSave: () => {
           if (currentPage) {
             sessionStorage.setItem(SessionStorageKey.INFINITE_SCROLL_PAGE, currentPage.toString());
@@ -394,7 +373,6 @@
         >
           <PeopleCard
             {person}
-            onSetBirthDate={() => handleChangeBirthDate(person)}
             onMergePeople={() => handleMergePeople(person)}
             onHidePerson={() => handleHidePerson(person)}
             onToggleFavorite={() => handleToggleFavorite(person)}
@@ -424,18 +402,17 @@
 
 {#if selectHidden}
   <dialog
-    open
     transition:fly={{ y: innerHeight, duration: 150, easing: quintOut, opacity: 0 }}
     class="absolute start-0 top-0 w-full h-full bg-bg"
-    aria-modal="true"
     aria-labelledby="manage-visibility-title"
-    use:focusTrap
+    {@attach (dialog) => dialog.showModal()}
   >
     <ManagePeopleVisibility
-      bind:people
+      {people}
       totalPeopleCount={totalPeople}
       titleId="manage-visibility-title"
       onClose={() => (selectHidden = false)}
+      onUpdate={(updatedPeople) => (people = updatedPeople.slice())}
       {loadNextPage}
     />
   </dialog>

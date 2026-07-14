@@ -1,17 +1,12 @@
 <script lang="ts">
-  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
-  import {
-    notificationController,
-    NotificationType,
-  } from '$lib/components/shared-components/notification/notification';
+  import Combobox from '$lib/components/shared-components/combobox.svelte';
   import SettingAccordion from '$lib/components/shared-components/settings/setting-accordion.svelte';
-  import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
   import { preferences } from '$lib/stores/user.store';
+  import { handleError } from '$lib/utils/handle-error';
   import { AssetOrder, updateMyPreferences } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, Field, NumberInput, Switch, toastManager } from '@immich/ui';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
-  import { handleError } from '../../utils/handle-error';
 
   // Albums
   let defaultAssetOrder = $state($preferences?.albums?.defaultAssetOrder ?? AssetOrder.Desc);
@@ -22,6 +17,7 @@
 
   // Memories
   let memoriesEnabled = $state($preferences?.memories?.enabled ?? true);
+  let memoriesDuration = $state($preferences?.memories?.duration ?? 5);
 
   // People
   let peopleEnabled = $state($preferences?.people?.enabled ?? false);
@@ -47,7 +43,7 @@
         userPreferencesUpdateDto: {
           albums: { defaultAssetOrder },
           folders: { enabled: foldersEnabled, sidebarWeb: foldersSidebar },
-          memories: { enabled: memoriesEnabled },
+          memories: { enabled: memoriesEnabled, duration: memoriesDuration },
           people: { enabled: peopleEnabled, sidebarWeb: peopleSidebar },
           ratings: { enabled: ratingsEnabled },
           sharedLinks: { enabled: sharedLinksEnabled, sidebarWeb: sharedLinkSidebar },
@@ -58,7 +54,7 @@
 
       $preferences = { ...data };
 
-      notificationController.show({ message: $t('saved_settings'), type: NotificationType.Success });
+      toastManager.primary($t('saved_settings'));
     } catch (error) {
       handleError(error, $t('errors.unable_to_update_settings'));
     }
@@ -88,14 +84,6 @@
       <div class="mt-4 flex flex-col">
         <SettingAccordion key="albums" title={$t('albums')} subtitle={$t('albums_feature_description')}>
           <div class="ms-4 mt-6">
-            <!-- <SettingSelect               
-              desc={$t('albums_default_sort_order_description')}
-              options={[
-                { value: AssetOrder.Asc, text: $t('oldest_first') },
-                { value: AssetOrder.Desc, text: $t('newest_first') },
-              ]}
-              bind:value={defaultAssetOrder}
-            /> -->
             <Combobox
               label={$t('albums_default_sort_order')}
               selectedOption={options.find((option) => option.value === defaultAssetOrder)}
@@ -106,86 +94,86 @@
         </SettingAccordion>
 
         <SettingAccordion key="folders" title={$t('folders')} subtitle={$t('folders_feature_description')}>
-          <div class="ms-4">
-            <SettingSwitch title={$t('enable')} bind:checked={foldersEnabled} />
-          </div>
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={foldersEnabled} />
+            </Field>
 
-          {#if foldersEnabled}
-            <div class="ms-4 mt-6">
-              <SettingSwitch
-                title={$t('sidebar')}
-                subtitle={$t('sidebar_display_description')}
-                bind:checked={foldersSidebar}
-              />
-            </div>
-          {/if}
+            {#if foldersEnabled}
+              <Field label={$t('sidebar')} description={$t('sidebar_display_description')}>
+                <Switch bind:checked={foldersSidebar} />
+              </Field>
+            {/if}
+          </div>
         </SettingAccordion>
 
         <SettingAccordion key="memories" title={$t('time_based_memories')} subtitle={$t('photos_from_previous_years')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch title={$t('enable')} bind:checked={memoriesEnabled} />
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={memoriesEnabled} />
+            </Field>
+
+            <Field label={$t('duration')} description={$t('time_based_memories_duration')}>
+              <NumberInput bind:value={memoriesDuration} />
+            </Field>
           </div>
         </SettingAccordion>
 
         <SettingAccordion key="people" title={$t('people')} subtitle={$t('people_feature_description')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch title={$t('enable')} bind:checked={peopleEnabled} />
-          </div>
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={peopleEnabled} />
+            </Field>
 
-          {#if peopleEnabled}
-            <div class="ms-4 mt-6">
-              <SettingSwitch
-                title={$t('sidebar')}
-                subtitle={$t('sidebar_display_description')}
-                bind:checked={peopleSidebar}
-              />
-            </div>
-          {/if}
+            {#if peopleEnabled}
+              <Field label={$t('sidebar')} description={$t('sidebar_display_description')}>
+                <Switch bind:checked={peopleSidebar} />
+              </Field>
+            {/if}
+          </div>
         </SettingAccordion>
 
         <SettingAccordion key="rating" title={$t('rating')} subtitle={$t('rating_description')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch title={$t('enable')} bind:checked={ratingsEnabled} />
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={ratingsEnabled} />
+            </Field>
           </div>
         </SettingAccordion>
 
         <SettingAccordion key="shared-links" title={$t('shared_links')} subtitle={$t('shared_links_description')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch title={$t('enable')} bind:checked={sharedLinksEnabled} />
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={sharedLinksEnabled} />
+            </Field>
+
+            {#if sharedLinksEnabled}
+              <Field label={$t('sidebar')} description={$t('sidebar_display_description')}>
+                <Switch bind:checked={sharedLinkSidebar} />
+              </Field>
+            {/if}
           </div>
-          {#if sharedLinksEnabled}
-            <div class="ms-4 mt-6">
-              <SettingSwitch
-                title={$t('sidebar')}
-                subtitle={$t('sidebar_display_description')}
-                bind:checked={sharedLinkSidebar}
-              />
-            </div>
-          {/if}
         </SettingAccordion>
 
         <SettingAccordion key="tags" title={$t('tags')} subtitle={$t('tag_feature_description')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch title={$t('enable')} bind:checked={tagsEnabled} />
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('enable')}>
+              <Switch bind:checked={tagsEnabled} />
+            </Field>
+
+            {#if tagsEnabled}
+              <Field label={$t('sidebar')} description={$t('sidebar_display_description')}>
+                <Switch bind:checked={tagsSidebar} />
+              </Field>
+            {/if}
           </div>
-          {#if tagsEnabled}
-            <div class="ms-4 mt-6">
-              <SettingSwitch
-                title={$t('sidebar')}
-                subtitle={$t('sidebar_display_description')}
-                bind:checked={tagsSidebar}
-              />
-            </div>
-          {/if}
         </SettingAccordion>
 
         <SettingAccordion key="cast" title={$t('cast')} subtitle={$t('cast_description')}>
-          <div class="ms-4 mt-6">
-            <SettingSwitch
-              title={$t('gcast_enabled')}
-              subtitle={$t('gcast_enabled_description')}
-              bind:checked={gCastEnabled}
-            />
+          <div class="sm:ms-4 mt-4 flex flex-col gap-4">
+            <Field label={$t('gcast_enabled')} description={$t('gcast_enabled_description')}>
+              <Switch bind:checked={gCastEnabled} />
+            </Field>
           </div>
         </SettingAccordion>
 

@@ -1,9 +1,8 @@
 <script lang="ts">
   import BrokenAsset from '$lib/components/assets/broken-asset.svelte';
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { cancelImageUrl } from '$lib/utils/sw-messaging';
+  import Image from '$lib/components/Image.svelte';
+  import { Icon } from '@immich/ui';
   import { mdiEyeOffOutline } from '@mdi/js';
-  import type { ActionReturn } from 'svelte/action';
   import type { ClassValue } from 'svelte/elements';
 
   interface Props {
@@ -17,9 +16,11 @@
     circle?: boolean;
     hidden?: boolean;
     border?: boolean;
+    highlighted?: boolean;
     hiddenIconClass?: string;
     class?: ClassValue;
     brokenAssetClass?: ClassValue;
+    preload?: boolean;
     onComplete?: ((errored: boolean) => void) | undefined;
   }
 
@@ -34,10 +35,12 @@
     circle = false,
     hidden = false,
     border = false,
+    highlighted = false,
     hiddenIconClass = 'text-white',
     onComplete = undefined,
     class: imageClass = '',
     brokenAssetClass = '',
+    preload = true,
   }: Props = $props();
 
   let loaded = $state(false);
@@ -47,56 +50,46 @@
     loaded = true;
     onComplete?.(false);
   };
+
   const setErrored = () => {
     errored = true;
     onComplete?.(true);
   };
 
-  function mount(elem: HTMLImageElement): ActionReturn {
-    if (elem.complete) {
-      loaded = true;
-      onComplete?.(false);
-    }
-    return {
-      destroy: () => cancelImageUrl(url),
-    };
-  }
+  let sharedClasses = $derived([
+    curve && 'rounded-[14.1px]',
+    circle && 'rounded-full',
+    shadow && 'shadow-lg',
+    (circle || !heightStyle) && 'aspect-square',
+    border && 'border-[3px] border-immich-dark-primary/80 hover:border-immich-primary',
+    'transition-shadow duration-150',
+    highlighted && 'ring-4 ring-immich-primary dark:ring-immich-dark-primary',
+  ]);
 
-  let optionalClasses = $derived(
-    [
-      curve && 'rounded-[14.1px]',
-      circle && 'rounded-full',
-      shadow && 'shadow-lg',
-      (circle || !heightStyle) && 'aspect-square',
-      border && 'border-[3px] border-immich-dark-primary/80 hover:border-immich-primary',
-      brokenAssetClass,
-    ]
-      .filter(Boolean)
-      .join(' '),
+  let style = $derived(
+    `width: ${widthStyle}; height: ${heightStyle ?? ''}; filter: ${hidden ? 'grayscale(50%)' : 'none'}; opacity: ${hidden ? '0.5' : '1'};`,
   );
 </script>
 
 {#if errored}
-  <BrokenAsset class={optionalClasses} width={widthStyle} height={heightStyle} />
+  <BrokenAsset class={[sharedClasses, brokenAssetClass]} width={widthStyle} height={heightStyle} />
 {:else}
-  <img
-    use:mount
-    onload={setLoaded}
-    onerror={setErrored}
-    style:width={widthStyle}
-    style:height={heightStyle}
-    style:filter={hidden ? 'grayscale(50%)' : 'none'}
-    style:opacity={hidden ? '0.5' : '1'}
+  <Image
     src={url}
+    onLoad={setLoaded}
+    onError={setErrored}
+    class={['object-cover bg-gray-300 dark:bg-gray-700', sharedClasses, imageClass]}
+    {style}
     alt={loaded || errored ? altText : ''}
-    {title}
-    class={['object-cover', optionalClasses, imageClass]}
-    draggable="false"
+    draggable={false}
+    title={title ?? undefined}
+    loading={preload ? 'eager' : 'lazy'}
   />
 {/if}
 
 {#if hidden}
   <div class="absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform">
-    <Icon {title} path={mdiEyeOffOutline} size="2em" class={hiddenIconClass} />
+    <!-- TODO fix `title` type -->
+    <Icon title={title ?? undefined} icon={mdiEyeOffOutline} size="2em" class={hiddenIconClass} />
   </div>
 {/if}

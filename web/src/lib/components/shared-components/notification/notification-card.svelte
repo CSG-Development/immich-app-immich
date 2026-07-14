@@ -7,8 +7,7 @@
     type ComponentNotification,
     type Notification,
   } from '$lib/components/shared-components/notification/notification';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
-  import { Button, IconButton, Theme, type Color } from '@immich/ui';
+  import { Button, IconButton, Theme, themeManager, type Color } from '@immich/ui';
   import { mdiCheckCircleOutline, mdiCloseCircleOutline, mdiInformationOutline, mdiWindowClose } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';

@@ -22,9 +22,8 @@
 <script lang="ts">
   import { focusOutside } from '$lib/actions/focus-outside';
   import { shortcuts } from '$lib/actions/shortcut';
-  import Icon from '$lib/components/elements/icon.svelte';
   import { generateId } from '$lib/utils/generate-id';
-  import { IconButton } from '@immich/ui';
+  import { Icon, IconButton, Label } from '@immich/ui';
   import { mdiChevronDown, mdiClose, mdiMagnify } from '@mdi/js';
   import { onMount, tick } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -184,6 +183,17 @@
     onSelect(selectedOption);
   };
 
+  // TODO: move this combobox component into @immich/ui
+  // Bits UI dialogs use `contain: layout` so fixed descendants are positioned in dialog space
+  const getModalBounds = () => {
+    const modalRoot = input?.closest('[data-dialog-content]');
+    if (!modalRoot || !getComputedStyle(modalRoot).contain.includes('layout')) {
+      return;
+    }
+
+    return modalRoot.getBoundingClientRect();
+  };
+
   const calculatePosition = (boundary: DOMRect | undefined) => {
     const visualViewport = window.visualViewport;
 
@@ -191,29 +201,35 @@
       return;
     }
 
-    const left = boundary.left + (visualViewport?.offsetLeft || 0);
-    const offsetTop = visualViewport?.offsetTop || 0;
+    const modalBounds = getModalBounds();
+    const offsetTop = modalBounds?.top || 0;
+    const offsetLeft = modalBounds?.left || 0;
+    const rootHeight = modalBounds?.height || window.innerHeight;
+
+    const top = boundary.top - offsetTop;
+    const bottom = boundary.bottom - offsetTop;
+    const left = boundary.left - offsetLeft;
 
     if (dropdownDirection === 'top') {
       return {
-        bottom: `${window.innerHeight - boundary.top - offsetTop}px`,
+        bottom: `${rootHeight - top}px`,
         left: `${left}px`,
         width: `${boundary.width}px`,
         maxHeight: maxHeight(boundary.top - dropdownOffset),
       };
     }
 
-    const viewportHeight = visualViewport?.height || 0;
+    const viewportHeight = visualViewport?.height || window.innerHeight;
     const availableHeight = viewportHeight - boundary.bottom;
     return {
-      top: `${boundary.bottom + offsetTop}px`,
+      top: `${bottom}px`,
       left: `${left}px`,
       width: `${boundary.width}px`,
       maxHeight: maxHeight(availableHeight - dropdownOffset),
     };
   };
 
-  const maxHeight = (size: number) => `min(${size}px,18rem)`;
+  const maxHeight = (size: number) => `min(${Math.max(size, 0)}px,18rem)`;
 
   const onPositionChange = () => {
     if (!isOpen) {
@@ -275,7 +291,7 @@
 </script>
 
 <svelte:window onresize={onPositionChange} />
-<label class="immich-form-label font-bold" class:sr-only={hideLabel} for={inputId}>{label}</label>
+<Label class="block mb-1 {hideLabel ? 'sr-only' : ''} text-xs text-neutral-500 font-light" for={inputId}>{label}</Label>
 <div
   class="relative w-full dark:text-gray-300 text-gray-700 text-base"
   use:focusOutside={{ onFocusOut: deactivate }}
@@ -293,7 +309,7 @@
     {#if isActive}
       <div class="absolute inset-y-0 start-0 flex items-center ps-3">
         <div class="dark:text-immich-dark-fg/75">
-          <Icon path={mdiMagnify} ariaHidden={true} />
+          <Icon icon={mdiMagnify} aria-hidden />
         </div>
       </div>
     {/if}
@@ -352,8 +368,10 @@
         {
           shortcut: { key: 'Escape' },
           onShortcut: (event) => {
-            event.stopPropagation();
-            closeDropdown();
+            if (isOpen) {
+              event.stopPropagation();
+              closeDropdown();
+            }
           },
         },
       ]}
@@ -375,7 +393,7 @@
           size="small"
         />
       {:else if !isOpen}
-        <Icon path={mdiChevronDown} size={24} ariaHidden={true} />
+        <Icon icon={mdiChevronDown} aria-hidden />
       {/if}
     </div>
   </div>
