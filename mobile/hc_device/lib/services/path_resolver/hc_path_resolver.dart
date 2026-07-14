@@ -651,6 +651,7 @@ class HcPathResolver {
       ResolveTrigger.connectivityChange ||
       ResolveTrigger.splashWarmup ||
       ResolveTrigger.appResume ||
+      ResolveTrigger.apiError ||
       ResolveTrigger.unknown =>
         false,
       _ => true,
