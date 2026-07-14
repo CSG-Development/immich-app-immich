@@ -213,11 +213,17 @@ class CuratorLoginForm extends HookConsumerWidget {
     preselectFavoriteDevice() {
       if (devices.value.isEmpty) return;
 
-      final favoriteDeviceId = ref.read(deviceProvider).deviceID;
+      final deviceState = ref.read(deviceProvider);
+      // Prefer the currently favorite device, then the last device the user
+      // connected to (survives logout), and fall back to the first in the list.
+      final preferredDeviceId = deviceState.deviceID?.isNotEmpty == true ? deviceState.deviceID : deviceState.lastDeviceID;
 
       DeviceItem? candidateDevice;
-      if (favoriteDeviceId?.isNotEmpty == true) {
-        candidateDevice = devices.value.firstWhereOrNull((d) => d.about?.certificateCommonName == favoriteDeviceId);
+      if (preferredDeviceId?.isNotEmpty == true) {
+        // Match by [DeviceItem.id] — the same value persisted on connect via
+        // setHost(deviceID: device.id). It resolves through remoteDevice first,
+        // so matching only on about?.certificateCommonName misses remote devices.
+        candidateDevice = devices.value.firstWhereOrNull((d) => d.id == preferredDeviceId);
       }
 
       selectedDevice.value = candidateDevice ?? devices.value.firstOrNull;
