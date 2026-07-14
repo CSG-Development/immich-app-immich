@@ -30,12 +30,11 @@ extension RecoveryTriggerX on RecoveryTrigger {
       this == RecoveryTrigger.apiTransportError ||
       this == RecoveryTrigger.manualRetry;
 
-  /// Losing the current path (or the network changing under it) starts a
-  /// search the user should see as the finding toast.
-  bool get surfacesFindingToast =>
-      this == RecoveryTrigger.connectivityChange ||
-      this == RecoveryTrigger.apiTransportError ||
-      this == RecoveryTrigger.healthProbeMiss;
+  /// The "finding network" toast surfaces automatically only on a genuine
+  /// connectivity change. Automatic background probes (apiTransportError,
+  /// healthProbeMiss) stay silent so the steady "Connection lost" banner does
+  /// not flicker; manual retry surfaces the toast explicitly (see the monitor).
+  bool get surfacesFindingToast => this == RecoveryTrigger.connectivityChange;
 }
 
 /// Observation that woke the recovery pipeline.

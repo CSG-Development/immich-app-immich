@@ -291,8 +291,13 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   }
 
   void forceManualRetry() {
+    // Explicit user action — always surface the "finding network" toast as
+    // feedback, even if a background recovery is already in progress (which
+    // would otherwise make _runRecovery return before showing anything).
+    noteRecoveryEpisodeStarted();
+    _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
     unawaited(
-      _runRecovery(const RecoveryEvent(trigger: RecoveryTrigger.manualRetry, suppressFindingToast: true)),
+      _runRecovery(const RecoveryEvent(trigger: RecoveryTrigger.manualRetry)),
     );
   }
 
