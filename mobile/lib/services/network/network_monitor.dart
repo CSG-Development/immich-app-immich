@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hc_device/hc_device.dart';
@@ -11,6 +12,11 @@ const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
 const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
 const Duration curatorEndpointHealthProbeInterval = Duration(seconds: 30);
 const Duration curatorEndpointHealthProbeTimeout = Duration(seconds: 5);
+
+/// iOS only: after settling on a non-local path on wifi, re-resolve at these
+/// delays to catch a just-granted Local Network permission (the discovery that
+/// triggered the system prompt completes empty before the user taps Allow).
+const List<Duration> curatorLocalNetworkPermissionRetryDelays = [Duration(seconds: 5), Duration(seconds: 7)];
 
 abstract class CuratorNetworkMonitorCallbacks {
   bool onShowReconnecting();
@@ -88,6 +94,9 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   /// Connectivity recovery arrived while another attempt was active.
   bool _queuedConnectivityWhileBusy = false;
 
+  Timer? _localNetPermissionTimer;
+  int _localNetPermissionRetries = 0;
+
   bool _isReconnecting = false;
   bool _isStarted = false;
   bool _hasSeenConnectivityEvent = false;
@@ -135,6 +144,7 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     _hasSeenConnectivityEvent = false;
     _isReconnecting = false;
     _isAppInForeground = true;
+    _cancelLocalNetPermissionRetry();
     _reconnectEpisodeService.reset();
     _executor.lastFailureSignature = null;
     _log.info('[Network] Stopped monitoring network changes');
@@ -154,6 +164,11 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     final changed = _lastConnectivitySignature != signature;
     _hasSeenConnectivityEvent = true;
     _lastConnectivitySignature = signature;
+
+    if (changed) {
+      // New transport episode — drop any pending local-network-permission retry.
+      _cancelLocalNetPermissionRetry();
+    }
 
     if (!_isAppInForeground) {
       _deferredWhileBackgrounded = true;
@@ -420,7 +435,61 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   }
 
   @override
-  Future<void> onReconnected(PingResult result) => callbacks.onReconnected(result);
+  Future<void> onReconnected(PingResult result) {
+    _handleLocalNetPermissionReresolve(HcPathType.fromDevicePathType(result.pathType));
+    return callbacks.onReconnected(result);
+  }
+
+  /// iOS: a resolve that settled on a non-local path on wifi (while
+  /// remote-authenticated) is the Local Network permission case — the mDNS
+  /// discovery that triggered the system prompt finished empty before the user
+  /// granted access. Re-resolve a couple of times to pick up the grant.
+  void _handleLocalNetPermissionReresolve(String? resolvedPathType) {
+    if (!Platform.isIOS) {
+      return;
+    }
+    if (resolvedPathType == HcPathType.local) {
+      _cancelLocalNetPermissionRetry();
+      return;
+    }
+    if (!remoteProvider.isAuthenticated || !_isOnWifiNow()) {
+      return;
+    }
+    if (_localNetPermissionTimer != null ||
+        _localNetPermissionRetries >= curatorLocalNetworkPermissionRetryDelays.length) {
+      return;
+    }
+    final delay = curatorLocalNetworkPermissionRetryDelays[_localNetPermissionRetries];
+    _localNetPermissionTimer = Timer(delay, () {
+      _localNetPermissionTimer = null;
+      _localNetPermissionRetries++;
+      if (getActivePathType?.call() == HcPathType.local) {
+        _cancelLocalNetPermissionRetry();
+        return;
+      }
+      _log.info('[Network] local-network-permission re-resolve attempt=$_localNetPermissionRetries');
+      unawaited(
+        _runRecovery(
+          const RecoveryEvent(
+            trigger: RecoveryTrigger.connectivityChange,
+            suppressFindingToast: true,
+            detail: 'local_net_permission_retry',
+          ),
+        ),
+      );
+    });
+  }
+
+  void _cancelLocalNetPermissionRetry() {
+    _localNetPermissionTimer?.cancel();
+    _localNetPermissionTimer = null;
+    _localNetPermissionRetries = 0;
+  }
+
+  bool _isOnWifiNow() {
+    final sig = _lastConnectivitySignature;
+    return sig != null && (sig.contains('wifi') || sig.contains('ethernet'));
+  }
 
   @override
   Future<void> onNeedRemoteAccessAuth(Future<void> Function() retry) => callbacks.onNeedRemoteAccessAuth(retry);
