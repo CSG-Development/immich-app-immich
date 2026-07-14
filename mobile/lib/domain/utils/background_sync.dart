@@ -27,6 +27,17 @@ class BackgroundSyncManager {
   final SyncCallback? onCloudIdSyncComplete;
   final SyncErrorCallback? onCloudIdSyncError;
 
+  /// Window after a successful remote sync during which redundant re-triggers
+  /// coalesce instead of spawning another isolate. A single reconnect fans out
+  /// into several syncRemote() calls (endpoint activation, post-reconnect hook,
+  /// app resume), and a staged network recovery (cellular then wifi after
+  /// airplane mode) produces several such episodes a few seconds apart; this
+  /// collapses that burst into one worker. Live changes still arrive over the
+  /// websocket meanwhile, and a failed sync leaves the window unset so retries
+  /// stay immediate.
+  static const Duration _remoteSyncCoalesceWindow = Duration(seconds: 10);
+  DateTime? _lastRemoteSyncSuccessAt;
+
   Cancelable<bool?>? _syncTask;
   Cancelable<void>? _syncWebsocketTask;
   Cancelable<void>? _cloudIdSyncTask;
@@ -164,6 +175,13 @@ class BackgroundSyncManager {
       return _syncTask!.future.then((result) => result ?? false).catchError((_) => false);
     }
 
+    // Coalesce redundant re-triggers right after a successful sync. A failed
+    // sync leaves the window unset so retries stay immediate.
+    final lastSuccess = _lastRemoteSyncSuccessAt;
+    if (lastSuccess != null && DateTime.now().difference(lastSuccess) < _remoteSyncCoalesceWindow) {
+      return Future.value(true);
+    }
+
     onRemoteSyncStart?.call();
 
     _syncTask = runInIsolateGentle(
@@ -173,6 +191,9 @@ class BackgroundSyncManager {
     return _syncTask!
         .then((result) {
           final success = result ?? false;
+          if (success) {
+            _lastRemoteSyncSuccessAt = DateTime.now();
+          }
           onRemoteSyncComplete?.call(success);
           return success;
         })
