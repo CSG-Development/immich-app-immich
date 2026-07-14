@@ -121,6 +121,9 @@ class DeviceState {
   final String? refreshToken;
   final String? login;
   final String? deviceID;
+  // Last device the user connected to. Persisted across logout so the login
+  // form can pre-select it again.
+  final String? lastDeviceID;
   final String? seagateDeviceID;
   final Status? deviceStatus;
   final List<DevicePath>? devicePaths;
@@ -135,6 +138,7 @@ class DeviceState {
     this.refreshToken,
     this.login,
     this.deviceID,
+    this.lastDeviceID,
     this.seagateDeviceID,
     this.deviceStatus,
     this.devicePaths,
@@ -153,6 +157,7 @@ class DeviceState {
     String? refreshToken,
     String? login,
     String? deviceID,
+    String? lastDeviceID,
     String? seagateDeviceID,
     Status? deviceStatus,
     List<DevicePath>? devicePaths,
@@ -177,6 +182,7 @@ class DeviceState {
       refreshToken: clearRefreshToken ? null : (refreshToken ?? this.refreshToken),
       login: login ?? this.login,
       deviceID: clearDeviceId ? null : (deviceID ?? this.deviceID),
+      lastDeviceID: lastDeviceID ?? this.lastDeviceID,
       seagateDeviceID:
           clearSeagateDeviceId ? null : (seagateDeviceID ?? this.seagateDeviceID),
       deviceStatus: clearDeviceStatus ? null : (deviceStatus ?? this.deviceStatus),
@@ -194,6 +200,9 @@ class DeviceProvider extends Notifier<DeviceState>
   static const String basePath = '/api/v1';
   static const String loginKey = "curator_login";
   static const String favoriteDeviceKey = "curator_favorite";
+  // Last connected device id. Unlike [favoriteDeviceKey] it survives logout so
+  // the login form can pre-select the device the user last used.
+  static const String lastDeviceKey = "curator_last_device";
   static const String seagateDeviceIDKey = "curator_seagate_device_id";
   static const String favoriteDevicePathsKey = "curator_favorite_paths";
   static const String cachedDevicePathsKey = "curator_cached_device_paths";
@@ -253,6 +262,7 @@ class DeviceProvider extends Notifier<DeviceState>
     return DeviceState(
       login: _storageData[loginKey] as String?,
       deviceID: _storageData[favoriteDeviceKey] as String?,
+      lastDeviceID: _storageData[lastDeviceKey] as String? ?? _storageData[favoriteDeviceKey] as String?,
       seagateDeviceID: _storageData[seagateDeviceIDKey] as String?,
       refreshToken: deps.secureData[refreshTokenKey],
       devicePaths: initialDevicePaths,
@@ -269,6 +279,7 @@ class DeviceProvider extends Notifier<DeviceState>
   @override
   String? get accessToken => state.accessToken;
   String? get deviceID => state.deviceID;
+  String? get lastDeviceID => state.lastDeviceID;
   String? get seagateDeviceID => state.seagateDeviceID;
   Status? get deviceStatus => state.deviceStatus;
   List<DevicePath>? get devicePaths => state.devicePaths;
@@ -403,6 +414,7 @@ class DeviceProvider extends Notifier<DeviceState>
       login: login ?? state.login,
       deviceStatus: status ?? state.deviceStatus,
       deviceID: deviceID ?? state.deviceID,
+      lastDeviceID: deviceID ?? state.lastDeviceID,
       seagateDeviceID: seagateDeviceID ?? state.seagateDeviceID,
     );
     if (productName != null) {
@@ -439,6 +451,7 @@ class DeviceProvider extends Notifier<DeviceState>
     // Save favorite device in shared preferences
     if (deviceID != null) {
       await asyncPrefs.setString(favoriteDeviceKey, deviceID);
+      await asyncPrefs.setString(lastDeviceKey, deviceID);
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
         await asyncPrefs.setString(seagateDeviceIDKey, seagateDeviceID);
       } else {
