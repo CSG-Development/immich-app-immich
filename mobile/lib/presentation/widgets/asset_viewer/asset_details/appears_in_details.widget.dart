@@ -8,8 +8,8 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/album/album_tile.dart';
-import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/sheet_tile.widget.dart';
+import 'package:immich_mobile/providers/asset_viewer/video_player_provider.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -57,9 +57,12 @@ class AppearsInDetails extends ConsumerWidget {
                     return AlbumTile(
                       album: album,
                       isOwner: isOwner,
-                      onAlbumSelected: (album) async {
-                        ref.invalidate(assetViewerProvider);
-                        unawaited(context.router.popAndPush(RemoteAlbumRoute(album: album)));
+                      onAlbumSelected: (album) {
+                        // Keep the asset viewer under the album so Back returns to the photo.
+                        if (asset.isVideo) {
+                          unawaited(ref.read(videoPlayerProvider(asset.heroTag).notifier).pause());
+                        }
+                        unawaited(context.pushRoute(RemoteAlbumRoute(album: album)));
                       },
                     );
                   }).toList(),
