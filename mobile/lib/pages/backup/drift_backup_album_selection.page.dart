@@ -463,18 +463,14 @@ class _SelectAllButton extends ConsumerWidget {
             child: ElevatedButton.icon(
               onPressed: canSelectAll
                   ? () {
-                      for (final album in filteredAlbums) {
-                        if (album.backupSelection != BackupSelection.selected) {
-                          ref.read(backupAlbumProvider.notifier).selectAlbum(album);
-                        }
-                      }
+                      final toSelect = filteredAlbums
+                          .where((album) => album.backupSelection != BackupSelection.selected)
+                          .toList();
+                      ref.read(backupAlbumProvider.notifier).selectAlbums(toSelect);
                     }
                   : null,
               icon: const Icon(Icons.select_all),
-              label: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text("select_all".t(context: context)),
-              ),
+              label: Text("select_all".t(context: context)),
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12.0)),
             ),
           ),
@@ -483,11 +479,10 @@ class _SelectAllButton extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: selectedBackupAlbums.isNotEmpty
                   ? () {
-                      for (final album in filteredAlbums) {
-                        if (album.backupSelection == BackupSelection.selected) {
-                          ref.read(backupAlbumProvider.notifier).deselectAlbum(album);
-                        }
-                      }
+                      final toDeselect = filteredAlbums
+                          .where((album) => album.backupSelection == BackupSelection.selected)
+                          .toList();
+                      ref.read(backupAlbumProvider.notifier).deselectAlbums(toDeselect);
                     }
                   : null,
               icon: const Icon(Icons.deselect),
