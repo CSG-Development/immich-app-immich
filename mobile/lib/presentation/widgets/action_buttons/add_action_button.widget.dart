@@ -156,9 +156,6 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
         context: context,
         msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
       );
-
-      // Invalidate using the asset's remote ID to refresh the "Appears in" list
-      ref.invalidate(albumsContainingAssetProvider(latest.remoteId!));
     }
 
     if (!context.mounted) {

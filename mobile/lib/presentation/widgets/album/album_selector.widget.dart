@@ -830,9 +830,6 @@ class CreateAlbumButton extends ConsumerWidget {
         msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
       );
 
-      // Invalidate using the asset's remote ID to refresh the "Appears in" list
-      ref.invalidate(albumsContainingAssetProvider(asset.remoteId!));
-
       context.pop();
     }
 

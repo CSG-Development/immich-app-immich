@@ -391,17 +391,14 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
     return query.map((row) => row.read(_db.remoteAssetEntity.id)!).get();
   }
 
-  Future<List<RemoteAlbum>> getAlbumsContainingAsset(String assetId) async {
-    // Note: this needs to be 2 queries as the where clause filtering causes the assetCount to always be 1
-    final albumIdsQuery = _db.remoteAlbumAssetEntity.selectOnly()
-      ..addColumns([_db.remoteAlbumAssetEntity.albumId])
-      ..where(_db.remoteAlbumAssetEntity.assetId.equals(assetId));
-
-    final albumIds = await albumIdsQuery.map((row) => row.read(_db.remoteAlbumAssetEntity.albumId)!).get();
-
-    if (albumIds.isEmpty) {
-      return [];
-    }
+  Stream<List<RemoteAlbum>> watchAlbumsContainingAsset(String assetId) {
+    // The membership filter has to live in a subquery: putting it in the outer
+    // where clause would restrict the joined rows and pin assetCount to 1.
+    // An alias keeps it from colliding with the join on the same table below.
+    final membership = _db.remoteAlbumAssetEntity.createAlias('album_asset_membership');
+    final albumIdsQuery = membership.selectOnly()
+      ..addColumns([membership.albumId])
+      ..where(membership.assetId.equals(assetId));
 
     final assetCount = _db.remoteAlbumAssetEntity.assetId.count(distinct: true);
     final query =
@@ -427,7 +424,7 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
               useColumns: false,
             ),
           ])
-          ..where(_db.remoteAlbumEntity.id.isIn(albumIds) & _db.remoteAssetEntity.deletedAt.isNull())
+          ..where(_db.remoteAlbumEntity.id.isInQuery(albumIdsQuery) & _db.remoteAssetEntity.deletedAt.isNull())
           ..addColumns([assetCount])
           ..addColumns([_db.remoteAlbumUserEntity.userId.count(distinct: true)])
           ..addColumns([_db.userEntity.name])
@@ -443,7 +440,7 @@ class DriftRemoteAlbumRepository extends DriftDatabaseRepository {
                 assetCount: row.read(assetCount) ?? 0,
               ),
         )
-        .get();
+        .watch();
   }
 }
 
