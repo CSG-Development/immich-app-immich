@@ -1,22 +1,13 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
-  import ActionMenuItem from '$lib/components/ActionMenuItem.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
   import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import { QueryParameter } from '$lib/constants';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
@@ -24,8 +15,8 @@
   import type { Viewport } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { lang, locale } from '$lib/stores/preferences.store';
-  import { preferences } from '$lib/stores/user.store';
   import { handlePromiseError } from '$lib/utils';
   import { parseUtcDate } from '$lib/utils/date-time';
   import { handleError } from '$lib/utils/handle-error';
@@ -41,7 +32,7 @@
     searchSmart,
     type SmartSearchDto,
   } from '@immich/sdk';
-  import { ActionButton, CommandPaletteDefaultProvider, Icon, IconButton, LoadingSpinner } from '@immich/ui';
+  import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton, Icon, IconButton, LoadingSpinner } from '@immich/ui';
   import { mdiArrowLeft, mdiDotsVertical, mdiImageOffOutline, mdiSelectAll } from '@mdi/js';
   import { tick, untrack } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -234,6 +225,19 @@
   function getObjectKeys<T extends object>(obj: T): (keyof T)[] {
     return Object.keys(obj) as (keyof T)[];
   }
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showAddToAlbum: true,
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onVisibilitySet: handleSetVisibility,
+      onAssetDelete,
+      onUndoDelete: () => {
+        void onSearchQueryUpdate();
+      },
+      showJobs: true,
+    }),
+  );
 </script>
 
 <svelte:window bind:scrollY />
@@ -345,23 +349,7 @@
               }}
             />
 
-            <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-              <ActionMenuItem action={Actions.AddToAlbum} />
-              <DownloadAction menuItem />
-              <ChangeDate menuItem />
-              <ChangeDescription menuItem />
-              <ChangeLocation menuItem />
-              <ArchiveAction menuItem unarchive={assetMultiSelectManager.isAllArchived} />
-              <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-              {#if $preferences.tags.enabled}
-                <TagAction menuItem />
-              {/if}
-              <DeleteAssets menuItem {onAssetDelete} onUndoDelete={onSearchQueryUpdate} />
-              <hr />
-              <ActionMenuItem action={Actions.RegenerateThumbnailJob} />
-              <ActionMenuItem action={Actions.RefreshMetadataJob} />
-              <ActionMenuItem action={Actions.TranscodeVideoJob} />
-            </ButtonContextMenu>
+            <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
           {:else}
             <DownloadAction />
           {/if}

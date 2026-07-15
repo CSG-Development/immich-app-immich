@@ -9,7 +9,7 @@ import { handleError } from './handle-error';
 
 export type OnDelete = (assetIds: string[]) => void;
 export type OnUndoDelete = (assets: TimelineAsset[]) => void;
-export type OnRestore = (ids: string[]) => void;
+export type OnRestore = (ids: string[]) => void | Promise<void>;
 export type OnLink = (assets: { still: TimelineAsset; motion: TimelineAsset }) => void;
 export type OnUnlink = (assets: { still: TimelineAsset; motion: TimelineAsset }) => void;
 export type OnAddToAlbum = (ids: string[], albumId: string) => void;

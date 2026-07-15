@@ -1,12 +1,10 @@
 <script lang="ts">
   import { focusOutside } from '$lib/actions/focus-outside';
-  import ActionMenuItem from '$lib/components/ActionMenuItem.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import { Route } from '$lib/route';
   import { getPersonActions } from '$lib/services/person.service';
   import { getPeopleThumbnailUrl } from '$lib/utils';
   import { type PersonResponseDto } from '@immich/sdk';
-  import { Icon } from '@immich/ui';
+  import { ContextMenuButton, Icon, type ActionItem } from '@immich/ui';
   import {
     mdiAccountMultipleCheckOutline,
     mdiDotsVertical,
@@ -17,7 +15,6 @@
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import ImageThumbnail from '../assets/thumbnail/image-thumbnail.svelte';
-  import MenuOption from '../shared-components/context-menu/menu-option.svelte';
 
   type Props = {
     person: PersonResponseDto;
@@ -31,6 +28,25 @@
   let showVerticalDots = $state(false);
 
   const { SetDateOfBirth } = $derived(getPersonActions($t, person));
+
+  const items = $derived([
+    {
+      title: $t('hide_person'),
+      icon: mdiEyeOffOutline,
+      onAction: onHidePerson,
+    },
+    SetDateOfBirth,
+    {
+      title: $t('merge_people'),
+      icon: mdiAccountMultipleCheckOutline,
+      onAction: onMergePeople,
+    },
+    {
+      title: person.isFavorite ? $t('unfavorite') : $t('to_favorite'),
+      icon: person.isFavorite ? mdiHeartMinusOutline : mdiHeartOutline,
+      onAction: onToggleFavorite,
+    },
+  ] satisfies ActionItem[]);
 </script>
 
 <div
@@ -66,23 +82,13 @@
 
   {#if showVerticalDots}
     <div class="absolute top-2 end-2 z-1 bg-black rounded-full">
-      <ButtonContextMenu
-        buttonClass="icon-white-drop-shadow focus:opacity-100 text-white {showVerticalDots
-          ? 'opacity-100'
-          : 'opacity-0'}"
+      <ContextMenuButton
+        class="icon-white-drop-shadow focus:opacity-100 text-white {showVerticalDots ? 'opacity-100' : 'opacity-0'}"
         size="medium"
         icon={mdiDotsVertical}
-        title={$t('show_person_options')}
-      >
-        <MenuOption onClick={onHidePerson} icon={mdiEyeOffOutline} text={$t('hide_person')} />
-        <ActionMenuItem action={SetDateOfBirth} />
-        <MenuOption onClick={onMergePeople} icon={mdiAccountMultipleCheckOutline} text={$t('merge_people')} />
-        <MenuOption
-          onClick={onToggleFavorite}
-          icon={person.isFavorite ? mdiHeartMinusOutline : mdiHeartOutline}
-          text={person.isFavorite ? $t('unfavorite') : $t('to_favorite')}
-        />
-      </ButtonContextMenu>
+        aria-label={$t('show_person_options')}
+        {items}
+      />
     </div>
   {/if}
 </div>

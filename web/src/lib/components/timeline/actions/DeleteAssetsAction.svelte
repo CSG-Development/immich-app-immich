@@ -1,22 +1,20 @@
 <script lang="ts">
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import AssetDeleteConfirmModal from '$lib/modals/AssetDeleteConfirmModal.svelte';
   import { showDeleteModal } from '$lib/stores/preferences.store';
   import { type OnDelete, type OnUndoDelete, deleteAssets } from '$lib/utils/actions';
   import { IconButton, modalManager } from '@immich/ui';
-  import { mdiDeleteForeverOutline, mdiTimerSand, mdiTrashCanOutline } from '@mdi/js';
+  import { mdiDeleteForeverOutline, mdiTimerSand } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   type Props = {
     onAssetDelete: OnDelete;
     onUndoDelete?: OnUndoDelete | undefined;
-    menuItem?: boolean;
     force?: boolean;
   };
 
-  let { onAssetDelete, onUndoDelete = undefined, menuItem = false, force: forceRequested }: Props = $props();
+  let { onAssetDelete, onUndoDelete = undefined, force: forceRequested }: Props = $props();
 
   const force = $derived(forceRequested || !featureFlagsManager.value.trash);
   let label = $derived(force ? $t('permanently_delete') : $t('delete'));
@@ -39,9 +37,7 @@
   };
 </script>
 
-{#if menuItem}
-  <MenuOption text={label} icon={mdiTrashCanOutline} onClick={onAction} />
-{:else if loading}
+{#if loading}
   <IconButton
     shape="round"
     color="secondary"

@@ -13,7 +13,7 @@
 </script>
 
 <ConfirmModal title={$t('confirm')} size="small" confirmColor="primary" {onClose}>
-  {#snippet prompt()}
+  {#snippet promptSnippet()}
     <p>{$t('update_location_action_prompt', { values: { count: assetCount } })}</p>
     <p>- {$t('latitude')}: {point.lat}</p>
     <p>- {$t('longitude')}: {point.lng}</p>

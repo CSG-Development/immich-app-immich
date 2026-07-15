@@ -38,7 +38,21 @@
     }
   };
 
-  const { Empty, RestoreAll } = $derived(getTrashActions($t));
+  const clearTrashTimeline = async () => {
+    const assets = await timelineManager.getAssets();
+    timelineManager.removeAssets(assets.map((asset) => asset.id));
+    await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
+  };
+
+  const handleTrashSelectionChange = async (assetIds: string[]) => {
+    timelineManager.removeAssets(assetIds);
+    const assets = await timelineManager.getAssets();
+    if (assets.length === 0) {
+      await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
+    }
+  };
+
+  const { Empty, RestoreAll } = $derived(getTrashActions($t, clearTrashTimeline));
 </script>
 
 {#if featureFlagsManager.value.trash}
@@ -70,24 +84,7 @@
 {#if assetMultiSelectManager.selectionActive}
   <AssetSelectControlBar>
     <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
-    <DeleteAssets
-      force
-      onAssetDelete={async (assetIds) => {
-        timelineManager.removeAssets(assetIds);
-        const assets = await timelineManager.getAssets();
-        if (assetMultiSelectManager.selectedAssets.length === assets.length) {
-          await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
-        }
-      }}
-    />
-    <RestoreAssets
-      onRestore={async (assetIds) => {
-        timelineManager.removeAssets(assetIds);
-        const assets = await timelineManager.getAssets();
-        if (assetMultiSelectManager.selectedAssets.length === assets.length) {
-          await timelineManager.updateOptions({ deferInit: false, isTrashed: true });
-        }
-      }}
-    />
+    <DeleteAssets force onAssetDelete={handleTrashSelectionChange} />
+    <RestoreAssets onRestore={handleTrashSelectionChange} />
   </AssetSelectControlBar>
 {/if}

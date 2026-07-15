@@ -1,19 +1,9 @@
 <script lang="ts">
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
@@ -21,11 +11,11 @@
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { preferences } from '$lib/stores/user.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
-  import { ActionButton, CommandPaletteDefaultProvider } from '@immich/ui';
-  import { mdiDotsVertical, mdiPresentationPlay } from '@mdi/js';
+  import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton } from '@immich/ui';
+  import { mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import type { PageData } from './$types';
@@ -68,6 +58,18 @@
       );
     }
   };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showSlideshow: true,
+      onStartSlideshow: handleStartSlideshow,
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: (ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility)),
+      onVisibilitySet: handleSetVisibility,
+      onAssetDelete: (assetIds) => timelineManager.removeAssets(assetIds),
+      onUndoDelete: (assets) => timelineManager.upsertAssets(assets),
+    }),
+  );
 </script>
 
 <UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} title={data.meta.title} scrollbar={false}>
@@ -87,7 +89,6 @@
   </Timeline>
 </UserPageLayout>
 
-<!-- Multiselection mode app bar -->
 {#if assetMultiSelectManager.selectionActive}
   <AssetSelectControlBar>
     {@const Actions = getAssetBulkActions($t)}
@@ -96,28 +97,6 @@
     <CreateSharedLink />
     <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
     <ActionButton action={Actions.AddToAlbum} />
-    <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-      {#if assetMultiSelectManager.selectedAssets.length > 1}
-        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
-      {/if}
-      <DownloadAction menuItem />
-      <ChangeDate menuItem />
-      <ChangeDescription menuItem />
-      <ChangeLocation menuItem />
-      <ArchiveAction
-        menuItem
-        unarchive={assetMultiSelectManager.isAllArchived}
-        onArchive={(ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility))}
-      />
-      {#if $preferences.tags.enabled}
-        <TagAction menuItem />
-      {/if}
-      <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-      <DeleteAssets
-        menuItem
-        onAssetDelete={(assetIds) => timelineManager.removeAssets(assetIds)}
-        onUndoDelete={(assets) => timelineManager.upsertAssets(assets)}
-      />
-    </ButtonContextMenu>
+    <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
   </AssetSelectControlBar>
 {/if}

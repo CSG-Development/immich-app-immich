@@ -4,14 +4,16 @@
   import DetailPanelLocation from '$lib/components/asset-viewer/detail-panel-location.svelte';
   import DetailPanelRating from '$lib/components/asset-viewer/detail-panel-star-rating.svelte';
   import DetailPanelTags from '$lib/components/asset-viewer/detail-panel-tags.svelte';
+  import MetadataList from '$lib/components/asset-viewer/metadata-list.svelte';
   import { timeToLoadTheMap } from '$lib/constants';
+  import Tab from '$lib/elements/Tab.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import AssetChangeDateModal from '$lib/modals/AssetChangeDateModal.svelte';
   import { Route } from '$lib/route';
   import { boundingBoxesArray } from '$lib/stores/people.store';
-  import { locale } from '$lib/stores/preferences.store';
+  import { locale, PhotoTabs } from '$lib/stores/preferences.store';
   import { preferences, user } from '$lib/stores/user.store';
   import { getAssetMediaUrl, getPeopleThumbnailUrl } from '$lib/utils';
   import { delay, getDimensions } from '$lib/utils/asset-utils';
@@ -57,6 +59,7 @@
 
   let showAssetPath = $state(false);
   let showEditFaces = $state(false);
+  let selectedTab = $state(PhotoTabs.Basic);
   let isOwner = $derived($user?.id === asset.ownerId);
   let people = $derived(asset.people || []);
   let unassignedFaces = $derived(asset.unassignedFaces || []);
@@ -79,34 +82,50 @@
   );
   let previousId: string | undefined = $state();
   let previousRoute = $derived(currentAlbum?.id ? Route.viewAlbum(currentAlbum) : Route.photos());
+  let albums = $state<AlbumResponseDto[]>([]);
+  let albumsAssetId = $state<string | undefined>();
 
-  const refreshAlbums = async () => {
+  const refreshAlbums = async (assetId: string = asset.id) => {
     if (authManager.isSharedLink) {
-      return [];
+      albums = [];
+      albumsAssetId = assetId;
+      return;
     }
 
     try {
-      return await getAllAlbums({ assetId: asset.id });
+      const result = await getAllAlbums({ assetId });
+      // Ignore stale responses after navigating to another asset
+      if (assetId === asset.id) {
+        albums = result;
+        albumsAssetId = assetId;
+      }
     } catch (error) {
       handleError(error, 'Error getting asset album membership');
-      return [];
+      if (assetId === asset.id) {
+        albums = [];
+        albumsAssetId = assetId;
+      }
     }
   };
 
-  let albums = $derived(refreshAlbums());
-
+  // Fetch by asset id only — not on every asset object identity change.
+  // `$derived(refreshAlbums())` recreated a promise on each identity change
+  // (websocket AssetUpdate, cursor reload), and `{#await}` hid the section while pending.
   $effect(() => {
-    if (!previousId) {
-      previousId = asset.id;
+    const assetId = asset.id;
+
+    if (assetId !== previousId) {
+      showEditFaces = false;
+      previousId = assetId;
+    }
+
+    if (albumsAssetId === assetId) {
       return;
     }
 
-    if (asset.id === previousId) {
-      return;
-    }
-
-    showEditFaces = false;
-    previousId = asset.id;
+    albums = [];
+    albumsAssetId = assetId;
+    void refreshAlbums(assetId);
   });
 
   const getMegapixel = (width: number, height: number): number | undefined => {
@@ -144,7 +163,7 @@
   };
 </script>
 
-<OnEvents onAlbumAddAssets={() => (albums = refreshAlbums())} />
+<OnEvents onAlbumAddAssets={() => void refreshAlbums()} />
 
 <section class="relative p-2">
   <div class="flex place-items-center gap-2">
@@ -159,6 +178,16 @@
     <p class="text-lg text-immich-fg dark:text-immich-dark-fg">{$t('info')}</p>
   </div>
 
+  <div class="p-3">
+    <Tab
+      label={$t('show_info')}
+      tabs={Object.values(PhotoTabs)}
+      selected={selectedTab}
+      onSelect={(selected) => (selectedTab = selected as PhotoTabs)}
+    />
+  </div>
+
+  {#if selectedTab === PhotoTabs.Basic}
   {#if asset.isOffline}
     <section class="px-4 py-4">
       <div role="alert">
@@ -466,8 +495,14 @@
 
     <DetailPanelLocation {isOwner} {asset} />
   </div>
+  {:else}
+    <section class="px-4 py-4">
+      <MetadataList exifInfo={asset.exifInfo} />
+    </section>
+  {/if}
 </section>
 
+{#if selectedTab === PhotoTabs.Basic}
 {#if latlng && featureFlagsManager.value.map}
   <div class="h-90">
     {#await import('$lib/components/shared-components/map/map.svelte')}
@@ -532,39 +567,37 @@
   </section>
 {/if}
 
-{#await albums then albums}
-  {#if albums.length > 0}
-    <section class="px-6 py-6 dark:text-immich-dark-fg">
-      <div class="pb-4">
-        <Text size="small" color="muted">{$t('appears_in')}</Text>
-      </div>
-      {#each albums as album (album.id)}
-        <a href={Route.viewAlbum(album)}>
-          <div class="flex gap-4 pt-2 hover:cursor-pointer items-center">
-            <div>
-              <img
-                alt={album.albumName}
-                class="h-12.5 w-12.5 rounded object-cover"
-                src={album.albumThumbnailAssetId &&
-                  getAssetMediaUrl({ id: album.albumThumbnailAssetId, size: AssetMediaSize.Preview })}
-                draggable="false"
-              />
-            </div>
+{#if albums.length > 0}
+  <section class="px-6 py-6 dark:text-immich-dark-fg">
+    <div class="pb-4">
+      <Text size="small" color="muted">{$t('appears_in')}</Text>
+    </div>
+    {#each albums as album (album.id)}
+      <a href={Route.viewAlbum(album)}>
+        <div class="flex gap-4 pt-2 hover:cursor-pointer items-center">
+          <div>
+            <img
+              alt={album.albumName}
+              class="h-12.5 w-12.5 rounded object-cover"
+              src={album.albumThumbnailAssetId &&
+                getAssetMediaUrl({ id: album.albumThumbnailAssetId, size: AssetMediaSize.Preview })}
+              draggable="false"
+            />
+          </div>
 
-            <div class="mb-auto mt-auto">
-              <p class="dark:text-immich-dark-primary">{album.albumName}</p>
-              <div class="flex flex-col gap-0 text-sm">
-                <div>
-                  <AlbumListItemDetails {album} />
-                </div>
+          <div class="mb-auto mt-auto">
+            <p class="dark:text-immich-dark-primary">{album.albumName}</p>
+            <div class="flex flex-col gap-0 text-sm">
+              <div>
+                <AlbumListItemDetails {album} />
               </div>
             </div>
           </div>
-        </a>
-      {/each}
-    </section>
-  {/if}
-{/await}
+        </div>
+      </a>
+    {/each}
+  </section>
+{/if}
 
 {#if $preferences?.tags?.enabled}
   <section class="relative px-2 pb-12 dark:bg-immich-dark-bg dark:text-immich-dark-fg">
@@ -579,4 +612,5 @@
     onClose={() => (showEditFaces = false)}
     onRefresh={handleRefreshPeople}
   />
+{/if}
 {/if}

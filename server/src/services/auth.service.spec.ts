@@ -168,7 +168,7 @@ describe(AuthService.name, () => {
 
       await expect(sut.logout(auth, AuthType.Password)).resolves.toEqual({
         successful: true,
-        redirectUri: '/auth/login?autoLaunch=0',
+        redirectUri: '/photos/auth/login?autoLaunch=0',
       });
     });
 
@@ -178,7 +178,7 @@ describe(AuthService.name, () => {
 
       await expect(sut.logout(auth, AuthType.Password)).resolves.toEqual({
         successful: true,
-        redirectUri: '/auth/login?autoLaunch=0',
+        redirectUri: '/photos/auth/login?autoLaunch=0',
       });
 
       expect(mocks.session.delete).toHaveBeenCalledWith('token123');
@@ -190,7 +190,7 @@ describe(AuthService.name, () => {
 
       await expect(sut.logout(auth, AuthType.OAuth)).resolves.toEqual({
         successful: true,
-        redirectUri: '/auth/login?autoLaunch=0',
+        redirectUri: '/photos/auth/login?autoLaunch=0',
       });
     });
   });

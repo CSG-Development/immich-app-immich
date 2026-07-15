@@ -7,7 +7,9 @@
   import OcrBoundingBox from '$lib/components/asset-viewer/ocr-bounding-box.svelte';
   import AssetViewerEvents from '$lib/components/AssetViewerEvents.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { authManager } from '$lib/managers/auth-manager.svelte';
   import { castManager } from '$lib/managers/cast-manager.svelte';
+  import { Route } from '$lib/route';
   import { ocrManager } from '$lib/stores/ocr.svelte';
   import { boundingBoxesArray, type Faces } from '$lib/stores/people.store';
   import { SlideshowLook, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
@@ -17,7 +19,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { getOcrBoundingBoxes } from '$lib/utils/ocr-utils';
   import { getBoundingBox, type BoundingBox } from '$lib/utils/people-utils';
-  import { type SharedLinkResponseDto } from '@immich/sdk';
+  import { type PersonWithFacesResponseDto, type SharedLinkResponseDto } from '@immich/sdk';
   import { toastManager } from '@immich/ui';
   import { onDestroy, untrack } from 'svelte';
   import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
@@ -78,11 +80,9 @@
   const isHighlighting = $derived(highlightedBoxes.length > 0);
 
   let visibleBoxes = $state<BoundingBox[]>([]);
-  let visibleBoundingBoxes = $state<Faces[]>([]);
   $effect(() => {
     if (isHighlighting) {
       visibleBoxes = highlightedBoxes;
-      visibleBoundingBoxes = $boundingBoxesArray;
     }
   });
 
@@ -156,47 +156,55 @@
 
   let adaptiveImage = $state<HTMLDivElement | undefined>();
 
-  const faceToNameMap = $derived.by(() => {
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity
-    const map = new Map<Faces, string>();
-    for (const person of asset.people ?? []) {
-      for (const face of person.faces ?? []) {
-        map.set(face, person.name);
-      }
-    }
-    return map;
-  });
-
-  const faces = $derived(Array.from(faceToNameMap.keys()));
-
-  const handleImageMouseMove = (event: MouseEvent) => {
-    $boundingBoxesArray = [];
-    if (!assetViewerManager.imgRef || !element || assetViewerManager.isFaceEditMode || ocrManager.showOverlay) {
-      return;
-    }
-
-    const natural = getNaturalSize(assetViewerManager.imgRef);
-    const scaled = scaleToFit(natural, container);
-    const { currentZoom, currentPositionX, currentPositionY } = assetViewerManager.zoomState;
-
-    const contentOffsetX = (container.width - scaled.width) / 2;
-    const contentOffsetY = (container.height - scaled.height) / 2;
-
-    const containerRect = element.getBoundingClientRect();
-    const mouseX = (event.clientX - containerRect.left - contentOffsetX * currentZoom - currentPositionX) / currentZoom;
-    const mouseY = (event.clientY - containerRect.top - contentOffsetY * currentZoom - currentPositionY) / currentZoom;
-
-    const faceBoxes = getBoundingBox(faces, overlaySize);
-
-    for (const [index, box] of faceBoxes.entries()) {
-      if (mouseX >= box.left && mouseX <= box.left + box.width && mouseY >= box.top && mouseY <= box.top + box.height) {
-        $boundingBoxesArray.push(faces[index]);
-      }
-    }
+  type FaceOverlay = BoundingBox & {
+    face: Faces;
+    person: PersonWithFacesResponseDto;
+    name: string;
   };
 
-  const handleImageMouseLeave = () => {
+  const faceOverlays = $derived.by((): FaceOverlay[] => {
+    if (
+      assetViewerManager.isFaceEditMode ||
+      ocrManager.showOverlay ||
+      overlaySize.width === 0 ||
+      overlaySize.height === 0
+    ) {
+      return [];
+    }
+
+    const facePeople: { face: Faces; person: PersonWithFacesResponseDto }[] = [];
+    for (const person of asset.people ?? []) {
+      for (const face of person.faces ?? []) {
+        facePeople.push({ face, person });
+      }
+    }
+
+    const boxes = getBoundingBox(
+      facePeople.map(({ face }) => face),
+      overlaySize,
+    );
+
+    return boxes.map((box, index) => ({
+      ...box,
+      face: facePeople[index].face,
+      person: facePeople[index].person,
+      name: facePeople[index].person.name,
+    }));
+  });
+
+  const canOpenPerson = $derived(!authManager.isSharedLink);
+  const previousRoute = Route.photos();
+
+  const onFacePointerEnter = (face: Faces) => {
+    $boundingBoxesArray = [face];
+  };
+
+  const onFacePointerLeave = () => {
     $boundingBoxesArray = [];
+  };
+
+  const stopZoomDblClick = (event: MouseEvent) => {
+    event.stopPropagation();
   };
 </script>
 
@@ -218,8 +226,6 @@
   bind:clientHeight={containerHeight}
   role="presentation"
   ondblclick={onZoom}
-  onmousemove={handleImageMouseMove}
-  onmouseleave={handleImageMouseLeave}
   use:zoomImageAction={{ zoomTarget: adaptiveImage }}
   {...useSwipe((event) => onSwipe?.(event))}
 >
@@ -264,22 +270,52 @@
           </defs>
           <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" mask="url(#face-dim-mask)" />
         </svg>
-        {#each visibleBoxes as boundingbox, index (boundingbox.id)}
+        {#each visibleBoxes as box (box.id)}
+          {@const overlay = faceOverlays.find((item) => item.id === box.id)}
           <div
             class="absolute border-solid border-white border-3 rounded-lg"
-            style="top: {boundingbox.top}px; left: {boundingbox.left}px; height: {boundingbox.height}px; width: {boundingbox.width}px;"
+            style="top: {box.top}px; left: {box.left}px; height: {box.height}px; width: {box.width}px;"
           ></div>
-          {#if faceToNameMap.get(visibleBoundingBoxes[index])}
+          {#if overlay?.name}
             <div
-              class="absolute bg-white/90 text-black px-2 py-1 rounded text-sm font-medium whitespace-nowrap pointer-events-none shadow-lg"
-              style="top: {boundingbox.top + boundingbox.height + 4}px; left: {boundingbox.left +
-                boundingbox.width}px; transform: translateX(-100%);"
+              aria-hidden="true"
+              class="absolute bg-white/90 text-black px-2 py-1 rounded text-sm font-medium whitespace-nowrap shadow-lg"
+              style="top: {box.top + box.height + 4}px; left: {box.left + box.width}px; transform: translateX(-100%);"
             >
-              {faceToNameMap.get(visibleBoundingBoxes[index])}
+              {overlay.name}
             </div>
           {/if}
         {/each}
       </div>
+
+      {#each faceOverlays as overlay (overlay.id)}
+        {@const label = overlay.name || $t('person')}
+        {@const faceClass = `absolute rounded-lg pointer-events-auto ${canOpenPerson ? 'cursor-pointer' : ''}`}
+        {@const faceStyle = `top: ${overlay.top}px; left: ${overlay.left}px; height: ${overlay.height}px; width: ${overlay.width}px;`}
+        {#if canOpenPerson}
+          <a
+            href={Route.viewPerson(overlay.person, { previousRoute })}
+            class={faceClass}
+            style={faceStyle}
+            data-overlay-interactive
+            aria-label={label}
+            onpointerenter={() => onFacePointerEnter(overlay.face)}
+            onpointerleave={onFacePointerLeave}
+            ondblclick={stopZoomDblClick}
+          ></a>
+        {:else}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class={faceClass}
+            style={faceStyle}
+            data-overlay-interactive
+            role="presentation"
+            onpointerenter={() => onFacePointerEnter(overlay.face)}
+            onpointerleave={onFacePointerLeave}
+            ondblclick={stopZoomDblClick}
+          ></div>
+        {/if}
+      {/each}
 
       {#each ocrBoxes as ocrBox (ocrBox.id)}
         <OcrBoundingBox {ocrBox} />

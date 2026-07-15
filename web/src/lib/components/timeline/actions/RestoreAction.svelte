@@ -21,7 +21,7 @@
     try {
       const ids = assetMultiSelectManager.assets.map((a) => a.id);
       await restoreAssets({ bulkIdsDto: { ids } });
-      onRestore?.(ids);
+      await onRestore?.(ids);
       toastManager.primary($t('assets_restored_count', { values: { count: ids.length } }));
       assetMultiSelectManager.clear();
     } catch (error) {

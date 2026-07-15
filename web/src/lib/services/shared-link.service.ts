@@ -1,9 +1,8 @@
 import { goto } from '$app/navigation';
 import { eventManager } from '$lib/managers/event-manager.svelte';
-import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
 import QrCodeModal from '$lib/modals/QrCodeModal.svelte';
 import { Route } from '$lib/route';
-import { copyToClipboard } from '$lib/utils';
+import { copyToClipboard, makeSharedLinkUrl } from '$lib/utils';
 import { handleError } from '$lib/utils/handle-error';
 import { getFormatter } from '$lib/utils/i18n';
 import {
@@ -59,12 +58,7 @@ export const getSharedLinkActions = ($t: MessageFormatter, sharedLink: SharedLin
   return { Edit, Delete, Copy, ViewQrCode };
 };
 
-export const asUrl = (sharedLink: SharedLinkResponseDto) => {
-  const path = sharedLink.slug
-    ? `s/${encodeURIComponent(sharedLink.slug)}`
-    : `share/${encodeURIComponent(sharedLink.key)}`;
-  return new URL(path, serverConfigManager.value.externalDomain || globalThis.location.origin).href;
-};
+export const asUrl = (sharedLink: SharedLinkResponseDto) => makeSharedLinkUrl(sharedLink);
 
 export const handleCreateSharedLink = async (dto: SharedLinkCreateDto) => {
   const $t = await getFormatter();
