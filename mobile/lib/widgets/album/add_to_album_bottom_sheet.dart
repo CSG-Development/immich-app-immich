@@ -5,7 +5,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/services/album.service.dart';
 import 'package:immich_mobile/widgets/album/add_to_album_sliverlist.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -46,11 +45,6 @@ class AddToAlbumBottomSheet extends HookConsumerWidget {
             context: context,
             msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {"album": album.name}),
           );
-          for (final asset in assets) {
-            if (asset.isRemote && asset.remoteId != null) {
-              ref.invalidate(albumsContainingAssetProvider(asset.remoteId!));
-            }
-          }
         }
       }
       context.pop();

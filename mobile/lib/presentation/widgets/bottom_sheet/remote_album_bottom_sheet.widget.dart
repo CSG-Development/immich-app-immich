@@ -76,11 +76,6 @@ class _RemoteAlbumBottomSheetState extends ConsumerState<RemoteAlbumBottomSheet>
           context: context,
           msg: 'add_to_album_bottom_sheet_added'.t(context: context, args: {"album": album.name}),
         );
-        for (final asset in selectedAssets) {
-          if (asset is RemoteAsset) {
-            ref.invalidate(albumsContainingAssetProvider(asset.id));
-          }
-        }
       }
 
       ref.read(multiSelectProvider.notifier).reset();

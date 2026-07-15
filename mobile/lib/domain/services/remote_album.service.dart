@@ -177,8 +177,8 @@ class RemoteAlbumService {
     return _repository.getCount();
   }
 
-  Future<List<RemoteAlbum>> getAlbumsContainingAsset(String assetId) {
-    return _repository.getAlbumsContainingAsset(assetId);
+  Stream<List<RemoteAlbum>> watchAlbumsContainingAsset(String assetId) {
+    return _repository.watchAlbumsContainingAsset(assetId);
   }
 
   Future<List<RemoteAlbum>> _sortByAssetDate(

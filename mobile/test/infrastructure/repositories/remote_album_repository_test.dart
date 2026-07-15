@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/constants/enums.dart';
+import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/remote_album.repository.dart';
 
 import '../../medium/repository_context.dart';
@@ -205,6 +206,78 @@ void main() {
 
       // album2 (Jan 1) should come before album1 (Jan 25)
       expect(resultEnd, [album2.id, album1.id]);
+    });
+  });
+
+  group('watchAlbumsContainingAsset', () {
+    late String userId;
+
+    setUp(() async {
+      final user = await ctx.newUser();
+      userId = user.id;
+    });
+
+    test('emits the albums the asset belongs to', () async {
+      final asset = await ctx.newRemoteAsset(ownerId: userId);
+      final album = await ctx.newRemoteAlbum(ownerId: userId, name: 'Album X');
+      await ctx.insertRemoteAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.watchAlbumsContainingAsset(asset.id).first;
+
+      expect(result.map((a) => a.id), [album.id]);
+    });
+
+    test('reports the full album asset count, not just the matched asset', () async {
+      final asset = await ctx.newRemoteAsset(ownerId: userId);
+      final other = await ctx.newRemoteAsset(ownerId: userId);
+      final album = await ctx.newRemoteAlbum(ownerId: userId);
+      await ctx.insertRemoteAlbumAsset(albumId: album.id, assetId: asset.id);
+      await ctx.insertRemoteAlbumAsset(albumId: album.id, assetId: other.id);
+
+      final result = await sut.watchAlbumsContainingAsset(asset.id).first;
+
+      expect(result.single.assetCount, 2);
+    });
+
+    test('emits empty when the asset is in no album', () async {
+      final asset = await ctx.newRemoteAsset(ownerId: userId);
+      await ctx.newRemoteAlbum(ownerId: userId);
+
+      expect(await sut.watchAlbumsContainingAsset(asset.id).first, isEmpty);
+    });
+
+    test('re-emits without the album once it is deleted', () async {
+      final asset = await ctx.newRemoteAsset(ownerId: userId);
+      final album = await ctx.newRemoteAlbum(ownerId: userId);
+      await ctx.insertRemoteAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final stream = sut.watchAlbumsContainingAsset(asset.id);
+      final emissions = expectLater(
+        stream,
+        emitsInOrder([
+          predicate<List<RemoteAlbum>>((a) => a.length == 1 && a.single.id == album.id),
+          isEmpty,
+        ]),
+      );
+
+      await sut.deleteAlbum(album.id);
+      await emissions;
+    });
+
+    test('re-emits when the asset is added to an album later', () async {
+      final asset = await ctx.newRemoteAsset(ownerId: userId);
+      final album = await ctx.newRemoteAlbum(ownerId: userId);
+
+      final emissions = expectLater(
+        sut.watchAlbumsContainingAsset(asset.id),
+        emitsInOrder([
+          isEmpty,
+          predicate<List<RemoteAlbum>>((a) => a.length == 1 && a.single.id == album.id),
+        ]),
+      );
+
+      await ctx.insertRemoteAlbumAsset(albumId: album.id, assetId: asset.id);
+      await emissions;
     });
   });
 }

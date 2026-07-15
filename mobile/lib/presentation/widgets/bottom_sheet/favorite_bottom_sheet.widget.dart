@@ -60,9 +60,6 @@ class FavoriteBottomSheet extends ConsumerWidget {
           context: context,
           msg: 'add_to_album_bottom_sheet_added'.t(args: {"album": album.name}),
         );
-        for (final asset in remoteAssets) {
-          ref.invalidate(albumsContainingAssetProvider(asset.id));
-        }
       }
 
       ref.read(multiSelectProvider.notifier).reset();
