@@ -94,6 +94,11 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   /// Connectivity recovery arrived while another attempt was active.
   bool _queuedConnectivityWhileBusy = false;
 
+  /// When the transport / network identity last actually changed. Compared
+  /// against the time the active run observed the network, to drop a queued
+  /// connectivity recovery that describes state the run already handled.
+  DateTime? _lastNetworkStateChangeAt;
+
   Timer? _localNetPermissionTimer;
   int _localNetPermissionRetries = 0;
 
@@ -136,6 +141,7 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     _lastDetectionTime = null;
     _lastConnectivitySignature = null;
     _lastNetworkIdentitySignature = null;
+    _lastNetworkStateChangeAt = null;
     _lastTransportUsable = null;
     _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
@@ -166,6 +172,7 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     _lastConnectivitySignature = signature;
 
     if (changed) {
+      _lastNetworkStateChangeAt = DateTime.now();
       // New transport episode — drop any pending local-network-permission retry.
       _cancelLocalNetPermissionRetry();
     }
@@ -359,13 +366,6 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
       }
     }
 
-    final shouldSurfaceFinding =
-        !event.suppressFindingToast && event.trigger.surfacesFindingToast;
-    if (shouldSurfaceFinding) {
-      noteRecoveryEpisodeStarted();
-      _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
-    }
-
     _isReconnecting = true;
     _snapshotBuilder.isResolving = pathResolveTriggerService.isResolving;
     _snapshotBuilder.isAppInForeground = _isAppInForeground;
@@ -379,10 +379,24 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
       _isReconnecting = false;
       if (_queuedConnectivityWhileBusy) {
         _queuedConnectivityWhileBusy = false;
-        _log.info('[Network] running queued connectivity recovery');
-        unawaited(
-          _runRecovery(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange)),
-        );
+        // The run that just finished may already have observed the network the
+        // queued event reports — the OTP grace, for one, re-observes several
+        // seconds in. Replaying then costs a full duplicate resolve (discovery,
+        // endpoint switch, websocket recycle) for a result we already have.
+        // Unknown timings replay, so this can only skip a provably stale event.
+        final observedAt = _executor.lastSnapshotAt;
+        final changedAt = _lastNetworkStateChangeAt;
+        if (observedAt != null && changedAt != null && observedAt.isAfter(changedAt)) {
+          _log.info(
+            '[Network] queued connectivity recovery dropped: '
+            'run already observed current network',
+          );
+        } else {
+          _log.info('[Network] running queued connectivity recovery');
+          unawaited(
+            _runRecovery(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange)),
+          );
+        }
       }
     }
   }
@@ -412,6 +426,12 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
       final previous = _lastNetworkIdentitySignature;
       _lastNetworkIdentitySignature = identity;
+
+      if (previous != null && previous != identity) {
+        // ssid/ip can change without a transport change (wifi handoff), so the
+        // identity refresh is the only signal for those.
+        _lastNetworkStateChangeAt = DateTime.now();
+      }
 
       if (previous != null && previous != identity && triggerReconnectOnChange) {
         _log.info(
@@ -513,7 +533,21 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   }
 
   @override
-  void onReconnectStarted({required bool isConnectivityDriven}) {
+  void onReconnectStarted({required bool isConnectivityDriven, required bool suppressFindingToast}) {
+    // Surfaced here rather than when recovery starts: by now any cheap probe
+    // has already missed, so a transient request failure on a healthy endpoint
+    // never flashes the toast.
+    //
+    // A connectivity change always surfaces it — a new network is a fresh
+    // chance worth reporting. Automatic probes only do so while the episode has
+    // not shown its final status yet: that keeps a steady "Connection lost"
+    // from being replaced by "Finding network" on every retry, without leaving
+    // the first (tens-of-seconds long) resolve completely silent.
+    if (!suppressFindingToast &&
+        (isConnectivityDriven || !_reconnectEpisodeService.hasShownFailureToastInActiveEpisode)) {
+      noteRecoveryEpisodeStarted();
+      _reconnectEpisodeService.scheduleFindingToastForActiveFailureEpisode();
+    }
     onConnectivityReconnectStarted?.call(isConnectivityDriven);
   }
 }
@@ -537,6 +571,10 @@ class ReconnectEpisodeController {
   bool _findingToastVisible = false;
 
   bool get hasActiveFailureEpisode => _hasActiveFailureEpisode;
+
+  /// Whether this episode already told the user how it ended ("Connection
+  /// lost" / "No internet"). Automatic retries must not walk that back.
+  bool get hasShownFailureToastInActiveEpisode => _hasShownFailureToastInActiveEpisode;
 
   void reset() {
     _hasActiveFailureEpisode = false;

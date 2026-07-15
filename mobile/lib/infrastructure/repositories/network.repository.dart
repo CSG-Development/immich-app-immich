@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:http/http.dart' as http;
+import 'package:immich_mobile/infrastructure/repositories/redirect_following_client.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:ok_http/ok_http.dart';
 import 'package:web_socket/web_socket.dart';
@@ -22,12 +23,17 @@ class NetworkRepository {
       final session = URLSession.fromRawPointer(clientPointer.cast());
       _client = CupertinoClient.fromSharedSession(session);
     } else {
-      _client = OkHttpClient.fromJniGlobalRef(
-        clientPointer,
-        configuration: const OkHttpClientConfiguration(
-          connectTimeout: Duration(seconds: 30),
-          readTimeout: Duration(seconds: 60),
-          writeTimeout: Duration(seconds: 60),
+      // ok_http crashes the process on a relative `Location` header, so
+      // redirects are followed in Dart instead. URLSession already handles
+      // them correctly, so iOS is left alone.
+      _client = RedirectFollowingClient(
+        OkHttpClient.fromJniGlobalRef(
+          clientPointer,
+          configuration: const OkHttpClientConfiguration(
+            connectTimeout: Duration(seconds: 30),
+            readTimeout: Duration(seconds: 60),
+            writeTimeout: Duration(seconds: 60),
+          ),
         ),
       );
     }

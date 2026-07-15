@@ -172,9 +172,14 @@ class RecordingCallbacks implements RecoveryExecutorCallbacks {
     return probeReachable;
   }
 
+  /// Whether the resolve that started asked to stay silent (null until one does).
+  bool? reconnectStartedSuppressedFinding;
+
   @override
-  void onReconnectStarted({required bool isConnectivityDriven}) =>
-      events.add('reconnectStarted:$isConnectivityDriven');
+  void onReconnectStarted({required bool isConnectivityDriven, required bool suppressFindingToast}) {
+    reconnectStartedSuppressedFinding = suppressFindingToast;
+    events.add('reconnectStarted:$isConnectivityDriven');
+  }
 }
 
 typedef Harness = ({
@@ -348,7 +353,12 @@ void main() {
     });
 
     test('no transport reports failure', () async {
-      final h = _harness(_snap(transport: TransportKind.none));
+      // Zero grace: the transport-settle wait is covered by its own group; here
+      // the transport never comes back, so the report stands.
+      final h = _harness(
+        _snap(transport: TransportKind.none),
+        policy: const RecoveryPolicy(transportSettleDelay: Duration.zero),
+      );
 
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
 
@@ -443,6 +453,136 @@ void main() {
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
 
       expect(h.callbacks.events, ['otp']);
+    });
+  });
+
+  group('RecoveryExecutor finding-toast surfacing', () {
+    test('reachable cached endpoint never announces a reconnect', () async {
+      // The monitor surfaces "finding network" from onReconnectStarted, so a
+      // transient request failure on a healthy endpoint must not reach it.
+      final h = _harness(_snap(trigger: RecoveryTrigger.apiTransportError));
+      h.callbacks.probeReachable = true;
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
+
+      expect(h.callbacks.events, ['probe', 'connected']);
+      expect(h.callbacks.reconnectStartedSuppressedFinding, isNull);
+    });
+
+    test('cached probe miss announces the reconnect that follows', () async {
+      final h = _harness(_snap(trigger: RecoveryTrigger.apiTransportError));
+      h.callbacks.probeReachable = false;
+      h.triggers.results.add(_success);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
+
+      expect(h.callbacks.events, contains('reconnectStarted:false'));
+      expect(h.callbacks.reconnectStartedSuppressedFinding, isFalse);
+    });
+
+    test('a silent event stays silent when the resolve starts', () async {
+      // e.g. the iOS local-network-permission re-resolve: connectivity-driven,
+      // but explicitly silent — it must not replace a shown banner.
+      final h = _harness(_snap(trigger: RecoveryTrigger.connectivityChange, activeEndpoint: null));
+      h.triggers.results.add(_success);
+
+      await h.executor.run(
+        const RecoveryEvent(
+          trigger: RecoveryTrigger.connectivityChange,
+          detail: 'local_net_permission_retry',
+          suppressFindingToast: true,
+        ),
+      );
+
+      expect(h.callbacks.events, contains('reconnectStarted:true'));
+      expect(h.callbacks.reconnectStartedSuppressedFinding, isTrue);
+    });
+  });
+
+  group('RecoveryExecutor resume transport grace', () {
+    const noGrace = RecoveryPolicy(transportSettleDelay: Duration.zero);
+
+    test('re-runs recovery when transport settles during the grace', () async {
+      // Airplane mode off, then back to the app: the OS still reports no
+      // transport at resume and wifi appears a moment later. That is not an
+      // outage, so no failure is reported and recovery runs on wifi.
+      final h = _harness(
+        _snap(transport: TransportKind.wifi, activeEndpoint: null),
+        policy: noGrace,
+      );
+      // First build (decide) reports no transport; the rest report wifi.
+      h.builder.scriptedBuilds.add(_snap(transport: TransportKind.none, activeEndpoint: null));
+      h.triggers.results.add(_success);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, isNot(contains('failed')));
+      expect(h.callbacks.events, contains('reconnected'));
+      expect(h.triggers.calls, ['networkChanged:app_resume']);
+    });
+
+    test('reports no internet once when the transport does not settle', () async {
+      final h = _harness(_snap(transport: TransportKind.none), policy: noGrace);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, ['failed']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('connectivity change to no transport reports without waiting', () async {
+      // The OS just said transport is gone (airplane on) — that banner must not
+      // be delayed. A grace here would re-run and hit the trigger service.
+      final h = _harness(
+        _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.wifi),
+        policy: noGrace,
+      );
+      h.builder.scriptedBuilds.add(
+        _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.none),
+      );
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['failed']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('a transport flap after the grace cannot chain another grace', () async {
+      // Grace sees the transport back, but the re-run observes it gone again:
+      // the re-run must report instead of waiting again. Builds after the flap
+      // report wifi, so a chained grace would settle and reach the trigger
+      // service — which has no scripted result and fails the test.
+      final h = _harness(
+        _snap(transport: TransportKind.wifi, activeEndpoint: null),
+        policy: noGrace,
+      );
+      h.builder.scriptedBuilds
+        ..add(_snap(transport: TransportKind.none, activeEndpoint: null))
+        ..add(_snap(transport: TransportKind.wifi, activeEndpoint: null))
+        ..add(_snap(transport: TransportKind.none, activeEndpoint: null));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, ['failed']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('lastSnapshotAt tracks the newest observation, including post-grace', () async {
+      // The monitor compares this against the time the network last changed to
+      // drop a queued connectivity recovery the run already covered.
+      final h = _harness(
+        _snap(transport: TransportKind.wifi, activeEndpoint: null),
+        policy: noGrace,
+      );
+      h.builder.scriptedBuilds.add(_snap(transport: TransportKind.none, activeEndpoint: null));
+      h.triggers.results.add(_success);
+
+      final startedAt = DateTime.now();
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.executor.lastSnapshotAt, isNotNull);
+      expect(h.executor.lastSnapshotAt!.isBefore(startedAt), isFalse);
+      expect(h.executor.lastSnapshot?.transport, TransportKind.wifi);
     });
   });
 }

@@ -393,6 +393,12 @@ class ApiService implements Authentication {
   }) async {
     return _enqueueEndpointSwitch(() async {
       _isSetEndpoint = true;
+      // A resolve that lands back on the already active endpoint (reconnect on
+      // the same network) needs no client rebuild, and there is no stale
+      // in-flight traffic to shield from _handleConnectionError — so the settle
+      // delay would just be dead time. The availability check still runs: it is
+      // the only proof that this endpoint is answering.
+      var isNoOpSwitch = false;
       try {
         final stopwatch = Stopwatch()..start();
         final normalizedEndpoint = _normalizeEndpoint(serverUrl);
@@ -411,7 +417,10 @@ class ApiService implements Authentication {
         final endpoint = pathAlreadyProbed
             ? normalizedEndpoint
             : await resolveEndpoint(normalizedEndpoint, availabilityTimeout: policy.availabilityTimeout);
-        setEndpoint(endpoint);
+        isNoOpSwitch = endpoint == _apiClient.basePath;
+        if (!isNoOpSwitch) {
+          setEndpoint(endpoint);
+        }
         try {
           await Store.put(StoreKey.serverEndpoint, endpoint);
         } on StateError catch (error, stackTrace) {
@@ -420,7 +429,8 @@ class ApiService implements Authentication {
         }
 
         // Sync native auth cookies after Store reflects the new endpoint so cookie
-        // domains match the active host (getServerUrls reads from Store).
+        // domains match the active host (getServerUrls reads from Store). Runs on
+        // a no-op switch too: the session may have changed while the host did not.
         await updateHeaders();
 
         stopwatch.stop();
@@ -428,13 +438,16 @@ class ApiService implements Authentication {
           'endpoint_switch success '
           'endpoint=$endpoint '
           'host=${uri.host} '
+          'noop=$isNoOpSwitch '
           'elapsedMs=${stopwatch.elapsedMilliseconds} '
           'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
-          'settleMs=${policy.settleDelay.inMilliseconds}',
+          'settleMs=${isNoOpSwitch ? 0 : policy.settleDelay.inMilliseconds}',
         );
         return endpoint;
       } finally {
-        await Future.delayed(policy.settleDelay);
+        if (!isNoOpSwitch) {
+          await Future.delayed(policy.settleDelay);
+        }
         _isSetEndpoint = false;
         _log.fine('endpoint_switch unlocked');
       }
