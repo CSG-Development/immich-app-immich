@@ -71,7 +71,10 @@ abstract class RecoveryExecutorCallbacks {
   Future<void> onNeedRemoteAccessAuth(Future<void> Function() retry);
   Future<void> onReconnectionFailed();
   Future<bool> probeCachedEndpoint({required Duration timeout});
-  void onReconnectStarted({required bool isConnectivityDriven});
+
+  /// A path resolve is genuinely about to start: any cheap probe already
+  /// missed. This — not a failed request — is when "finding network" is true.
+  void onReconnectStarted({required bool isConnectivityDriven, required bool suppressFindingToast});
 }
 
 /// Runs one [RecoveryDecision] as a linear flow:
@@ -95,10 +98,18 @@ class RecoveryExecutor {
   String? lastPlanDebugReason;
   NetworkSnapshot? lastSnapshot;
 
-  Future<void> run(RecoveryEvent event) async {
+  /// When [lastSnapshot] observed the network. The monitor compares this with
+  /// the time the network last changed to tell whether a connectivity event
+  /// queued during this run describes state the run already saw.
+  DateTime? lastSnapshotAt;
+
+  Future<void> run(RecoveryEvent event) => _run(event);
+
+  Future<void> _run(RecoveryEvent event, {bool allowTransportGrace = true}) async {
     snapshotBuilder.isResolving = triggerService.isResolving;
     final snapshot = await snapshotBuilder.build(event);
     lastSnapshot = snapshot;
+    lastSnapshotAt = DateTime.now();
     final decision = policy.decide(snapshot);
     lastPlanDebugReason = decision.reason;
     _log.info('[Recovery] decide $decision snapshot=$snapshot');
@@ -108,6 +119,9 @@ class RecoveryExecutor {
         return;
 
       case ReportNoInternet():
+        await _reportNoInternet(snapshot, allowGrace: allowTransportGrace);
+        return;
+
       case ReportUnable():
         await callbacks.onReconnectionFailed();
         return;
@@ -133,7 +147,10 @@ class RecoveryExecutor {
           lastPlanDebugReason = 'cached_probe_miss_resolve_${probeMode.name}';
           _log.info('[Recovery] cached endpoint unreachable, resolving');
         }
-        callbacks.onReconnectStarted(isConnectivityDriven: snapshot.trigger.isConnectivityDriven);
+        callbacks.onReconnectStarted(
+          isConnectivityDriven: snapshot.trigger.isConnectivityDriven,
+          suppressFindingToast: snapshot.event.suppressFindingToast,
+        );
         final resolved = await _resolve(snapshot, probeMode: probeMode);
         await _handleResolveResult(snapshot, resolved);
         return;
@@ -149,6 +166,35 @@ class RecoveryExecutor {
     _log.info('[Recovery] awaiting active resolve');
     final resolved = await active;
     await _handleResolveResult(snapshot, resolved);
+  }
+
+  /// Switching airplane mode off leaves the OS reporting no transport for a
+  /// moment. A resume that lands in that window is not a real outage, so give
+  /// the transport a short grace and re-run once it appears.
+  ///
+  /// Only appResume waits: a connectivity change to none means the OS just told
+  /// us transport is gone (airplane on), and that banner must not be delayed.
+  Future<void> _reportNoInternet(NetworkSnapshot snapshot, {required bool allowGrace}) async {
+    if (allowGrace && snapshot.trigger == RecoveryTrigger.appResume) {
+      _log.info(
+        '[Recovery] resume without transport: waiting '
+        '${policy.transportSettleDelay.inMilliseconds}ms for transport to settle',
+      );
+      await Future<void>.delayed(policy.transportSettleDelay);
+      final settled = await snapshotBuilder.build(snapshot.event);
+      lastSnapshot = settled;
+      lastSnapshotAt = DateTime.now();
+      if (settled.hasUsableTransport) {
+        _log.info('[Recovery] transport settled during resume grace, re-running recovery');
+        // allowTransportGrace: false — a transport flap between the two builds
+        // must not be able to chain graces.
+        await _run(snapshot.event, allowTransportGrace: false);
+        return;
+      }
+      _log.info('[Recovery] transport did not settle during grace, reporting no internet');
+    }
+
+    await callbacks.onReconnectionFailed();
   }
 
   Future<void> _promptOtp(NetworkSnapshot snapshot) async {

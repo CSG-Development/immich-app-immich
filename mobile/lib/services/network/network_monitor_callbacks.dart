@@ -126,7 +126,12 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     }
     final status = _ref.read(connectionStateProvider).status;
     if (status == conn.ConnectionStatus.reconnecting) {
-      return NetworkBannerKind.finding;
+      // 'reconnecting' is published by any failed request (see
+      // ApiService._handleConnectionError), not by the recovery pipeline
+      // deciding to search — so it says nothing about what the banner should
+      // read. Whether 'finding' is shown is the episode controller's call
+      // (onShowReconnecting); leave whatever is on screen alone.
+      return _bannerController.activeKind;
     }
     if (status == conn.ConnectionStatus.disconnected) {
       // Transport is up but external resources did not answer at failure

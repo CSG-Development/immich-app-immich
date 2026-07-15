@@ -20,6 +20,7 @@ class RecoveryPolicy {
   const RecoveryPolicy({
     this.cachedProbeTimeout = const Duration(seconds: 5),
     this.offWifiOtpGraceDelay = const Duration(seconds: 3),
+    this.transportSettleDelay = const Duration(milliseconds: 1500),
   });
 
   final Duration cachedProbeTimeout;
@@ -29,6 +30,12 @@ class RecoveryPolicy {
   /// first, wifi a moment later); this waits for wifi so a local path can be
   /// used instead of prompting OTP too early.
   final Duration offWifiOtpGraceDelay;
+
+  /// Grace period before reporting "no internet" on a resume that lands with
+  /// no transport. Switching airplane mode off leaves the OS reporting none
+  /// for a few hundred ms; without the grace a resume in that window flashes a
+  /// false offline banner. Applies to appResume only — see RecoveryExecutor.
+  final Duration transportSettleDelay;
 
   RecoveryDecision decide(NetworkSnapshot snapshot) {
     final trigger = snapshot.trigger;
