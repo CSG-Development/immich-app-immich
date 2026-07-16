@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
+  import { Icon } from '@immich/ui';
   import { AlbumSortBy, albumViewSettings, SortOrder } from '$lib/stores/preferences.store';
   import type { AlbumSortOptionMetadata } from '$lib/utils/album-utils';
   import { mdiArrowDown, mdiArrowUp } from '@mdi/js';
@@ -38,9 +38,9 @@
   >
     {#if $albumViewSettings.sortBy === option.id}
       {#if $albumViewSettings.sortOrder === SortOrder.Desc}
-        <Icon path={mdiArrowDown} size="24" />
+        <Icon icon={mdiArrowDown} size="24" />
       {:else}
-        <Icon path={mdiArrowUp} size="24" />
+        <Icon icon={mdiArrowUp} size="24" />
       {/if}
     {:else}
       <div class="w-6 h-6"></div>

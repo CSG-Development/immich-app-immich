@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
-  import { IconButton, Logo } from '@immich/ui';
+  import { Icon, IconButton, Logo } from '@immich/ui';
   import { mdiClose } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -29,7 +28,7 @@
     {#if showLogo}
       <Logo class="h-[40px]" variant="icon" />
     {:else if icon}
-      <Icon path={icon} size={24} ariaHidden={true} class="text-immich-primary dark:text-immich-dark-primary" />
+      <Icon {icon} size="24" aria-hidden={true} class="text-immich-primary dark:text-immich-dark-primary" />
     {/if}
     <h1 {id}>
       {title}

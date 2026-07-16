@@ -21,7 +21,7 @@
         title={item.value}
         type="button"
       >
-        <Icon path={icon} class="text-primary" size={80} />
+        <Icon {icon} class="text-primary" size="80" />
         <p
           class="text-sm text-black/87 dark:text-white/87 text-nowrap text-ellipsis overflow-clip w-full whitespace-pre-wrap"
         >
