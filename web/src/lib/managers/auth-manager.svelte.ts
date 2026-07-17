@@ -90,12 +90,14 @@ class AuthManager {
   }
 
   async logout() {
-    let redirectUri = Route.login();
+    let redirectUri = Route.login({ autoLaunch: 0 });
 
     try {
       const response = await logout();
       if (response.redirectUri) {
-        redirectUri = response.redirectUri;
+        const uri = response.redirectUri;
+        // Server may return a root-relative path without the `/photos` base.
+        redirectUri = uri.startsWith('/') && !uri.startsWith('/photos') ? `/photos${uri}` : uri;
       }
     } catch {
       // noop
@@ -104,10 +106,12 @@ class AuthManager {
     if (redirectUri.startsWith('/')) {
       this.isPurchased = false;
 
+      // Reset auth state only after navigation — clearing `$user` while the
+      // user layout is still mounted throws in UserAvatar / navigation-bar.
+      await goto(redirectUri);
+
       this.reset();
       eventManager.emit('AuthLogout');
-
-      await goto(redirectUri);
     } else {
       globalThis.location.href = redirectUri;
     }

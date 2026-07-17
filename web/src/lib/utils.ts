@@ -1,8 +1,8 @@
-import { resolve } from '$app/paths';
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
+import { Route } from '$lib/route';
 import { alwaysLoadOriginalFile, lang } from '$lib/stores/preferences.store';
 import { SlideshowNavigation } from '$lib/stores/slideshow.store';
 import { isWebCompatibleImage } from '$lib/utils/asset-utils';
@@ -128,6 +128,11 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
     }
 
     if (signal) {
+      if (signal.aborted) {
+        onAbort?.(signal.reason);
+        return;
+      }
+
       signal.addEventListener('abort', () => {
         xhr.abort();
         onAbort?.(signal.reason);
@@ -186,7 +191,10 @@ export const setSharedLink = (sharedLink: typeof _sharedLink) => (_sharedLink = 
 export const getSharedLink = (): typeof _sharedLink => _sharedLink;
 
 export const makeSharedLinkUrl = (sharedLink: SharedLinkResponseDto) => {
-  const path = sharedLink.slug ? resolve(`/s/${sharedLink.slug}` as any) : resolve(`/share/${sharedLink.key}`);
+  const path = Route.viewSharedLink({
+    slug: sharedLink.slug ? encodeURIComponent(sharedLink.slug) : sharedLink.slug,
+    key: encodeURIComponent(sharedLink.key),
+  });
   return new URL(path, serverConfigManager.value.externalDomain || globalThis.location.origin).href;
 };
 

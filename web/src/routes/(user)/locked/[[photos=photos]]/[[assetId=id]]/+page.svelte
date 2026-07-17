@@ -2,13 +2,7 @@
   import { goto } from '$app/navigation';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
   import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
@@ -19,11 +13,13 @@
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { getUserActions } from '$lib/services/user.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
   import { AssetVisibility } from '@immich/sdk';
-  import { mdiDotsVertical, mdiPresentationPlay } from '@mdi/js';
+  import { ContextMenuButton } from '@immich/ui';
+  import { mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import type { PageData } from './$types';
@@ -72,6 +68,19 @@
       );
     }
   };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showSlideshow: true,
+      onStartSlideshow: handleStartSlideshow,
+      showChangeDescription: false,
+      showArchive: false,
+      showTag: false,
+      showVisibility: false,
+      forceDelete: true,
+      onAssetDelete: (assetIds) => timelineManager.removeAssets(assetIds),
+    }),
+  );
 </script>
 
 <OnEvents {onSessionLocked} />
@@ -103,14 +112,6 @@
   <AssetSelectControlBar>
     <SelectAllAssets withText {timelineManager} assetInteraction={assetMultiSelectManager} />
     <SetVisibilityAction unlock onVisibilitySet={handleMoveOffLockedFolder} />
-    <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-      {#if assetMultiSelectManager.selectedAssets.length > 1}
-        <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
-      {/if}
-      <DownloadAction menuItem />
-      <ChangeDate menuItem />
-      <ChangeLocation menuItem />
-      <DeleteAssets menuItem force onAssetDelete={(assetIds) => timelineManager.removeAssets(assetIds)} />
-    </ButtonContextMenu>
+    <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
   </AssetSelectControlBar>
 {/if}

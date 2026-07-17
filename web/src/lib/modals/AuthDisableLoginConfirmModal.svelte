@@ -12,7 +12,7 @@
 </script>
 
 <ConfirmModal title={$t('admin.disable_login')} icon={mdiCancel} size="small" {onClose}>
-  {#snippet prompt()}
+  {#snippet promptSnippet()}
     <div class="flex flex-col gap-4 text-center">
       <p>{$t('admin.authentication_settings_disable_all')}</p>
       <p>

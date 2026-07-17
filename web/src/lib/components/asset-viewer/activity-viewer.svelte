@@ -1,7 +1,5 @@
 <script lang="ts">
   import { shortcut } from '$lib/actions/shortcut';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { timeBeforeShowLoadingSpinner } from '$lib/constants';
   import { activityManager } from '$lib/managers/activity-manager.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
@@ -12,7 +10,15 @@
   import { handleError } from '$lib/utils/handle-error';
   import { isTenMinutesApart } from '$lib/utils/timesince';
   import { ReactionType, type ActivityResponseDto, type AssetTypeEnum, type UserResponseDto } from '@immich/sdk';
-  import { Icon, IconButton, LoadingSpinner, Textarea, toastManager } from '@immich/ui';
+  import {
+    ContextMenuButton,
+    Icon,
+    IconButton,
+    LoadingSpinner,
+    Textarea,
+    toastManager,
+    type ActionItem,
+  } from '@immich/ui';
   import { mdiClose, mdiDeleteOutline, mdiDotsVertical, mdiSend, mdiThumbUp } from '@mdi/js';
   import * as luxon from 'luxon';
   import { t } from 'svelte-i18n';
@@ -79,6 +85,15 @@
       handleError(error, $t('errors.unable_to_remove_reaction'));
     }
   };
+
+  const getReactionMenuItems = (reaction: ActivityResponseDto, index: number): ActionItem[] => [
+    {
+      title: $t('remove'),
+      icon: mdiDeleteOutline,
+      color: 'danger',
+      onAction: () => handleDeleteReaction(reaction, index),
+    },
+  ];
 
   const handleSendComment = async () => {
     if (!message) {
@@ -149,20 +164,13 @@
               {/if}
               {#if reaction.user.id === user.id || albumOwnerId === user.id}
                 <div class="me-4">
-                  <ButtonContextMenu
+                  <ContextMenuButton
                     icon={mdiDotsVertical}
-                    title={$t('comment_options')}
-                    align="top-right"
-                    direction="left"
+                    aria-label={$t('comment_options')}
+                    position="top-right"
                     size="small"
-                  >
-                    <MenuOption
-                      activeColor="bg-red-200"
-                      icon={mdiDeleteOutline}
-                      text={$t('remove')}
-                      onClick={() => handleDeleteReaction(reaction, index)}
-                    />
-                  </ButtonContextMenu>
+                    items={getReactionMenuItems(reaction, index)}
+                  />
                 </div>
               {/if}
             </div>
@@ -202,20 +210,13 @@
                 {/if}
                 {#if reaction.user.id === user.id || albumOwnerId === user.id}
                   <div class="me-4">
-                    <ButtonContextMenu
+                    <ContextMenuButton
                       icon={mdiDotsVertical}
-                      title={$t('reaction_options')}
-                      align="top-right"
-                      direction="left"
+                      aria-label={$t('reaction_options')}
+                      position="top-right"
                       size="small"
-                    >
-                      <MenuOption
-                        activeColor="bg-red-200"
-                        icon={mdiDeleteOutline}
-                        text={$t('remove')}
-                        onClick={() => handleDeleteReaction(reaction, index)}
-                      />
-                    </ButtonContextMenu>
+                      items={getReactionMenuItems(reaction, index)}
+                    />
                   </div>
                 {/if}
               </div>

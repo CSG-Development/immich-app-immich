@@ -4,19 +4,10 @@
   import { shortcuts } from '$lib/actions/shortcut';
   import MemoryPhotoViewer from '$lib/components/memory-page/memory-photo-viewer.svelte';
   import MemoryVideoViewer from '$lib/components/memory-page/memory-video-viewer.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import { QueryParameter } from '$lib/constants';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
@@ -26,12 +17,13 @@
   import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { locale, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
   import { preferences } from '$lib/stores/user.store';
   import { getAssetMediaUrl, handlePromiseError, memoryLaneTitle } from '$lib/utils';
   import { fromISODateTimeUTC, toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetMediaSize, AssetTypeEnum, getAssetInfo } from '@immich/sdk';
-  import { ActionButton, IconButton, toastManager } from '@immich/ui';
+  import { ActionButton, ContextMenuButton, IconButton, menuManager, toastManager, type ActionItem } from '@immich/ui';
   import {
     mdiCardsOutline,
     mdiChevronDown,
@@ -188,6 +180,16 @@
     init(page);
   };
 
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: handleDeleteOrArchiveAssets,
+      showTag: assetMultiSelectManager.isAllUserOwned,
+      showVisibility: false,
+      onAssetDelete: handleDeleteOrArchiveAssets,
+    }),
+  );
+
   const handleDeleteMemoryAsset = async () => {
     if (!current) {
       return;
@@ -205,6 +207,28 @@
     await memoryManager.deleteMemory(current.memory.id);
     toastManager.primary($t('removed_memory'));
     init(page);
+  };
+
+  const memoryMenuItems = $derived([
+    {
+      title: $t('remove_memory'),
+      icon: mdiCardsOutline,
+      onAction: () => handleDeleteMemory(),
+    },
+    {
+      title: $t('remove_photo_from_memory'),
+      icon: mdiImageMinusOutline,
+      onAction: () => handleDeleteMemoryAsset(),
+    },
+  ] satisfies ActionItem[]);
+
+  const openMemoryMenu = (event: MouseEvent) => {
+    handlePromiseError(handleAction('ContextMenuClick', 'pause'));
+    void menuManager.show({
+      target: event.currentTarget as HTMLElement,
+      position: 'bottom-right',
+      items: memoryMenuItems,
+    });
   };
 
   const handleSaveMemory = async () => {
@@ -352,21 +376,7 @@
 
       <FavoriteAction removeFavorite={assetMultiSelectManager.isAllFavorite} />
 
-      <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-        <DownloadAction menuItem />
-        <ChangeDate menuItem />
-        <ChangeDescription menuItem />
-        <ChangeLocation menuItem />
-        <ArchiveAction
-          menuItem
-          unarchive={assetMultiSelectManager.isAllArchived}
-          onArchive={handleDeleteOrArchiveAssets}
-        />
-        {#if $preferences.tags.enabled && assetMultiSelectManager.isAllUserOwned}
-          <TagAction menuItem />
-        {/if}
-        <DeleteAssets menuItem onAssetDelete={handleDeleteOrArchiveAssets} />
-      </ButtonContextMenu>
+      <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
     </AssetSelectControlBar>
   </div>
 {/if}
@@ -529,22 +539,15 @@
                   color="secondary"
                   aria-label={$t('share')}
                 /> -->
-                <ButtonContextMenu
+                <IconButton
                   icon={mdiDotsVertical}
-                  title={$t('menu')}
-                  onclick={() => handlePromiseError(handleAction('ContextMenuClick', 'pause'))}
-                  direction="left"
+                  shape="round"
+                  variant="ghost"
+                  color="secondary"
                   size="medium"
-                  align="bottom-right"
-                >
-                  <MenuOption onClick={() => handleDeleteMemory()} text={$t('remove_memory')} icon={mdiCardsOutline} />
-                  <MenuOption
-                    onClick={() => handleDeleteMemoryAsset()}
-                    text={$t('remove_photo_from_memory')}
-                    icon={mdiImageMinusOutline}
-                  />
-                  <!-- shortcut={{ key: 'l', shift: shared }} -->
-                </ButtonContextMenu>
+                  aria-label={$t('menu')}
+                  onclick={openMemoryMenu}
+                />
               </div>
 
               <div>

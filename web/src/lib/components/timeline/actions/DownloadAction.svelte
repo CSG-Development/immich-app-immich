@@ -1,7 +1,5 @@
 <script lang="ts">
   import { shortcut } from '$lib/actions/shortcut';
-
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { handleDownloadAsset } from '$lib/services/asset.service';
@@ -13,10 +11,9 @@
 
   interface Props {
     filename?: string;
-    menuItem?: boolean;
   }
 
-  let { filename = 'immich.zip', menuItem = false }: Props = $props();
+  let { filename = 'immich.zip' }: Props = $props();
 
   const handleDownloadFiles = async () => {
     const assets = assetMultiSelectManager.assets;
@@ -34,15 +31,11 @@
 
 <svelte:document use:shortcut={{ shortcut: { key: 'd', shift: true }, onShortcut: handleDownloadFiles }} />
 
-{#if menuItem}
-  <MenuOption text={$t('download')} icon={mdiDownload} onClick={handleDownloadFiles} />
-{:else}
-  <IconButton
-    shape="round"
-    color="secondary"
-    variant="ghost"
-    aria-label={$t('download')}
-    icon={mdiDownload}
-    onclick={handleDownloadFiles}
-  />
-{/if}
+<IconButton
+  shape="round"
+  color="secondary"
+  variant="ghost"
+  aria-label={$t('download')}
+  icon={mdiDownload}
+  onclick={handleDownloadFiles}
+/>

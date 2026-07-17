@@ -2,25 +2,15 @@
   import { goto } from '$app/navigation';
   import OnEvents from '$lib/components/OnEvents.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import Breadcrumbs from '$lib/components/shared-components/tree/breadcrumbs.svelte';
   import TreeItemThumbnails from '$lib/components/shared-components/tree/tree-item-thumbnails.svelte';
   import TreeItems from '$lib/components/shared-components/tree/tree-items.svelte';
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import { AssetAction } from '$lib/constants';
   import SkipLink from '$lib/elements/SkipLink.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
@@ -29,14 +19,14 @@
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { getTagActions } from '$lib/services/tag.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { preferences } from '$lib/stores/user.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
   import { joinPaths, TreeNode } from '$lib/utils/tree-utils';
   import { getAllTags, type TagResponseDto } from '@immich/sdk';
-  import { ActionButton, CommandPaletteDefaultProvider } from '@immich/ui';
-  import { mdiDotsVertical, mdiPresentationPlay, mdiTag, mdiTagMultiple } from '@mdi/js';
+  import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton } from '@immich/ui';
+  import { mdiDotsVertical, mdiTag, mdiTagMultiple } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import type { PageData } from './$types';
@@ -102,6 +92,17 @@
       );
     }
   };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showSlideshow: true,
+      onStartSlideshow: handleStartSlideshow,
+      onArchive: (ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility)),
+      onVisibilitySet: handleSetVisibility,
+      onAssetDelete: (assetIds) => timelineManager.removeAssets(assetIds),
+      onUndoDelete: (assets) => timelineManager.upsertAssets(assets),
+    }),
+  );
 </script>
 
 <OnEvents onTagCreate={onRefresh} onTagUpdate={onRefresh} {onTagDelete} />
@@ -153,28 +154,7 @@
           removeFavorite={assetMultiSelectManager.isAllFavorite}
           onFavorite={(ids, isFavorite) => timelineManager.update(ids, (asset) => (asset.isFavorite = isFavorite))}
         ></FavoriteAction>
-        <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-          {#if assetMultiSelectManager.selectedAssets.length > 1}
-            <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
-          {/if}
-          <DownloadAction menuItem />
-          <ChangeDate menuItem />
-          <ChangeDescription menuItem />
-          <ChangeLocation menuItem />
-          <ArchiveAction
-            menuItem
-            onArchive={(ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility))}
-          />
-          {#if $preferences.tags.enabled}
-            <TagAction menuItem />
-          {/if}
-          <DeleteAssets
-            menuItem
-            onAssetDelete={(assetIds) => timelineManager.removeAssets(assetIds)}
-            onUndoDelete={(assets) => timelineManager.upsertAssets(assets)}
-          />
-          <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-        </ButtonContextMenu>
+        <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
       </AssetSelectControlBar>
     </div>
   {/if}

@@ -9,22 +9,11 @@
   import ActivityViewer from '$lib/components/asset-viewer/activity-viewer.svelte';
   import HeaderActionButton from '$lib/components/HeaderActionButton.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
-  import RemoveFromAlbum from '$lib/components/timeline/actions/RemoveFromAlbumAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AlbumPageViewMode } from '$lib/constants';
@@ -46,19 +35,29 @@
   } from '$lib/services/album.service';
   import { getGlobalActions } from '$lib/services/app.service';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { preferences, user } from '$lib/stores/user.store';
+  import { user } from '$lib/stores/user.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { isAlbumsRoute, navigate, type AssetGridRouteSearchParams } from '$lib/utils/navigation';
-  import { AlbumUserRole, AssetVisibility, getAlbumInfo, updateAlbumInfo, type AlbumResponseDto } from '@immich/sdk';
+  import {
+    AlbumUserRole,
+    AssetVisibility,
+    getAlbumInfo,
+    removeAssetFromAlbum,
+    updateAlbumInfo,
+    type AlbumResponseDto,
+  } from '@immich/sdk';
   import {
     ActionButton,
     CommandPaletteDefaultProvider,
+    ContextMenuButton,
     Icon,
     IconButton,
     modalManager,
     toastManager,
+    type ActionItem,
   } from '@immich/ui';
   import {
     mdiAccountEye,
@@ -69,6 +68,7 @@
     mdiDownload,
     mdiImageOutline,
     mdiImagePlusOutline,
+    mdiImageRemoveOutline,
     mdiLink,
     mdiPlus,
     mdiPresentationPlay,
@@ -342,6 +342,114 @@
       );
     }
   };
+
+  const handleRemoveFromAlbum = async () => {
+    const ids = assetMultiSelectManager.assets.map(({ id }) => id);
+
+    const isConfirmed = await modalManager.showDialog({
+      prompt: $t('remove_assets_album_confirmation', { values: { count: ids.length } }),
+    });
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      const results = await removeAssetFromAlbum({
+        id: album.id,
+        bulkIdsDto: { ids },
+      });
+
+      await handleRemoveAssets(ids);
+
+      const count = results.filter(({ success }) => success).length;
+      toastManager.primary($t('assets_removed_count', { values: { count } }));
+
+      assetMultiSelectManager.clear();
+    } catch (error) {
+      handleError(error, $t('errors.error_removing_assets_from_album'));
+    }
+  };
+
+  const SetAsAlbumCover: ActionItem = {
+    title: $t('set_as_album_cover'),
+    icon: mdiImageOutline,
+    $if: () => assetMultiSelectManager.assets.length === 1,
+    onAction: () => {
+      void updateThumbnailUsingCurrentSelection();
+    },
+  };
+
+  const RemoveFromAlbumItem: ActionItem = {
+    title: $t('remove_from_album'),
+    icon: mdiImageRemoveOutline,
+    $if: () => isOwned || assetMultiSelectManager.isAllUserOwned,
+    onAction: () => {
+      void handleRemoveFromAlbum();
+    },
+  };
+
+  const owned = $derived(assetMultiSelectManager.isAllUserOwned);
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showSlideshow: true,
+      onStartSlideshow: () => {
+        void handleStartSlideshow();
+      },
+      filename: `${album.albumName}.zip`,
+      showChangeDate: owned,
+      showChangeDescription: owned,
+      showChangeLocation: owned,
+      showArchive: owned,
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: (ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility)),
+      showVisibility: owned,
+      onVisibilitySet: handleSetVisibility,
+      showTag: owned,
+      showDelete: owned,
+      onAssetDelete: (assetIds) => {
+        void handleRemoveAssets(assetIds);
+      },
+      onUndoDelete: (assets) => {
+        void handleUndoRemoveAssets(assets);
+      },
+      extraItems: [SetAsAlbumCover, RemoveFromAlbumItem],
+    }),
+  );
+
+  const albumOptionsItems = $derived([
+    containsEditors
+      ? {
+          title: $t('view_asset_owners'),
+          icon: showAlbumUsers ? mdiAccountEye : mdiAccountEyeOutline,
+          onAction: () => timelineManager.toggleShowAssetOwners(),
+        }
+      : undefined,
+    isOwned && album.assetCount > 0
+      ? {
+          title: $t('select_album_cover'),
+          icon: mdiImageOutline,
+          onAction: () => {
+            viewMode = AlbumPageViewMode.SELECT_THUMBNAIL;
+          },
+        }
+      : undefined,
+    isOwned && album.assetCount > 0
+      ? {
+          title: $t('options'),
+          icon: mdiCogOutline,
+          onAction: () => modalManager.show(AlbumOptionsModal, { album }),
+        }
+      : undefined,
+    isOwned
+      ? {
+          title: $t('delete_album'),
+          icon: mdiTrashCanOutline,
+          onAction: () => handleDeleteAlbum(album),
+        }
+      : undefined,
+  ] satisfies Array<ActionItem | undefined>);
 </script>
 
 <OnEvents
@@ -488,41 +596,7 @@
             onFavorite={(ids, isFavorite) => timelineManager.update(ids, (asset) => (asset.isFavorite = isFavorite))}
           ></FavoriteAction>
         {/if}
-        <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')} offset={{ x: 175, y: 25 }}>
-          {#if assetMultiSelectManager.selectedAssets.length > 1}
-            <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
-          {/if}
-          <DownloadAction menuItem filename="{album.albumName}.zip" />
-          {#if assetMultiSelectManager.isAllUserOwned}
-            <ChangeDate menuItem />
-            <ChangeDescription menuItem />
-            <ChangeLocation menuItem />
-            <ArchiveAction
-              menuItem
-              unarchive={assetMultiSelectManager.isAllArchived}
-              onArchive={(ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility))}
-            />
-            <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-          {/if}
-          {#if assetMultiSelectManager.assets.length === 1}
-            <MenuOption
-              text={$t('set_as_album_cover')}
-              icon={mdiImageOutline}
-              onClick={() => updateThumbnailUsingCurrentSelection()}
-            />
-          {/if}
-
-          {#if $preferences.tags.enabled && assetMultiSelectManager.isAllUserOwned}
-            <TagAction menuItem />
-          {/if}
-
-          {#if isOwned || assetMultiSelectManager.isAllUserOwned}
-            <RemoveFromAlbum menuItem bind:album onRemove={handleRemoveAssets} />
-          {/if}
-          {#if assetMultiSelectManager.isAllUserOwned}
-            <DeleteAssets menuItem onAssetDelete={handleRemoveAssets} onUndoDelete={handleUndoRemoveAssets} />
-          {/if}
-        </ButtonContextMenu>
+        <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
       </AssetSelectControlBar>
     {:else}
       {#if viewMode === AlbumPageViewMode.VIEW}
@@ -575,40 +649,12 @@
             {/if}
 
             {#if isOwned || containsEditors}
-              <ButtonContextMenu
+              <ContextMenuButton
                 icon={mdiDotsVertical}
-                title={$t('album_options')}
+                aria-label={$t('album_options')}
                 color="secondary"
-                offset={{ x: 175, y: 25 }}
-              >
-                {#if containsEditors}
-                  <MenuOption
-                    icon={showAlbumUsers ? mdiAccountEye : mdiAccountEyeOutline}
-                    text={$t('view_asset_owners')}
-                    onClick={() => timelineManager.toggleShowAssetOwners()}
-                  />
-                {/if}
-                {#if isOwned && album.assetCount > 0}
-                  <MenuOption
-                    icon={mdiImageOutline}
-                    text={$t('select_album_cover')}
-                    onClick={() => (viewMode = AlbumPageViewMode.SELECT_THUMBNAIL)}
-                  />
-                  <MenuOption
-                    icon={mdiCogOutline}
-                    text={$t('options')}
-                    onClick={() => modalManager.show(AlbumOptionsModal, { album })}
-                  />
-                {/if}
-
-                {#if isOwned}
-                  <MenuOption
-                    icon={mdiTrashCanOutline}
-                    text={$t('delete_album')}
-                    onClick={() => handleDeleteAlbum(album)}
-                  />
-                {/if}
-              </ButtonContextMenu>
+                items={albumOptionsItems}
+              />
             {/if}
           {/snippet}
         </ControlAppBar>

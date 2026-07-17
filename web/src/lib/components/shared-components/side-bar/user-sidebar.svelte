@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import BottomInfo from '$lib/components/shared-components/side-bar/bottom-info.svelte';
   import RecentAlbums from '$lib/components/shared-components/side-bar/recent-albums.svelte';
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
@@ -95,12 +96,13 @@
     href={Route.utilities()}
     icon={mdiToolboxOutline}
     activeIcon={mdiToolbox}
+    isActive={() => page.url.pathname === Route.utilities()}
     bind:expanded={$utilitiesDropdown}
   >
     {#snippet items()}
-      <NavbarItem title={$t('review_duplicates')} href={Route.largeFileUtility()} icon={mdiContentDuplicate} />
+      <NavbarItem title={$t('review_duplicates')} href={Route.duplicatesUtility()} icon={mdiContentDuplicate} />
       <NavbarItem title={$t('review_large_files')} href={Route.largeFileUtility()} icon={mdiImageSizeSelectLarge} />
-      <NavbarItem title={$t('manage_geolocation')} href={Route.largeFileUtility()} icon={mdiCrosshairsGps} />
+      <NavbarItem title={$t('manage_geolocation')} href={Route.geolocationUtility()} icon={mdiCrosshairsGps} />
     {/snippet}
   </NavbarItem>
 

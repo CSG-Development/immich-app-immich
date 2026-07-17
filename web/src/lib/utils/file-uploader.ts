@@ -1,4 +1,5 @@
 import FormatMsg from '$lib/components/shared-components/format-msg.svelte';
+import { ErrorTexts } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { addAssetsToAlbums } from '$lib/services/album.service';
@@ -109,7 +110,7 @@ export const fileUploadHandler = async ({
     const controller = new AbortController();
     const signal = controller.signal;
     const deviceAssetId = getDeviceAssetId(file);
-    uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId });
+    uploadAssetsStore.addItem({ id: deviceAssetId, file, albumId, controller });
     promises.push(
       uploadExecutionQueue.addTask(() =>
         fileUploader({ assetFile: file, deviceAssetId, albumId, isLockedAssets, signal }),
@@ -145,12 +146,17 @@ async function fileUploader({
   const $t = get(t);
   const wasInitiallyLoggedIn = !!get(user);
 
-  uploadAssetsStore.markStarted(deviceAssetId);
-
   const onAbort = (reason?: string) => {
     uploadExecutionQueue.taskFinished(!!reason && reason === ErrorTexts.CANCEL_ALL);
     uploadAssetsStore.removeItem(deviceAssetId);
   };
+
+  if (signal?.aborted) {
+    uploadAssetsStore.removeItem(deviceAssetId);
+    return;
+  }
+
+  uploadAssetsStore.markStarted(deviceAssetId);
 
   try {
     const formData = new FormData();
@@ -201,8 +207,15 @@ async function fileUploader({
           };
         }
       } catch (error) {
+        if (signal?.aborted) {
+          return;
+        }
         console.error(`Error calculating sha1 file=${assetFile.name})`, error);
       }
+    }
+
+    if (signal?.aborted) {
+      return;
     }
 
     if (!responseData) {

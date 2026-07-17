@@ -1,3 +1,4 @@
+import { goto } from '$app/navigation';
 import { ProjectionType } from '$lib/constants';
 import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
 import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
@@ -6,6 +7,7 @@ import { eventManager } from '$lib/managers/event-manager.svelte';
 import AssetAddToAlbumModal from '$lib/modals/AssetAddToAlbumModal.svelte';
 import AssetTagModal from '$lib/modals/AssetTagModal.svelte';
 import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
+import { Route } from '$lib/route';
 import { user as authUser, preferences } from '$lib/stores/user.store';
 import { getAssetMediaUrl, getSharedLink, sleep } from '$lib/utils';
 import { downloadUrl } from '$lib/utils/asset-utils';
@@ -244,7 +246,7 @@ export const getAssetActions = ($t: MessageFormatter, asset: AssetResponseDto) =
       !asset.originalPath.toLowerCase().endsWith('.insp') &&
       !asset.originalPath.toLowerCase().endsWith('.gif') &&
       !asset.originalPath.toLowerCase().endsWith('.svg'),
-    onAction: () => assetViewerManager.openEditor(),
+    onAction: () => goto(Route.editor({ assetId: asset.id })),
     shortcuts: [{ key: 'e' }],
   };
 

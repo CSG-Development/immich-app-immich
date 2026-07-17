@@ -1,6 +1,4 @@
 <script lang="ts">
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import {
     NotificationType,
     notificationController,
@@ -16,7 +14,7 @@
     type AlbumResponseDto,
     type UserResponseDto,
   } from '@immich/sdk';
-  import { Button, Modal, ModalBody } from '@immich/ui';
+  import { Button, ContextMenuButton, Modal, ModalBody, type ActionItem } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -93,6 +91,22 @@
       handleError(error, $t('errors.unable_to_change_album_user_role'));
     }
   };
+
+  const getUserMenuItems = (user: UserResponseDto, role: AlbumUserRole): ActionItem[] => [
+    role === AlbumUserRole.Viewer
+      ? {
+          title: $t('allow_edits'),
+          onAction: () => handleSetReadonly(user, AlbumUserRole.Editor),
+        }
+      : {
+          title: $t('disallow_edits'),
+          onAction: () => handleSetReadonly(user, AlbumUserRole.Viewer),
+        },
+    {
+      title: $t('remove'),
+      onAction: () => handleRemoveUser(user),
+    },
+  ];
 </script>
 
 <Modal title={$t('options')} size="small" {onClose}>
@@ -129,17 +143,12 @@
 
           <div id="icon-{user.id}" class="flex place-items-center gap-2 text-sm">
             {#if isOwned}
-              <ButtonContextMenu icon={mdiDotsVertical} size="medium" title={$t('options')}>
-                {#if role === AlbumUserRole.Viewer}
-                  <MenuOption onClick={() => handleSetReadonly(user, AlbumUserRole.Editor)} text={$t('allow_edits')} />
-                {:else}
-                  <MenuOption
-                    onClick={() => handleSetReadonly(user, AlbumUserRole.Viewer)}
-                    text={$t('disallow_edits')}
-                  />
-                {/if}
-                <MenuOption onClick={() => handleRemoveUser(user)} text={$t('remove')} />
-              </ButtonContextMenu>
+              <ContextMenuButton
+                icon={mdiDotsVertical}
+                size="medium"
+                aria-label={$t('options')}
+                items={getUserMenuItems(user, role)}
+              />
             {:else if user.id == currentUser?.id}
               <Button shape="round" variant="ghost" leadingIcon={undefined} onclick={() => handleRemoveUser(user)}>
                 {$t('leave')}

@@ -9,20 +9,10 @@
   import MergeFaceSelector from '$lib/components/faces-page/merge-face-selector.svelte';
   import UnMergeFaceSelector from '$lib/components/faces-page/unmerge-face-selector.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { PersonPageViewMode, QueryParameter, SessionStorageKey } from '$lib/constants';
@@ -33,9 +23,9 @@
   import PersonMergeSuggestionModal from '$lib/modals/PersonMergeSuggestionModal.svelte';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { getPersonActions } from '$lib/services/person.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { preferences } from '$lib/stores/user.store';
   import { websocketEvents } from '$lib/stores/websocket';
   import { getFirstSlideshowAsset, getPeopleThumbnailUrl, handlePromiseError, toDate } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
@@ -55,7 +45,6 @@
     mdiAccountMultipleCheckOutline,
     mdiArrowLeft,
     mdiDotsVertical,
-    mdiPresentationPlay,
   } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { onMount } from 'svelte';
@@ -356,6 +345,31 @@
       );
     }
   };
+
+  const FixIncorrectMatch: ActionItem = {
+    title: $t('fix_incorrect_match'),
+    icon: mdiAccountMultipleCheckOutline,
+    onAction: handleReassignAssets,
+  };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      showSlideshow: true,
+      onStartSlideshow: handleStartSlideshow,
+      filename: `${person.name || 'immich'}.zip`,
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: (ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility)),
+      showTag: assetMultiSelectManager.isAllUserOwned,
+      onVisibilitySet: handleSetVisibility,
+      onAssetDelete: (assetIds) => {
+        void handleDeleteAssets(assetIds);
+      },
+      onUndoDelete: (assets) => {
+        void handleUndoDeleteAssets(assets);
+      },
+      extraItems: [FixIncorrectMatch],
+    }),
+  );
 </script>
 
 <OnEvents
@@ -504,34 +518,7 @@
         removeFavorite={assetMultiSelectManager.isAllFavorite}
         onFavorite={(ids, isFavorite) => timelineManager.update(ids, (asset) => (asset.isFavorite = isFavorite))}
       />
-      <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-        {#if assetMultiSelectManager.selectedAssets.length > 1}
-          <MenuOption icon={mdiPresentationPlay} text={$t('slideshow')} onClick={handleStartSlideshow} />
-        {/if}
-        <DownloadAction menuItem filename="{person.name || 'immich'}.zip" />
-        <MenuOption
-          icon={mdiAccountMultipleCheckOutline}
-          text={$t('fix_incorrect_match')}
-          onClick={handleReassignAssets}
-        />
-        <ChangeDate menuItem />
-        <ChangeDescription menuItem />
-        <ChangeLocation menuItem />
-        <ArchiveAction
-          menuItem
-          unarchive={assetMultiSelectManager.isAllArchived}
-          onArchive={(ids, visibility) => timelineManager.update(ids, (asset) => (asset.visibility = visibility))}
-        />
-        {#if $preferences.tags.enabled && assetMultiSelectManager.isAllUserOwned}
-          <TagAction menuItem />
-        {/if}
-        <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-        <DeleteAssets
-          menuItem
-          onAssetDelete={(assetIds) => handleDeleteAssets(assetIds)}
-          onUndoDelete={(assets) => handleUndoDeleteAssets(assets)}
-        />
-      </ButtonContextMenu>
+      <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
     </AssetSelectControlBar>
   {:else}
     {#if viewMode === PersonPageViewMode.VIEW_ASSETS}

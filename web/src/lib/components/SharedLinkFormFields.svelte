@@ -36,7 +36,7 @@
       <Input bind:value={slug} autocomplete="off" />
     </Field>
     {#if slug}
-      <Text size="tiny" color="muted" class="pt-2 break-all">/s/{encodeURIComponent(slug)}</Text>
+      <Text size="tiny" color="muted" class="pt-2 break-all">/photos/s/{encodeURIComponent(slug)}</Text>
     {/if}
   </div>
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { OnSetVisibility } from '$lib/utils/actions';
   import { handleError } from '$lib/utils/handle-error';
@@ -10,11 +9,10 @@
 
   interface Props {
     onVisibilitySet: OnSetVisibility;
-    menuItem?: boolean;
     unlock?: boolean;
   }
 
-  let { onVisibilitySet, menuItem = false, unlock = false }: Props = $props();
+  let { onVisibilitySet, unlock = false }: Props = $props();
   let loading = $state(false);
 
   const setLockedVisibility = async () => {
@@ -50,21 +48,13 @@
   };
 </script>
 
-{#if menuItem}
-  <MenuOption
-    onClick={setLockedVisibility}
-    text={unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
-    icon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
-  />
-{:else}
-  <Button
-    leadingIcon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
-    disabled={loading}
-    size="medium"
-    color="secondary"
-    variant="ghost"
-    onclick={setLockedVisibility}
-  >
-    {unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
-  </Button>
-{/if}
+<Button
+  leadingIcon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
+  disabled={loading}
+  size="medium"
+  color="secondary"
+  variant="ghost"
+  onclick={setLockedVisibility}
+>
+  {unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
+</Button>
