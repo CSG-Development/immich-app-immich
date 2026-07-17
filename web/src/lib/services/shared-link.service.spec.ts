@@ -15,7 +15,9 @@ describe('SharedLinkService', () => {
 
   describe('asUrl', () => {
     it('should properly encode characters in slug', () => {
-      expect(asUrl(sharedLinkFactory.build({ slug: 'foo/bar' }))).toBe('http://localhost:2283/s/foo%2Fbar');
+      expect(asUrl(sharedLinkFactory.build({ slug: 'foo/bar' }))).toBe(
+        'http://localhost:2283/photos/s/foo%2Fbar',
+      );
     });
   });
 });

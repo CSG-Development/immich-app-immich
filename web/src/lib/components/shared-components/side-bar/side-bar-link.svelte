@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import Icon from '$lib/components/elements/icon.svelte';
+  import { Icon } from '@immich/ui';
   import { mdiChevronDown, mdiChevronLeft } from '@mdi/js';
   import type { Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -44,11 +44,11 @@
         onclick={() => (dropdownOpen = !dropdownOpen)}
       >
         <Icon
-          path={dropdownOpen ? mdiChevronDown : mdiChevronLeft}
+          icon={dropdownOpen ? mdiChevronDown : mdiChevronLeft}
           size="1em"
           class="shrink-0 delay-100 duration-100 "
           flipped={flippedLogo}
-          ariaHidden
+          aria-hidden={true}
         />
       </button>
     </span>
@@ -64,7 +64,7 @@
       : ''} {isDropdownItem ? 'pl-4' : ''}"
   >
     <div class="flex w-full place-items-center gap-4 ps-5 overflow-hidden truncate">
-      <Icon path={icon} size="1.5em" class="shrink-0" flipped={flippedLogo} ariaHidden />
+      <Icon {icon} size="1.5em" class="shrink-0" flipped={flippedLogo} aria-hidden={true} />
       <span class="text-sm font-medium">{title}</span>
     </div>
     <div></div>

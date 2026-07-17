@@ -7,7 +7,7 @@
   import { getNaturalSize, scaleToFit } from '$lib/utils/container-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { createFace, getAllPeople, type PersonResponseDto } from '@immich/sdk';
-  import { Button, Input, modalManager, toastManager } from '@immich/ui';
+  import { Button, Input, modalManager, Theme, themeManager, toastManager } from '@immich/ui';
   import { Canvas, InteractiveFabricObject, Rect } from 'fabric';
   import { clamp } from 'lodash-es';
   import { onDestroy, onMount, tick } from 'svelte';
@@ -390,7 +390,7 @@
     <div bind:this={scrollableListEl} class="h-[250px] overflow-y-auto px-3">
       {#if filteredCandidates.length > 0}
         <div class="rounded-lg">
-          {#each filteredCandidates as person (person.id)}
+          {#each filteredCandidates as person, index (person.id)}
             <button
               onclick={() => tagFace(person)}
               type="button"
@@ -425,7 +425,7 @@
     </Button>
 
     <div class="px-3 py-4 border-t immich-border">
-      <Button size="standard-large" fullWidth onclick={cancel} color="danger">{$t('cancel')}</Button>
+      <Button size="standard-large" fullWidth onclick={onClose} color="danger">{$t('cancel')}</Button>
     </div>
   </div>
 </div>

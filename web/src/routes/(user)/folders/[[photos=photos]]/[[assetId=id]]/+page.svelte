@@ -1,34 +1,24 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import ActionMenuItem from '$lib/components/ActionMenuItem.svelte';
   import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import Breadcrumbs from '$lib/components/shared-components/tree/breadcrumbs.svelte';
   import TreeItemThumbnails from '$lib/components/shared-components/tree/tree-item-thumbnails.svelte';
   import TreeItems from '$lib/components/shared-components/tree/tree-items.svelte';
   import Sidebar from '$lib/components/sidebar/sidebar.svelte';
-  import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
-  import ChangeDate from '$lib/components/timeline/actions/ChangeDateAction.svelte';
-  import ChangeDescription from '$lib/components/timeline/actions/ChangeDescriptionAction.svelte';
-  import ChangeLocation from '$lib/components/timeline/actions/ChangeLocationAction.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
-  import DeleteAssets from '$lib/components/timeline/actions/DeleteAssetsAction.svelte';
-  import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
-  import SetVisibilityAction from '$lib/components/timeline/actions/SetVisibilityAction.svelte';
-  import TagAction from '$lib/components/timeline/actions/TagAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import SkipLink from '$lib/elements/SkipLink.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { Viewport } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { foldersStore } from '$lib/stores/folders.svelte';
-  import { preferences } from '$lib/stores/user.store';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { joinPaths } from '$lib/utils/tree-utils';
-  import { ActionButton, CommandPaletteDefaultProvider, IconButton } from '@immich/ui';
+  import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton, IconButton } from '@immich/ui';
   import { mdiDotsVertical, mdiFolder, mdiFolderHome, mdiFolderOutline, mdiSelectAll } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -72,6 +62,24 @@
 
     assetMultiSelectManager.selectAssets(data.pathAssets.map((asset) => toTimelineAsset(asset)));
   };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: () => {
+        void triggerAssetUpdate();
+      },
+      onVisibilitySet: handleSetVisibility,
+      showTag: assetMultiSelectManager.isAllUserOwned,
+      onAssetDelete: () => {
+        void triggerAssetUpdate();
+      },
+      onUndoDelete: () => {
+        void triggerAssetUpdate();
+      },
+      showJobs: true,
+    }),
+  );
 </script>
 
 <UserPageLayout title={data.meta.title}>
@@ -142,23 +150,7 @@
         }}
       />
 
-      <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-        <DownloadAction menuItem />
-        <ChangeDate menuItem />
-        <ChangeDescription menuItem />
-        <ChangeLocation menuItem />
-        <ArchiveAction menuItem unarchive={assetMultiSelectManager.isAllArchived} onArchive={triggerAssetUpdate} />
-        <SetVisibilityAction menuItem onVisibilitySet={handleSetVisibility} />
-        {#if $preferences.tags.enabled && assetMultiSelectManager.isAllUserOwned}
-          <TagAction menuItem />
-        {/if}
-        <DeleteAssets menuItem onAssetDelete={triggerAssetUpdate} onUndoDelete={triggerAssetUpdate} />
-        <hr />
-
-        <ActionMenuItem action={Actions.RegenerateThumbnailJob} />
-        <ActionMenuItem action={Actions.RefreshMetadataJob} />
-        <ActionMenuItem action={Actions.TranscodeVideoJob} />
-      </ButtonContextMenu>
+      <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
     </AssetSelectControlBar>
   </div>
 {/if}

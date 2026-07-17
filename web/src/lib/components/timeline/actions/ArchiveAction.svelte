@@ -1,5 +1,4 @@
 <script lang="ts">
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { OnArchive } from '$lib/utils/actions';
   import { archiveAssets } from '$lib/utils/asset-utils';
@@ -10,11 +9,10 @@
 
   type Props = {
     onArchive?: OnArchive;
-    menuItem?: boolean;
     unarchive?: boolean;
   };
 
-  let { onArchive, menuItem = false, unarchive = false }: Props = $props();
+  let { onArchive, unarchive = false }: Props = $props();
 
   let text = $derived(unarchive ? $t('unarchive') : $t('to_archive'));
   let icon = $derived(unarchive ? mdiArchiveArrowUpOutline : mdiArchiveArrowDownOutline);
@@ -34,21 +32,15 @@
   };
 </script>
 
-{#if menuItem}
-  <MenuOption {text} {icon} onClick={handleArchive} />
-{/if}
-
-{#if !menuItem}
-  {#if loading}
-    <IconButton
-      shape="round"
-      color="secondary"
-      variant="ghost"
-      aria-label={$t('loading')}
-      icon={mdiTimerSand}
-      onclick={() => {}}
-    />
-  {:else}
-    <IconButton shape="round" color="secondary" variant="ghost" aria-label={text} {icon} onclick={handleArchive} />
-  {/if}
+{#if loading}
+  <IconButton
+    shape="round"
+    color="secondary"
+    variant="ghost"
+    aria-label={$t('loading')}
+    icon={mdiTimerSand}
+    onclick={() => {}}
+  />
+{:else}
+  <IconButton shape="round" color="secondary" variant="ghost" aria-label={text} {icon} onclick={handleArchive} />
 {/if}

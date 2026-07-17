@@ -29,7 +29,7 @@
   icon={mdiDeleteForeverOutline}
   {onClose}
 >
-  {#snippet prompt()}
+  {#snippet promptSnippet()}
     <p>
       <FormatMessage key="permanently_delete_assets_prompt" values={{ count: size }}>
         {#snippet children({ message })}

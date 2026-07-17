@@ -5,23 +5,25 @@ import { modalManager, toastManager, type ActionItem } from '@immich/ui';
 import { mdiDeleteForeverOutline, mdiHistory } from '@mdi/js';
 import type { MessageFormatter } from 'svelte-i18n';
 
-export const getTrashActions = ($t: MessageFormatter) => {
+type OnTrashCleared = () => void | Promise<void>;
+
+export const getTrashActions = ($t: MessageFormatter, onTrashCleared?: OnTrashCleared) => {
   const RestoreAll: ActionItem = {
     title: $t('restore_all'),
     icon: mdiHistory,
-    onAction: () => handleRestoreTrash(),
+    onAction: () => handleRestoreTrash(onTrashCleared),
   };
 
   const Empty: ActionItem = {
     title: $t('empty_trash'),
     icon: mdiDeleteForeverOutline,
-    onAction: () => handleEmptyTrash(),
+    onAction: () => handleEmptyTrash(onTrashCleared),
   };
 
   return { RestoreAll, Empty };
 };
 
-export const handleEmptyTrash = async () => {
+export const handleEmptyTrash = async (onTrashCleared?: OnTrashCleared) => {
   const $t = await getFormatter();
 
   const confirmed = await modalManager.showDialog({ prompt: $t('empty_trash_confirmation') });
@@ -31,13 +33,14 @@ export const handleEmptyTrash = async () => {
 
   try {
     const { count } = await emptyTrash();
+    await onTrashCleared?.();
     toastManager.primary($t('assets_permanently_deleted_count', { values: { count } }));
   } catch (error) {
     handleError(error, $t('errors.unable_to_empty_trash'));
   }
 };
 
-export const handleRestoreTrash = async () => {
+export const handleRestoreTrash = async (onTrashCleared?: OnTrashCleared) => {
   const $t = await getFormatter();
 
   const confirmed = await modalManager.showDialog({ prompt: $t('assets_restore_confirmation') });
@@ -47,6 +50,7 @@ export const handleRestoreTrash = async () => {
 
   try {
     const { count } = await restoreTrash();
+    await onTrashCleared?.();
     toastManager.primary($t('assets_restored_count', { values: { count } }));
   } catch (error) {
     handleError(error, $t('errors.unable_to_restore_trash'));

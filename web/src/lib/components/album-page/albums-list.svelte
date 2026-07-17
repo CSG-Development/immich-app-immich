@@ -2,8 +2,6 @@
   import AlbumCardGroup from '$lib/components/album-page/album-card-group.svelte';
   import AlbumsTable from '$lib/components/album-page/albums-table.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
-  import RightClickContextMenu from '$lib/components/shared-components/context-menu/right-click-context-menu.svelte';
   import AlbumEditModal from '$lib/modals/AlbumEditModal.svelte';
   import AlbumOptionsModal from '$lib/modals/AlbumOptionsModal.svelte';
   import { handleDeleteAlbum, handleDownloadAlbum } from '$lib/services/album.service';
@@ -21,7 +19,7 @@
   import type { ContextMenuPosition } from '$lib/utils/context-menu';
   import { normalizeSearchString } from '$lib/utils/string-utils';
   import { type AlbumResponseDto, type SharedLinkResponseDto } from '@immich/sdk';
-  import { modalManager } from '@immich/ui';
+  import { menuManager, modalManager, type ActionItem } from '@immich/ui';
   import { mdiDeleteOutline, mdiDownload, mdiRenameOutline, mdiShareVariantOutline } from '@mdi/js';
   import { groupBy } from 'lodash-es';
   import { onMount, type Snippet } from 'svelte';
@@ -157,16 +155,10 @@
     }));
   });
 
-  let contextMenuPosition: ContextMenuPosition = $state({ x: 0, y: 0 });
-  let selectedAlbum: AlbumResponseDto | undefined = $state();
-  let isOpen = $state(false);
-
   // TODO get rid of this
   $effect(() => {
     albumGroupIds = groupedAlbums.map(({ id }) => id);
   });
-
-  let showFullContextMenu = $derived(allowEdit && selectedAlbum && selectedAlbum.ownerId === $user.id);
 
   onMount(async () => {
     if (allowEdit) {
@@ -175,46 +167,49 @@
   });
 
   const showAlbumContextMenu = (contextMenuDetail: ContextMenuPosition, album: AlbumResponseDto) => {
-    selectedAlbum = album;
-    contextMenuPosition = {
-      x: contextMenuDetail.x,
-      y: contextMenuDetail.y,
-    };
-    isOpen = true;
-  };
+    const showFullContextMenu = allowEdit && album.ownerId === $user.id;
 
-  const closeAlbumContextMenu = () => {
-    isOpen = false;
-  };
+    const target = document.createElement('div');
+    Object.assign(target.style, {
+      position: 'fixed',
+      left: `${contextMenuDetail.x}px`,
+      top: `${contextMenuDetail.y}px`,
+      width: '0',
+      height: '0',
+      pointerEvents: 'none',
+    });
+    document.body.append(target);
 
-  const handleSelect = async (action: 'edit' | 'share' | 'download' | 'delete') => {
-    closeAlbumContextMenu();
+    const items: Array<ActionItem | undefined> = [
+      showFullContextMenu
+        ? {
+            title: $t('edit_album'),
+            icon: mdiRenameOutline,
+            onAction: () => void modalManager.show(AlbumEditModal, { album }),
+          }
+        : undefined,
+      showFullContextMenu
+        ? {
+            title: $t('share'),
+            icon: mdiShareVariantOutline,
+            onAction: () => void modalManager.show(AlbumOptionsModal, { album }),
+          }
+        : undefined,
+      {
+        title: $t('download'),
+        icon: mdiDownload,
+        onAction: () => void handleDownloadAlbum(album),
+      },
+      showFullContextMenu
+        ? {
+            title: $t('delete'),
+            icon: mdiDeleteOutline,
+            onAction: () => void handleDeleteAlbum(album),
+          }
+        : undefined,
+    ];
 
-    if (!selectedAlbum) {
-      return;
-    }
-
-    switch (action) {
-      case 'edit': {
-        await modalManager.show(AlbumEditModal, { album: selectedAlbum });
-        break;
-      }
-
-      case 'share': {
-        await modalManager.show(AlbumOptionsModal, { album: selectedAlbum });
-        break;
-      }
-
-      case 'download': {
-        await handleDownloadAlbum(selectedAlbum);
-        break;
-      }
-
-      case 'delete': {
-        await handleDeleteAlbum(selectedAlbum);
-        break;
-      }
-    }
+    void menuManager.show({ target, position: 'top-left', items }).finally(() => target.remove());
   };
 
   const removeAlbumsIfEmpty = async () => {
@@ -281,15 +276,3 @@
   <!-- Empty Message -->
   {@render empty?.()}
 {/if}
-
-<!-- Context Menu -->
-<RightClickContextMenu title={$t('album_options')} {...contextMenuPosition} {isOpen} onClose={closeAlbumContextMenu}>
-  {#if showFullContextMenu}
-    <MenuOption icon={mdiRenameOutline} text={$t('edit_album')} onClick={() => handleSelect('edit')} />
-    <MenuOption icon={mdiShareVariantOutline} text={$t('share')} onClick={() => handleSelect('share')} />
-  {/if}
-  <MenuOption icon={mdiDownload} text={$t('download')} onClick={() => handleSelect('download')} />
-  {#if showFullContextMenu}
-    <MenuOption icon={mdiDeleteOutline} text={$t('delete')} onClick={() => handleSelect('delete')} />
-  {/if}
-</RightClickContextMenu>

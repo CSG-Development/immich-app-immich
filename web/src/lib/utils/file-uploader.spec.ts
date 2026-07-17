@@ -45,6 +45,17 @@ describe('fileUploader error handling', () => {
         expect(items[0].state).toBe(UploadState.DONE);
       });
 
+      it('should attach an AbortController for cancellation', async () => {
+        vi.spyOn(utils, 'uploadRequest').mockResolvedValue({ status: 200, data: mockUploadResponse });
+
+        const uploadPromise = fileUploadHandler({ files: [mockFile] });
+
+        const [item] = get(uploadAssetsStore);
+        expect(item.controller).toBeInstanceOf(AbortController);
+
+        await uploadPromise;
+      });
+
       it('should capture errors', async () => {
         vi.spyOn(utils, 'uploadRequest').mockRejectedValue(mockError);
 
