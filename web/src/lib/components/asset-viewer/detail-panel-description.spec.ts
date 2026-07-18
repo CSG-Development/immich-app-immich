@@ -1,5 +1,5 @@
 import { eventManager } from '$lib/managers/event-manager.svelte';
-import { updateAsset } from '@immich/sdk';
+import { getAssetInfo, updateAsset } from '@immich/sdk';
 import { assetFactory } from '@test-data/factories/asset-factory';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
@@ -10,6 +10,7 @@ vi.mock('@immich/sdk', async () => {
   return {
     ...sdk,
     updateAsset: vi.fn(),
+    getAssetInfo: vi.fn(),
   };
 });
 
@@ -54,6 +55,7 @@ describe('DetailPanelDescription', () => {
     };
 
     vi.mocked(updateAsset).mockResolvedValue(updated);
+    vi.mocked(getAssetInfo).mockResolvedValue(updated);
 
     render(DetailPanelDescription, {
       props: {
@@ -72,6 +74,7 @@ describe('DetailPanelDescription', () => {
         updateAssetDto: { description: 'new description' },
       }),
     );
+    await waitFor(() => expect(getAssetInfo).toHaveBeenCalledWith({ id: asset.id }));
     expect(emitSpy).toHaveBeenCalledWith('AssetUpdate', {
       ...updated,
       exifInfo: { ...updated.exifInfo, description: 'new description' },

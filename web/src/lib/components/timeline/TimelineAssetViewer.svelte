@@ -267,7 +267,7 @@
 {#await import('$lib/components/asset-viewer/asset-viewer.svelte') then { default: AssetViewer }}
   <AssetViewer
     {withStacked}
-    cursor={assetCursor}
+    bind:cursor={assetCursor}
     {isShared}
     {album}
     {person}

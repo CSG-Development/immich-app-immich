@@ -54,7 +54,10 @@
   size="medium"
   color="secondary"
   variant="ghost"
+  class="shrink-0 text-start leading-tight [&_svg]:shrink-0"
   onclick={setLockedVisibility}
 >
-  {unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
+  <span class="max-w-28">
+    {unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
+  </span>
 </Button>

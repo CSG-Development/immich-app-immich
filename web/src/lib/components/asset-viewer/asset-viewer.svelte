@@ -78,7 +78,7 @@
   }
 
   let {
-    cursor,
+    cursor = $bindable(),
     showNavigation = true,
     withStacked = false,
     isShared = false,
@@ -150,10 +150,12 @@
   };
 
   const onAssetUpdate = (updatedAsset: AssetResponseDto) => {
-    if (asset.id === updatedAsset.id) {
-      // Mutate in place — reassigning `cursor` is wiped when the parent re-renders.
-      cursor.current = updatedAsset;
+    if (cursor.current.id !== updatedAsset.id) {
+      return;
     }
+
+    cursor = { ...cursor, current: updatedAsset };
+    assetViewerManager.setAsset(updatedAsset);
   };
 
   onMount(() => {

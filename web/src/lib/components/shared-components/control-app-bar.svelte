@@ -89,11 +89,15 @@
       <span class={isSearch ? '' : 'w-full'}>{@render leading?.()}</span>
     </div>
 
-    <div class="w-full">
-      {@render children?.()}
-    </div>
+    {#if children}
+      <div class="w-full">
+        {@render children()}
+      </div>
+    {/if}
 
-    <div class="max-[350px]:me-0 max-[350px]:gap-0 me-4 flex place-items-center gap-1 justify-self-end">
+    <div
+      class="max-[350px]:me-0 max-[350px]:gap-0 me-4 flex shrink-0 place-items-center gap-1 justify-self-end [&_svg]:h-6 [&_svg]:w-6"
+    >
       {@render trailing?.()}
     </div>
   </nav>

@@ -1,6 +1,5 @@
 <script lang="ts">
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import UploadCover from '$lib/components/shared-components/drag-and-drop-upload-overlay.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
   import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
@@ -229,4 +228,3 @@
     {/if}
   </AssetSelectControlBar>
 {/if}
-<UploadCover />

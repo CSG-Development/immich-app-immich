@@ -43,6 +43,7 @@
     mdiPlus,
   } from '@mdi/js';
   import { DateTime } from 'luxon';
+  import { onMount, untrack } from 'svelte';
   import { t } from 'svelte-i18n';
   import { slide } from 'svelte/transition';
   import ImageThumbnail from '../assets/thumbnail/image-thumbnail.svelte';
@@ -56,7 +57,28 @@
     currentAlbum?: AlbumResponseDto | null;
   }
 
-  let { asset, currentAlbum = null }: Props = $props();
+  let { asset: assetProp, currentAlbum = null }: Props = $props();
+
+  // Local copy so Basic + Metadata stay in sync after edits, even if the parent
+  // cursor/asset prop chain lags behind AssetUpdate.
+  let asset = $state(untrack(() => assetProp));
+
+  $effect(() => {
+    const incoming = assetProp;
+    if (incoming.id !== untrack(() => asset.id)) {
+      asset = incoming;
+    }
+  });
+
+  const onAssetUpdate = (updated: AssetResponseDto) => {
+    if (updated.id === asset.id) {
+      asset = updated;
+    }
+  };
+
+  // Must use onMount — eventManager.on reads/writes $state callbacks; doing that
+  // inside $effect re-triggers the effect and freezes the tab.
+  onMount(() => eventManager.on({ AssetUpdate: onAssetUpdate }));
 
   let showAssetPath = $state(false);
   let showEditFaces = $state(false);
@@ -388,49 +410,53 @@
       </div>
     {/if}
 
-    <div class="flex gap-4 py-4">
-      <div><Icon icon={mdiImageOutline} size="24" /></div>
+    <div class="flex w-full justify-between place-items-start gap-4 py-4">
+      <div class="flex min-w-0 gap-4">
+        <div><Icon icon={mdiImageOutline} size="24" /></div>
 
-      <div>
-        <p class="break-all flex place-items-center gap-2 whitespace-pre-wrap">
-          {asset.originalFileName}
-          {#if isOwner}
-            <IconButton
-              icon={mdiInformationOutline}
-              aria-label={$t('show_file_location')}
-              size="small"
-              shape="round"
-              color="secondary"
-              variant="ghost"
-              onclick={toggleAssetPath}
-            />
+        <div class="min-w-0">
+          <p class="break-all whitespace-pre-wrap">{asset.originalFileName}</p>
+          {#if showAssetPath}
+            <p class="text-xs opacity-50 break-all pb-2 hover:text-primary" transition:slide={{ duration: 250 }}>
+              <!-- eslint-disable-next-line svelte/no-navigation-without-resolve this is supposed to be treated as an absolute/external link -->
+              <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap">
+                {asset.originalPath}
+              </a>
+            </p>
           {/if}
-        </p>
-        {#if showAssetPath}
-          <p class="text-xs opacity-50 break-all pb-2 hover:text-primary" transition:slide={{ duration: 250 }}>
-            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve this is supposed to be treated as an absolute/external link -->
-            <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap">
-              {asset.originalPath}
-            </a>
-          </p>
-        {/if}
-        {#if (asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth) || asset.exifInfo?.fileSizeInByte}
-          <div class="flex gap-2 text-sm">
-            {#if asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth}
-              {#if getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)}
-                <p>
-                  {getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)} MP
-                </p>
+          {#if (asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth) || asset.exifInfo?.fileSizeInByte}
+            <div class="flex gap-2 text-sm">
+              {#if asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth}
+                {#if getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)}
+                  <p>
+                    {getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)} MP
+                  </p>
+                {/if}
+                {@const { width, height } = getDimensions(asset.exifInfo)}
+                <p>{width} x {height}</p>
               {/if}
-              {@const { width, height } = getDimensions(asset.exifInfo)}
-              <p>{width} x {height}</p>
-            {/if}
-            {#if asset.exifInfo?.fileSizeInByte}
-              <p>{getByteUnitString(asset.exifInfo.fileSizeInByte, $locale)}</p>
-            {/if}
-          </div>
-        {/if}
+              {#if asset.exifInfo?.fileSizeInByte}
+                <p>{getByteUnitString(asset.exifInfo.fileSizeInByte, $locale)}</p>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
+
+      {#if isOwner}
+        <div class="shrink-0">
+          <IconButton
+            icon={mdiInformationOutline}
+            aria-label={$t('show_file_location')}
+            size="small"
+            shape="round"
+            color="secondary"
+            variant="ghost"
+            class="[&_svg]:w-6 [&_svg]:h-6"
+            onclick={toggleAssetPath}
+          />
+        </div>
+      {/if}
     </div>
 
     {#if asset.exifInfo?.make || asset.exifInfo?.model || asset.exifInfo?.exposureTime || asset.exifInfo?.iso}

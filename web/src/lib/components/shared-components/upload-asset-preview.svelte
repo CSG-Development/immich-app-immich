@@ -55,7 +55,8 @@
             size="24"
             class="text-primary"
             title={$t('asset_uploading')}
-            progress={uploadAsset.progress}
+            spin
+            progress={25}
           />
         {/if}
         {#if uploadAsset.message === $t('asset_hashing')}

@@ -27,7 +27,9 @@
 </script>
 
 {#if withText}
-  <Button leadingIcon={icon} size="medium" color="secondary" variant="ghost" {onclick}>{label}</Button>
+  <Button leadingIcon={icon} size="medium" color="secondary" variant="ghost" class="shrink-0" {onclick}>
+    {label}
+  </Button>
 {:else}
   <IconButton shape="round" color="secondary" variant="ghost" aria-label={label} {icon} {onclick} />
 {/if}
