@@ -151,7 +151,8 @@
 
   const onAssetUpdate = (updatedAsset: AssetResponseDto) => {
     if (asset.id === updatedAsset.id) {
-      cursor = { ...cursor, current: updatedAsset };
+      // Mutate in place — reassigning `cursor` is wiped when the parent re-renders.
+      cursor.current = updatedAsset;
     }
   };
 

@@ -5,6 +5,7 @@
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { assetCacheManager } from '$lib/managers/AssetCacheManager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import type { SlideshowState } from '$lib/stores/slideshow.store';
@@ -246,7 +247,10 @@
   onMount(() => {
     const unsubscribes = [
       websocketEvents.on('on_upload_success', (asset: AssetResponseDto) => handleUpdateOrUpload(asset)),
-      websocketEvents.on('on_asset_update', (asset: AssetResponseDto) => handleUpdateOrUpload(asset)),
+      // Covers websocket on_asset_update and local emits (e.g. description save).
+      eventManager.on({
+        AssetUpdate: (asset: AssetResponseDto) => handleUpdateOrUpload(asset),
+      }),
     ];
     return () => {
       for (const unsubscribe of unsubscribes) {

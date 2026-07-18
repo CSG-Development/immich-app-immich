@@ -13,9 +13,9 @@ function createUploadStore() {
   const { subscribe } = uploadAssets;
 
   const isUploading = derived(uploadAssets, (items) => items.length > 0);
-  const isDismissible = derived(uploadAssets, (items) =>
-    items.some((item) => item.state === UploadState.ERROR || item.state === UploadState.DUPLICATED),
-  );
+  const isDismissibleState = (state?: UploadState) =>
+    state === UploadState.ERROR || state === UploadState.DUPLICATED || state === UploadState.UNSUPPORTED_TYPE;
+  const isDismissible = derived(uploadAssets, (items) => items.some((item) => isDismissibleState(item.state)));
   const remainingUploads = derived(
     uploadAssets,
     (values) => values.filter((a) => a.state === UploadState.PENDING || a.state === UploadState.STARTED).length,
@@ -90,7 +90,8 @@ function createUploadStore() {
               break;
             }
 
-            case UploadState.ERROR: {
+            case UploadState.ERROR:
+            case UploadState.UNSUPPORTED_TYPE: {
               stats.errors--;
               break;
             }
@@ -109,9 +110,7 @@ function createUploadStore() {
   };
 
   const dismissErrors = () =>
-    uploadAssets.update((value) =>
-      value.filter((e) => e.state !== UploadState.ERROR && e.state !== UploadState.DUPLICATED),
-    );
+    uploadAssets.update((value) => value.filter((e) => !isDismissibleState(e.state)));
 
   const reset = () => {
     uploadAssets.set([]);

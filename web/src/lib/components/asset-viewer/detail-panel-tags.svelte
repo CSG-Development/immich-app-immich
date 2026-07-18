@@ -2,6 +2,7 @@
   import HeaderActionButton from '$lib/components/HeaderActionButton.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { Route } from '$lib/route';
   import { getAssetActions } from '$lib/services/asset.service';
   import { removeTag } from '$lib/utils/asset-utils';
@@ -15,20 +16,25 @@
     isOwner: boolean;
   }
 
-  let { asset = $bindable(), isOwner }: Props = $props();
+  let { asset, isOwner }: Props = $props();
 
   let tags = $derived(asset.tags || []);
+
+  const refreshAsset = async () => {
+    const updated = await getAssetInfo({ id: asset.id });
+    eventManager.emit('AssetUpdate', updated);
+  };
 
   const handleRemove = async (tagId: string) => {
     const ids = await removeTag({ tagIds: [tagId], assetIds: [asset.id], showNotification: false });
     if (ids) {
-      asset = await getAssetInfo({ id: asset.id });
+      await refreshAsset();
     }
   };
 
   const onAssetsTag = async (ids: string[]) => {
     if (ids.includes(asset.id)) {
-      asset = await getAssetInfo({ id: asset.id });
+      await refreshAsset();
     }
   };
 

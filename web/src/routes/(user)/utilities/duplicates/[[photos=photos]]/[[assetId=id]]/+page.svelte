@@ -12,6 +12,7 @@
   import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';
   import { Route } from '$lib/route';
   import { locale } from '$lib/stores/preferences.store';
+  import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { handleError } from '$lib/utils/handle-error';
   import type { AssetResponseDto } from '@immich/sdk';
   import { createStack, deleteDuplicates, resolveDuplicates, updateAssets } from '@immich/sdk';
@@ -133,39 +134,48 @@
     await navigateToIndex(duplicatesIndex);
   };
 
+  const getTrashAssetIds = (group: (typeof duplicates)[number]) => {
+    const assetIds = group.assets.map((asset) => asset.id);
+    const assetIdSet = new Set(assetIds);
+    let keepIds = group.suggestedKeepAssetIds.filter((id) => assetIdSet.has(id));
+    if (keepIds.length === 0 && assetIds.length > 0) {
+      const fallback = suggestDuplicate(group.assets);
+      keepIds = [fallback?.id ?? assetIds[0]];
+    }
+    const keepSet = new Set(keepIds);
+    return assetIds.filter((id) => !keepSet.has(id));
+  };
+
   const handleDeduplicateAll = async () => {
-    // Use server-provided suggestedKeepAssetIds from each group
-    const idsToDelete = duplicates.flatMap((group) => {
-      const keepIds = new Set(group.suggestedKeepAssetIds);
-      return group.assets.map((asset) => asset.id).filter((id) => !keepIds.has(id));
-    });
+    const idsToDelete = duplicates.flatMap((group) => getTrashAssetIds(group));
+    // Use group count so the dialog matches the page title and Keep All confirmation
+    const groupCount = duplicates.length;
 
     let prompt, confirmText;
     if (featureFlagsManager.value.trash) {
-      prompt = $t('bulk_trash_duplicates_confirmation', { values: { count: idsToDelete.length } });
+      prompt = $t('bulk_trash_duplicates_confirmation', { values: { count: groupCount } });
       confirmText = $t('confirm');
     } else {
-      prompt = $t('bulk_delete_duplicates_confirmation', { values: { count: idsToDelete.length } });
+      prompt = $t('bulk_delete_duplicates_confirmation', { values: { count: groupCount } });
       confirmText = $t('permanently_delete');
     }
 
     return withConfirmation(
       async () => {
-        // Resolve all groups in a single batch request
         const response = await resolveDuplicates({
           duplicateResolveDto: {
             groups: duplicates.map((group) => {
-              const keepIds = new Set(group.suggestedKeepAssetIds);
+              const trashAssetIds = getTrashAssetIds(group);
+              const trashIdSet = new Set(trashAssetIds);
               return {
                 duplicateId: group.duplicateId,
-                keepAssetIds: group.suggestedKeepAssetIds,
-                trashAssetIds: group.assets.map((asset) => asset.id).filter((id) => !keepIds.has(id)),
+                keepAssetIds: group.assets.map((asset) => asset.id).filter((id) => !trashIdSet.has(id)),
+                trashAssetIds,
               };
             }),
           },
         });
 
-        // Count failures and show appropriate message
         const failedCount = response.filter(({ success }) => !success).length;
         if (failedCount > 0) {
           toastManager.danger($t('errors.unable_to_resolve_duplicate'));

@@ -1,10 +1,12 @@
 <script lang="ts">
   import { shortcut } from '$lib/actions/shortcut';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
   import { Textarea, toastManager } from '@immich/ui';
   import { t } from 'svelte-i18n';
   import { fromAction } from 'svelte/attachments';
+  import { untrack } from 'svelte';
 
   interface Props {
     asset: AssetResponseDto;
@@ -13,15 +15,35 @@
 
   let { asset, isOwner }: Props = $props();
 
-  let description = $derived(asset.exifInfo?.description ?? '');
+  // Local draft. Re-sync only when navigating to a different asset — not when the
+  // same asset is replaced (AssetUpdate / sidecar websocket), which was clearing the field.
+  let description = $state(untrack(() => asset.exifInfo?.description ?? ''));
+  let syncedAssetId = $state.raw(untrack(() => asset.id));
+
+  $effect(() => {
+    const nextId = asset.id;
+    if (nextId === syncedAssetId) {
+      return;
+    }
+
+    syncedAssetId = nextId;
+    description = untrack(() => asset.exifInfo?.description ?? '');
+  });
 
   const handleFocusOut = async () => {
-    const currentDescription = asset.exifInfo?.description ?? '';
+    const currentDescription = untrack(() => asset.exifInfo?.description ?? '');
     if (description === currentDescription) {
       return;
     }
+
+    const newDescription = description;
     try {
-      await updateAsset({ id: asset.id, updateAssetDto: { description } });
+      const updated = await updateAsset({ id: asset.id, updateAssetDto: { description: newDescription } });
+      description = newDescription;
+      eventManager.emit('AssetUpdate', {
+        ...updated,
+        exifInfo: { ...updated.exifInfo, description: newDescription },
+      });
       toastManager.primary($t('asset_description_updated'));
     } catch (error) {
       handleError(error, $t('cannot_update_the_description'));

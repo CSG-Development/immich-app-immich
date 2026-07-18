@@ -9,6 +9,7 @@
   import Tab from '$lib/elements/Tab.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import AssetChangeDateModal from '$lib/modals/AssetChangeDateModal.svelte';
   import { Route } from '$lib/route';
@@ -139,7 +140,8 @@
   };
 
   const handleRefreshPeople = async () => {
-    asset = await getAssetInfo({ id: asset.id });
+    const updated = await getAssetInfo({ id: asset.id });
+    eventManager.emit('AssetUpdate', updated);
     showEditFaces = false;
   };
 
@@ -187,7 +189,10 @@
     />
   </div>
 
-  {#if selectedTab === PhotoTabs.Basic}
+  <!-- Keep Basic details mounted across tab switches so edits (description, tags, etc.) survive. -->
+  <div class:hidden={selectedTab !== PhotoTabs.Basic}>
+    <DetailPanelDescription {asset} {isOwner} />
+
   {#if asset.isOffline}
     <section class="px-4 py-4">
       <div role="alert">
@@ -210,7 +215,6 @@
     </section>
   {/if}
 
-  <DetailPanelDescription {asset} {isOwner} />
   <DetailPanelRating {asset} {isOwner} />
 
   {#if !authManager.isSharedLink && isOwner}
@@ -495,14 +499,16 @@
 
     <DetailPanelLocation {isOwner} {asset} />
   </div>
-  {:else}
+  </div>
+
+  <div class:hidden={selectedTab !== PhotoTabs.Metadata}>
     <section class="px-4 py-4">
       <MetadataList exifInfo={asset.exifInfo} />
     </section>
-  {/if}
+  </div>
 </section>
 
-{#if selectedTab === PhotoTabs.Basic}
+<div class:hidden={selectedTab !== PhotoTabs.Basic}>
 {#if latlng && featureFlagsManager.value.map}
   <div class="h-90">
     {#await import('$lib/components/shared-components/map/map.svelte')}
@@ -613,4 +619,4 @@
     onRefresh={handleRefreshPeople}
   />
 {/if}
-{/if}
+</div>

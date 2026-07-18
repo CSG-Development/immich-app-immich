@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import GeolocationPointPickerModal from '$lib/modals/GeolocationPointPickerModal.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
@@ -11,7 +12,7 @@
     asset: AssetResponseDto;
   };
 
-  let { isOwner, asset = $bindable() }: Props = $props();
+  let { isOwner, asset }: Props = $props();
 
   const onAction = async () => {
     const point = await modalManager.show(GeolocationPointPickerModal, { asset });
@@ -20,10 +21,11 @@
     }
 
     try {
-      asset = await updateAsset({
+      const updated = await updateAsset({
         id: asset.id,
         updateAssetDto: { latitude: point.lat, longitude: point.lng },
       });
+      eventManager.emit('AssetUpdate', updated);
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_location'));
     }

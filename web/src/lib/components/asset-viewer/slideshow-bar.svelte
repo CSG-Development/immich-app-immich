@@ -40,6 +40,10 @@
   let timer: NodeJS.Timeout;
   let isOverControls = $state(false);
   const isVideoSlide = $derived(assetType === AssetTypeEnum.Video);
+  // In backward order, "next" in the slideshow is the previous timeline asset.
+  const isBackward = $derived($slideshowNavigation === SlideshowNavigation.AscendingOrder);
+  const goSlideshowNext = () => (isBackward ? onPrevious() : onNext());
+  const goSlideshowPrevious = () => (isBackward ? onNext() : onPrevious());
 
   let unsubscribeRestart: () => void;
   let unsubscribeStop: () => void;
@@ -98,11 +102,7 @@
   const handleDone = () => {
     // Do not reset progress here — a dropped/in-flight navigate would leave the bar at 0
     // forever. Restart happens via restartProgress after a successful advance.
-    if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
-      onPrevious();
-      return;
-    }
-    onNext();
+    goSlideshowNext();
   };
 
   const onShowSettings = async () => {
@@ -142,8 +142,8 @@
   const shortcutBindings = $derived.by((): ShortcutOptions[] => {
     const bindings: ShortcutOptions[] = [
       { shortcut: { key: 'Escape' }, onShortcut: onClose },
-      { shortcut: { key: 'ArrowLeft' }, onShortcut: onPrevious },
-      { shortcut: { key: 'ArrowRight' }, onShortcut: onNext },
+      { shortcut: { key: 'ArrowLeft' }, onShortcut: goSlideshowPrevious },
+      { shortcut: { key: 'ArrowRight' }, onShortcut: goSlideshowNext },
     ];
 
     // For videos, allow the native HTML5 element to handle space for play/pause
@@ -202,7 +202,7 @@
       shape="round"
       color="secondary"
       icon={languageManager.rtl ? mdiChevronRight : mdiChevronLeft}
-      onclick={onPrevious}
+      onclick={goSlideshowPrevious}
       aria-label={$t('previous')}
     />
     <IconButton
@@ -210,7 +210,7 @@
       shape="round"
       color="secondary"
       icon={languageManager.rtl ? mdiChevronLeft : mdiChevronRight}
-      onclick={onNext}
+      onclick={goSlideshowNext}
       aria-label={$t('next')}
     />
     <IconButton

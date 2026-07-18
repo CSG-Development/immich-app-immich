@@ -460,12 +460,6 @@
   };
 
   const handlePrevious = async () => {
-    if (
-      $slideshowState === SlideshowState.PlaySlideshow &&
-      $slideshowNavigation === SlideshowNavigation.AscendingOrder
-    ) {
-      return selectedAssets.length > 1 ? await handleNextFromSelectedAssets() : await handleNextFromTimeline();
-    }
     return selectedAssets.length > 1 ? await handlePreviousFromSelectedAssets() : await handlePreviousFromTimeline();
   };
 
@@ -496,12 +490,6 @@
   };
 
   const handleNext = async () => {
-    if (
-      $slideshowState === SlideshowState.PlaySlideshow &&
-      $slideshowNavigation === SlideshowNavigation.AscendingOrder
-    ) {
-      return selectedAssets.length > 1 ? await handlePreviousFromSelectedAssets() : await handlePreviousFromTimeline();
-    }
     return selectedAssets.length > 1 ? await handleNextFromSelectedAssets() : await handleNextFromTimeline();
   };
 
