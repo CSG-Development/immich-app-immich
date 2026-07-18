@@ -53541,6 +53541,7 @@ class CodegenLoader extends AssetLoader {
         "text_label": "Watermark text",
       },
     },
+    "image_editor_failed_to_load_image": "Failed to load the image. Please check your connection and try again.",
     "image_saved_successfully": "Image saved",
     "image_viewer_page_state_provider_download_started": "Download Started",
     "image_viewer_page_state_provider_download_success": "Download Success",
