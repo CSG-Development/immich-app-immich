@@ -2,7 +2,6 @@ import { MediaType } from '$lib/constants';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import type { QueueResponseDto, ServerVersionResponseDto } from '@immich/sdk';
 import type { ActionItem } from '@immich/ui';
-import type { DateTime } from 'luxon';
 import type { SvelteSet } from 'svelte/reactivity';
 
 export type LatLng = { lng: number; lat: number };
@@ -63,8 +62,8 @@ export type SearchCameraFilter = {
 };
 
 export type SearchDateFilter = {
-  takenBefore?: DateTime;
-  takenAfter?: DateTime;
+  takenBefore?: string;
+  takenAfter?: string;
 };
 
 export type SearchDisplayFilters = {

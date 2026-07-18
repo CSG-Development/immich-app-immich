@@ -20,7 +20,6 @@
   import type { TimelineMonth } from '$lib/managers/timeline-manager/timeline-month.svelte';
   import type { TimelineAsset, TimelineManagerOptions, ViewportTopMonth } from '$lib/managers/timeline-manager/types';
   import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { isAssetViewerRoute, navigate } from '$lib/utils/navigation';
@@ -263,6 +262,20 @@
     });
   });
 
+  $effect(() => {
+    if (assetViewerManager.isViewing || !invisible) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      if (!assetViewerManager.isViewing && invisible) {
+        void scrollAfterNavigate();
+      }
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  });
+
   const updateIsScrolling = () => (timelineManager.scrolling = true);
   // note: don't throttle, debounch, or otherwise do this function async - it causes flicker
 
@@ -380,7 +393,6 @@
 
   const viewAssetWithPreload = async ({
     asset,
-    preload,
     returnFullAsset,
   }: {
     asset: TimelineAsset;
@@ -388,7 +400,7 @@
     returnFullAsset?: boolean;
   }) => {
     const fullAsset = await getAssetInfo({ ...authManager.params, id: asset.id });
-    assetViewingStore.setAsset(fullAsset, preload ? [preload] : []);
+    assetViewerManager.setAsset(fullAsset);
     await navigate({ targetRoute: 'current', assetId: asset.id });
     if (returnFullAsset) {
       return fullAsset;

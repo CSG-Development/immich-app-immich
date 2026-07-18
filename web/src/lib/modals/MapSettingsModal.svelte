@@ -1,7 +1,7 @@
 <script lang="ts">
   import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import type { MapSettings } from '$lib/stores/preferences.store';
-  import { Button, DateInput, Field, Stack, Switch } from '@immich/ui';
+  import { Button, DateInput, Field, FormModal, Stack, Switch } from '@immich/ui';
   import { Duration } from 'luxon';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';

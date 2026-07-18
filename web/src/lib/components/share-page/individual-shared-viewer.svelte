@@ -136,13 +136,6 @@
           {/snippet}
         </ControlAppBar>
       {/if}
-      <section
-        class="mt-[82px] md:mt-[114px] mx-3 md:mx-6"
-        bind:clientHeight={viewport.height}
-        bind:clientWidth={viewport.width}
-      >
-        <GalleryViewer {assets} assetInteraction={assetMultiSelectManager} {viewport} />
-      </section>
     </header>
   {:else if assets.length === 1}
     {#await getAssetInfo({ ...authManager.params, id: assets[0].id }) then asset}

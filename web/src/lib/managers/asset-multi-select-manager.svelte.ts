@@ -57,6 +57,10 @@ export class AssetMultiSelectManager {
   }
 
   selectAsset(asset: TimelineAsset) {
+    if (this.#selectedMap.has(asset.id)) {
+      return;
+    }
+
     this.#selectedMap.set(asset.id, asset);
     this.selectedAssets.push(asset);
   }
@@ -97,6 +101,7 @@ export class AssetMultiSelectManager {
 
     // Multi-selection
     this.#selectedMap.clear();
+    this.selectedAssets = [];
     this.selectedGroup.clear();
 
     // Range selection

@@ -37,7 +37,10 @@
   onMount(handleSearch);
 
   const handleSwapPeople = async () => {
-    [person, selectedPeople[0]] = [selectedPeople[0], person];
+    const previousPerson = person;
+    const [newTarget, ...rest] = selectedPeople;
+    selectedPeople = [previousPerson, ...rest];
+    person = newTarget;
     await goto(Route.viewPerson(person, { previousRoute: Route.people(), action: 'merge' }));
   };
 
@@ -121,9 +124,16 @@
             ? 'justify-between'
             : 'gap-3'} md:gap-4"
         >
-          {#each selectedPeople as person (person.id)}
+          {#each selectedPeople as selectedPerson (selectedPerson.id)}
             <div animate:flip={{ duration: 250, easing: quintOut }}>
-              <FaceThumbnail border circle {person} selectable thumbnailSize={117} onClick={() => onSelect(person)} />
+              <FaceThumbnail
+                border
+                circle
+                person={selectedPerson}
+                selectable
+                thumbnailSize={117}
+                onClick={() => onSelect(selectedPerson)}
+              />
             </div>
           {/each}
 
@@ -147,7 +157,9 @@
               </div>
             </div>
           {/if}
-          <FaceThumbnail {person} border circle selectable={false} thumbnailSize={156} />
+          {#key person.id}
+            <FaceThumbnail {person} border circle selectable={false} thumbnailSize={156} />
+          {/key}
         </div>
       </div>
       <PeopleList {people} {peopleToNotShow} {screenHeight} {onSelect} {handleSearch} />

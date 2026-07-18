@@ -83,9 +83,12 @@
       loading = true;
       const user = await login({ loginCredentialDto: { email, password } });
 
-      if (user.isAdmin && !serverConfig.isOnboarded) {
-        await onOnboarding();
-        return;
+      if (user.isAdmin && !serverConfigManager.value.isOnboarded) {
+        await serverConfigManager.loadServerConfig();
+        if (!serverConfigManager.value.isOnboarded) {
+          await onOnboarding();
+          return;
+        }
       }
 
       // change the user password before we onboard them

@@ -95,9 +95,9 @@
     }
   });
 
-  const handleDone = async () => {
-    await progressBar?.resetProgress();
-
+  const handleDone = () => {
+    // Do not reset progress here — a dropped/in-flight navigate would leave the bar at 0
+    // forever. Restart happens via restartProgress after a successful advance.
     if ($slideshowNavigation === SlideshowNavigation.AscendingOrder) {
       onPrevious();
       return;

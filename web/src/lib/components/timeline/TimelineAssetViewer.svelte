@@ -107,14 +107,31 @@
     return { id: randomAsset.id };
   };
 
+  let closeInFlight: Promise<void> | null = null;
+
   const handleClose = async (asset: { id: string }) => {
-    invisible = true;
-    assetViewerManager.gridScrollTarget = { at: asset.id };
-    await navigate({
-      targetRoute: 'current',
-      assetId: null,
-      assetGridRouteSearchParams: assetViewerManager.gridScrollTarget,
-    });
+    if (closeInFlight) {
+      return closeInFlight;
+    }
+
+    closeInFlight = (async () => {
+      invisible = true;
+      assetViewerManager.gridScrollTarget = { at: asset.id };
+      try {
+        await navigate(
+          {
+            targetRoute: 'current',
+            assetId: null,
+            assetGridRouteSearchParams: assetViewerManager.gridScrollTarget,
+          },
+          { forceNavigate: true },
+        );
+      } finally {
+        closeInFlight = null;
+      }
+    })();
+
+    return closeInFlight;
   };
 
   const handleRemoveFromAlbum = async (assetIds: string[]) => {
