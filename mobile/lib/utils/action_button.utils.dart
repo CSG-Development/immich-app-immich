@@ -122,10 +122,10 @@ enum ActionButtonType {
             context.isTrashEnabled && //
             context.timelineOrigin != TimelineOrigin.trash,
       ActionButtonType.deletePermanent =>
-        context.isOwner && //
+        context.isInLockedView ||
+            (context.isOwner && //
                 context.asset.hasRemote && //
-                !context.isTrashEnabled ||
-            context.isInLockedView,
+                (!context.isTrashEnabled || context.timelineOrigin == TimelineOrigin.trash)),
       ActionButtonType.delete =>
         context.isOwner && //
             !context.isInLockedView && //
@@ -140,7 +140,8 @@ enum ActionButtonType {
             context.asset.hasRemote,
       ActionButtonType.deleteLocal =>
         !context.isInLockedView && //
-            context.asset.hasLocal,
+            context.asset.hasLocal && //
+            context.timelineOrigin != TimelineOrigin.trash,
       ActionButtonType.upload =>
         !context.isInLockedView && //
             context.asset.storage == AssetState.local,
