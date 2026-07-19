@@ -147,6 +147,10 @@ export class SearchService extends BaseService {
         throw new BadRequestException(`Asset ${dto.queryAssetId} has no embedding`);
       }
       embedding = assetEmbedding;
+      const embeddingArray: number[] = JSON.parse(assetEmbedding);
+      const counterEmbeddingArray = embeddingArray.map((v:number) => -v);
+      counterEmbedding = JSON.stringify(counterEmbeddingArray);
+      this.logger.log('EMBEDDING', embedding, 'COUNTER EMBEDDING', counterEmbedding);
     } else {
       throw new BadRequestException('Either `query` or `queryAssetId` must be set');
     }
