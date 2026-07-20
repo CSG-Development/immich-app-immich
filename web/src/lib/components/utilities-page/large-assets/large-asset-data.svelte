@@ -11,12 +11,15 @@
 
   let { asset, onViewAsset }: Props = $props();
 
+  let assetData = $derived(JSON.stringify(asset, null, 2));
+
   let boxWidth = $state(300);
 </script>
 
 <div
   class="w-full aspect-square rounded-xl transition-colors font-semibold text-xs bg-immich-bg-gray dark:bg-immich-dark-bg-gray p-1"
   bind:clientWidth={boxWidth}
+  title={assetData}
 >
   <div class="relative w-full h-full overflow-hidden rounded-lg">
     <Thumbnail asset={toTimelineAsset(asset)} readonly onClick={() => onViewAsset(asset)} thumbnailSize={boxWidth} />
@@ -29,7 +32,6 @@
   <div class="text-center mt-4 px-4 text-sm font-medium truncate" title={asset.originalFileName}>
     {asset.originalFileName}
   </div>
-
   <div class="text-center">
     <p class="text-primary text-xl font-semibold py-3">{getFileSize(asset, 1)}</p>
   </div>

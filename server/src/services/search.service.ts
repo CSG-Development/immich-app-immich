@@ -147,6 +147,10 @@ export class SearchService extends BaseService {
         throw new BadRequestException(`Asset ${dto.queryAssetId} has no embedding`);
       }
       embedding = assetEmbedding;
+      const embeddingArray: number[] = JSON.parse(assetEmbedding);
+      const counterEmbeddingArray = embeddingArray.map((v:number) => -v);
+      counterEmbedding = JSON.stringify(counterEmbeddingArray);
+      this.logger.log('EMBEDDING', embedding, 'COUNTER EMBEDDING', counterEmbedding);
     } else {
       throw new BadRequestException('Either `query` or `queryAssetId` must be set');
     }
@@ -192,6 +196,9 @@ export class SearchService extends BaseService {
       }
       case SearchSuggestionType.CAMERA_MODEL: {
         return this.searchRepository.getCameraModels(userIds, dto);
+      }
+      case SearchSuggestionType.CAMERA_LENS_MODEL: {
+        return this.searchRepository.getCameraLensModels(userIds, dto);
       }
       default: {
         return Promise.resolve([]);

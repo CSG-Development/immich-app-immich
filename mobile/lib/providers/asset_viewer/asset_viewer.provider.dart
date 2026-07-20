@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/providers/asset_viewer/video_player_provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 class AssetViewerState {
   final double backgroundOpacity;
@@ -68,27 +69,53 @@ class AssetViewerState {
 }
 
 class AssetViewerStateNotifier extends Notifier<AssetViewerState> {
+  StreamSubscription<BaseAsset?>? _assetSubscription;
+
   @override
   AssetViewerState build() {
-    ref.listen(_watchedCurrentAssetProvider, (_, next) {
-      final updated = next.valueOrNull;
-      if (updated == null) return;
-
-      final currentHeroTag = state.currentAsset?.heroTag;
-      if (currentHeroTag == null || updated.heroTag == currentHeroTag) {
-        state = state.copyWith(currentAsset: updated);
-      }
-    });
+    ref.onDispose(() => _assetSubscription?.cancel());
     return const AssetViewerState();
   }
 
   void reset() {
+    _assetSubscription?.cancel();
+    _assetSubscription = null;
     state = const AssetViewerState();
   }
 
   void setAsset(BaseAsset asset) {
-    if (asset == state.currentAsset) return;
+    if (asset == state.currentAsset) {
+      return;
+    }
     state = state.copyWith(currentAsset: asset, stackIndex: 0);
+    _watchCurrentAsset(asset);
+  }
+
+  Future<void> refreshCurrentAsset() async {
+    final current = state.currentAsset;
+    if (current == null) {
+      return;
+    }
+
+    final assetService = ref.read(assetServiceProvider);
+    var resolved = await assetService.getAsset(current);
+    if (resolved == null && current is LocalAsset && current.remoteId != null) {
+      resolved = await assetService.getRemoteAsset(current.remoteId!);
+    }
+    if (resolved == null || resolved == state.currentAsset) {
+      return;
+    }
+
+    setAsset(resolved);
+  }
+
+  void _watchCurrentAsset(BaseAsset asset) {
+    _assetSubscription?.cancel();
+    _assetSubscription = ref.read(assetServiceProvider).watchAsset(asset).listen((updated) {
+      if (updated != null) {
+        state = state.copyWith(currentAsset: updated);
+      }
+    });
   }
 
   void setOpacity(double opacity) {
@@ -138,10 +165,3 @@ class AssetViewerStateNotifier extends Notifier<AssetViewerState> {
 }
 
 final assetViewerProvider = NotifierProvider<AssetViewerStateNotifier, AssetViewerState>(AssetViewerStateNotifier.new);
-
-final _watchedCurrentAssetProvider = StreamProvider<BaseAsset?>((ref) {
-  ref.watch(assetViewerProvider.select((s) => s.currentAsset?.heroTag));
-  final asset = ref.read(assetViewerProvider).currentAsset;
-  if (asset == null) return const Stream.empty();
-  return ref.read(assetServiceProvider).watchAsset(asset);
-});

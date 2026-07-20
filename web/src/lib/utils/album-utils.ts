@@ -1,7 +1,6 @@
 import { goto } from '$app/navigation';
-import { resolve } from '$app/paths';
-import { AppRoute } from '$lib/constants';
-import { modalManager } from '$lib/managers/modal-manager.svelte';
+import { eventManager } from '$lib/managers/event-manager.svelte';
+import { Route } from '$lib/route';
 import {
   AlbumFilter,
   AlbumGroupBy,
@@ -31,6 +30,7 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
         assetIds,
       },
     });
+    eventManager.emit('AlbumCreate', newAlbum);
     return newAlbum;
   } catch (error) {
     const $t = get(t);
@@ -41,7 +41,7 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
 export const createAlbumAndRedirect = async (name?: string, assetIds?: string[]) => {
   const newAlbum = await createAlbum(name, assetIds);
   if (newAlbum) {
-    await goto(resolve(`${AppRoute.ALBUMS}/${newAlbum.id}`));
+    await goto(Route.viewAlbum(newAlbum));
   }
 };
 
@@ -60,7 +60,7 @@ export const sortOptionsMetadata: AlbumSortOptionMetadata[] = [
   {
     id: AlbumSortBy.Title,
     defaultOrder: SortOrder.Asc,
-    columnStyle: 'text-start w-6/12 sm:w-4/12 md:w-4/12 xl:w-[30%] 2xl:w-[40%]',
+    columnStyle: 'text-start w-8/12 sm:w-4/12 md:w-4/12 xl:w-[30%] 2xl:w-[40%]',
   },
   {
     id: AlbumSortBy.ItemCount,
@@ -202,19 +202,6 @@ export const collapseAllAlbumGroups = (groupIds: string[]) => {
 
 export const expandAllAlbumGroups = () => {
   collapseAllAlbumGroups([]);
-};
-
-export const confirmAlbumDelete = async (album: AlbumResponseDto) => {
-  const $t = get(t);
-  const confirmation =
-    album.albumName.length > 0
-      ? $t('album_delete_confirmation', { values: { album: album.albumName } })
-      : $t('unnamed_album_delete_confirmation');
-
-  const description = $t('album_delete_confirmation_description');
-  const prompt = `${confirmation} ${description}`;
-
-  return modalManager.showDialog({ prompt, mdFullSize: false });
 };
 
 interface AlbumSortOption {

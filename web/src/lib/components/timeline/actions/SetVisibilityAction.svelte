@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { OnSetVisibility } from '$lib/utils/actions';
   import { handleError } from '$lib/utils/handle-error';
   import { AssetVisibility, updateAssets } from '@immich/sdk';
@@ -10,13 +9,11 @@
 
   interface Props {
     onVisibilitySet: OnSetVisibility;
-    menuItem?: boolean;
     unlock?: boolean;
   }
 
-  let { onVisibilitySet, menuItem = false, unlock = false }: Props = $props();
+  let { onVisibilitySet, unlock = false }: Props = $props();
   let loading = $state(false);
-  const { getAssets } = getAssetControlContext();
 
   const setLockedVisibility = async () => {
     const isConfirmed = await modalManager.showDialog({
@@ -33,7 +30,7 @@
 
     try {
       loading = true;
-      const assetIds = getAssets().map(({ id }) => id);
+      const assetIds = assetMultiSelectManager.assets.map(({ id }) => id);
 
       await updateAssets({
         assetBulkUpdateDto: {
@@ -51,21 +48,16 @@
   };
 </script>
 
-{#if menuItem}
-  <MenuOption
-    onClick={setLockedVisibility}
-    text={unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
-    icon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
-  />
-{:else}
-  <Button
-    leadingIcon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
-    disabled={loading}
-    size="medium"
-    color="secondary"
-    variant="ghost"
-    onclick={setLockedVisibility}
-  >
+<Button
+  leadingIcon={unlock ? mdiLockOpenVariantOutline : mdiLockOutline}
+  disabled={loading}
+  size="medium"
+  color="secondary"
+  variant="ghost"
+  class="shrink-0 text-start leading-tight [&_svg]:shrink-0"
+  onclick={setLockedVisibility}
+>
+  <span class="max-w-28">
     {unlock ? $t('move_off_locked_folder') : $t('move_to_locked_folder')}
-  </Button>
-{/if}
+  </span>
+</Button>

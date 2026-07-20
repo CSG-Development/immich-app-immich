@@ -1,8 +1,7 @@
 <script lang="ts">
   import { ProgressBarStatus } from '$lib/constants';
-  import { handlePromiseError } from '$lib/utils';
 
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { tweened } from 'svelte/motion';
 
   interface Props {
@@ -33,20 +32,38 @@
   }: Props = $props();
 
   const onChange = async (progressDuration: number) => {
+    doneFired = false;
     progress = setDuration(progressDuration);
     await play();
   };
 
   let progress = setDuration(duration);
+  let doneFired = false;
 
+  // Only react to duration changes — do not track callback/status reads inside play().
   $effect(() => {
-    handlePromiseError(onChange(duration));
+    const progressDuration = duration;
+    untrack(() => {
+      void onChange(progressDuration).catch((error) => {
+        console.error('[progress-bar]:onChange', error);
+      });
+    });
   });
 
   $effect(() => {
-    if ($progress === 1) {
-      onDone();
+    if ($progress !== 1) {
+      doneFired = false;
+      return;
     }
+
+    if (doneFired) {
+      return;
+    }
+
+    doneFired = true;
+    untrack(() => {
+      onDone();
+    });
   });
 
   onMount(async () => {
@@ -72,6 +89,7 @@
   };
 
   export const restart = async () => {
+    doneFired = false;
     await progress.set(0);
 
     if (status !== ProgressBarStatus.Paused) {
@@ -80,6 +98,7 @@
   };
 
   export const resetProgress = async () => {
+    doneFired = false;
     await progress.set(0);
   };
 

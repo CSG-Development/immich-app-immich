@@ -102,9 +102,6 @@ class HcPathResolverSnapshot {
   final DateTime? lastResolveAt;
   final ResolveMode? lastMode;
   final ResolveTrigger? lastTrigger;
-
-  @Deprecated('Use availablePath')
-  String? get validPath => availablePath;
 }
 
 class HcPathResolver {
@@ -135,6 +132,7 @@ class HcPathResolver {
   DateTime? _lastResolveAt;
   ResolveMode? _lastMode;
   ResolveTrigger? _lastTrigger;
+  int _consecutiveStaleLocalMisses = 0;
 
   Future<void> init() async {
     if (_isInitialized) {
@@ -172,7 +170,7 @@ class HcPathResolver {
       '[HcPathResolver] resolve start '
       'mode=${mode.name} trigger=${trigger.name} localOnly=$localOnly '
       'cachedPath=${_availablePath ?? '-'} cachedPathType=${_availablePathType ?? '-'} '
-      'deviceAuth=${_deviceProvider.isAuthenticated} remoteAuth=${_remoteProvider.isAuthenticated}',
+      'remoteAuth=${_remoteProvider.isAuthenticated}',
     );
     final stopwatch = Stopwatch()..start();
     final context = ResolveContext(mode: mode, trigger: trigger, localOnly: localOnly);
@@ -208,19 +206,26 @@ class HcPathResolver {
     required bool allowFallbackToAvailablePath,
     ExternalEndpointValidator? validateExternal,
   }) async {
-    final deviceAuth = _deviceProvider.isAuthenticated;
     final deviceID = _deviceProvider.deviceID;
     final seagateDeviceID = _deviceProvider.seagateDeviceID;
 
-    // Do not hard-gate on hc_device access token.
-    // In the app architecture, Photos auth can be valid while hc_device token
-    // is absent. Gating here would skip resolution and force stale fallback.
+    // Photos auth can be valid without hc_device device tokens. Gate only on
+    // known device identity (deviceID / seagateDeviceID) needed for path resolve.
     final hasKnownDeviceIdentity =
         (deviceID != null && deviceID.isNotEmpty) ||
         (seagateDeviceID != null && seagateDeviceID.isNotEmpty);
-    if (!deviceAuth && !hasKnownDeviceIdentity) {
+    if (!hasKnownDeviceIdentity) {
       _log.info('[HcPathResolver] resolveCore abort reason=not_authenticated');
       return const HcPathResolveResult(success: false, reason: 'not_authenticated');
+    }
+
+    Future<HcPathResolveResult> fallback(String branch) {
+      _log.info('[HcPathResolver] resolveCore branch=$branch → fallback');
+      return _fallbackToAvailablePath(
+        allowFallbackToAvailablePath: allowFallbackToAvailablePath,
+        context: context,
+        validateExternal: validateExternal,
+      );
     }
 
     try {
@@ -230,95 +235,55 @@ class HcPathResolver {
         'probeMode=${plan.probeMode.name} skipDiscovery=${plan.skipDiscovery} '
         'mode=${context.mode.name} trigger=${context.trigger.name} localOnly=${context.localOnly}',
       );
+
+      // 1. Probe RA paths for the known remote device id.
       if (seagateDeviceID != null && seagateDeviceID.isNotEmpty) {
-        final ping = await DeviceDetectionService(
-          deviceProvider: _deviceProvider,
-          remoteProvider: _remoteProvider,
-        ).findOptimalDeviceConnection(
-          seagateDeviceID: seagateDeviceID,
-          pathProbeMode: plan.probeMode,
-          onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
-            ping: betterPing,
-            context: context,
-            validateExternal: validateExternal,
-            remoteDeviceID: seagateDeviceID,
-          ),
-        );
-        final fromSeagate = await _tryCompleteFromPing(
-          ping: ping,
+        final fromSeagate = await _probeDevicePaths(
+          probeDeviceID: seagateDeviceID,
           selectionSource: 'seagate_device_id',
+          plan: plan,
           context: context,
           validateExternal: validateExternal,
         );
         if (fromSeagate != null) {
-          _log.info('[HcPathResolver] resolveCore success branch=seagate_device_id endpoint=${fromSeagate.endpoint}');
           return fromSeagate;
         }
         if (plan.skipDiscovery) {
-          _log.info('[HcPathResolver] resolveCore seagate probe failed, skipDiscovery=true → fallback');
-          return _fallbackToAvailablePath(
-            allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-            context: context,
-            validateExternal: validateExternal,
-          );
+          return fallback('seagate_probe_failed_skip_discovery');
         }
       }
 
       if (deviceID == null || deviceID.isEmpty) {
-        _log.info('[HcPathResolver] resolveCore abort branch=no_device_id → fallback');
-        return _fallbackToAvailablePath(
-          allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-          context: context,
-          validateExternal: validateExternal,
-        );
+        return fallback('no_device_id');
       }
 
+      // 2. Discovery not possible: recover the remote device id by
+      //    certificate CN (OTP/reconnect flows) and probe its RA paths.
       if (plan.skipDiscovery) {
-        // Safe recovery path for OTP/reconnect flows:
-        // when mDNS identity is known but remote id is missing, resolve remote
-        // device id by certificate CN and continue normal probing.
-        if (deviceID.isNotEmpty &&
-            (_deviceProvider.seagateDeviceID == null || _deviceProvider.seagateDeviceID!.isEmpty) &&
-            _remoteProvider.isAuthenticated) {
+        if ((seagateDeviceID == null || seagateDeviceID.isEmpty) && _remoteProvider.isAuthenticated) {
           final recoveredRemoteDeviceID = await _recoverRemoteDeviceIdByCertificateCN(deviceID);
           if (recoveredRemoteDeviceID != null) {
             _log.info(
               '[HcPathResolver] recovered remote device id from certificate CN '
               'deviceID=$deviceID remoteDeviceID=$recoveredRemoteDeviceID',
             );
-            final ping = await DeviceDetectionService(
-              deviceProvider: _deviceProvider,
-              remoteProvider: _remoteProvider,
-            ).findOptimalDeviceConnection(
-              seagateDeviceID: recoveredRemoteDeviceID,
-              pathProbeMode: plan.probeMode,
-              onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
-                ping: betterPing,
-                context: context,
-                validateExternal: validateExternal,
-                remoteDeviceID: recoveredRemoteDeviceID,
-              ),
-            );
-            final fromRecovered = await _tryCompleteFromPing(
-              ping: ping,
+            final fromRecovered = await _probeDevicePaths(
+              probeDeviceID: recoveredRemoteDeviceID,
+              completeRemoteDeviceID: recoveredRemoteDeviceID,
               selectionSource: 'recovered_remote_device_id',
+              plan: plan,
               context: context,
               validateExternal: validateExternal,
-              remoteDeviceID: recoveredRemoteDeviceID,
             );
             if (fromRecovered != null) {
               return fromRecovered;
             }
           }
         }
-        _log.info('[HcPathResolver] resolveCore skipDiscovery=true (no seagate success) → fallback');
-        return _fallbackToAvailablePath(
-          allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-          context: context,
-          validateExternal: validateExternal,
-        );
+        return fallback('skip_discovery_no_seagate_success');
       }
 
+      // 3. mDNS discovery, match by certificate CN.
       final discovered = await _discoverDevices();
       _log.info('[HcPathResolver] resolveCore discovery found=${discovered.length} devices');
       final selected = _findByConnectedDeviceId(
@@ -326,63 +291,34 @@ class HcPathResolver {
         connectedDeviceId: deviceID,
       );
       if (selected == null) {
-        _log.info('[HcPathResolver] resolveCore no device match for deviceID=$deviceID → fallback');
-        return _fallbackToAvailablePath(
-          allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-          context: context,
-          validateExternal: validateExternal,
-        );
+        return fallback('no_device_match_for_$deviceID');
       }
 
+      // 4. Probe the discovered device's RA paths when a remote id is known.
       final remoteDeviceID = selected.remoteDevice?.seagateDeviceID;
       if (!context.localOnly && remoteDeviceID != null && remoteDeviceID.isNotEmpty) {
-        final ping = await DeviceDetectionService(
-          deviceProvider: _deviceProvider,
-          remoteProvider: _remoteProvider,
-        ).findOptimalDeviceConnection(
-          device: selected,
-          seagateDeviceID: remoteDeviceID,
-          pathProbeMode: plan.probeMode,
-          onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
-            ping: betterPing,
-            context: context,
-            validateExternal: validateExternal,
-            selected: selected,
-            remoteDeviceID: remoteDeviceID,
-          ),
-        );
-        final fromRemote = await _tryCompleteFromPing(
-          ping: ping,
+        final fromRemote = await _probeDevicePaths(
+          probeDeviceID: remoteDeviceID,
+          completeRemoteDeviceID: remoteDeviceID,
+          selected: selected,
           selectionSource: 'remote_device_paths',
+          plan: plan,
           context: context,
           validateExternal: validateExternal,
-          selected: selected,
-          remoteDeviceID: remoteDeviceID,
         );
         if (fromRemote != null) {
-          _log.info('[HcPathResolver] resolveCore success branch=remote_device_paths endpoint=${fromRemote.endpoint}');
           return fromRemote;
         }
       }
 
+      // 5. Last resort: the discovered mDNS base URL itself.
       if (selected.baseUrl != null) {
         final endpoint = winnerEndpointFromBaseUrl(selected.baseUrl!);
         if (context.localOnly && endpoint.contains('remote')) {
-          _log.info('[HcPathResolver] resolveCore localOnly rejected remote endpoint → fallback');
-          return _fallbackToAvailablePath(
-            allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-            context: context,
-            validateExternal: validateExternal,
-          );
+          return fallback('local_only_rejected_remote_endpoint');
         }
-        final isValid = await _validate(endpoint, context, validateExternal);
-        if (!isValid) {
-          _log.info('[HcPathResolver] resolveCore discovery baseUrl validation failed endpoint=$endpoint → fallback');
-          return _fallbackToAvailablePath(
-            allowFallbackToAvailablePath: allowFallbackToAvailablePath,
-            context: context,
-            validateExternal: validateExternal,
-          );
+        if (!await _validate(endpoint, context, validateExternal)) {
+          return fallback('discovery_base_url_validation_failed');
         }
         await _deviceProvider.setHost(
           baseUrl: selected.baseUrl,
@@ -403,12 +339,50 @@ class HcPathResolver {
       _log.warning('[HcPathResolver] resolveCore unexpected error', error, stackTrace);
     }
 
-    _log.info('[HcPathResolver] resolveCore exhausted all branches → fallback');
-    return _fallbackToAvailablePath(
-      allowFallbackToAvailablePath: allowFallbackToAvailablePath,
+    return fallback('exhausted_all_branches');
+  }
+
+  /// Probes a device's RA paths via [DeviceDetectionService] and completes
+  /// the resolve from a successful ping. Returns null when no path answered.
+  ///
+  /// [completeRemoteDeviceID] is passed through to host activation; the
+  /// plain seagate-id branch historically omits it.
+  Future<HcPathResolveResult?> _probeDevicePaths({
+    required String probeDeviceID,
+    required String selectionSource,
+    required _ResolvePlan plan,
+    required ResolveContext context,
+    required ExternalEndpointValidator? validateExternal,
+    String? completeRemoteDeviceID,
+    DeviceItem? selected,
+  }) async {
+    final ping = await DeviceDetectionService(
+      deviceProvider: _deviceProvider,
+      remoteProvider: _remoteProvider,
+    ).findOptimalDeviceConnection(
+      device: selected,
+      seagateDeviceID: probeDeviceID,
+      pathProbeMode: plan.probeMode,
+      onHigherPriorityPathResolved: (betterPing) => _onHigherPriorityPingResolved(
+        ping: betterPing,
+        context: context,
+        validateExternal: validateExternal,
+        selected: selected,
+        remoteDeviceID: probeDeviceID,
+      ),
+    );
+    final result = await _tryCompleteFromPing(
+      ping: ping,
+      selectionSource: selectionSource,
       context: context,
       validateExternal: validateExternal,
+      selected: selected,
+      remoteDeviceID: completeRemoteDeviceID,
     );
+    if (result != null) {
+      _log.info('[HcPathResolver] resolveCore success branch=$selectionSource endpoint=${result.endpoint}');
+    }
+    return result;
   }
 
   Future<String?> _endpointFromValidatedPing({
@@ -523,12 +497,16 @@ class HcPathResolver {
       return const HcPathResolveResult(success: false, reason: 'no_available_path');
     }
     final endpoint = _availablePath!;
-    if (await shouldSkipStaleLocalFallback()) {
+    final stale = await _evaluateStaleLocalFallback();
+    if (stale.shouldFail) {
       _log.info(
         '[HcPathResolver] fallback abort reason=stale_local_path_offline '
-        'endpoint=$endpoint pathType=${_availablePathType ?? '-'}',
+        'endpoint=$endpoint pathType=${_availablePathType ?? '-'} '
+        'invalidate=${stale.shouldInvalidate} misses=$_consecutiveStaleLocalMisses',
       );
-      await invalidatePath(endpoint);
+      if (stale.shouldInvalidate) {
+        await invalidatePath(endpoint);
+      }
       return const HcPathResolveResult(success: false, reason: 'stale_local_path_offline');
     }
     if (!await _validate(endpoint, context, validateExternal)) {
@@ -547,15 +525,22 @@ class HcPathResolver {
   }
 
   Future<bool> shouldSkipStaleLocalFallback() async {
+    final result = await _evaluateStaleLocalFallback();
+    return result.shouldFail && result.shouldInvalidate;
+  }
+
+  Future<({bool shouldFail, bool shouldInvalidate})> _evaluateStaleLocalFallback() async {
     if (_availablePathType != HcPathType.local) {
-      return false;
+      _consecutiveStaleLocalMisses = 0;
+      return (shouldFail: false, shouldInvalidate: false);
     }
     if (!await _hasWiFiConnectivity()) {
-      return true;
+      _consecutiveStaleLocalMisses = 0;
+      return (shouldFail: true, shouldInvalidate: true);
     }
     final endpoint = _availablePath;
     if (endpoint == null || endpoint.isEmpty) {
-      return true;
+      return (shouldFail: true, shouldInvalidate: true);
     }
     final uri = Uri.parse(endpoint.trim());
     final baseUrl = Uri(
@@ -567,7 +552,21 @@ class HcPathResolver {
       deviceProvider: _deviceProvider,
       remoteProvider: _remoteProvider,
     ).getAbout(baseUrl);
-    return about == null;
+    if (about != null) {
+      _consecutiveStaleLocalMisses = 0;
+      return (shouldFail: false, shouldInvalidate: false);
+    }
+    _consecutiveStaleLocalMisses++;
+    _log.info(
+      '[HcPathResolver] stale local probe miss '
+      'count=$_consecutiveStaleLocalMisses endpoint=$endpoint',
+    );
+    // First miss: soft-fail without wiping cache so local retry can reuse it.
+    // Second consecutive miss: invalidate.
+    return (
+      shouldFail: true,
+      shouldInvalidate: _consecutiveStaleLocalMisses >= 2,
+    );
   }
 
   Future<void> invalidateLocalPathIfOffline() async {
@@ -651,6 +650,7 @@ class HcPathResolver {
       ResolveTrigger.connectivityChange ||
       ResolveTrigger.splashWarmup ||
       ResolveTrigger.appResume ||
+      ResolveTrigger.apiError ||
       ResolveTrigger.unknown =>
         false,
       _ => true,
@@ -727,8 +727,6 @@ class HcPathResolver {
     return null;
   }
 
-  String? getValidPath() => _availablePath;
-
   String? getAvailablePath() => _availablePath;
 
   List getDevicePaths(String remoteDeviceId) {
@@ -749,6 +747,7 @@ class HcPathResolver {
   Future<void> setAvailablePath(String endpoint, {String? pathType}) async {
     _availablePath = endpoint;
     _persistPathType(pathType);
+    _consecutiveStaleLocalMisses = 0;
     await _persist();
   }
 
@@ -757,6 +756,7 @@ class HcPathResolver {
       _log.info('[HcPathResolver] invalidatePath endpoint=$endpoint pathType=${_availablePathType ?? '-'}');
       _availablePath = null;
       _availablePathType = null;
+      _consecutiveStaleLocalMisses = 0;
     }
     await _persist();
   }
@@ -768,6 +768,7 @@ class HcPathResolver {
     _lastResolveAt = null;
     _lastMode = null;
     _lastTrigger = null;
+    _consecutiveStaleLocalMisses = 0;
     await _persist();
   }
 

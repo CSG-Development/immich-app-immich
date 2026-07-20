@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
   import {
     isComponentNotification,
     notificationController,
@@ -7,8 +6,7 @@
     type ComponentNotification,
     type Notification,
   } from '$lib/components/shared-components/notification/notification';
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
-  import { Button, IconButton, Theme, type Color } from '@immich/ui';
+  import { Button, Icon, IconButton, Theme, themeManager, type Color } from '@immich/ui';
   import { mdiCheckCircleOutline, mdiCloseCircleOutline, mdiInformationOutline, mdiWindowClose } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
@@ -118,7 +116,7 @@
   <div class="flex justify-between h-6">
     <div class="flex place-items-center gap-2">
       <Icon
-        path={icon}
+        {icon}
         color={theme === Theme.Light ? primaryColor[notification.type] : primaryColorDark[notification.type]}
         size="20"
       />

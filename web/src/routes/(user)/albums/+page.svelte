@@ -4,11 +4,12 @@
   import Albums from '$lib/components/album-page/albums-list.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import { AppRoute } from '$lib/constants';
   import GroupTab from '$lib/elements/GroupTab.svelte';
   import SearchBar from '$lib/elements/SearchBar.svelte';
-  import { AlbumFilter, albumViewSettings } from '$lib/stores/preferences.store';
+  import { Route } from '$lib/route';
+  import { AlbumFilter, albumViewSettings, locale } from '$lib/stores/preferences.store';
   import { createAlbumAndRedirect } from '$lib/utils/album-utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -20,9 +21,13 @@
 
   let searchQuery = $state('');
   let albumGroups: string[] = $state([]);
+  let albumCount = $state(0);
 </script>
 
-<UserPageLayout title={data.meta.title} use={[[scrollMemory, { routeStartsWith: AppRoute.ALBUMS }]]}>
+<UserPageLayout
+  title={formatPageTitleWithCount(data.meta.title, albumCount, $locale)}
+  use={[[scrollMemory, { routeStartsWith: Route.albums() }]]}
+>
   {#snippet buttons()}
     <div class="flex place-items-center gap-1">
       <AlbumsControls {albumGroups} bind:searchQuery />
@@ -50,9 +55,10 @@
     allowEdit
     {searchQuery}
     bind:albumGroupIds={albumGroups}
+    bind:itemCount={albumCount}
   >
     {#snippet empty()}
-      <EmptyPlaceholder text={$t('no_albums_message')} onClick={() => createAlbumAndRedirect()} />
+      <EmptyPlaceholder text={$t('no_albums_message')} onClick={() => createAlbumAndRedirect()} class="mt-10 mx-auto" />
     {/snippet}
   </Albums>
 </UserPageLayout>

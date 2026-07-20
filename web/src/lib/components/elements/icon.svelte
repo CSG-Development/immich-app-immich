@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { themeManager } from '$lib/managers/theme-manager.svelte';
+  import { themeManager } from '@immich/ui';
   import type { Component } from 'svelte';
   import type { AriaRole } from 'svelte/elements';
 
@@ -48,10 +48,10 @@
     progress === undefined ? circumference : circumference - (progress / 100) * circumference,
   );
 
-  let theme = $derived(themeManager.theme);
+  let theme = $derived(themeManager.value);
 
   $effect(() => {
-    theme = themeManager.theme;
+    theme = themeManager.value;
   });
 </script>
 

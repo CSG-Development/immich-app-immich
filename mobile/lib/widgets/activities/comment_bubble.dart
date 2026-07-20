@@ -124,11 +124,40 @@ class CommentBubble extends ConsumerWidget {
                   crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
                     ...contentChildren.map((w) => Padding(padding: const EdgeInsets.only(bottom: 8.0), child: w)),
-                    Text(
-                      '${activity.user.name} • ${activity.createdAt.timeAgo()}',
-                      style: context.textTheme.labelMedium?.copyWith(
-                        color: context.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${activity.user.name} • ${activity.createdAt.timeAgo()}',
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        if (activity.isPending) ...[
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                context.colorScheme.onSurface.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (activity.isFailed && isOwn) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => activityNotifier.retryFailedActivity(activity.id),
+                            child: Icon(Icons.error, size: 16, color: context.colorScheme.error),
+                          ),
+                        ],
+                        if (activity.isFailed && !isOwn) ...[
+                          const SizedBox(width: 6),
+                          Icon(Icons.error, size: 14, color: context.colorScheme.error),
+                        ],
+                      ],
                     ),
                   ],
                 ),

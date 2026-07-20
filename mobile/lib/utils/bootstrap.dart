@@ -61,8 +61,8 @@ abstract final class Bootstrap {
     final logDb = DriftLogger();
 
     Isar? isar = Isar.getInstance();
-
-    if (isar != null) {
+    // Worker isolates reuse Dart isolates; a previous task may have closed Isar.
+    if (isar != null && isar.isOpen) {
       return (isar, drift, logDb);
     }
 

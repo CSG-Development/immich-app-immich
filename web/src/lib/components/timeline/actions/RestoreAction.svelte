@@ -1,13 +1,9 @@
 <script lang="ts">
-  import {
-    NotificationType,
-    notificationController,
-  } from '$lib/components/shared-components/notification/notification';
-  import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import type { OnRestore } from '$lib/utils/actions';
   import { handleError } from '$lib/utils/handle-error';
   import { restoreAssets } from '@immich/sdk';
-  import { Button } from '@immich/ui';
+  import { Button, toastManager } from '@immich/ui';
   import { mdiHistory } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -17,24 +13,17 @@
 
   let { onRestore }: Props = $props();
 
-  const { getAssets, clearSelect } = getAssetControlContext();
-
   let loading = $state(false);
 
   const handleRestore = async () => {
     loading = true;
 
     try {
-      const ids = [...getAssets()].map((a) => a.id);
+      const ids = assetMultiSelectManager.assets.map((a) => a.id);
       await restoreAssets({ bulkIdsDto: { ids } });
-      onRestore?.(ids);
-
-      notificationController.show({
-        message: $t('assets_restored_count', { values: { count: ids.length } }),
-        type: NotificationType.Success,
-      });
-
-      clearSelect();
+      await onRestore?.(ids);
+      toastManager.primary($t('assets_restored_count', { values: { count: ids.length } }));
+      assetMultiSelectManager.clear();
     } catch (error) {
       handleError(error, $t('errors.unable_to_restore_assets'));
     } finally {

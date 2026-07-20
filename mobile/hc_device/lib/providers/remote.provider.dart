@@ -37,6 +37,11 @@ RemoteCodeFailureType mapRemoteCodeFailureType(
   String? message,
 }) {
   final normalizedMessage = (message ?? '').toLowerCase();
+
+  if (normalizedMessage.contains('expir')) {
+    return RemoteCodeFailureType.expiredCode;
+  }
+
   switch (statusCode) {
     case 401:
       return RemoteCodeFailureType.invalidCode;

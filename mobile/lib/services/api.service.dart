@@ -22,18 +22,12 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   final Client _inner;
   final Function(String) _onConnectionError;
   final Function(String)? _onRequestSuccess;
-  final void Function(String, Duration, bool isHard)? _onSlowRequest;
 
   ConnectionRecoveryInterceptor(
     this._inner,
     this._onConnectionError, {
     Function(String)? onRequestSuccess,
-    void Function(String, Duration, bool isHard)? onSlowRequest,
-  }) : _onRequestSuccess = onRequestSuccess,
-       _onSlowRequest = onSlowRequest;
-
-  static const Duration _slowRequestSoftThreshold = Duration(seconds: 8);
-  static const Duration _slowRequestHardThreshold = Duration(seconds: 15);
+  }) : _onRequestSuccess = onRequestSuccess;
 
   static const String _nsUrlErrorDomain = 'NSURLErrorDomain';
 
@@ -106,18 +100,6 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
-    final startedAt = DateTime.now();
-    var softReported = false;
-    var hardReported = false;
-    final softTimer = Timer(_slowRequestSoftThreshold, () {
-      softReported = true;
-      _onSlowRequest?.call(request.url.toString(), _slowRequestSoftThreshold, false);
-    });
-    final hardTimer = Timer(_slowRequestHardThreshold, () {
-      hardReported = true;
-      _onSlowRequest?.call(request.url.toString(), _slowRequestHardThreshold, true);
-    });
-
     try {
       final response = await _inner.send(request);
       _onRequestSuccess?.call(request.url.toString());
@@ -127,16 +109,6 @@ class ConnectionRecoveryInterceptor extends BaseClient {
         _onConnectionError(request.url.toString());
       }
       rethrow;
-    } finally {
-      softTimer.cancel();
-      hardTimer.cancel();
-      final elapsed = DateTime.now().difference(startedAt);
-      if (!softReported && elapsed >= _slowRequestSoftThreshold) {
-        _onSlowRequest?.call(request.url.toString(), elapsed, false);
-      }
-      if (!hardReported && elapsed >= _slowRequestHardThreshold) {
-        _onSlowRequest?.call(request.url.toString(), elapsed, true);
-      }
     }
   }
 
@@ -264,7 +236,6 @@ class ApiService implements Authentication {
   /// Optional hook (set from main tab shell): run Curator device re-detection after
   /// [ConnectionStatus.reconnecting] is published.
   void Function()? curatorNetworkForceReconnectHandler;
-  void Function(String, Duration, bool isHard)? curatorNetworkSlowRequestHandler;
 
   ApiService() {
     _initHttpClient();
@@ -287,7 +258,6 @@ class ApiService implements Authentication {
       _baseClient,
       _handleConnectionError,
       onRequestSuccess: _handleRequestSuccess,
-      onSlowRequest: _handleSlowRequest,
     );
     _httpClient = PerformanceHttpClient(_connectionRecoveryInterceptor);
   }
@@ -319,6 +289,13 @@ class ApiService implements Authentication {
         () =>
             '_handleConnectionError: Skipping notification - failed URL does not match active endpoint $activeEndpoint',
       );
+      return;
+    }
+
+    // Long asset uploads can time out without the endpoint being dead; do not
+    // treat POST /assets transport failures as a path-resolve signal.
+    if (_isAssetUploadUrl(failedUrl)) {
+      dPrint(() => '_handleConnectionError: Skipping reconnect for asset upload $failedUrl');
       return;
     }
 
@@ -365,12 +342,9 @@ class ApiService implements Authentication {
     );
   }
 
-  void _handleSlowRequest(String requestUrl, Duration elapsed, bool isHard) {
-    try {
-      curatorNetworkSlowRequestHandler?.call(requestUrl, elapsed, isHard);
-    } catch (error, stackTrace) {
-      _log.warning('curatorNetworkSlowRequestHandler failed', error, stackTrace);
-    }
+  static bool _isAssetUploadUrl(String url) {
+    final path = Uri.tryParse(url)?.path ?? url;
+    return path.endsWith('/assets');
   }
 
   void notifyConnectionState(ConnectionState state) {
@@ -419,6 +393,12 @@ class ApiService implements Authentication {
   }) async {
     return _enqueueEndpointSwitch(() async {
       _isSetEndpoint = true;
+      // A resolve that lands back on the already active endpoint (reconnect on
+      // the same network) needs no client rebuild, and there is no stale
+      // in-flight traffic to shield from _handleConnectionError — so the settle
+      // delay would just be dead time. The availability check still runs: it is
+      // the only proof that this endpoint is answering.
+      var isNoOpSwitch = false;
       try {
         final stopwatch = Stopwatch()..start();
         final normalizedEndpoint = _normalizeEndpoint(serverUrl);
@@ -437,7 +417,10 @@ class ApiService implements Authentication {
         final endpoint = pathAlreadyProbed
             ? normalizedEndpoint
             : await resolveEndpoint(normalizedEndpoint, availabilityTimeout: policy.availabilityTimeout);
-        setEndpoint(endpoint);
+        isNoOpSwitch = endpoint == _apiClient.basePath;
+        if (!isNoOpSwitch) {
+          setEndpoint(endpoint);
+        }
         try {
           await Store.put(StoreKey.serverEndpoint, endpoint);
         } on StateError catch (error, stackTrace) {
@@ -446,7 +429,8 @@ class ApiService implements Authentication {
         }
 
         // Sync native auth cookies after Store reflects the new endpoint so cookie
-        // domains match the active host (getServerUrls reads from Store).
+        // domains match the active host (getServerUrls reads from Store). Runs on
+        // a no-op switch too: the session may have changed while the host did not.
         await updateHeaders();
 
         stopwatch.stop();
@@ -454,13 +438,16 @@ class ApiService implements Authentication {
           'endpoint_switch success '
           'endpoint=$endpoint '
           'host=${uri.host} '
+          'noop=$isNoOpSwitch '
           'elapsedMs=${stopwatch.elapsedMilliseconds} '
           'timeoutMs=${policy.availabilityTimeout.inMilliseconds} '
-          'settleMs=${policy.settleDelay.inMilliseconds}',
+          'settleMs=${isNoOpSwitch ? 0 : policy.settleDelay.inMilliseconds}',
         );
         return endpoint;
       } finally {
-        await Future.delayed(policy.settleDelay);
+        if (!isNoOpSwitch) {
+          await Future.delayed(policy.settleDelay);
+        }
         _isSetEndpoint = false;
         _log.fine('endpoint_switch unlocked');
       }

@@ -11,6 +11,7 @@ import { LoggingRepository } from 'src/repositories/logging.repository';
 import { SessionRepository } from 'src/repositories/session.repository';
 import { StorageRepository } from 'src/repositories/storage.repository';
 import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
+import { TelemetryRepository } from 'src/repositories/telemetry.repository';
 import { UserRepository } from 'src/repositories/user.repository';
 import { DB } from 'src/schema';
 import { AuthService } from 'src/services/auth.service';
@@ -32,7 +33,7 @@ const setup = (db?: Kysely<DB>) => {
       SystemMetadataRepository,
       UserRepository,
     ],
-    mock: [LoggingRepository, StorageRepository, EventRepository],
+    mock: [LoggingRepository, StorageRepository, EventRepository, TelemetryRepository],
   });
 };
 
@@ -43,7 +44,8 @@ beforeAll(async () => {
 describe(AuthService.name, () => {
   describe('adminSignUp', () => {
     it(`should sign up the admin`, async () => {
-      const { sut } = setup();
+      const { sut, ctx } = setup();
+      ctx.getMock(EventRepository).emit.mockResolvedValue();
       const dto = { name: 'Admin', email: 'admin@immich.cloud', password: 'password' };
 
       await expect(sut.adminSignUp(dto)).resolves.toEqual(
@@ -104,7 +106,7 @@ describe(AuthService.name, () => {
       const auth = factory.auth();
       await expect(sut.logout(auth, AuthType.Password)).resolves.toEqual({
         successful: true,
-        redirectUri: '/auth/login?autoLaunch=0',
+        redirectUri: '/photos/auth/login?autoLaunch=0',
       });
     });
 
@@ -120,7 +122,7 @@ describe(AuthService.name, () => {
       await expect(sessionRepo.get(session.id)).resolves.toEqual(expect.objectContaining({ id: session.id }));
       await expect(sut.logout(auth, AuthType.Password)).resolves.toEqual({
         successful: true,
-        redirectUri: '/auth/login?autoLaunch=0',
+        redirectUri: '/photos/auth/login?autoLaunch=0',
       });
       await expect(sessionRepo.get(session.id)).resolves.toBeUndefined();
     });
@@ -129,6 +131,7 @@ describe(AuthService.name, () => {
   describe('changePassword', () => {
     it('should change the password and login with it', async () => {
       const { sut, ctx } = setup();
+      ctx.getMock(EventRepository).emit.mockResolvedValue();
       const dto = { password: 'password', newPassword: 'new-password' };
       const passwordHashed = await hash(dto.password, 10);
       const { user } = await ctx.newUser({ password: passwordHashed });

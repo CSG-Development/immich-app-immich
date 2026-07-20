@@ -23,7 +23,6 @@ import 'package:immich_mobile/presentation/widgets/asset_viewer/viewer_top_app_b
 import 'package:immich_mobile/presentation/widgets/asset_viewer/viewer_bottom_app_bar.widget.dart';
 import 'package:immich_mobile/providers/airplay.provider.dart';
 import 'package:immich_mobile/providers/cast.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/asset_viewer/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/viewer_scope.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/current_album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
@@ -334,39 +333,24 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       return;
     }
 
-    unawaited(_syncTimelineReload(totalAssets, timelineService));
-  }
-
-  Future<void> _syncTimelineReload(int totalAssets, TimelineService timelineService) async {
     final currentAsset = ref.read(assetViewerProvider).currentAsset;
     final dismissedHeroTag = _dismissedHeroTag;
 
-    var index = _currentPage.clamp(0, totalAssets - 1);
-
-    if (currentAsset != null && currentAsset.heroTag != dismissedHeroTag) {
-      final resolvedIndex = await timelineService.findAssetIndexByHeroTag(
-        currentAsset.heroTag,
-        preferredIndex: _currentPage,
-      );
-      if (resolvedIndex != null) {
-        index = resolvedIndex;
+    if (currentAsset?.heroTag == dismissedHeroTag) {
+      if (_totalAssets != totalAssets && mounted) {
+        setState(() => _totalAssets = totalAssets);
       }
-    }
-
-    if (!mounted) {
       return;
     }
 
-    _currentPage = index;
+    final assetIndex = currentAsset != null ? timelineService.getIndex(currentAsset.heroTag) : null;
+    final index = (assetIndex ?? _currentPage).clamp(0, totalAssets - 1);
 
-    if (_pageController.hasClients && _pageController.page?.round() != index) {
+    if (index != _currentPage) {
       _pageController.jumpToPage(index);
-    }
-
-    await _onAssetChanged(index);
-
-    if (!mounted) {
-      return;
+      unawaited(_onAssetChanged(index));
+    } else if (currentAsset != null && assetIndex == null) {
+      unawaited(_onAssetChanged(index));
     }
 
     final displayedAsset = ref.read(assetViewerProvider).currentAsset;
@@ -374,10 +358,8 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       _dismissedHeroTag = null;
     }
 
-    if (_totalAssets != totalAssets) {
-      setState(() {
-        _totalAssets = totalAssets;
-      });
+    if (_totalAssets != totalAssets && mounted) {
+      setState(() => _totalAssets = totalAssets);
     }
   }
 

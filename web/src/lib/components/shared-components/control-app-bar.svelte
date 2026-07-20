@@ -1,7 +1,5 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-
-  import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
   import { IconButton } from '@immich/ui';
   import { mdiClose } from '@mdi/js';
   import { onDestroy, onMount, type Snippet } from 'svelte';
@@ -48,11 +46,6 @@
     }
   };
 
-  const handleClose = () => {
-    $isSelectingAllAssets = false;
-    onClose();
-  };
-
   onMount(() => {
     if (browser) {
       document.addEventListener('scroll', onScroll, { passive: true });
@@ -85,7 +78,7 @@
       {#if showBackButton}
         <IconButton
           aria-label={$t('close')}
-          onclick={handleClose}
+          onclick={onClose}
           color="secondary"
           shape="round"
           variant="ghost"
@@ -96,11 +89,15 @@
       <span class={isSearch ? '' : 'w-full'}>{@render leading?.()}</span>
     </div>
 
-    <div class="w-full">
-      {@render children?.()}
-    </div>
+    {#if children}
+      <div class="w-full">
+        {@render children()}
+      </div>
+    {/if}
 
-    <div class="max-[350px]:me-0 max-[350px]:gap-0 me-4 flex place-items-center gap-1 justify-self-end">
+    <div
+      class="max-[350px]:me-0 max-[350px]:gap-0 me-4 flex shrink-0 place-items-center gap-1 justify-self-end [&_svg]:h-6 [&_svg]:w-6"
+    >
       {@render trailing?.()}
     </div>
   </nav>

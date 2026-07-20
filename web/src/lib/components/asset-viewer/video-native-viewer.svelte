@@ -1,15 +1,20 @@
 <script lang="ts">
   import FaceEditor from '$lib/components/asset-viewer/face-editor/face-editor.svelte';
   import VideoRemoteViewer from '$lib/components/asset-viewer/video-remote-viewer.svelte';
-  import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import { assetViewerFadeDuration } from '$lib/constants';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { castManager } from '$lib/managers/cast-manager.svelte';
-  import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
-  import { loopVideo as loopVideoPreference, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
+  import {
+    autoPlayVideo,
+    loopVideo as loopVideoPreference,
+    videoViewerMuted,
+    videoViewerVolume,
+  } from '$lib/stores/preferences.store';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { videoStore } from '$lib/stores/video.store';
-  import { getAssetPlaybackUrl, getAssetThumbnailUrl } from '$lib/utils';
+  import { getAssetMediaUrl, getAssetPlaybackUrl } from '$lib/utils';
   import { AssetMediaSize } from '@immich/sdk';
+  import { LoadingSpinner } from '@immich/ui';
   import { onDestroy, onMount } from 'svelte';
   import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
   import { fade } from 'svelte/transition';
@@ -18,6 +23,7 @@
     assetId: string;
     loopVideo: boolean;
     cacheKey: string | null;
+    playOriginalVideo: boolean;
     onPreviousAsset?: () => void;
     onNextAsset?: () => void;
     onVideoEnded?: () => void;
@@ -29,6 +35,7 @@
     assetId,
     loopVideo,
     cacheKey,
+    playOriginalVideo,
     onPreviousAsset = () => {},
     onNextAsset = () => {},
     onVideoEnded = () => {},
@@ -38,16 +45,25 @@
 
   let videoPlayer: HTMLVideoElement | undefined = $state();
   let isLoading = $state(true);
-  let assetFileUrl = $state('');
+  let assetFileUrl = $derived(
+    playOriginalVideo
+      ? getAssetMediaUrl({ id: assetId, size: AssetMediaSize.Original, cacheKey })
+      : getAssetPlaybackUrl({ id: assetId, cacheKey }),
+  );
   let isScrubbing = $state(false);
   let showVideo = $state(false);
+  let hasFocused = $state(false);
 
   onMount(() => {
     // Show video after mount to ensure fading in.
     showVideo = true;
-    assetFileUrl = getAssetPlaybackUrl({ id: assetId, cacheKey });
-    if (videoPlayer) {
-      videoPlayer.load();
+  });
+
+  $effect(() => {
+    // reactive on `assetFileUrl` changes
+    if (assetFileUrl) {
+      hasFocused = false;
+      videoPlayer?.load();
     }
   });
 
@@ -104,7 +120,7 @@
   const { slideshowState } = slideshowStore;
 
   $effect(() => {
-    if (isFaceEditMode.value) {
+    if (assetViewerManager.isFaceEditMode) {
       videoPlayer?.pause();
     }
   });
@@ -124,7 +140,7 @@
     {#if castManager.isCasting}
       <div class="place-content-center h-full place-items-center">
         <VideoRemoteViewer
-          poster={getAssetThumbnailUrl({ id: assetId, size: AssetMediaSize.Preview, cacheKey })}
+          poster={getAssetMediaUrl({ id: assetId, size: AssetMediaSize.Preview, cacheKey })}
           {onVideoStarted}
           {onVideoEnded}
           {assetFileUrl}
@@ -134,9 +150,10 @@
       <video
         bind:this={videoPlayer}
         loop={$loopVideoPreference && loopVideo}
-        autoplay
+        autoplay={$autoPlayVideo}
         playsinline
         controls={$slideshowState === SlideshowState.None}
+        disablePictureInPicture
         class="h-full object-contain"
         {...useSwipe(onSwipe)}
         oncanplay={(e) => handleCanPlay(e.currentTarget)}
@@ -145,12 +162,15 @@
         onseeking={() => (isScrubbing = true)}
         onseeked={() => (isScrubbing = false)}
         onplaying={(e) => {
-          e.currentTarget.focus();
+          if (!hasFocused) {
+            e.currentTarget.focus();
+            hasFocused = true;
+          }
         }}
         onclose={() => onClose()}
         muted={$videoViewerMuted}
         bind:volume={$videoViewerVolume}
-        poster={getAssetThumbnailUrl({ id: assetId, size: AssetMediaSize.Preview, cacheKey })}
+        poster={getAssetMediaUrl({ id: assetId, size: AssetMediaSize.Preview, cacheKey })}
         src={assetFileUrl}
       >
       </video>
@@ -161,7 +181,7 @@
         </div>
       {/if}
 
-      {#if isFaceEditMode.value}
+      {#if assetViewerManager.isFaceEditMode}
         <FaceEditor htmlElement={videoPlayer} {containerWidth} {containerHeight} {assetId} />
       {/if}
     {/if}

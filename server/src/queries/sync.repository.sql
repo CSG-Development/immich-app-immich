@@ -2,12 +2,12 @@
 
 -- SyncRepository.album.getCreatedAfter
 select
-  "albumsId" as "id",
+  "albumId" as "id",
   "createId"
 from
   "album_user"
 where
-  "usersId" = $1
+  "userId" = $1
   and "createId" >= $2
   and "createId" < $3
 order by
@@ -40,13 +40,13 @@ select distinct
   "album"."updateId"
 from
   "album" as "album"
-  left join "album_user" as "album_users" on "album"."id" = "album_users"."albumsId"
+  left join "album_user" as "album_users" on "album"."id" = "album_users"."albumId"
 where
   "album"."updateId" < $1
   and "album"."updateId" > $2
   and (
     "album"."ownerId" = $3
-    or "album_users"."usersId" = $4
+    or "album_users"."userId" = $4
   )
 order by
   "album"."updateId" asc
@@ -69,15 +69,18 @@ select
   "asset"."livePhotoVideoId",
   "asset"."stackId",
   "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited",
   "album_asset"."updateId"
 from
   "album_asset" as "album_asset"
-  inner join "asset" on "asset"."id" = "album_asset"."assetsId"
+  inner join "asset" on "asset"."id" = "album_asset"."assetId"
 where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" <= $2
   and "album_asset"."updateId" >= $3
-  and "album_asset"."albumsId" = $4
+  and "album_asset"."albumId" = $4
 order by
   "album_asset"."updateId" asc
 
@@ -99,19 +102,22 @@ select
   "asset"."livePhotoVideoId",
   "asset"."stackId",
   "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited",
   "asset"."updateId"
 from
   "asset" as "asset"
-  inner join "album_asset" on "album_asset"."assetsId" = "asset"."id"
-  inner join "album" on "album"."id" = "album_asset"."albumsId"
-  left join "album_user" on "album_user"."albumsId" = "album_asset"."albumsId"
+  inner join "album_asset" on "album_asset"."assetId" = "asset"."id"
+  inner join "album" on "album"."id" = "album_asset"."albumId"
+  left join "album_user" on "album_user"."albumId" = "album_asset"."albumId"
 where
   "asset"."updateId" < $1
   and "asset"."updateId" > $2
   and "album_asset"."updateId" <= $3
   and (
     "album"."ownerId" = $4
-    or "album_user"."usersId" = $5
+    or "album_user"."userId" = $5
   )
 order by
   "asset"."updateId" asc
@@ -134,18 +140,21 @@ select
   "asset"."duration",
   "asset"."livePhotoVideoId",
   "asset"."stackId",
-  "asset"."libraryId"
+  "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited"
 from
   "album_asset" as "album_asset"
-  inner join "asset" on "asset"."id" = "album_asset"."assetsId"
-  inner join "album" on "album"."id" = "album_asset"."albumsId"
-  left join "album_user" on "album_user"."albumsId" = "album_asset"."albumsId"
+  inner join "asset" on "asset"."id" = "album_asset"."assetId"
+  inner join "album" on "album"."id" = "album_asset"."albumId"
+  left join "album_user" on "album_user"."albumId" = "album_asset"."albumId"
 where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" > $2
   and (
     "album"."ownerId" = $3
-    or "album_user"."usersId" = $4
+    or "album_user"."userId" = $4
   )
 order by
   "album_asset"."updateId" asc
@@ -180,12 +189,12 @@ select
   "album_asset"."updateId"
 from
   "album_asset" as "album_asset"
-  inner join "asset_exif" on "asset_exif"."assetId" = "album_asset"."assetsId"
+  inner join "asset_exif" on "asset_exif"."assetId" = "album_asset"."assetId"
 where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" <= $2
   and "album_asset"."updateId" >= $3
-  and "album_asset"."albumsId" = $4
+  and "album_asset"."albumId" = $4
 order by
   "album_asset"."updateId" asc
 
@@ -219,16 +228,16 @@ select
   "asset_exif"."updateId"
 from
   "asset_exif" as "asset_exif"
-  inner join "album_asset" on "album_asset"."assetsId" = "asset_exif"."assetId"
-  inner join "album" on "album"."id" = "album_asset"."albumsId"
-  left join "album_user" on "album_user"."albumsId" = "album_asset"."albumsId"
+  inner join "album_asset" on "album_asset"."assetId" = "asset_exif"."assetId"
+  inner join "album" on "album"."id" = "album_asset"."albumId"
+  left join "album_user" on "album_user"."albumId" = "album_asset"."albumId"
 where
   "asset_exif"."updateId" < $1
   and "asset_exif"."updateId" > $2
   and "album_asset"."updateId" <= $3
   and (
     "album"."ownerId" = $4
-    or "album_user"."usersId" = $5
+    or "album_user"."userId" = $5
   )
 order by
   "asset_exif"."updateId" asc
@@ -263,23 +272,23 @@ select
   "asset_exif"."fps"
 from
   "album_asset" as "album_asset"
-  inner join "asset_exif" on "asset_exif"."assetId" = "album_asset"."assetsId"
-  inner join "album" on "album"."id" = "album_asset"."albumsId"
-  left join "album_user" on "album_user"."albumsId" = "album_asset"."albumsId"
+  inner join "asset_exif" on "asset_exif"."assetId" = "album_asset"."assetId"
+  inner join "album" on "album"."id" = "album_asset"."albumId"
+  left join "album_user" on "album_user"."albumId" = "album_asset"."albumId"
 where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" > $2
   and (
     "album"."ownerId" = $3
-    or "album_user"."usersId" = $4
+    or "album_user"."userId" = $4
   )
 order by
   "album_asset"."updateId" asc
 
 -- SyncRepository.albumToAsset.getBackfill
 select
-  "album_asset"."assetsId" as "assetId",
-  "album_asset"."albumsId" as "albumId",
+  "album_asset"."assetId" as "assetId",
+  "album_asset"."albumId" as "albumId",
   "album_asset"."updateId"
 from
   "album_asset" as "album_asset"
@@ -287,7 +296,7 @@ where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" <= $2
   and "album_asset"."updateId" >= $3
-  and "album_asset"."albumsId" = $4
+  and "album_asset"."albumId" = $4
 order by
   "album_asset"."updateId" asc
 
@@ -311,11 +320,11 @@ where
     union
     (
       select
-        "album_user"."albumsId" as "id"
+        "album_user"."albumId" as "id"
       from
         "album_user"
       where
-        "album_user"."usersId" = $4
+        "album_user"."userId" = $4
     )
   )
 order by
@@ -323,27 +332,27 @@ order by
 
 -- SyncRepository.albumToAsset.getUpserts
 select
-  "album_asset"."assetsId" as "assetId",
-  "album_asset"."albumsId" as "albumId",
+  "album_asset"."assetId" as "assetId",
+  "album_asset"."albumId" as "albumId",
   "album_asset"."updateId"
 from
   "album_asset" as "album_asset"
-  inner join "album" on "album"."id" = "album_asset"."albumsId"
-  left join "album_user" on "album_user"."albumsId" = "album_asset"."albumsId"
+  inner join "album" on "album"."id" = "album_asset"."albumId"
+  left join "album_user" on "album_user"."albumId" = "album_asset"."albumId"
 where
   "album_asset"."updateId" < $1
   and "album_asset"."updateId" > $2
   and (
     "album"."ownerId" = $3
-    or "album_user"."usersId" = $4
+    or "album_user"."userId" = $4
   )
 order by
   "album_asset"."updateId" asc
 
 -- SyncRepository.albumUser.getBackfill
 select
-  "album_user"."albumsId" as "albumId",
-  "album_user"."usersId" as "userId",
+  "album_user"."albumId" as "albumId",
+  "album_user"."userId" as "userId",
   "album_user"."role",
   "album_user"."updateId"
 from
@@ -352,7 +361,7 @@ where
   "album_user"."updateId" < $1
   and "album_user"."updateId" <= $2
   and "album_user"."updateId" >= $3
-  and "albumsId" = $4
+  and "albumId" = $4
 order by
   "album_user"."updateId" asc
 
@@ -376,11 +385,11 @@ where
     union
     (
       select
-        "album_user"."albumsId" as "id"
+        "album_user"."albumId" as "id"
       from
         "album_user"
       where
-        "album_user"."usersId" = $4
+        "album_user"."userId" = $4
     )
   )
 order by
@@ -388,8 +397,8 @@ order by
 
 -- SyncRepository.albumUser.getUpserts
 select
-  "album_user"."albumsId" as "albumId",
-  "album_user"."usersId" as "userId",
+  "album_user"."albumId" as "albumId",
+  "album_user"."userId" as "userId",
   "album_user"."role",
   "album_user"."updateId"
 from
@@ -397,7 +406,7 @@ from
 where
   "album_user"."updateId" < $1
   and "album_user"."updateId" > $2
-  and "album_user"."albumsId" in (
+  and "album_user"."albumId" in (
     select
       "id"
     from
@@ -407,11 +416,11 @@ where
     union
     (
       select
-        "albumUsers"."albumsId" as "id"
+        "albumUsers"."albumId" as "id"
       from
         "album_user" as "albumUsers"
       where
-        "albumUsers"."usersId" = $4
+        "albumUsers"."userId" = $4
     )
   )
 order by
@@ -448,6 +457,9 @@ select
   "asset"."livePhotoVideoId",
   "asset"."stackId",
   "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited",
   "asset"."updateId"
 from
   "asset" as "asset"
@@ -502,6 +514,38 @@ where
 order by
   "asset_exif"."updateId" asc
 
+-- SyncRepository.assetEdit.getDeletes
+select
+  "asset_edit_audit"."id",
+  "editId"
+from
+  "asset_edit_audit" as "asset_edit_audit"
+  inner join "asset" on "asset"."id" = "asset_edit_audit"."assetId"
+where
+  "asset_edit_audit"."id" < $1
+  and "asset_edit_audit"."id" > $2
+  and "asset"."ownerId" = $3
+order by
+  "asset_edit_audit"."id" asc
+
+-- SyncRepository.assetEdit.getUpserts
+select
+  "asset_edit"."id",
+  "asset_edit"."assetId",
+  "asset_edit"."sequence",
+  "asset_edit"."action",
+  "asset_edit"."parameters",
+  "asset_edit"."updateId"
+from
+  "asset_edit" as "asset_edit"
+  inner join "asset" on "asset"."id" = "asset_edit"."assetId"
+where
+  "asset_edit"."updateId" < $1
+  and "asset_edit"."updateId" > $2
+  and "asset"."ownerId" = $3
+order by
+  "asset_edit"."updateId" asc
+
 -- SyncRepository.assetFace.getDeletes
 select
   "asset_face_audit"."id",
@@ -528,6 +572,8 @@ select
   "boundingBoxX2",
   "boundingBoxY2",
   "sourceType",
+  "isVisible",
+  "asset_face"."deletedAt",
   "asset_face"."updateId"
 from
   "asset_face" as "asset_face"
@@ -656,7 +702,7 @@ order by
 -- SyncRepository.memoryToAsset.getUpserts
 select
   "memoriesId" as "memoryId",
-  "assetsId" as "assetId",
+  "assetId" as "assetId",
   "updateId"
 from
   "memory_asset" as "memory_asset"
@@ -740,6 +786,9 @@ select
   "asset"."livePhotoVideoId",
   "asset"."stackId",
   "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited",
   "asset"."updateId"
 from
   "asset" as "asset"
@@ -789,6 +838,9 @@ select
   "asset"."livePhotoVideoId",
   "asset"."stackId",
   "asset"."libraryId",
+  "asset"."width",
+  "asset"."height",
+  "asset"."isEdited",
   "asset"."updateId"
 from
   "asset" as "asset"

@@ -1,5 +1,5 @@
+import { UploadState, type UploadAsset } from '$lib/types';
 import { derived, writable } from 'svelte/store';
-import { UploadState, type UploadAsset } from '../models/upload-asset';
 
 function createUploadStore() {
   const uploadAssets = writable<Array<UploadAsset>>([]);
@@ -13,14 +13,9 @@ function createUploadStore() {
   const { subscribe } = uploadAssets;
 
   const isUploading = derived(uploadAssets, (items) => items.length > 0);
-  const isDismissible = derived(uploadAssets, (items) =>
-    items.some(
-      (item) =>
-        item.state === UploadState.ERROR ||
-        item.state === UploadState.DUPLICATED ||
-        item.state === UploadState.UNSUPPORTED_TYPE,
-    ),
-  );
+  const isDismissibleState = (state?: UploadState) =>
+    state === UploadState.ERROR || state === UploadState.DUPLICATED || state === UploadState.UNSUPPORTED_TYPE;
+  const isDismissible = derived(uploadAssets, (items) => items.some((item) => isDismissibleState(item.state)));
   const remainingUploads = derived(
     uploadAssets,
     (values) => values.filter((a) => a.state === UploadState.PENDING || a.state === UploadState.STARTED).length,
@@ -85,18 +80,37 @@ function createUploadStore() {
   };
 
   const removeItem = (id: string) => {
-    uploadAssets.update((uploadingAsset) => uploadingAsset.filter((a) => a.id != id));
+    uploadAssets.update((uploadingAsset) => {
+      const assetToRemove = uploadingAsset.find((a) => a.id === id);
+      if (assetToRemove) {
+        stats.update((stats) => {
+          switch (assetToRemove.state) {
+            case UploadState.DUPLICATED: {
+              stats.duplicates--;
+              break;
+            }
+
+            case UploadState.ERROR:
+            case UploadState.UNSUPPORTED_TYPE: {
+              stats.errors--;
+              break;
+            }
+
+            case UploadState.DONE: {
+              break;
+            }
+          }
+
+          return stats;
+        });
+      }
+
+      return uploadingAsset.filter((a) => a.id != id);
+    });
   };
 
   const dismissErrors = () =>
-    uploadAssets.update((value) =>
-      value.filter(
-        (e) =>
-          e.state !== UploadState.ERROR &&
-          e.state !== UploadState.DUPLICATED &&
-          e.state !== UploadState.UNSUPPORTED_TYPE,
-      ),
-    );
+    uploadAssets.update((value) => value.filter((e) => !isDismissibleState(e.state)));
 
   const reset = () => {
     uploadAssets.set([]);

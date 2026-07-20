@@ -1,33 +1,29 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { page } from '$app/state';
-  import { intersectionObserver } from '$lib/actions/intersection-observer';
-  import { resizeObserver } from '$lib/actions/resize-observer';
   import { shortcuts } from '$lib/actions/shortcut';
   import MemoryPhotoViewer from '$lib/components/memory-page/memory-photo-viewer.svelte';
   import MemoryVideoViewer from '$lib/components/memory-page/memory-video-viewer.svelte';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
-  import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
-  import {
-    notificationController,
-    NotificationType,
-  } from '$lib/components/shared-components/notification/notification';
-  import { AppRoute, QueryParameter } from '$lib/constants';
+  import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
+  import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
+  import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import { QueryParameter } from '$lib/constants';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { memoryManager, type MemoryAsset } from '$lib/managers/memory-manager.svelte';
   import type { TimelineAsset, Viewport } from '$lib/managers/timeline-manager/types';
-  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { type MemoryAsset, memoryStore } from '$lib/stores/memory.store.svelte';
+  import { Route } from '$lib/route';
+  import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { locale, videoViewerMuted, videoViewerVolume } from '$lib/stores/preferences.store';
   import { preferences } from '$lib/stores/user.store';
-  import { getAssetThumbnailUrl, handlePromiseError, memoryLaneTitle } from '$lib/utils';
-  import { cancelMultiselect } from '$lib/utils/asset-utils';
+  import { getAssetMediaUrl, handlePromiseError, memoryLaneTitle } from '$lib/utils';
   import { fromISODateTimeUTC, toTimelineAsset } from '$lib/utils/timeline-util';
-  import { AssetMediaSize, getAssetInfo } from '@immich/sdk';
-  import { IconButton } from '@immich/ui';
+  import { AssetMediaSize, AssetTypeEnum, getAssetInfo } from '@immich/sdk';
+  import { ActionButton, ContextMenuButton, IconButton, menuManager, toastManager, type ActionItem } from '@immich/ui';
   import {
     mdiCardsOutline,
     mdiChevronDown,
@@ -41,7 +37,6 @@
     mdiImageSearch,
     mdiPause,
     mdiPlay,
-    mdiPlus,
     mdiSelectAll,
     mdiVolumeHigh,
     mdiVolumeOff,
@@ -49,6 +44,7 @@
   import type { NavigationTarget, Page } from '@sveltejs/kit';
   import { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
+  import type { Attachment } from 'svelte/attachments';
   import { Tween } from 'svelte/motion';
 
   let memoryGallery: HTMLElement | undefined = $state();
@@ -58,24 +54,29 @@
   let playerInitialized = $state(false);
   let paused = $state(false);
   let current = $state<MemoryAsset | undefined>(undefined);
-  let currentMemoryAssetFull = $derived.by(async () =>
-    current?.asset ? await getAssetInfo({ ...authManager.params, id: current.asset.id }) : undefined,
+  const currentAssetId = $derived(current?.asset.id);
+  const currentMemoryAssetFull = $derived.by(async () =>
+    currentAssetId ? await getAssetInfo({ ...authManager.params, id: currentAssetId }) : undefined,
   );
-  let currentTimelineAssets = $derived(current?.memory.assets.map((asset) => toTimelineAsset(asset)) || []);
+  let currentTimelineAssets = $derived(current?.memory.assets ?? []);
+  let viewerAssets = $derived([
+    ...(current?.previousMemory?.assets ?? []),
+    ...(current?.memory.assets ?? []),
+    ...(current?.nextMemory?.assets ?? []),
+  ]);
 
   let isSaved = $derived(current?.memory.isSaved);
   let viewerHeight = $state(0);
 
-  const { isViewing } = assetViewingStore;
   const viewport: Viewport = $state({ width: 0, height: 0 });
   // need to include padding in the viewport for gallery
   const galleryViewport: Viewport = $derived({ height: viewport.height, width: viewport.width - 32 });
-  const assetInteraction = new AssetInteraction();
   let progressBarController: Tween<number> | undefined = $state(undefined);
   let videoPlayer: HTMLVideoElement | undefined = $state();
   const asHref = (asset: { id: string }) => `?${QueryParameter.ID}=${asset.id}`;
+
   const handleNavigate = async (asset?: { id: string }) => {
-    if ($isViewing) {
+    if (assetViewerManager.isViewing) {
       return asset;
     }
 
@@ -85,6 +86,7 @@
 
     await goto(asHref(asset));
   };
+
   const setProgressDuration = (asset: TimelineAsset) => {
     if (asset.isVideo) {
       const timeParts = asset.duration!.split(':').map(Number);
@@ -94,17 +96,18 @@
       });
     } else {
       progressBarController = new Tween<number>(0, {
-        duration: (from: number, to: number) => (to ? 5000 * (to - from) : 0),
+        duration: (from: number, to: number) => (to ? $preferences.memories.duration * 1000 * (to - from) : 0),
       });
     }
   };
+
   const handleNextAsset = () => handleNavigate(current?.next?.asset);
   const handlePreviousAsset = () => handleNavigate(current?.previous?.asset);
   const handleNextMemory = () => handleNavigate(current?.nextMemory?.assets[0]);
   const handlePreviousMemory = () => handleNavigate(current?.previousMemory?.assets[0]);
-  const handleEscape = async () => goto(resolve(AppRoute.PHOTOS));
+  const handleEscape = async () => goto(Route.photos());
   const handleSelectAll = () =>
-    assetInteraction.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
+    assetMultiSelectManager.selectAssets(current?.memory.assets.map((a) => toTimelineAsset(a)) || []);
 
   const handleAction = async (callingContext: string, action: 'reset' | 'pause' | 'play') => {
     // leaving these log statements here as comments. Very useful to figure out what's going on during dev!
@@ -145,6 +148,7 @@
       }
     }
   };
+
   const handleProgress = async (progress: number) => {
     if (!progressBarController) {
       return;
@@ -172,43 +176,77 @@
     if (!current) {
       return;
     }
-    memoryStore.hideAssetsFromMemory(ids);
+    memoryManager.hideAssetsFromMemory(ids);
     init(page);
   };
+
+  const menuItems = $derived(
+    getAssetSelectMenuItems($t, {
+      unarchive: assetMultiSelectManager.isAllArchived,
+      onArchive: handleDeleteOrArchiveAssets,
+      showTag: assetMultiSelectManager.isAllUserOwned,
+      showVisibility: false,
+      onAssetDelete: handleDeleteOrArchiveAssets,
+    }),
+  );
+
   const handleDeleteMemoryAsset = async () => {
     if (!current) {
       return;
     }
 
-    await memoryStore.deleteAssetFromMemory(current.asset.id);
+    await memoryManager.deleteAssetFromMemory(current.asset.id);
     init(page);
   };
+
   const handleDeleteMemory = async () => {
     if (!current) {
       return;
     }
 
-    await memoryStore.deleteMemory(current.memory.id);
-    notificationController.show({ message: $t('removed_memory'), type: NotificationType.Info });
+    await memoryManager.deleteMemory(current.memory.id);
+    toastManager.primary($t('removed_memory'));
     init(page);
   };
+
+  const memoryMenuItems = $derived([
+    {
+      title: $t('remove_memory'),
+      icon: mdiCardsOutline,
+      onAction: () => handleDeleteMemory(),
+    },
+    {
+      title: $t('remove_photo_from_memory'),
+      icon: mdiImageMinusOutline,
+      onAction: () => handleDeleteMemoryAsset(),
+    },
+  ] satisfies ActionItem[]);
+
+  const openMemoryMenu = (event: MouseEvent) => {
+    handlePromiseError(handleAction('ContextMenuClick', 'pause'));
+    void menuManager.show({
+      target: event.currentTarget as HTMLElement,
+      position: 'bottom-right',
+      items: memoryMenuItems,
+    });
+  };
+
   const handleSaveMemory = async () => {
     if (!current) {
       return;
     }
 
     const newSavedState = !current.memory.isSaved;
-    await memoryStore.updateMemorySaved(current.memory.id, newSavedState);
-    notificationController.show({
-      message: newSavedState ? $t('added_to_favorites') : $t('removed_from_favorites'),
-      type: NotificationType.Success,
-    });
+    await memoryManager.updateMemorySaved(current.memory.id, newSavedState);
+    toastManager.primary(newSavedState ? $t('added_to_favorites') : $t('removed_from_favorites'));
     init(page);
   };
+
   const handleGalleryScrollsIntoView = () => {
     galleryInView = true;
     handlePromiseError(handleAction('galleryInView', 'pause'));
   };
+
   const handleGalleryScrollsOutOfView = () => {
     galleryInView = false;
     // only call play after the first page load. When page first loads the gallery will not be visible
@@ -219,14 +257,30 @@
     galleryFirstLoad = false;
   };
 
+  const galleryObserver: Attachment<HTMLElement> = (element) => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          handleGalleryScrollsIntoView();
+        } else {
+          handleGalleryScrollsOutOfView();
+        }
+      },
+      { rootMargin: '0px 0px -200px 0px' },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  };
+
   const loadFromParams = (page: Page | NavigationTarget | null) => {
     const assetId = page?.params?.assetId ?? page?.url.searchParams.get(QueryParameter.ID) ?? undefined;
-    return memoryStore.getMemoryAsset(assetId);
+    return memoryManager.getMemoryAsset(assetId);
   };
 
   const init = (target: Page | NavigationTarget | null) => {
-    if (memoryStore.memories.length === 0) {
-      return handlePromiseError(goto(resolve(AppRoute.PHOTOS)));
+    if (memoryManager.memories.length === 0) {
+      return handlePromiseError(goto(Route.photos()));
     }
 
     current = loadFromParams(target);
@@ -248,22 +302,19 @@
     if (playerInitialized || isVideoAssetButPlayerHasNotLoadedYet) {
       return;
     }
-    if ($isViewing) {
+    if (assetViewerManager.isViewing) {
       handlePromiseError(handleAction('initPlayer[AssetViewOpen]', 'pause'));
     } else if (isVideo) {
       // Image assets will start playing when the image is loaded. Only autostart video assets.
       resetAndPlay();
-    } else {
-      handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'reset'));
-      handlePromiseError(handleAction('initPlayer[AssetViewClosed]', 'play'));
     }
     playerInitialized = true;
   };
 
   afterNavigate(({ from, to }) => {
-    memoryStore.initialize().then(
+    memoryManager.ready().then(
       () => {
-        let target = null;
+        let target;
         if (to?.params?.assetId) {
           target = to;
         } else if (from?.params?.assetId) {
@@ -296,7 +347,7 @@
 </script>
 
 <svelte:document
-  use:shortcuts={$isViewing
+  use:shortcuts={assetViewerManager.isViewing
     ? []
     : [
         { shortcut: { key: 'ArrowRight' }, onShortcut: () => handleNextAsset() },
@@ -307,13 +358,10 @@
       ]}
 />
 
-{#if assetInteraction.selectionActive}
+{#if assetMultiSelectManager.selectionActive}
   <div class="sticky top-0 z-1 dark">
-    <AssetSelectControlBar
-      forceDark
-      assets={assetInteraction.selectedAssets}
-      clearSelect={() => cancelMultiselect(assetInteraction)}
-    >
+    <AssetSelectControlBar forceDark>
+      {@const Actions = getAssetBulkActions($t)}
       <CreateSharedLink />
       <IconButton
         shape="round"
@@ -324,24 +372,11 @@
         onclick={handleSelectAll}
       />
 
-      <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
-        <AddToAlbum />
-        <AddToAlbum shared />
-      </ButtonContextMenu>
+      <ActionButton action={Actions.AddToAlbum} />
 
-      <FavoriteAction removeFavorite={assetInteraction.isAllFavorite} />
+      <FavoriteAction removeFavorite={assetMultiSelectManager.isAllFavorite} />
 
-      <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
-        <DownloadAction menuItem />
-        <ChangeDate menuItem />
-        <ChangeDescription menuItem />
-        <ChangeLocation menuItem />
-        <ArchiveAction menuItem unarchive={assetInteraction.isAllArchived} onArchive={handleDeleteOrArchiveAssets} />
-        {#if $preferences.tags.enabled && assetInteraction.isAllUserOwned}
-          <TagAction menuItem />
-        {/if}
-        <DeleteAssets menuItem onAssetDelete={handleDeleteOrArchiveAssets} />
-      </ButtonContextMenu>
+      <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
     </AssetSelectControlBar>
   </div>
 {/if}
@@ -350,10 +385,11 @@
   id="memory-viewer"
   class="w-full bg-immich-dark-gray"
   bind:this={memoryWrapper}
-  use:resizeObserver={({ height, width }) => ((viewport.height = height), (viewport.width = width))}
+  bind:clientHeight={viewport.height}
+  bind:clientWidth={viewport.width}
 >
   {#if current}
-    <ControlAppBar onClose={() => goto(resolve(AppRoute.PHOTOS))} forceDark multiRow>
+    <ControlAppBar onClose={() => goto(Route.photos())} forceDark multiRow>
       {#snippet leading()}
         {#if current}
           <p class="text-lg">
@@ -363,7 +399,7 @@
       {/snippet}
 
       <div class="flex place-content-center place-items-center gap-2 overflow-hidden">
-        <div class="w-[50px] dark">
+        <div class="w-12.5 dark">
           <IconButton
             shape="round"
             variant="ghost"
@@ -376,8 +412,8 @@
 
         {#each current.memory.assets as asset, index (asset.id)}
           <a class="relative w-full py-2" href={asHref(asset)} aria-label={$t('view')}>
-            <span class="absolute start-0 h-[2px] w-full bg-gray-500"></span>
-            <span class="absolute start-0 h-[2px] bg-white" style:width={`${toProgressPercentage(index)}%`}></span>
+            <span class="absolute start-0 h-0.5 w-full bg-gray-500"></span>
+            <span class="absolute start-0 h-0.5 bg-white" style:width={`${toProgressPercentage(index)}%`}></span>
           </a>
         {/each}
 
@@ -387,16 +423,18 @@
           </p>
         </div>
 
-        <div class="w-[50px] dark">
-          <IconButton
-            shape="round"
-            variant="ghost"
-            color="secondary"
-            aria-label={$videoViewerMuted ? $t('unmute_memories') : $t('mute_memories')}
-            icon={$videoViewerMuted ? mdiVolumeOff : mdiVolumeHigh}
-            onclick={() => ($videoViewerMuted = !$videoViewerMuted)}
-          />
-        </div>
+        {#if currentTimelineAssets.some((asset) => asset.type === AssetTypeEnum.Video)}
+          <div class="w-12.5 dark">
+            <IconButton
+              shape="round"
+              variant="ghost"
+              color="secondary"
+              aria-label={$videoViewerMuted ? $t('unmute_memories') : $t('mute_memories')}
+              icon={$videoViewerMuted ? mdiVolumeOff : mdiVolumeHigh}
+              onclick={() => ($videoViewerMuted = !$videoViewerMuted)}
+            />
+          </div>
+        {/if}
       </div>
     </ControlAppBar>
 
@@ -437,7 +475,7 @@
             {#if current.previousMemory && current.previousMemory.assets.length > 0}
               <img
                 class="h-full w-full rounded-2xl object-cover"
-                src={getAssetThumbnailUrl({ id: current.previousMemory.assets[0].id, size: AssetMediaSize.Preview })}
+                src={getAssetMediaUrl({ id: current.previousMemory.assets[0].id, size: AssetMediaSize.Preview })}
                 alt={$t('previous_memory')}
                 draggable="false"
               />
@@ -453,7 +491,7 @@
 
             {#if current.previousMemory}
               <div class="absolute bottom-4 end-4 text-start text-white">
-                <p class="text-xs font-semibold text-gray-200">{$t('previous').toUpperCase()}</p>
+                <p class="uppercase text-xs font-semibold text-gray-200">{$t('previous')}</p>
                 <p class="text-xl">{$memoryLaneTitle(current.previousMemory)}</p>
               </div>
             {/if}
@@ -474,7 +512,7 @@
                   videoViewerVolume={$videoViewerVolume}
                 />
               {:else}
-                <MemoryPhotoViewer asset={current.asset} />
+                <MemoryPhotoViewer asset={current.asset} onImageLoad={resetAndPlay} />
               {/if}
             {/key}
 
@@ -491,7 +529,7 @@
                   color="secondary"
                   aria-label={isSaved ? $t('unfavorite') : $t('favorite')}
                   onclick={() => handleSaveMemory()}
-                  class="w-[48px] h-[48px]"
+                  class="w-12 h-12"
                 />
                 <!-- <IconButton
                   icon={mdiShareVariantOutline}
@@ -501,33 +539,30 @@
                   color="secondary"
                   aria-label={$t('share')}
                 /> -->
-                <ButtonContextMenu
+                <IconButton
                   icon={mdiDotsVertical}
-                  title={$t('menu')}
-                  onclick={() => handlePromiseError(handleAction('ContextMenuClick', 'pause'))}
-                  direction="left"
+                  shape="round"
+                  variant="ghost"
+                  color="secondary"
                   size="medium"
-                  align="bottom-right"
-                >
-                  <MenuOption onClick={() => handleDeleteMemory()} text={$t('remove_memory')} icon={mdiCardsOutline} />
-                  <MenuOption
-                    onClick={() => handleDeleteMemoryAsset()}
-                    text={$t('remove_photo_from_memory')}
-                    icon={mdiImageMinusOutline}
-                  />
-                  <!-- shortcut={{ key: 'l', shift: shared }} -->
-                </ButtonContextMenu>
+                  aria-label={$t('menu')}
+                  onclick={openMemoryMenu}
+                />
               </div>
 
               <div>
-                <IconButton
-                  href={resolve(`${AppRoute.PHOTOS}?at=${current.asset.id}`)}
-                  icon={mdiImageSearch}
-                  aria-label={$t('view_in_timeline')}
-                  color="secondary"
-                  variant="ghost"
-                  shape="round"
-                />
+                {#await currentMemoryAssetFull then asset}
+                  {#if asset}
+                    <IconButton
+                      href={Route.photos({ at: asset.stack?.primaryAssetId ?? asset.id })}
+                      icon={mdiImageSearch}
+                      aria-label={$t('view_in_timeline')}
+                      color="secondary"
+                      variant="ghost"
+                      shape="round"
+                    />
+                  {/if}
+                {/await}
               </div>
             </div>
             <!-- CONTROL BUTTONS -->
@@ -586,7 +621,7 @@
             {#if current.nextMemory && current.nextMemory.assets.length > 0}
               <img
                 class="h-full w-full rounded-2xl object-cover"
-                src={getAssetThumbnailUrl({ id: current.nextMemory.assets[0].id, size: AssetMediaSize.Preview })}
+                src={getAssetMediaUrl({ id: current.nextMemory.assets[0].id, size: AssetMediaSize.Preview })}
                 alt={$t('next_memory')}
                 draggable="false"
               />
@@ -602,7 +637,7 @@
 
             {#if current.nextMemory}
               <div class="absolute bottom-4 start-4 text-start text-white">
-                <p class="text-xs font-semibold text-gray-200">{$t('up_next').toUpperCase()}</p>
+                <p class="uppercase text-xs font-semibold text-gray-200">{$t('up_next')}</p>
                 <p class="text-xl">{$memoryLaneTitle(current.nextMemory)}</p>
               </div>
             {/if}
@@ -630,22 +665,14 @@
       />
     </div>
 
-    <div
-      id="gallery-memory"
-      use:intersectionObserver={{
-        onIntersect: handleGalleryScrollsIntoView,
-        onSeparate: handleGalleryScrollsOutOfView,
-        bottom: '-200px',
-      }}
-      bind:this={memoryGallery}
-    >
+    <div id="gallery-memory" {@attach galleryObserver} bind:this={memoryGallery}>
       <GalleryViewer
-        onNext={handleNextAsset}
-        onPrevious={handlePreviousAsset}
         assets={currentTimelineAssets}
+        {viewerAssets}
         viewport={galleryViewport}
-        {assetInteraction}
+        assetInteraction={assetMultiSelectManager}
         slidingWindowOffset={viewerHeight}
+        arrowNavigation={false}
       />
     </div>
   </section>

@@ -1,31 +1,9 @@
 import 'dart:async';
 
 import 'package:hc_device/hc_device.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
-import 'package:immich_mobile/providers/background_sync.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/async_mutex.dart';
 import 'package:logging/logging.dart';
-
-final hcDeviceEndpointResolverProvider = Provider<HcDeviceEndpointResolver>(
-  (ref) => HcDeviceEndpointResolver(
-    ref.watch(apiServiceProvider),
-    ref.watch(hcPathResolverProvider),
-    onEndpointActivated: () async {
-      if (!Store.isBetaTimelineEnabled) {
-        return;
-      }
-      if (Store.tryGet(StoreKey.accessToken)?.isNotEmpty != true) {
-        return;
-      }
-      await ref.read(backgroundSyncProvider).syncRemote();
-    },
-  ),
-);
 
 class EndpointResolutionResult {
   const EndpointResolutionResult({
@@ -223,6 +201,12 @@ class HcDeviceEndpointResolver {
     return detailed.endpoint;
   }
 
+  /// Direct resolve entry for secondary runtimes / callers that skip
+  /// [PathResolveTriggerService]. Serialized via [_resolveMutex].
+  ///
+  /// App recovery paths must go through [PathResolveTriggerService] (priority
+  /// coalesce / join) and call [resolveWithDetailsUnserialized] so the two
+  /// layers do not nest.
   Future<EndpointResolutionResult> resolveWithDetails({
     String? runId,
     String trigger = 'unknown',
@@ -235,7 +219,7 @@ class HcDeviceEndpointResolver {
       _log.fine('[Resolver] Queuing resolve trigger=$trigger (enqueued=${_resolveMutex.enqueued})');
     }
     return _resolveMutex.run(
-      () => _resolveWithDetailsInternal(
+      () => resolveWithDetailsUnserialized(
         runId: runId,
         trigger: trigger,
         allowFallbackToPreviousEndpoint: allowFallbackToPreviousEndpoint,
@@ -245,6 +229,26 @@ class HcDeviceEndpointResolver {
       ),
     );
   }
+
+  /// Resolve without the outer mutex — [PathResolveTriggerService] already
+  /// serializes and coalesces callers. Prefer this over [resolveWithDetails]
+  /// from that layer only.
+  Future<EndpointResolutionResult> resolveWithDetailsUnserialized({
+    String? runId,
+    String trigger = 'unknown',
+    bool allowFallbackToPreviousEndpoint = true,
+    ResolveMode mode = ResolveMode.foreground,
+    bool localOnly = false,
+    ExternalEndpointValidator? validateExternal,
+  }) =>
+      _resolveWithDetailsInternal(
+        runId: runId,
+        trigger: trigger,
+        allowFallbackToPreviousEndpoint: allowFallbackToPreviousEndpoint,
+        mode: mode,
+        localOnly: localOnly,
+        validateExternal: validateExternal,
+      );
 
   Future<EndpointResolutionResult> _resolveWithDetailsInternal({
     String? runId,
@@ -345,9 +349,11 @@ class HcDeviceEndpointResolver {
           resolveTrigger: ResolveTrigger.connectivityChange,
           policy: EndpointResolvePolicy.conservative,
         );
+      // Post-OTP retry probes by current transport (all paths on wifi,
+      // remote-only otherwise) - same plan as an api error.
       case 'remote_auth_retry':
         return const _ResolvedTriggerConfig(
-          resolveTrigger: ResolveTrigger.websocketError,
+          resolveTrigger: ResolveTrigger.apiError,
           policy: EndpointResolvePolicy.conservative,
         );
       case 'app_resume':
@@ -392,10 +398,6 @@ class HcDeviceEndpointResolver {
     }
   }
 
-  @Deprecated('Use HcPathResolver.winnerEndpointFromBaseUrl')
-  static String winnerEndpointFromBaseUrl(Uri baseUrl) {
-    return HcPathResolver.winnerEndpointFromBaseUrl(baseUrl);
-  }
 }
 
 class _ResolvedTriggerConfig {
@@ -403,4 +405,193 @@ class _ResolvedTriggerConfig {
 
   final ResolveTrigger resolveTrigger;
   final EndpointResolvePolicy policy;
+}
+
+enum PathResolveTriggerType { networkChanged, apiTransportError, manualRetry }
+
+class PathResolveTriggerService {
+  PathResolveTriggerService(this._endpointResolver);
+
+  final HcDeviceEndpointResolver _endpointResolver;
+  final Logger _log = Logger('PathResolveTriggerService');
+
+  bool _isResolving = false;
+  final _resolveStateController = StreamController<bool>.broadcast();
+  _PendingResolveRequest? _activeRequest;
+  DateTime? _activeResolveStartedAt;
+  _PendingResolveRequest? _pendingRequest;
+  Completer<EndpointResolutionResult>? _pendingCompleter;
+  Future<EndpointResolutionResult>? _activeRunFuture;
+  DateTime? _lastResolveAt;
+  Duration? _lastResolveDuration;
+  PathResolveTriggerType? _lastTriggerType;
+  String? _lastResolvedEndpoint;
+  String? _lastSelectionSource;
+
+  bool get isResolving => _isResolving;
+  Future<EndpointResolutionResult>? get activeRunFuture => _activeRunFuture;
+  Stream<bool> get resolveStateChanges => _resolveStateController.stream;
+  DateTime? get lastResolveAt => _lastResolveAt;
+  Duration? get lastResolveDuration => _lastResolveDuration;
+  PathResolveTriggerType? get lastTriggerType => _lastTriggerType;
+  PathResolveTriggerType? get activeTriggerType => _activeRequest?.type;
+  PathResolveTriggerType? get queuedTriggerType => _pendingRequest?.type;
+  DateTime? get activeResolveStartedAt => _activeResolveStartedAt;
+  String? get lastResolvedEndpoint => _lastResolvedEndpoint;
+  String? get lastSelectionSource => _lastSelectionSource;
+
+  void dispose() {
+    if (!_resolveStateController.isClosed) {
+      _resolveStateController.close();
+    }
+  }
+
+  Future<EndpointResolutionResult> onNetworkChanged({
+    required ResolveMode mode,
+    String trigger = 'connectivity_change',
+  }) => _trigger(_PendingResolveRequest(type: PathResolveTriggerType.networkChanged, mode: mode, trigger: trigger));
+
+  Future<EndpointResolutionResult> onApiTransportError({required ResolveMode mode, String trigger = 'api_error'}) =>
+      _trigger(_PendingResolveRequest(type: PathResolveTriggerType.apiTransportError, mode: mode, trigger: trigger));
+
+  Future<EndpointResolutionResult> onManualRetry({required ResolveMode mode, String trigger = 'manual_retry'}) =>
+      _trigger(_PendingResolveRequest(type: PathResolveTriggerType.manualRetry, mode: mode, trigger: trigger));
+
+  /// Serializes resolve requests. When a resolve is already running:
+  /// - same or lower priority joins the active run and shares its result;
+  /// - higher priority is queued (coalesced, highest priority wins) and the
+  ///   caller receives the queued run's real result once it executes.
+  Future<EndpointResolutionResult> _trigger(_PendingResolveRequest request) {
+    if (_isResolving) {
+      final active = _activeRequest;
+      final activeFuture = _activeRunFuture;
+      if (active != null && activeFuture != null && _priority(request.type) <= _priority(active.type)) {
+        _log.info(
+          '[Trigger] resolve join '
+          'active=${active.type.name}:${active.trigger} '
+          'incoming=${request.type.name}:${request.trigger}',
+        );
+        return activeFuture;
+      }
+      _pendingRequest = _coalesce(_pendingRequest, request);
+      _pendingCompleter ??= Completer<EndpointResolutionResult>();
+      _log.info(
+        '[Trigger] resolve queued '
+        'incoming=${request.type.name}:${request.trigger} '
+        'queued=${_pendingRequest?.type.name}:${_pendingRequest?.trigger}',
+      );
+      return _pendingCompleter!.future;
+    }
+
+    return _run(request);
+  }
+
+  Future<EndpointResolutionResult> _run(_PendingResolveRequest request) async {
+    final runFuture = _runInternal(request);
+    _activeRunFuture = runFuture;
+    try {
+      return await runFuture;
+    } finally {
+      if (identical(_activeRunFuture, runFuture)) {
+        _activeRunFuture = null;
+      }
+    }
+  }
+
+  Future<EndpointResolutionResult> _runInternal(_PendingResolveRequest request) async {
+    _isResolving = true;
+    _activeRequest = request;
+    _activeResolveStartedAt = DateTime.now();
+    if (!_resolveStateController.isClosed) {
+      _resolveStateController.add(true);
+    }
+    _lastResolveAt = DateTime.now();
+    _lastTriggerType = request.type;
+    _log.info(
+      '[Trigger] resolve start type=${request.type.name} trigger=${request.trigger} mode=${request.mode.name}',
+    );
+
+    try {
+      // Trigger service owns coalesce/join — do not nest the resolver mutex.
+      final result = await _endpointResolver.resolveWithDetailsUnserialized(
+        trigger: request.trigger,
+        mode: request.mode,
+      );
+      if (result.success) {
+        _lastResolvedEndpoint = result.endpoint;
+        _lastSelectionSource = result.selectionSource;
+      }
+      _log.info(
+        '[Trigger] resolve result '
+        'type=${request.type.name} '
+        'trigger=${request.trigger} '
+        'mode=${request.mode.name} '
+        'success=${result.success} '
+        'reason=${result.reason} '
+        'selection=${result.selectionSource} '
+        'pathType=${result.resolvedPathType} '
+        'endpoint=${result.endpoint}',
+      );
+      return result;
+    } finally {
+      final startedAt = _activeResolveStartedAt;
+      _isResolving = false;
+      _activeRequest = null;
+      _activeResolveStartedAt = null;
+      if (startedAt != null) {
+        _lastResolveDuration = DateTime.now().difference(startedAt);
+        _log.info(
+          '[Trigger] resolve end '
+          'type=${request.type.name} '
+          'trigger=${request.trigger} '
+          'elapsedMs=${_lastResolveDuration!.inMilliseconds}',
+        );
+      }
+      if (!_resolveStateController.isClosed) {
+        _resolveStateController.add(false);
+      }
+      final next = _pendingRequest;
+      final pendingCompleter = _pendingCompleter;
+      _pendingRequest = null;
+      _pendingCompleter = null;
+      if (next != null) {
+        _log.info('[Trigger] resolve run queued type=${next.type.name} trigger=${next.trigger}');
+        final queuedRun = _run(next);
+        if (pendingCompleter != null) {
+          pendingCompleter.complete(queuedRun);
+        } else {
+          unawaited(queuedRun);
+        }
+      }
+    }
+  }
+
+  _PendingResolveRequest _coalesce(_PendingResolveRequest? current, _PendingResolveRequest incoming) {
+    if (current == null) {
+      return incoming;
+    }
+
+    final currentPriority = _priority(current.type);
+    final incomingPriority = _priority(incoming.type);
+    return incomingPriority >= currentPriority ? incoming : current;
+  }
+
+  int _priority(PathResolveTriggerType type) {
+    switch (type) {
+      case PathResolveTriggerType.manualRetry:
+        return 3;
+      case PathResolveTriggerType.networkChanged:
+        return 2;
+      case PathResolveTriggerType.apiTransportError:
+        return 1;
+    }
+  }
+}
+
+class _PendingResolveRequest {
+  const _PendingResolveRequest({required this.type, required this.mode, required this.trigger});
+
+  final PathResolveTriggerType type;
+  final ResolveMode mode;
+  final String trigger;
 }

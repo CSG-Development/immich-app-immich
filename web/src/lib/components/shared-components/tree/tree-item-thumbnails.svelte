@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Icon from '$lib/components/elements/icon.svelte';
   import type { TreeNode } from '$lib/utils/tree-utils';
+  import { Icon } from '@immich/ui';
 
   interface Props {
     items: TreeNode[];
@@ -21,7 +21,7 @@
         title={item.value}
         type="button"
       >
-        <Icon path={icon} class="text-primary" size={80} />
+        <Icon {icon} class="text-primary" size="80" />
         <p
           class="text-sm text-black/87 dark:text-white/87 text-nowrap text-ellipsis overflow-clip w-full whitespace-pre-wrap"
         >

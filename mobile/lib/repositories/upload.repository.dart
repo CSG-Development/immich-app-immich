@@ -23,6 +23,10 @@ class UploadTaskWithFile {
 
 typedef PhotosHttpClientProvider = Client Function();
 
+/// Per-request timeout for large multipart uploads (native client strips this header).
+const _uploadTimeoutHeader = 'x-curator-request-timeout-seconds';
+const _uploadTimeoutSeconds = '600';
+
 final uploadRepositoryProvider = Provider((ref) {
   return UploadRepository(
     httpClientProvider: () => ref.read(apiServiceProvider).httpClient,
@@ -129,6 +133,7 @@ class UploadRepository {
       final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
 
       baseRequest.headers.addAll(candidate.task.headers);
+      baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
       baseRequest.fields.addAll(candidate.task.fields);
       baseRequest.files.add(assetRawUploadData);
 
@@ -183,6 +188,7 @@ class UploadRepository {
 
         baseRequest.headers.addAll(ApiService.getRequestHeaders());
         baseRequest.headers.addAll(candidate.task.headers);
+        baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
         baseRequest.fields.addAll(candidate.task.fields);
         baseRequest.files.add(assetRawUploadData);
 
@@ -243,6 +249,7 @@ class UploadRepository {
       final baseRequest = _CustomMultipartRequest('POST', Uri.parse('$savedEndpoint/assets'), onProgress: onProgress);
 
       baseRequest.headers.addAll(ApiService.getRequestHeaders());
+      baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
       baseRequest.fields.addAll(fields);
       baseRequest.files.add(assetRawUploadData);
 

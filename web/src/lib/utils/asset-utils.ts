@@ -1,37 +1,27 @@
-import { goto } from '$app/navigation';
-import { resolve } from '$app/paths';
-import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
-import { AppRoute, OS } from '$lib/constants';
+import { OS } from '$lib/constants';
+import type { AssetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { downloadManager } from '$lib/managers/download-manager.svelte';
-import type { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
-import { assetsSnapshot } from '$lib/managers/timeline-manager/utils.svelte';
-import type { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-import { isSelectingAllAssets } from '$lib/stores/assets-store.svelte';
 import { preferences } from '$lib/stores/user.store';
-import { downloadRequest, sleep, withError } from '$lib/utils';
+import { downloadRequest, withError } from '$lib/utils';
 import { getByteUnitString } from '$lib/utils/byte-units';
 import { getFormatter } from '$lib/utils/i18n';
 import { navigate } from '$lib/utils/navigation';
 import { asQueryString } from '$lib/utils/shared-links';
 import {
-  addAssetsToAlbum as addAssets,
-  /* addAssetsToAlbums as addToAlbums, */
   AssetVisibility,
-  /* BulkIdErrorReason, */
   bulkTagAssets,
   createStack,
   deleteAssets,
   deleteStacks,
-  getAssetInfo,
   getBaseUrl,
   getDownloadInfo,
   getStack,
   untagAssets,
   updateAsset,
   updateAssets,
-  type AlbumResponseDto,
   type AssetResponseDto,
   type AssetTypeEnum,
   type DownloadInfoDto,
@@ -40,101 +30,11 @@ import {
   type UserPreferencesResponseDto,
   type UserResponseDto,
 } from '@immich/sdk';
+import { toastManager } from '@immich/ui';
 import { DateTime } from 'luxon';
 import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
-
-const $t = get(t);
-
-export const addAssetsToAlbum = async (albumId: string, assetIds: string[], showNotification = true) => {
-  try {
-    const result = await addAssets({
-      ...authManager.params,
-      id: albumId,
-      bulkIdsDto: {
-        ids: assetIds,
-      },
-    });
-    const count = result.filter(({ success }) => success).length;
-    const duplicateErrorCount = result.filter(({ error }) => error === 'duplicate').length;
-
-    if (showNotification) {
-      let message = $t('assets_cannot_be_added_to_album_count', { values: { count: assetIds.length } });
-      if (count > 0) {
-        message = $t('assets_added_to_album_count', { values: { count } });
-      } else if (duplicateErrorCount > 0) {
-        message = $t('assets_were_part_of_album_count', { values: { count: duplicateErrorCount } });
-      }
-      notificationController.show({
-        type: NotificationType.Info,
-        timeout: 5000,
-        message,
-        button: {
-          text: $t('view_album'),
-          onClick() {
-            return goto(resolve(`${AppRoute.ALBUMS}/${albumId}`));
-          },
-        },
-      });
-    }
-  } catch (error) {
-    // temporary
-    if ((error as Error)?.message === 'Error: 400') {
-      notificationController.show({
-        type: NotificationType.Error,
-        timeout: 5000,
-        message: $t('errors.unable_to_upload_file_shared_album'),
-      });
-    }
-  }
-};
-
-export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], showNotification = true) => {
-  /* const result = await addToAlbums({
-    ...authManager.params,
-    albumsAddAssetsDto: {
-      albumIds,
-      assetIds,
-    },
-  });
-
-  if (!showNotification) {
-    return result;
-  }
-
-  if (showNotification) {
-    const $t = get(t);
-
-    if (result.error === BulkIdErrorReason.Duplicate) {
-      notificationController.show({
-        type: NotificationType.Info,
-        timeout: 5000,
-        message: $t('assets_were_part_of_albums_count', { values: { count: assetIds.length } }),
-      });
-      return result;
-    }
-    if (result.error) {
-      notificationController.show({
-        type: NotificationType.Info,
-        timeout: 5000,
-        message: $t('assets_cannot_be_added_to_albums', { values: { count: assetIds.length } }),
-      });
-      return result;
-    }
-    notificationController.show({
-      type: NotificationType.Info,
-      timeout: 5000,
-      message: $t('assets_added_to_albums_count', {
-        values: {
-          albumTotal: albumIds.length,
-          assetTotal: assetIds.length,
-        },
-      }),
-    });
-    return result;
-  } */
-};
 
 export const tagAssets = async ({
   assetIds,
@@ -149,10 +49,7 @@ export const tagAssets = async ({
 
   if (showNotification) {
     const $t = await getFormatter();
-    notificationController.show({
-      message: $t('tagged_assets', { values: { count: assetIds.length } }),
-      type: NotificationType.Info,
-    });
+    toastManager.primary($t('tagged_assets', { values: { count: assetIds.length } }));
   }
 
   return assetIds;
@@ -173,19 +70,10 @@ export const removeTag = async ({
 
   if (showNotification) {
     const $t = await getFormatter();
-    notificationController.show({
-      message: $t('removed_tagged_assets', { values: { count: assetIds.length } }),
-      type: NotificationType.Info,
-    });
+    toastManager.primary($t('removed_tagged_assets', { values: { count: assetIds.length } }));
   }
 
   return assetIds;
-};
-
-export const downloadAlbum = async (album: AlbumResponseDto) => {
-  await downloadArchive(`${album.albumName}.zip`, {
-    albumId: album.id,
-  });
 };
 
 export const downloadBlob = (data: Blob, filename: string) => {
@@ -248,7 +136,7 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
       const { data } = await downloadRequest({
         method: 'POST',
         url: getBaseUrl() + '/download/archive' + (queryParams ? `?${queryParams}` : ''),
-        data: { assetIds: archive.assetIds },
+        data: { assetIds: archive.assetIds, edited: true },
         signal: abort.signal,
         onDownloadProgress: (event) => downloadManager.update(downloadKey, event.loaded),
       });
@@ -261,52 +149,6 @@ export const downloadArchive = async (fileName: string, options: Omit<DownloadIn
       return;
     } finally {
       setTimeout(() => downloadManager.clear(downloadKey), 5000);
-    }
-  }
-};
-
-export const downloadFile = async (asset: AssetResponseDto) => {
-  const $t = get(t);
-  const assets = [
-    {
-      filename: asset.originalFileName,
-      id: asset.id,
-      size: asset.exifInfo?.fileSizeInByte || 0,
-    },
-  ];
-
-  const isAndroidMotionVideo = (asset: AssetResponseDto) => {
-    return asset.originalPath.includes('encoded-video');
-  };
-
-  if (asset.livePhotoVideoId) {
-    const motionAsset = await getAssetInfo({ ...authManager.params, id: asset.livePhotoVideoId });
-    if (!isAndroidMotionVideo(motionAsset) || get(preferences)?.download.includeEmbeddedVideos) {
-      assets.push({
-        filename: motionAsset.originalFileName,
-        id: asset.livePhotoVideoId,
-        size: motionAsset.exifInfo?.fileSizeInByte || 0,
-      });
-    }
-  }
-
-  const queryParams = asQueryString(authManager.params);
-
-  for (const [i, { filename, id }] of assets.entries()) {
-    if (i !== 0) {
-      // play nice with Safari
-      await sleep(500);
-    }
-
-    try {
-      notificationController.show({
-        type: NotificationType.Info,
-        message: $t('downloading_asset_filename', { values: { filename: asset.originalFileName } }),
-      });
-
-      downloadUrl(getBaseUrl() + `/assets/${id}/original` + (queryParams ? `?${queryParams}` : ''), filename);
-    } catch (error) {
-      handleError(error, $t('errors.error_downloading', { values: { filename } }));
     }
   }
 };
@@ -357,31 +199,25 @@ export function getFileSize(asset: AssetResponseDto, maxPrecision = 4): string {
 }
 
 export function getAssetResolution(asset: AssetResponseDto): string {
-  const { width, height } = getAssetRatio(asset);
-
-  if (width === 235 && height === 235) {
+  if (!asset.width || !asset.height) {
     return 'Invalid Data';
   }
 
-  return `${width} x ${height}`;
+  return `${asset.width} x ${asset.height}`;
 }
 
 /**
  * Returns aspect ratio for the asset
  */
 export function getAssetRatio(asset: AssetResponseDto) {
-  let height = asset.exifInfo?.exifImageHeight || 235;
-  let width = asset.exifInfo?.exifImageWidth || 235;
-  if (isFlipped(asset.exifInfo?.orientation)) {
-    [width, height] = [height, width];
-  }
-  return { width, height };
+  return asset.width && asset.height ? asset.width / asset.height : null;
 }
 
 // list of supported image extensions from https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types excluding svg
-const supportedAssetMimeTypes = new Set([
+const supportedImageMimeTypes = new Set([
   'image/apng',
   'image/avif',
+  'image/bmp',
   'image/gif',
   'image/jpeg',
   'image/png',
@@ -399,15 +235,27 @@ const supportedAssetMimeTypes = new Set([
   'video/x-ms-asf',
 ]);
 
+export const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.includes('Firefox');
+
 /* const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); */ // https://stackoverflow.com/a/23522755
 export const getOS = () => {
   const userAgent = navigator.userAgent;
 
-  if (/Windows NT/i.test(userAgent)) return OS.WINDOWS;
-  if (/Mac/i.test(userAgent)) return OS.MACOS;
-  if (/Linux/i.test(userAgent)) return OS.LINUX;
-  if (/Android/i.test(userAgent)) return OS.ANDROID;
-  if (/iPhone|iPad|iPod/i.test(userAgent)) return OS.IOS;
+  if (/Windows NT/i.test(userAgent)) {
+    return OS.WINDOWS;
+  }
+  if (/Mac/i.test(userAgent)) {
+    return OS.MACOS;
+  }
+  if (/Linux/i.test(userAgent)) {
+    return OS.LINUX;
+  }
+  if (/Android/i.test(userAgent)) {
+    return OS.ANDROID;
+  }
+  if (/iPhone|iPad|iPod/i.test(userAgent)) {
+    return OS.IOS;
+  }
 
   return 'Unknown';
 };
@@ -425,15 +273,15 @@ export function isWebSupportedAssetMimeType(type: string): boolean {
     return false;
   }
 
-  return supportedAssetMimeTypes.has(type);
+  return supportedImageMimeTypes.has(type);
 }
 
-export function isWebCompatibleAsset(asset: AssetResponseDto): boolean {
+export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
   if (!asset.originalMimeType) {
     return false;
   }
 
-  return supportedAssetMimeTypes.has(asset.originalMimeType);
+  return supportedImageMimeTypes.has(asset.originalMimeType);
 }
 
 export const getAssetType = (type: AssetTypeEnum) => {
@@ -450,16 +298,13 @@ export const getAssetType = (type: AssetTypeEnum) => {
   }
 };
 
-export const getSelectedAssets = (assets: TimelineAsset[], user: UserResponseDto | null): string[] => {
+export const getOwnedAssetsWithWarning = (assets: TimelineAsset[], user: UserResponseDto | null): string[] => {
   const ids = [...assets].filter((a) => user && a.ownerId === user.id).map((a) => a.id);
 
   const numberOfIssues = [...assets].filter((a) => user && a.ownerId !== user.id).length;
   if (numberOfIssues > 0) {
     const $t = get(t);
-    notificationController.show({
-      message: $t('errors.cant_change_metadata_assets_count', { values: { count: numberOfIssues } }),
-      type: NotificationType.Warning,
-    });
+    toastManager.warning($t('errors.cant_change_metadata_assets_count', { values: { count: numberOfIssues } }));
   }
   return ids;
 };
@@ -479,12 +324,11 @@ export const stackAssets = async (assets: { id: string }[], showNotification = t
   try {
     const stack = await createStack({ stackCreateDto: { assetIds: assets.map(({ id }) => id) } });
     if (showNotification) {
-      notificationController.show({
-        message: $t('stacked_assets_count', { values: { count: stack.assets.length } }),
-        type: NotificationType.Info,
+      toastManager.primary({
+        description: $t('stacked_assets_count', { values: { count: stack.assets.length } }),
         button: {
-          text: $t('view_stack'),
-          onClick: () => navigate({ targetRoute: 'current', assetId: stack.primaryAssetId }),
+          label: $t('view_stack'),
+          onclick: () => navigate({ targetRoute: 'current', assetId: stack.primaryAssetId }),
         },
       });
     }
@@ -513,10 +357,7 @@ export const deleteStack = async (stackIds: string[]) => {
 
     await deleteStacks({ bulkIdsDto: { ids: [...ids] } });
 
-    notificationController.show({
-      type: NotificationType.Info,
-      message: $t('unstacked_assets_count', { values: { count } }),
-    });
+    toastManager.primary($t('unstacked_assets_count', { values: { count } }));
 
     const assets = stacks.flatMap((stack) => stack.assets);
     for (const asset of assets) {
@@ -537,10 +378,7 @@ export const keepThisDeleteOthers = async (keepAsset: AssetResponseDto, stack: S
     await deleteAssets({ assetBulkDeleteDto: { ids: assetsToDeleteIds } });
     await deleteStacks({ bulkIdsDto: { ids: [stack.id] } });
 
-    notificationController.show({
-      type: NotificationType.Info,
-      message: $t('kept_this_deleted_others', { values: { count: assetsToDeleteIds.length } }),
-    });
+    toastManager.primary($t('kept_this_deleted_others', { values: { count: assetsToDeleteIds.length } }));
 
     keepAsset.stack = null;
     return keepAsset;
@@ -549,37 +387,34 @@ export const keepThisDeleteOthers = async (keepAsset: AssetResponseDto, stack: S
   }
 };
 
-export const selectAllAssets = async (timelineManager: TimelineManager, assetInteraction: AssetInteraction) => {
-  if (get(isSelectingAllAssets)) {
+export const selectAllAssets = async (timelineManager: TimelineManager, assetInteraction: AssetMultiSelectManager) => {
+  if (assetInteraction.selectAll) {
     // Selection is already ongoing
     return;
   }
-  isSelectingAllAssets.set(true);
+  assetInteraction.selectAll = true;
 
   try {
-    for (const monthGroup of timelineManager.months) {
-      await timelineManager.loadMonthGroup(monthGroup.yearMonth);
+    for (const timelineMonth of timelineManager.months) {
+      if (!timelineMonth.isLoaded) {
+        await timelineManager.loadTimelineMonth(timelineMonth.yearMonth);
+      }
 
-      if (!get(isSelectingAllAssets)) {
-        assetInteraction.clearMultiselect();
+      if (!assetInteraction.selectAll) {
+        assetInteraction.clear();
         break; // Cancelled
       }
-      assetInteraction.selectAssets(assetsSnapshot([...monthGroup.assetsIterator()]));
+      assetInteraction.selectAssets([...timelineMonth.assetsIterator()]);
 
-      for (const dateGroup of monthGroup.dayGroups) {
+      for (const dateGroup of timelineMonth.timelineDays) {
         assetInteraction.addGroupToMultiselectGroup(dateGroup.groupTitle);
       }
     }
   } catch (error) {
     const $t = get(t);
     handleError(error, $t('errors.error_selecting_all_assets'));
-    isSelectingAllAssets.set(false);
+    assetInteraction.selectAll = false;
   }
-};
-
-export const cancelMultiselect = (assetInteraction: AssetInteraction) => {
-  isSelectingAllAssets.set(false);
-  assetInteraction.clearMultiselect();
 };
 
 export const toggleArchive = async (asset: AssetResponseDto) => {
@@ -593,11 +428,7 @@ export const toggleArchive = async (asset: AssetResponseDto) => {
     });
 
     asset.isArchived = data.isArchived;
-
-    notificationController.show({
-      type: NotificationType.Success,
-      message: asset.isArchived ? $t(`added_to_archive`) : $t(`removed_from_archive`),
-    });
+    toastManager.primary(asset.isArchived ? $t(`added_to_archive`) : $t(`removed_from_archive`));
   } catch (error) {
     handleError(error, $t('errors.unable_to_add_remove_archive', { values: { archived: asset.isArchived } }));
   }
@@ -616,13 +447,11 @@ export const archiveAssets = async (assets: { id: string }[], visibility: AssetV
       });
     }
 
-    notificationController.show({
-      message:
-        visibility === AssetVisibility.Archive
-          ? $t('archived_count', { values: { count: ids.length } })
-          : $t('unarchived_count', { values: { count: ids.length } }),
-      type: NotificationType.Info,
-    });
+    toastManager.primary(
+      visibility === AssetVisibility.Archive
+        ? $t('archived_count', { values: { count: ids.length } })
+        : $t('unarchived_count', { values: { count: ids.length } }),
+    );
   } catch (error) {
     handleError(
       error,
@@ -637,13 +466,23 @@ export const delay = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+export const getNextAsset = (assets: AssetResponseDto[], currentAsset: AssetResponseDto | undefined) => {
+  const index = currentAsset ? assets.findIndex((a) => a.id === currentAsset.id) : -1;
+  return index >= 0 ? assets[index + 1] : undefined;
+};
+
+export const getPreviousAsset = (assets: AssetResponseDto[], currentAsset: AssetResponseDto | undefined) => {
+  const index = currentAsset ? assets.findIndex((a) => a.id === currentAsset.id) : -1;
+  return index >= 0 ? assets[index - 1] : undefined;
+};
+
 export const canCopyImageToClipboard = (): boolean => {
   return !!(navigator.clipboard && globalThis.ClipboardItem);
 };
 
 export const getFileExtension = (fileName: string) => {
   const dotIndex = fileName.lastIndexOf('.');
-  return dotIndex !== -1 ? fileName.slice(dotIndex) : '';
+  return dotIndex === -1 ? '' : fileName.slice(dotIndex);
 };
 
 export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasElement => {
@@ -658,7 +497,9 @@ export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasEleme
   const width = canvas.width;
   const height = canvas.height;
 
-  if (width < 2 || height < 2) return canvas;
+  if (width < 2 || height < 2) {
+    return canvas;
+  }
 
   const ts = Date.now(); // timestamp for some variability
 
@@ -695,8 +536,11 @@ export const makeImageUnique = (imageElement: HTMLImageElement): HTMLCanvasEleme
 export const canvasToBlob = async (canvas: HTMLCanvasElement) => {
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('Canvas conversion to Blob failed'));
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Canvas conversion to Blob failed'));
+      }
     });
   });
 };
@@ -733,4 +577,13 @@ export const urlToArrayBuffer = async (imageSource: string) => {
 export const copyImageToClipboard = async (source: HTMLImageElement) => {
   // do not await, so the Safari clipboard write happens in the context of the user gesture
   await navigator.clipboard.write([new ClipboardItem({ ['image/png']: imgToBlob(source) })]);
+};
+
+export const navigateToAsset = async (targetAsset: AssetResponseDto | undefined | null) => {
+  if (!targetAsset) {
+    return false;
+  }
+
+  await navigate({ targetRoute: 'current', assetId: targetAsset.id });
+  return true;
 };

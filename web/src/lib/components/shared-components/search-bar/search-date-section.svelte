@@ -1,25 +1,15 @@
-<script lang="ts" module>
-  export interface SearchDateFilter {
-    takenBefore?: string;
-    takenAfter?: string;
-  }
-</script>
-
 <script lang="ts">
+  import type { SearchDateFilter } from '$lib/types';
   import { DateInput, Text } from '@immich/ui';
   import { t } from 'svelte-i18n';
 
-  interface Props {
+  type Props = {
     filters: SearchDateFilter;
-  }
+  };
 
   let { filters = $bindable() }: Props = $props();
 
   let invalid = $derived(filters.takenAfter && filters.takenBefore && filters.takenAfter > filters.takenBefore);
-
-  /* const inputClasses = $derived(
-    `immich-form-input w-full mt-1 hover:cursor-pointer ${invalid ? 'border border-danger' : ''}`,
-  ); */
 </script>
 
 <div class="flex flex-col gap-1">

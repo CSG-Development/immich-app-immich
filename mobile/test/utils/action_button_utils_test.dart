@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/services/timeline.service.dart';
 import 'package:immich_mobile/utils/action_button.utils.dart';
 
 LocalAsset createLocalAsset({
@@ -452,6 +453,24 @@ void main() {
           advancedTroubleshooting: false,
           isStacked: false,
           source: ActionSource.timeline,
+        );
+
+        expect(ActionButtonType.trash.shouldShow(context), isFalse);
+      });
+
+      test('should not show when already in trash timeline', () {
+        final remoteAsset = createRemoteAsset();
+        final context = ActionButtonContext(
+          asset: remoteAsset,
+          isOwner: true,
+          isArchived: false,
+          isTrashEnabled: true,
+          isInLockedView: false,
+          currentAlbum: null,
+          advancedTroubleshooting: false,
+          isStacked: false,
+          source: ActionSource.timeline,
+          timelineOrigin: TimelineOrigin.trash,
         );
 
         expect(ActionButtonType.trash.shouldShow(context), isFalse);

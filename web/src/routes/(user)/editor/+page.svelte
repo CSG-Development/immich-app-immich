@@ -2,10 +2,9 @@
   // @ts-nocheck
 
   import { afterNavigate, goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { page } from '$app/state';
-  import { AppRoute } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { Route } from '$lib/route';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { getAssetInfo, getBaseUrl } from '@immich/sdk';
@@ -51,14 +50,12 @@
       lastDotIndex === -1 ? asset.originalFileName : asset.originalFileName.substring(0, lastDotIndex);
     const resultFile = new File([uint8Array], `${fileNameWithoutExt}_${Date.now()}_edited.png`, { type: 'image/png' });
     await fileUploadHandler({ files: [resultFile] }).then(async () => {
-      await goto(resolve(AppRoute.PHOTOS), { replaceState: true });
+      await goto(Route.photos(), { replaceState: true });
     });
   };
 
   const onEditorClosed = async () => {
-    await (previousUrl
-      ? goto(previousUrl, { replaceState: true })
-      : goto(resolve(AppRoute.PHOTOS), { replaceState: true }));
+    await (previousUrl ? goto(previousUrl, { replaceState: true }) : goto(Route.photos(), { replaceState: true }));
   };
 
   function loadFlutterScript() {

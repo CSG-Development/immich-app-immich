@@ -1,52 +1,43 @@
 <script lang="ts">
-  import DeleteAssetDialog from '$lib/components/photos-page/delete-asset-dialog.svelte';
-  import { getAssetControlContext } from '$lib/components/timeline/AssetSelectControlBar.svelte';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
+  import AssetDeleteConfirmModal from '$lib/modals/AssetDeleteConfirmModal.svelte';
   import { showDeleteModal } from '$lib/stores/preferences.store';
-  import { featureFlags } from '$lib/stores/server-config.store';
   import { type OnDelete, type OnUndoDelete, deleteAssets } from '$lib/utils/actions';
-  import { IconButton } from '@immich/ui';
-  import { mdiDeleteForeverOutline, mdiTimerSand, mdiTrashCanOutline } from '@mdi/js';
+  import { IconButton, modalManager } from '@immich/ui';
+  import { mdiDeleteForeverOutline, mdiTimerSand } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import MenuOption from '../../shared-components/context-menu/menu-option.svelte';
 
-  interface Props {
+  type Props = {
     onAssetDelete: OnDelete;
     onUndoDelete?: OnUndoDelete | undefined;
-    menuItem?: boolean;
     force?: boolean;
-  }
-
-  let { onAssetDelete, onUndoDelete = undefined, menuItem = false, force = !$featureFlags.trash }: Props = $props();
-
-  const { clearSelect, getOwnedAssets } = getAssetControlContext();
-
-  let isShowConfirmation = $state(false);
-  let loading = $state(false);
-
-  let label = $derived(force ? $t('permanently_delete') : $t('delete'));
-
-  const handleTrash = async () => {
-    if ($showDeleteModal) {
-      isShowConfirmation = true;
-      return;
-    }
-
-    await handleDelete();
   };
 
-  const handleDelete = async () => {
+  let { onAssetDelete, onUndoDelete = undefined, force: forceRequested }: Props = $props();
+
+  const force = $derived(forceRequested || !featureFlagsManager.value.trash);
+  let label = $derived(force ? $t('permanently_delete') : $t('delete'));
+  let loading = $state(false);
+
+  const onAction = async () => {
+    const assets = assetMultiSelectManager.ownedAssets;
+
+    if ($showDeleteModal) {
+      const confirmed = await modalManager.show(AssetDeleteConfirmModal, { size: assets.length });
+      if (!confirmed) {
+        return;
+      }
+    }
+
     loading = true;
-    const assets = [...getOwnedAssets()];
     await deleteAssets(force, onAssetDelete, assets, onUndoDelete);
-    clearSelect();
-    isShowConfirmation = false;
+    assetMultiSelectManager.clear();
     loading = false;
   };
 </script>
 
-{#if menuItem}
-  <MenuOption text={label} icon={mdiTrashCanOutline} onClick={handleTrash} />
-{:else if loading}
+{#if loading}
   <IconButton
     shape="round"
     color="secondary"
@@ -62,14 +53,6 @@
     variant="ghost"
     aria-label={label}
     icon={mdiDeleteForeverOutline}
-    onclick={handleTrash}
-  />
-{/if}
-
-{#if isShowConfirmation}
-  <DeleteAssetDialog
-    size={getOwnedAssets().length}
-    onConfirm={handleDelete}
-    onCancel={() => (isShowConfirmation = false)}
+    onclick={onAction}
   />
 {/if}

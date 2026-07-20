@@ -1,23 +1,22 @@
 <script lang="ts">
   import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
   import type { MapSettings } from '$lib/stores/preferences.store';
-  import { Button, DateInput, Field, HStack, Modal, ModalBody, ModalFooter, Stack, Switch } from '@immich/ui';
+  import { Button, DateInput, Field, FormModal, Stack, Switch } from '@immich/ui';
   import { Duration } from 'luxon';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';
 
-  interface Props {
+  type Props = {
     settings: MapSettings;
     onClose: (settings?: MapSettings) => void;
-  }
+  };
 
   let { settings: initialValues, onClose }: Props = $props();
   let settings = $state(initialValues);
 
   let customDateRange = $state(!!settings.dateAfter || !!settings.dateBefore);
 
-  const onsubmit = (event: Event) => {
-    event.preventDefault();
+  const onSubmit = () => {
     onClose(settings);
   };
 
@@ -59,90 +58,70 @@
   };
 </script>
 
-<Modal title={$t('map_settings')} {onClose} size="small">
-  <ModalBody>
-    <form {onsubmit} id="map-settings-form">
-      <Stack gap={4}>
-        <Field label={$t('allow_dark_mode')}>
-          <Switch bind:checked={settings.allowDarkMode} />
-        </Field>
-        <Field label={$t('only_favorites')}>
-          <Switch bind:checked={settings.onlyFavorites} />
-        </Field>
-        <Field label={$t('include_archived')}>
-          <Switch bind:checked={settings.includeArchived} />
-        </Field>
-        <Field label={$t('include_shared_partner_assets')}>
-          <Switch bind:checked={settings.withPartners} />
-        </Field>
-        <Field label={$t('include_shared_albums')}>
-          <Switch bind:checked={settings.withSharedAlbums} />
-        </Field>
+<FormModal title={$t('map_settings')} {onClose} {onSubmit} size="small">
+  <Stack gap={4}>
+    <Field label={$t('allow_dark_mode')}>
+      <Switch bind:checked={settings.allowDarkMode} />
+    </Field>
+    <Field label={$t('only_favorites')}>
+      <Switch bind:checked={settings.onlyFavorites} />
+    </Field>
+    <Field label={$t('include_archived')}>
+      <Switch bind:checked={settings.includeArchived} />
+    </Field>
+    <Field label={$t('include_shared_partner_assets')}>
+      <Switch bind:checked={settings.withPartners} />
+    </Field>
+    <Field label={$t('include_shared_albums')}>
+      <Switch bind:checked={settings.withSharedAlbums} />
+    </Field>
 
-        {#if customDateRange}
-          <div in:fly={{ y: 10, duration: 200 }} class="flex flex-col gap-4">
-            <div class="flex items-center justify-between gap-8">
-              <label class="immich-form-label shrink-0 text-sm" for="date-after">{$t('date_after')}</label>
-              <div class="w-40">
-                <DateInput type="date" id="date-after" max={settings.dateBefore} bind:value={settings.dateAfter} />
-              </div>
-            </div>
-            <div class="flex items-center justify-between gap-8">
-              <label class="immich-form-label shrink-0 text-sm" for="date-before">{$t('date_before')}</label>
-              <div class="w-40">
-                <DateInput type="date" id="date-before" bind:value={settings.dateBefore} />
-              </div>
-            </div>
-            <div class="flex justify-center text-xs">
-              <Button
-                color="primary"
-                size="small"
-                variant="ghost"
-                onclick={() => {
-                  customDateRange = false;
-                  settings.dateAfter = '';
-                  settings.dateBefore = '';
-                }}
-              >
-                {$t('remove_custom_date_range')}
-              </Button>
-            </div>
+    {#if customDateRange}
+      <div in:fly={{ y: 10, duration: 200 }} class="flex flex-col gap-4">
+        <div class="flex items-center justify-between gap-8">
+          <label class="immich-form-label shrink-0 text-sm" for="date-after">{$t('date_after')}</label>
+          <div class="w-40">
+            <DateInput type="date" id="date-after" max={settings.dateBefore} bind:value={settings.dateAfter} />
           </div>
-        {:else}
-          <div in:fly={{ y: -10, duration: 200 }} class="flex flex-col gap-1">
-            <Combobox label={$t('date_range')} {options} bind:selectedOption onSelect={handleSelect} />
-            <div class="text-xs pt-4">
-              <Button
-                color="primary"
-                size="small"
-                variant="ghost"
-                onclick={() => {
-                  customDateRange = true;
-                  settings.relativeDate = '';
-                }}
-              >
-                {$t('use_custom_date_range')}
-              </Button>
-            </div>
+        </div>
+        <div class="flex items-center justify-between gap-8">
+          <label class="immich-form-label shrink-0 text-sm" for="date-before">{$t('date_before')}</label>
+          <div class="w-40">
+            <DateInput type="date" id="date-before" bind:value={settings.dateBefore} />
           </div>
-        {/if}
-      </Stack>
-    </form>
-  </ModalBody>
-
-  <ModalFooter>
-    <HStack fullWidth>
-      <Button
-        color="secondary"
-        shape="round"
-        fullWidth
-        size="standard-large"
-        class="font-normal"
-        onclick={() => onClose()}>{$t('cancel')}</Button
-      >
-      <Button type="submit" shape="round" fullWidth size="standard-large" class="font-normal" form="map-settings-form"
-        >{$t('save')}</Button
-      >
-    </HStack>
-  </ModalFooter>
-</Modal>
+        </div>
+        <div class="flex justify-center text-xs">
+          <Button
+            color="primary"
+            size="small"
+            variant="ghost"
+            onclick={() => {
+              customDateRange = false;
+              settings.dateAfter = '';
+              settings.dateBefore = '';
+            }}
+          >
+            {$t('remove_custom_date_range')}
+          </Button>
+        </div>
+      </div>
+    {:else}
+      <div in:fly={{ y: -10, duration: 200 }} class="flex flex-col gap-1">
+        <Combobox label={$t('date_range')} {options} bind:selectedOption onSelect={handleSelect} />
+        <div class="text-xs pt-4">
+          <Button
+            color="primary"
+            size="small"
+            variant="ghost"
+            onclick={() => {
+              customDateRange = true;
+              settings.relativeDate = '';
+            }}
+          >
+            {$t('use_custom_date_range')}
+          </Button>
+        </div>
+      </div>
+    {/if}
+  </Stack>
+</FormModal>

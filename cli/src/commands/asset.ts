@@ -4,6 +4,7 @@ import {
   AssetBulkUploadCheckResult,
   AssetMediaResponseDto,
   AssetMediaStatus,
+  Permission,
   addAssetsToAlbum,
   checkBulkUpload,
   createAlbum,
@@ -16,16 +17,14 @@ import { Matcher, watch as watchFs } from 'chokidar';
 import { MultiBar, Presets, SingleBar } from 'cli-progress';
 import { chunk } from 'lodash-es';
 import micromatch from 'micromatch';
-import { Stats, createReadStream } from 'node:fs';
+import { Stats, createReadStream, existsSync } from 'node:fs';
 import { stat, unlink } from 'node:fs/promises';
 import path, { basename } from 'node:path';
 import { Queue } from 'src/queue';
-import { BaseOptions, Batcher, authenticate, crawl, sha1 } from 'src/utils';
+import { BaseOptions, Batcher, authenticate, crawl, requirePermissions, s, sha1 } from 'src/utils';
 
 const UPLOAD_WATCH_BATCH_SIZE = 100;
 const UPLOAD_WATCH_DEBOUNCE_TIME_MS = 10_000;
-
-const s = (count: number) => (count === 1 ? '' : 's');
 
 // TODO figure out why `id` is missing
 type AssetBulkUploadCheckResults = Array<AssetBulkUploadCheckResult & { id: string }>;
@@ -37,6 +36,7 @@ export interface UploadOptionsDto {
   dryRun?: boolean;
   skipHash?: boolean;
   delete?: boolean;
+  deleteDuplicates?: boolean;
   album?: boolean;
   albumName?: string;
   includeHidden?: boolean;
@@ -70,10 +70,8 @@ const uploadBatch = async (files: string[], options: UploadOptionsDto) => {
     console.log(JSON.stringify({ newFiles, duplicates, newAssets }, undefined, 4));
   }
   await updateAlbums([...newAssets, ...duplicates], options);
-  await deleteFiles(
-    newAssets.map(({ filepath }) => filepath),
-    options,
-  );
+
+  await deleteFiles(newAssets, duplicates, options);
 };
 
 export const startWatch = async (
@@ -137,6 +135,7 @@ export const startWatch = async (
 
 export const upload = async (paths: string[], baseOptions: BaseOptions, options: UploadOptionsDto) => {
   await authenticate(baseOptions);
+  await requirePermissions([Permission.AssetUpload]);
 
   const scanFiles = await scan(paths, options);
 
@@ -181,18 +180,49 @@ export const checkForDuplicates = async (files: string[], { concurrency, skipHas
   }
 
   let multiBar: MultiBar | undefined;
+  let totalSize = 0;
+  const statsMap = new Map<string, Stats>();
+
+  // Calculate total size first
+  for (const filepath of files) {
+    const stats = await stat(filepath);
+    statsMap.set(filepath, stats);
+    totalSize += stats.size;
+  }
 
   if (progress) {
     multiBar = new MultiBar(
-      { format: '{message} | {bar} | {percentage}% | ETA: {eta}s | {value}/{total} assets' },
+      {
+        format: '{message} | {bar} | {percentage}% | ETA: {eta_formatted} | {value}/{total}',
+        formatValue: (v: number, options, type) => {
+          // Don't format percentage
+          if (type === 'percentage') {
+            return v.toString();
+          }
+          return byteSize(v).toString();
+        },
+        etaBuffer: 100, // Increase samples for ETA calculation
+      },
       Presets.shades_classic,
     );
+
+    // Ensure we restore cursor on interrupt
+    process.on('SIGINT', () => {
+      if (multiBar) {
+        multiBar.stop();
+      }
+      process.exit(0);
+    });
   } else {
-    console.log(`Received ${files.length} files, hashing...`);
+    console.log(`Received ${files.length} files (${byteSize(totalSize)}), hashing...`);
   }
 
-  const hashProgressBar = multiBar?.create(files.length, 0, { message: 'Hashing files          ' });
-  const checkProgressBar = multiBar?.create(files.length, 0, { message: 'Checking for duplicates' });
+  const hashProgressBar = multiBar?.create(totalSize, 0, {
+    message: 'Hashing files          ',
+  });
+  const checkProgressBar = multiBar?.create(totalSize, 0, {
+    message: 'Checking for duplicates',
+  });
 
   const newFiles: string[] = [];
   const duplicates: Asset[] = [];
@@ -212,7 +242,13 @@ export const checkForDuplicates = async (files: string[], { concurrency, skipHas
         }
       }
 
-      checkProgressBar?.increment(assets.length);
+      // Update progress based on total size of processed files
+      let processedSize = 0;
+      for (const asset of assets) {
+        const stats = statsMap.get(asset.id);
+        processedSize += stats?.size || 0;
+      }
+      checkProgressBar?.increment(processedSize);
     },
     { concurrency, retry: 3 },
   );
@@ -222,6 +258,10 @@ export const checkForDuplicates = async (files: string[], { concurrency, skipHas
 
   const queue = new Queue<string, AssetBulkUploadCheckItem[]>(
     async (filepath: string): Promise<AssetBulkUploadCheckItem[]> => {
+      const stats = statsMap.get(filepath);
+      if (!stats) {
+        throw new Error(`Stats not found for ${filepath}`);
+      }
       const dto = { id: filepath, checksum: await sha1(filepath) };
 
       results.push(dto);
@@ -232,7 +272,7 @@ export const checkForDuplicates = async (files: string[], { concurrency, skipHas
         void checkBulkUploadQueue.push(batch);
       }
 
-      hashProgressBar?.increment();
+      hashProgressBar?.increment(stats.size);
       return results;
     },
     { concurrency, retry: 3 },
@@ -363,23 +403,6 @@ export const uploadFiles = async (
 const uploadFile = async (input: string, stats: Stats): Promise<AssetMediaResponseDto> => {
   const { baseUrl, headers } = defaults;
 
-  const assetPath = path.parse(input);
-  const noExtension = path.join(assetPath.dir, assetPath.name);
-
-  const sidecarsFiles = await Promise.all(
-    // XMP sidecars can come in two filename formats. For a photo named photo.ext, the filenames are photo.ext.xmp and photo.xmp
-    [`${noExtension}.xmp`, `${input}.xmp`].map(async (sidecarPath) => {
-      try {
-        const stats = await stat(sidecarPath);
-        return new UploadFile(sidecarPath, stats.size);
-      } catch {
-        return false;
-      }
-    }),
-  );
-
-  const sidecarData = sidecarsFiles.find((file): file is UploadFile => file !== false);
-
   const formData = new FormData();
   formData.append('deviceAssetId', `${basename(input)}-${stats.size}`.replaceAll(/\s+/g, ''));
   formData.append('deviceId', 'CLI');
@@ -389,8 +412,15 @@ const uploadFile = async (input: string, stats: Stats): Promise<AssetMediaRespon
   formData.append('isFavorite', 'false');
   formData.append('assetData', new UploadFile(input, stats.size));
 
-  if (sidecarData) {
-    formData.append('sidecarData', sidecarData);
+  const sidecarPath = findSidecar(input);
+  if (sidecarPath) {
+    try {
+      const stats = await stat(sidecarPath);
+      const sidecarData = new UploadFile(sidecarPath, stats.size);
+      formData.append('sidecarData', sidecarData);
+    } catch {
+      // noop
+    }
   }
 
   const response = await fetch(`${baseUrl}/assets`, {
@@ -406,28 +436,66 @@ const uploadFile = async (input: string, stats: Stats): Promise<AssetMediaRespon
   return response.json();
 };
 
-const deleteFiles = async (files: string[], options: UploadOptionsDto): Promise<void> => {
-  if (!options.delete) {
-    return;
+export const findSidecar = (filepath: string): string | undefined => {
+  const assetPath = path.parse(filepath);
+  const noExtension = path.join(assetPath.dir, assetPath.name);
+
+  // XMP sidecars can come in two filename formats. For a photo named photo.ext, the filenames are photo.ext.xmp and photo.xmp
+  for (const sidecarPath of [`${noExtension}.xmp`, `${filepath}.xmp`]) {
+    if (existsSync(sidecarPath)) {
+      return sidecarPath;
+    }
+  }
+};
+
+export const deleteFiles = async (uploaded: Asset[], duplicates: Asset[], options: UploadOptionsDto): Promise<void> => {
+  let fileCount = 0;
+  if (options.delete) {
+    fileCount += uploaded.length;
+  }
+
+  if (options.deleteDuplicates) {
+    fileCount += duplicates.length;
   }
 
   if (options.dryRun) {
-    console.log(`Would have deleted ${files.length} local asset${s(files.length)}`);
+    console.log(`Would have deleted ${fileCount} local asset${s(fileCount)}`);
+    return;
+  }
+
+  if (fileCount === 0) {
     return;
   }
 
   console.log('Deleting assets that have been uploaded...');
-
   const deletionProgress = new SingleBar(
     { format: 'Deleting local assets | {bar} | {percentage}% | ETA: {eta}s | {value}/{total} assets' },
     Presets.shades_classic,
   );
-  deletionProgress.start(files.length, 0);
+  deletionProgress.start(fileCount, 0);
+
+  const chunkDelete = async (files: Asset[]) => {
+    for (const assetBatch of chunk(files, options.concurrency)) {
+      await Promise.all(
+        assetBatch.map(async (input: Asset) => {
+          await unlink(input.filepath);
+          const sidecarPath = findSidecar(input.filepath);
+          if (sidecarPath) {
+            await unlink(sidecarPath);
+          }
+        }),
+      );
+      deletionProgress.update(assetBatch.length);
+    }
+  };
 
   try {
-    for (const assetBatch of chunk(files, options.concurrency)) {
-      await Promise.all(assetBatch.map((input: string) => unlink(input)));
-      deletionProgress.update(assetBatch.length);
+    if (options.delete) {
+      await chunkDelete(uploaded);
+    }
+
+    if (options.deleteDuplicates) {
+      await chunkDelete(duplicates);
     }
   } finally {
     deletionProgress.stop();

@@ -1,38 +1,140 @@
+import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { AppRoute } from '$lib/constants';
 import { eventManager } from '$lib/managers/event-manager.svelte';
+import { Route } from '$lib/route';
 import { isSharedLinkRoute } from '$lib/utils/navigation';
-import { logout } from '@immich/sdk';
+import {
+  getAboutInfo,
+  getMyPreferences,
+  getMyUser,
+  logout,
+  type UserAdminResponseDto,
+  type UserPreferencesResponseDto,
+} from '@immich/sdk';
 
 class AuthManager {
+  isPurchased = $state(false);
   isSharedLink = $derived(isSharedLinkRoute(page.route?.id));
   params = $derived(this.isSharedLink ? { key: page.params.key, slug: page.params.slug } : {});
 
+  #user = $state<UserAdminResponseDto>();
+  #preferences = $state<UserPreferencesResponseDto>();
+
+  get authenticated() {
+    return !!(this.#user && this.#preferences);
+  }
+
+  get user() {
+    if (!this.#user) {
+      throw new TypeError('AuthManager.user is undefined');
+    }
+
+    return this.#user;
+  }
+
+  get preferences() {
+    if (!this.#preferences) {
+      throw new TypeError('AuthManager.preferences is undefined');
+    }
+
+    return this.#preferences;
+  }
+
+  constructor() {
+    eventManager.on({
+      SessionDelete: () => goto(Route.logout()),
+    });
+  }
+
+  async load() {
+    if (authManager.authenticated) {
+      return;
+    }
+
+    if (!this.#hasAuthCookie()) {
+      return;
+    }
+
+    return this.refresh();
+  }
+
+  async refresh() {
+    try {
+      const [user, preferences] = await Promise.all([getMyUser(), getMyPreferences()]);
+      this.#preferences = preferences;
+      this.#user = user;
+
+      if (user.license?.activatedAt) {
+        this.isPurchased = true;
+      } else {
+        // check server status
+        const serverInfo = await getAboutInfo().catch(() => {});
+        if (serverInfo?.licensed) {
+          this.isPurchased = true;
+        }
+      }
+
+      eventManager.emit('AuthUserLoaded', user);
+    } catch {
+      // noop
+    }
+  }
+
+  setUser(user: UserAdminResponseDto) {
+    this.#user = user;
+  }
+
+  setPreferences(preferences: UserPreferencesResponseDto) {
+    this.#preferences = preferences;
+  }
+
   async logout() {
-    let redirectUri;
+    let redirectUri = Route.login({ autoLaunch: 0 });
 
     try {
       const response = await logout();
       if (response.redirectUri) {
-        redirectUri = response.redirectUri;
+        const uri = response.redirectUri;
+        // Server may return a root-relative path without the `/photos` base.
+        redirectUri = uri.startsWith('/') && !uri.startsWith('/photos') ? `/photos${uri}` : uri;
       }
-    } catch (error) {
-      console.log('Error logging out:', error);
+    } catch {
+      // noop
     }
 
-    redirectUri = redirectUri ? resolve(redirectUri as any) : resolve(AppRoute.AUTH_LOGIN);
+    if (redirectUri.startsWith('/')) {
+      this.isPurchased = false;
 
-    try {
-      if (redirectUri.startsWith('/')) {
-        await goto(redirectUri);
-      } else {
-        globalThis.location.href = redirectUri;
-      }
-    } finally {
-      eventManager.emit('auth.logout');
+      // Reset auth state only after navigation — clearing `$user` while the
+      // user layout is still mounted throws in UserAvatar / navigation-bar.
+      await goto(redirectUri);
+
+      this.reset();
+      eventManager.emit('AuthLogout');
+    } else {
+      globalThis.location.href = redirectUri;
     }
+  }
+
+  reset() {
+    this.#user = undefined;
+    this.#preferences = undefined;
+  }
+
+  #hasAuthCookie() {
+    if (!browser) {
+      return;
+    }
+
+    for (const cookie of document.cookie.split('; ')) {
+      const [name] = cookie.split('=');
+      if (name === 'immich_is_authenticated') {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 

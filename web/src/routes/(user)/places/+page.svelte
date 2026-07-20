@@ -5,6 +5,7 @@
   import SearchBar from '$lib/elements/SearchBar.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { locale, placesViewSettings } from '$lib/stores/preferences.store';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { type AssetResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -33,12 +34,7 @@
 
 <svelte:window bind:innerHeight />
 
-<UserPageLayout
-  title={$t('places')}
-  description={countVisiblePlaces === 0 && !searchQuery
-    ? undefined
-    : $t('items_count', { values: { count: countVisiblePlaces.toLocaleString($locale) } })}
->
+<UserPageLayout title={formatPageTitleWithCount($t('places'), countVisiblePlaces, $locale)}>
   {#snippet buttons()}
     <div class="flex place-items-center gap-2">
       <PlacesControls {placesGroups} bind:searchQuery />

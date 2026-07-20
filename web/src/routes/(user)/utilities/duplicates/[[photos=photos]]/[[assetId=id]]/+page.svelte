@@ -1,34 +1,27 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { shortcuts } from '$lib/actions/shortcut';
   import duplicatesUrl from '$lib/assets/duplicates.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import LinkToDocs from '$lib/components/LinkToDocs.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import {
-    notificationController,
-    NotificationType,
-  } from '$lib/components/shared-components/notification/notification';
   import DuplicatesCompareControl from '$lib/components/utilities-page/duplicates/duplicates-compare-control.svelte';
-  import { AppRoute } from '$lib/constants';
-  import { modalManager } from '$lib/managers/modal-manager.svelte';
-  import DuplicatesInformationModal from '$lib/modals/DuplicatesInformationModal.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';
-  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
+  import { Route } from '$lib/route';
   import { locale } from '$lib/stores/preferences.store';
-  import { featureFlags } from '$lib/stores/server-config.store';
-  import { stackAssets } from '$lib/utils/asset-utils';
   import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { handleError } from '$lib/utils/handle-error';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import type { AssetResponseDto } from '@immich/sdk';
-  import { deleteAssets, deleteDuplicates, updateAssets } from '@immich/sdk';
-  import { Button, HStack, IconButton, Text, type Color } from '@immich/ui';
+  import { createStack, deleteDuplicates, resolveDuplicates, updateAssets } from '@immich/sdk';
+  import { Button, HStack, IconButton, modalManager, Text, toastManager } from '@immich/ui';
   import {
     mdiCheckOutline,
     mdiChevronLeft,
     mdiChevronRight,
-    mdiInformationOutline,
     mdiKeyboard,
     mdiPageFirst,
     mdiPageLast,
@@ -65,7 +58,6 @@
   };
 
   let duplicates = $state(data.duplicates);
-  const { isViewing: showAssetViewer } = assetViewingStore;
 
   const correctDuplicatesIndex = (index: number) => {
     return Math.max(0, Math.min(index, duplicates.length - 1));
@@ -80,14 +72,9 @@
   );
 
   let hasDuplicates = $derived(duplicates.length > 0);
-  const withConfirmation = async (
-    callback: () => Promise<void>,
-    prompt?: string,
-    confirmText?: string,
-    confirmColor?: Color,
-  ) => {
-    if (prompt && confirmText && confirmColor) {
-      const isConfirmed = await modalManager.showDialog({ prompt, confirmText, confirmColor });
+  const withConfirmation = async (callback: () => Promise<void>, prompt?: string, confirmText?: string) => {
+    if (prompt && confirmText) {
+      const isConfirmed = await modalManager.showDialog({ prompt, confirmText });
       if (!isConfirmed) {
         return;
       }
@@ -105,75 +92,105 @@
       return;
     }
 
-    notificationController.show({
-      message: $featureFlags.trash
-        ? $t('assets_moved_to_trash_count', { values: { count: trashedCount } })
-        : $t('permanently_deleted_assets_count', { values: { count: trashedCount } }),
-      type: NotificationType.Success,
-    });
+    const message = featureFlagsManager.value.trash
+      ? $t('assets_moved_to_trash_count', { values: { count: trashedCount } })
+      : $t('permanently_deleted_assets_count', { values: { count: trashedCount } });
+    toastManager.primary(message);
   };
 
   const handleResolve = async (duplicateId: string, duplicateAssetIds: string[], trashIds: string[]) => {
+    const forceDelete = !featureFlagsManager.value.trash;
+    const shouldConfirmDelete = trashIds.length > 0 && forceDelete;
+
     return withConfirmation(
       async () => {
-        await deleteAssets({ assetBulkDeleteDto: { ids: trashIds, force: !$featureFlags.trash } });
-        await updateAssets({ assetBulkUpdateDto: { ids: duplicateAssetIds, duplicateId: null } });
+        const keepAssetIds = duplicateAssetIds.filter((id) => !trashIds.includes(id));
+
+        const response = await resolveDuplicates({
+          duplicateResolveDto: {
+            groups: [{ duplicateId, keepAssetIds, trashAssetIds: trashIds }],
+          },
+        });
+
+        const { success, error, errorMessage } = response[0];
+        if (!success) {
+          throw new Error(errorMessage || error);
+        }
 
         duplicates = duplicates.filter((duplicate) => duplicate.duplicateId !== duplicateId);
 
         deletedNotification(trashIds.length);
-        await correctDuplicatesIndexAndGo(duplicatesIndex);
+        await navigateToIndex(duplicatesIndex);
       },
-      trashIds.length > 0 && !$featureFlags.trash ? $t('delete_duplicates_confirmation') : undefined,
-      trashIds.length > 0 && !$featureFlags.trash ? $t('permanently_delete') : undefined,
+      shouldConfirmDelete ? $t('delete_duplicates_confirmation') : undefined,
+      shouldConfirmDelete ? $t('permanently_delete') : undefined,
     );
   };
 
   const handleStack = async (duplicateId: string, assets: AssetResponseDto[]) => {
-    await stackAssets(assets, false);
-    const duplicateAssetIds = assets.map((asset) => asset.id);
-    await updateAssets({ assetBulkUpdateDto: { ids: duplicateAssetIds, duplicateId: null } });
+    const assetIds = assets.map((asset) => asset.id);
+    await createStack({ stackCreateDto: { assetIds } });
+    await updateAssets({ assetBulkUpdateDto: { ids: assetIds, duplicateId: null } });
     duplicates = duplicates.filter((duplicate) => duplicate.duplicateId !== duplicateId);
-    await correctDuplicatesIndexAndGo(duplicatesIndex);
+    await navigateToIndex(duplicatesIndex);
+  };
+
+  const getTrashAssetIds = (group: (typeof duplicates)[number]) => {
+    const assetIds = group.assets.map((asset) => asset.id);
+    const assetIdSet = new Set(assetIds);
+    let keepIds = group.suggestedKeepAssetIds.filter((id) => assetIdSet.has(id));
+    if (keepIds.length === 0 && assetIds.length > 0) {
+      const fallback = suggestDuplicate(group.assets);
+      keepIds = [fallback?.id ?? assetIds[0]];
+    }
+    const keepSet = new Set(keepIds);
+    return assetIds.filter((id) => !keepSet.has(id));
   };
 
   const handleDeduplicateAll = async () => {
-    const idsToKeep = duplicates.map((group) => suggestDuplicate(group.assets)).map((asset) => asset?.id);
-    const idsToDelete = duplicates.flatMap((group, i) =>
-      group.assets.map((asset) => asset.id).filter((asset) => asset !== idsToKeep[i]),
-    );
+    const idsToDelete = duplicates.flatMap((group) => getTrashAssetIds(group));
+    // Use group count so the dialog matches the page title and Keep All confirmation
+    const groupCount = duplicates.length;
 
-    let prompt, confirmText, confirmColor;
-    if ($featureFlags.trash) {
-      prompt = $t('bulk_trash_duplicates_confirmation', { values: { count: idsToDelete.length } });
+    let prompt, confirmText;
+    if (featureFlagsManager.value.trash) {
+      prompt = $t('bulk_trash_duplicates_confirmation', { values: { count: groupCount } });
       confirmText = $t('confirm');
-      confirmColor = 'primary' as Color;
     } else {
-      prompt = $t('bulk_delete_duplicates_confirmation', { values: { count: idsToDelete.length } });
+      prompt = $t('bulk_delete_duplicates_confirmation', { values: { count: groupCount } });
       confirmText = $t('permanently_delete');
-      confirmColor = 'danger' as Color;
     }
 
     return withConfirmation(
       async () => {
-        await deleteAssets({ assetBulkDeleteDto: { ids: idsToDelete, force: !$featureFlags.trash } });
-        await updateAssets({
-          assetBulkUpdateDto: {
-            ids: [...idsToDelete, ...idsToKeep.filter((id): id is string => !!id)],
-            duplicateId: null,
+        const response = await resolveDuplicates({
+          duplicateResolveDto: {
+            groups: duplicates.map((group) => {
+              const trashAssetIds = getTrashAssetIds(group);
+              const trashIdSet = new Set(trashAssetIds);
+              return {
+                duplicateId: group.duplicateId,
+                keepAssetIds: group.assets.map((asset) => asset.id).filter((id) => !trashIdSet.has(id)),
+                trashAssetIds,
+              };
+            }),
           },
         });
+
+        const failedCount = response.filter(({ success }) => !success).length;
+        if (failedCount > 0) {
+          toastManager.danger($t('errors.unable_to_resolve_duplicate'));
+        }
 
         duplicates = [];
 
         deletedNotification(idsToDelete.length);
 
         page.url.searchParams.delete('index');
-        await goto(resolve(AppRoute.DUPLICATES));
+        await goto(Route.duplicatesUtility());
       },
       prompt,
       confirmText,
-      confirmColor,
     );
   };
 
@@ -185,62 +202,39 @@
 
         duplicates = [];
 
-        notificationController.show({
-          message: $t('resolved_all_duplicates'),
-          type: NotificationType.Success,
-        });
+        toastManager.primary($t('resolved_all_duplicates'));
         page.url.searchParams.delete('index');
-        await goto(resolve(AppRoute.DUPLICATES));
+        await goto(Route.duplicatesUtility());
       },
       $t('bulk_keep_duplicates_confirmation', { values: { count: ids.length } }),
       $t('confirm'),
-      'primary',
     );
   };
 
-  const handleFirst = async () => {
-    await correctDuplicatesIndexAndGo(0);
-  };
-  const handlePrevious = async () => {
-    await correctDuplicatesIndexAndGo(Math.max(duplicatesIndex - 1, 0));
-  };
-  const handlePreviousShortcut = async () => {
-    if ($showAssetViewer) {
-      return;
-    }
-    await handlePrevious();
-  };
-  const handleNext = async () => {
-    await correctDuplicatesIndexAndGo(Math.min(duplicatesIndex + 1, duplicates.length - 1));
-  };
-  const handleNextShortcut = async () => {
-    if ($showAssetViewer) {
-      return;
-    }
-    await handleNext();
-  };
-  const handleLast = async () => {
-    await correctDuplicatesIndexAndGo(duplicates.length - 1);
-  };
-  const correctDuplicatesIndexAndGo = async (index: number) => {
-    page.url.searchParams.set('index', correctDuplicatesIndex(index).toString());
-    await goto(resolve(`${AppRoute.DUPLICATES}?${page.url.searchParams.toString()}`));
-  };
+  const handleFirst = () => navigateToIndex(0);
+  const handlePrevious = () => navigateToIndex(Math.max(duplicatesIndex - 1, 0));
+  const handleNext = async () => navigateToIndex(Math.min(duplicatesIndex + 1, duplicates.length - 1));
+  const handleLast = () => navigateToIndex(duplicates.length - 1);
+
+  const navigateToIndex = async (index: number) =>
+    goto(Route.duplicatesUtility({ index: correctDuplicatesIndex(index) }));
 </script>
 
 <svelte:document
-  use:shortcuts={[
-    { shortcut: { key: 'ArrowLeft' }, onShortcut: handlePreviousShortcut },
-    { shortcut: { key: 'ArrowRight' }, onShortcut: handleNextShortcut },
-  ]}
+  use:shortcuts={assetViewerManager.isViewing
+    ? []
+    : [
+        { shortcut: { key: 'ArrowLeft' }, onShortcut: handlePrevious },
+        { shortcut: { key: 'ArrowRight' }, onShortcut: handleNext },
+      ]}
 />
 
-<UserPageLayout title={data.meta.title + ` (${duplicates.length.toLocaleString($locale)})`} scrollbar={true}>
+<UserPageLayout title={formatPageTitleWithCount(data.meta.title, duplicates.length, $locale)} scrollbar={true}>
   {#snippet buttons()}
     <HStack gap={0}>
       <Button
         leadingIcon={mdiTrashCanOutline}
-        onclick={handleDeduplicateAll}
+        onclick={() => handleDeduplicateAll()}
         disabled={!hasDuplicates}
         size="small"
         variant="ghost"
@@ -250,7 +244,7 @@
       </Button>
       <Button
         leadingIcon={mdiCheckOutline}
-        onclick={handleKeepAll}
+        onclick={() => handleKeepAll()}
         disabled={!hasDuplicates}
         size="small"
         variant="ghost"
@@ -270,26 +264,16 @@
     </HStack>
   {/snippet}
 
-  <div class="">
+  <div>
     {#if duplicates && duplicates.length > 0}
-      <div class="flex items-center mb-2">
-        <div class="text-sm dark:text-white font-medium">
-          <p>{$t('duplicates_description')}</p>
-        </div>
-        <IconButton
-          shape="round"
-          variant="ghost"
-          color="secondary"
-          icon={mdiInformationOutline}
-          aria-label={$t('deduplication_info')}
-          size="medium"
-          onclick={() => modalManager.show(DuplicatesInformationModal)}
-        />
+      <div class="text-sm dark:text-white font-medium">
+        <p>{$t('duplicates_description')} <LinkToDocs href="https://docs.immich.app/features/duplicates-utility" /></p>
       </div>
 
       {#key duplicates[duplicatesIndex].duplicateId}
         <DuplicatesCompareControl
           assets={duplicates[duplicatesIndex].assets}
+          suggestedKeepAssetIds={duplicates[duplicatesIndex].suggestedKeepAssetIds}
           onResolve={(duplicateAssetIds, trashIds) =>
             handleResolve(duplicates[duplicatesIndex].duplicateId, duplicateAssetIds, trashIds)}
           onStack={(assets) => handleStack(duplicates[duplicatesIndex].duplicateId, assets)}

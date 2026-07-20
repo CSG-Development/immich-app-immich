@@ -20,7 +20,7 @@ final class RemoteImageRequest: ImageRequest {
 
 class RemoteImageApiImpl: NSObject, RemoteImageApi {
   private static let registry = RequestRegistry<RemoteImageRequest>()
-  private static let maxTlsRetries = 1
+  private static let maxTlsRetries = 3
   private static let rgbaFormat = vImage_CGImageFormat(
     bitsPerComponent: 8,
     bitsPerPixel: 32,
@@ -66,7 +66,8 @@ class RemoteImageApiImpl: NSObject, RemoteImageApi {
 
     let task = URLSessionManager.shared.session.dataTask(with: urlRequest) { data, response, error in
       if let error = error, retryCount < maxTlsRetries, isTlsError(error), !request.isCancelled {
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.2) {
+        let delay = 0.1 * Double(1 << retryCount)
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + delay) {
           startRequest(
             request: request,
             url: url,

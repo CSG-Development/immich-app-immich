@@ -1,82 +1,88 @@
 <script lang="ts">
+  import { isDefined } from '$lib';
   import empty5Url from '$lib/assets/empty-5.svg';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import ChangeLocation from '$lib/components/shared-components/change-location.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AssetAction } from '$lib/constants';
+  import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
-  import type { DayGroup } from '$lib/managers/timeline-manager/day-group.svelte';
+  import type { TimelineDay } from '$lib/managers/timeline-manager/timeline-day.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
+  import GeolocationPointPickerModal from '$lib/modals/GeolocationPointPickerModal.svelte';
   import GeolocationUpdateConfirmModal from '$lib/modals/GeolocationUpdateConfirmModal.svelte';
-  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
-  import { cancelMultiselect } from '$lib/utils/asset-utils';
+  import type { LatLng } from '$lib/types';
   import { setQueryValue } from '$lib/utils/navigation';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, updateAssets } from '@immich/sdk';
   import { Button, LoadingSpinner, modalManager, Text } from '@immich/ui';
   import { mdiMapMarkerMultipleOutline, mdiPencilOutline, mdiSelectRemove } from '@mdi/js';
   import { t } from 'svelte-i18n';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
-  interface Props {
+  type Props = {
     data: PageData;
-  }
+  };
 
   let { data }: Props = $props();
 
   let isLoading = $state(false);
-  let assetInteraction = new AssetInteraction();
-  let location = $state<{ latitude: number; longitude: number }>({ latitude: 0, longitude: 0 });
+  let point = $state<LatLng>();
   let locationUpdated = $state(false);
 
-  const timelineManager = new TimelineManager();
-  void timelineManager.updateOptions({
+  let timelineManager = $state<TimelineManager>() as TimelineManager;
+  const options = {
     visibility: AssetVisibility.Timeline,
     withStacked: true,
     withPartners: true,
     withCoordinates: true,
-  });
+  };
 
   const handleUpdate = async () => {
+    if (!point) {
+      return;
+    }
+
     const confirmed = await modalManager.show(GeolocationUpdateConfirmModal, {
-      location: location ?? { latitude: 0, longitude: 0 },
-      assetCount: assetInteraction.selectedAssets.length,
+      point,
+      assetCount: assetMultiSelectManager.assets.length,
     });
 
     if (!confirmed) {
       return;
     }
 
-    const selectedIds = assetInteraction.selectedAssets.map((asset) => asset.id);
+    const selectedIds = assetMultiSelectManager.selectedAssets.map((asset) => asset.id);
 
     await updateAssets({
       assetBulkUpdateDto: {
         ids: selectedIds,
-        latitude: location?.latitude ?? undefined,
-        longitude: location?.longitude ?? undefined,
+        latitude: point.lat,
+        longitude: point.lng,
       },
     });
 
     const updatedAssets = await Promise.all(
-      assetInteraction.selectedAssets.map(async (asset) => {
+      assetMultiSelectManager.selectedAssets.map(async (asset) => {
         const updatedAsset = await getAssetInfo({ ...authManager.params, id: asset.id });
         return toTimelineAsset(updatedAsset);
       }),
     );
 
-    timelineManager.updateAssets(updatedAssets);
+    timelineManager.upsertAssets(updatedAssets);
 
-    handleDeselectAll();
+    assetMultiSelectManager.clear();
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Shift') {
       event.preventDefault();
     }
-    if (event.key === 'Escape' && assetInteraction.selectionActive) {
-      cancelMultiselect(assetInteraction);
+    if (event.key === 'Escape' && assetMultiSelectManager.selectionActive) {
+      assetMultiSelectManager.clear();
     }
   };
   const onKeyUp = (event: KeyboardEvent) => {
@@ -85,38 +91,30 @@
     }
   };
 
-  const handleDeselectAll = () => {
-    cancelMultiselect(assetInteraction);
-  };
-
-  const handlePickOnMap = async () => {
-    const point = await modalManager.show(ChangeLocation, {
-      point: {
-        lat: location.latitude,
-        lng: location.longitude,
-      },
-    });
-    if (!point) {
+  const handlePickPoint = async () => {
+    const selected = await modalManager.show(GeolocationPointPickerModal, { point });
+    if (!selected) {
       return;
     }
 
-    location = { latitude: point.lat, longitude: point.lng };
+    point = selected;
   };
   const handleEscape = () => {
-    if (assetInteraction.selectionActive) {
-      assetInteraction.clearMultiselect();
+    if (assetMultiSelectManager.selectionActive) {
+      assetMultiSelectManager.clear();
       return;
     }
   };
 
-  const hasGps = (asset: TimelineAsset) => {
-    return !!asset.latitude && !!asset.longitude;
-  };
+  type AssetPoint = { latitude: number; longitude: number };
+
+  const hasGps = (asset: TimelineAsset | AssetPoint): asset is AssetPoint =>
+    isDefined(asset.latitude) && isDefined(asset.longitude);
 
   const handleThumbnailClick = (
     asset: TimelineAsset,
     timelineManager: TimelineManager,
-    dayGroup: DayGroup,
+    timelineDay: TimelineDay,
     onClick: (
       timelineManager: TimelineManager,
       assets: TimelineAsset[],
@@ -129,10 +127,10 @@
       setTimeout(() => {
         locationUpdated = false;
       }, 1500);
-      location = { latitude: asset.latitude!, longitude: asset.longitude! };
+      point = { lat: asset.latitude, lng: asset.longitude };
       void setQueryValue('at', asset.id);
     } else {
-      onClick(timelineManager, dayGroup.getAssets(), dayGroup.groupTitle, asset);
+      onClick(timelineManager, timelineDay.getAssets(), timelineDay.groupTitle, asset);
     }
   };
 
@@ -141,7 +139,10 @@
 
 <svelte:document onkeydown={onKeyDown} onkeyup={onKeyUp} />
 
-<UserPageLayout title={data.meta.title} scrollbar={true}>
+<UserPageLayout
+  title={data.meta.title}
+  scrollbar={true}
+>
   {#snippet buttons()}
     <div class="flex gap-2 justify-end place-items-center">
       {#if !isEmpty}
@@ -155,18 +156,21 @@
         >
           {$t('selected_gps_coordinates')}
         </Text>
-
         <Text
           class="rounded-3xl text-xs text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
             ? 'bg-primary/90 text-light font-semibold scale-105'
             : ''}"
           title={`${$t('latitude')}, ${$t('longitude')}`}
         >
-          {location.latitude.toFixed(3)}, {location.longitude.toFixed(3)}
+          {#if point}
+            {point.lat.toFixed(3)}, {point.lng.toFixed(3)}
+          {:else}
+            {$t('none')}
+          {/if}
         </Text>
       </div>
 
-      <Button size="small" color="secondary" variant="ghost" leadingIcon={mdiPencilOutline} onclick={handlePickOnMap}>
+      <Button size="small" color="secondary" variant="ghost" leadingIcon={mdiPencilOutline} onclick={handlePickPoint}>
         <Text class="hidden sm:inline-block font-medium">{$t('location_picker_choose_on_map')}</Text>
       </Button>
       {#if !isEmpty}
@@ -175,8 +179,8 @@
           size="small"
           color="secondary"
           variant="ghost"
-          disabled={!assetInteraction.selectionActive}
-          onclick={handleDeselectAll}
+          disabled={!assetMultiSelectManager.selectionActive}
+          onclick={() => assetMultiSelectManager.clear()}
         >
           {$t('unselect_all')}
         </Button>
@@ -186,14 +190,14 @@
         size="small"
         color="primary"
         shape="round"
-        disabled={assetInteraction.selectedAssets.length === 0}
+        disabled={assetMultiSelectManager.selectedAssets.length === 0}
         onclick={async () =>
           await handleUpdate().then(() => {
             timelineManager.refreshLayout();
           })}
       >
         <Text class="hidden sm:inline-block">
-          {$t('apply_count', { values: { count: assetInteraction.selectedAssets.length } })}
+          {$t('apply_count', { values: { count: assetMultiSelectManager.selectedAssets.length } })}
         </Text>
       </Button>
     </div>
@@ -208,14 +212,15 @@
   <Timeline
     isSelectionMode={true}
     enableRouting={true}
-    {timelineManager}
-    {assetInteraction}
+    bind:timelineManager
+    {options}
+    assetInteraction={assetMultiSelectManager}
     removeAction={AssetAction.ARCHIVE}
     onEscape={handleEscape}
     withStacked
     onThumbnailClick={handleThumbnailClick}
   >
-    {#snippet customLayout(asset: TimelineAsset)}
+    {#snippet customThumbnailLayout(asset: TimelineAsset)}
       {#if hasGps(asset)}
         <div
           class="absolute bottom-1 end-3 px-4 py-1 rounded-xl text-xs transition-colors bg-immich-dark-success text-black"

@@ -1,15 +1,15 @@
-import { notificationController, NotificationType } from '$lib/components/shared-components/notification/notification';
 import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import type { StackResponse } from '$lib/utils/asset-utils';
 import { AssetVisibility, deleteAssets as deleteBulk, restoreAssets } from '@immich/sdk';
+import { toastManager } from '@immich/ui';
 import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import { handleError } from './handle-error';
 
 export type OnDelete = (assetIds: string[]) => void;
 export type OnUndoDelete = (assets: TimelineAsset[]) => void;
-export type OnRestore = (ids: string[]) => void;
+export type OnRestore = (ids: string[]) => void | Promise<void>;
 export type OnLink = (assets: { still: TimelineAsset; motion: TimelineAsset }) => void;
 export type OnUnlink = (assets: { still: TimelineAsset; motion: TimelineAsset }) => void;
 export type OnAddToAlbum = (ids: string[], albumId: string) => void;
@@ -31,17 +31,18 @@ export const deleteAssets = async (
     await deleteBulk({ assetBulkDeleteDto: { ids, force } });
     onAssetDelete(ids);
 
-    notificationController.show({
-      message: force
-        ? $t('assets_permanently_deleted_count', { values: { count: ids.length } })
-        : $t('assets_trashed_count', { values: { count: ids.length } }),
-      type: NotificationType.Info,
-      ...(onUndoDelete &&
-        !force && {
-          button: { text: $t('undo'), onClick: () => undoDeleteAssets(onUndoDelete, assets) },
-          timeout: 5000,
-        }),
-    });
+    toastManager.primary(
+      {
+        description: force
+          ? $t('assets_permanently_deleted_count', { values: { count: ids.length } })
+          : $t('assets_trashed_count', { values: { count: ids.length } }),
+        button:
+          onUndoDelete && !force
+            ? { label: $t('undo'), color: 'secondary', onclick: () => undoDeleteAssets(onUndoDelete, assets) }
+            : undefined,
+      },
+      { timeout: 5000 },
+    );
   } catch (error) {
     handleError(error, $t('errors.unable_to_delete_assets'));
   }
@@ -68,14 +69,15 @@ const undoDeleteAssets = async (onUndoDelete: OnUndoDelete, assets: TimelineAsse
  */
 export function updateStackedAssetInTimeline(timelineManager: TimelineManager, { stack, toDeleteIds }: StackResponse) {
   if (stack != undefined) {
-    timelineManager.updateAssetOperation([stack.primaryAssetId], (asset) => {
-      asset.stack = {
-        id: stack.id,
-        primaryAssetId: stack.primaryAssetId,
-        assetCount: stack.assets.length,
-      };
-      return { remove: false };
-    });
+    timelineManager.update(
+      [stack.primaryAssetId],
+      (asset) =>
+        (asset.stack = {
+          id: stack.id,
+          primaryAssetId: stack.primaryAssetId,
+          assetCount: stack.assets.length,
+        }),
+    );
 
     timelineManager.removeAssets(toDeleteIds);
   }
@@ -90,7 +92,7 @@ export function updateStackedAssetInTimeline(timelineManager: TimelineManager, {
  * @param assets - The array of asset response DTOs to update in the timeline manager.
  */
 export function updateUnstackedAssetInTimeline(timelineManager: TimelineManager, assets: TimelineAsset[]) {
-  timelineManager.updateAssetOperation(
+  timelineManager.update(
     assets.map((asset) => asset.id),
     (asset) => {
       asset.stack = null;
@@ -98,5 +100,5 @@ export function updateUnstackedAssetInTimeline(timelineManager: TimelineManager,
     },
   );
 
-  timelineManager.addAssets(assets);
+  timelineManager.upsertAssets(assets);
 }

@@ -28,6 +28,8 @@ vite.config.js.timestamp-*
 .pnpm-store
 .devcontainer/library
 .devcontainer/.env*
+*.tsbuildinfo
+*.tsbuildInfo
 
 homecloud-l10n-5f2611435b25.json
 .venv

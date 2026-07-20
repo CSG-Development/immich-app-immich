@@ -12,7 +12,7 @@ import 'package:immich_mobile/widgets/common/user_circle_avatar.dart';
 class ActivityTextField extends HookConsumerWidget {
   final bool isEnabled;
   final String? likeId;
-  final Function(String) onSubmit;
+  final Future<bool> Function(String) onSubmit;
 
   const ActivityTextField({required this.onSubmit, this.isEnabled = true, this.likeId, super.key});
 
@@ -33,9 +33,15 @@ class ActivityTextField extends HookConsumerWidget {
     }, []);
 
     // Pass text to callback and reset controller
-    void onEditingComplete() {
-      onSubmit(inputController.text);
-      inputController.clear();
+    Future<void> onEditingComplete() async {
+      final text = inputController.text.trim();
+      if (text.isEmpty) {
+        return;
+      }
+      final success = await onSubmit(text);
+      if (success) {
+        inputController.clear();
+      }
       inputFocusNode.unfocus();
     }
 

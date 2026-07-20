@@ -119,7 +119,8 @@ enum ActionButtonType {
         context.isOwner && //
             !context.isInLockedView && //
             context.asset.hasRemote && //
-            context.isTrashEnabled,
+            context.isTrashEnabled && //
+            context.timelineOrigin != TimelineOrigin.trash,
       ActionButtonType.deletePermanent =>
         context.isOwner && //
                 context.asset.hasRemote && //

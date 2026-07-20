@@ -4,8 +4,11 @@ import 'dart:typed_data';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 
+/// Always resolves to the current [StoreService] singleton.
+/// Must be a getter: worker isolates reuse Dart isolates, and [StoreService.dispose]
+/// replaces the singleton — a `final` capture would keep the emptied instance.
 // ignore: non_constant_identifier_names
-final Store = StoreService.I;
+StoreService get Store => StoreService.I;
 
 class SSLClientCertStoreVal {
   final Uint8List data;

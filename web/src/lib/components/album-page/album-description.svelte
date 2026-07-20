@@ -1,8 +1,11 @@
 <script lang="ts">
-  import AutogrowTextarea from '$lib/components/shared-components/autogrow-textarea.svelte';
+  import { shortcut } from '$lib/actions/shortcut';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAlbumInfo } from '@immich/sdk';
+  import { Textarea } from '@immich/ui';
   import { t } from 'svelte-i18n';
+  import { fromAction } from 'svelte/attachments';
 
   interface Props {
     id: string;
@@ -12,30 +15,42 @@
 
   let { id, description = $bindable(), isOwned }: Props = $props();
 
-  const handleUpdateDescription = async (newDescription: string) => {
+  const handleFocusOut = async () => {
     try {
-      await updateAlbumInfo({
+      const response = await updateAlbumInfo({
         id,
         updateAlbumDto: {
-          description: newDescription,
+          description,
         },
       });
+      eventManager.emit('AlbumUpdate', response);
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_album'));
     }
-    description = newDescription;
   };
 </script>
 
 {#if isOwned}
-  <AutogrowTextarea
-    content={description}
-    class="w-full mt-3 md:mt-3 text-black dark:text-white border-b-2 border-transparent border-gray-500 bg-transparent text-base outline-none transition-all focus:border-b-2 focus:border-immich-primary disabled:border-none dark:focus:border-immich-dark-primary hover:border-gray-400 placeholder:text-immich-gray-text placeholder:dark:text-immich-dark-gray-text"
-    onContentUpdate={handleUpdateDescription}
-    placeholder={$t('add_a_description')}
-  />
+  <div
+    class="mt-3 w-full border-b-2 border-transparent transition-colors hover:border-gray-400 dark:hover:border-gray-500"
+  >
+    <Textarea
+      bind:value={description}
+      shape="rectangle"
+      grow
+      rows={1}
+      onfocusout={handleFocusOut}
+      placeholder={$t('add_a_description')}
+      data-testid="autogrow-textarea"
+      class="max-h-32 w-full border-0 bg-transparent px-0 py-0 text-base text-black outline-none focus:border-0 focus-within:border-0 dark:text-white placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text"
+      {@attach fromAction(shortcut, () => ({
+        shortcut: { key: 'Enter', ctrl: true },
+        onShortcut: (e) => e.currentTarget.blur(),
+      }))}
+    />
+  </div>
 {:else if description}
-  <p class="break-words whitespace-pre-line w-full text-black dark:text-white text-base">
+  <p class="wrap-break-words whitespace-pre-line w-full text-black dark:text-white text-base">
     {description}
   </p>
 {/if}

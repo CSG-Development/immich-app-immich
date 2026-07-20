@@ -12,10 +12,10 @@
 
 <script lang="ts" generics="T">
   import { clickOutside } from '$lib/actions/click-outside';
-  import { Button, Text } from '@immich/ui';
+  import { Button, Icon, Text } from '@immich/ui';
   import { mdiCheck } from '@mdi/js';
   import { isEqual } from 'lodash-es';
-  import Icon from '../components/elements/icon.svelte';
+  import { fly } from 'svelte/transition';
 
   interface Props {
     class?: string;
@@ -82,6 +82,8 @@
     }
   };
 
+  let renderedSelectedOption = $derived(renderOption(selectedOption));
+
   const getAlignClass = (position: 'bottom-left' | 'bottom-right') => {
     switch (position) {
       case 'bottom-left': {
@@ -113,8 +115,6 @@
       }
     }
   });
-
-  let renderedSelectedOption = $derived(renderOption(selectedOption));
 </script>
 
 <div
@@ -136,7 +136,7 @@
     class="gap-2"
   >
     {#if renderedSelectedOption?.icon}
-      <Icon path={renderedSelectedOption.icon} size="24" />
+      <Icon icon={renderedSelectedOption.icon} size="24" />
     {/if}
     <Text class={hideTextOnSmallScreen ? 'hidden sm:block font-medium' : 'font-medium'}
       >{renderedSelectedOption.title}</Text
@@ -146,6 +146,7 @@
   <!-- DROP DOWN MENU -->
   {#if showMenu}
     <div
+      transition:fly={{ y: -30, duration: 250 }}
       style={menuStyle}
       class="flex min-w-[250px] max-h-[70vh] overflow-y-auto immich-scrollbar flex-col rounded-2xl bg-immich-bg-gray-mt text-black shadow-lg
       dark:bg-immich-dark-gray-card dark:text-white {className} {isShareModal
@@ -164,8 +165,10 @@
           onclick={() => !renderedOption.disabled && handleSelectOption(option)}
         >
           {#if isEqual(selectedOption, option)}
-            <Icon path={mdiCheck} size="24" class="text-primary" />
-            <p class="justify-self-start text-immich-primary dark:text-immich-dark-primary">
+            <div class="text-primary">
+              <Icon icon={mdiCheck} size="24" />
+            </div>
+            <p class="justify-self-start text-primary">
               {renderedOption.title}
             </p>
           {:else}

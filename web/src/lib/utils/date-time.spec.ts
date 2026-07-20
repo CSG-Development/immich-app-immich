@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { buildDateRangeFromYearMonthAndDay, getAlbumDateRange, timeToSeconds } from './date-time';
+import { getAlbumDateRange, getShortDateRange, timeToSeconds } from './date-time';
 
 describe('converting time to seconds', () => {
   it('parses hh:mm:ss correctly', () => {
@@ -49,6 +49,43 @@ describe('converting time to seconds', () => {
   });
 });
 
+describe('getShortDateRange', () => {
+  beforeEach(() => {
+    vi.stubEnv('TZ', 'UTC');
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('should correctly return month if start and end date are within the same month', () => {
+    expect(getShortDateRange('2022-01-01T00:00:00.000Z', '2022-01-31T00:00:00.000Z')).toEqual('Jan 2022');
+  });
+
+  it('should correctly return month range if start and end date are in separate months within the same year', () => {
+    expect(getShortDateRange('2022-01-01T00:00:00.000Z', '2022-02-01T00:00:00.000Z')).toEqual('Jan - Feb 2022');
+  });
+
+  it('should correctly return range if start and end date are in separate months and years', () => {
+    expect(getShortDateRange('2021-12-01T00:00:00.000Z', '2022-01-01T00:00:00.000Z')).toEqual('Dec 2021 - Jan 2022');
+  });
+
+  it('should correctly return month if start and end date are within the same month, ignoring local time zone', () => {
+    vi.stubEnv('TZ', 'UTC+6');
+    expect(getShortDateRange('2022-01-01T00:00:00.000Z', '2022-01-31T00:00:00.000Z')).toEqual('Jan 2022');
+  });
+
+  it('should correctly return month range if start and end date are in separate months within the same year, ignoring local time zone', () => {
+    vi.stubEnv('TZ', 'UTC+6');
+    expect(getShortDateRange('2022-01-01T00:00:00.000Z', '2022-02-01T00:00:00.000Z')).toEqual('Jan - Feb 2022');
+  });
+
+  it('should correctly return range if start and end date are in separate months and years, ignoring local time zone', () => {
+    vi.stubEnv('TZ', 'UTC+6');
+    expect(getShortDateRange('2021-12-01T00:00:00.000Z', '2022-01-01T00:00:00.000Z')).toEqual('Dec 2021 - Jan 2022');
+  });
+});
+
 describe('getAlbumDate', () => {
   beforeAll(() => {
     process.env.TZ = 'UTC';
@@ -73,26 +110,5 @@ describe('getAlbumDate', () => {
 
   it('should work with the new date format', () => {
     expect(getAlbumDateRange({ startDate: '2021-01-01T00:00:00+05:00' })).toEqual('Jan 1, 2021');
-  });
-});
-
-describe('buildDateRangeFromYearMonthAndDay', () => {
-  it('should build correct date range for a specific day', () => {
-    const result = buildDateRangeFromYearMonthAndDay(2023, 1, 8);
-
-    expect(result.from).toContain('2023-01-08T00:00:00');
-    expect(result.to).toContain('2023-01-09T00:00:00');
-  });
-
-  it('should build correct date range for a month', () => {
-    const result = buildDateRangeFromYearMonthAndDay(2023, 2);
-    expect(result.from).toContain('2023-02-01T00:00:00');
-    expect(result.to).toContain('2023-03-01T00:00:00');
-  });
-
-  it('should build correct date range for a year', () => {
-    const result = buildDateRangeFromYearMonthAndDay(2023);
-    expect(result.from).toContain('2023-01-01T00:00:00');
-    expect(result.to).toContain('2024-01-01T00:00:00');
   });
 });
