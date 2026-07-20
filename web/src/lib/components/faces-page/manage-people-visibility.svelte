@@ -147,12 +147,12 @@
   </div>
 
   <div class="flex flex-wrap gap-1 py-4 px-3.5 md:px-24 md:pt-7 mt-16">
-    <PeopleInfiniteScroll {people} hasNextPage={true} {loadNextPage}>
+    <PeopleInfiniteScroll {people} hasNextPage={true} {loadNextPage} isVisibilityPage>
       {#snippet children({ person })}
         {@const hidden = overrides.get(person.id) ?? person.isHidden}
         <button
           type="button"
-          class="group relative w-full h-full"
+          class="group relative w-full h-full md:w-60 md:h-60"
           onclick={() => setHiddenOverride(person, !hidden)}
           aria-pressed={hidden}
           aria-label={person.name ? $t('hide_named_person', { values: { name: person.name } }) : $t('hide_person')}

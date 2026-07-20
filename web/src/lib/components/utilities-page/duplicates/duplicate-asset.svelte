@@ -167,13 +167,10 @@
     </button>
   </div>
 
-  <div
-    class="grid place-items-start gap-y-2 py-2 text-sm transition-colors rounded-b-lg {isSelected
-      ? 'bg-success/15 dark:bg-[#001a06]'
-      : 'bg-transparent'}"
-  >
+  <div class="grid place-items-start gap-y-2 py-2 text-sm rounded-b-lg">
     <InfoRow
       icon={mdiImageOutline}
+      active={isSelected}
       highlight={hasDifferentValues.fileName}
       title={$t('file_name_with_value', { values: { file_name: asset.originalFileName ?? '' } })}
     >
@@ -182,21 +179,32 @@
 
     <InfoRow
       icon={mdiFolderOutline}
+      active={isSelected}
       highlight={hasDifferentValues.originalPath}
       title={$t('full_path', { values: { path: asset.originalPath } })}
     >
       {truncateMiddle(getBasePath(asset.originalPath, asset.originalFileName)) || $t('unknown')}
     </InfoRow>
 
-    <InfoRow icon={mdiFile} highlight={hasDifferentValues.fileSize} title={$t('file_size')}>
+    <InfoRow
+      icon={mdiFile}
+      active={isSelected}
+      highlight={hasDifferentValues.fileSize}
+      title={$t('file_size')}
+    >
       {getFileSize(asset)}
     </InfoRow>
 
-    <InfoRow icon={mdiFitToScreen} highlight={hasDifferentValues.resolution} title={$t('resolution')}>
+    <InfoRow
+      icon={mdiFitToScreen}
+      active={isSelected}
+      highlight={hasDifferentValues.resolution}
+      title={$t('resolution')}
+    >
       {getAssetResolution(asset)}
     </InfoRow>
 
-    <InfoRow icon={mdiCalendar} highlight={hasDifferentValues.date} title={$t('date')}>
+    <InfoRow icon={mdiCalendar} active={isSelected} highlight={hasDifferentValues.date} title={$t('date')}>
       {#if dateTime}
         {dateTime.toLocaleString(
           {
@@ -211,7 +219,7 @@
       {/if}
     </InfoRow>
 
-    <InfoRow icon={mdiClock} highlight={hasDifferentValues.time} title={$t('time')}>
+    <InfoRow icon={mdiClock} active={isSelected} highlight={hasDifferentValues.time} title={$t('time')}>
       {#if dateTime}
         {dateTime.toLocaleString(
           {
@@ -227,7 +235,12 @@
       {/if}
     </InfoRow>
 
-    <InfoRow icon={mdiMapMarkerOutline} highlight={hasDifferentValues.location} title={$t('location')}>
+    <InfoRow
+      icon={mdiMapMarkerOutline}
+      active={isSelected}
+      highlight={hasDifferentValues.location}
+      title={$t('location')}
+    >
       {#if locationParts.length > 0}
         {locationParts.join(', ')}
       {:else}
@@ -235,7 +248,7 @@
       {/if}
     </InfoRow>
 
-    <InfoRow icon={mdiBookmarkOutline} borderBottom={false} title={$t('albums')}>
+    <InfoRow icon={mdiBookmarkOutline} active={isSelected} borderBottom={false} title={$t('albums')}>
       {#await getAllAlbums({ assetId: asset.id })}
         {$t('scanning_for_album')}
       {:then albums}

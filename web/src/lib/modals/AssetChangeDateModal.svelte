@@ -1,6 +1,7 @@
 <script lang="ts">
   import Combobox from '$lib/components/shared-components/combobox.svelte';
   import DateInput from '$lib/elements/DateInput.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { getPreferredTimeZone, getTimezones, toIsoDate } from '$lib/modals/timezone-utils';
   import { handleError } from '$lib/utils/handle-error';
@@ -34,7 +35,8 @@
     // Get the local date/time components from the selected string using neutral timezone
     const isoDate = toIsoDate(selectedDate, selectedOption);
     try {
-      await updateAsset({ id: asset.id, updateAssetDto: { dateTimeOriginal: isoDate } });
+      const updated = await updateAsset({ id: asset.id, updateAssetDto: { dateTimeOriginal: isoDate } });
+      eventManager.emit('AssetUpdate', updated);
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_date'));

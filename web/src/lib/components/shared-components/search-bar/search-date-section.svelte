@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { SearchDateFilter } from '$lib/types';
   import { DateInput, Text } from '@immich/ui';
   import { t } from 'svelte-i18n';
 

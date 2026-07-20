@@ -49,7 +49,7 @@
     await navigate({ targetRoute: 'current', assetId: asset.id });
   };
 
-  const assetCursor = $derived({
+  let assetCursor = $derived({
     current: assetViewerManager.asset!,
     nextAsset: getNextAsset(assets, assetViewerManager.asset),
     previousAsset: getPreviousAsset(assets, assetViewerManager.asset),
@@ -72,7 +72,7 @@
   {#await import('$lib/components/asset-viewer/asset-viewer.svelte') then { default: AssetViewer }}
     <Portal target="body">
       <AssetViewer
-        cursor={assetCursor}
+        bind:cursor={assetCursor}
         showNavigation={assets.length > 1}
         {onRandom}
         {onAction}

@@ -18,15 +18,15 @@
   {@const sliderId = `${id}-slider`}
   {@const valueId = item.value ? `${id}-value` : undefined}
 
-  <div class="flex place-items-center justify-between py-2">
-    <div class="me-2">
+  <div class="flex min-w-0 place-items-center justify-between py-2">
+    <div class="me-2 min-w-0 w-full">
       <div class="flex h-[26px] place-items-center gap-1">
         <label class="font-medium text-primary text-xs" for={sliderId}>
           {item.title}
         </label>
       </div>
 
-      <p id={valueId} class="dark:text-immich-dark-fg">{item.value ?? '-'}</p>
+      <p id={valueId} class="dark:text-immich-dark-fg wrap-break-word whitespace-pre-wrap">{item.value ?? '-'}</p>
     </div>
   </div>
 {/each}

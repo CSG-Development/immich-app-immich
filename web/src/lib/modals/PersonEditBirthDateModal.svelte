@@ -1,7 +1,7 @@
 <script lang="ts">
   import { handleUpdatePersonBirthDate } from '$lib/services/person.service';
   import { type PersonResponseDto } from '@immich/sdk';
-  import { Button, DateInput, Text } from '@immich/ui';
+  import { Button, DateInput, FormModal, Text } from '@immich/ui';
   import { mdiCake } from '@mdi/js';
   import { t } from 'svelte-i18n';
 

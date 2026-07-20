@@ -16,7 +16,6 @@
   import { AssetTypeEnum, AssetVisibility, type MetadataSearchDto, type SmartSearchDto } from '@immich/sdk';
   import { Button, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';
   import { mdiTune } from '@mdi/js';
-  import type { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
   import { SvelteSet } from 'svelte/reactivity';
 
@@ -27,8 +26,8 @@
 
   let { searchQuery, onClose }: Props = $props();
 
-  const parseOptionalDate = (dateString?: DateTime) => (dateString ? parseUtcDate(dateString.toString()) : undefined);
-  const toStartOfDayDate = (dateString: string) => parseUtcDate(dateString)?.startOf('day') || undefined;
+  const toDateInputValue = (dateString?: string) =>
+    dateString ? parseUtcDate(dateString)?.toISODate() || undefined : undefined;
   const formId = generateId();
 
   // combobox and all the search components have terrible support for value | null so we use empty string instead.
@@ -77,8 +76,8 @@
         lensModel: withNullAsUndefined(searchQuery.lensModel),
       },
       date: {
-        takenAfter: searchQuery.takenAfter ? toStartOfDayDate(searchQuery.takenAfter) : undefined,
-        takenBefore: searchQuery.takenBefore ? toStartOfDayDate(searchQuery.takenBefore) : undefined,
+        takenAfter: toDateInputValue(searchQuery.takenAfter),
+        takenBefore: toDateInputValue(searchQuery.takenBefore),
       },
       display: {
         isArchive: searchQuery.visibility === AssetVisibility.Archive,
@@ -139,8 +138,12 @@
       make: filter.camera.make,
       model: filter.camera.model,
       lensModel: filter.camera.lensModel,
-      takenAfter: parseOptionalDate(filter.date.takenAfter)?.startOf('day').toISO() || undefined,
-      takenBefore: parseOptionalDate(filter.date.takenBefore)?.endOf('day').toISO() || undefined,
+      takenAfter: filter.date.takenAfter
+        ? parseUtcDate(filter.date.takenAfter)?.startOf('day').toISO() || undefined
+        : undefined,
+      takenBefore: filter.date.takenBefore
+        ? parseUtcDate(filter.date.takenBefore)?.endOf('day').toISO() || undefined
+        : undefined,
       visibility: filter.display.isArchive ? AssetVisibility.Archive : undefined,
       isFavorite: filter.display.isFavorite || undefined,
       isNotInAlbum: filter.display.isNotInAlbum || undefined,

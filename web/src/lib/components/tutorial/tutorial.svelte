@@ -7,6 +7,7 @@
   import onboarding4DarkUrl from '$lib/assets/onboarding-4-dark.svg';
   import onboarding4Url from '$lib/assets/onboarding-4.svg';
   import onboarding5Url from '$lib/assets/onboarding-5.svg';
+  import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
   import { Route } from '$lib/route';
   import { user } from '$lib/stores/user.store';
   import { setUserOnboarding, updateAdminOnboarding } from '@immich/sdk';
@@ -77,6 +78,7 @@
   const onDone = async () => {
     if ($user.isAdmin) {
       await updateAdminOnboarding({ adminOnboardingUpdateDto: { isOnboarded: true } });
+      await serverConfigManager.loadServerConfig();
     }
 
     await setUserOnboarding({

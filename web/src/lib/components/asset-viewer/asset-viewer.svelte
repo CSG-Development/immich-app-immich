@@ -21,6 +21,7 @@
   import { user } from '$lib/stores/user.store';
   import { getSharedLink, handlePromiseError } from '$lib/utils';
   import type { OnUndoDelete } from '$lib/utils/actions';
+  import { navigateToAsset } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { InvocationTracker } from '$lib/utils/invocationTracker';
   import { SlideshowHistory } from '$lib/utils/slideshow-history';
@@ -77,7 +78,7 @@
   }
 
   let {
-    cursor,
+    cursor = $bindable(),
     showNavigation = true,
     withStacked = false,
     isShared = false,
@@ -149,9 +150,12 @@
   };
 
   const onAssetUpdate = (updatedAsset: AssetResponseDto) => {
-    if (asset.id === updatedAsset.id) {
-      cursor = { ...cursor, current: updatedAsset };
+    if (cursor.current.id !== updatedAsset.id) {
+      return;
     }
+
+    cursor = { ...cursor, current: updatedAsset };
+    assetViewerManager.setAsset(updatedAsset);
   };
 
   onMount(() => {
@@ -212,44 +216,57 @@
     preloadManager.cancelBeforeNavigation(order);
 
     if (tracker.isActive()) {
+      // Keep autoplay alive if a duplicate advance arrives while navigation is in flight.
+      if ($slideshowState === SlideshowState.PlaySlideshow) {
+        $restartSlideshowProgress = true;
+      }
       return;
     }
 
     void tracker.invoke(async () => {
-      const isShuffle =
-        $slideshowState === SlideshowState.PlaySlideshow && $slideshowNavigation === SlideshowNavigation.Shuffle;
+      try {
+        const isShuffle =
+          $slideshowState === SlideshowState.PlaySlideshow && $slideshowNavigation === SlideshowNavigation.Shuffle;
 
-      let hasNext: boolean;
+        let hasNext: boolean;
 
-      if (isShuffle) {
-        hasNext = order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next();
-        if (!hasNext && order === 'next') {
-          const asset = await onRandom?.();
-          if (asset) {
-            slideshowHistory.queue(asset);
-            hasNext = true;
+        if (isShuffle) {
+          hasNext = order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next();
+          if (!hasNext && order === 'next') {
+            const asset = await onRandom?.();
+            if (asset) {
+              slideshowHistory.queue(asset);
+              hasNext = true;
+            }
           }
+        } else if (order === 'previous') {
+          hasNext = onPrevious ? await onPrevious() : await navigateToAsset(previousAsset);
+        } else {
+          hasNext = onNext ? await onNext() : await navigateToAsset(nextAsset);
         }
-      } else {
-        hasNext = order === 'previous' ? await onPrevious?.() : await onNext?.();
-      }
 
-      if ($slideshowState !== SlideshowState.PlaySlideshow) {
-        return;
-      }
+        if ($slideshowState !== SlideshowState.PlaySlideshow) {
+          return;
+        }
 
-      if (hasNext) {
-        $restartSlideshowProgress = true;
-        return;
-      }
+        if (hasNext) {
+          $restartSlideshowProgress = true;
+          return;
+        }
 
-      if ($slideshowRepeat && slideshowStartAssetId) {
-        await assetViewerManager.setAssetId(slideshowStartAssetId);
-        $restartSlideshowProgress = true;
-        return;
-      }
+        if ($slideshowRepeat && slideshowStartAssetId) {
+          await assetViewerManager.setAssetId(slideshowStartAssetId);
+          $restartSlideshowProgress = true;
+          return;
+        }
 
-      await handleStopSlideshow();
+        await handleStopSlideshow();
+      } catch (error) {
+        if ($slideshowState === SlideshowState.PlaySlideshow) {
+          $restartSlideshowProgress = true;
+        }
+        throw error;
+      }
     }, $t('error_while_navigating'));
   };
 
@@ -279,7 +296,16 @@
     }
   };
 
+  let stoppingSlideshow = false;
+
   const handleStopSlideshow = async () => {
+    // Fullscreen exit re-enters via SlideshowBar's fullscreenchange → onClose → StopSlideshow.
+    // Ignore duplicate stop requests so we don't call closeViewer multiple times (that can leave
+    // the timeline permanently `invisible` when a no-op navigate skips afterNavigate).
+    if (stoppingSlideshow || $slideshowState === SlideshowState.None) {
+      return;
+    }
+    stoppingSlideshow = true;
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
@@ -290,6 +316,7 @@
       $stopSlideshowProgress = true;
       $slideshowState = SlideshowState.None;
       $isShuffled = false;
+      stoppingSlideshow = false;
       if (assetMultiSelectManager?.selectedAssets.length) {
         closeViewer();
       }
@@ -503,9 +530,6 @@
         onNext={() => navigateAsset('next')}
         onClose={() => {
           $slideshowState = SlideshowState.StopSlideshow;
-          if (assetMultiSelectManager && assetMultiSelectManager.selectedAssets.length > 0) {
-            closeViewer();
-          }
         }}
       />
     </div>
