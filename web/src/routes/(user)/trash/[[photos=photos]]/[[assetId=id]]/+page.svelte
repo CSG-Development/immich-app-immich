@@ -15,6 +15,8 @@
   import { Route } from '$lib/route';
   import { getTrashActions } from '$lib/services/trash.service';
   import { handlePromiseError } from '$lib/utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
+  import { locale } from '$lib/stores/preferences.store';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -59,7 +61,7 @@
   <UserPageLayout
     hideNavbar={assetMultiSelectManager.selectionActive}
     actions={assetMultiSelectManager.selectionActive ? [] : [Empty, RestoreAll]}
-    title={data.meta.title}
+    title={formatPageTitleWithCount(data.meta.title, timelineManager?.assetCount ?? 0, $locale)}
     scrollbar={false}
   >
     <Timeline

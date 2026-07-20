@@ -255,7 +255,7 @@ export const handleDeleteAlbum = async (album: AlbumResponseDto, options?: { pro
     }
     return true;
   } catch (error) {
-    handleError(error, $t('errors.unable_to_delete_album'), { notify });
+    handleError(error, $t('errors.unable_to_delete_album'), undefined, { notify });
     return false;
   }
 };

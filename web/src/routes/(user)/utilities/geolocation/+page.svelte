@@ -14,11 +14,13 @@
   import GeolocationUpdateConfirmModal from '$lib/modals/GeolocationUpdateConfirmModal.svelte';
   import type { LatLng } from '$lib/types';
   import { setQueryValue } from '$lib/utils/navigation';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo, updateAssets } from '@immich/sdk';
   import { Button, LoadingSpinner, modalManager, Text } from '@immich/ui';
   import { mdiMapMarkerMultipleOutline, mdiPencilOutline, mdiSelectRemove } from '@mdi/js';
   import { t } from 'svelte-i18n';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   type Props = {
@@ -137,7 +139,10 @@
 
 <svelte:document onkeydown={onKeyDown} onkeyup={onKeyUp} />
 
-<UserPageLayout title={data.meta.title} scrollbar={true}>
+<UserPageLayout
+  title={data.meta.title}
+  scrollbar={true}
+>
   {#snippet buttons()}
     <div class="flex gap-2 justify-end place-items-center">
       {#if !isEmpty}

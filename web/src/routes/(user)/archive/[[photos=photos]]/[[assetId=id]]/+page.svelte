@@ -16,11 +16,13 @@
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { AssetVisibility } from '@immich/sdk';
   import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -76,7 +78,11 @@
   );
 </script>
 
-<UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} title={data.meta.title} scrollbar={false}>
+<UserPageLayout
+  hideNavbar={assetMultiSelectManager.selectionActive}
+  title={formatPageTitleWithCount(data.meta.title, timelineManager?.assetCount ?? 0, $locale)}
+  scrollbar={false}
+>
   <Timeline
     enableRouting={true}
     bind:timelineManager

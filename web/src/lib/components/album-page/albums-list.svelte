@@ -33,6 +33,7 @@
     allowEdit?: boolean;
     showOwner?: boolean;
     albumGroupIds?: string[];
+    itemCount?: number;
     empty?: Snippet;
   }
 
@@ -44,6 +45,7 @@
     allowEdit = false,
     showOwner = false,
     albumGroupIds = $bindable([]),
+    itemCount = $bindable(0),
     empty,
   }: Props = $props();
 
@@ -158,6 +160,7 @@
   // TODO get rid of this
   $effect(() => {
     albumGroupIds = groupedAlbums.map(({ id }) => id);
+    itemCount = filteredAlbums.length;
   });
 
   onMount(async () => {

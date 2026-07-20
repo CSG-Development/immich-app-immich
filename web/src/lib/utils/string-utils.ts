@@ -15,3 +15,7 @@ export const buildDateString = (year: number, month?: number, day?: number) => {
     .filter((date) => date !== undefined)
     .join('-');
 };
+
+export function formatPageTitleWithCount(title: string, count: number, locale?: string | null): string {
+  return `${title} (${count.toLocaleString(locale ?? undefined)})`;
+}

@@ -20,6 +20,7 @@
   import { handlePromiseError } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { clearQueryParam } from '$lib/utils/navigation';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { getAllPeople, getPerson, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
   import { Button, modalManager, toastManager } from '@immich/ui';
   import { mdiEyeOutline } from '@mdi/js';
@@ -298,10 +299,7 @@
 
 <UserPageLayout
   hideSection={selectHidden}
-  title={$t('people')}
-  description={countVisiblePeople === 0 && !searchName
-    ? undefined
-    : $t('items_count', { values: { count: countVisiblePeople.toLocaleString($locale) } })}
+  title={formatPageTitleWithCount($t('people'), countVisiblePeople, $locale)}
   use={[
     [
       scrollMemory,

@@ -11,6 +11,7 @@
     getWorkflowShowSchemaAction,
     type WorkflowPayload,
   } from '$lib/services/workflow.service';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { type PluginFilterResponseDto, type WorkflowResponseDto } from '@immich/sdk';
   import {
     Button,
@@ -28,6 +29,7 @@
   } from '@immich/ui';
   import { mdiClose, mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
+  import { locale } from '$lib/stores/preferences.store';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import type { PageData } from './$types';
 
@@ -151,7 +153,7 @@
   </span>
 {/snippet}
 
-<UserPageLayout title={data.meta.title} actions={[Create]} scrollbar={false}>
+<UserPageLayout title={formatPageTitleWithCount(data.meta.title, workflows.length, $locale)} actions={[Create]} scrollbar={false}>
   <section class="flex place-content-center sm:mx-4">
     <section class="w-full pb-28 sm:w-5/6 md:w-4xl">
       {#if workflows.length === 0}

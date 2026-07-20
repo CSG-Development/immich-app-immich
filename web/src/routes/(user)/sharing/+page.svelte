@@ -13,8 +13,10 @@
     AlbumSortBy,
     AlbumViewMode,
     SortOrder,
+    locale,
     type AlbumViewSettings,
   } from '$lib/stores/preferences.store';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -38,7 +40,10 @@
   const { ViewAll: ViewSharedLinks } = $derived(getSharedLinksActions($t));
 </script>
 
-<UserPageLayout title={data.meta.title} actions={[CreateAlbum, ViewSharedLinks]}>
+<UserPageLayout
+  title={formatPageTitleWithCount(data.meta.title, data.sharedAlbums.length, $locale)}
+  actions={[CreateAlbum, ViewSharedLinks]}
+>
   <div class="flex flex-col">
     {#if data.partners.length > 0}
       <div class="mb-6 md:mt-2">
