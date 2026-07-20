@@ -17,11 +17,13 @@
   import { getUserActions } from '$lib/services/user.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { AssetVisibility } from '@immich/sdk';
   import { ContextMenuButton } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -86,7 +88,7 @@
 <OnEvents {onSessionLocked} />
 
 <UserPageLayout
-  title={data.meta.title}
+  title={formatPageTitleWithCount(data.meta.title, timelineManager?.assetCount ?? 0, $locale)}
   actions={[LockSession]}
   hideNavbar={assetMultiSelectManager.selectionActive}
   scrollbar={false}

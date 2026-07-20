@@ -7,10 +7,12 @@
   import Portal from '$lib/elements/Portal.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { handlePromiseError } from '$lib/utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { getNextAsset, getPreviousAsset } from '$lib/utils/asset-utils';
   import { navigate } from '$lib/utils/navigation';
   import type { AssetResponseDto } from '@immich/sdk';
   import { t } from 'svelte-i18n';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -56,7 +58,10 @@
   });
 </script>
 
-<UserPageLayout title={data.meta.title} scrollbar={true}>
+<UserPageLayout
+  title={formatPageTitleWithCount(data.meta.title, assets.length, $locale)}
+  scrollbar={true}
+>
   {#if assets && data.assets.length > 0}
     <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 pt-2">
       {#each assets as asset (asset.id)}

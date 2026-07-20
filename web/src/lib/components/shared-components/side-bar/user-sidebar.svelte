@@ -100,9 +100,24 @@
     bind:expanded={$utilitiesDropdown}
   >
     {#snippet items()}
-      <NavbarItem title={$t('review_duplicates')} href={Route.duplicatesUtility()} icon={mdiContentDuplicate} />
-      <NavbarItem title={$t('review_large_files')} href={Route.largeFileUtility()} icon={mdiImageSizeSelectLarge} />
-      <NavbarItem title={$t('manage_geolocation')} href={Route.geolocationUtility()} icon={mdiCrosshairsGps} />
+      <NavbarItem
+        title={$t('review_duplicates')}
+        href={Route.duplicatesUtility()}
+        icon={mdiContentDuplicate}
+        class="ps-10"
+      />
+      <NavbarItem
+        title={$t('review_large_files')}
+        href={Route.largeFileUtility()}
+        icon={mdiImageSizeSelectLarge}
+        class="ps-10"
+      />
+      <NavbarItem
+        title={$t('manage_geolocation')}
+        href={Route.geolocationUtility()}
+        icon={mdiCrosshairsGps}
+        class="ps-10"
+      />
     {/snippet}
   </NavbarItem>
 

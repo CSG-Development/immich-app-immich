@@ -7,8 +7,9 @@
   import GroupTab from '$lib/elements/GroupTab.svelte';
   import SearchBar from '$lib/elements/SearchBar.svelte';
   import { Route } from '$lib/route';
-  import { AlbumFilter, albumViewSettings } from '$lib/stores/preferences.store';
+  import { AlbumFilter, albumViewSettings, locale } from '$lib/stores/preferences.store';
   import { createAlbumAndRedirect } from '$lib/utils/album-utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
 
@@ -20,9 +21,13 @@
 
   let searchQuery = $state('');
   let albumGroups: string[] = $state([]);
+  let albumCount = $state(0);
 </script>
 
-<UserPageLayout title={data.meta.title} use={[[scrollMemory, { routeStartsWith: Route.albums() }]]}>
+<UserPageLayout
+  title={formatPageTitleWithCount(data.meta.title, albumCount, $locale)}
+  use={[[scrollMemory, { routeStartsWith: Route.albums() }]]}
+>
   {#snippet buttons()}
     <div class="flex place-items-center gap-1">
       <AlbumsControls {albumGroups} bind:searchQuery />
@@ -50,6 +55,7 @@
     allowEdit
     {searchQuery}
     bind:albumGroupIds={albumGroups}
+    bind:itemCount={albumCount}
   >
     {#snippet empty()}
       <EmptyPlaceholder text={$t('no_albums_message')} onClick={() => createAlbumAndRedirect()} class="mt-10 mx-auto" />

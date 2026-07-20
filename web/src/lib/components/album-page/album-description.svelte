@@ -31,18 +31,24 @@
 </script>
 
 {#if isOwned}
-  <Textarea
-    bind:value={description}
-    variant="ghost"
-    onfocusout={handleFocusOut}
-    placeholder={$t('add_a_description')}
-    data-testid="autogrow-textarea"
-    class="max-h-32"
-    {@attach fromAction(shortcut, () => ({
-      shortcut: { key: 'Enter', ctrl: true },
-      onShortcut: (e) => e.currentTarget.blur(),
-    }))}
-  />
+  <div
+    class="mt-3 w-full border-b-2 border-transparent transition-colors hover:border-gray-400 dark:hover:border-gray-500"
+  >
+    <Textarea
+      bind:value={description}
+      shape="rectangle"
+      grow
+      rows={1}
+      onfocusout={handleFocusOut}
+      placeholder={$t('add_a_description')}
+      data-testid="autogrow-textarea"
+      class="max-h-32 w-full border-0 bg-transparent px-0 py-0 text-base text-black outline-none focus:border-0 focus-within:border-0 dark:text-white placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text"
+      {@attach fromAction(shortcut, () => ({
+        shortcut: { key: 'Enter', ctrl: true },
+        onShortcut: (e) => e.currentTarget.blur(),
+      }))}
+    />
+  </div>
 {:else if description}
   <p class="wrap-break-words whitespace-pre-line w-full text-black dark:text-white text-base">
     {description}

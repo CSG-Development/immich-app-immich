@@ -23,12 +23,14 @@
   import { getTagActions } from '$lib/services/tag.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { joinPaths, TreeNode } from '$lib/utils/tree-utils';
   import { getAllTags, type TagResponseDto } from '@immich/sdk';
   import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton } from '@immich/ui';
   import { mdiDotsVertical, mdiTag, mdiTagMultiple } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -75,6 +77,8 @@
 
   const { Create, Update, Delete } = $derived(getTagActions($t, tag));
 
+  let pageItemCount = $derived(tag.hasAssets ? (timelineManager?.assetCount ?? 0) : tag.children.length);
+
   let { slideshowState, slideshowNavigation } = slideshowStore;
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
@@ -107,7 +111,10 @@
 
 <OnEvents onTagCreate={onRefresh} onTagUpdate={onRefresh} {onTagDelete} />
 
-<UserPageLayout title={data.meta.title} actions={[Create, Update, Delete]}>
+<UserPageLayout
+  title={formatPageTitleWithCount(data.meta.title, pageItemCount, $locale)}
+  actions={[Create, Update, Delete]}
+>
   {#snippet sidebar()}
     <Sidebar>
       <SkipLink target={`#${headerId}`} text={$t('skip_to_tags')} breakpoint="md" />

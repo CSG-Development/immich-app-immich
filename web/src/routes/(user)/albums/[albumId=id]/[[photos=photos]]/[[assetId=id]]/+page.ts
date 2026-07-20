@@ -6,8 +6,10 @@ import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
 
-export const load = (async ({ params, url }) => {
+export const load = (async ({ params, url, depends }) => {
   await authenticate(url);
+
+  depends('album:data');
 
   let album: AlbumResponseDto;
 

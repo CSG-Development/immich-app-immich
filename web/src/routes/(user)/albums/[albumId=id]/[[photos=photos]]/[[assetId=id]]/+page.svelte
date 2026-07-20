@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto, onNavigate } from '$app/navigation';
+  import { goto, invalidate, onNavigate } from '$app/navigation';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
   import AlbumDescription from '$lib/components/album-page/album-description.svelte';
   import AlbumMap from '$lib/components/album-page/album-map.svelte';
@@ -191,14 +191,19 @@
     }
   };
 
-  onNavigate(async ({ to }) => {
-    if (!isAlbumsRoute(to?.route.id) && album.assetCount === 0 && !album.albumName) {
-      await handleDeleteAlbum(album, { notify: false, prompt: false });
-    }
-  });
-
   let album = $derived(data.album);
   let albumId = $derived(album.id);
+
+  onNavigate(async ({ to }) => {
+    const currentAlbum = data.album;
+    if (!currentAlbum) {
+      return;
+    }
+
+    if (!isAlbumsRoute(to?.route.id) && currentAlbum.assetCount === 0 && !currentAlbum.albumName) {
+      await handleDeleteAlbum(currentAlbum, { notify: false, prompt: false });
+    }
+  });
 
   const containsEditors = $derived(album?.shared && album.albumUsers.some(({ role }) => role === AlbumUserRole.Editor));
   const albumUsers = $derived(
@@ -298,6 +303,12 @@
       albumUser.user.id === userId ? { ...albumUser, role } : albumUser,
     );
     album = { ...album, albumUsers };
+  };
+
+  const onAlbumUpdate = async (newAlbum: AlbumResponseDto) => {
+    album = newAlbum;
+
+    await invalidate('album:data');
   };
 
   const { Cast } = $derived(getGlobalActions($t));
@@ -460,7 +471,7 @@
   {onAlbumShare}
   {onAlbumUserUpdate}
   onAlbumUserDelete={refreshAlbum}
-  onAlbumUpdate={(newAlbum) => (album = newAlbum)}
+  {onAlbumUpdate}
 />
 <CommandPaletteDefaultProvider name={$t('album')} actions={[AddAssets, Upload, Close]} />
 

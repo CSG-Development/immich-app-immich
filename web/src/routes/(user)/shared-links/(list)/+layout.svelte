@@ -7,6 +7,8 @@
   import { type SharedLinkTab } from '$lib/constants';
   import GroupTab from '$lib/elements/GroupTab.svelte';
   import { Route } from '$lib/route';
+  import { locale } from '$lib/stores/preferences.store';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { getAllSharedLinks, SharedLinkType, type SharedLinkResponseDto } from '@immich/sdk';
   import { Container } from '@immich/ui';
   import { onMount, type Snippet } from 'svelte';
@@ -69,7 +71,7 @@
 
 <OnEvents {onSharedLinkUpdate} {onSharedLinkDelete} />
 
-<UserPageLayout title={data.meta.title}>
+<UserPageLayout title={formatPageTitleWithCount(data.meta.title, filteredSharedLinks.length, $locale)}>
   {#snippet buttons()}
     <div class="hidden xl:block h-10">
       <GroupTab

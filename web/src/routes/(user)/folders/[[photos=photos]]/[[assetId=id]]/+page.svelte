@@ -17,10 +17,12 @@
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { foldersStore } from '$lib/stores/folders.svelte';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { joinPaths } from '$lib/utils/tree-utils';
   import { ActionButton, CommandPaletteDefaultProvider, ContextMenuButton, IconButton } from '@immich/ui';
   import { mdiDotsVertical, mdiFolder, mdiFolderHome, mdiFolderOutline, mdiSelectAll } from '@mdi/js';
   import { t } from 'svelte-i18n';
+  import { locale } from '$lib/stores/preferences.store';
   import type { PageData } from './$types';
 
   interface Props {
@@ -80,9 +82,11 @@
       showJobs: true,
     }),
   );
+
+  let pageItemCount = $derived((data.pathAssets?.length ?? 0) + data.tree.children.length);
 </script>
 
-<UserPageLayout title={data.meta.title}>
+<UserPageLayout title={formatPageTitleWithCount(data.meta.title, pageItemCount, $locale)}>
   {#snippet sidebar()}
     <Sidebar>
       <SkipLink target={`#${headerId}`} text={$t('skip_to_folders')} breakpoint="md" />

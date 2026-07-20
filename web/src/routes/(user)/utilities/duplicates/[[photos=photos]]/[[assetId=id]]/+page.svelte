@@ -14,6 +14,7 @@
   import { locale } from '$lib/stores/preferences.store';
   import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { handleError } from '$lib/utils/handle-error';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import type { AssetResponseDto } from '@immich/sdk';
   import { createStack, deleteDuplicates, resolveDuplicates, updateAssets } from '@immich/sdk';
   import { Button, HStack, IconButton, modalManager, Text, toastManager } from '@immich/ui';
@@ -228,7 +229,7 @@
       ]}
 />
 
-<UserPageLayout title={data.meta.title + ` (${duplicates.length.toLocaleString($locale)})`} scrollbar={true}>
+<UserPageLayout title={formatPageTitleWithCount(data.meta.title, duplicates.length, $locale)} scrollbar={true}>
   {#snippet buttons()}
     <HStack gap={0}>
       <Button

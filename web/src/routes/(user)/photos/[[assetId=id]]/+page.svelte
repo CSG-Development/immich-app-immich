@@ -18,6 +18,7 @@
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
+  import { locale } from '$lib/stores/preferences.store';
   import {
     getAssetMediaUrl,
     getAssetOriginalUrl,
@@ -35,6 +36,7 @@
   import { canvasToBlob, getFileExtension, isWebCompatibleImage, makeImageUnique } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
+  import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { getAltText } from '$lib/utils/thumbnail-util';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
   import { AssetVisibility, getAssetInfo } from '@immich/sdk';
@@ -49,6 +51,13 @@
   import { mdiContentDuplicate, mdiDotsVertical } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
+  import type { PageData } from './$types';
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
   let timelineManager = $state<TimelineManager>() as TimelineManager;
   const options = { visibility: AssetVisibility.Timeline, withStacked: true, withPartners: true };
@@ -178,7 +187,11 @@
   );
 </script>
 
-<UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} scrollbar={false}>
+<UserPageLayout
+  hideNavbar={assetMultiSelectManager.selectionActive}
+  title={formatPageTitleWithCount(data.meta.title, timelineManager?.assetCount ?? 0, $locale)}
+  scrollbar={false}
+>
   <Timeline
     enableRouting={true}
     bind:timelineManager
