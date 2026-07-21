@@ -1,8 +1,12 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_edit_birthday_modal.widget.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_edit_name_modal.widget.dart';
+import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 String formatAge(DateTime birthDate, DateTime referenceDate) {
   int ageInYears = _calculateAge(birthDate, referenceDate);
@@ -51,4 +55,38 @@ Future<DateTime?> showBirthdayEditModal(BuildContext context, DriftPerson person
       return DriftPersonBirthdayEditForm(person: person);
     },
   );
+}
+
+Future<bool> togglePersonFavorite({
+  required BuildContext context,
+  required bool isFavorite,
+  required Future<void> Function() update,
+}) async {
+  try {
+    await update();
+    if (!context.mounted) {
+      return true;
+    }
+
+    ImmichToast.show(
+      context: context,
+      msg: (isFavorite ? 'added_to_favorites' : 'removed_from_favorites').tr(),
+      gravity: ToastGravity.BOTTOM,
+      toastType: ToastType.success,
+    );
+    return true;
+  } catch (error) {
+    dPrint(() => 'Error updating person favorite state: $error');
+    if (!context.mounted) {
+      return false;
+    }
+
+    ImmichToast.show(
+      context: context,
+      msg: 'scaffold_body_error_occurred'.tr(),
+      gravity: ToastGravity.BOTTOM,
+      toastType: ToastType.error,
+    );
+    return false;
+  }
 }

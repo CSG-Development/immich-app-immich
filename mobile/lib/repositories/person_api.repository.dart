@@ -28,9 +28,14 @@ class PersonApiRepository extends ApiRepository {
     }
   }
 
-  Future<PersonDto> update(String id, {String? name, DateTime? birthday}) async {
+  Future<PersonDto> get(String id) async {
+    final response = await checkNull(_api.getPerson(id));
+    return _toPerson(response);
+  }
+
+  Future<PersonDto> update(String id, {String? name, DateTime? birthday, bool? isFavorite}) async {
     final birthdayUtc = birthday == null ? null : DateTime.utc(birthday.year, birthday.month, birthday.day);
-    final dto = PersonUpdateDto(name: name, birthDate: birthdayUtc);
+    final dto = PersonUpdateDto(name: name, birthDate: birthdayUtc, isFavorite: isFavorite);
     final response = await checkNull(_api.updatePerson(id, dto));
     return _toPerson(response);
   }
@@ -43,6 +48,7 @@ class PersonApiRepository extends ApiRepository {
   static PersonDto _toPerson(PersonResponseDto dto) => PersonDto(
     birthDate: dto.birthDate,
     id: dto.id,
+    isFavorite: dto.isFavorite ?? false,
     isHidden: dto.isHidden,
     name: dto.name,
     thumbnailPath: dto.thumbnailPath,

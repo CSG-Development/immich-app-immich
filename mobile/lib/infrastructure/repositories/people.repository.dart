@@ -52,6 +52,7 @@ class DriftPeopleRepository extends DriftDatabaseRepository {
           )
           ..groupBy([people.id], having: faces.id.count().isBiggerOrEqualValue(3) | people.name.equals('').not())
           ..orderBy([
+            OrderingTerm(expression: people.isFavorite, mode: OrderingMode.desc),
             OrderingTerm(expression: people.name.equals('').not(), mode: OrderingMode.desc),
             OrderingTerm(expression: faces.id.count(), mode: OrderingMode.desc),
           ]);
@@ -74,16 +75,22 @@ class DriftPeopleRepository extends DriftDatabaseRepository {
     return query.write(PersonEntityCompanion(birthDate: Value(birthday), updatedAt: Value(DateTime.now())));
   }
 
+  Future<int> updateFavorite(String personId, bool isFavorite) {
+    final query = _db.update(_db.personEntity)..where((row) => row.id.equals(personId));
+
+    return query.write(PersonEntityCompanion(isFavorite: Value(isFavorite), updatedAt: Value(DateTime.now())));
+  }
+
   Future<DriftPerson> merge(String targetPersonId, List<String> sourcePersonIds) async {
     if (sourcePersonIds.isEmpty) {
       throw ArgumentError('Source person IDs list cannot be empty');
     }
 
     // Ensure target person exists
-    final targetPerson = await (_db.select(_db.personEntity)
-      ..where((row) => row.id.equals(targetPersonId)))
-      .getSingleOrNull();
-      
+    final targetPerson = await (_db.select(
+      _db.personEntity,
+    )..where((row) => row.id.equals(targetPersonId))).getSingleOrNull();
+
     if (targetPerson == null) {
       throw Exception('Target person not found');
     }
@@ -91,24 +98,20 @@ class DriftPeopleRepository extends DriftDatabaseRepository {
     await _db.transaction(() async {
       // Update all faces from source people to target person
       for (final sourceId in sourcePersonIds) {
-        await (_db.update(_db.assetFaceEntity)
-          ..where((row) => row.personId.equals(sourceId)))
-          .write(AssetFaceEntityCompanion(
-            personId: Value(targetPersonId),
-          ));
+        await (_db.update(_db.assetFaceEntity)..where((row) => row.personId.equals(sourceId))).write(
+          AssetFaceEntityCompanion(personId: Value(targetPersonId)),
+        );
       }
 
       // Delete source people
-      await (_db.delete(_db.personEntity)
-        ..where((row) => row.id.isIn(sourcePersonIds)))
-        .go();
+      await (_db.delete(_db.personEntity)..where((row) => row.id.isIn(sourcePersonIds))).go();
     });
 
     // Fetch and return updated target person
-    final updatedPerson = await (_db.select(_db.personEntity)
-      ..where((row) => row.id.equals(targetPersonId)))
-      .getSingle();
-      
+    final updatedPerson = await (_db.select(
+      _db.personEntity,
+    )..where((row) => row.id.equals(targetPersonId))).getSingle();
+
     return updatedPerson.toDto();
   }
 }

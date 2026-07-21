@@ -55,11 +55,29 @@ class PersonService {
     return [];
   }
 
+  Future<PersonDto?> get(String id) async {
+    try {
+      return await _personApiRepository.get(id);
+    } catch (error, stack) {
+      _log.severe("Error while fetching person", error, stack);
+    }
+    return null;
+  }
+
   Future<PersonDto?> updateName(String id, String name) async {
     try {
       return await _personApiRepository.update(id, name: name);
     } catch (error, stack) {
       _log.severe("Error while updating person name", error, stack);
+    }
+    return null;
+  }
+
+  Future<PersonDto?> updateFavorite(String id, bool isFavorite) async {
+    try {
+      return await _personApiRepository.update(id, isFavorite: isFavorite);
+    } catch (error, stack) {
+      _log.severe("Error while updating person favorite state", error, stack);
     }
     return null;
   }
