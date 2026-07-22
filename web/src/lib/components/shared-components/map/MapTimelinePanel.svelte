@@ -100,8 +100,8 @@
   );
 </script>
 
-<aside class="h-full w-full overflow-hidden bg-immich-bg dark:bg-immich-dark-bg flex flex-col contain-content">
-  <div class="flex items-center justify-between border-b border-gray-200 dark:border-immich-dark-gray pb-1 pe-1">
+<aside class="flex h-full w-full flex-col contain-content overflow-hidden bg-immich-bg p-2 dark:bg-immich-dark-bg">
+  <div class="-mx-2 flex items-center justify-between border-b border-gray-200 px-2 pb-2 dark:border-immich-dark-gray">
     <div class="flex items-center gap-2">
       <Icon icon={mdiImageMultiple} size="20" />
       <p class="text-sm font-medium text-immich-fg dark:text-immich-dark-fg">
@@ -111,7 +111,7 @@
     <CloseButton onclick={onClose} />
   </div>
 
-  <div class="min-h-0 flex-1">
+  <div class="min-h-0 flex-1 pt-2">
     <Timeline
       bind:timelineManager
       enableRouting={false}
