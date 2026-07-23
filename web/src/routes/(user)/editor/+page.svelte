@@ -5,9 +5,10 @@
   import { page } from '$app/state';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { Route } from '$lib/route';
+  import { getAssetMediaUrl } from '$lib/utils';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
-  import { getAssetInfo, getBaseUrl } from '@immich/sdk';
+  import { AssetMediaSize, getAssetInfo } from '@immich/sdk';
   import { LoadingSpinner } from '@immich/ui';
   import { onMount } from 'svelte';
   /**
@@ -17,7 +18,6 @@
   let flutterState;
   /* let asset = $state(undefined); */
 
-  const key = authManager.key;
   const assetId = page.url.searchParams.get('assetId');
 
   let previousUrl = '';
@@ -29,12 +29,15 @@
   const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
     flutterState = event.detail;
 
-    const originalAsset = await urlToArrayBuffer(
-      getBaseUrl() + `/assets/${assetId}/original` + (key ? `?key=${key}` : ''),
-    );
+    // The Flutter image editor decodes these bytes with the browser's image decoder,
+    // which cannot handle formats like HEIC/HEIF. Request the fullsize media instead of
+    // the original: the server returns the original for web-supported formats and a
+    // browser-decodable (JPEG/WebP) version for everything else.
+    const imageUrl = getAssetMediaUrl({ id: assetId, size: AssetMediaSize.Fullsize, edited: false });
+    const imageBytes = await urlToArrayBuffer(imageUrl);
 
-    globalThis.postMessage({ type: 'sendFile', file: originalAsset });
-    flutterState.setImage(new Uint8Array(originalAsset));
+    globalThis.postMessage({ type: 'sendFile', file: imageBytes });
+    flutterState.setImage(new Uint8Array(imageBytes));
 
     flutterState.onEditingComplete(onEditingComplete);
     flutterState.onEditorClosed(onEditorClosed);
