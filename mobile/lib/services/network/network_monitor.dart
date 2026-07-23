@@ -7,12 +7,20 @@ import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/services/network/local_network_permission_otp_gate.dart';
 import 'package:immich_mobile/services/network/recovery/recovery.dart';
+import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:logging/logging.dart';
 
 const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
 const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
 const Duration curatorEndpointHealthProbeInterval = Duration(seconds: 30);
 const Duration curatorEndpointHealthProbeTimeout = Duration(seconds: 5);
+
+/// A backup saturates the uplink, so the probe competes with upload traffic for
+/// it. At the normal timeout that reads as an unreachable endpoint and tears
+/// down a link that is in fact working, so the probe is given more room while
+/// uploads are in flight. It still runs: a genuinely dead endpoint has to be
+/// noticed, and upload failures no longer report one.
+const Duration curatorEndpointHealthProbeTimeoutDuringUpload = Duration(seconds: 20);
 
 /// iOS only: the OS Local Network permission dialog puts the app in the
 /// `inactive` state, and the user answering it (Allow/Deny) returns the app to
@@ -235,7 +243,10 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     if (probe == null) {
       return;
     }
-    final reachable = await probe(curatorEndpointHealthProbeTimeout);
+    final timeout = UploadActivity.isActive
+        ? curatorEndpointHealthProbeTimeoutDuringUpload
+        : curatorEndpointHealthProbeTimeout;
+    final reachable = await probe(timeout);
     if (reachable) {
       return;
     }

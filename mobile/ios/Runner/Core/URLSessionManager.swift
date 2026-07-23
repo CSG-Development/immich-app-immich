@@ -170,8 +170,9 @@ class URLSessionManager: NSObject {
     config.urlCache = urlCache
     config.httpCookieStorage = cookieStorage
     config.httpMaximumConnectionsPerHost = 64
+    // Idle timeout only. No timeoutIntervalForResource: it caps the total
+    // duration of a request, which killed large uploads mid-transfer.
     config.timeoutIntervalForRequest = 60
-    config.timeoutIntervalForResource = 60
     config.waitsForConnectivity = false
 
     var headers = UserDefaults.group.dictionary(forKey: HEADERS_KEY) as? [String: String] ?? [:]

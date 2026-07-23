@@ -23,10 +23,6 @@ class UploadTaskWithFile {
 
 typedef PhotosHttpClientProvider = Client Function();
 
-/// Per-request timeout for large multipart uploads (native client strips this header).
-const _uploadTimeoutHeader = 'x-curator-request-timeout-seconds';
-const _uploadTimeoutSeconds = '600';
-
 final uploadRepositoryProvider = Provider((ref) {
   return UploadRepository(
     httpClientProvider: () => ref.read(apiServiceProvider).httpClient,
@@ -133,7 +129,7 @@ class UploadRepository {
       final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
 
       baseRequest.headers.addAll(candidate.task.headers);
-      baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
+      baseRequest.headers[kUploadRequestHeader] = '1';
       baseRequest.fields.addAll(candidate.task.fields);
       baseRequest.files.add(assetRawUploadData);
 
@@ -188,7 +184,7 @@ class UploadRepository {
 
         baseRequest.headers.addAll(ApiService.getRequestHeaders());
         baseRequest.headers.addAll(candidate.task.headers);
-        baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
+        baseRequest.headers[kUploadRequestHeader] = '1';
         baseRequest.fields.addAll(candidate.task.fields);
         baseRequest.files.add(assetRawUploadData);
 
@@ -242,14 +238,20 @@ class UploadRepository {
       return UploadResult.cancelled();
     }
 
+    final abortTrigger = _AbortTrigger(cancelToken);
     try {
       final fileStream = file.openRead();
       final assetRawUploadData = MultipartFile("assetData", fileStream, file.lengthSync(), filename: originalFileName);
 
-      final baseRequest = _CustomMultipartRequest('POST', Uri.parse('$savedEndpoint/assets'), onProgress: onProgress);
+      final baseRequest = _ProgressMultipartRequest(
+        'POST',
+        Uri.parse('$savedEndpoint/assets'),
+        abortTrigger: abortTrigger.future,
+        onProgress: onProgress,
+      );
 
       baseRequest.headers.addAll(ApiService.getRequestHeaders());
-      baseRequest.headers[_uploadTimeoutHeader] = _uploadTimeoutSeconds;
+      baseRequest.headers[kUploadRequestHeader] = '1';
       baseRequest.fields.addAll(fields);
       baseRequest.files.add(assetRawUploadData);
 
@@ -280,11 +282,18 @@ class UploadRepository {
         final responseBody = jsonDecode(responseBodyString);
         return UploadResult.success(remoteAssetId: responseBody['id'] as String);
       } catch (e) {
-        return UploadResult.error(errorMessage: 'Failed to parse server response');
+        // Carries the status code: the server accepted the asset, so this must
+        // not read as a transport failure and get retried into a duplicate.
+        return UploadResult.error(statusCode: response.statusCode, errorMessage: 'Failed to parse server response');
       }
     } catch (error, stackTrace) {
+      if (cancelToken.isCancelled || error is RequestAbortedException) {
+        return UploadResult.cancelled();
+      }
       logger.warning('Error uploading asset', error, stackTrace);
       return UploadResult.error(errorMessage: error.toString());
+    } finally {
+      abortTrigger.dispose();
     }
   }
 }
@@ -317,8 +326,11 @@ class UploadResult {
   }
 }
 
-class _CustomMultipartRequest extends MultipartRequest {
-  _CustomMultipartRequest(super.method, super.url, {required this.onProgress});
+class _ProgressMultipartRequest extends MultipartRequest with Abortable {
+  _ProgressMultipartRequest(super.method, super.url, {this.abortTrigger, required this.onProgress});
+
+  @override
+  final Future<void>? abortTrigger;
 
   final void Function(int bytes, int totalBytes) onProgress;
 
@@ -337,5 +349,35 @@ class _CustomMultipartRequest extends MultipartRequest {
     );
     final stream = byteStream.transform(t);
     return ByteStream(stream);
+  }
+}
+
+/// Bridges a [CancellationToken] to the `abortTrigger` future understood by the
+/// http client, so cancelling a backup aborts the request already in flight
+/// instead of waiting for it to time out.
+class _AbortTrigger with Cancellable {
+  _AbortTrigger(CancellationToken? token) {
+    maybeAttach(token);
+  }
+
+  final _completer = Completer<void>();
+
+  Future<void> get future => _completer.future;
+
+  @override
+  void onCancel(Exception cancelException) {
+    super.onCancel(cancelException);
+    _complete();
+  }
+
+  void dispose() {
+    detach();
+    _complete();
+  }
+
+  void _complete() {
+    if (!_completer.isCompleted) {
+      _completer.complete();
+    }
   }
 }
