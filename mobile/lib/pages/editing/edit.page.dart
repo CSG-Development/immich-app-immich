@@ -6,6 +6,7 @@ import 'package:cancellation_token_http/http.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_editor/image_editor.dart';
@@ -29,10 +30,15 @@ import 'package:path/path.dart' as p;
 /// They automatically navigate to the [HomePage] with the edited image saved and they eventually get backed up to the server.
 @immutable
 @RoutePage()
-class EditImagePage extends ConsumerWidget {
+class EditImagePage extends HookConsumerWidget {
   final BaseAsset asset;
   final Image image;
   final bool isEdited;
+
+  /// Maximum time to wait for the original image to load before giving up.
+  /// Prevents the editor from hanging until the OS socket timeout (~60s) when
+  /// the server is unreachable (e.g. after switching from a local to a public URL).
+  static const _loadTimeout = Duration(seconds: 20);
 
   const EditImagePage({super.key, required this.asset, required this.image, required this.isEdited});
 
@@ -115,6 +121,13 @@ class EditImagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Memoize the future so it is not recreated (and the network fetch restarted)
+    // on every rebuild. A timeout guarantees the loader can't spin forever.
+    final imageFuture = useMemoized(
+      () => _imageToUint8List(asset).timeout(_loadTimeout),
+      [asset],
+    );
+
     String trOr(String primaryKey, {String? fallbackKey, String? fallbackText}) {
       final primaryValue = primaryKey.tr();
       if (primaryValue != primaryKey) {
@@ -134,7 +147,7 @@ class EditImagePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       body: FutureBuilder<Uint8List>(
-        future: _imageToUint8List(asset),
+        future: imageFuture,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ImageEditor(
@@ -289,12 +302,78 @@ class EditImagePage extends ConsumerWidget {
             );
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return _EditorErrorView(error: snapshot.error);
           }
 
-          return const Center(child: CircularProgressIndicator());
+          return const _EditorLoadingView();
         },
       ),
+    );
+  }
+}
+
+/// A back button overlay so the user can always leave the editor while it is
+/// loading or after an error, instead of being stuck on a black screen.
+class _EditorBackButton extends StatelessWidget {
+  const _EditorBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.maybePop(),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorLoadingView extends StatelessWidget {
+  const _EditorLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Stack(
+      children: [Center(child: CircularProgressIndicator()), _EditorBackButton()],
+    );
+  }
+}
+
+class _EditorErrorView extends StatelessWidget {
+  final Object? error;
+
+  const _EditorErrorView({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    Logger("EditImagePage").warning("Failed to load image for editing", error);
+
+    return Stack(
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.broken_image_outlined, color: Colors.white70, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'image_editor_failed_to_load_image'.tr(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(onPressed: () => context.maybePop(), child: Text('back'.tr())),
+              ],
+            ),
+          ),
+        ),
+        const _EditorBackButton(),
+      ],
     );
   }
 }
