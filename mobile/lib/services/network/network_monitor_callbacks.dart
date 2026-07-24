@@ -26,11 +26,16 @@ import 'package:immich_mobile/widgets/common/network_status_snackbar.widget.dart
 import 'package:logging/logging.dart';
 
 class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallbacks {
-  CuratorAppNetworkMonitorCallbacks(this._ref, {required VoidCallback onFindingNetworkToastDismissed})
-    : _onFindingNetworkToastDismissed = onFindingNetworkToastDismissed;
+  CuratorAppNetworkMonitorCallbacks(
+    this._ref, {
+    required VoidCallback onFindingNetworkToastDismissed,
+    required VoidCallback onManualRetry,
+  }) : _onFindingNetworkToastDismissed = onFindingNetworkToastDismissed,
+       _onManualRetry = onManualRetry;
 
   final Ref _ref;
   final VoidCallback _onFindingNetworkToastDismissed;
+  final VoidCallback _onManualRetry;
   final _log = Logger('CuratorAppNetworkMonitorCallbacks');
   bool _lastReconnectionFailureWasNetwork = false;
   bool _lastFailureHadInternet = true;
@@ -42,7 +47,8 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   late final NetworkBannerController _bannerController = NetworkBannerController(
     contextGetter: () => _navigatorContext,
     onFindingDismissed: _onFindingNetworkToastDismissed,
-    onRetry: () => _ref.read(curatorNetworkMonitorProvider).forceManualRetry(),
+    // Injected: reading curatorNetworkMonitorProvider via this Ref would self-depend.
+    onRetry: _onManualRetry,
   );
 
   @override
@@ -151,9 +157,9 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
       if (!_lastFailureHadInternet) {
         return NetworkBannerKind.noInternet;
       }
-      // 'Connection lost' is only meaningful with a remote access session;
-      // without one the OTP flow is the recovery UX.
-      return _ref.read(remoteProvider).isAuthenticated ? NetworkBannerKind.unable : NetworkBannerKind.hidden;
+      // Shown for local-only sessions too: its Retry re-runs as a manual retry
+      // (which prompts OTP), so it's the feedback + manual escape hatch.
+      return NetworkBannerKind.unable;
     }
     return NetworkBannerKind.hidden;
   }

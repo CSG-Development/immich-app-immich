@@ -31,9 +31,18 @@ import 'package:nsd/nsd.dart' as nsd;
 const String serviceTypeDiscover = '_https._tcp';
 const String serviceTxtKeyDiscover = 'seagate';
 const String serviceTxtValueDiscover = 'homecloud';
-const Duration defaultDurationLocalDetection = Duration(seconds: 5);
+// Long enough for a cold mDNS cache to answer a retransmit; a short 5s window
+// often misses a present device and forces a premature OTP fallback.
+const Duration defaultDurationLocalDetection = Duration(seconds: 8);
 const Duration timeoutLocalApiCall = Duration(seconds: 4);
 const Duration timeoutRemoteApiCall = Duration(seconds: 9);
+// A logout (or airplane-mode toggle) can make connectivity_plus briefly report
+// no wifi even though the device is still on it. Skipping local mDNS on that
+// transient report completes detection instantly with no devices and forces a
+// premature OTP prompt. Re-check across this settle window before concluding
+// wifi is really gone, so mDNS still runs its full window when wifi is present.
+const Duration wifiSettleBeforeLocalDetectionSkip = Duration(seconds: 2);
+const Duration wifiSettleRecheckInterval = Duration(milliseconds: 400);
 
 String _devicePathMultisetKey(DevicePath p) {
   final addr = p.address.trim().toLowerCase();
@@ -92,6 +101,7 @@ class DeviceDetectionService {
   bool _isDetecting = false;
   bool _isCancelled = false;
   bool _remoteDetectionDone = false;
+  bool _detectionCompleted = false;
   int _operationId = 0;
   int _detectionCounter = 0;
   final Map<String, DeviceItem> _devices = {};
@@ -121,6 +131,7 @@ class DeviceDetectionService {
     _isDetecting = true;
     _isCancelled = false;
     _remoteDetectionDone = false;
+    _detectionCompleted = false;
     _devices.clear();
 
     logger.info('[Network] Starting detection');
@@ -167,6 +178,29 @@ class DeviceDetectionService {
     }
   }
 
+  /// Wait briefly for a transient no-wifi report to settle before concluding
+  /// local mDNS must be skipped. Returns true as soon as wifi reappears within
+  /// [wifiSettleBeforeLocalDetectionSkip], false if it stays absent (genuinely
+  /// off wifi) or the detection is cancelled/superseded meanwhile.
+  Future<bool> _awaitWifiSettle(int operationId) async {
+    logger.info(
+      '[Network] No WiFi at detection start, waiting up to '
+      '${wifiSettleBeforeLocalDetectionSkip.inMilliseconds}ms for it to settle',
+    );
+    final deadline = DateTime.now().add(wifiSettleBeforeLocalDetectionSkip);
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(wifiSettleRecheckInterval);
+      if (_isCancelled || operationId != _operationId) {
+        return false;
+      }
+      if (await _checkWiFiConnectivity()) {
+        logger.info('[Network] WiFi settled, proceeding with local detection');
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Start mDNS detection of local devices
   Future<void> _startLocalDetection(int operationId) async {
     if (_discovery != null || _isCancelled) {
@@ -177,8 +211,15 @@ class DeviceDetectionService {
     }
     _updateDetectionCounter(1);
 
-    final hasWiFi = await _checkWiFiConnectivity();
+    var hasWiFi = await _checkWiFiConnectivity();
     if (operationId != _operationId) return;
+    if (!hasWiFi) {
+      // Tolerate a transient no-wifi report (e.g. right after logout) before
+      // giving up on local mDNS — otherwise detection completes empty and
+      // prompts OTP without ever having searched the local network.
+      hasWiFi = await _awaitWifiSettle(operationId);
+      if (operationId != _operationId) return;
+    }
     if (!hasWiFi) {
       logger.warning(
         '[Network] Skipping local detection due to no WiFi connectivity',
@@ -220,7 +261,10 @@ class DeviceDetectionService {
           logger.info(
             '[Network] Device discovered on local network by mDNS: ${service.name}',
           );
-          // Get About info to obtain certificateCommonName and confirm it's a valid HomeCloud device before adding to the list
+          // Confirm it's a valid HomeCloud device before adding. Count the
+          // lookup so detection doesn't complete (→ OTP) while it's in flight.
+          if (operationId != _operationId) return;
+          _updateDetectionCounter(1);
           getAbout(
             DeviceProvider.createBaseUrl(host, port),
           ).then((about) {
@@ -250,6 +294,10 @@ class DeviceDetectionService {
                 '[Network] Added device: ${device.name} at ${device.baseUrl}',
               );
               onDeviceFound?.call(device);
+            }
+          }).whenComplete(() {
+            if (operationId == _operationId) {
+              _updateDetectionCounter(-1);
             }
           });
         }
@@ -301,6 +349,11 @@ class DeviceDetectionService {
         _startRemoteDetection(_operationId);
         return;
       }
+      // A late About lookup must not re-fire completion.
+      if (_detectionCompleted) {
+        return;
+      }
+      _detectionCompleted = true;
       logger.info(
         '[Network] Detection finished, found ${_devices.length} devices',
       );

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/async_mutex.dart';
@@ -117,6 +118,15 @@ class HcDeviceEndpointResolver {
 
   String? getAvailablePath() => _resolver.getAvailablePath();
   String? getAvailablePathType() => _resolver.availablePathType;
+
+  /// Records the type of a path selected outside a resolve (login probes paths
+  /// itself), so recovery can trust it: a local cached path may cheap-probe
+  /// past a resolve, a remote one must not.
+  Future<void> noteSelectedPath(String endpoint, {DevicePathType? pathType}) async {
+    final resolvedPathType = HcPathType.fromDevicePathType(pathType);
+    _log.info('[Resolver] external path selection endpoint=$endpoint pathType=${resolvedPathType ?? '-'}');
+    await _resolver.setAvailablePath(endpoint, pathType: resolvedPathType);
+  }
 
   List getDevicePaths(String remoteDeviceId) => _resolver.getDevicePaths(remoteDeviceId);
 

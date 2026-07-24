@@ -18,6 +18,7 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -37,6 +38,7 @@ import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
@@ -516,6 +518,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     Future<bool> syncServerEndpointWithBaseUrl({
       required Uri baseUrl,
       required String flowTag,
+      DevicePathType? pathType,
     }) async {
       final normalizedBaseUrl = buildDevicePhotosBaseUrl(baseUrl);
       final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
@@ -528,8 +531,14 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       try {
-        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
-        log.info('[$flowTag] Endpoint synced to selected device: $normalizedServerUrl');
+        final resolvedServerUrl = await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
+        // Login picks the path itself; record its type so recovery does not
+        // have to re-resolve to learn it (see noteSelectedPath).
+        await ref.read(hcDeviceEndpointResolverProvider).noteSelectedPath(resolvedServerUrl, pathType: pathType);
+        log.info(
+          '[$flowTag] Endpoint synced to selected device: $normalizedServerUrl '
+          'pathType=${pathType?.value ?? '-'}',
+        );
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
@@ -569,7 +578,11 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (ping == null || ping.baseUrl == null) {
           return false;
         }
-        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: ping.baseUrl!, flowTag: 'Login');
+        final endpointSynced = await syncServerEndpointWithBaseUrl(
+          baseUrl: ping.baseUrl!,
+          flowTag: 'Login',
+          pathType: ping.pathType,
+        );
         if (!endpointSynced) {
           return false;
         }
@@ -598,12 +611,14 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       var baseUrl = device.baseUrl;
+      var selectedPathType = device.pathType;
       if (baseUrl == null && device.remoteDevice != null) {
         final ping = await resolveRemoteDeviceConnection(device: device, flowTag: 'Login', requireFreshPaths: true);
         if (ping == null) {
           return false;
         }
         baseUrl = ping.baseUrl;
+        selectedPathType = ping.pathType;
       }
 
       if (baseUrl == null) {
@@ -613,7 +628,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       clearAllErrors();
-      final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: baseUrl, flowTag: 'Login');
+      final endpointSynced = await syncServerEndpointWithBaseUrl(
+        baseUrl: baseUrl,
+        flowTag: 'Login',
+        pathType: selectedPathType,
+      );
       if (!endpointSynced) {
         return false;
       }
@@ -762,7 +781,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    Future<bool> prepareDeviceHostForLogin(DeviceItem device) async {
+    /// Returns the prepared host's path type together with the outcome, so the
+    /// endpoint sync that follows can record which kind of path won.
+    Future<({bool prepared, DevicePathType? pathType})> prepareDeviceHostForLogin(DeviceItem device) async {
       final dp = ref.read(deviceProvider.notifier);
       final rp = ref.read(remoteProvider.notifier);
       final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
@@ -783,7 +804,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             login: email.value.trim(),
             devicePaths: dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
           );
-          return true;
+          return (prepared: true, pathType: ping.pathType);
         }
       }
 
@@ -798,11 +819,11 @@ class CuratorLoginForm extends HookConsumerWidget {
               ? null
               : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
         );
-        return true;
+        return (prepared: true, pathType: device.pathType);
       }
 
       dp.clearDevice(save: true);
-      return false;
+      return (prepared: false, pathType: null);
     }
 
     bool isResetPasswordEnabled() =>
@@ -995,7 +1016,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
 
         final preparedBeforeLogin = await prepareDeviceHostForLogin(selected);
-        if (!preparedBeforeLogin) {
+        if (!preparedBeforeLogin.prepared) {
           warningMessage.value = "login_form_server_error".tr();
           return;
         }
@@ -1006,7 +1027,11 @@ class CuratorLoginForm extends HookConsumerWidget {
           log.warning('[Login] Aborted: connected device host is null after prepareDeviceHostForLogin');
           return;
         }
-        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: connectedBaseUrl, flowTag: 'Login');
+        final endpointSynced = await syncServerEndpointWithBaseUrl(
+          baseUrl: connectedBaseUrl,
+          flowTag: 'Login',
+          pathType: preparedBeforeLogin.pathType,
+        );
         if (!endpointSynced) {
           return;
         }

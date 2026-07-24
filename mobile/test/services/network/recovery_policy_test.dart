@@ -121,16 +121,21 @@ void main() {
       expect((decision as ResolvePaths).cheapProbeFirst, isTrue);
     });
 
-    test('connectivityChange → full resolve without cheap probe', () {
+    test('connectivityChange on wifi with endpoint → cheap probe', () {
+      // Airplane / wifi flaps: same LAN IP is often reachable before mDNS is.
       final decision = policy.decide(_snap(trigger: RecoveryTrigger.connectivityChange));
-      final resolve = decision as ResolvePaths;
-      expect(resolve.cheapProbeFirst, isFalse);
-      expect(resolve.probeMode, PathProbeMode.all);
+      expect(decision.reason, 'local_first_cheap_probe');
+      expect((decision as ResolvePaths).cheapProbeFirst, isTrue);
     });
 
-    test('healthProbeMiss → cheap probe', () {
+    test('healthProbeMiss → full resolve without cheap probe', () {
+      // The periodic health probe already confirmed the active endpoint is
+      // unreachable, so recovery skips the redundant second probe and resolves
+      // immediately (surfacing the "finding network" toast right away).
       final decision = policy.decide(_snap(trigger: RecoveryTrigger.healthProbeMiss));
-      expect((decision as ResolvePaths).cheapProbeFirst, isTrue);
+      final resolve = decision as ResolvePaths;
+      expect(resolve.cheapProbeFirst, isFalse);
+      expect(resolve.reason, 'local_first_resolve_all');
     });
   });
 
