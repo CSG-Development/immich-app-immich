@@ -62,7 +62,7 @@ void main() {
     (
       name: 'connectivity change while OTP modal is up still proceeds',
       snapshot: _snap(trigger: RecoveryTrigger.connectivityChange, otpModalShowing: true),
-      reason: 'local_first_resolve_all',
+      reason: 'local_first_cheap_probe',
     ),
     (
       name: 'another resolve already active',
@@ -114,9 +114,11 @@ void main() {
       reason: 'local_first_cheap_probe',
     ),
     (
-      name: 'app resume with cached endpoint of unknown path type',
+      // Unknown is never assumed local: a remote endpoint answers from any
+      // network, so short-circuiting on one would strand the app on remote.
+      name: 'app resume with cached endpoint of unknown path type resolves fully',
       snapshot: _snap(trigger: RecoveryTrigger.appResume, cachedPathType: null),
-      reason: 'local_first_cheap_probe',
+      reason: 'local_first_resolve_all',
     ),
     (
       name: 'app resume on wifi with cached remote endpoint searches for local',
@@ -144,9 +146,11 @@ void main() {
       reason: 'local_first_cheap_probe',
     ),
     (
+      // The periodic health probe already found the endpoint unreachable, so
+      // recovery resolves immediately instead of re-probing the cached one.
       name: 'health probe miss with cached endpoint',
       snapshot: _snap(trigger: RecoveryTrigger.healthProbeMiss),
-      reason: 'local_first_cheap_probe',
+      reason: 'local_first_resolve_all',
     ),
     (
       name: 'manual retry with cached endpoint',
@@ -154,8 +158,24 @@ void main() {
       reason: 'local_first_cheap_probe',
     ),
     (
-      name: 'connectivity change goes straight to full resolve',
+      name: 'connectivity change with cached local endpoint cheap-probes first',
       snapshot: _snap(trigger: RecoveryTrigger.connectivityChange),
+      reason: 'local_first_cheap_probe',
+    ),
+    (
+      // Joining the home wifi on a cached remote endpoint must search for the
+      // local path — the remote one answers here too and would never yield.
+      name: 'connectivity change with cached remote endpoint searches for local',
+      snapshot: _snap(
+        trigger: RecoveryTrigger.connectivityChange,
+        cachedPathType: 'remote',
+        activeEndpoint: 'https://57390a5d.remote.lasea.fr/photos/api',
+      ),
+      reason: 'local_first_resolve_all',
+    ),
+    (
+      name: 'connectivity change without cached endpoint resolves fully',
+      snapshot: _snap(trigger: RecoveryTrigger.connectivityChange, activeEndpoint: null),
       reason: 'local_first_resolve_all',
     ),
     (

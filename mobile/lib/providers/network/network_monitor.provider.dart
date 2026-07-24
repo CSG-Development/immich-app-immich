@@ -63,6 +63,7 @@ final curatorNetworkMonitorProvider = Provider<CuratorNetworkMonitor>((ref) {
   final callbacks = CuratorAppNetworkMonitorCallbacks(
     ref,
     onFindingNetworkToastDismissed: () => monitor.noteUserDismissedFindingToast(),
+    onManualRetry: () => monitor.forceManualRetry(),
   );
   monitor = CuratorNetworkMonitor(
     deviceProvider: ref.read(deviceProvider.notifier),

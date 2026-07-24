@@ -164,6 +164,9 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     _resetLocalNetPermissionState();
     _reconnectEpisodeService.reset();
     _executor.lastFailureSignature = null;
+    _snapshotBuilder.hasEstablishedConnectedThisLaunch = false;
+    _snapshotBuilder.networkIdentity = null;
+    _snapshotBuilder.lastConnectedNetworkIdentity = null;
     _log.info('[Network] Stopped monitoring network changes');
   }
 
@@ -187,6 +190,13 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
       // New transport episode — reset any pending local-network-permission
       // re-resolve so its bound starts fresh for the new network.
       _resetLocalNetPermissionState();
+      // A different network may fail for a different reason - re-arm the
+      // duplicate-failure suppression so OTP/unable can surface again. Done
+      // before the backgrounded return: switching wifi from the system shade
+      // always lands here with the app in the background, and the deferred
+      // recovery that runs on resume must not inherit the old network's
+      // failure signature.
+      _executor.lastFailureSignature = null;
     }
 
     if (!_isAppInForeground) {
@@ -201,9 +211,6 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     if (!hadPrevious) {
       _log.fine('[Network] Initial connectivity status: $results');
     } else if (changed) {
-      // A different network may fail for a different reason - re-arm the
-      // duplicate-failure suppression so OTP/unable can surface again.
-      _executor.lastFailureSignature = null;
       _scheduleRecovery(
         RecoveryEvent(trigger: RecoveryTrigger.connectivityChange, detail: 'transport changed: $results'),
       );
@@ -280,6 +287,14 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
       }
     }
     if (_deferredWhileBackgrounded) {
+      // The network changed out of sight (wifi switched from the system shade),
+      // and identity refresh does not run while backgrounded. Re-observe it
+      // before the deferred recovery so that run judges the network it is
+      // actually on. triggerReconnectOnChange: false — the deferred recovery
+      // below already covers the change.
+      await _refreshNetworkIdentity(source: 'resume_deferred', triggerReconnectOnChange: false);
+    }
+    if (_deferredWhileBackgrounded) {
       _deferredWhileBackgrounded = false;
       await _runRecovery(
         const RecoveryEvent(
@@ -309,6 +324,11 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
   void onConnectionRestored() {
     _isReconnecting = false;
+    _snapshotBuilder.hasEstablishedConnectedThisLaunch = true;
+    // Remember which network served this connection: a later connectivity-driven
+    // failure on that same network is an outage to report, not a network switch
+    // that warrants an OTP prompt.
+    _snapshotBuilder.lastConnectedNetworkIdentity = _lastNetworkIdentitySignature;
     _reconnectEpisodeService.onConnectionRestored();
   }
 
@@ -466,6 +486,9 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
       final previous = _lastNetworkIdentitySignature;
       _lastNetworkIdentitySignature = identity;
+      // Feeds the failure signature and the same-network-outage check, so it
+      // must be current before any recovery that follows this refresh.
+      _snapshotBuilder.networkIdentity = identity;
 
       if (previous != null && previous != identity) {
         // ssid/ip can change without a transport change (wifi handoff), so the
