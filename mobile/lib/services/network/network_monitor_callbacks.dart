@@ -124,6 +124,18 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     if (!hasUsableTransport) {
       return NetworkBannerKind.noInternet;
     }
+    // Like the debug overlay, derive from the live resolver state. Transport is
+    // usable here (checked above), so while a resolve is actively searching:
+    //  - keep an already-shown "finding" through transient status blips, and
+    //  - promote a now-stale "no internet" (left over from when transport was
+    //    off) to "finding" — we're back online and probing.
+    // 'unable' (Connection lost) is deliberately left alone so steady failures
+    // don't flip to finding on background retries.
+    final activeKind = _bannerController.activeKind;
+    if ((activeKind == NetworkBannerKind.finding || activeKind == NetworkBannerKind.noInternet) &&
+        _ref.read(pathResolveTriggerServiceProvider).isResolving) {
+      return NetworkBannerKind.finding;
+    }
     final status = _ref.read(connectionStateProvider).status;
     if (status == conn.ConnectionStatus.reconnecting) {
       // 'reconnecting' is published by any failed request (see
