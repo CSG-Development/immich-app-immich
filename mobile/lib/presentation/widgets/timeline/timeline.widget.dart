@@ -15,6 +15,7 @@ import 'package:immich_mobile/domain/models/timeline.model.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/presentation/utils/scroll_notifier_utils.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/download_status_floating_button.widget.dart';
 import 'package:immich_mobile/widgets/clipboard/clipboard_paste_button.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/general_bottom_sheet.widget.dart';
@@ -156,6 +157,7 @@ class _SliverTimeline extends ConsumerStatefulWidget {
 class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
   late final ScrollController _scrollController;
   StreamSubscription? _eventSubscription;
+  RemoveScrollListener? _detachScrollListener;
 
   // Drag selection state
   bool _dragging = false;
@@ -173,6 +175,7 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
     super.initState();
     _scrollController = ScrollController(onAttach: _restoreAssetPosition);
     _eventSubscription = EventStream.shared.listen(_onEvent);
+    _detachScrollListener = attachScrollNotifierToController(controller: _scrollController, ref: ref);
 
     final currentTilesPerRow = ref.read(settingsProvider).get(Setting.tilesPerRow);
     _perRow = currentTilesPerRow;
@@ -259,6 +262,7 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> {
 
   @override
   void dispose() {
+    _detachScrollListener?.call();
     _scrollController.dispose();
     _eventSubscription?.cancel();
     super.dispose();
