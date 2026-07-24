@@ -10,7 +10,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
@@ -36,9 +38,25 @@ class DriftPeopleMergePage extends HookConsumerWidget {
     final searchQuery = useState<String?>(null);
     final isLoadingMerge = useState<bool>(false);
 
+    final peopleParams = withClosestPersonId.value ? sourcePersonId.value : null;
     final allPeople = peopleAsync.value ?? [];
     final isLoading = peopleAsync.isLoading;
     final isError = peopleAsync.error != null;
+
+    void refreshPeopleIfEmpty() {
+      final async = ref.read(getAllPeopleWithParamsProvider(peopleParams));
+      if (async.isLoading) return;
+      if ((async.value ?? []).isNotEmpty) return;
+      ref.invalidate(getAllPeopleWithParamsProvider(peopleParams));
+    }
+
+    // After recovery the monitor publishes connected — refresh empty list only.
+    ref.listen(connectionStateProvider, (prev, next) {
+      final stabilized =
+          prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
+      if (!stabilized) return;
+      refreshPeopleIfEmpty();
+    });
 
     List<PersonDto> filteredPeople = allPeople.where((p) {
       final matchesSearch =
