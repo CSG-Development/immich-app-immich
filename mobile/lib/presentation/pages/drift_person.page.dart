@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
+import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -65,6 +66,29 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
     }
   }
 
+  Future<void> handleToggleFavorite() async {
+    final isFavorite = !_person.isFavorite;
+    final success = await togglePersonFavorite(
+      context: context,
+      isFavorite: isFavorite,
+      update: () async {
+        final result = await ref.read(driftPeopleServiceProvider).updateFavorite(_person.id, isFavorite);
+        if (result == 0) {
+          throw StateError('Person ${_person.id} was not found in the local database');
+        }
+      },
+    );
+
+    if (!success || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _person = _person.copyWith(isFavorite: isFavorite);
+    });
+    ref.invalidate(driftGetAllPeopleProvider);
+  }
+
   void showOptionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -84,7 +108,12 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
             context.pop();
             handleMerge();
           },
+          onToggleFavorite: () {
+            context.pop();
+            handleToggleFavorite();
+          },
           birthdayExists: _person.birthDate != null,
+          isFavorite: _person.isFavorite,
         );
       },
     );

@@ -5,7 +5,10 @@ import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
+import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
+import 'package:immich_mobile/services/person.service.dart';
+import 'package:immich_mobile/utils/people.utils.dart';
 import 'package:immich_mobile/widgets/search/person_name_edit_form.dart';
 import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
@@ -20,6 +23,20 @@ class PersonResultPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = useState(personName);
+    final isFavorite = useState(false);
+
+    useEffect(() {
+      var cancelled = false;
+
+      Future(() async {
+        final person = await ref.read(personServiceProvider).get(personId);
+        if (!cancelled && person != null) {
+          isFavorite.value = person.isFavorite;
+        }
+      });
+
+      return () => cancelled = true;
+    }, [personId]);
 
     showEditNameDialog() {
       showDialog(
@@ -35,24 +52,44 @@ class PersonResultPage extends HookConsumerWidget {
       });
     }
 
+    Future<void> toggleFavorite() async {
+      final targetFavorite = !isFavorite.value;
+      final success = await togglePersonFavorite(
+        context: context,
+        isFavorite: targetFavorite,
+        update: () async {
+          final updatedPerson = await ref.read(personServiceProvider).updateFavorite(personId, targetFavorite);
+          if (updatedPerson == null || updatedPerson.isFavorite != targetFavorite) {
+            throw StateError('Failed to update favorite for person $personId');
+          }
+        },
+      );
+
+      if (!success) {
+        return;
+      }
+
+      isFavorite.value = targetFavorite;
+      ref.invalidate(getAllPeopleProvider);
+    }
+
     void buildBottomSheet() {
       showModalBottomSheet(
         backgroundColor: context.scaffoldBackgroundColor,
         isScrollControlled: false,
         context: context,
         useSafeArea: true,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('edit_name', style: TextStyle(fontWeight: FontWeight.bold)).tr(),
-                  onTap: showEditNameDialog,
-                ),
-              ],
-            ),
+        builder: (sheetContext) {
+          return PersonOptionSheet(
+            onEditName: () {
+              sheetContext.pop();
+              showEditNameDialog();
+            },
+            onToggleFavorite: () {
+              sheetContext.pop();
+              toggleFavorite();
+            },
+            isFavorite: isFavorite.value,
           );
         },
       );
