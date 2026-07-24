@@ -5,7 +5,8 @@
   import { page } from '$app/state';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { Route } from '$lib/route';
-  import { getAssetMediaUrl } from '$lib/utils';
+  import { websocketEvents } from '$lib/stores/websocket';
+  import { getAssetMediaUrl, sleep } from '$lib/utils';
   import { urlToArrayBuffer } from '$lib/utils/asset-utils';
   import { fileUploadHandler } from '$lib/utils/file-uploader';
   import { AssetMediaSize, getAssetInfo } from '@immich/sdk';
@@ -19,12 +20,56 @@
   /* let asset = $state(undefined); */
 
   const assetId = page.url.searchParams.get('assetId');
+  const THUMBNAIL_READY_TIMEOUT_MS = 30_000;
 
   let previousUrl = '';
+  let isSaving = $state(false);
 
   afterNavigate((nav) => {
     previousUrl = nav.from?.url.pathname || '';
   });
+
+  /**
+   * Upload returns before thumbnails exist. Wait until thumbhash is available so the
+   * gallery does not request a thumbnail that 404s (thumbhash null, no `c=` cache key).
+   */
+  const waitForThumbnailReady = async (upload) => {
+    const readyIds = new Set();
+    /** @type {string | undefined} */
+    let uploadedAssetId;
+    let resolveReady = () => {};
+    const readyPromise = new Promise((resolve) => {
+      resolveReady = resolve;
+    });
+
+    const unsubscribe = websocketEvents.on('on_upload_success', (asset) => {
+      readyIds.add(asset.id);
+      if (uploadedAssetId && asset.id === uploadedAssetId) {
+        resolveReady();
+      }
+    });
+
+    try {
+      uploadedAssetId = await upload();
+      if (!uploadedAssetId) {
+        return;
+      }
+
+      if (readyIds.has(uploadedAssetId)) {
+        return;
+      }
+
+      // Thumbnails may already be committed if generation finished before we subscribed.
+      const existing = await getAssetInfo({ id: uploadedAssetId, key: authManager.key });
+      if (existing.thumbhash) {
+        return;
+      }
+
+      await Promise.race([readyPromise, sleep(THUMBNAIL_READY_TIMEOUT_MS)]);
+    } finally {
+      unsubscribe();
+    }
+  };
 
   const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
     flutterState = event.detail;
@@ -44,17 +89,29 @@
   };
 
   const onEditingComplete = async () => {
-    const uint8Array = flutterState.getImage();
+    isSaving = true;
 
-    const asset = await getAssetInfo({ id: assetId, key: authManager.key });
-    const lastDotIndex = asset.originalFileName.lastIndexOf('.');
-    const fileNameWithoutExt =
-      // eslint-disable-next-line unicorn/prefer-string-slice
-      lastDotIndex === -1 ? asset.originalFileName : asset.originalFileName.substring(0, lastDotIndex);
-    const resultFile = new File([uint8Array], `${fileNameWithoutExt}_${Date.now()}_edited.png`, { type: 'image/png' });
-    await fileUploadHandler({ files: [resultFile] }).then(async () => {
+    try {
+      const uint8Array = flutterState.getImage();
+
+      const asset = await getAssetInfo({ id: assetId, key: authManager.key });
+      const lastDotIndex = asset.originalFileName.lastIndexOf('.');
+      const fileNameWithoutExt =
+        // eslint-disable-next-line unicorn/prefer-string-slice
+        lastDotIndex === -1 ? asset.originalFileName : asset.originalFileName.substring(0, lastDotIndex);
+      const resultFile = new File([uint8Array], `${fileNameWithoutExt}_${Date.now()}_edited.png`, {
+        type: 'image/png',
+      });
+
+      await waitForThumbnailReady(async () => {
+        const [id] = await fileUploadHandler({ files: [resultFile] });
+        return id;
+      });
+
       await goto(Route.photos(), { replaceState: true });
-    });
+    } finally {
+      isSaving = false;
+    }
   };
 
   const onEditorClosed = async () => {
@@ -97,13 +154,16 @@
 </script>
 
 <div class="flutter_target flex justify-center items-center" bind:this={target}>
-  {#if isFlutterLoading}
-    <LoadingSpinner size="giant" />
+  {#if isFlutterLoading || isSaving}
+    <div class="absolute inset-0 z-10 flex items-center justify-center bg-[#f2f2f2]">
+      <LoadingSpinner size="giant" />
+    </div>
   {/if}
 </div>
 
 <style>
   .flutter_target {
+    position: relative;
     width: 100%;
     height: 100vh;
     background-color: #f2f2f2;
