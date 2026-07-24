@@ -46,6 +46,13 @@
   let loaded = $state(false);
   let errored = $state(false);
 
+  // Retry when the URL changes (e.g. thumbhash arrives after thumbnail generation).
+  $effect(() => {
+    void url;
+    loaded = false;
+    errored = false;
+  });
+
   const setLoaded = () => {
     loaded = true;
     onComplete?.(false);

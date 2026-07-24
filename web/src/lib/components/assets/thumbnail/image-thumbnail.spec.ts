@@ -74,16 +74,26 @@ describe('ImageThumbnail component', () => {
     expect(style).toContain('opacity');
   });
 
-  it('sets alt text after loading', async () => {
-    const { baseElement } = render(ImageThumbnail, {
-      url: '/test-thumbnail.jpg',
+  it('resets error state when url changes', async () => {
+    const onComplete = vi.fn();
+    const { baseElement, rerender } = render(ImageThumbnail, {
+      url: '/missing-thumbnail.jpg',
       altText: 'Test image',
       widthStyle: '200px',
+      onComplete,
     });
     const img = baseElement.querySelector('img')!;
-    expect(img.getAttribute('alt')).toBe('');
+    await fireEvent.error(img);
+    expect(baseElement.querySelector('span')?.textContent).toEqual('error_loading_image');
 
-    await fireEvent.load(img);
-    expect(img.getAttribute('alt')).toBe('Test image');
+    await rerender({
+      url: '/recovered-thumbnail.jpg',
+      altText: 'Test image',
+      widthStyle: '200px',
+      onComplete,
+    });
+
+    expect(baseElement.querySelector('img')).not.toBeNull();
+    expect(baseElement.querySelector('img')!.getAttribute('src')).toBe('/recovered-thumbnail.jpg');
   });
 });

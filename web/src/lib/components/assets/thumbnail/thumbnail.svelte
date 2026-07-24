@@ -1,5 +1,6 @@
 <script lang="ts">
   import { thumbhash } from '$lib/actions/thumbhash';
+  import DelayedLoadingSpinner from '$lib/components/DelayedLoadingSpinner.svelte';
   import { ProjectionType } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
@@ -85,8 +86,16 @@
   let loaded = $state(false);
   let thumbError = $state(false);
 
+  // When thumbhash arrives after generation, allow the thumbnail to load again.
+  $effect(() => {
+    void asset.thumbhash;
+    loaded = false;
+    thumbError = false;
+  });
+
   let width = $derived(thumbnailSize || thumbnailWidth || 235);
   let height = $derived(thumbnailSize || thumbnailHeight || 235);
+  let thumbnailPending = $derived(!asset.thumbhash);
 
   let assetOwner = $derived(albumUsers?.find((user) => user.id === asset.ownerId) ?? null);
 
@@ -257,25 +266,39 @@
         { 'rounded-[14.1px]': selected },
       ]}
     >
-      <ImageThumbnail
-        class={[
-          'absolute group-focus-visible:rounded-lg transition-[border-radius]',
-          { 'rounded-xl': selected },
-          imageClass,
-        ]}
-        brokenAssetClass={[
-          'z-1 absolute group-focus-visible:rounded-lg transition-[border-radius]',
-          { 'rounded-xl': selected },
-          brokenAssetClass,
-        ]}
-        url={getAssetMediaUrl({ id: asset.id, size: AssetMediaSize.Thumbnail, cacheKey: asset.thumbhash })}
-        altText={$getAltText(asset)}
-        widthStyle="{width}px"
-        heightStyle="{height}px"
-        curve={selected}
-        onComplete={(errored) => ((loaded = true), (thumbError = errored))}
-      />
-      {#if asset.isVideo}
+      {#if thumbnailPending}
+        <div
+          class={[
+            'absolute h-full w-full bg-gray-300 dark:bg-gray-700',
+            { 'rounded-xl': selected },
+            'group-focus-visible:rounded-lg',
+          ]}
+          style:width="{width}px"
+          style:height="{height}px"
+        >
+          <DelayedLoadingSpinner />
+        </div>
+      {:else}
+        <ImageThumbnail
+          class={[
+            'absolute group-focus-visible:rounded-lg transition-[border-radius]',
+            { 'rounded-xl': selected },
+            imageClass,
+          ]}
+          brokenAssetClass={[
+            'z-1 absolute group-focus-visible:rounded-lg transition-[border-radius]',
+            { 'rounded-xl': selected },
+            brokenAssetClass,
+          ]}
+          url={getAssetMediaUrl({ id: asset.id, size: AssetMediaSize.Thumbnail, cacheKey: asset.thumbhash })}
+          altText={$getAltText(asset)}
+          widthStyle="{width}px"
+          heightStyle="{height}px"
+          curve={selected}
+          onComplete={(errored) => ((loaded = true), (thumbError = errored))}
+        />
+      {/if}
+      {#if !thumbnailPending && asset.isVideo}
         <div class="absolute h-full w-full pointer-events-none group-focus-visible:rounded-lg">
           <VideoThumbnail
             class="group-focus-visible:rounded-lg"
@@ -286,7 +309,7 @@
             playbackOnIconHover={!$playVideoThumbnailOnHover}
           />
         </div>
-      {:else if asset.isImage && asset.livePhotoVideoId}
+      {:else if !thumbnailPending && asset.isImage && asset.livePhotoVideoId}
         <div class="absolute h-full w-full pointer-events-none group-focus-visible:rounded-lg">
           <VideoThumbnail
             class="group-focus-visible:rounded-lg"
@@ -299,7 +322,7 @@
             playbackOnIconHover={!$playVideoThumbnailOnHover}
           />
         </div>
-      {:else if asset.isImage && asset.duration && !asset.duration.includes('0:00:00.000') && mouseOver}
+      {:else if !thumbnailPending && asset.isImage && asset.duration && !asset.duration.includes('0:00:00.000') && mouseOver}
         <!-- GIF -->
         <div class="absolute h-full w-full pointer-events-none">
           <ImageThumbnail
