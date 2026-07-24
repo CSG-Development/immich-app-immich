@@ -24,9 +24,15 @@ extension RecoveryTriggerX on RecoveryTrigger {
 
   bool get isConnectivityDriven => this == RecoveryTrigger.connectivityChange;
 
+  /// Re-probe the cached endpoint and short-circuit if it answers, before a
+  /// full resolve. Includes [connectivityChange]: airplane / wifi flaps often
+  /// leave the same LAN IP reachable while mDNS discovery is still empty —
+  /// probing first avoids escalating to OTP. Excludes [healthProbeMiss]: the
+  /// health probe just found the endpoint unreachable, so a second probe is
+  /// redundant — resolve (and the finding toast) start immediately instead.
   bool get prefersCheapProbeFirst =>
       this == RecoveryTrigger.appResume ||
-      this == RecoveryTrigger.healthProbeMiss ||
+      this == RecoveryTrigger.connectivityChange ||
       this == RecoveryTrigger.apiTransportError ||
       this == RecoveryTrigger.manualRetry;
 
@@ -186,6 +192,9 @@ class NetworkSnapshot {
     required this.isResolving,
     required this.otpModalShowing,
     this.cachedEndpointReachable,
+    this.hasEstablishedConnectedThisLaunch = false,
+    this.networkIdentity,
+    this.lastConnectedNetworkIdentity,
   });
 
   final RecoveryEvent event;
@@ -212,7 +221,44 @@ class NetworkSnapshot {
   final bool isResolving;
   final bool otpModalShowing;
 
+  /// True after any successful connect in this monitoring session (recovery
+  /// publish or API success). Used to keep mid-session background probes from
+  /// auto-escalating to OTP while still allowing OTP on cold-start failures.
+  final bool hasEstablishedConnectedThisLaunch;
+
+  /// Opaque identity of the network the device is on (transport + ssid + ip),
+  /// as computed by the monitor. Null when it has not been observed yet.
+  final String? networkIdentity;
+
+  /// [networkIdentity] captured at the last successful connect this launch.
+  final String? lastConnectedNetworkIdentity;
+
   RecoveryTrigger get trigger => event.trigger;
+
+  /// Whether [networkIdentity] carries enough to tell two networks apart. The
+  /// OS can withhold both ssid (iOS: needs location permission) and ip, leaving
+  /// every network looking alike — such an identity must never be used to
+  /// conclude "same network".
+  bool get hasInformativeNetworkIdentity {
+    final identity = networkIdentity;
+    if (identity == null || identity.isEmpty) {
+      return false;
+    }
+    return identity.contains('ssid:') && !identity.contains('ssid:-') ||
+        identity.contains('ip:') && !identity.contains('ip:-');
+  }
+
+  /// True only when we can positively confirm the device is still on the very
+  /// network that last served a working connection. Deliberately false on any
+  /// doubt (identity unknown or uninformative, no connect yet this launch) so
+  /// an unresolvable network still escalates to OTP.
+  bool get isSameNetworkAsLastConnect {
+    final connected = lastConnectedNetworkIdentity;
+    if (connected == null || !hasInformativeNetworkIdentity) {
+      return false;
+    }
+    return connected == networkIdentity;
+  }
 
   bool get hasUsableTransport => transport.hasUsableTransport;
 
@@ -237,6 +283,9 @@ class NetworkSnapshot {
     TransportKind? transport,
     bool? isResolving,
     bool? otpModalShowing,
+    bool? hasEstablishedConnectedThisLaunch,
+    String? networkIdentity,
+    String? lastConnectedNetworkIdentity,
   }) {
     return NetworkSnapshot(
       event: event ?? this.event,
@@ -255,6 +304,10 @@ class NetworkSnapshot {
       transport: transport ?? this.transport,
       isResolving: isResolving ?? this.isResolving,
       otpModalShowing: otpModalShowing ?? this.otpModalShowing,
+      hasEstablishedConnectedThisLaunch:
+          hasEstablishedConnectedThisLaunch ?? this.hasEstablishedConnectedThisLaunch,
+      networkIdentity: networkIdentity ?? this.networkIdentity,
+      lastConnectedNetworkIdentity: lastConnectedNetworkIdentity ?? this.lastConnectedNetworkIdentity,
     );
   }
 
@@ -264,5 +317,8 @@ class NetworkSnapshot {
   String toString() =>
       'NetworkSnapshot(trigger=${trigger.name}, mode=${mode.name}, transport=${transport.name}, '
       'photosAuth=$photosAuthenticated, remoteAuth=$remoteAuth, knownDevice=$knownDevice, '
-      'endpoint=$activeEndpoint, reachable=$cachedEndpointReachable, otpModal=$otpModalShowing)';
+      'endpoint=$activeEndpoint, cachedPathType=${cachedPathType ?? '-'}, '
+      'reachable=$cachedEndpointReachable, otpModal=$otpModalShowing, '
+      'establishedThisLaunch=$hasEstablishedConnectedThisLaunch, '
+      'identity=[${networkIdentity ?? '-'}], lastConnectedIdentity=[${lastConnectedNetworkIdentity ?? '-'}])';
 }

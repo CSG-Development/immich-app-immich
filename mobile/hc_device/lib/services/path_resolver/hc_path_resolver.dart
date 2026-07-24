@@ -581,10 +581,10 @@ class HcPathResolver {
 
   String? get availablePathType => _availablePathType;
 
+  /// The type describes the current [_availablePath], so an unknown candidate
+  /// clears it rather than leaving a stale (possibly local) label behind.
   void _persistPathType(String? candidate) {
-    if (HcPathType.isKnown(candidate)) {
-      _availablePathType = candidate;
-    }
+    _availablePathType = HcPathType.isKnown(candidate) ? candidate : null;
   }
 
   Future<bool> _hasWiFiConnectivity() async {

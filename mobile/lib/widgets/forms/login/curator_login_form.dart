@@ -11,15 +11,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/network/local_network_permission_otp_gate.dart';
+import 'package:immich_mobile/services/network/recovery/recovery_policy.dart';
+import 'package:immich_mobile/utils/env_config.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
@@ -32,9 +37,8 @@ import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:immich_mobile/services/network/recovery/recovery_policy.dart';
-import 'package:immich_mobile/utils/env_config.dart';
 
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
 
 class CuratorLoginForm extends HookConsumerWidget {
@@ -72,8 +76,18 @@ class CuratorLoginForm extends HookConsumerWidget {
     final isDiscovering = useState<bool>(false);
     final isRemoteCodeModalActive = useRef(false);
     final shouldRetryDiscoveryAfterOtp = useState<bool>(false);
+    // iOS: OTP was deferred while the OS Local Network permission dialog was up.
+    final pendingDiscoveryAfterLocalNetPermission = useRef(false);
     final activeDetection = useRef<DeviceDetectionService?>(null);
     final isFormActive = useRef(true);
+
+    bool isAppLifecycleBlockingUi() {
+      final state = ref.read(appStateProvider);
+      return state == AppLifeCycleEnum.inactive ||
+          state == AppLifeCycleEnum.paused ||
+          state == AppLifeCycleEnum.hidden ||
+          state == AppLifeCycleEnum.detached;
+    }
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -183,6 +197,21 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (!hasMdnsDevices && !isAuthenticated && emailAddress.isEmpty) {
           warningMessage.value = 'login_form_err_invalid_email'.tr();
         }
+        return;
+      }
+
+      // Same gate as network_monitor: do not open Remote Access under the OS
+      // Local Network permission dialog. Retry discovery once the user answers.
+      if (await shouldDeferRemoteAccessOtpForLocalNetPermission(
+        isIos: Platform.isIOS,
+        remoteAuthenticated: isAuthenticated,
+        isAppBlockingUi: isAppLifecycleBlockingUi,
+      )) {
+        pendingDiscoveryAfterLocalNetPermission.value = true;
+        log.info(
+          '[MDNS discovery]: OTP deferred: app inactive '
+          '(likely OS Local Network permission dialog)',
+        );
         return;
       }
 
@@ -318,6 +347,21 @@ class CuratorLoginForm extends HookConsumerWidget {
       });
       return null;
     }, []);
+
+    ref.listen<AppLifeCycleEnum>(appStateProvider, (previous, next) {
+      if (!isFormActive.value) {
+        return;
+      }
+      if (next != AppLifeCycleEnum.resumed && next != AppLifeCycleEnum.active) {
+        return;
+      }
+      if (!pendingDiscoveryAfterLocalNetPermission.value) {
+        return;
+      }
+      pendingDiscoveryAfterLocalNetPermission.value = false;
+      log.info('[MDNS discovery]: retrying after Local Network permission decision');
+      unawaited(startDiscovery());
+    });
 
     useEffect(() {
       void onFocusChange() {
@@ -474,6 +518,7 @@ class CuratorLoginForm extends HookConsumerWidget {
     Future<bool> syncServerEndpointWithBaseUrl({
       required Uri baseUrl,
       required String flowTag,
+      DevicePathType? pathType,
     }) async {
       final normalizedBaseUrl = buildDevicePhotosBaseUrl(baseUrl);
       final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
@@ -486,8 +531,14 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       try {
-        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
-        log.info('[$flowTag] Endpoint synced to selected device: $normalizedServerUrl');
+        final resolvedServerUrl = await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
+        // Login picks the path itself; record its type so recovery does not
+        // have to re-resolve to learn it (see noteSelectedPath).
+        await ref.read(hcDeviceEndpointResolverProvider).noteSelectedPath(resolvedServerUrl, pathType: pathType);
+        log.info(
+          '[$flowTag] Endpoint synced to selected device: $normalizedServerUrl '
+          'pathType=${pathType?.value ?? '-'}',
+        );
         return true;
       } on ApiException catch (e) {
         warningMessage.value = e.message ?? 'login_form_api_exception'.tr();
@@ -527,7 +578,11 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (ping == null || ping.baseUrl == null) {
           return false;
         }
-        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: ping.baseUrl!, flowTag: 'Login');
+        final endpointSynced = await syncServerEndpointWithBaseUrl(
+          baseUrl: ping.baseUrl!,
+          flowTag: 'Login',
+          pathType: ping.pathType,
+        );
         if (!endpointSynced) {
           return false;
         }
@@ -556,12 +611,14 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       var baseUrl = device.baseUrl;
+      var selectedPathType = device.pathType;
       if (baseUrl == null && device.remoteDevice != null) {
         final ping = await resolveRemoteDeviceConnection(device: device, flowTag: 'Login', requireFreshPaths: true);
         if (ping == null) {
           return false;
         }
         baseUrl = ping.baseUrl;
+        selectedPathType = ping.pathType;
       }
 
       if (baseUrl == null) {
@@ -571,7 +628,11 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       clearAllErrors();
-      final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: baseUrl, flowTag: 'Login');
+      final endpointSynced = await syncServerEndpointWithBaseUrl(
+        baseUrl: baseUrl,
+        flowTag: 'Login',
+        pathType: selectedPathType,
+      );
       if (!endpointSynced) {
         return false;
       }
@@ -720,7 +781,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
     }
 
-    Future<bool> prepareDeviceHostForLogin(DeviceItem device) async {
+    /// Returns the prepared host's path type together with the outcome, so the
+    /// endpoint sync that follows can record which kind of path won.
+    Future<({bool prepared, DevicePathType? pathType})> prepareDeviceHostForLogin(DeviceItem device) async {
       final dp = ref.read(deviceProvider.notifier);
       final rp = ref.read(remoteProvider.notifier);
       final detection = DeviceDetectionService(deviceProvider: dp, remoteProvider: rp);
@@ -741,7 +804,7 @@ class CuratorLoginForm extends HookConsumerWidget {
             login: email.value.trim(),
             devicePaths: dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
           );
-          return true;
+          return (prepared: true, pathType: ping.pathType);
         }
       }
 
@@ -756,11 +819,11 @@ class CuratorLoginForm extends HookConsumerWidget {
               ? null
               : dp.getCachedDevicePathsForDevice(seagateDeviceId)?.paths,
         );
-        return true;
+        return (prepared: true, pathType: device.pathType);
       }
 
       dp.clearDevice(save: true);
-      return false;
+      return (prepared: false, pathType: null);
     }
 
     bool isResetPasswordEnabled() =>
@@ -953,7 +1016,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
 
         final preparedBeforeLogin = await prepareDeviceHostForLogin(selected);
-        if (!preparedBeforeLogin) {
+        if (!preparedBeforeLogin.prepared) {
           warningMessage.value = "login_form_server_error".tr();
           return;
         }
@@ -964,7 +1027,11 @@ class CuratorLoginForm extends HookConsumerWidget {
           log.warning('[Login] Aborted: connected device host is null after prepareDeviceHostForLogin');
           return;
         }
-        final endpointSynced = await syncServerEndpointWithBaseUrl(baseUrl: connectedBaseUrl, flowTag: 'Login');
+        final endpointSynced = await syncServerEndpointWithBaseUrl(
+          baseUrl: connectedBaseUrl,
+          flowTag: 'Login',
+          pathType: preparedBeforeLogin.pathType,
+        );
         if (!endpointSynced) {
           return;
         }

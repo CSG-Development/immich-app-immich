@@ -5,6 +5,7 @@ class PersonDto {
   const PersonDto({
     required this.id,
     this.birthDate,
+    required this.isFavorite,
     required this.isHidden,
     required this.name,
     required this.thumbnailPath,
@@ -13,6 +14,7 @@ class PersonDto {
 
   final String id;
   final DateTime? birthDate;
+  final bool isFavorite;
   final bool isHidden;
   final String name;
   final String thumbnailPath;
@@ -20,12 +22,13 @@ class PersonDto {
 
   @override
   String toString() {
-    return 'Person(id: $id, birthDate: $birthDate, isHidden: $isHidden, name: $name, thumbnailPath: $thumbnailPath, updatedAt: $updatedAt)';
+    return 'Person(id: $id, birthDate: $birthDate, isFavorite: $isFavorite, isHidden: $isHidden, name: $name, thumbnailPath: $thumbnailPath, updatedAt: $updatedAt)';
   }
 
   PersonDto copyWith({
     String? id,
     DateTime? birthDate,
+    bool? isFavorite,
     bool? isHidden,
     String? name,
     String? thumbnailPath,
@@ -34,6 +37,7 @@ class PersonDto {
     return PersonDto(
       id: id ?? this.id,
       birthDate: birthDate ?? this.birthDate,
+      isFavorite: isFavorite ?? this.isFavorite,
       isHidden: isHidden ?? this.isHidden,
       name: name ?? this.name,
       thumbnailPath: thumbnailPath ?? this.thumbnailPath,
@@ -45,6 +49,7 @@ class PersonDto {
     return <String, dynamic>{
       'id': id,
       'birthDate': birthDate?.millisecondsSinceEpoch,
+      'isFavorite': isFavorite,
       'isHidden': isHidden,
       'name': name,
       'thumbnailPath': thumbnailPath,
@@ -56,6 +61,7 @@ class PersonDto {
     return PersonDto(
       id: map['id'] as String,
       birthDate: map['birthDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['birthDate'] as int) : null,
+      isFavorite: map['isFavorite'] as bool? ?? false,
       isHidden: map['isHidden'] as bool,
       name: map['name'] as String,
       thumbnailPath: map['thumbnailPath'] as String,
@@ -73,6 +79,7 @@ class PersonDto {
 
     return other.id == id &&
         other.birthDate == birthDate &&
+        other.isFavorite == isFavorite &&
         other.isHidden == isHidden &&
         other.name == name &&
         other.thumbnailPath == thumbnailPath &&
@@ -83,6 +90,7 @@ class PersonDto {
   int get hashCode {
     return id.hashCode ^
         birthDate.hashCode ^
+        isFavorite.hashCode ^
         isHidden.hashCode ^
         name.hashCode ^
         thumbnailPath.hashCode ^

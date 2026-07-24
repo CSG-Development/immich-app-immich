@@ -5,7 +5,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
+import 'package:immich_mobile/services/network/local_network_permission_otp_gate.dart';
 import 'package:immich_mobile/services/network/recovery/recovery.dart';
+import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:logging/logging.dart';
 
 const Duration curatorFastReconnectDebounceDelay = Duration(milliseconds: 800);
@@ -13,10 +15,20 @@ const Duration curatorApiErrorReconnectCooldownDelay = Duration(seconds: 2);
 const Duration curatorEndpointHealthProbeInterval = Duration(seconds: 30);
 const Duration curatorEndpointHealthProbeTimeout = Duration(seconds: 5);
 
-/// iOS only: after settling on a non-local path on wifi, re-resolve at these
-/// delays to catch a just-granted Local Network permission (the discovery that
-/// triggered the system prompt completes empty before the user taps Allow).
-const List<Duration> curatorLocalNetworkPermissionRetryDelays = [Duration(seconds: 5), Duration(seconds: 7)];
+/// A backup saturates the uplink, so the probe competes with upload traffic for
+/// it. At the normal timeout that reads as an unreachable endpoint and tears
+/// down a link that is in fact working, so the probe is given more room while
+/// uploads are in flight. It still runs: a genuinely dead endpoint has to be
+/// noticed, and upload failures no longer report one.
+const Duration curatorEndpointHealthProbeTimeoutDuringUpload = Duration(seconds: 20);
+
+/// iOS only: the OS Local Network permission dialog puts the app in the
+/// `inactive` state, and the user answering it (Allow/Deny) returns the app to
+/// the foreground. That resume — not a blind timer — is the signal to re-resolve
+/// and pick up a just-granted permission. This bounds how many such
+/// resume-driven re-resolves we run per transport episode so a permanently
+/// denied permission cannot cause a re-resolve on every single resume.
+const int curatorMaxLocalNetPermissionResumeReresolves = 2;
 
 abstract class CuratorNetworkMonitorCallbacks {
   bool onShowReconnecting();
@@ -99,8 +111,15 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   /// connectivity recovery that describes state the run already handled.
   DateTime? _lastNetworkStateChangeAt;
 
-  Timer? _localNetPermissionTimer;
-  int _localNetPermissionRetries = 0;
+  /// iOS: set when a Local Network permission decision may have just been made
+  /// (the OS dialog was open during a resolve). Consumed on the next resume to
+  /// re-run a full local resolve. Covers two cases:
+  ///  - OTP was deferred because the app was inactive (dialog open, no local
+  ///    path yet) — see [onNeedRemoteAccessAuth];
+  ///  - a resolve settled on a non-local path while remote-authenticated on
+  ///    wifi — see [_noteLocalNetPermissionMayBePending].
+  bool _reresolveOnResumeForLocalNetPermission = false;
+  int _localNetPermissionResumeReresolves = 0;
 
   bool _isReconnecting = false;
   bool _isStarted = false;
@@ -150,9 +169,12 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     _hasSeenConnectivityEvent = false;
     _isReconnecting = false;
     _isAppInForeground = true;
-    _cancelLocalNetPermissionRetry();
+    _resetLocalNetPermissionState();
     _reconnectEpisodeService.reset();
     _executor.lastFailureSignature = null;
+    _snapshotBuilder.hasEstablishedConnectedThisLaunch = false;
+    _snapshotBuilder.networkIdentity = null;
+    _snapshotBuilder.lastConnectedNetworkIdentity = null;
     _log.info('[Network] Stopped monitoring network changes');
   }
 
@@ -173,8 +195,16 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
     if (changed) {
       _lastNetworkStateChangeAt = DateTime.now();
-      // New transport episode — drop any pending local-network-permission retry.
-      _cancelLocalNetPermissionRetry();
+      // New transport episode — reset any pending local-network-permission
+      // re-resolve so its bound starts fresh for the new network.
+      _resetLocalNetPermissionState();
+      // A different network may fail for a different reason - re-arm the
+      // duplicate-failure suppression so OTP/unable can surface again. Done
+      // before the backgrounded return: switching wifi from the system shade
+      // always lands here with the app in the background, and the deferred
+      // recovery that runs on resume must not inherit the old network's
+      // failure signature.
+      _executor.lastFailureSignature = null;
     }
 
     if (!_isAppInForeground) {
@@ -189,9 +219,6 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     if (!hadPrevious) {
       _log.fine('[Network] Initial connectivity status: $results');
     } else if (changed) {
-      // A different network may fail for a different reason - re-arm the
-      // duplicate-failure suppression so OTP/unable can surface again.
-      _executor.lastFailureSignature = null;
       _scheduleRecovery(
         RecoveryEvent(trigger: RecoveryTrigger.connectivityChange, detail: 'transport changed: $results'),
       );
@@ -216,7 +243,10 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     if (probe == null) {
       return;
     }
-    final reachable = await probe(curatorEndpointHealthProbeTimeout);
+    final timeout = UploadActivity.isActive
+        ? curatorEndpointHealthProbeTimeoutDuringUpload
+        : curatorEndpointHealthProbeTimeout;
+    final reachable = await probe(timeout);
     if (reachable) {
       return;
     }
@@ -238,6 +268,42 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     }
     if (!_canAttemptReconnect()) {
       return;
+    }
+    // iOS: the app resumed right after the OS Local Network permission dialog
+    // was answered. Re-run a full local resolve (connectivityChange does full
+    // discovery on wifi, unlike appResume's cheap cached-endpoint probe) so a
+    // just-granted permission is picked up as a local path. If permission was
+    // denied the resolve fails again and prompts OTP normally — now in the
+    // foreground, so its modal no longer renders behind the system dialog.
+    if (_reresolveOnResumeForLocalNetPermission) {
+      _reresolveOnResumeForLocalNetPermission = false;
+      if (getActivePathType?.call() != HcPathType.local) {
+        // This connectivityChange resolve subsumes any connectivity change that
+        // was deferred while backgrounded, so consume that flag too.
+        _deferredWhileBackgrounded = false;
+        _localNetPermissionResumeReresolves++;
+        _executor.lastFailureSignature = null;
+        _log.info(
+          '[Network] resume: re-resolving after Local Network permission decision '
+          'attempt=$_localNetPermissionResumeReresolves',
+        );
+        await _runRecovery(
+          const RecoveryEvent(
+            trigger: RecoveryTrigger.connectivityChange,
+            suppressFindingToast: true,
+            detail: 'local_net_permission_resume',
+          ),
+        );
+        return;
+      }
+    }
+    if (_deferredWhileBackgrounded) {
+      // The network changed out of sight (wifi switched from the system shade),
+      // and identity refresh does not run while backgrounded. Re-observe it
+      // before the deferred recovery so that run judges the network it is
+      // actually on. triggerReconnectOnChange: false — the deferred recovery
+      // below already covers the change.
+      await _refreshNetworkIdentity(source: 'resume_deferred', triggerReconnectOnChange: false);
     }
     if (_deferredWhileBackgrounded) {
       _deferredWhileBackgrounded = false;
@@ -269,6 +335,11 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
   void onConnectionRestored() {
     _isReconnecting = false;
+    _snapshotBuilder.hasEstablishedConnectedThisLaunch = true;
+    // Remember which network served this connection: a later connectivity-driven
+    // failure on that same network is an outage to report, not a network switch
+    // that warrants an OTP prompt.
+    _snapshotBuilder.lastConnectedNetworkIdentity = _lastNetworkIdentitySignature;
     _reconnectEpisodeService.onConnectionRestored();
   }
 
@@ -426,6 +497,9 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
       final previous = _lastNetworkIdentitySignature;
       _lastNetworkIdentitySignature = identity;
+      // Feeds the failure signature and the same-network-outage check, so it
+      // must be current before any recovery that follows this refresh.
+      _snapshotBuilder.networkIdentity = identity;
 
       if (previous != null && previous != identity) {
         // ssid/ip can change without a transport change (wifi handoff), so the
@@ -461,54 +535,36 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
 
   @override
   Future<void> onReconnected(PingResult result) {
-    _handleLocalNetPermissionReresolve(HcPathType.fromDevicePathType(result.pathType));
+    _noteLocalNetPermissionMayBePending(HcPathType.fromDevicePathType(result.pathType));
     return callbacks.onReconnected(result);
   }
 
   /// iOS: a resolve that settled on a non-local path on wifi (while
   /// remote-authenticated) is the Local Network permission case — the mDNS
   /// discovery that triggered the system prompt finished empty before the user
-  /// granted access. Re-resolve a couple of times to pick up the grant.
-  void _handleLocalNetPermissionReresolve(String? resolvedPathType) {
+  /// granted access. Arm a resume-driven re-resolve so the grant is picked up
+  /// once the user answers the dialog (the app returns to the foreground then),
+  /// rather than firing blind timers while the dialog is still open.
+  void _noteLocalNetPermissionMayBePending(String? resolvedPathType) {
     if (!Platform.isIOS) {
       return;
     }
     if (resolvedPathType == HcPathType.local) {
-      _cancelLocalNetPermissionRetry();
+      _resetLocalNetPermissionState();
       return;
     }
     if (!remoteProvider.isAuthenticated || !_isOnWifiNow()) {
       return;
     }
-    if (_localNetPermissionTimer != null ||
-        _localNetPermissionRetries >= curatorLocalNetworkPermissionRetryDelays.length) {
+    if (_localNetPermissionResumeReresolves >= curatorMaxLocalNetPermissionResumeReresolves) {
       return;
     }
-    final delay = curatorLocalNetworkPermissionRetryDelays[_localNetPermissionRetries];
-    _localNetPermissionTimer = Timer(delay, () {
-      _localNetPermissionTimer = null;
-      _localNetPermissionRetries++;
-      if (getActivePathType?.call() == HcPathType.local) {
-        _cancelLocalNetPermissionRetry();
-        return;
-      }
-      _log.info('[Network] local-network-permission re-resolve attempt=$_localNetPermissionRetries');
-      unawaited(
-        _runRecovery(
-          const RecoveryEvent(
-            trigger: RecoveryTrigger.connectivityChange,
-            suppressFindingToast: true,
-            detail: 'local_net_permission_retry',
-          ),
-        ),
-      );
-    });
+    _reresolveOnResumeForLocalNetPermission = true;
   }
 
-  void _cancelLocalNetPermissionRetry() {
-    _localNetPermissionTimer?.cancel();
-    _localNetPermissionTimer = null;
-    _localNetPermissionRetries = 0;
+  void _resetLocalNetPermissionState() {
+    _reresolveOnResumeForLocalNetPermission = false;
+    _localNetPermissionResumeReresolves = 0;
   }
 
   bool _isOnWifiNow() {
@@ -517,7 +573,29 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
   }
 
   @override
-  Future<void> onNeedRemoteAccessAuth(Future<void> Function() retry) => callbacks.onNeedRemoteAccessAuth(retry);
+  Future<void> onNeedRemoteAccessAuth(Future<void> Function() retry) async {
+    // iOS: the resolve that just failed may have failed only because the OS
+    // Local Network permission dialog is still open — a system permission alert
+    // puts the app in the `inactive` state. Prompting the remote-access OTP now
+    // renders its modal behind that dialog, and if the user then taps Allow the
+    // resume is skipped (OTP modal already showing), leaving them stuck. Defer
+    // instead: the resume that follows the user's answer re-runs a full local
+    // resolve (see [onAppLifecycleResumed]), which either connects locally
+    // (permission granted) or fails again and prompts OTP with the dialog gone.
+    //
+    // A short settle covers the race where resolve finishes just before Flutter
+    // delivers the inactive lifecycle event for the permission dialog.
+    if (await shouldDeferRemoteAccessOtpForLocalNetPermission(
+      isIos: Platform.isIOS,
+      remoteAuthenticated: remoteProvider.isAuthenticated,
+      isAppBlockingUi: () => !_isAppInForeground,
+    )) {
+      _reresolveOnResumeForLocalNetPermission = true;
+      _log.info('[Network] OTP prompt deferred: app inactive (likely OS Local Network permission dialog)');
+      return;
+    }
+    return callbacks.onNeedRemoteAccessAuth(retry);
+  }
 
   @override
   Future<void> onReconnectionFailed() =>

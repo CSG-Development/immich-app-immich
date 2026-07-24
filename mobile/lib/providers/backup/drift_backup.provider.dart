@@ -643,6 +643,28 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
     );
 
+    // A run that is still alive keeps going. Every resolve success republishes
+    // "reconnected", and a resume per publish used to cancel and restart the
+    // run each time, aborting uploads that were making progress.
+    final activeToken = state.cancelToken;
+    if (activeToken != null && !activeToken.isCancelled) {
+      logBackupTrace(
+        _logger,
+        level: Level.INFO,
+        event: BackupTraceEvent.uplResumeSkipped,
+        phase: BackupTracePhase.trigger,
+        step: 'RESUME_SKIPPED',
+        source: 'APP_RESUME',
+        appState: 'RESUMED',
+        trigger: 'foreground_resume',
+        status: BackupTraceStatus.skip,
+        reasonCode: 'FOREGROUND_BACKUP_ALREADY_RUNNING',
+        runId: _runId,
+        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      );
+      return;
+    }
+
     // Cancel any existing backup before starting a new one
     if (state.cancelToken != null) {
       logBackupTrace(

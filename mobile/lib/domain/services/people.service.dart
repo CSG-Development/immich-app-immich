@@ -32,6 +32,11 @@ class DriftPeopleService {
     return _repository.updateBirthday(personId, birthday);
   }
 
+  Future<int> updateFavorite(String personId, bool isFavorite) async {
+    await _personApiRepository.update(personId, isFavorite: isFavorite);
+    return _repository.updateFavorite(personId, isFavorite);
+  }
+
   Future<DriftPerson> mergePerson(String personId, List<String> ids) async {
     await _personApiRepository.mergePerson(personId, ids: ids);
     return _repository.merge(personId, ids);
