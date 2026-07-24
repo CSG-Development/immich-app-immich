@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -68,9 +70,14 @@ class DriftPeopleMergePage extends HookConsumerWidget {
 
         isLoadingMerge.value = true;
 
-        await ref.read(driftPeopleServiceProvider).mergePerson(sourcePersonId.value, selectedPeopleIds.value);
+        final mergedPerson = await ref
+            .read(driftPeopleServiceProvider)
+            .mergePerson(sourcePersonId.value, selectedPeopleIds.value);
         ref.invalidate(driftGetAllPeopleProvider);
-        context.maybePop();
+        // Return the surviving (target) person so the detail page can switch to
+        // it. This matters when the primary face was swapped, otherwise we would
+        // pop back to the source person that has just been merged away.
+        unawaited(context.maybePop(mergedPerson));
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {
