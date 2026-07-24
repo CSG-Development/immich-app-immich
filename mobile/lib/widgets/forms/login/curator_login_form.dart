@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
@@ -20,6 +21,9 @@ import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/services/network/local_network_permission_otp_gate.dart';
+import 'package:immich_mobile/services/network/recovery/recovery_policy.dart';
+import 'package:immich_mobile/utils/env_config.dart';
 import 'package:immich_mobile/utils/provider_utils.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/version_compatibility.dart';
@@ -32,8 +36,6 @@ import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:immich_mobile/services/network/recovery/recovery_policy.dart';
-import 'package:immich_mobile/utils/env_config.dart';
 
 import 'package:hc_device/hc_device.dart';
 
@@ -72,8 +74,18 @@ class CuratorLoginForm extends HookConsumerWidget {
     final isDiscovering = useState<bool>(false);
     final isRemoteCodeModalActive = useRef(false);
     final shouldRetryDiscoveryAfterOtp = useState<bool>(false);
+    // iOS: OTP was deferred while the OS Local Network permission dialog was up.
+    final pendingDiscoveryAfterLocalNetPermission = useRef(false);
     final activeDetection = useRef<DeviceDetectionService?>(null);
     final isFormActive = useRef(true);
+
+    bool isAppLifecycleBlockingUi() {
+      final state = ref.read(appStateProvider);
+      return state == AppLifeCycleEnum.inactive ||
+          state == AppLifeCycleEnum.paused ||
+          state == AppLifeCycleEnum.hidden ||
+          state == AppLifeCycleEnum.detached;
+    }
 
     /// Change focus from one field to another
     void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
@@ -183,6 +195,21 @@ class CuratorLoginForm extends HookConsumerWidget {
         if (!hasMdnsDevices && !isAuthenticated && emailAddress.isEmpty) {
           warningMessage.value = 'login_form_err_invalid_email'.tr();
         }
+        return;
+      }
+
+      // Same gate as network_monitor: do not open Remote Access under the OS
+      // Local Network permission dialog. Retry discovery once the user answers.
+      if (await shouldDeferRemoteAccessOtpForLocalNetPermission(
+        isIos: Platform.isIOS,
+        remoteAuthenticated: isAuthenticated,
+        isAppBlockingUi: isAppLifecycleBlockingUi,
+      )) {
+        pendingDiscoveryAfterLocalNetPermission.value = true;
+        log.info(
+          '[MDNS discovery]: OTP deferred: app inactive '
+          '(likely OS Local Network permission dialog)',
+        );
         return;
       }
 
@@ -318,6 +345,21 @@ class CuratorLoginForm extends HookConsumerWidget {
       });
       return null;
     }, []);
+
+    ref.listen<AppLifeCycleEnum>(appStateProvider, (previous, next) {
+      if (!isFormActive.value) {
+        return;
+      }
+      if (next != AppLifeCycleEnum.resumed && next != AppLifeCycleEnum.active) {
+        return;
+      }
+      if (!pendingDiscoveryAfterLocalNetPermission.value) {
+        return;
+      }
+      pendingDiscoveryAfterLocalNetPermission.value = false;
+      log.info('[MDNS discovery]: retrying after Local Network permission decision');
+      unawaited(startDiscovery());
+    });
 
     useEffect(() {
       void onFocusChange() {
