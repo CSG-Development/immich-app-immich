@@ -208,7 +208,8 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
   }
 
   Future<void> _handleBetaTimelineResume() async {
-    await _ref.read(driftBackupProvider.notifier).stopForegroundBackup();
+    // No stopForegroundBackup() here (as upstream): resume ends by starting the
+    // backup anyway, so cancelling first only aborts uploads that are mid-flight.
     unawaited(_ref.read(backgroundWorkerLockServiceProvider).lock());
 
     // Give isolates time to complete any ongoing database transactions

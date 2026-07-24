@@ -6,6 +6,7 @@ import 'package:cupertino_http/cupertino_http.dart' show NSErrorClientException;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
@@ -14,6 +15,7 @@ import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
@@ -100,12 +102,17 @@ class ConnectionRecoveryInterceptor extends BaseClient {
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
+    // An upload of tens of megabytes is not a reachability probe: a timeout on
+    // it says the transfer was slow, not that the endpoint is gone. Treating it
+    // as a disconnect re-resolves paths mid-backup, whose probes then fail on
+    // the saturated link and tear down the endpoint that was working.
+    final isUpload = request.headers.remove(kUploadRequestHeader) != null;
     try {
       final response = await _inner.send(request);
       _onRequestSuccess?.call(request.url.toString());
       return response;
     } catch (e) {
-      if (_isConnectionError(e)) {
+      if (!isUpload && _isConnectionError(e)) {
         _onConnectionError(request.url.toString());
       }
       rethrow;
@@ -404,7 +411,7 @@ class ApiService implements Authentication {
         final normalizedEndpoint = _normalizeEndpoint(serverUrl);
         final uri = Uri.parse(normalizedEndpoint);
         final currentHost = _apiClient.basePath.isEmpty ? null : Uri.tryParse(_apiClient.basePath)?.host;
-        if (currentHost != null && currentHost != uri.host) {
+        if (currentHost != null && currentHost != uri.host && !UploadActivity.isActive) {
           await NetworkRepository.cancelInFlightHttpRequests();
         }
         _log.info(
