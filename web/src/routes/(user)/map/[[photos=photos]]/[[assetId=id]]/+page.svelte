@@ -39,8 +39,13 @@
   }
 
   async function onViewAssets(assetIds: string[]) {
-    await assetViewerManager.setAssetId(assetIds[0]);
+    const assetId = assetIds[0];
+    if (!assetId) {
+      return;
+    }
+
     closeTimelinePanel();
+    await navigate({ targetRoute: 'current', assetId });
   }
 
   function onClusterSelect(assetIds: string[], bbox: SelectionBBox) {

@@ -353,9 +353,8 @@
   };
   const getTouch = (event: TouchEvent) => {
     // desktop safari does not support this since Apple does not have desktop touch devices
-    // eslint-disable-next-line tscompat/tscompat
+
     if (event.touches.length === 1) {
-      // eslint-disable-next-line tscompat/tscompat
       return event.touches[0];
     }
     return null;
@@ -587,7 +586,7 @@
     >
       {#if !usingMobileDevice}
         {#if segment.hasLabel}
-          <div class="absolute end-5 top-[-16px] text-sm dark:text-immich-dark-fg font-immich-mono dark:text-white/87">
+          <div class="absolute end-5 -top-5 text-sm dark:text-immich-dark-fg font-immich-mono dark:text-white/87">
             {segment.year}
           </div>
         {/if}
