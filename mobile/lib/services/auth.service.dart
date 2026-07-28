@@ -19,6 +19,7 @@ import 'package:immich_mobile/infrastructure/repositories/network.repository.dar
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
+import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:logging/logging.dart';
 
 final authServiceProvider = Provider(
@@ -29,6 +30,10 @@ final authServiceProvider = Provider(
     ref.watch(backgroundSyncProvider),
     ref.watch(appSettingsServiceProvider),
     ref.watch(hcPathResolverProvider),
+    HcDeviceEndpointResolver(
+      ref.watch(apiServiceProvider),
+      ref.watch(hcPathResolverProvider),
+    ),
     ref.read(deviceProvider.notifier),
   ),
 );
@@ -40,6 +45,7 @@ class AuthService {
   final BackgroundSyncManager _backgroundSyncManager;
   final AppSettingsService _appSettingsService;
   final HcPathResolver _hcPathResolver;
+  final HcDeviceEndpointResolver _endpointResolver;
   final DeviceProvider _deviceProvider;
   final _log = Logger("AuthService");
 
@@ -50,6 +56,7 @@ class AuthService {
     this._backgroundSyncManager,
     this._appSettingsService,
     this._hcPathResolver,
+    this._endpointResolver,
     this._deviceProvider,
   );
 
@@ -61,8 +68,8 @@ class AuthService {
   /// Returns the validated and resolved server URL as a [String].
   ///
   /// Throws an exception if the URL cannot be resolved or set.
-  Future<String> validateServerUrl(String url) async {
-    final validUrl = await _apiService.resolveAndSetEndpoint(url);
+  Future<String> validateServerUrl(String url, {DevicePathType? pathType}) async {
+    final validUrl = await _endpointResolver.resolveAndSetEndpointWithPathType(url, pathType: pathType);
     await _apiService.setDeviceInfoHeader();
     // Store.put(StoreKey.serverUrl, validUrl);
 
@@ -177,6 +184,7 @@ class AuthService {
     await _hcPathResolver.init();
     final resolved = await _apiService.activateFirstReachable(_availablePathCandidates());
     if (resolved != null) {
+      await _hcPathResolver.setAvailablePath(resolved);
       _log.info('[EndpointSwitch] activated trigger=$trigger endpoint=$resolved');
     }
     return resolved;

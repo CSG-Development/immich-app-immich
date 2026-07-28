@@ -18,7 +18,6 @@ import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
-import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -531,10 +530,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       }
 
       try {
-        final resolvedServerUrl = await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl);
-        // Login picks the path itself; record its type so recovery does not
-        // have to re-resolve to learn it (see noteSelectedPath).
-        await ref.read(hcDeviceEndpointResolverProvider).noteSelectedPath(resolvedServerUrl, pathType: pathType);
+        await ref.read(authProvider.notifier).validateServerUrl(normalizedServerUrl, pathType: pathType);
         log.info(
           '[$flowTag] Endpoint synced to selected device: $normalizedServerUrl '
           'pathType=${pathType?.value ?? '-'}',
@@ -1030,7 +1026,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         final endpointSynced = await syncServerEndpointWithBaseUrl(
           baseUrl: connectedBaseUrl,
           flowTag: 'Login',
-          pathType: preparedBeforeLogin.pathType,
+          pathType: null,
         );
         if (!endpointSynced) {
           return;
