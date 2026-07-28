@@ -108,10 +108,18 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
     const xhr = new XMLHttpRequest();
     const unsubscribe = trackUpload(() => xhr.abort());
 
+    const settleAbort = () => {
+      unsubscribe();
+      onAbort?.(signal?.reason);
+      reject(new AbortError());
+    };
+
     xhr.addEventListener('error', (error) => {
       unsubscribe();
       reject(error);
     });
+
+    xhr.addEventListener('abort', () => settleAbort());
 
     xhr.addEventListener('load', () => {
       if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
@@ -129,14 +137,11 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
 
     if (signal) {
       if (signal.aborted) {
-        onAbort?.(signal.reason);
+        settleAbort();
         return;
       }
 
-      signal.addEventListener('abort', () => {
-        xhr.abort();
-        onAbort?.(signal.reason);
-      });
+      signal.addEventListener('abort', () => xhr.abort());
     }
 
     xhr.open(options.method || 'POST', url);

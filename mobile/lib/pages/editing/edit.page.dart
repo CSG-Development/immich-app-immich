@@ -154,6 +154,8 @@ class EditImagePage extends HookConsumerWidget {
               config: ImageEditorConfig(
                 imageBytes: snapshot.data!,
                 onImageEditingComplete: (bytes) {
+                  // Fire-and-forget: this method pops the editor mid-flight.
+                  // Awaiting it would resume ProImageEditor after dispose.
                   _saveEditedImage(context, asset, bytes, ref);
                 },
                 onCloseEditor: () {},

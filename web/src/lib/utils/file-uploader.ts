@@ -1,12 +1,11 @@
 import FormatMsg from '$lib/components/shared-components/format-msg.svelte';
-import { ErrorTexts } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { addAssetsToAlbums } from '$lib/services/album.service';
 import { uploadAssetsStore } from '$lib/stores/upload';
 import { user } from '$lib/stores/user.store';
 import { UploadState } from '$lib/types';
-import { uploadRequest } from '$lib/utils';
+import { AbortError, uploadRequest } from '$lib/utils';
 import { isHEIC, isWebSupportedAssetMimeType } from '$lib/utils/asset-utils';
 import { ExecutorQueue } from '$lib/utils/executor-queue';
 import { asQueryString } from '$lib/utils/shared-links';
@@ -146,11 +145,6 @@ async function fileUploader({
   const $t = get(t);
   const wasInitiallyLoggedIn = !!get(user);
 
-  const onAbort = (reason?: string) => {
-    uploadExecutionQueue.taskFinished(!!reason && reason === ErrorTexts.CANCEL_ALL);
-    uploadAssetsStore.removeItem(deviceAssetId);
-  };
-
   if (signal?.aborted) {
     uploadAssetsStore.removeItem(deviceAssetId);
     return;
@@ -207,7 +201,8 @@ async function fileUploader({
           };
         }
       } catch (error) {
-        if (signal?.aborted) {
+        if (signal?.aborted || error instanceof AbortError || (error as Error)?.name === 'AbortError') {
+          uploadAssetsStore.removeItem(deviceAssetId);
           return;
         }
         console.error(`Error calculating sha1 file=${assetFile.name})`, error);
@@ -215,6 +210,7 @@ async function fileUploader({
     }
 
     if (signal?.aborted) {
+      uploadAssetsStore.removeItem(deviceAssetId);
       return;
     }
 
@@ -228,7 +224,6 @@ async function fileUploader({
           data: formData,
           onUploadProgress: (event) => uploadAssetsStore.updateProgress(deviceAssetId, event.loaded, event.total),
           signal,
-          onAbort,
         });
 
         if (![200, 201].includes(response.status)) {
@@ -273,24 +268,25 @@ async function fileUploader({
       return;
     }
 
-    if (!signal || !signal.aborted) {
-      if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
-        const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {
-          type: FormatMsg,
-          props: {
-            key: 'errors.unsupported_file_type_notification',
-            values: { filename: assetFile.name },
-          },
-        });
-        uploadAssetsStore.track('error');
-        uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.UNSUPPORTED_TYPE, error: errorMessage });
-      } else {
-        const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
-        uploadAssetsStore.track('error');
-        uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
-      }
-
+    if (signal?.aborted || error instanceof AbortError || (error as Error)?.name === 'AbortError') {
+      uploadAssetsStore.removeItem(deviceAssetId);
       return;
+    }
+
+    if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
+      const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {
+        type: FormatMsg,
+        props: {
+          key: 'errors.unsupported_file_type_notification',
+          values: { filename: assetFile.name },
+        },
+      });
+      uploadAssetsStore.track('error');
+      uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.UNSUPPORTED_TYPE, error: errorMessage });
+    } else {
+      const errorMessage = handleError(error, $t('errors.unable_to_upload_file'));
+      uploadAssetsStore.track('error');
+      uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.ERROR, error: errorMessage });
     }
   }
 }

@@ -81,4 +81,13 @@ describe('fileUploader error handling', () => {
     expect(items.length).toBe(1);
     expect(items[0].state).toBe(UploadState.STARTED);
   });
+
+  it('should clear the upload item when the request is aborted', async () => {
+    vi.spyOn(utils, 'uploadRequest').mockRejectedValue(new utils.AbortError());
+
+    const results = await fileUploadHandler({ files: [mockFile] });
+
+    expect(results).toEqual([]);
+    expect(get(uploadAssetsStore)).toEqual([]);
+  });
 });

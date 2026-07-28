@@ -71,6 +71,10 @@
     }
   };
 
+  const unlockFlutterSave = () => {
+    flutterState?.completeSaving?.();
+  };
+
   const onFlutterAppLoaded = async (/** @type {Event} */ event) => {
     flutterState = event.detail;
 
@@ -89,6 +93,10 @@
   };
 
   const onEditingComplete = async () => {
+    if (isSaving) {
+      return;
+    }
+
     isSaving = true;
 
     try {
@@ -103,14 +111,24 @@
         type: 'image/png',
       });
 
+      /** @type {string | undefined} */
+      let uploadedAssetId;
       await waitForThumbnailReady(async () => {
         const [id] = await fileUploadHandler({ files: [resultFile] });
+        uploadedAssetId = id;
         return id;
       });
+
+      // Cancelled or failed uploads return no id — stay on the editor so the user can retry.
+      if (!uploadedAssetId) {
+        return;
+      }
 
       await goto(Route.photos(), { replaceState: true });
     } finally {
       isSaving = false;
+      // Releases Flutter's loading dialog / Done lock (beginSaving Completer).
+      unlockFlutterSave();
     }
   };
 
@@ -153,20 +171,38 @@
   });
 </script>
 
-<div class="flutter_target flex justify-center items-center" bind:this={target}>
+<div class="editor-shell">
+  <div class="flutter_target" bind:this={target}></div>
   {#if isFlutterLoading || isSaving}
-    <div class="absolute inset-0 z-10 flex items-center justify-center bg-[#f2f2f2]">
+    <!-- Sibling overlay so it sits above the Flutter canvas and blocks Done clicks. -->
+    <div class="editor-overlay" aria-busy="true">
       <LoadingSpinner size="giant" />
     </div>
   {/if}
 </div>
 
 <style>
-  .flutter_target {
+  .editor-shell {
     position: relative;
     width: 100%;
     height: 100vh;
+  }
+
+  .flutter_target {
+    width: 100%;
+    height: 100%;
     background-color: #f2f2f2;
     border: 1px solid #000;
+  }
+
+  .editor-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f2f2f2;
+    pointer-events: all;
   }
 </style>
