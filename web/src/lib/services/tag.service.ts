@@ -91,7 +91,7 @@ const handleDeleteTag = async (tag: TreeNode) => {
   try {
     await deleteTag({ id: tagId });
     eventManager.emit('TagDelete', tag);
-    toastManager.primary();
+    toastManager.primary($t('tag_deleted', { values: { tag: tag.value } }));
   } catch (error) {
     handleError(error, $t('errors.something_went_wrong'));
   }
