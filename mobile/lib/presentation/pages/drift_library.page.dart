@@ -16,6 +16,7 @@ import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/common/curator_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/map/map_thumbnail.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -113,7 +114,10 @@ class _ActionButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          backgroundColor: context.colorScheme.surfaceContainerLow,
+          backgroundColor: resolveSgChipBackground(
+            context,
+            fallback: context.colorScheme.surfaceContainerLow,
+          ),
           alignment: Alignment.centerLeft,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(25)),

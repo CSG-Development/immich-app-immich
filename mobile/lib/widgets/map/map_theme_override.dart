@@ -81,9 +81,14 @@ class _MapThemeOverrideState extends ConsumerState<MapThemeOverride> with Widget
     });
 
     return Theme(
-      data: _isDarkTheme
-          ? getThemeData(colorScheme: appTheme.dark, locale: locale)
-          : getThemeData(colorScheme: appTheme.light, locale: locale),
+      data: getThemeData(
+        colorScheme: _isDarkTheme ? appTheme.dark : appTheme.light,
+        locale: locale,
+        ctaColor: appTheme.ctaColor,
+        ctaPressedColor: appTheme.ctaPressedColor,
+        timelineSurface: _isDarkTheme ? appTheme.timelineSurfaceDark : appTheme.timelineSurfaceLight,
+        chromeSurface: _isDarkTheme ? appTheme.chromeSurfaceDark : appTheme.chromeSurfaceLight,
+      ),
       child: widget.mapBuilder.call(
         ref.watch(mapStateNotifierProvider.select((v) => _isDarkTheme ? v.darkStyleFetched : v.lightStyleFetched)),
       ),

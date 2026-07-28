@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hc_device/hc_device.dart' show DeviceItem;
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/forms/login/server_endpoint_input.dart';
 
 class DeviceSelector extends HookWidget {
@@ -102,7 +103,13 @@ class DeviceSelector extends HookWidget {
           icon = null;
         }
       } else {
-        icon = UnconstrainedBox(child: SvgPicture.asset('assets/device.svg', width: 24.0, height: 24.0));
+        icon = UnconstrainedBox(
+          child: SvgPicture.asset(
+            'assets/device.svg',
+            width: 24.0,
+            height: 24.0,
+          ),
+        );
       }
       return icon != null
           ? Padding(
@@ -204,6 +211,9 @@ class DeviceSelector extends HookWidget {
                             (selected.id == option.id ||
                                 selected.name.trim().toLowerCase() ==
                                     option.name.trim().toLowerCase());
+                        final selectionColor =
+                            Theme.of(context).extension<ImmichBrandColors>()?.cta ??
+                            Theme.of(context).colorScheme.primary;
                         return ListTile(
                           title: Text(
                             option.name,
@@ -213,14 +223,12 @@ class DeviceSelector extends HookWidget {
                             ),
                           ),
                           selected: isSelected,
-                          selectedTileColor: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.08),
+                          selectedTileColor: selectionColor.withValues(alpha: 0.08),
                           trailing: isSelected
                               ? Icon(
                                   Icons.check,
                                   size: 18,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: selectionColor,
                                 )
                               : null,
                           onTap: () => onSelected(option),

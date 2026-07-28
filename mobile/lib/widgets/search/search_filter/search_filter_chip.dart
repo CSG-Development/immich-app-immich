@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class SearchFilterChip extends StatelessWidget {
   final String label;
@@ -11,12 +12,17 @@ class SearchFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chipColor = resolveSgChipBackground(
+      context,
+      fallback: context.colorScheme.surfaceContainerLowest,
+    );
+
     if (currentFilter != null) {
       return GestureDetector(
         onTap: onTap,
         child: Card(
           elevation: 0,
-          color: context.colorScheme.surfaceContainerLowest,
+          color: chipColor,
           shape: StadiumBorder(side: BorderSide(color: context.colorScheme.secondaryContainer)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 14.0),
@@ -29,7 +35,7 @@ class SearchFilterChip extends StatelessWidget {
       onTap: onTap,
       child: Card(
         elevation: 0,
-        color: context.colorScheme.surfaceContainerLowest,
+        color: chipColor,
         shape: StadiumBorder(side: BorderSide(color: context.colorScheme.outline.withAlpha(15))),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 14.0),

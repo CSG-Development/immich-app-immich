@@ -52,7 +52,10 @@ final immichThemeProvider = StateProvider<ImmichTheme>((ref) {
   final useSystemColor = ref.watch(dynamicThemeSettingProvider);
   final useColorfulInterface = ref.watch(colorfulInterfaceSettingProvider);
   final ImmichTheme? dynamicTheme = DynamicTheme.theme;
-  final currentTheme = (useSystemColor && dynamicTheme != null) ? dynamicTheme : primaryColorPreset.themeOfPreset;
+  final useDynamicThemeForPreset = primaryColorPreset != ImmichColorPreset.sg;
+  final currentTheme = (useSystemColor && useDynamicThemeForPreset && dynamicTheme != null)
+      ? dynamicTheme
+      : primaryColorPreset.themeOfPreset;
 
   return useColorfulInterface ? currentTheme : decolorizeSurfaces(theme: currentTheme);
 });
