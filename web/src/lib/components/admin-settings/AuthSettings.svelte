@@ -55,7 +55,7 @@
 
     try {
       await unlinkAllOAuthAccountsAdmin();
-      toastManager.primary();
+      toastManager.primary($t('admin.unlinked_all_oauth_accounts'));
     } catch (error) {
       handleError(error, $t('errors.something_went_wrong'));
     }

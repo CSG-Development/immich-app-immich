@@ -51,7 +51,7 @@
         ? openFileUploadDialog()
         : fileUploadHandler({ files }));
 
-      toastManager.primary();
+      toastManager.primary($t('upload_success'));
     } catch (error) {
       handleError(error, $t('errors.unable_to_add_assets_to_shared_link'));
     }

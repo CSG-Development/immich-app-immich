@@ -251,7 +251,7 @@ export const handleDeleteAlbum = async (album: AlbumResponseDto, options?: { pro
     await deleteAlbum({ id: album.id });
     eventManager.emit('AlbumDelete', album);
     if (notify) {
-      toastManager.primary();
+      toastManager.primary($t('album_deleted'));
     }
     return true;
   } catch (error) {
