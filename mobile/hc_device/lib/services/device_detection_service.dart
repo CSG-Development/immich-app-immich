@@ -473,10 +473,13 @@ class DeviceDetectionService {
     PathProbeMode pathProbeMode = PathProbeMode.all,
     FutureOr<void> Function(PingResult betterResult)? onHigherPriorityPathResolved,
   }) async {
-    if (pathProbeMode == PathProbeMode.all && device != null && device.baseUrl != null) {
+    if (pathProbeMode == PathProbeMode.all &&
+        device != null &&
+        device.baseUrl != null &&
+        device.pathType != null) {
       final result = await _testPath(
         DevicePath(
-          type: DevicePathType.local,
+          type: device.pathType!,
           address: device.baseUrl!.host,
           port: device.baseUrl!.port,
         ),

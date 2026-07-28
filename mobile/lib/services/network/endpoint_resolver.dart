@@ -119,6 +119,23 @@ class HcDeviceEndpointResolver {
   String? getAvailablePath() => _resolver.getAvailablePath();
   String? getAvailablePathType() => _resolver.availablePathType;
 
+  /// Single writer for endpoint + path type.
+  Future<String> resolveAndSetEndpointWithPathType(
+    String serverUrl, {
+    DevicePathType? pathType,
+    EndpointResolvePolicy policy = EndpointResolvePolicy.conservative,
+    bool pathAlreadyProbed = false,
+  }) async {
+    final resolvedEndpoint = await _apiService.resolveAndSetEndpoint(
+      serverUrl,
+      policy: policy,
+      pathAlreadyProbed: pathAlreadyProbed,
+    );
+    final resolvedPathType = HcPathType.fromDevicePathType(pathType);
+    await _resolver.setAvailablePath(resolvedEndpoint, pathType: resolvedPathType);
+    return resolvedEndpoint;
+  }
+
   /// Records the type of a path selected outside a resolve (login probes paths
   /// itself), so recovery can trust it: a local cached path may cheap-probe
   /// past a resolve, a remote one must not.
