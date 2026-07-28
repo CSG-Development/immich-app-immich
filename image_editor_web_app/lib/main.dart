@@ -35,9 +35,11 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  void _handleEditingComplete(Uint8List editedBytes) {
+  Future<void> _handleEditingComplete(Uint8List editedBytes) async {
     _state.setImage(editedBytes);
-    _state.setEditingComplete();
+    // Keep ProImageEditor's "Changes are being applied" dialog open until JS
+    // finishes the upload (or the user cancels) via completeSaving().
+    await _state.beginSaving();
   }
 
   void _handleCloseEditor() {

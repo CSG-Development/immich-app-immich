@@ -1,9 +1,7 @@
 import { goto } from '$app/navigation';
-import { page } from '$app/state';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
 import { Route } from '$lib/route';
-import { copyToClipboard } from '$lib/utils';
 import { defaultProvider, screencastManager, themeManager, ThemePreference, type ActionItem } from '@immich/ui';
 import {
   mdiAccountMultipleOutline,
@@ -202,10 +200,6 @@ export const getPagesProvider = ($t: MessageFormatter) => {
   return defaultProvider({ name: $t('page'), actions: [...userPages, ...utilityPages, ...adminPages] });
 };
 
-const getMyImmichLink = () => {
-  return new URL(page.url.pathname + page.url.search, 'https://my.immich.app');
-};
-
 export const getSettingsProvider = ($t: MessageFormatter) => {
   const settings: ActionItem[] = [
     {
@@ -228,12 +222,6 @@ export const getSettingsProvider = ($t: MessageFormatter) => {
       description: $t('screencast_mode_description'),
       icon: mdiKeyboard,
       onAction: () => screencastManager.toggle(),
-    },
-    {
-      title: $t('my_immich_title'),
-      description: $t('my_immich_description'),
-      onAction: () => copyToClipboard(getMyImmichLink().toString()),
-      shortcuts: { ctrl: true, shift: true, key: 'm' },
     },
   ];
 

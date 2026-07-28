@@ -19,16 +19,10 @@
   import { getServerConfig } from '@immich/sdk';
   import {
     CommandPaletteProvider,
-    CORE_PAGE_COMMANDS,
-    defaultProvider,
-    MOBILE_APP_COMMANDS,
     modalManager,
-    OTHER_SITE_COMMANDS,
-    PROJECT_SUPPORT_COMMANDS,
     ScreencastOverlay,
     setLocale,
     setTranslations,
-    SOCIAL_COMMANDS,
     Theme,
     themeManager,
     toastManager,
@@ -286,15 +280,5 @@
   <UploadPanel />
   <ScreencastOverlay />
 
-  <CommandPaletteProvider
-    providers={[
-      getPagesProvider($t),
-      getSettingsProvider($t),
-      defaultProvider({ name: $t('documentation'), types: ['doc', 'documentation'], actions: CORE_PAGE_COMMANDS }),
-      defaultProvider({ name: $t('support'), actions: PROJECT_SUPPORT_COMMANDS }),
-      defaultProvider({ name: 'Socials', types: ['social', 'socials'], actions: SOCIAL_COMMANDS }),
-      defaultProvider({ name: $t('mobile_app'), actions: MOBILE_APP_COMMANDS }),
-      defaultProvider({ name: 'Sites', types: ['site', 'sites'], actions: OTHER_SITE_COMMANDS }),
-    ]}
-  />
+  <CommandPaletteProvider providers={[getPagesProvider($t), getSettingsProvider($t)]} />
 </TooltipProvider>
