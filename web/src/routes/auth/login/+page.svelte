@@ -27,6 +27,10 @@
   let oauthLoading = $state(true);
 
   const serverConfig = $derived(serverConfigManager.value);
+  const canSubmit = $derived(email.trim().length > 0 && password.length > 0);
+
+  const inputClass =
+    'bg-neutral-50! border-neutral-300 focus-within:border-neutral-400 dark:bg-neutral-800! dark:border-neutral-600';
 
   const onSuccess = async (user: LoginResponseDto) => {
     await goto(data.continueUrl, { invalidateAll: true });
@@ -125,34 +129,75 @@
 
   const onsubmit = async (event: Event) => {
     event.preventDefault();
+    if (!canSubmit || loading) {
+      return;
+    }
     await handleLogin();
   };
 </script>
 
-<AuthPageLayout title={data.meta.title}>
-  <Stack gap={4}>
+<AuthPageLayout title={data.meta.title} isLogin>
+  <Stack gap={6} class="h-full">
     {#if serverConfig.loginPageMessage}
-      <Alert color="primary" class="mb-6">
+      <Alert color="primary" class="mb-2">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         {@html serverConfig.loginPageMessage}
       </Alert>
     {/if}
 
     {#if !oauthLoading && featureFlagsManager.value.passwordLogin}
-      <form {onsubmit} class="flex flex-col gap-4">
+      <form {onsubmit} class="flex flex-1 flex-col gap-4">
         {#if errorMessage}
           <Alert color="danger" class="[&_p]:first-letter:uppercase" title={errorMessage} closable />
         {/if}
 
-        <Field label={$t('email')}>
-          <Input id="email" name="email" type="email" autocomplete="email" bind:value={email} />
-        </Field>
+      <Field>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          shape="round"
+          size="giant"
+          placeholder={$t('email')}
+          aria-label={$t('email')}
+          class={inputClass}
+          bind:value={email}
+        />
+      </Field>
+      <Field>
+        <PasswordInput
+          id="password"
+          autocomplete="current-password"
+          shape="round"
+          size="giant"
+          placeholder={$t('password')}
+          aria-label={$t('password')}
+          class={inputClass}
+          bind:value={password}
+        />
+      </Field>
+        <!-- <button
+          type="button"
+          class="w-fit text-base font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-500"
+        >
+          {$t('reset_password')}
+        </button> -->
 
-        <Field label={$t('password')}>
-          <PasswordInput id="password" bind:value={password} autocomplete="current-password" />
-        </Field>
-
-        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-6">{$t('to_login')}</Button>
+        <div class="mt-auto pt-16">
+          <Button
+            type="submit"
+            size="giant"
+            shape="round"
+            color="success"
+            fullWidth
+            {loading}
+            disabled={!canSubmit || loading}
+            class="bg-[rgb(110,190,73)]! text-dark! not-disabled:hover:bg-[rgb(98,172,64)]! disabled:bg-[rgb(231,231,231)]! disabled:text-dark/40! disabled:opacity-100 dark:disabled:bg-[rgb(93,93,93)]! dark:disabled:text-white/40!"
+          >
+            {$t('to_login')}
+          </Button>
+        </div>
       </form>
     {/if}
 
@@ -161,7 +206,7 @@
         <div class="inline-flex w-full items-center justify-center my-4">
           <hr class="my-4 h-px w-3/4 border-0 bg-gray-200 dark:bg-gray-600" />
           <span
-            class="absolute start-1/2 -translate-x-1/2 bg-gray-50 px-3 font-medium text-gray-900 dark:bg-neutral-900 dark:text-white uppercase"
+            class="absolute start-1/2 -translate-x-1/2 bg-white px-3 font-medium text-gray-900 dark:bg-neutral-900 dark:text-white uppercase"
           >
             {$t('or')}
           </span>
