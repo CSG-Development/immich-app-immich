@@ -16,11 +16,12 @@ class DriftPersonBirthdayEditForm extends ConsumerStatefulWidget {
   const DriftPersonBirthdayEditForm({super.key, required this.person});
 
   @override
-  ConsumerState<DriftPersonBirthdayEditForm> createState() => _DriftPersonNameEditFormState();
+  ConsumerState<DriftPersonBirthdayEditForm> createState() => _DriftPersonBirthdayEditFormState();
 }
 
-class _DriftPersonNameEditFormState extends ConsumerState<DriftPersonBirthdayEditForm> {
+class _DriftPersonBirthdayEditFormState extends ConsumerState<DriftPersonBirthdayEditForm> {
   late DateTime _selectedDate;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -28,93 +29,127 @@ class _DriftPersonNameEditFormState extends ConsumerState<DriftPersonBirthdayEdi
     _selectedDate = widget.person.birthDate ?? DateTime(DateTime.now().year - 30, 1, 1);
   }
 
-  void saveBirthday() async {
+  Future<void> saveBirthday() async {
+    if (_isSaving) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
     try {
       final result = await ref.read(driftPeopleServiceProvider).updateBrithday(widget.person.id, _selectedDate);
+
+      if (!mounted) {
+        return;
+      }
 
       if (result != 0) {
         ref.invalidate(driftGetAllPeopleProvider);
         context.pop<DateTime>(_selectedDate);
-      }
-    } catch (error) {
-      dPrint(() => 'Error updating birthday: $error');
-
-      if (!context.mounted) {
         return;
       }
 
-      ImmichToast.show(
-        context: context,
-        msg: 'scaffold_body_error_occurred'.t(context: context),
-        gravity: ToastGravity.BOTTOM,
-        toastType: ToastType.error,
-      );
+      setState(() => _isSaving = false);
+      _showErrorToast();
+    } catch (error) {
+      dPrint(() => 'Error updating birthday: $error');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isSaving = false);
+      _showErrorToast();
     }
+  }
+
+  void _showErrorToast() {
+    ImmichToast.show(
+      context: context,
+      msg: 'scaffold_body_error_occurred'.t(context: context),
+      gravity: ToastGravity.BOTTOM,
+      toastType: ToastType.error,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        "edit_birthday".t(context: context),
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 300,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-          child: ScrollDatePicker(
-            options: DatePickerOptions(
-              backgroundColor: context.colorScheme.surfaceContainerHigh,
-              itemExtent: 50,
-              diameterRatio: 5,
+    return PopScope(
+      canPop: !_isSaving,
+      child: AlertDialog(
+        title: Text(
+          "edit_birthday".t(context: context),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+            child: ScrollDatePicker(
+              options: DatePickerOptions(
+                backgroundColor: context.colorScheme.surfaceContainerHigh,
+                itemExtent: 50,
+                diameterRatio: 5,
+              ),
+              scrollViewOptions: DatePickerScrollViewOptions(
+                day: ScrollViewDetailOptions(
+                  isLoop: false,
+                  margin: const EdgeInsets.all(12),
+                  selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                month: ScrollViewDetailOptions(
+                  isLoop: false,
+                  margin: const EdgeInsets.all(12),
+                  selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                year: ScrollViewDetailOptions(
+                  isLoop: false,
+                  margin: const EdgeInsets.all(12),
+                  selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              selectedDate: _selectedDate,
+              locale: context.locale,
+              minimumDate: DateTime(1800, 1, 1),
+              maximumDate: DateTime.now(),
+              onDateTimeChanged: (DateTime value) {
+                if (_isSaving) {
+                  return;
+                }
+                setState(() {
+                  _selectedDate = value;
+                });
+              },
             ),
-            scrollViewOptions: DatePickerScrollViewOptions(
-              day: ScrollViewDetailOptions(
-                isLoop: false,
-                margin: const EdgeInsets.all(12),
-                selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              month: ScrollViewDetailOptions(
-                isLoop: false,
-                margin: const EdgeInsets.all(12),
-                selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              year: ScrollViewDetailOptions(
-                isLoop: false,
-                margin: const EdgeInsets.all(12),
-                selectedTextStyle: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            selectedDate: _selectedDate,
-            locale: context.locale,
-            minimumDate: DateTime(1800, 1, 1),
-            maximumDate: DateTime.now(),
-            onDateTimeChanged: (DateTime value) {
-              setState(() {
-                _selectedDate = value;
-              });
-            },
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : () => context.pop(null),
+            child: Text(
+              "cancel",
+              style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.bold),
+            ).tr(),
+          ),
+          TextButton(
+            onPressed: _isSaving ? null : saveBirthday,
+            child: _isSaving
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.primaryColor,
+                    ),
+                  )
+                : Text(
+                    "save",
+                    style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold),
+                  ).tr(),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => context.pop(null),
-          child: Text(
-            "cancel",
-            style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.bold),
-          ).tr(),
-        ),
-        TextButton(
-          onPressed: () => saveBirthday(),
-          child: Text(
-            "save",
-            style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold),
-          ).tr(),
-        ),
-      ],
     );
   }
 }

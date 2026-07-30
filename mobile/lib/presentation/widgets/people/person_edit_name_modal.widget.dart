@@ -20,6 +20,7 @@ class DriftPersonNameEditForm extends ConsumerStatefulWidget {
 
 class _DriftPersonNameEditFormState extends ConsumerState<DriftPersonNameEditForm> {
   late TextEditingController _formController;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -27,57 +28,96 @@ class _DriftPersonNameEditFormState extends ConsumerState<DriftPersonNameEditFor
     _formController = TextEditingController(text: widget.person.name);
   }
 
-  void onEdit(String personId, String newName) async {
+  @override
+  void dispose() {
+    _formController.dispose();
+    super.dispose();
+  }
+
+  Future<void> onEdit(String personId, String newName) async {
+    if (_isSaving) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
     try {
       final result = await ref.read(driftPeopleServiceProvider).updateName(personId, newName);
-      if (result != 0) {
-        ref.invalidate(driftGetAllPeopleProvider);
-        context.pop<String>(newName);
-      }
-    } catch (error) {
-      dPrint(() => 'Error updating name: $error');
 
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
 
-      ImmichToast.show(
-        context: context,
-        msg: 'scaffold_body_error_occurred'.t(context: context),
-        gravity: ToastGravity.BOTTOM,
-        toastType: ToastType.error,
-      );
+      if (result != 0) {
+        ref.invalidate(driftGetAllPeopleProvider);
+        context.pop<String>(newName);
+        return;
+      }
+
+      setState(() => _isSaving = false);
+      _showErrorToast();
+    } catch (error) {
+      dPrint(() => 'Error updating name: $error');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isSaving = false);
+      _showErrorToast();
     }
+  }
+
+  void _showErrorToast() {
+    ImmichToast.show(
+      context: context,
+      msg: 'scaffold_body_error_occurred'.t(context: context),
+      gravity: ToastGravity.BOTTOM,
+      toastType: ToastType.error,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("edit_name", style: TextStyle(fontWeight: FontWeight.bold)).tr(),
-      content: SingleChildScrollView(
-        child: TextFormField(
-          controller: _formController,
-          textCapitalization: TextCapitalization.words,
-          autofocus: true,
-          decoration: InputDecoration(hintText: 'name'.tr(), border: const OutlineInputBorder()),
+    return PopScope(
+      canPop: !_isSaving,
+      child: AlertDialog(
+        title: const Text("edit_name", style: TextStyle(fontWeight: FontWeight.bold)).tr(),
+        content: SingleChildScrollView(
+          child: TextFormField(
+            controller: _formController,
+            textCapitalization: TextCapitalization.words,
+            autofocus: true,
+            readOnly: _isSaving,
+            decoration: InputDecoration(hintText: 'name'.tr(), border: const OutlineInputBorder()),
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : () => context.pop(null),
+            child: Text(
+              "cancel",
+              style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.bold),
+            ).tr(),
+          ),
+          TextButton(
+            onPressed: _isSaving ? null : () => onEdit(widget.person.id, _formController.text),
+            child: _isSaving
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.primaryColor,
+                    ),
+                  )
+                : Text(
+                    "save",
+                    style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold),
+                  ).tr(),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => context.pop(null),
-          child: Text(
-            "cancel",
-            style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.bold),
-          ).tr(),
-        ),
-        TextButton(
-          onPressed: () => onEdit(widget.person.id, _formController.text),
-          child: Text(
-            "save",
-            style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold),
-          ).tr(),
-        ),
-      ],
     );
   }
 }
