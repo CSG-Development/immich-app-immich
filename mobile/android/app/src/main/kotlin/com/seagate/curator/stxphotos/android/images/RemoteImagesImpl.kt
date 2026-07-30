@@ -12,6 +12,8 @@ import kotlinx.coroutines.*
 import okhttp3.Cache
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -23,6 +25,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 private class RemoteRequest(val cancellationSignal: CancellationSignal)
 
@@ -311,10 +314,28 @@ private class OkHttpImageFetcher private constructor(
   private var draining = false
 
   companion object {
+    // Gallery scroll fires dozens of thumbnail GETs at once. Sharing the API client's
+    // HTTP/2 connection with maxRequestsPerHost=64 exceeds many proxies' concurrent
+    // stream limits and surfaces as StreamResetException: REFUSED_STREAM.
+    private const val MAX_REQUESTS = 24
+    private const val MAX_REQUESTS_PER_HOST = 8
+    private const val MAX_IDLE_CONNECTIONS = 8
+
     fun create(cacheDir: File): OkHttpImageFetcher {
       val dir = File(cacheDir, "okhttp")
 
       val client = HttpClientManager.getClient().newBuilder()
+        // Isolate thumbnail traffic from the API multiplexed connection and cap
+        // concurrency below typical SETTINGS_MAX_CONCURRENT_STREAMS.
+        .connectionPool(
+          ConnectionPool(MAX_IDLE_CONNECTIONS, 5, TimeUnit.MINUTES),
+        )
+        .dispatcher(
+          Dispatcher().apply {
+            maxRequests = MAX_REQUESTS
+            maxRequestsPerHost = MAX_REQUESTS_PER_HOST
+          },
+        )
         .cache(Cache(File(dir, "thumbnails"), HttpClientManager.MEDIA_CACHE_SIZE_BYTES))
         .build()
 
