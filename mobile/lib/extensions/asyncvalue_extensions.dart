@@ -28,7 +28,7 @@ extension LogOnError<T> on AsyncValue<T> {
 
     if (hasError && !hasValue) {
       _asyncErrorLogger.severe('Could not load value', error, stackTrace);
-      return onError?.call(error, stackTrace) ?? ScaffoldErrorBody(errorMsg: error?.toString());
+      return onError?.call(error, stackTrace) ?? const ScaffoldErrorBody();
     }
 
     return onData(requireValue);
