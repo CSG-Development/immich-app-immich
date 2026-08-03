@@ -82,7 +82,7 @@ class DuplicateActionRunner {
         context,
         result.success
             ? 'duplicate_success'.t(context: context, args: {'count': result.savedCount.toString()})
-            : 'duplicate_error'.t(context: context),
+            : ClipboardService.duplicateFailureMessage(context, result),
         result.success ? ToastType.success : ToastType.error,
       );
     } finally {

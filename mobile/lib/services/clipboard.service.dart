@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -505,6 +506,9 @@ class ClipboardService {
 
         final res = await ref.read(apiServiceProvider).assetsApi.downloadAssetWithHttpInfo(asset.remoteId!);
         if (res.statusCode == 200) {
+          if (_isTooHeavyForDuplicate(fileSizeBytes: res.bodyBytes.length)) {
+            throw Exception('too large');
+          }
           await tempFile.writeAsBytes(res.bodyBytes);
           sourceFile = tempFile;
         } else {
@@ -521,6 +525,11 @@ class ClipboardService {
 
     if (!await sourceFile.exists()) {
       throw Exception('File not found: ${sourceFile.path}');
+    }
+
+    final fileSize = await sourceFile.length();
+    if (_isTooHeavyForDuplicate(fileSizeBytes: fileSize)) {
+      throw Exception('too large');
     }
 
     try {
@@ -590,10 +599,11 @@ class ClipboardService {
 
       final request = http.MultipartRequest('POST', url);
       request.headers.addAll(ApiService.getRequestHeaders());
+      final fileLength = await file.length();
       request.files.add(http.MultipartFile(
         'assetData',
         file.openRead(),
-        file.lengthSync(),
+        fileLength,
         filename: fileName,
       ));
       request.fields.addAll({
@@ -639,57 +649,30 @@ class ClipboardService {
     }
   }
 
+  /// Decode/re-encode runs in a background isolate so large photos do not block
+  /// the UI isolate (ANR / multi-second freezes during Duplicate).
   Future<File?> _createUniqueVersion(File originalFile, String fileName, {int attempt = 1}) async {
     try {
-      final bytes = await originalFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-      if (image == null) return null;
-
-      final modified = _modifyImageToMakeUnique(image, attempt: attempt);
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final quality = _getQualityForAttempt(attempt, timestamp);
-      final encoded = img.encodeJpg(modified, quality: quality.clamp(80, 100));
-
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/unique_${timestamp}_${attempt}_$fileName');
-      await tempFile.writeAsBytes(encoded);
-      return tempFile;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final outputPath = '${tempDir.path}/unique_${timestamp}_${attempt}_$fileName';
+
+      final resultPath = await Isolate.run(
+        () => _createUniqueVersionSync(
+          sourcePath: originalFile.path,
+          outputPath: outputPath,
+          attempt: attempt,
+          timestamp: timestamp,
+        ),
+      );
+
+      if (resultPath == null) {
+        return null;
+      }
+      return File(resultPath);
     } catch (_) {
       return null;
     }
-  }
-
-  int _getQualityForAttempt(int attempt, int timestamp) {
-    return switch (attempt) {
-      1 => 96 - (timestamp % 3),
-      2 => 93 - (timestamp % 3),
-      _ => 90 - (timestamp % 3),
-    };
-  }
-
-  img.Image _modifyImageToMakeUnique(img.Image image, {int attempt = 1}) {
-    final width = image.width;
-    final height = image.height;
-    if (width < 2 || height < 2) return image;
-
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final points = [
-      [width - 1, 0],
-      [0, height - 1],
-      [((ts * (attempt + 3)) % width).toInt(), ((ts * (attempt + 5)) % height).toInt()],
-    ];
-
-    for (final p in points) {
-      final x = p[0].clamp(0, width - 1);
-      final y = p[1].clamp(0, height - 1);
-      image.setPixel(x, y, img.ColorRgba8(
-        (5 * attempt) % 256,
-        (3 * attempt) % 256,
-        (7 * attempt) % 256,
-        1,
-      ));
-    }
-    return image;
   }
 
   FilenameParts _splitNameAndSuffix(String originalName) {
@@ -758,6 +741,10 @@ class ClipboardService {
     return duplicateUnsupportedReasons(assets).isEmpty && assets.isNotEmpty;
   }
 
+  /// Soft limits for duplicate: decode/re-encode cost scales with pixels, not just file size.
+  static const int maxDuplicateFileBytes = 25 * 1024 * 1024; // 25 MB
+  static const int maxDuplicatePixels = 40 * 1000 * 1000; // 40 MP
+
   static Map<String, String> duplicateUnsupportedReasons(Set<BaseAsset> assets) {
     final reasons = <String, String>{};
     if (assets.isEmpty) {
@@ -775,7 +762,14 @@ class ClipboardService {
   }
 
   static String? _duplicateUnsupportedReason(BaseAsset asset) {
-    return _duplicateUnsupportedReasonForFile(asset.isImage, asset.name);
+    final reason = _duplicateUnsupportedReasonForFile(asset.isImage, asset.name);
+    if (reason != null) {
+      return reason;
+    }
+    if (_isTooHeavyForDuplicate(width: asset.width, height: asset.height)) {
+      return 'too large';
+    }
+    return null;
   }
 
   static String? _duplicateUnsupportedReasonForFile(bool isImage, String fileName) {
@@ -799,9 +793,27 @@ class ClipboardService {
       final reason = _duplicateUnsupportedReasonForFile(asset.isImage, asset.fileName);
       if (reason != null) {
         reasons[asset.fileName] = reason;
+        continue;
+      }
+      if (_isTooHeavyForDuplicate(
+        width: asset.width,
+        height: asset.height,
+        fileSizeBytes: asset.exifInfo?.fileSize,
+      )) {
+        reasons[asset.fileName] = 'too large';
       }
     }
     return reasons;
+  }
+
+  static bool _isTooHeavyForDuplicate({int? width, int? height, int? fileSizeBytes}) {
+    if (fileSizeBytes != null && fileSizeBytes > maxDuplicateFileBytes) {
+      return true;
+    }
+    if (width != null && height != null && width > 0 && height > 0) {
+      return width * height > maxDuplicatePixels;
+    }
+    return false;
   }
 
   static String unsupportedSelectionMessage(BuildContext? context, Map<String, String> reasons) {
@@ -819,8 +831,18 @@ class ClipboardService {
         final type = (match?.group(1) ?? 'file').toUpperCase();
         return 'duplicate_error_unsupported_type'.t(context: context, args: {'type': type});
       }
+      if (reason.contains('too large')) {
+        return 'duplicate_error_too_large'.t(context: context);
+      }
     }
 
+    return 'duplicate_error'.t(context: context);
+  }
+
+  static String duplicateFailureMessage(BuildContext? context, ClipboardPasteResult result) {
+    if (result.errors.any((e) => e.contains('too large'))) {
+      return 'duplicate_error_too_large'.t(context: context);
+    }
     return 'duplicate_error'.t(context: context);
   }
 
@@ -904,4 +926,62 @@ class ClipboardPasteResult {
 
   bool get hasErrors => errorCount > 0;
   bool get hasPartialSuccess => success && errorCount > 0;
+}
+
+/// CPU-heavy JPEG rewrite for duplicate uniqueness; must stay isolate-safe (no UI / no Ref).
+String? _createUniqueVersionSync({
+  required String sourcePath,
+  required String outputPath,
+  required int attempt,
+  required int timestamp,
+}) {
+  final bytes = File(sourcePath).readAsBytesSync();
+  final image = img.decodeImage(bytes);
+  if (image == null) {
+    return null;
+  }
+
+  final modified = _modifyImageToMakeUniqueSync(image, attempt: attempt, timestamp: timestamp);
+  final quality = _getQualityForAttemptSync(attempt, timestamp);
+  final encoded = img.encodeJpg(modified, quality: quality.clamp(80, 100));
+  File(outputPath).writeAsBytesSync(encoded);
+  return outputPath;
+}
+
+int _getQualityForAttemptSync(int attempt, int timestamp) {
+  return switch (attempt) {
+    1 => 96 - (timestamp % 3),
+    2 => 93 - (timestamp % 3),
+    _ => 90 - (timestamp % 3),
+  };
+}
+
+img.Image _modifyImageToMakeUniqueSync(img.Image image, {required int attempt, required int timestamp}) {
+  final width = image.width;
+  final height = image.height;
+  if (width < 2 || height < 2) {
+    return image;
+  }
+
+  final points = [
+    [width - 1, 0],
+    [0, height - 1],
+    [((timestamp * (attempt + 3)) % width).toInt(), ((timestamp * (attempt + 5)) % height).toInt()],
+  ];
+
+  for (final p in points) {
+    final x = p[0].clamp(0, width - 1);
+    final y = p[1].clamp(0, height - 1);
+    image.setPixel(
+      x,
+      y,
+      img.ColorRgba8(
+        (5 * attempt) % 256,
+        (3 * attempt) % 256,
+        (7 * attempt) % 256,
+        1,
+      ),
+    );
+  }
+  return image;
 }
