@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
@@ -34,9 +38,25 @@ class DriftPeopleMergePage extends HookConsumerWidget {
     final searchQuery = useState<String?>(null);
     final isLoadingMerge = useState<bool>(false);
 
+    final peopleParams = withClosestPersonId.value ? sourcePersonId.value : null;
     final allPeople = peopleAsync.value ?? [];
     final isLoading = peopleAsync.isLoading;
     final isError = peopleAsync.error != null;
+
+    void refreshPeopleIfEmpty() {
+      final async = ref.read(getAllPeopleWithParamsProvider(peopleParams));
+      if (async.isLoading) return;
+      if ((async.value ?? []).isNotEmpty) return;
+      ref.invalidate(getAllPeopleWithParamsProvider(peopleParams));
+    }
+
+    // After recovery the monitor publishes connected — refresh empty list only.
+    ref.listen(connectionStateProvider, (prev, next) {
+      final stabilized =
+          prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
+      if (!stabilized) return;
+      refreshPeopleIfEmpty();
+    });
 
     List<PersonDto> filteredPeople = allPeople.where((p) {
       final matchesSearch =
@@ -68,9 +88,14 @@ class DriftPeopleMergePage extends HookConsumerWidget {
 
         isLoadingMerge.value = true;
 
-        await ref.read(driftPeopleServiceProvider).mergePerson(sourcePersonId.value, selectedPeopleIds.value);
+        final mergedPerson = await ref
+            .read(driftPeopleServiceProvider)
+            .mergePerson(sourcePersonId.value, selectedPeopleIds.value);
         ref.invalidate(driftGetAllPeopleProvider);
-        context.maybePop();
+        // Return the surviving (target) person so the detail page can switch to
+        // it. This matters when the primary face was swapped, otherwise we would
+        // pop back to the source person that has just been merged away.
+        unawaited(context.maybePop(mergedPerson));
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {

@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
@@ -27,6 +28,24 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
   void dispose() {
     _formFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleFavorite(DriftPerson person) async {
+    final isFavorite = !person.isFavorite;
+    final success = await togglePersonFavorite(
+      context: context,
+      isFavorite: isFavorite,
+      update: () async {
+        final result = await ref.read(driftPeopleServiceProvider).updateFavorite(person.id, isFavorite);
+        if (result == 0) {
+          throw StateError('Person ${person.id} was not found in the local database');
+        }
+      },
+    );
+
+    if (success) {
+      ref.invalidate(driftGetAllPeopleProvider);
+    }
   }
 
   @override
@@ -62,6 +81,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
           ),
           body: SafeArea(
             child: people.when(
+              skipLoadingOnReload: true,
               data: (people) {
                 if (_search != null) {
                   people = people.where((person) {
@@ -107,6 +127,21 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                                 ),
                               ),
                             ),
+                            if (person.isFavorite)
+                              Positioned(
+                                left: 8,
+                                top: 8,
+                                child: IgnorePointer(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: context.colorScheme.surfaceContainer.withValues(alpha: 0.9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.favorite, size: 20, color: context.colorScheme.primary),
+                                  ),
+                                ),
+                              ),
                             Positioned(
                               right: 0.0,
                               top: 0.0,
@@ -142,7 +177,12 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                                           sheetContext.pop();
                                           sheetContext.pushRoute(DriftPeopleMergeRoute(person: person));
                                         },
+                                        onToggleFavorite: () {
+                                          sheetContext.pop();
+                                          _toggleFavorite(person);
+                                        },
                                         birthdayExists: person.birthDate != null,
+                                        isFavorite: person.isFavorite,
                                       );
                                     },
                                   );

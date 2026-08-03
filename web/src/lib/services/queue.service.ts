@@ -155,7 +155,7 @@ const handleRemoveFailedJobs = async (queue: QueueResponseDto) => {
     await emptyQueue({ name: queue.name, queueDeleteDto: { failed: true } });
     const response = await getQueue({ name: queue.name });
     eventManager.emit('QueueUpdate', response);
-    toastManager.primary();
+    toastManager.primary($t('admin.failed_jobs_removed'));
   } catch (error) {
     handleError(error, $t('errors.something_went_wrong'));
   }

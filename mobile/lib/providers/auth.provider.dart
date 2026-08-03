@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_udid/flutter_udid.dart';
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
@@ -66,8 +67,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         ),
       );
 
-  Future<String> validateServerUrl(String url) {
-    return _authService.validateServerUrl(url);
+  Future<String> validateServerUrl(String url, {DevicePathType? pathType}) {
+    return _authService.validateServerUrl(url, pathType: pathType);
   }
 
   Future<LoginResponse> login(String email, String password) async {

@@ -97,7 +97,7 @@ class DrawerProfileInfoBox extends HookConsumerWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              buildUserProfileImage(),
+              AbsorbPointer(child: buildUserProfileImage()),
               if (!isReadonlyModeEnabled)
                 Positioned(
                   bottom: -3.2,

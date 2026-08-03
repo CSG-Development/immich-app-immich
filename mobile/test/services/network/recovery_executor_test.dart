@@ -17,6 +17,25 @@ const _success = EndpointResolutionResult(
   selectionSource: 'test',
 );
 
+/// Endpoints as they actually look in the field: a LAN ip for the local path,
+/// the remote-access host for the cloud one.
+const _localEndpoint = 'https://192.168.1.16/photos/api';
+const _remoteEndpoint = 'https://57390a5d-1390-4ec9-9e2a-29690822241a.remote.lasea.fr/photos/api';
+
+const _localSuccess = EndpointResolutionResult(
+  success: true,
+  endpoint: _localEndpoint,
+  resolvedPathType: 'local',
+  selectionSource: 'remote_device_paths',
+);
+
+const _remoteSuccess = EndpointResolutionResult(
+  success: true,
+  endpoint: _remoteEndpoint,
+  resolvedPathType: 'remote',
+  selectionSource: 'remote_device_paths',
+);
+
 EndpointResolutionResult _failure(String reason) =>
     EndpointResolutionResult(success: false, reason: reason, selectionSource: 'test');
 
@@ -29,8 +48,12 @@ NetworkSnapshot _snap({
   bool otpModalShowing = false,
   bool isResolving = false,
   String? activeEndpoint = 'https://homecloud.local/photos/api',
+  String? cachedPathType = 'local',
   String? loginEmail = 'user@example.com',
   bool suppressFindingToast = false,
+  bool hasEstablishedConnectedThisLaunch = false,
+  String? networkIdentity,
+  String? lastConnectedNetworkIdentity,
 }) {
   return NetworkSnapshot(
     event: RecoveryEvent(trigger: trigger, suppressFindingToast: suppressFindingToast),
@@ -42,12 +65,19 @@ NetworkSnapshot _snap({
     seagateDeviceId: null,
     loginEmail: loginEmail,
     activeEndpoint: activeEndpoint,
-    cachedPathType: 'local',
+    cachedPathType: cachedPathType,
     transport: transport,
     isResolving: isResolving,
     otpModalShowing: otpModalShowing,
+    hasEstablishedConnectedThisLaunch: hasEstablishedConnectedThisLaunch,
+    networkIdentity: networkIdentity,
+    lastConnectedNetworkIdentity: lastConnectedNetworkIdentity,
   );
 }
+
+/// Network identity in the shape the monitor builds it.
+String _identity({String transport = 'wifi', String ssid = 'Home', String ip = '192.168.1.44'}) =>
+    'c:$transport|ssid:$ssid|ip:$ip';
 
 class FakeSnapshotBuilder implements SnapshotBuilder {
   FakeSnapshotBuilder(this.snapshot);
@@ -64,6 +94,12 @@ class FakeSnapshotBuilder implements SnapshotBuilder {
   bool isAppInForeground = true;
   @override
   String? cachedPathType;
+  @override
+  bool hasEstablishedConnectedThisLaunch = false;
+  @override
+  String? networkIdentity;
+  @override
+  String? lastConnectedNetworkIdentity;
 
   @override
   DeviceProvider get deviceProvider => throw UnimplementedError();
@@ -145,6 +181,10 @@ class FakeTriggerService implements PathResolveTriggerService {
 class RecordingCallbacks implements RecoveryExecutorCallbacks {
   final List<String> events = [];
   bool probeReachable = true;
+
+  /// When non-empty, successive [probeCachedEndpoint] calls consume these
+  /// before falling back to [probeReachable].
+  final List<bool> scriptedProbeResults = [];
   Future<void> Function()? otpRetry;
   PingResult? reconnectedWith;
 
@@ -169,6 +209,9 @@ class RecordingCallbacks implements RecoveryExecutorCallbacks {
   @override
   Future<bool> probeCachedEndpoint({required Duration timeout}) async {
     events.add('probe');
+    if (scriptedProbeResults.isNotEmpty) {
+      return scriptedProbeResults.removeAt(0);
+    }
     return probeReachable;
   }
 
@@ -227,6 +270,34 @@ void main() {
       expect(h.callbacks.events, ['probe', 'connected']);
       expect(h.triggers.calls, isEmpty);
       expect(h.executor.lastPlanDebugReason, 'cached_endpoint_reachable');
+    });
+
+    test('connectivity change with reachable cached endpoint skips resolve', () async {
+      // Airplane on/off: LAN IP answers while mDNS may still be empty.
+      final h = _harness(_snap(trigger: RecoveryTrigger.connectivityChange));
+      h.callbacks.probeReachable = true;
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['probe', 'connected']);
+      expect(h.triggers.calls, isEmpty);
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.executor.lastPlanDebugReason, 'cached_endpoint_reachable');
+    });
+
+    test('resolve fail then cached endpoint recovers skips OTP', () async {
+      // Cheap probe misses, full resolve fails, but the LAN IP answers again
+      // before OTP — common right after airplane off.
+      final h = _harness(_snap(trigger: RecoveryTrigger.connectivityChange));
+      h.callbacks.scriptedProbeResults.addAll([false, true]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.events, contains('connected'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_cached_reachable');
     });
 
     test('app resume with dead cached endpoint falls back to full resolve', () async {
@@ -342,6 +413,37 @@ void main() {
       expect(h.executor.lastPlanDebugReason, 'post_fail_remote_auth_unable');
     });
 
+    test('cold-start api probe failure prompts OTP before first connect', () async {
+      final h = _harness(_snap(trigger: RecoveryTrigger.apiTransportError, activeEndpoint: null));
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
+
+      expect(h.callbacks.events, ['reconnectStarted:false', 'otp']);
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('mid-session automatic probe failure reports unable, never OTP', () async {
+      // A live local session (no remote auth) hitting a transient failure during
+      // sync must not pop the OTP modal — it surfaces "connection lost" instead.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.apiTransportError,
+          activeEndpoint: null,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
+
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.events, ['reconnectStarted:false', 'failed']);
+      expect(h.executor.lastPlanDebugReason, 'post_fail_background_probe_unable');
+    });
+
     test('failure without login email reports unable', () async {
       final h = _harness(_snap(loginEmail: null, activeEndpoint: null));
       h.triggers.results.add(_failure('fallback_path_invalid'));
@@ -365,6 +467,136 @@ void main() {
       expect(h.callbacks.events, ['failed']);
       expect(h.triggers.calls, isEmpty);
       expect(h.executor.lastPlanDebugReason, 'transport_none');
+    });
+
+    test('REPRO wifi->wifi switch still prompts OTP after soft-local retry', () async {
+      // Field report: wifi1 (local device) -> wifi2 (hotspot, no device) via the
+      // system shade, no OTP modal on return. The soft-local retry re-enters
+      // _handleResolveResult with the same snapshot, so its failure signature
+      // equals the one the first pass just stored — it must not read as a
+      // duplicate connectivity failure and swallow the OTP prompt.
+      final h = _harness(_snap(trigger: RecoveryTrigger.connectivityChange));
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('connectivity failure on the network that last connected reports unable', () async {
+      // HC or the router restarting on the same wifi: remote access is not the
+      // answer, the Retry banner is. Guards the "false OTP during local
+      // connection loss" regression that the in-run retry fix reopens.
+      final home = _identity();
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          networkIdentity: home,
+          lastConnectedNetworkIdentity: home,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.events, contains('failed'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_same_network_outage_unable');
+    });
+
+    test('connectivity failure after switching networks still prompts OTP', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          networkIdentity: _identity(ssid: 'Hotspot', ip: '10.167.63.119'),
+          lastConnectedNetworkIdentity: _identity(),
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('uninformative network identity still prompts OTP', () async {
+      // iOS without location permission reports neither ssid nor ip: every
+      // network looks alike, so "same network" must not be concluded.
+      final blind = _identity(ssid: '-', ip: '-');
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          networkIdentity: blind,
+          lastConnectedNetworkIdentity: blind,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('manual retry on the last connected network still reaches OTP', () async {
+      // The banner's Retry is the user asking for remote access explicitly.
+      final home = _identity();
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.manualRetry,
+          networkIdentity: home,
+          lastConnectedNetworkIdentity: home,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.manualRetry));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('same failure on a different network is not a duplicate', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          loginEmail: null,
+          activeEndpoint: null,
+          networkIdentity: _identity(),
+        ),
+      );
+      h.triggers.results.add(_failure('fallback_path_invalid'));
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+      expect(h.callbacks.events, ['reconnectStarted:true', 'failed']);
+
+      h.callbacks.events.clear();
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.connectivityChange,
+        loginEmail: null,
+        activeEndpoint: null,
+        networkIdentity: _identity(ssid: 'Hotspot', ip: '10.167.63.119'),
+      );
+      h.triggers.results.add(_failure('fallback_path_invalid'));
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['reconnectStarted:true', 'failed']);
+      expect(h.executor.lastPlanDebugReason, 'post_fail_unable_no_email');
     });
 
     test('duplicate connectivity failure is suppressed silently', () async {
@@ -418,6 +650,7 @@ void main() {
         _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.cellular),
         policy: noGrace,
       );
+      h.callbacks.probeReachable = false;
       // Second build (post-grace) reports wifi.
       h.builder.scriptedBuilds.add(
         _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.cellular),
@@ -456,6 +689,423 @@ void main() {
     });
   });
 
+  // End-to-end matrix of the transitions the app is expected to survive. Each
+  // test names the transition, the path before it and the path expected after.
+  group('RecoveryExecutor network transition scenarios', () {
+    const noGrace = RecoveryPolicy(
+      offWifiOtpGraceDelay: Duration.zero,
+      transportSettleDelay: Duration.zero,
+    );
+
+    // --- wifi -> wifi -------------------------------------------------------
+
+    test('wifi->wifi: local becomes remote when the new network has no device', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+          networkIdentity: _identity(ssid: 'Hotspot', ip: '10.167.63.119'),
+          lastConnectedNetworkIdentity: _identity(),
+        ),
+      );
+      // The LAN ip is gone on the new network, so the cheap probe misses.
+      h.callbacks.probeReachable = false;
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['probe', 'reconnectStarted:true', 'connected', 'reconnected']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    test('wifi->wifi: local with no device and no remote session prompts OTP', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+          networkIdentity: _identity(ssid: 'Hotspot', ip: '10.167.63.119'),
+          lastConnectedNetworkIdentity: _identity(),
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('wifi->wifi: remote becomes local, cached remote endpoint never short-circuits', () async {
+      // REGRESSION: the reachable remote endpoint answers from any network, so
+      // a cheap probe here would skip the resolve and strand the app on remote.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: 'remote',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
+      expect(h.callbacks.events, ['reconnectStarted:true', 'connected', 'reconnected']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'local');
+    });
+
+    test('wifi->wifi: remote endpoint picked at login (unknown path type) still resolves', () async {
+      // The resolver only learns the path type from its own resolves; a path
+      // chosen in the login form leaves cachedPathType null.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: null,
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'local');
+    });
+
+    test('wifi->wifi: same network flap keeps the cheap probe on a live LAN endpoint', () async {
+      // Counterpart to the two above: on a local endpoint the short-circuit is
+      // the point — it is what keeps a wifi flap from popping the OTP modal.
+      final home = _identity();
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          networkIdentity: home,
+          lastConnectedNetworkIdentity: home,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['probe', 'connected']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('wifi->wifi: OTP answered on the new network lands on remote', () async {
+      // Spec tail of the scenario above: the modal is only the way to get a
+      // remote session; answering it must finish on the remote path.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, false]);
+      h.triggers.results.add(_failure('no_available_path'));
+      h.triggers.results.add(_failure('no_available_path'));
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+      expect(h.callbacks.otpRetry, isNotNull);
+
+      // OTP accepted: remote access is now authenticated.
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.remoteAuthRetry,
+        activeEndpoint: _localEndpoint,
+        cachedPathType: 'local',
+        remoteAuth: true,
+        hasEstablishedConnectedThisLaunch: true,
+      );
+      h.triggers.results.add(_remoteSuccess);
+      await h.callbacks.otpRetry!();
+
+      expect(h.triggers.calls.last, 'networkChanged:remote_auth_retry');
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    test('wifi->cellular: OTP answered off wifi lands on remote', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.cellular,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+      expect(h.callbacks.events, ['otp']);
+
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.remoteAuthRetry,
+        transport: TransportKind.cellular,
+        activeEndpoint: _localEndpoint,
+        cachedPathType: 'local',
+        remoteAuth: true,
+        hasEstablishedConnectedThisLaunch: true,
+      );
+      h.triggers.results.add(_remoteSuccess);
+      await h.callbacks.otpRetry!();
+
+      expect(h.executor.lastPlanDebugReason, 'off_wifi_remote_only');
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    // --- cellular -> wifi ---------------------------------------------------
+
+    test('cellular->wifi: switches to the local device', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.wifi,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: 'remote',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
+      expect(h.triggers.calls, ['networkChanged:connectivity_change']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'local');
+    });
+
+    test('cellular->wifi: no local device, stays on remote without OTP', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.wifi,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: 'remote',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['reconnectStarted:true', 'connected', 'reconnected']);
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    // --- wifi -> cellular ---------------------------------------------------
+
+    test('wifi->cellular: resolves remote-only with a remote session', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.cellular,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.executor.lastPlanDebugReason, 'off_wifi_remote_only');
+      expect(h.callbacks.events, ['reconnectStarted:true', 'connected', 'reconnected']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    test('wifi->cellular: already on remote stays on remote', () async {
+      // Remote-only login: nothing local to lose, the path must simply hold.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.cellular,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: 'remote',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.executor.lastPlanDebugReason, 'off_wifi_remote_only');
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    test('wifi->cellular: without a remote session prompts OTP', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.cellular,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['otp']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    // --- airplane / no transport -> ... -------------------------------------
+
+    test('off->wifi: reports offline, then reconnects to the local device', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.none,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+      expect(h.callbacks.events, ['failed']);
+      expect(h.executor.lastPlanDebugReason, 'transport_none');
+
+      // Wifi comes back: the LAN endpoint is not answering yet (mDNS still
+      // empty too), so the resolve is what brings local back.
+      h.callbacks.events.clear();
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.connectivityChange,
+        transport: TransportKind.wifi,
+        activeEndpoint: _localEndpoint,
+        cachedPathType: 'local',
+        hasEstablishedConnectedThisLaunch: true,
+      );
+      h.callbacks.probeReachable = false;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['probe', 'reconnectStarted:true', 'connected', 'reconnected']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'local');
+    });
+
+    test('off->wifi: live LAN endpoint reconnects on the probe alone', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+      h.callbacks.probeReachable = true;
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.callbacks.events, ['probe', 'connected']);
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('off->cellular: no local device, connects remote', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.none,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+      expect(h.callbacks.events, ['failed']);
+
+      h.callbacks.events.clear();
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.connectivityChange,
+        transport: TransportKind.cellular,
+        activeEndpoint: _localEndpoint,
+        cachedPathType: 'local',
+        remoteAuth: true,
+        hasEstablishedConnectedThisLaunch: true,
+      );
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.executor.lastPlanDebugReason, 'off_wifi_remote_only');
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+    });
+
+    // --- resume after a switch that happened while backgrounded -------------
+
+    test('resume on wifi with a cached remote endpoint searches for local', () async {
+      // The OS defers connectivity events while backgrounded, so the switch is
+      // observed as an appResume — it must search for local just the same.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.appResume,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: null,
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
+      expect(h.triggers.calls, ['networkChanged:app_resume']);
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'local');
+    });
+
+    test('api error on a cached remote endpoint searches for local', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.apiTransportError,
+          activeEndpoint: _remoteEndpoint,
+          cachedPathType: null,
+          remoteAuth: true,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_localSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
+      expect(h.triggers.calls, ['apiError:api_error']);
+    });
+  });
+
   group('RecoveryExecutor finding-toast surfacing', () {
     test('reachable cached endpoint never announces a reconnect', () async {
       // The monitor surfaces "finding network" from onReconnectStarted, so a
@@ -476,6 +1126,22 @@ void main() {
 
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
 
+      expect(h.callbacks.events, contains('reconnectStarted:false'));
+      expect(h.callbacks.reconnectStartedSuppressedFinding, isFalse);
+    });
+
+    test('health probe miss skips the redundant probe and announces immediately', () async {
+      // The health probe already found the endpoint unreachable, so recovery
+      // must not re-probe it (which would delay the toast by another timeout)
+      // and must announce the reconnect right away — even if a stray probe
+      // would have reported the cached endpoint reachable.
+      final h = _harness(_snap(trigger: RecoveryTrigger.healthProbeMiss));
+      h.callbacks.probeReachable = true;
+      h.triggers.results.add(_success);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.healthProbeMiss));
+
+      expect(h.callbacks.events, isNot(contains('probe')));
       expect(h.callbacks.events, contains('reconnectStarted:false'));
       expect(h.callbacks.reconnectStartedSuppressedFinding, isFalse);
     });

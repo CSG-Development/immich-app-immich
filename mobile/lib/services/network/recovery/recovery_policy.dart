@@ -11,19 +11,27 @@ import 'package:immich_mobile/services/network/recovery/recovery_models.dart';
 /// - already resolving → await the active resolve
 /// - transport none → no internet
 /// - off-wifi: RA authenticated → remote-only resolve; email → OTP; else unable
-/// - on-wifi: cheap cached-endpoint probe for resume/health/apiError/manual,
-///   otherwise full resolve (remote-only when backgrounded)
+/// - on-wifi: cheap cached-endpoint probe for resume/connectivity/apiError/manual
+///   (not healthProbeMiss — probe already missed), otherwise full resolve
+///   (remote-only when backgrounded)
 ///
 /// Failure handling after a resolve (local retry → OTP → unable) is a linear
 /// flow in RecoveryExecutor, not a policy re-entry.
 class RecoveryPolicy {
   const RecoveryPolicy({
     this.cachedProbeTimeout = const Duration(seconds: 5),
+    this.postFailProbeTimeout = const Duration(seconds: 2),
     this.offWifiOtpGraceDelay = const Duration(seconds: 3),
     this.transportSettleDelay = const Duration(milliseconds: 1500),
   });
 
   final Duration cachedProbeTimeout;
+
+  /// Timeout for the last-chance endpoint probe before OTP when this run's
+  /// cheap probe already missed. Only has to catch an endpoint that recovered
+  /// during the resolve, so it is deliberately shorter than
+  /// [cachedProbeTimeout] — the modal should not wait a second full timeout.
+  final Duration postFailProbeTimeout;
 
   /// Grace period before prompting OTP when a transport change / resume lands
   /// us off wifi. Networks come up in stages after airplane mode (cellular
@@ -99,16 +107,13 @@ class RecoveryPolicy {
   RecoveryDecision _decideLocalFirst(NetworkSnapshot snapshot) {
     final endpoint = snapshot.activeEndpoint;
     // A reachable cached endpoint short-circuits the resolve, so allow that
-    // only when the cached path is local (or its type is unknown). With a
-    // remote/public path cached on wifi the spec requires searching for a
-    // local path: the full resolve probes local and remote in parallel and
-    // path upgrade switches to local even when it answers later.
-    final cachedPathIsLocalOrUnknown =
-        snapshot.cachedPathType == null || snapshot.cachedPathType == HcPathType.local;
+    // only for a local path. A remote/public one (and an unknown type, since a
+    // remote endpoint answers from any network) must run the full resolve so
+    // wifi can upgrade to local — otherwise the app stays stranded on remote.
     if (snapshot.trigger.prefersCheapProbeFirst &&
         endpoint != null &&
         endpoint.isNotEmpty &&
-        cachedPathIsLocalOrUnknown) {
+        snapshot.cachedPathType == HcPathType.local) {
       return const ResolvePaths(
         'local_first_cheap_probe',
         probeMode: PathProbeMode.all,

@@ -20,6 +20,7 @@ import 'package:immich_mobile/providers/infrastructure/storage.provider.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:immich_mobile/repositories/upload.repository.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
@@ -67,6 +68,10 @@ class ForegroundUploadService {
   final AppSettingsService _appSettingsService;
   final AssetMediaRepository _assetMediaRepository;
   final Logger _logger = Logger('ForegroundUploadService');
+
+  /// Retries for uploads that failed on a transport error.
+  static const _uploadRetries = 2;
+  static const _retryBackoff = [Duration(seconds: 2), Duration(seconds: 6)];
 
   bool shouldAbortUpload = false;
 
@@ -119,18 +124,23 @@ class ForegroundUploadService {
     await _storageRepository.clearCache();
     shouldAbortUpload = false;
 
-    for (final asset in items) {
-      if (shouldAbortUpload || cancelToken.isCancelled) {
-        break;
-      }
+    UploadActivity.begin();
+    try {
+      for (final asset in items) {
+        if (shouldAbortUpload || cancelToken.isCancelled) {
+          break;
+        }
 
-      final requireWifi = _shouldRequireWiFi(asset);
-      if (requireWifi && !hasWifi) {
-        _logger.warning('Skipping upload for ${asset.id} because it requires WiFi');
-        continue;
-      }
+        final requireWifi = _shouldRequireWiFi(asset);
+        if (requireWifi && !hasWifi) {
+          _logger.warning('Skipping upload for ${asset.id} because it requires WiFi');
+          continue;
+        }
 
-      await _uploadSingleAsset(asset, cancelToken, callbacks: callbacks);
+        await _uploadSingleAsset(asset, cancelToken, callbacks: callbacks);
+      }
+    } finally {
+      UploadActivity.end();
     }
   }
 
@@ -229,12 +239,52 @@ class ForegroundUploadService {
       }
     }
 
-    final workerFutures = <Future<void>>[];
-    for (int i = 0; i < concurrentWorkers; i++) {
-      workerFutures.add(worker());
-    }
+    UploadActivity.begin();
+    try {
+      final workerFutures = <Future<void>>[];
+      for (int i = 0; i < concurrentWorkers; i++) {
+        workerFutures.add(worker());
+      }
 
-    await Future.wait(workerFutures);
+      await Future.wait(workerFutures);
+    } finally {
+      UploadActivity.end();
+    }
+  }
+
+  /// Retries uploads that failed without reaching the server. A result carrying
+  /// a status code is the server's answer and is returned as is.
+  Future<UploadResult> _uploadWithRetry({
+    required File file,
+    required String originalFileName,
+    required Map<String, String> fields,
+    required CancellationToken cancelToken,
+    required void Function(int bytes, int totalBytes) onProgress,
+    required String logContext,
+  }) async {
+    for (var attempt = 0; ; attempt++) {
+      final result = await _uploadRepository.uploadFile(
+        file: file,
+        originalFileName: originalFileName,
+        fields: fields,
+        cancelToken: cancelToken,
+        onProgress: onProgress,
+        logContext: logContext,
+      );
+
+      final isTransportFailure = !result.isSuccess && !result.isCancelled && result.statusCode == null;
+      if (!isTransportFailure || attempt >= _uploadRetries || shouldAbortUpload || cancelToken.isCancelled) {
+        return result;
+      }
+
+      final backoff = _retryBackoff[attempt];
+      _logger.warning(
+        () =>
+            'Retrying $logContext in ${backoff.inSeconds}s '
+            '(attempt ${attempt + 2}/${_uploadRetries + 1}): ${result.errorMessage}',
+      );
+      await Future.delayed(backoff);
+    }
   }
 
   Future<void> _uploadSingleAsset(
@@ -377,7 +427,7 @@ class ForegroundUploadService {
 
       final onProgress = callbacks.onProgress;
       final uploadCancelToken = cancelToken ?? CancellationToken();
-      final result = await _uploadRepository.uploadFile(
+      final result = await _uploadWithRetry(
         file: file,
         originalFileName: originalFileName,
         fields: fields,
@@ -390,8 +440,11 @@ class ForegroundUploadService {
       if (result.isSuccess && result.remoteAssetId != null) {
         callbacks.onSuccess?.call(asset.localId!, result.remoteAssetId!);
       } else if (result.isCancelled) {
+        // Deliberately does not set shouldAbortUpload: that field is shared by
+        // every run, while a cancellation belongs to one. A cancelled run stops
+        // through its own token, which the worker loop checks. Flipping the
+        // shared flag here would also kill the run that replaces this one.
         _logger.warning(() => "Backup was cancelled by the user");
-        shouldAbortUpload = true;
       } else if (result.errorMessage != null) {
         _logger.severe(
           () =>

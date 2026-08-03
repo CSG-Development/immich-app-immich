@@ -250,7 +250,7 @@ export const getAssetSelectMenuItems = ($t: MessageFormatter, options: AssetSele
       const ids = getOwnedAssetsWithWarning(assetMultiSelectManager.assets, get(user));
       try {
         await updateAssets({ assetBulkUpdateDto: { ids, latitude: point.lat, longitude: point.lng } });
-        toastManager.primary();
+        toastManager.primary($t('edit_location_action_prompt', { values: { count: ids.length } }));
         assetMultiSelectManager.clear();
       } catch (error) {
         handleError(error, $t('errors.unable_to_update_location'));

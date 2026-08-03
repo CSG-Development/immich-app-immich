@@ -23,6 +23,9 @@ class SnapshotBuilder {
     this.isResolving = false,
     this.isAppInForeground = true,
     this.cachedPathType,
+    this.hasEstablishedConnectedThisLaunch = false,
+    this.networkIdentity,
+    this.lastConnectedNetworkIdentity,
   });
 
   final DeviceProvider deviceProvider;
@@ -32,6 +35,15 @@ class SnapshotBuilder {
   bool isResolving;
   bool isAppInForeground;
   String? cachedPathType;
+
+  /// Latched by [CuratorNetworkMonitor] when any connect succeeds this session.
+  bool hasEstablishedConnectedThisLaunch;
+
+  /// Identity of the current network, kept fresh by [CuratorNetworkMonitor].
+  String? networkIdentity;
+
+  /// [networkIdentity] at the last successful connect this session.
+  String? lastConnectedNetworkIdentity;
 
   Future<NetworkSnapshot> build(RecoveryEvent event) async {
     final connectivity = await (readConnectivity ?? Connectivity().checkConnectivity)();
@@ -60,6 +72,9 @@ class SnapshotBuilder {
       transport: transport,
       isResolving: isResolving,
       otpModalShowing: isOtpModalShowing(),
+      hasEstablishedConnectedThisLaunch: hasEstablishedConnectedThisLaunch,
+      networkIdentity: networkIdentity,
+      lastConnectedNetworkIdentity: lastConnectedNetworkIdentity,
     );
   }
 }
@@ -152,7 +167,7 @@ class RecoveryExecutor {
           suppressFindingToast: snapshot.event.suppressFindingToast,
         );
         final resolved = await _resolve(snapshot, probeMode: probeMode);
-        await _handleResolveResult(snapshot, resolved);
+        await _handleResolveResult(snapshot, resolved, cachedProbeAlreadyMissed: cheapProbeFirst);
         return;
     }
   }
@@ -215,6 +230,7 @@ class RecoveryExecutor {
       await Future<void>.delayed(policy.offWifiOtpGraceDelay);
       final settled = await snapshotBuilder.build(snapshot.event);
       lastSnapshot = settled;
+      lastSnapshotAt = DateTime.now();
       if (settled.remoteAuth || settled.otpModalShowing) {
         _log.info('[Recovery] off-wifi OTP aborted after grace: state changed');
         return;
@@ -245,6 +261,32 @@ class RecoveryExecutor {
     });
   }
 
+  /// Returns true when the cached endpoint answered and connected was published.
+  Future<bool> _recoverViaCachedEndpointIfReachable(
+    NetworkSnapshot snapshot, {
+    required String reason,
+    bool alreadyProbedThisRun = false,
+  }) async {
+    final endpoint = snapshot.activeEndpoint;
+    if (!snapshot.hasWifi || endpoint == null || endpoint.isEmpty) {
+      return false;
+    }
+    // A re-probe of an endpoint this run already found dead only has to catch
+    // one that came back during the resolve, so it gets the short timeout —
+    // the full one would just push the OTP modal further out.
+    final timeout = alreadyProbedThisRun ? policy.postFailProbeTimeout : policy.cachedProbeTimeout;
+    final reachable = await callbacks.probeCachedEndpoint(timeout: timeout);
+    lastSnapshot = snapshot.copyWith(cachedEndpointReachable: reachable);
+    lastSnapshotAt = DateTime.now();
+    if (!reachable) {
+      return false;
+    }
+    lastPlanDebugReason = reason;
+    _log.info('[Recovery] cached endpoint reachable ($reason), skipping OTP');
+    callbacks.onPublishConnected();
+    return true;
+  }
+
   Future<EndpointResolutionResult> _resolve(
     NetworkSnapshot snapshot, {
     required PathProbeMode probeMode,
@@ -267,6 +309,7 @@ class RecoveryExecutor {
     NetworkSnapshot snapshot,
     EndpointResolutionResult resolved, {
     bool isRetry = false,
+    bool cachedProbeAlreadyMissed = false,
   }) async {
     _log.info(
       '[Recovery] resolve result success=${resolved.success} reason=${resolved.reason} '
@@ -280,14 +323,22 @@ class RecoveryExecutor {
     }
 
     final reason = ResolveFailureReasonX.fromWire(resolved.reason);
+    // The network identity is part of the signature: the same failure reason on
+    // a different network is a different event and must be able to surface its
+    // own OTP / banner, not read as a repeat of the previous network's failure.
     final signature = [
       snapshot.trigger.name,
       reason.wireValue,
       snapshot.remoteAuth.toString(),
       snapshot.certificateCommonName ?? '-',
       snapshot.seagateDeviceId ?? '-',
+      snapshot.networkIdentity ?? '-',
     ].join('|');
-    final isDuplicate = snapshot.trigger.isConnectivityDriven && lastFailureSignature == signature;
+    // Soft-local retry is still the same recovery run — do not treat its
+    // identical failure as a duplicate connectivity event (that suppression
+    // is for a later queued transport change, not the in-run retry).
+    final isDuplicate =
+        !isRetry && snapshot.trigger.isConnectivityDriven && lastFailureSignature == signature;
     lastFailureSignature = signature;
     if (isDuplicate) {
       lastPlanDebugReason = 'duplicate_connectivity_failure';
@@ -314,13 +365,62 @@ class RecoveryExecutor {
         mode: snapshot.mode,
         trigger: 'api_error_local_retry',
       );
-      await _handleResolveResult(snapshot, retried, isRetry: true);
+      await _handleResolveResult(
+        snapshot,
+        retried,
+        isRetry: true,
+        cachedProbeAlreadyMissed: cachedProbeAlreadyMissed,
+      );
       return;
     }
 
-    if (snapshot.hasLoginEmail && !snapshot.otpModalShowing) {
+    // Mid-session automatic probes must not auto-escalate to OTP (spam during
+    // heavy sync). Cold start / pre-connect failures still may — there has been
+    // no successful connect this launch yet. Banner Retry → manualRetry → OTP.
+    final isBackgroundProbe = snapshot.trigger == RecoveryTrigger.apiTransportError ||
+        snapshot.trigger == RecoveryTrigger.healthProbeMiss;
+    final suppressOtpForBackgroundProbe =
+        isBackgroundProbe && snapshot.hasEstablishedConnectedThisLaunch;
+
+    // A transport flap on the very network that last served a working
+    // connection is a device-side outage (HC or router restarting), not a move
+    // to a network without a local path — remote access is not the answer, the
+    // Retry banner is. Only a positively confirmed identity match suppresses;
+    // an unknown identity still prompts, so a real network switch is never
+    // mistaken for a flap. Manual Retry is not connectivity-driven and stays
+    // able to reach OTP.
+    final isSameNetworkOutage =
+        snapshot.trigger.isConnectivityDriven && snapshot.isSameNetworkAsLastConnect;
+
+    if (snapshot.hasLoginEmail &&
+        !snapshot.otpModalShowing &&
+        !suppressOtpForBackgroundProbe &&
+        !isSameNetworkOutage) {
+      // Airplane / transport flaps: mDNS resolve can fail while the cached LAN
+      // IP is already answering again (sync may even be mid-flight). Last-chance
+      // probe before OTP avoids a false remote-access modal on a live local path.
+      if (await _recoverViaCachedEndpointIfReachable(
+        snapshot,
+        reason: 'post_fail_cached_reachable',
+        alreadyProbedThisRun: cachedProbeAlreadyMissed,
+      )) {
+        return;
+      }
       lastPlanDebugReason = 'post_fail_prompt_otp';
       await _promptOtp(snapshot);
+      return;
+    }
+
+    if (isSameNetworkOutage) {
+      lastPlanDebugReason = 'post_fail_same_network_outage_unable';
+      _log.info('[Recovery] same network as last connect, reporting unable instead of OTP');
+      await callbacks.onReconnectionFailed();
+      return;
+    }
+
+    if (suppressOtpForBackgroundProbe) {
+      lastPlanDebugReason = 'post_fail_background_probe_unable';
+      await callbacks.onReconnectionFailed();
       return;
     }
 

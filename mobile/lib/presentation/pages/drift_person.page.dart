@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/people/person_option_sheet.widget.dart';
+import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -50,8 +51,42 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
     }
   }
 
-  Future<void> handleMerge(BuildContext context) async {
-    context.pushRoute(DriftPeopleMergeRoute(person: _person));
+  Future<void> handleMerge() async {
+    final mergedPerson = await context.pushRoute<DriftPerson?>(DriftPeopleMergeRoute(person: _person));
+
+    // After a merge the surviving (target) person is returned. When the primary
+    // face was swapped, this differs from the person we opened (which has just
+    // been merged away), so switch the page to the survivor. The ProviderScope
+    // below is keyed on the person id, so changing it rebuilds the timeline for
+    // the correct person instead of keeping the now-empty source timeline.
+    if (mergedPerson != null && mounted) {
+      setState(() {
+        _person = mergedPerson;
+      });
+    }
+  }
+
+  Future<void> handleToggleFavorite() async {
+    final isFavorite = !_person.isFavorite;
+    final success = await togglePersonFavorite(
+      context: context,
+      isFavorite: isFavorite,
+      update: () async {
+        final result = await ref.read(driftPeopleServiceProvider).updateFavorite(_person.id, isFavorite);
+        if (result == 0) {
+          throw StateError('Person ${_person.id} was not found in the local database');
+        }
+      },
+    );
+
+    if (!success || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _person = _person.copyWith(isFavorite: isFavorite);
+    });
+    ref.invalidate(driftGetAllPeopleProvider);
   }
 
   void showOptionSheet(BuildContext context) {
@@ -69,11 +104,16 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
             await handleEditBirthday(context);
             context.pop();
           },
-          onMerge: () async {
-            await handleMerge(context);
+          onMerge: () {
             context.pop();
+            handleMerge();
+          },
+          onToggleFavorite: () {
+            context.pop();
+            handleToggleFavorite();
           },
           birthdayExists: _person.birthDate != null,
+          isFavorite: _person.isFavorite,
         );
       },
     );
@@ -82,6 +122,7 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
+      key: ValueKey(_person.id),
       overrides: [
         timelineServiceProvider.overrideWith((ref) {
           final user = ref.watch(currentUserProvider);

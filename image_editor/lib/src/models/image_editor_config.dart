@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_editor/src/models/image_editor_translations.dart';
@@ -7,8 +9,11 @@ class ImageEditorConfig {
   /// The image bytes to edit
   final Uint8List imageBytes;
 
-  /// Callback when image editing is complete
-  final Function(Uint8List) onImageEditingComplete;
+  /// Callback when image editing is complete.
+  ///
+  /// If this returns a [Future], the editor keeps its loading UI up and blocks
+  /// further Done presses until that Future completes.
+  final FutureOr<void> Function(Uint8List) onImageEditingComplete;
 
   /// Callback when editor is closed
   final VoidCallback onCloseEditor;

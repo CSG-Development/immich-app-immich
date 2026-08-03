@@ -10,6 +10,9 @@ final class RequestTimeoutURLProtocol: URLProtocol {
     config.protocolClasses = (config.protocolClasses ?? []).filter { $0 != RequestTimeoutURLProtocol.self }
     config.httpCookieStorage = URLSessionManager.cookieStorage
     config.waitsForConnectivity = false
+    // The per-request timeoutInterval set in startLoading() governs; the session
+    // must not cap it lower (the default here would be 60s).
+    config.timeoutIntervalForRequest = 3600
     return URLSession(configuration: config, delegate: URLSessionManager.shared.delegate, delegateQueue: nil)
   }()
 

@@ -25,6 +25,10 @@ const String kSecuredPinCode = "secured_pin_code";
 const String kSecuredPasscode = "secured_passcode";
 const String kSecuredPattern = "secured_pattern";
 
+/// Marks a request as an asset upload. Stripped by ConnectionRecoveryInterceptor
+/// before the request is sent, so it never reaches the server.
+const String kUploadRequestHeader = 'x-curator-upload';
+
 // background_downloader task groups
 const String kManualUploadGroup = 'manual_upload_group';
 const String kBackupGroup = 'backup_group';

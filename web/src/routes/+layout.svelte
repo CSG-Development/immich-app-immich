@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate, beforeNavigate } from '$app/navigation';
+  import { browser } from '$app/environment';
   import { page } from '$app/state';
   import { getPagesProvider, getSettingsProvider } from '$lib/commands';
   import DownloadPanel from '$lib/components/asset-viewer/download-panel.svelte';
@@ -19,16 +20,10 @@
   import { getServerConfig } from '@immich/sdk';
   import {
     CommandPaletteProvider,
-    CORE_PAGE_COMMANDS,
-    defaultProvider,
-    MOBILE_APP_COMMANDS,
     modalManager,
-    OTHER_SITE_COMMANDS,
-    PROJECT_SUPPORT_COMMANDS,
     ScreencastOverlay,
     setLocale,
     setTranslations,
-    SOCIAL_COMMANDS,
     Theme,
     themeManager,
     toastManager,
@@ -36,11 +31,16 @@
   } from '@immich/ui';
   import { En } from 'media-chrome/lang/en';
   import { addTranslation } from 'media-chrome/utils/i18n';
-  import { onMount, type Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { t } from 'svelte-i18n';
   import { get } from 'svelte/store';
   import '../app.css';
 
+  // Remove splash as soon as the client bundle runs so app.css/preflight
+  // cannot restyle #stencil and cause a layout jump before login appears.
+  if (browser) {
+    document.querySelector('#stencil')?.remove();
+  }
 
   interface Props {
     children?: Snippet;
@@ -169,12 +169,6 @@
 
   toastManager.setOptions({ class: 'top-16 fixed' });
 
-  onMount(() => {
-    const element = document.querySelector('#stencil');
-    element?.remove();
-    // if the browser theme changes, changes the Immich theme too
-  });
-
   eventManager.emit('AppInit');
 
   beforeNavigate(({ from, to }) => {
@@ -233,8 +227,8 @@
 <OnEvents {onWebsocketConnect} />
 
 <svelte:head>
-  <title>{page.data.meta?.title || 'Web'} - Immich</title>
-  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+  <title>{page.data.meta?.title || 'Web'} - Personal Cloud Photos</title>
+  <link rel="manifest" href="/photos/static/manifest.json" crossorigin="use-credentials" />
   <meta name="theme-color" content="white" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="black" media="(prefers-color-scheme: dark)" />
 
@@ -286,15 +280,5 @@
   <UploadPanel />
   <ScreencastOverlay />
 
-  <CommandPaletteProvider
-    providers={[
-      getPagesProvider($t),
-      getSettingsProvider($t),
-      defaultProvider({ name: $t('documentation'), types: ['doc', 'documentation'], actions: CORE_PAGE_COMMANDS }),
-      defaultProvider({ name: $t('support'), actions: PROJECT_SUPPORT_COMMANDS }),
-      defaultProvider({ name: 'Socials', types: ['social', 'socials'], actions: SOCIAL_COMMANDS }),
-      defaultProvider({ name: $t('mobile_app'), actions: MOBILE_APP_COMMANDS }),
-      defaultProvider({ name: 'Sites', types: ['site', 'sites'], actions: OTHER_SITE_COMMANDS }),
-    ]}
-  />
+  <CommandPaletteProvider providers={[getPagesProvider($t), getSettingsProvider($t)]} />
 </TooltipProvider>

@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 
@@ -29,6 +30,9 @@ class FakeEndpointResolver implements HcDeviceEndpointResolver {
 
   @override
   String? getAvailablePathType() => null;
+
+  @override
+  Future<void> noteSelectedPath(String endpoint, {DevicePathType? pathType}) async {}
 
   @override
   List getDevicePaths(String remoteDeviceId) => const [];

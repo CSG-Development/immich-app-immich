@@ -35,7 +35,7 @@ class _ImageEditorState extends State<ImageEditor> {
         key: _editorKey,
         callbacks: ProImageEditorCallbacks(
           onImageEditingComplete: (bytes) async {
-            widget.config.onImageEditingComplete(bytes);
+            await widget.config.onImageEditingComplete(bytes);
           },
           mainEditorCallbacks: MainEditorCallbacks(onPopInvoked: (didPop, result) => widget.config.onCloseEditor()),
         ),
