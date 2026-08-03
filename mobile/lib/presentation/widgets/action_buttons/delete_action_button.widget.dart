@@ -7,6 +7,7 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -30,6 +31,16 @@ class DeleteActionButton extends ConsumerWidget {
 
   void _onTap(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) {
+      return;
+    }
+
+    if (ref.read(connectionStateProvider).isDisconnected) {
+      ImmichToast.show(
+        context: context,
+        msg: 'curator.network.no_internet'.t(context: context),
+        gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
+      );
       return;
     }
 
@@ -62,11 +73,11 @@ class DeleteActionButton extends ConsumerWidget {
     final remoteIds = actionNotifier.getOwnedRemoteIdsForSource(source);
     final messenger = ScaffoldMessenger.maybeOf(context);
 
-    if (source == ActionSource.viewer) {
+    final result = await actionNotifier.trashRemoteAndDeleteLocal(source);
+
+    if (source == ActionSource.viewer && result.success) {
       EventStream.shared.emit(const ViewerReloadAssetEvent());
     }
-
-    final result = await actionNotifier.trashRemoteAndDeleteLocal(source);
 
     final feedbackContext = context.mounted ? context : messenger?.context;
     if (feedbackContext == null) {
