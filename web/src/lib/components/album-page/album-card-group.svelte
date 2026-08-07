@@ -32,7 +32,7 @@
   let isCollapsed = $derived(!!group && isAlbumGroupCollapsed($albumViewSettings, group.id));
 
   const showContextMenu = (position: ContextMenuPosition, album: AlbumResponseDto) => {
-    onShowContextMenu?.(position, album);
+    return onShowContextMenu?.(position, album);
   };
 
   let iconRotation = $derived(isCollapsed ? 'rotate-0' : 'rotate-90');

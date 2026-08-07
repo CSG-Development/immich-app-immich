@@ -14,7 +14,7 @@
     showDateRange?: boolean;
     showItemCount?: boolean;
     preload?: boolean;
-    onShowContextMenu?: ((position: ContextMenuPosition) => unknown) | undefined;
+    onShowContextMenu?: ((position: ContextMenuPosition) => unknown | Promise<unknown>) | undefined;
   }
 
   let {
@@ -26,10 +26,21 @@
     onShowContextMenu = undefined,
   }: Props = $props();
 
-  const showAlbumContextMenu = (e: MouseEvent) => {
+  let menuOpen = $state(false);
+
+  const showAlbumContextMenu = async (e: MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onShowContextMenu?.(getContextMenuPositionFromEvent(e));
+    if (!onShowContextMenu) {
+      return;
+    }
+
+    menuOpen = true;
+    try {
+      await onShowContextMenu(getContextMenuPositionFromEvent(e));
+    } finally {
+      menuOpen = false;
+    }
   };
 </script>
 
@@ -40,7 +51,9 @@
   {#if onShowContextMenu}
     <div
       id="icon-{album.id}"
-      class="absolute end-6 top-6 opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+      class="absolute end-6 top-6 transition-opacity {menuOpen
+        ? 'opacity-100'
+        : 'opacity-0 group-hover:opacity-100 has-focus-visible:opacity-100'}"
       data-testid="context-button-parent"
     >
       <IconButton

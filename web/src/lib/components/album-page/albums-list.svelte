@@ -212,7 +212,7 @@
         : undefined,
     ];
 
-    void menuManager.show({ target, position: 'top-left', items }).finally(() => target.remove());
+    return menuManager.show({ target, position: 'top-left', items }).finally(() => target.remove());
   };
 
   const removeAlbumsIfEmpty = async () => {
