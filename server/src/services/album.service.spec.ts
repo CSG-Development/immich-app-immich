@@ -617,14 +617,27 @@ describe(AlbumService.name, () => {
 
     it('should throw an error for no access', async () => {
       const auth = AuthFactory.create();
-      await expect(sut.get(auth, 'album-123', {})).rejects.toBeInstanceOf(BadRequestException);
+      const album = AlbumFactory.create();
+      mocks.album.getById.mockResolvedValue(getForAlbum(album));
 
-      expect(mocks.access.album.checkOwnerAccess).toHaveBeenCalledWith(auth.user.id, new Set(['album-123']));
+      await expect(sut.get(auth, album.id, {})).rejects.toThrow(`Not found or no album.read access`);
+
+      expect(mocks.access.album.checkOwnerAccess).toHaveBeenCalledWith(auth.user.id, new Set([album.id]));
       expect(mocks.access.album.checkSharedAlbumAccess).toHaveBeenCalledWith(
         auth.user.id,
-        new Set(['album-123']),
+        new Set([album.id]),
         AlbumUserRole.Viewer,
       );
+      expect(mocks.album.getById).toHaveBeenCalledWith(album.id, { withAssets: false });
+    });
+
+    it('should throw a deleted error when the album no longer exists', async () => {
+      const auth = AuthFactory.create();
+      mocks.album.getById.mockResolvedValue(void 0);
+
+      await expect(sut.get(auth, 'album-123', {})).rejects.toThrow('Album has been deleted');
+
+      expect(mocks.album.getById).toHaveBeenCalledWith('album-123', { withAssets: false });
     });
   });
 

@@ -1,3 +1,4 @@
+import type { AlbumEditAccessResult } from '$lib/utils/album-access';
 import { BaseEventManager } from '$lib/utils/base-event-manager.svelte';
 import type { TreeNode } from '$lib/utils/tree-utils';
 import type {
@@ -46,6 +47,7 @@ export type Events = {
   AlbumShare: [];
   AlbumUserUpdate: [{ albumId: string; userId: string; role: AlbumUserRole }];
   AlbumUserDelete: [{ albumId: string; userId: string }];
+  AlbumAccessLost: [{ albumId: string; result: AlbumEditAccessResult }];
 
   PersonUpdate: [PersonResponseDto];
   PersonThumbnailReady: [{ id: string }];

@@ -74,7 +74,17 @@ export class AlbumService extends BaseService {
   }
 
   async get(auth: AuthDto, id: string, dto: AlbumInfoDto): Promise<AlbumResponseDto> {
-    await this.requireAccess({ auth, permission: Permission.AlbumRead, ids: [id] });
+    const allowedIds = await this.checkAccess({ auth, permission: Permission.AlbumRead, ids: [id] });
+    if (allowedIds.size === 0) {
+      // Distinguish deleted vs revoked so clients can show accurate UX for users who
+      // already knew the album existed (e.g. mid-session permission changes).
+      const existing = await this.albumRepository.getById(id, { withAssets: false });
+      if (!existing) {
+        throw new BadRequestException('Album has been deleted');
+      }
+      throw new BadRequestException(`Not found or no ${Permission.AlbumRead} access`);
+    }
+
     await this.albumRepository.updateThumbnails();
     const withAssets = dto.withoutAssets === undefined ? true : !dto.withoutAssets;
     const album = await this.findOrFail(id, { withAssets });
