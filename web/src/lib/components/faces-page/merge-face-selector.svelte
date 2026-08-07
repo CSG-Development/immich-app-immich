@@ -119,10 +119,7 @@
         </p>
 
         <div
-          class="overflow-x-auto grid grid-flow-col-dense place-items-center w-full md:w-auto {selectedPeople.length ===
-          1
-            ? 'justify-between'
-            : 'gap-3'} md:gap-4"
+          class="overflow-x-auto grid grid-flow-col-dense place-content-center place-items-center w-full gap-3 md:gap-4"
         >
           {#each selectedPeople as selectedPerson (selectedPerson.id)}
             <div animate:flip={{ duration: 250, easing: quintOut }}>
