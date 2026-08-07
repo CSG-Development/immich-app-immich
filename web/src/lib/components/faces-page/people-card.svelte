@@ -3,8 +3,10 @@
 </script>
 
 <script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
   import { clickOutside } from '$lib/actions/click-outside';
   import { focusOutside } from '$lib/actions/focus-outside';
+  import { portal } from '$lib/elements/Portal.svelte';
   import { Route } from '$lib/route';
   import { getPersonActions } from '$lib/services/person.service';
   import { getPeopleThumbnailUrl } from '$lib/utils';
@@ -19,7 +21,7 @@
     mdiHeartOutline,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import { fly } from 'svelte/transition';
   import ImageThumbnail from '../assets/thumbnail/image-thumbnail.svelte';
 
@@ -89,6 +91,20 @@
     hideDots();
   };
 
+  // Body-portaled menus can be orphaned if the People page unmounts mid-outro
+  // (portal + fly transition leaves the node on <body> after route change).
+  // Always hard-remove the DOM node — clickOutside may already have cleared
+  // openPersonId while the fly outro is still in progress.
+  const dismissMenu = () => {
+    const menu = menuElement;
+    closeMenu();
+    menu?.remove();
+    menuElement = undefined;
+  };
+
+  beforeNavigate(dismissMenu);
+  onDestroy(dismissMenu);
+
   const positionMenu = (anchor: DOMRect, menu: HTMLElement) => {
     const margin = 8;
     const gap = 4;
@@ -154,8 +170,6 @@
     const menu = menuElement;
     let cancelled = false;
     let frame = 0;
-
-    document.body.append(menu);
 
     void tick().then(() => {
       if (cancelled) {
@@ -244,6 +258,7 @@
     role="menu"
     tabindex="-1"
     transition:fly={{ y: -8, duration: 150 }}
+    use:portal
     use:clickOutside={{ onOutclick: closeMenu, onEscape: closeMenu }}
   >
     {#each items as item (item.title)}
