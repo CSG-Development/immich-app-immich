@@ -7,6 +7,7 @@ import AlbumOptionsModal from '$lib/modals/AlbumOptionsModal.svelte';
 import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
 import { Route } from '$lib/route';
 import { user } from '$lib/stores/user.store';
+import { checkAlbumEditAccess, isAlbumPermissionError, albumAccessMessageKey } from '$lib/utils/album-access';
 import { createAlbumAndRedirect } from '$lib/utils/album-utils';
 import { downloadArchive } from '$lib/utils/asset-utils';
 import { openFileUploadDialog } from '$lib/utils/file-uploader';
@@ -122,6 +123,23 @@ export const addAssetsToAlbums = async (albumIds: string[], assetIds: string[], 
     eventManager.emit('AlbumAddAssets', { assetIds, albumIds });
     return true;
   } catch (error) {
+    if (albumIds.length === 1 && isAlbumPermissionError(error)) {
+      const access = await checkAlbumEditAccess(albumIds[0], get(user).id);
+      if (access.kind !== 'allowed') {
+        const message = $t(albumAccessMessageKey(access));
+        if (access.kind === 'view_only') {
+          toastManager.warning(message);
+        } else {
+          toastManager.danger(message);
+        }
+        eventManager.emit('AlbumAccessLost', { albumId: albumIds[0], result: access });
+        if (access.kind === 'access_denied' || access.kind === 'deleted') {
+          await goto(Route.albums());
+        }
+        return false;
+      }
+    }
+
     handleError(error, $t('errors.error_adding_assets_to_album'));
     return false;
   }
