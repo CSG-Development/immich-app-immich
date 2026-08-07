@@ -23,7 +23,6 @@ import {
   mdiMapMarkerOutline,
   mdiMapOutline,
   mdiServer,
-  mdiStateMachine,
   mdiSync,
   mdiTagMultipleOutline,
   mdiThemeLightDark,
@@ -189,11 +188,6 @@ export const getPagesProvider = ($t: MessageFormatter) => {
       title: $t('manage_geolocation'),
       icon: mdiCrosshairsGps,
       onAction: () => goto(Route.geolocationUtility()),
-    },
-    {
-      title: $t('workflows'),
-      icon: mdiStateMachine,
-      onAction: () => goto(Route.workflows()),
     },
   ].map((route) => ({ ...route, $if: () => authManager.authenticated }));
 
