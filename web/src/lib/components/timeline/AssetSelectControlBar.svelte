@@ -19,7 +19,7 @@
 
 <ControlAppBar {onClose} {forceDark} backIcon={mdiClose} tailwindClasses="bg-white shadow-md">
   {#snippet leading()}
-    <div class="font-medium {forceDark ? 'text-immich-dark-primary' : 'text-primary'}">
+    <div class="font-medium {forceDark ? 'text-immich-dark-primary' : 'text-primary-700'}">
       <p class="block sm:hidden">{assets.length}</p>
       <p class="hidden sm:block">{$t('selected_count', { values: { count: assets.length } })}</p>
     </div>

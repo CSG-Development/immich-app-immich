@@ -44,14 +44,14 @@
   };
 
   const primaryColor: Record<NotificationType, string> = {
-    [NotificationType.Info]: '#1976D2',
+    [NotificationType.Info]: '#2F743C',
     [NotificationType.Error]: '#F44336',
     [NotificationType.Warning]: '#D08613',
     [NotificationType.Success]: '#4CAF50',
   };
 
   const primaryColorDark: Record<NotificationType, string> = {
-    [NotificationType.Info]: '#64B5F6',
+    [NotificationType.Info]: '#8CD873',
     [NotificationType.Error]: '#F28F8C',
     [NotificationType.Warning]: '#FFD18D',
     [NotificationType.Success]: '#4CAF50',

@@ -165,7 +165,7 @@
         </section>
 
         <div class="flex flex-col mt-2">
-          <!-- <h3 class="text-base font-medium text-primary">{$t('template')}</h3> -->
+          <!-- <h3 class="text-base font-medium text-primary-700">{$t('template')}</h3> -->
           <Heading size="tiny" color="primary">
             {$t('template')}
           </Heading>
@@ -180,7 +180,7 @@
               values={{ length: parsedTemplate().length + $user.id.length + 'UPLOAD_LOCATION'.length, limit: 260 }}
             >
               {#snippet children({ message })}
-                <span class="font-semibold text-primary">{message}</span>
+                <span class="font-semibold text-primary-700">{message}</span>
               {/snippet}
             </FormatMessage>
           </p>
@@ -188,7 +188,7 @@
           <p class="text-sm">
             <FormatMessage key="admin.storage_template_user_label" values={{ label: $user.storageLabel || $user.id }}>
               {#snippet children({ message })}
-                <code class="text-primary">{message}</code>
+                <code class="text-primary-700">{message}</code>
               {/snippet}
             </FormatMessage>
           </p>
@@ -202,7 +202,7 @@
           <form autocomplete="off" class="flex flex-col" onsubmit={preventDefault(bubble('submit'))}>
             <div class="flex flex-col my-2">
               {#if templateOptions}
-                <label class="font-medium text-primary text-sm" for="preset-select">
+                <label class="font-medium text-primary-700 text-sm" for="preset-select">
                   {$t('preset')}
                 </label>
                 <select
@@ -252,7 +252,7 @@
                       values={{ job: $t('admin.storage_template_migration_job') }}
                     >
                       {#snippet children({ message })}
-                        <a href={Route.queues()} class="text-primary">{message}</a>
+                        <a href={Route.queues()} class="text-primary-700">{message}</a>
                       {/snippet}
                     </FormatMessage>
                   </p>

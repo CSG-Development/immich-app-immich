@@ -47,33 +47,33 @@
     <div class="mt-5 flex lg:hidden">
       <div class="flex flex-col justify-between rounded-3xl bg-subtle p-5 dark:bg-immich-dark-gray">
         <div class="flex flex-wrap gap-x-12">
-          <div class="flex flex-1 place-items-center gap-4 text-primary">
+          <div class="flex flex-1 place-items-center gap-4 text-primary-700">
             <Icon icon={mdiCameraIris} size="25" />
             <Text size="medium" fontWeight="medium">{$t('photos')}</Text>
           </div>
 
           <div class="relative text-center text-2xl font-semibold">
-            <span class="text-light-300">{zeros(stats.photos)}</span><span class="text-primary">{stats.photos}</span>
+            <span class="text-light-300">{zeros(stats.photos)}</span><span class="text-primary-700">{stats.photos}</span>
           </div>
         </div>
         <div class="flex flex-wrap gap-x-12">
-          <div class="flex flex-1 place-items-center gap-4 text-primary">
+          <div class="flex flex-1 place-items-center gap-4 text-primary-700">
             <Icon icon={mdiPlayCircle} size="25" />
             <Text size="medium" fontWeight="medium">{$t('videos')}</Text>
           </div>
 
           <div class="relative text-center text-2xl font-semibold">
-            <span class="text-light-300">{zeros(stats.videos)}</span><span class="text-primary">{stats.videos}</span>
+            <span class="text-light-300">{zeros(stats.videos)}</span><span class="text-primary-700">{stats.videos}</span>
           </div>
         </div>
         <div class="flex flex-wrap gap-x-5">
-          <div class="flex flex-1 flex-nowrap place-items-center gap-4 text-primary">
+          <div class="flex flex-1 flex-nowrap place-items-center gap-4 text-primary-700">
             <Icon icon={mdiChartPie} size="25" />
             <Text size="medium" fontWeight="medium">{$t('storage')}</Text>
           </div>
 
           <div class="relative flex text-center text-2xl font-semibold">
-            <span class="text-light-300">{zeros(statsUsage)}</span><span class="text-primary">{statsUsage}</span>
+            <span class="text-light-300">{zeros(statsUsage)}</span><span class="text-primary-700">{statsUsage}</span>
 
             <div class="absolute -end-1.5 -bottom-4">
               <span class="my-auto ms-2 text-center text-base font-light text-gray-400">{statsUsageUnit}</span>
@@ -108,7 +108,7 @@
               {#if user.quotaSizeInBytes !== null}
                 / <FormatBytes bytes={user.quotaSizeInBytes} precision={0} />
               {/if}
-              <span class="text-primary">
+              <span class="text-primary-700">
                 {#if user.quotaSizeInBytes !== null && user.quotaSizeInBytes >= 0}
                   ({(user.quotaSizeInBytes === 0 ? 1 : user.usage / user.quotaSizeInBytes).toLocaleString($locale, {
                     style: 'percent',

@@ -16,7 +16,7 @@
 <Card color="secondary">
   <CardHeader>
     <div class="flex w-full justify-between items-center px-4 py-2">
-      <div class="flex gap-2 text-primary">
+      <div class="flex gap-2 text-primary-700">
         <Icon {icon} size="1.5rem" />
         <CardTitle>{title}</CardTitle>
       </div>

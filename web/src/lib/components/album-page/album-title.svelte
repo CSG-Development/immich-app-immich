@@ -84,7 +84,7 @@
     }
   };
 
-  const textClasses = 'text-2xl lg:text-6xl text-primary';
+  const textClasses = 'text-2xl lg:text-6xl text-primary-700';
 </script>
 
 <div class="mb-2">
@@ -98,7 +98,7 @@
       onblur={handleUpdate}
       oninput={(event) => syncTextareaHeight(event.currentTarget as HTMLTextAreaElement)}
       placeholder={$t('add_a_title')}
-      class="{textClasses} immich-scrollbar w-[99%] border-none bg-transparent px-0 py-0 outline-none transition-all hover:border-b-2 hover:border-gray-400 focus:border-none placeholder:text-primary/90"
+      class="{textClasses} immich-scrollbar w-[99%] border-none bg-transparent px-0 py-0 outline-none transition-all hover:border-b-2 hover:border-gray-400 focus:border-none placeholder:text-primary-700/90"
       {@attach fromAction(shortcut, () => ({
         shortcut: { key: 'Enter' },
         onShortcut: (event) => event.currentTarget.blur(),

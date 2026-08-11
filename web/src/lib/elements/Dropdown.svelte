@@ -165,10 +165,10 @@
           onclick={() => !renderedOption.disabled && handleSelectOption(option)}
         >
           {#if isEqual(selectedOption, option)}
-            <div class="text-primary">
+            <div class="text-primary-700">
               <Icon icon={mdiCheck} size="24" />
             </div>
-            <p class="justify-self-start text-primary">
+            <p class="justify-self-start text-primary-700">
               {renderedOption.title}
             </p>
           {:else}

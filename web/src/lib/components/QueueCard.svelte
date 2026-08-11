@@ -52,7 +52,7 @@
       <QueueCardBadge color="success">{$t('active')}</QueueCardBadge>
     {/if}
     <div class="flex flex-col gap-2 p-5 sm:p-7 md:p-9">
-      <div class="flex items-center gap-2 text-xl font-semibold text-primary">
+      <div class="flex items-center gap-2 text-xl font-semibold text-primary-700">
         <Link class="flex items-center gap-2 hover:underline" href={Route.viewQueue(queue)} underline={false}>
           <Icon {icon} size="1.25em" class="hidden shrink-0 sm:block" />
           <span>{transformToTitleCase(title)}</span>

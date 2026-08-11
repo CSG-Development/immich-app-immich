@@ -30,8 +30,10 @@
   );
 </script>
 
-<div class="h-full flex flex-col">
-  <div class="flex h-16 w-full justify-between items-center border-b py-2 px-4 md:px-2">
+<div class="relative h-full min-h-0 overflow-hidden bg-bg">
+  <div
+    class="relative flex h-16 w-full shrink-0 items-center justify-between border-b immich-border bg-bg py-2 px-4 md:px-2"
+  >
     <Breadcrumbs items={breadcrumbs} separator={mdiSlashForward} />
 
     {#if enabledActions.length > 0}
@@ -41,7 +43,7 @@
             <Button
               variant="ghost"
               size="small"
-              color={action.color ?? 'secondary'}
+              color={action.color ?? 'primary'}
               leadingIcon={action.icon}
               onclick={() => action.onAction(action)}
               title={action.data?.title}
@@ -55,7 +57,7 @@
       <ContextMenuButton aria-label={$t('open')} items={actions} class="md:hidden" />
     {/if}
   </div>
-  <Scrollable class="grow">
+  <Scrollable class="absolute inset-x-0 top-16 bottom-0 scrollbar-stable bg-bg">
     <Container class="p-2 pb-16" {children} />
   </Scrollable>
 </div>

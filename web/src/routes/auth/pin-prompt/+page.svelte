@@ -47,7 +47,7 @@
             <Icon icon={mdiLockOpenVariantOutline} size="64" class="text-success/90" />
           </div>
         {:else}
-          <div class:text-danger={isBadPinCode} class:text-primary={!isBadPinCode}>
+          <div class:text-danger={isBadPinCode} class:text-primary-700={!isBadPinCode}>
             <Icon icon={mdiLockOutline} size="64" />
           </div>
         {/if}
@@ -56,7 +56,7 @@
 
         <PinInput password autofocus bind:value={pinCode} onComplete={handleUnlockSession} isMasked />
       {:else}
-        <div class="text-primary">
+        <div class="text-primary-700">
           <Icon icon={mdiLockSmart} size="64" />
         </div>
         <p class="text-center text-sm mb-4" style="text-wrap: pretty;">

@@ -48,7 +48,7 @@
     <button
       type="button"
       onclick={() => toggleAlbumGroupCollapsing(group.id)}
-      class="w-full text-start mt-2 pt-2 pe-2 pb-2 rounded-md transition-colors cursor-pointer dark:text-immich-dark-fg hover:text-primary hover:bg-subtle dark:hover:bg-immich-dark-gray flex items-center gap-1"
+      class="w-full text-start mt-2 pt-2 pe-2 pb-2 rounded-md transition-colors cursor-pointer dark:text-immich-dark-fg hover:text-primary-700 hover:bg-subtle dark:hover:bg-immich-dark-gray flex items-center gap-1"
       aria-expanded={!isCollapsed}
     >
       <Icon icon={mdiChevronRight} size="24" class="inline-block transition-all duration-250 {iconRotation}" />

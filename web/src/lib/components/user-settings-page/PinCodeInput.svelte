@@ -113,7 +113,7 @@
 
 <div class="flex flex-col gap-1">
   {#if label}
-    <Label class="text-primary font-medium" for={pinCodeInputElements[0]?.id}>{label}</Label>
+    <Label class="text-primary-700 font-medium" for={pinCodeInputElements[0]?.id}>{label}</Label>
   {/if}
   <div class="flex gap-2">
     {#each { length: pinLength } as _, index (index)}

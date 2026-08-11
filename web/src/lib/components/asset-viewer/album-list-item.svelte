@@ -163,10 +163,10 @@
     >
       {#if multiSelected}
         <div class="rounded-full">
-          <Icon icon={mdiCheckCircle} size="24" class="text-primary" />
+          <Icon icon={mdiCheckCircle} size="24" class="text-primary-700" />
         </div>
       {:else}
-        <Icon icon={mdiCheckCircle} size="24" class="text-gray-300 hover:text-primary/75" />
+        <Icon icon={mdiCheckCircle} size="24" class="text-gray-300 hover:text-primary-700/75" />
       {/if}
     </button>
   {/if}

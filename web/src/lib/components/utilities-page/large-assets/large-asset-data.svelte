@@ -33,6 +33,6 @@
     {asset.originalFileName}
   </div>
   <div class="text-center">
-    <p class="text-primary text-xl font-semibold py-3">{getFileSize(asset, 1)}</p>
+    <p class="text-primary-700 text-xl font-semibold py-3">{getFileSize(asset, 1)}</p>
   </div>
 </div>

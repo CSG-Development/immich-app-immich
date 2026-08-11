@@ -91,13 +91,13 @@
       <div class="flex justify-between w-full place-items-center place-content-center">
         <div class="flex place-items-center place-content-center gap-1">
           <Logo variant="icon" size="tiny" />
-          <p class="flex text-primary font-medium">
+          <p class="flex text-primary-700 font-medium">
             {$t('purchase_button_buy_immich')}
           </p>
         </div>
 
         <div>
-          <Icon icon={mdiInformationOutline} class="hidden sidebar:flex text-primary font-medium" size="18" />
+          <Icon icon={mdiInformationOutline} class="hidden sidebar:flex text-primary-700 font-medium" size="18" />
         </div>
       </div>
     </button>
@@ -133,7 +133,7 @@
         />
       </div>
 
-      <h1 class="text-lg font-medium my-3 text-primary">
+      <h1 class="text-lg font-medium my-3 text-primary-700">
         {$t('purchase_panel_title')}
       </h1>
 

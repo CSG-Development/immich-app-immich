@@ -44,7 +44,7 @@
     <div class="max-w-[95vw]">
       <Card color="secondary">
         <CardHeader class="flex-row justify-between gap-12">
-          <CardTitle tag="h1" size="medium" class="text-primary flex place-items-center gap-4">
+          <CardTitle tag="h1" size="medium" class="text-primary-700 flex place-items-center gap-4">
             <Icon icon={mdiAlarmLight} color="red" size="32" />
             {$t('error_title')}
           </CardTitle>

@@ -21,7 +21,7 @@
   <div class="flex min-w-0 place-items-center justify-between py-2">
     <div class="me-2 min-w-0 w-full">
       <div class="flex h-[26px] place-items-center gap-1">
-        <label class="font-medium text-primary text-xs" for={sliderId}>
+        <label class="font-medium text-primary-700 text-xs" for={sliderId}>
           {item.title}
         </label>
       </div>
