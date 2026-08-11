@@ -1,14 +1,14 @@
 <script lang="ts">
-  import AppDownloadModal from '$lib/modals/AppDownloadModal.svelte';
-  import ObtainiumConfigModal from '$lib/modals/ObtainiumConfigModal.svelte';
+  // import AppDownloadModal from '$lib/modals/AppDownloadModal.svelte';
+  // import ObtainiumConfigModal from '$lib/modals/ObtainiumConfigModal.svelte';
   import { Route } from '$lib/route';
-  import { Icon, modalManager, Text } from '@immich/ui';
+  import { Icon, /* modalManager, */ Text } from '@immich/ui';
   import {
-    mdiCellphoneArrowDownVariant,
+    // mdiCellphoneArrowDownVariant,
     mdiContentDuplicate,
     mdiCrosshairsGps,
     mdiImageSizeSelectLarge,
-    mdiLinkEdit,
+    // mdiLinkEdit,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -30,6 +30,7 @@
     </a>
   {/each}
 </div>
+<!-- Download section — not required for this application
 <br />
 <div class="border border-gray-300 dark:border-immich-dark-gray rounded-3xl pt-1 pb-6 dark:text-white">
   <Text size="tiny" color="muted" fontWeight="medium" class="p-4">{$t('download')}</Text>
@@ -55,3 +56,4 @@
     {$t('app_download_links')}
   </button>
 </div>
+-->
