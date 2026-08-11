@@ -47,20 +47,20 @@
   <div class="flex items-center gap-2">
     <div class="flex items-center justify-center">
       {#if uploadAsset.state === UploadState.PENDING}
-        <Icon icon={mdiLoading} size="24" class="text-primary" title={$t('asset_hashing')} spin progress={25} />
+        <Icon icon={mdiLoading} size="24" class="text-primary-700" title={$t('asset_hashing')} spin progress={25} />
       {:else if uploadAsset.state === UploadState.STARTED}
         {#if uploadAsset.message === $t('asset_uploading')}
           <Icon
             icon={mdiLoading}
             size="24"
-            class="text-primary"
+            class="text-primary-700"
             title={$t('asset_uploading')}
             spin
             progress={25}
           />
         {/if}
         {#if uploadAsset.message === $t('asset_hashing')}
-          <Icon icon={mdiLoading} size="24" class="text-primary" title={$t('asset_hashing')} spin progress={25} />
+          <Icon icon={mdiLoading} size="24" class="text-primary-700" title={$t('asset_hashing')} spin progress={25} />
         {/if}
       {:else if uploadAsset.state === UploadState.ERROR || uploadAsset.state === UploadState.UNSUPPORTED_TYPE}
         <Icon icon={mdiAlertCircle} size="24" class="text-danger" title={String(uploadAsset.error)} />

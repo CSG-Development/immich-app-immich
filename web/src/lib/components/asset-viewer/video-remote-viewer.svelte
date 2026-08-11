@@ -69,7 +69,7 @@
 </script>
 
 <span class="flex items-center space-x-2 text-gray-200 text-2xl font-bold">
-  <Icon icon={mdiCastConnected} class="text-primary" size="36" />
+  <Icon icon={mdiCastConnected} class="text-primary-700" size="36" />
   <span>{$t('connected_to')} {castManager.receiverName}</span>
 </span>
 

@@ -29,7 +29,7 @@
   <a
     href={Route.viewAlbum(album)}
     title={album.albumName}
-    class="flex w-full place-items-center justify-between gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-subtle hover:text-immich-primary dark:text-immich-dark-fg dark:hover:bg-immich-dark-gray dark:hover:text-immich-dark-primary ps-10 group-hover:sm:px-10 md:px-10"
+    class="flex w-full place-items-center justify-between gap-4 rounded-e-full py-3 transition-[padding] delay-100 duration-100 hover:cursor-pointer hover:bg-primary-300/10 hover:text-primary-700 dark:text-immich-dark-fg ps-10 group-hover:sm:px-10 md:px-10"
   >
     <div>
       <div

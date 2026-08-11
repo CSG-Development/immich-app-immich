@@ -85,7 +85,7 @@
       <Button leadingIcon={mdiRefresh} variant="ghost" onclick={reload}>{$t('refresh')}</Button>
     {:else}
       <HStack>
-        <Icon icon={mdiRefresh} color="rgb(var(--immich-ui-primary))" />
+        <Icon icon={mdiRefresh} class="text-primary-700" />
         <Text>{$t('maintenance_restore_library_loading')}</Text>
       </HStack>
     {/if}

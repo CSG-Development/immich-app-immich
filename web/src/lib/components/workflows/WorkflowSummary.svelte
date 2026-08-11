@@ -112,7 +112,7 @@
         <!-- Trigger -->
         <div class="rounded-lg bg-light-100 border p-3">
           <div class="flex items-center gap-2 mb-1">
-            <Icon icon={mdiFlashOutline} size="18" class="text-primary" />
+            <Icon icon={mdiFlashOutline} size="18" class="text-primary-700" />
             <Text size="tiny" fontWeight="semi-bold">{$t('trigger')}</Text>
           </div>
           <p class="text-sm truncate pl-5">{getTriggerName(trigger.type)}</p>

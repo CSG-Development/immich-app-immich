@@ -25,7 +25,7 @@
 
   {#each links as link (link.href)}
     <a href={link.href} class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4">
-      <span><Icon icon={link.icon} class="text-primary" size="24" /> </span>
+      <span><Icon icon={link.icon} class="text-primary-700" size="24" /> </span>
       {link.label}
     </a>
   {/each}
@@ -40,7 +40,7 @@
     class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4"
   >
     <span>
-      <Icon icon={mdiLinkEdit} class="text-immich-primary dark:text-immich-dark-primary" size="24" />
+      <Icon icon={mdiLinkEdit} class="text-primary-700" size="24" />
     </span>
     {$t('obtainium_configurator')}
   </button>
@@ -50,7 +50,7 @@
     class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4"
   >
     <span>
-      <Icon icon={mdiCellphoneArrowDownVariant} class="text-immich-primary dark:text-immich-dark-primary" size="24" />
+      <Icon icon={mdiCellphoneArrowDownVariant} class="text-primary-700" size="24" />
     </span>
     {$t('app_download_links')}
   </button>

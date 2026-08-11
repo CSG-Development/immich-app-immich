@@ -36,10 +36,10 @@
   {#if title || icon}
     <div class="flex gap-2 items-center justify-center w-fit">
       {#if icon}
-        <Icon {icon} size="30" class="text-primary" />
+        <Icon {icon} size="30" class="text-primary-700" />
       {/if}
       {#if title}
-        <p class="text-xl text-primary font-medium">
+        <p class="text-xl text-primary-700 font-medium">
           {title}
         </p>
       {/if}

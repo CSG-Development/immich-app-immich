@@ -106,7 +106,7 @@
         ...seriesOptions,
       },
       {
-        stroke: '#4250af',
+        stroke: '#6EBE49',
         ...seriesOptions,
       },
       {

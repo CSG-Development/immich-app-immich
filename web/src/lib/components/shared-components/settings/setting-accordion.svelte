@@ -82,9 +82,9 @@
     <div>
       <div class="flex gap-2 place-items-center">
         {#if icon}
-          <Icon {icon} class="text-primary" size="24" aria-hidden />
+          <Icon {icon} class="text-primary-700" size="24" aria-hidden />
         {/if}
-        <h2 class="font-medium text-primary">
+        <h2 class="font-medium text-primary-700">
           {title}
         </h2>
       </div>

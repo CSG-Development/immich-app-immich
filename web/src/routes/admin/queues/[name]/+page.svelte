@@ -62,7 +62,7 @@
       <div class="mt-8">
         <Card color="secondary">
           <CardHeader>
-            <div class="flex items-center gap-2 text-primary">
+            <div class="flex items-center gap-2 text-primary-700">
               <Icon icon={mdiClockTimeTwoOutline} size="1.5rem" />
               <CardTitle>{$t('admin.jobs_over_time')}</CardTitle>
             </div>

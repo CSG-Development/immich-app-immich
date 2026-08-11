@@ -669,9 +669,9 @@
                 <button
                   type="button"
                   onclick={() => void handleAddPhotos()}
-                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
+                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary-700 rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
                 >
-                  <span class="text-primary">
+                  <span class="text-primary-700">
                     <Icon icon={mdiPlus} size="24" />
                   </span>
                   <span>{$t('select_photos')}</span>

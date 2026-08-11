@@ -59,7 +59,7 @@
   type="button"
   {onclick}
   class="group rounded-xl p-4 w-full text-left cursor-pointer border-2 {selected
-    ? 'border-primary text-primary'
+    ? 'border-primary text-primary-700'
     : 'border-light-100 hover:border-light-200 text-light-400 hover:text-light-700'}"
 >
   <div class="flex items-center gap-3">

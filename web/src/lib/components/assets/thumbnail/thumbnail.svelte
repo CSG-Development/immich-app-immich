@@ -463,7 +463,7 @@
           <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-zinc-800" />
         {:else if selected}
           <div class="rounded-full bg-[#D9DCEF] dark:bg-[#232932]">
-            <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-primary" />
+            <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-primary-700" />
           </div>
         {:else}
           <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-white/80 hover:text-white" />

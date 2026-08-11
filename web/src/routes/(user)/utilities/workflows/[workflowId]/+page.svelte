@@ -416,9 +416,9 @@
         <Card expandable>
           <CardHeader class="bg-primary-50">
             <div class="flex items-start gap-3">
-              <Icon icon={mdiFlashOutline} size="20" class="mt-1 text-primary" />
+              <Icon icon={mdiFlashOutline} size="20" class="mt-1 text-primary-700" />
               <div class="flex flex-col">
-                <CardTitle class="text-left text-primary">{$t('trigger')}</CardTitle>
+                <CardTitle class="text-left text-primary-700">{$t('trigger')}</CardTitle>
                 <CardDescription>{$t('trigger_description')}</CardDescription>
               </div>
             </div>

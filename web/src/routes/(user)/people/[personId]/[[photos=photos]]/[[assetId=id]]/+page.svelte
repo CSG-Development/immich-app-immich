@@ -493,7 +493,7 @@
                         widthStyle="2.5rem"
                         heightStyle="2.5rem"
                       />
-                      <p class="ms-4 text-primary font-bold">{person.name}</p>
+                      <p class="ms-4 text-primary-700 font-bold">{person.name}</p>
                     </button>
                   {/each}
                 </div>
