@@ -230,6 +230,9 @@ protocol NetworkApi {
   func registerTrustedChain(host: String, chainCertificatesBase64: [String]) throws
   func unregisterTrustedChain(host: String) throws
   func cancelInFlightHttpRequests() throws
+  /// Recreates the shared native URLSession so a fresh Dart client can bind to
+  /// live callbacks after a background isolate was destroyed.
+  func recreateSession() throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -388,6 +391,21 @@ class NetworkApiSetup {
       }
     } else {
       cancelInFlightHttpRequestsChannel.setMessageHandler(nil)
+    }
+    /// Recreates the shared native URLSession so a fresh Dart client can bind to
+    /// live callbacks after a background isolate was destroyed.
+    let recreateSessionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.recreateSession\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      recreateSessionChannel.setMessageHandler { _, reply in
+        do {
+          try api.recreateSession()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      recreateSessionChannel.setMessageHandler(nil)
     }
   }
 }

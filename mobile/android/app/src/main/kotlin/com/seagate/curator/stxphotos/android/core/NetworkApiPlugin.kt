@@ -98,4 +98,9 @@ private class NetworkApiImpl : NetworkApi {
   override fun cancelInFlightHttpRequests() {
     HttpClientManager.getClient().dispatcher.cancelAll()
   }
+
+  override fun recreateSession() {
+    // No-op: Android does not share a URLSession across Flutter engines the way
+    // iOS does, so there is nothing to recreate after a background isolate dies.
+  }
 }
