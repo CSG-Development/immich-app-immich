@@ -12,7 +12,6 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
-import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
@@ -129,17 +128,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
     }
 
     _wasPaused = false;
-
-    // After a background Flutter engine is destroyed, the shared URLSession may
-    // still hold cupertino_http callbacks bound to the dead isolate. Recreate
-    // the session so foreground HTTP works without a cold start.
-    if (CurrentPlatform.isIOS) {
-      try {
-        await _ref.read(apiServiceProvider).refreshConnection();
-      } catch (e, stackTrace) {
-        _log.warning('Failed to refresh HTTP connection on resume', e, stackTrace);
-      }
-    }
 
     final routerStack = _ref.read(appRouterProvider).navigatorKey.currentContext?.router.stack;
 
