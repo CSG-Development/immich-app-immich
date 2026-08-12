@@ -412,6 +412,9 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       await nativeSyncApi?.cancelHashing();
       await backgroundSyncManager?.cancel();
 
+      // Drain in-flight HTTP before the rest of cleanup / native destroyContext.
+      await NetworkRepository.shutdown();
+
       await _drift.close();
       await _driftLogger.close();
 
@@ -591,9 +594,14 @@ Future<void> backgroundSyncNativeEntrypoint() async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
 
+  // Track in-flight HTTP before NetworkRepository.init so cupertino_http
+  // delegates can be drained before engine.destroyContext(). See [DrainingHttpClient].
+  NetworkRepository.enableShutdownTracking();
+
   final (isar, drift, logDB) = await Bootstrap.initDB();
   await Bootstrap.initDomain(isar, drift, logDB, shouldBufferLogs: false, listenStoreUpdates: false);
   await HttpCertPinningManager.ensureInitialized();
+  await NetworkRepository.init();
 
   final remoteAccessDependencies = await initHCDevice(
     httpClientProvider: () => NetworkRepository.client,

@@ -74,6 +74,10 @@ class NetworkApiImpl: NetworkApi {
     URLSessionManager.shared.cancelInFlightRequests()
   }
 
+  func recreateSession() throws {
+    URLSessionManager.shared.recreateSession()
+  }
+
   func setRequestHeaders(headers: [String : String], serverUrls: [String], token: String?) throws {
     URLSessionManager.setServerUrls(serverUrls)
 

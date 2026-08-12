@@ -339,9 +339,14 @@ class BackgroundService {
   }
 
   Future<bool> _onAssetsChanged() async {
+    // Track in-flight HTTP before NetworkRepository.init so cupertino_http
+    // delegates can be drained before engine.destroyContext(). See [DrainingHttpClient].
+    NetworkRepository.enableShutdownTracking();
+
     final (isar, drift, logDb) = await Bootstrap.initDB();
     await Bootstrap.initDomain(isar, drift, logDb, shouldBufferLogs: false, listenStoreUpdates: false);
     await HttpCertPinningManager.ensureInitialized();
+    await NetworkRepository.init();
 
     final remoteAccessDependencies = await initHCDevice(
       httpClientProvider: () => NetworkRepository.client,
@@ -419,6 +424,7 @@ class BackgroundService {
           true == await _backgroundChannel.invokeMethod<bool>("hasContentChanged"));
       return true;
     } finally {
+      await NetworkRepository.shutdown();
       ref.dispose();
     }
   }

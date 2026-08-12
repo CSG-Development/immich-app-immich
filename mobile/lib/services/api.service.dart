@@ -737,6 +737,16 @@ class ApiService implements Authentication {
     _apiClient.client = _httpClient;
   }
 
+  /// Rebuilds the shared native session / Dart client after a background
+  /// isolate may have orphaned cupertino_http callbacks, then re-points OpenAPI.
+  Future<void> refreshConnection() async {
+    await NetworkRepository.refresh();
+    if (_httpClientInitialized) {
+      _syncHttpClientFromRepository();
+    }
+    _apiClient.client = _httpClient;
+  }
+
   @override
   Future<void> applyToParams(List<QueryParam> queryParams, Map<String, String> headerParams) {
     return Future<void>(() {

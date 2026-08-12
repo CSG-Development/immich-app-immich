@@ -51,4 +51,8 @@ abstract class NetworkApi {
   void unregisterTrustedChain(String host);
 
   void cancelInFlightHttpRequests();
+
+  /// Recreates the shared native URLSession so a fresh Dart client can bind to
+  /// live callbacks after a background isolate was destroyed.
+  void recreateSession();
 }
