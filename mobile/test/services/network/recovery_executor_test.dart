@@ -232,7 +232,14 @@ typedef Harness = ({
   RecordingCallbacks callbacks,
 });
 
-Harness _harness(NetworkSnapshot snapshot, {RecoveryPolicy policy = const RecoveryPolicy()}) {
+Harness _harness(
+  NetworkSnapshot snapshot, {
+  RecoveryPolicy policy = const RecoveryPolicy(
+    offWifiOtpGraceDelay: Duration.zero,
+    transportSettleDelay: Duration.zero,
+    preOtpLocalSettleDelay: Duration.zero,
+  ),
+}) {
   final builder = FakeSnapshotBuilder(snapshot);
   final triggers = FakeTriggerService();
   final callbacks = RecordingCallbacks();
@@ -355,7 +362,7 @@ void main() {
       expect(h.callbacks.events, ['reconnectStarted:false', 'connected', 'reconnected']);
     });
 
-    test('soft fail with retry exhausted prompts OTP', () async {
+    test('soft fail with retry exhausted prompts OTP on cold start', () async {
       final h = _harness(_snap(activeEndpoint: null));
       h.triggers.results.add(_failure('stale_local_path_offline'));
       h.triggers.results.add(_failure('no_available_path'));
@@ -369,6 +376,41 @@ void main() {
       expect(h.callbacks.events, ['reconnectStarted:false', 'otp']);
       expect(h.callbacks.otpRetry, isNotNull);
       expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('mid-session soft fail on resume prompts OTP after last-chance miss', () async {
+      final h = _harness(
+        _snap(
+          activeEndpoint: _localEndpoint,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.probeReachable = false;
+      h.triggers.results.add(_failure('stale_local_path_offline'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, contains('otp'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_prompt_otp');
+    });
+
+    test('mid-session soft fail on resume skips OTP when LAN recovers during settle', () async {
+      final h = _harness(
+        _snap(
+          activeEndpoint: _localEndpoint,
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.callbacks.scriptedProbeResults.addAll([false, true]);
+      h.triggers.results.add(_failure('stale_local_path_offline'));
+      h.triggers.results.add(_failure('no_available_path'));
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.callbacks.events, isNot(contains('otp')));
+      expect(h.callbacks.events, contains('connected'));
+      expect(h.executor.lastPlanDebugReason, 'post_fail_cached_reachable');
     });
 
     test('local retry is attempted again on the next independent run', () async {
@@ -459,7 +501,10 @@ void main() {
       // the transport never comes back, so the report stands.
       final h = _harness(
         _snap(transport: TransportKind.none),
-        policy: const RecoveryPolicy(transportSettleDelay: Duration.zero),
+        policy: const RecoveryPolicy(
+          transportSettleDelay: Duration.zero,
+          preOtpLocalSettleDelay: Duration.zero,
+        ),
       );
 
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
@@ -639,19 +684,18 @@ void main() {
     });
   });
 
-  group('RecoveryExecutor off-wifi OTP grace', () {
-    const noGrace = RecoveryPolicy(offWifiOtpGraceDelay: Duration.zero);
+  group('RecoveryExecutor off-wifi settle grace', () {
+    const noGrace = RecoveryPolicy(
+      offWifiOtpGraceDelay: Duration.zero,
+      preOtpLocalSettleDelay: Duration.zero,
+    );
 
     test('retries on wifi when it settles during the grace instead of OTP', () async {
-      // Networks come up cellular-first after airplane: initial decide sees
-      // cellular; after the grace, wifi is present, so recovery re-runs on
-      // wifi (local-first) and no OTP is prompted.
       final h = _harness(
         _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.cellular),
         policy: noGrace,
       );
       h.callbacks.probeReachable = false;
-      // Second build (post-grace) reports wifi.
       h.builder.scriptedBuilds.add(
         _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.cellular),
       );
@@ -670,7 +714,6 @@ void main() {
         _snap(trigger: RecoveryTrigger.connectivityChange, transport: TransportKind.cellular),
         policy: noGrace,
       );
-      // Stays cellular across builds.
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
 
       expect(h.callbacks.events, ['otp']);
@@ -678,14 +721,76 @@ void main() {
     });
 
     test('steady-state cellular api error prompts OTP without waiting', () async {
-      // apiTransportError is not a transport-change trigger, so no grace: OTP
-      // is offered immediately even off wifi.
       final h = _harness(
         _snap(trigger: RecoveryTrigger.apiTransportError, transport: TransportKind.cellular),
       );
       await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.apiTransportError));
 
       expect(h.callbacks.events, ['otp']);
+    });
+
+    test('remoteOnly on resume re-runs local-first when wifi settles during grace', () async {
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.appResume,
+          transport: TransportKind.cellular,
+          remoteAuth: true,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: noGrace,
+      );
+      h.builder.scriptedBuilds.add(
+        _snap(
+          trigger: RecoveryTrigger.appResume,
+          transport: TransportKind.cellular,
+          remoteAuth: true,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+      );
+      h.builder.snapshot = _snap(
+        trigger: RecoveryTrigger.appResume,
+        transport: TransportKind.wifi,
+        remoteAuth: true,
+        activeEndpoint: _localEndpoint,
+        cachedPathType: 'local',
+        hasEstablishedConnectedThisLaunch: true,
+      );
+      h.callbacks.probeReachable = true;
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.appResume));
+
+      expect(h.executor.lastPlanDebugReason, 'cached_endpoint_reachable');
+      expect(h.callbacks.events, contains('connected'));
+      expect(h.triggers.calls, isEmpty);
+    });
+
+    test('remoteOnly on connectivityChange does not wait for wifi settle', () async {
+      // Intentional wifi→cellular must not pay the resume settle delay.
+      final h = _harness(
+        _snap(
+          trigger: RecoveryTrigger.connectivityChange,
+          transport: TransportKind.cellular,
+          remoteAuth: true,
+          activeEndpoint: _localEndpoint,
+          cachedPathType: 'local',
+          hasEstablishedConnectedThisLaunch: true,
+        ),
+        policy: const RecoveryPolicy(
+          offWifiOtpGraceDelay: Duration(seconds: 30),
+          preOtpLocalSettleDelay: Duration.zero,
+        ),
+      );
+      h.triggers.results.add(_remoteSuccess);
+
+      await h.executor.run(const RecoveryEvent(trigger: RecoveryTrigger.connectivityChange));
+
+      expect(h.executor.lastPlanDebugReason, 'off_wifi_remote_only');
+      expect(h.callbacks.reconnectedWith?.pathType?.value, 'remote');
+      expect(h.builder.scriptedBuilds, isEmpty);
     });
   });
 
@@ -695,6 +800,7 @@ void main() {
     const noGrace = RecoveryPolicy(
       offWifiOtpGraceDelay: Duration.zero,
       transportSettleDelay: Duration.zero,
+      preOtpLocalSettleDelay: Duration.zero,
     );
 
     // --- wifi -> wifi -------------------------------------------------------
@@ -1166,7 +1272,10 @@ void main() {
   });
 
   group('RecoveryExecutor resume transport grace', () {
-    const noGrace = RecoveryPolicy(transportSettleDelay: Duration.zero);
+    const noGrace = RecoveryPolicy(
+      transportSettleDelay: Duration.zero,
+      preOtpLocalSettleDelay: Duration.zero,
+    );
 
     test('re-runs recovery when transport settles during the grace', () async {
       // Airplane mode off, then back to the app: the OS still reports no

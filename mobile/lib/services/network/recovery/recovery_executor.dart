@@ -142,6 +142,7 @@ class RecoveryExecutor {
         return;
 
       case PromptRemoteOtp():
+        if (await _reRunIfWifiSettles(snapshot)) return;
         await _promptOtp(snapshot);
         return;
 
@@ -150,6 +151,13 @@ class RecoveryExecutor {
         return;
 
       case ResolvePaths(:final probeMode, :final cheapProbeFirst):
+        // Resume can observe cellular a beat before wifi; connectivityChange
+        // already reflects the settled transport, so do not delay remoteOnly there.
+        if (probeMode == PathProbeMode.remoteOnly &&
+            snapshot.trigger == RecoveryTrigger.appResume &&
+            await _reRunIfWifiSettles(snapshot)) {
+          return;
+        }
         if (cheapProbeFirst) {
           final reachable = await callbacks.probeCachedEndpoint(timeout: policy.cachedProbeTimeout);
           lastSnapshot = snapshot.copyWith(cachedEndpointReachable: reachable);
@@ -212,41 +220,33 @@ class RecoveryExecutor {
     await callbacks.onReconnectionFailed();
   }
 
+  /// Returns true when recovery was re-entered after wifi appeared during grace.
+  Future<bool> _reRunIfWifiSettles(NetworkSnapshot snapshot) async {
+    final trigger = snapshot.trigger;
+    if (snapshot.hasWifi ||
+        (trigger != RecoveryTrigger.connectivityChange && trigger != RecoveryTrigger.appResume)) {
+      return false;
+    }
+    _log.info(
+      '[Recovery] off-wifi: waiting ${policy.offWifiOtpGraceDelay.inMilliseconds}ms for wifi to settle',
+    );
+    await Future<void>.delayed(policy.offWifiOtpGraceDelay);
+    final settled = await snapshotBuilder.build(snapshot.event);
+    lastSnapshot = settled;
+    lastSnapshotAt = DateTime.now();
+    if (!settled.hasWifi) {
+      _log.info('[Recovery] wifi did not settle during grace');
+      return false;
+    }
+    _log.info('[Recovery] wifi settled during grace, retrying recovery');
+    await _run(snapshot.event, allowTransportGrace: false);
+    return true;
+  }
+
   Future<void> _promptOtp(NetworkSnapshot snapshot) async {
     if (snapshot.remoteAuth || snapshot.otpModalShowing) {
       _log.info('[Recovery] OTP prompt skipped reason=$lastPlanDebugReason');
       return;
-    }
-
-    // Networks come up in stages after airplane mode: cellular first, wifi a
-    // moment later. When a transport change / resume lands us off wifi and
-    // about to prompt OTP, give wifi a short grace to appear; if it does,
-    // retry recovery on wifi (local-first) instead of prompting too early.
-    final trigger = snapshot.trigger;
-    final mayWaitForWifi = !snapshot.hasWifi &&
-        (trigger == RecoveryTrigger.connectivityChange || trigger == RecoveryTrigger.appResume);
-    if (mayWaitForWifi) {
-      _log.info('[Recovery] off-wifi OTP: waiting ${policy.offWifiOtpGraceDelay.inMilliseconds}ms for wifi to settle');
-      await Future<void>.delayed(policy.offWifiOtpGraceDelay);
-      final settled = await snapshotBuilder.build(snapshot.event);
-      lastSnapshot = settled;
-      lastSnapshotAt = DateTime.now();
-      if (settled.remoteAuth || settled.otpModalShowing) {
-        _log.info('[Recovery] off-wifi OTP aborted after grace: state changed');
-        return;
-      }
-      if (settled.hasWifi) {
-        _log.info('[Recovery] wifi settled during OTP grace, retrying recovery on wifi');
-        await run(
-          const RecoveryEvent(
-            trigger: RecoveryTrigger.connectivityChange,
-            detail: 'wifi_settled_after_otp_grace',
-            suppressFindingToast: true,
-          ),
-        );
-        return;
-      }
-      _log.info('[Recovery] wifi did not settle during grace, prompting OTP');
     }
 
     _log.info('[Recovery] prompting remote access OTP reason=$lastPlanDebugReason');
@@ -374,21 +374,14 @@ class RecoveryExecutor {
       return;
     }
 
-    // Mid-session automatic probes must not auto-escalate to OTP (spam during
-    // heavy sync). Cold start / pre-connect failures still may — there has been
-    // no successful connect this launch yet. Banner Retry → manualRetry → OTP.
-    final isBackgroundProbe = snapshot.trigger == RecoveryTrigger.apiTransportError ||
-        snapshot.trigger == RecoveryTrigger.healthProbeMiss;
+    // Mid-session health/api probes must not auto-OTP (spam during sync/upload).
+    // appResume / connectivityChange may still OTP — but only after a local
+    // settle + last-chance probe below.
     final suppressOtpForBackgroundProbe =
-        isBackgroundProbe && snapshot.hasEstablishedConnectedThisLaunch;
+        snapshot.hasEstablishedConnectedThisLaunch &&
+        (snapshot.trigger == RecoveryTrigger.apiTransportError ||
+            snapshot.trigger == RecoveryTrigger.healthProbeMiss);
 
-    // A transport flap on the very network that last served a working
-    // connection is a device-side outage (HC or router restarting), not a move
-    // to a network without a local path — remote access is not the answer, the
-    // Retry banner is. Only a positively confirmed identity match suppresses;
-    // an unknown identity still prompts, so a real network switch is never
-    // mistaken for a flap. Manual Retry is not connectivity-driven and stays
-    // able to reach OTP.
     final isSameNetworkOutage =
         snapshot.trigger.isConnectivityDriven && snapshot.isSameNetworkAsLastConnect;
 
@@ -396,13 +389,9 @@ class RecoveryExecutor {
         !snapshot.otpModalShowing &&
         !suppressOtpForBackgroundProbe &&
         !isSameNetworkOutage) {
-      // Airplane / transport flaps: mDNS resolve can fail while the cached LAN
-      // IP is already answering again (sync may even be mid-flight). Last-chance
-      // probe before OTP avoids a false remote-access modal on a live local path.
-      if (await _recoverViaCachedEndpointIfReachable(
+      if (await _recoverViaCachedEndpointBeforeOtp(
         snapshot,
-        reason: 'post_fail_cached_reachable',
-        alreadyProbedThisRun: cachedProbeAlreadyMissed,
+        cachedProbeAlreadyMissed: cachedProbeAlreadyMissed,
       )) {
         return;
       }
@@ -426,6 +415,28 @@ class RecoveryExecutor {
 
     lastPlanDebugReason = 'post_fail_unable_no_email';
     await callbacks.onReconnectionFailed();
+  }
+
+  /// Last chance before OTP: on a live wifi session, settle then probe with the
+  /// full timeout so transient LAN /.local flaps do not open the RA modal.
+  Future<bool> _recoverViaCachedEndpointBeforeOtp(
+    NetworkSnapshot snapshot, {
+    required bool cachedProbeAlreadyMissed,
+  }) async {
+    final settleFirst =
+        snapshot.hasEstablishedConnectedThisLaunch && snapshot.hasWifi && snapshot.knownDevice;
+    if (settleFirst) {
+      _log.info(
+        '[Recovery] pre-OTP: waiting ${policy.preOtpLocalSettleDelay.inMilliseconds}ms for local recovery',
+      );
+      await Future<void>.delayed(policy.preOtpLocalSettleDelay);
+    }
+    return _recoverViaCachedEndpointIfReachable(
+      snapshot,
+      reason: 'post_fail_cached_reachable',
+      // After settle, use the full probe window even if a cheap probe missed earlier.
+      alreadyProbedThisRun: settleFirst ? false : cachedProbeAlreadyMissed,
+    );
   }
 
   Future<void> _publishSuccess(EndpointResolutionResult resolved) async {

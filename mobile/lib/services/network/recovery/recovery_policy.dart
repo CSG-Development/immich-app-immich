@@ -23,6 +23,7 @@ class RecoveryPolicy {
     this.postFailProbeTimeout = const Duration(seconds: 2),
     this.offWifiOtpGraceDelay = const Duration(seconds: 3),
     this.transportSettleDelay = const Duration(milliseconds: 1500),
+    this.preOtpLocalSettleDelay = const Duration(seconds: 2),
   });
 
   final Duration cachedProbeTimeout;
@@ -33,10 +34,8 @@ class RecoveryPolicy {
   /// [cachedProbeTimeout] — the modal should not wait a second full timeout.
   final Duration postFailProbeTimeout;
 
-  /// Grace period before prompting OTP when a transport change / resume lands
-  /// us off wifi. Networks come up in stages after airplane mode (cellular
-  /// first, wifi a moment later); this waits for wifi so a local path can be
-  /// used instead of prompting OTP too early.
+  /// Grace before committing to off-wifi OTP / remoteOnly after a transport
+  /// change or resume. Networks often report cellular first, wifi a moment later.
   final Duration offWifiOtpGraceDelay;
 
   /// Grace period before reporting "no internet" on a resume that lands with
@@ -44,6 +43,10 @@ class RecoveryPolicy {
   /// for a few hundred ms; without the grace a resume in that window flashes a
   /// false offline banner. Applies to appResume only — see RecoveryExecutor.
   final Duration transportSettleDelay;
+
+  /// On an established wifi session, wait before the last-chance probe / OTP so
+  /// transient .local / LAN flaps can recover without a false remote-access modal.
+  final Duration preOtpLocalSettleDelay;
 
   RecoveryDecision decide(NetworkSnapshot snapshot) {
     final trigger = snapshot.trigger;
