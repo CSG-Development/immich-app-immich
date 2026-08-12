@@ -233,6 +233,43 @@ const supportedImageMimeTypes = new Set([
   'video/quicktime',
   'video/webm',
   'video/x-ms-asf',
+  'video/x-ms-wmv',
+  'video/x-ms-asf',
+  'video/x-ms-wm',
+  'video/3gpp',
+  'video/x-msvideo',
+  'video/msvideo',
+  'video/avi',
+  'video/x-flv',
+  'flv-application/octet-stream',
+  'video/flv',
+  'video/mp2t',
+  'video/vnd.dlna.mpeg-tts',
+  'video/mpeg',
+  'video/x-matroska',
+  'video/matroska',
+  'video/quicktime',
+  'video/x-quicktime',
+  'application/quicktime',
+  'video/mts',
+  'video/avchd-stream',
+  'video/vnd.dlna.mpeg-tts',
+  'model/vnd.mts',
+  'application/mxf',
+  'image/x-canon-cr2',
+  'image/cr2',
+  'image/jp2',
+  'image/jpx',
+  'image/jpm',
+  'image/vnd.adobe.photoshop',
+  'image/psd',
+  'image/x-panasonic-raw',
+  'image/x-panasonic-rw2',
+  'image/x-panasonic-raw2',
+  'image/svg+xml',
+  'image/svg-xml',
+  'image/tiff',
+  'image/tif',
 ]);
 
 export const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.includes('Firefox');
@@ -273,7 +310,7 @@ export function isWebSupportedAssetMimeType(type: string): boolean {
     return false;
   }
 
-  return supportedImageMimeTypes.has(type);
+  return supportedImageMimeTypes.has(type.toLowerCase());
 }
 
 export function isWebCompatibleImage(asset: AssetResponseDto): boolean {
