@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/forms/login/curator_login_form.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_access_form.dart';
 
@@ -23,6 +24,8 @@ class LoginPage extends HookConsumerWidget {
     final remoteAccessInitialEmailError = useState<String?>(null);
 
     return Scaffold(
+      backgroundColor:
+          Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface ?? context.colorScheme.surface,
       appBar: isRemoteAccessForm.value
           ? null
           : AppBar(

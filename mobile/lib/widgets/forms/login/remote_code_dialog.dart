@@ -294,7 +294,7 @@ class RemoteCodeModal extends HookWidget {
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.all(Radius.circular(19)),
                         border: Border.all(
-                          color: context.isDarkTheme ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
+                          color: context.colorScheme.primary,
                           width: 2,
                         ),
                         color: Colors.transparent,

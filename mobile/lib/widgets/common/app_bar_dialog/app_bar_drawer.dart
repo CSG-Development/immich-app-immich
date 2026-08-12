@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/backup/backup_state.model.dart';
@@ -18,6 +19,7 @@ import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.da
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/bytes_units.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -36,6 +38,13 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final isLoggingOut = useState(false);
     final isReadonlyModeEnabled = ref.watch(readonlyModeProvider);
+    final chromeSurface = Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface;
+    final isSgTheme =
+        chromeSurface == sgChromeSurfaceLight ||
+        chromeSurface == sgChromeSurfaceDark;
+    final sectionAccentColor = isSgTheme ? chromeSurface! : context.colorScheme.surfaceContainerLowest;
+    final drawerBodyColor =
+        isSgTheme ? context.colorScheme.surface : chromeSurface ?? context.colorScheme.surfaceContainer;
 
     useEffect(
       () {
@@ -213,7 +222,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       return Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: context.colorScheme.surfaceContainerLowest,
+          color: sectionAccentColor,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(8.0),
             topRight: Radius.circular(8.0),
@@ -271,7 +280,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: context.colorScheme.surfaceContainerLowest,
+            color: sectionAccentColor,
           ),
           padding: const EdgeInsets.only(
             top: 10.0,
@@ -321,12 +330,14 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
     );
 
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final panelColor =
+        Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface ?? context.colorScheme.surfaceContainer;
 
     return Drawer(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Container(
-          decoration: BoxDecoration(color: context.colorScheme.surfaceContainer),
+          decoration: BoxDecoration(color: drawerBodyColor),
           child: isLandscape
               ? SingleChildScrollView(
                   child: ConstrainedBox(

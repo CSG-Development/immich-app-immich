@@ -91,9 +91,11 @@ class LocalAuthBottomSheet extends HookConsumerWidget {
                         ? SvgPicture.asset('assets/biom-auth-success.svg', height: 84.0)
                         : isAuthError.value
                         ? SvgPicture.asset('assets/biom-auth-error.svg', height: 84.0)
-                        : Platform.isIOS
-                        ? SvgPicture.asset('assets/biom-auth-fi.svg', height: 84.0)
-                        : SvgPicture.asset('assets/biom-auth-fp.svg', height: 84.0),
+                        : SvgPicture.asset(
+                            Platform.isIOS ? 'assets/biom-auth-fi.svg' : 'assets/biom-auth-fp.svg',
+                            height: 84.0,
+                            colorFilter: ColorFilter.mode(context.colorScheme.primary, BlendMode.srcIn),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12.0),

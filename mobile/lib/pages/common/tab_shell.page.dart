@@ -38,24 +38,24 @@ class _TabShellPageState extends ConsumerState<TabShellPage> {
       NavigationDestination(
         label: 'photos'.tr(),
         icon: const Icon(Icons.photo_library_outlined),
-        selectedIcon: Icon(Icons.photo_library, color: context.primaryColor),
+        selectedIcon: const Icon(Icons.photo_library),
       ),
       NavigationDestination(
         label: 'search'.tr(),
         icon: const Icon(Icons.search_rounded),
-        selectedIcon: Icon(Icons.search, color: context.primaryColor),
+        selectedIcon: const Icon(Icons.search),
         enabled: !isReadonlyModeEnabled,
       ),
       NavigationDestination(
         label: 'albums'.tr(),
         icon: const Icon(Icons.photo_album_outlined),
-        selectedIcon: Icon(Icons.photo_album_rounded, color: context.primaryColor),
+        selectedIcon: const Icon(Icons.photo_album_rounded),
         enabled: !isReadonlyModeEnabled,
       ),
       NavigationDestination(
         label: 'library'.tr(),
         icon: const Icon(Icons.space_dashboard_outlined),
-        selectedIcon: Icon(Icons.space_dashboard_rounded, color: context.primaryColor),
+        selectedIcon: const Icon(Icons.space_dashboard_rounded),
         enabled: !isReadonlyModeEnabled,
       ),
     ];
@@ -184,7 +184,6 @@ class _BottomNavigationBarState extends ConsumerState<_BottomNavigationBar> {
   @override
   Widget build(BuildContext context) {
     final isScreenLandscape = context.orientation == Orientation.landscape;
-
     final isVisible = ref.watch(scrollNotifierProvider).isVisible;
 
     if (hideNavigationBar) {

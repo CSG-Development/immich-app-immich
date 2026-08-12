@@ -24,6 +24,7 @@ import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/album_filter.utils.dart';
 import 'package:immich_mobile/widgets/common/confirm_dialog.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -504,7 +505,14 @@ class _QuickFilterButton extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all(isSelected ? context.colorScheme.primary : Colors.transparent),
+        backgroundColor: WidgetStateProperty.all(
+          isSelected
+              ? context.colorScheme.primary
+              : resolveSgChipBackground(
+                  context,
+                  fallback: Colors.transparent,
+                ),
+        ),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(20)),

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class CuratorHelpPage extends StatelessWidget {
   final String titleKey;
@@ -82,10 +83,13 @@ class CuratorHelpPage extends StatelessWidget {
       ],
     );
 
+    final chromeColor =
+        Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface ?? context.colorScheme.surface;
+
     return Scaffold(
-      backgroundColor: context.colorScheme.surface,
+      backgroundColor: chromeColor,
       appBar: AppBar(
-        backgroundColor: context.colorScheme.surface,
+        backgroundColor: chromeColor,
         title: Text(titleKey.tr()),
         titleTextStyle: context.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
@@ -115,15 +119,21 @@ class CuratorHelpPage extends StatelessWidget {
         },
       ),
       bottomNavigationBar: onRetry != null
-          ? BottomAppBar(
-              color: context.colorScheme.surface,
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 24, vertical: 12),
+          ? SafeArea(
+              minimum: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: Builder(
                 builder: (context) {
-                  final button = FilledButton.icon(
-                    onPressed: onRetry,
-                    icon: null,
-                    label: Text('curator.button_action_retry'.tr()),
+                  // Primary (link/accent green), not CTA elevated — matches design palette.
+                  final button = SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: onRetry,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      child: Text('curator.button_action_retry'.tr()),
+                    ),
                   );
 
                   if (isPortraitMobile) {
@@ -133,10 +143,7 @@ class CuratorHelpPage extends StatelessWidget {
                   return Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 400),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: button,
-                      ),
+                      child: button,
                     ),
                   );
                 },
@@ -146,4 +153,3 @@ class CuratorHelpPage extends StatelessWidget {
     );
   }
 }
-

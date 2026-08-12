@@ -67,20 +67,20 @@ class TabControllerPage extends HookConsumerWidget {
         icon: const Icon(Icons.photo_library_outlined),
         selectedIcon: buildIcon(
           isProcessing: isRefreshingAssets,
-          icon: Icon(Icons.photo_library, color: context.primaryColor),
+          icon: Icon(Icons.photo_library, color: context.colorScheme.primary),
         ),
       ),
       NavigationDestination(
         label: 'search'.tr(),
         icon: const Icon(Icons.search_rounded),
-        selectedIcon: Icon(Icons.search, color: context.primaryColor),
+        selectedIcon: Icon(Icons.search, color: context.colorScheme.primary),
       ),
       NavigationDestination(
         label: 'albums'.tr(),
         icon: const Icon(Icons.photo_album_outlined),
         selectedIcon: buildIcon(
           isProcessing: isRefreshingRemoteAlbums,
-          icon: Icon(Icons.photo_album_rounded, color: context.primaryColor),
+          icon: Icon(Icons.photo_album_rounded, color: context.colorScheme.primary),
         ),
       ),
       NavigationDestination(
@@ -88,7 +88,7 @@ class TabControllerPage extends HookConsumerWidget {
         icon: const Icon(Icons.space_dashboard_outlined),
         selectedIcon: buildIcon(
           isProcessing: isRefreshingAssets,
-          icon: Icon(Icons.space_dashboard_rounded, color: context.primaryColor),
+          icon: Icon(Icons.space_dashboard_rounded, color: context.colorScheme.primary),
         ),
       ),
     ];
@@ -99,8 +99,7 @@ class TabControllerPage extends HookConsumerWidget {
         context: context,
         child: NavigationBar(
           selectedIndex: tabsRouter.activeIndex,
-          onDestinationSelected: (index) =>
-              onNavigationSelected(tabsRouter, index),
+          onDestinationSelected: (index) => onNavigationSelected(tabsRouter, index),
           destinations: navigationDestinations,
         ),
       );

@@ -61,8 +61,22 @@ class BootstrapErrorWidget extends StatelessWidget {
           supportedLocales: lCtx.supportedLocales,
           locale: lCtx.locale,
           themeMode: ThemeMode.system,
-          darkTheme: getThemeData(colorScheme: immichTheme.dark, locale: lCtx.locale),
-          theme: getThemeData(colorScheme: immichTheme.light, locale: lCtx.locale),
+          darkTheme: getThemeData(
+            colorScheme: immichTheme.dark,
+            locale: lCtx.locale,
+            ctaColor: immichTheme.ctaColor,
+            ctaPressedColor: immichTheme.ctaPressedColor,
+            timelineSurface: immichTheme.timelineSurfaceDark,
+            chromeSurface: immichTheme.chromeSurfaceDark,
+          ),
+          theme: getThemeData(
+            colorScheme: immichTheme.light,
+            locale: lCtx.locale,
+            ctaColor: immichTheme.ctaColor,
+            ctaPressedColor: immichTheme.ctaPressedColor,
+            timelineSurface: immichTheme.timelineSurfaceLight,
+            chromeSurface: immichTheme.chromeSurfaceLight,
+          ),
           home: Builder(
             builder: (ctx) => Scaffold(
               body: Column(
