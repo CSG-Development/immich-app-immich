@@ -132,7 +132,6 @@ class HcPathResolver {
   DateTime? _lastResolveAt;
   ResolveMode? _lastMode;
   ResolveTrigger? _lastTrigger;
-  int _consecutiveStaleLocalMisses = 0;
 
   Future<void> init() async {
     if (_isInitialized) {
@@ -502,7 +501,7 @@ class HcPathResolver {
       _log.info(
         '[HcPathResolver] fallback abort reason=stale_local_path_offline '
         'endpoint=$endpoint pathType=${_availablePathType ?? '-'} '
-        'invalidate=${stale.shouldInvalidate} misses=$_consecutiveStaleLocalMisses',
+        'invalidate=${stale.shouldInvalidate}',
       );
       if (stale.shouldInvalidate) {
         await invalidatePath(endpoint);
@@ -531,11 +530,9 @@ class HcPathResolver {
 
   Future<({bool shouldFail, bool shouldInvalidate})> _evaluateStaleLocalFallback() async {
     if (_availablePathType != HcPathType.local) {
-      _consecutiveStaleLocalMisses = 0;
       return (shouldFail: false, shouldInvalidate: false);
     }
     if (!await _hasWiFiConnectivity()) {
-      _consecutiveStaleLocalMisses = 0;
       return (shouldFail: true, shouldInvalidate: true);
     }
     final endpoint = _availablePath;
@@ -553,20 +550,11 @@ class HcPathResolver {
       remoteProvider: _remoteProvider,
     ).getAbout(baseUrl);
     if (about != null) {
-      _consecutiveStaleLocalMisses = 0;
       return (shouldFail: false, shouldInvalidate: false);
     }
-    _consecutiveStaleLocalMisses++;
-    _log.info(
-      '[HcPathResolver] stale local probe miss '
-      'count=$_consecutiveStaleLocalMisses endpoint=$endpoint',
-    );
-    // First miss: soft-fail without wiping cache so local retry can reuse it.
-    // Second consecutive miss: invalidate.
-    return (
-      shouldFail: true,
-      shouldInvalidate: _consecutiveStaleLocalMisses >= 2,
-    );
+    // Keep cached local for soft-retry / last-chance probe.
+    _log.info('[HcPathResolver] stale local probe miss endpoint=$endpoint');
+    return (shouldFail: true, shouldInvalidate: false);
   }
 
   Future<void> invalidateLocalPathIfOffline() async {
@@ -747,7 +735,6 @@ class HcPathResolver {
   Future<void> setAvailablePath(String endpoint, {String? pathType}) async {
     _availablePath = endpoint;
     _persistPathType(pathType);
-    _consecutiveStaleLocalMisses = 0;
     await _persist();
   }
 
@@ -756,7 +743,6 @@ class HcPathResolver {
       _log.info('[HcPathResolver] invalidatePath endpoint=$endpoint pathType=${_availablePathType ?? '-'}');
       _availablePath = null;
       _availablePathType = null;
-      _consecutiveStaleLocalMisses = 0;
     }
     await _persist();
   }
@@ -768,7 +754,6 @@ class HcPathResolver {
     _lastResolveAt = null;
     _lastMode = null;
     _lastTrigger = null;
-    _consecutiveStaleLocalMisses = 0;
     await _persist();
   }
 
