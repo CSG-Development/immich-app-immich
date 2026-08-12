@@ -1,14 +1,5 @@
 import SQLiteData
 
-struct Endpoint: Codable {
-  let url: URL
-  let status: Status
-
-  enum Status: String, Codable {
-    case loading, valid, error, unknown
-  }
-}
-
 enum StoreKey: Int, CaseIterable, QueryBindable {
   // MARK: - Int
   case _version = 0
@@ -59,16 +50,8 @@ enum StoreKey: Int, CaseIterable, QueryBindable {
   static let customHeaders = Typed<[String: String]>(rawValue: ._customHeaders)
   case _primaryColor = 128
   static let primaryColor = Typed<String>(rawValue: ._primaryColor)
-  case _preferredWifiName = 133
-  static let preferredWifiName = Typed<String>(rawValue: ._preferredWifiName)
-
-  // MARK: - Endpoint
-  case _externalEndpointList = 135
-  static let externalEndpointList = Typed<[Endpoint]>(rawValue: ._externalEndpointList)
 
   // MARK: - URL
-  case _localEndpoint = 134
-  static let localEndpoint = Typed<URL>(rawValue: ._localEndpoint)
   case _serverUrl = 10
   static let serverUrl = Typed<URL>(rawValue: ._serverUrl)
 
@@ -123,8 +106,7 @@ enum StoreKey: Int, CaseIterable, QueryBindable {
   static let colorfulInterface = Typed<Bool>(rawValue: ._colorfulInterface)
   case _syncAlbums = 131
   static let syncAlbums = Typed<Bool>(rawValue: ._syncAlbums)
-  case _autoEndpointSwitching = 132
-  static let autoEndpointSwitching = Typed<Bool>(rawValue: ._autoEndpointSwitching)
+  // Store IDs 132–135 reserved (removed Immich auto endpoint switching keys)
   case _loadOriginalVideo = 136
   static let loadOriginalVideo = Typed<Bool>(rawValue: ._loadOriginalVideo)
   case _manageLocalMediaAndroid = 137
