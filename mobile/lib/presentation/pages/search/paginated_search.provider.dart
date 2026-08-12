@@ -86,6 +86,34 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
     _assetCountController.add(0);
   }
 
+  /// Removes assets from the in-memory search results (e.g. after trash/delete).
+  void removeAssets(Iterable<String> ids) {
+    if (ids.isEmpty || state.assets.isEmpty) {
+      return;
+    }
+
+    final idSet = ids.toSet();
+    final assets = state.assets
+        .where((asset) {
+          final remoteId = asset.remoteId;
+          final localId = asset.localId;
+          return (remoteId == null || !idSet.contains(remoteId)) && (localId == null || !idSet.contains(localId));
+        })
+        .toList(growable: false);
+
+    if (assets.length == state.assets.length) {
+      return;
+    }
+
+    state = SearchState(
+      assets: assets,
+      nextPage: state.nextPage,
+      isLoading: state.isLoading,
+      error: state.error,
+    );
+    _assetCountController.add(assets.length);
+  }
+
   @override
   void dispose() {
     _assetCountController.close();

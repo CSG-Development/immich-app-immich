@@ -6,6 +6,7 @@ import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/asset_grid/permanent_delete_dialog.dart';
@@ -26,6 +27,16 @@ class DeletePermanentActionButton extends ConsumerWidget {
       return;
     }
 
+    if (ref.read(connectionStateProvider).isDisconnected) {
+      ImmichToast.show(
+        context: context,
+        msg: 'curator.network.no_internet'.t(context: context),
+        gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
+      );
+      return;
+    }
+
     final count = source == ActionSource.viewer ? 1 : ref.read(multiSelectProvider).selectedAssets.length;
     final confirm =
         await showDialog<bool>(
@@ -35,11 +46,11 @@ class DeletePermanentActionButton extends ConsumerWidget {
         false;
     if (!confirm) return;
 
-    if (source == ActionSource.viewer) {
+    final result = await ref.read(actionProvider.notifier).deleteRemoteAndLocal(source);
+
+    if (source == ActionSource.viewer && result.success) {
       EventStream.shared.emit(const ViewerReloadAssetEvent());
     }
-
-    final result = await ref.read(actionProvider.notifier).deleteRemoteAndLocal(source);
 
     if (!context.mounted) return;
 
