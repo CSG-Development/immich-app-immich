@@ -1,5 +1,9 @@
 import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
+
+vi.mock('$lib/utils/sw-messaging', () => ({
+  cancelImageUrl: vi.fn(),
+}));
 
 describe('ImageThumbnail component', () => {
   beforeAll(() => {
@@ -8,15 +12,17 @@ describe('ImageThumbnail component', () => {
     }));
   });
 
-  it('shows thumbhash while image is loading', () => {
-    const sut = render(ImageThumbnail, {
+  it('keeps alt empty until the image has loaded', async () => {
+    const { baseElement } = render(ImageThumbnail, {
       url: 'http://localhost/img.png',
       altText: 'test',
-      base64ThumbHash: '1QcSHQRnh493V4dIh4eXh1h4kJUI',
       widthStyle: '250px',
     });
 
-    const thumbhash = sut.getByTestId('thumbhash');
-    expect(thumbhash).not.toBeFalsy();
+    const img = baseElement.querySelector('img')!;
+    expect(img.getAttribute('alt')).toBe('');
+
+    await fireEvent.load(img);
+    expect(img.getAttribute('alt')).toBe('test');
   });
 });

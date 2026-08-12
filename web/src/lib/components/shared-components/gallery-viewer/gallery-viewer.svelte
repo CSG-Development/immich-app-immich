@@ -61,6 +61,8 @@
 
   const navigationAssets = $derived(viewerAssets ?? assets);
 
+  const timelineAssets = $derived(assets.map((asset) => toTimelineAsset(asset)));
+
   const geometry = $derived(
     getJustifiedLayoutFromAssets(assets, {
       spacing: 2,
@@ -362,9 +364,9 @@
     style:height={geometry.containerHeight + 'px'}
     style:width={geometry.containerWidth + 'px'}
   >
-    {#each assets as asset, i (asset.id + '-' + i)}
+    {#each timelineAssets as currentAsset, i (currentAsset.id)}
       {#if isIntersecting(i)}
-        {@const currentAsset = toTimelineAsset(asset)}
+        {@const sourceAsset = assets[i]}
         <div class="absolute" style:overflow="clip" style={getStyle(i)}>
           <Thumbnail
             readonly={disableAssetSelect}
@@ -373,10 +375,10 @@
                 handleSelectAssets(currentAsset);
                 return;
               }
-              void navigateToAsset(asset);
+              void navigateToAsset(sourceAsset);
             }}
             onSelect={() => handleSelectAssets(currentAsset)}
-            onPreview={assetInteraction.selectionActive ? () => void navigateToAsset(asset) : undefined}
+            onPreview={assetInteraction.selectionActive ? () => void navigateToAsset(sourceAsset) : undefined}
             onMouseEvent={() => assetMouseEventHandler(currentAsset)}
             {showArchiveIcon}
             asset={currentAsset}
@@ -385,11 +387,11 @@
             thumbnailWidth={geometry.getWidth(i)}
             thumbnailHeight={geometry.getHeight(i)}
           />
-          {#if showAssetName && !isTimelineAsset(asset)}
+          {#if showAssetName && sourceAsset && !isTimelineAsset(sourceAsset)}
             <div
               class="absolute text-center p-1 text-xs font-mono font-semibold w-full bottom-0 bg-linear-to-t bg-slate-50/75 dark:bg-slate-800/75 overflow-clip text-ellipsis whitespace-pre-wrap"
             >
-              {asset.originalFileName}
+              {sourceAsset.originalFileName}
             </div>
           {/if}
         </div>
