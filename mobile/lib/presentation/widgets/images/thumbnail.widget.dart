@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
+import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
@@ -60,6 +63,9 @@ class _ThumbnailState extends State<Thumbnail> with SingleTickerProviderStateMix
   ImageStreamListener? _imageStreamListener;
   ImageStream? _thumbhashStream;
   ImageStreamListener? _thumbhashStreamListener;
+  StreamSubscription<RemoteImagesInvalidateEvent>? _invalidateSubscription;
+  /// True only after the main [imageProvider] decoded (not thumbhash placeholder).
+  bool _didLoadRemoteImage = false;
 
   static final _gradientCache = <ColorScheme, Gradient>{};
 
@@ -69,7 +75,28 @@ class _ThumbnailState extends State<Thumbnail> with SingleTickerProviderStateMix
     _fadeController = AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
     _fadeController.addStatusListener(_onAnimationStatusChanged);
+    _invalidateSubscription = EventStream.shared.listen(_onRemoteImagesInvalidated);
     _loadImage();
+  }
+
+  void _onRemoteImagesInvalidated(RemoteImagesInvalidateEvent _) {
+    // Keep already-decoded remote tiles; retry thumbhash-only / failed ones.
+    if (!mounted || _didLoadRemoteImage || widget.imageProvider == null) {
+      return;
+    }
+    unawaited(_retryUnresolvedImage());
+  }
+
+  Future<void> _retryUnresolvedImage() async {
+    final provider = widget.imageProvider;
+    if (provider == null || !mounted || _didLoadRemoteImage) {
+      return;
+    }
+    await provider.evict();
+    if (!mounted || _didLoadRemoteImage) {
+      return;
+    }
+    _loadFromImageProvider();
   }
 
   void _onAnimationStatusChanged(AnimationStatus status) {
@@ -139,6 +166,7 @@ class _ThumbnailState extends State<Thumbnail> with SingleTickerProviderStateMix
             _previousImage = null;
           }
           _providerImage = imageInfo.image;
+          _didLoadRemoteImage = true;
         });
       },
       onError: (exception, stackTrace) {
@@ -180,6 +208,7 @@ class _ThumbnailState extends State<Thumbnail> with SingleTickerProviderStateMix
         _previousImage?.dispose();
         _previousImage = null;
       }
+      _didLoadRemoteImage = false;
       _loadFromImageProvider();
     }
 
@@ -233,6 +262,7 @@ class _ThumbnailState extends State<Thumbnail> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
+    _invalidateSubscription?.cancel();
     _fadeController.removeStatusListener(_onAnimationStatusChanged);
     _fadeController.dispose();
     _stopListeningToStream();

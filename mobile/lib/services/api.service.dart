@@ -8,6 +8,8 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
+import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
@@ -439,6 +441,11 @@ class ApiService implements Authentication {
         // domains match the active host (getServerUrls reads from Store). Runs on
         // a no-op switch too: the session may have changed while the host did not.
         await updateHeaders();
+
+        // Include no-op reconnects (same host after a drop): unfinished tiles may
+        // have failed with timeouts while the path was unreachable. Thumbnail
+        // widgets only re-fetch when the remote image never decoded.
+        EventStream.shared.emit(const RemoteImagesInvalidateEvent());
 
         stopwatch.stop();
         _log.info(

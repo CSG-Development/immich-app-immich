@@ -13,12 +13,22 @@ import 'package:openapi/api.dart';
 
 class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
     with CancellableImageProviderMixin<RemoteImageProvider> {
-  final String url;
+  /// Absolute URL for one-off remote images (faces, album covers, etc.).
+  final String? _fixedUrl;
 
-  RemoteImageProvider({required this.url});
+  /// When set, the thumbnail URL is resolved at load time from [StoreKey.serverEndpoint]
+  /// so endpoint switches (local ↔ remote) do not keep a stale host.
+  final String? assetId;
+  final String? thumbhash;
+
+  RemoteImageProvider({required String url}) : _fixedUrl = url, assetId = null, thumbhash = null;
 
   RemoteImageProvider.thumbnail({required String assetId, required String thumbhash})
-    : url = getThumbnailUrlForRemoteId(assetId, thumbhash: thumbhash);
+    : assetId = assetId,
+      thumbhash = thumbhash,
+      _fixedUrl = null;
+
+  String get url => _fixedUrl ?? getThumbnailUrlForRemoteId(assetId!, thumbhash: thumbhash);
 
   @override
   Future<RemoteImageProvider> obtainKey(ImageConfiguration configuration) {
@@ -45,14 +55,15 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is RemoteImageProvider) {
-      return url == other.url;
+    if (other is! RemoteImageProvider) return false;
+    if (assetId != null || other.assetId != null) {
+      return assetId == other.assetId && thumbhash == other.thumbhash;
     }
-    return false;
+    return _fixedUrl == other._fixedUrl;
   }
 
   @override
-  int get hashCode => url.hashCode;
+  int get hashCode => assetId != null ? Object.hash(assetId, thumbhash) : _fixedUrl.hashCode;
 }
 
 class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImageProvider>
