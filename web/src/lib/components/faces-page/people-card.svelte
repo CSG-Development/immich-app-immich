@@ -6,6 +6,7 @@
   import { beforeNavigate } from '$app/navigation';
   import { clickOutside } from '$lib/actions/click-outside';
   import { focusOutside } from '$lib/actions/focus-outside';
+  import { longPress } from '$lib/actions/long-press';
   import { portal } from '$lib/elements/Portal.svelte';
   import { Route } from '$lib/route';
   import { getPersonActions } from '$lib/services/person.service';
@@ -41,6 +42,7 @@
   let menuReady = $state(false);
   let menuElement: HTMLElement | undefined = $state();
   let triggerRect: DOMRect | undefined = $state();
+  let cardElement: HTMLElement | undefined = $state();
 
   const menuOpen = $derived(openPersonId === person.id);
 
@@ -145,20 +147,43 @@
     menuReady = true;
   };
 
-  const openMenu = (event: MouseEvent) => {
-    event.stopPropagation();
-    event.preventDefault();
-
-    if (menuOpen) {
+  const openMenuAt = (anchor: DOMRect, { toggle = false } = {}) => {
+    if (menuOpen && toggle) {
       closeMenu();
       return;
     }
 
-    triggerRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    if (menuOpen) {
+      return;
+    }
+
+    triggerRect = anchor;
     menuPosition = { left: 0, top: 0, maxHeight: undefined };
     menuReady = false;
     openPersonId = person.id;
     showVerticalDots = true;
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const getMenuAnchor = () => {
+    const button = cardElement?.querySelector<HTMLElement>('[aria-haspopup="menu"]');
+    return button?.getBoundingClientRect() ?? cardElement?.getBoundingClientRect() ?? new DOMRect();
+  };
+
+  const openMenu = (event: MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    openMenuAt((event.currentTarget as HTMLElement).getBoundingClientRect(), { toggle: true });
+  };
+
+  const openMenuFromGesture = () => {
+    openMenuAt(getMenuAnchor());
+  };
+
+  const onContextMenu = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openMenuAt(new DOMRect(event.clientX, event.clientY, 0, 0));
   };
 
   $effect(() => {
@@ -196,17 +221,21 @@
 </script>
 
 <div
+  bind:this={cardElement}
   id="people-card"
   class="relative"
   onmouseenter={() => (showVerticalDots = true)}
   onmouseleave={hideDots}
+  oncontextmenu={onContextMenu}
   role="group"
   use:focusOutside={{ onFocusOut: hideDots }}
 >
   <a
     href={Route.viewPerson(person, { previousRoute: Route.people() })}
+    class="select-none"
     draggable="false"
     onfocus={() => (showVerticalDots = true)}
+    use:longPress={{ onLongPress: openMenuFromGesture }}
   >
     <div class="w-39 h-full rounded-xl brightness-95 filter">
       <ImageThumbnail
@@ -250,7 +279,7 @@
 {#if menuOpen}
   <div
     bind:this={menuElement}
-    class="fixed z-[9999] overflow-y-auto immich-scrollbar rounded-xl border border-immich-gray-border bg-immich-bg-gray-mt py-1 shadow-lg dark:border-immich-dark-gray-border dark:bg-immich-dark-gray-card"
+    class="fixed z-[9999] overflow-y-auto immich-scrollbar rounded-xl border border-immich-gray-border bg-immich-bg-gray-mt py-1 shadow-lg select-none dark:border-immich-dark-gray-border dark:bg-immich-dark-gray-card"
     class:invisible={!menuReady}
     style:left="{menuPosition.left}px"
     style:top="{menuPosition.top}px"
