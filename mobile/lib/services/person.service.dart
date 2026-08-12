@@ -30,7 +30,7 @@ class PersonService {
       return await _personApiRepository.getAll(closestPersonId: closestPersonId);
     } catch (error, stack) {
       _log.severe("Error while fetching curated people", error, stack);
-      return [];
+      rethrow;
     }
   }
 

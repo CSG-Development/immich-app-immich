@@ -50,6 +50,15 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   bool _isConnectionError(dynamic error) => isTransportFailure(error);
 
   static bool isTransportFailure(Object error) {
+    // PerformanceHttpClient wraps sockets/TLS as ApiException — unwrap those.
+    if (error is ApiException) {
+      final inner = error.innerException;
+      if (inner != null && isTransportFailure(inner)) {
+        return true;
+      }
+      final message = error.message ?? '';
+      return message.contains('Socket operation failed') || message.contains('TLS/SSL communication failed');
+    }
     if (error is SocketException ||
         error is TimeoutException ||
         error is TlsException ||
