@@ -30,7 +30,7 @@
         return;
       }
 
-      if (capturedSource !== undefined) {
+      if (capturedSource !== undefined && !loaded) {
         cancelImageUrl(capturedSource);
       }
 
@@ -42,7 +42,7 @@
 
   onDestroy(() => {
     destroyed = true;
-    if (capturedSource !== undefined) {
+    if (capturedSource !== undefined && !loaded) {
       cancelImageUrl(capturedSource);
     }
   });

@@ -85,10 +85,14 @@
   let mouseOver = $state(false);
   let loaded = $state(false);
   let thumbError = $state(false);
+  let lastThumbhash: string | null | undefined = undefined;
 
-  // When thumbhash arrives after generation, allow the thumbnail to load again.
   $effect(() => {
-    void asset.thumbhash;
+    const thumbhash = asset.thumbhash;
+    if (thumbhash === lastThumbhash) {
+      return;
+    }
+    lastThumbhash = thumbhash;
     loaded = false;
     thumbError = false;
   });
