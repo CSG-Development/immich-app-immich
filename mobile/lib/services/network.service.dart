@@ -20,14 +20,6 @@ class NetworkService {
     return _permissionRepository.requestLocationWhenInUsePermission();
   }
 
-  Future<bool> getLocationAlwaysPermission() {
-    return _permissionRepository.hasLocationAlwaysPermission();
-  }
-
-  Future<bool> requestLocationAlwaysPermission() {
-    return _permissionRepository.requestLocationAlwaysPermission();
-  }
-
   Future<String?> getWifiName() async {
     final canRead = await getLocationWhenInUserPermission();
     if (!canRead) {

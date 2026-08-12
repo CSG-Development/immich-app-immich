@@ -154,8 +154,6 @@ class AuthService {
       Store.delete(StoreKey.assetETag),
       // Keep serverEndpoint/serverVersion so in-flight UI (thumbnails, avatars)
       // does not hit StoreKeyNotFoundException during logout navigation.
-      Store.delete(StoreKey.autoEndpointSwitching),
-      Store.delete(StoreKey.preferredWifiName),
     ]);
   }
 

@@ -285,14 +285,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return true;
   }
 
-  Future<void> saveWifiName(String wifiName) async {
-    await Store.put(StoreKey.preferredWifiName, wifiName);
-  }
-
-  String? getSavedWifiName() {
-    return Store.tryGet(StoreKey.preferredWifiName);
-  }
-
   /// Returns the current server endpoint (with /api) URL from the store
   String? getServerEndpoint() {
     return Store.tryGet(StoreKey.serverEndpoint);

@@ -57,13 +57,8 @@ enum StoreKey<T> {
 
   syncAlbums<bool>._(131),
 
-  // Auto endpoint switching
-  autoEndpointSwitching<bool>._(132),
-  preferredWifiName<String>._(133),
-  localEndpoint<String>._(134),
-  externalEndpointList<String>._(135),
-
   // Video settings
+  // Store IDs 132–135 reserved (removed Immich auto endpoint switching keys)
   loadOriginalVideo<bool>._(136),
   manageLocalMediaAndroid<bool>._(137),
 

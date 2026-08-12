@@ -13,7 +13,6 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -719,18 +718,6 @@ class ApiService implements Authentication {
     final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
     if (serverEndpoint != null && serverEndpoint.isNotEmpty) {
       urls.add(serverEndpoint);
-    }
-    final localEndpoint = Store.tryGet(StoreKey.localEndpoint);
-    if (localEndpoint != null && localEndpoint.isNotEmpty) {
-      urls.add(localEndpoint);
-    }
-    final externalJson = Store.tryGet(StoreKey.externalEndpointList);
-    if (externalJson != null) {
-      final List<dynamic> list = jsonDecode(externalJson);
-      for (final entry in list) {
-        final url = AuxilaryEndpoint.fromJson(entry).url;
-        if (url.isNotEmpty) urls.add(url);
-      }
     }
     return urls;
   }
