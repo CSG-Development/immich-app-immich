@@ -13,18 +13,22 @@ import 'package:immich_mobile/domain/services/timeline.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
 import 'package:immich_mobile/presentation/utils/use_scroll_notifier.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/general_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/search/quick_date_picker.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user_metadata.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/common/feature_check.dart';
+import 'package:immich_mobile/widgets/common/scaffold_error_body.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 import 'package:immich_mobile/widgets/common/tag_picker.dart';
 import 'package:immich_mobile/widgets/search/search_filter/camera_picker.dart';
@@ -103,6 +107,25 @@ class DriftSearchPage extends HookConsumerWidget {
     loadMoreSearchResults() {
       unawaited(ref.read(paginatedSearchProvider.notifier).search(filter.value));
     }
+
+    void maybeRetrySearch() {
+      if (filter.value.isEmpty) return;
+      final searchState = ref.read(paginatedSearchProvider);
+      if (searchState.error == null) return;
+      unawaited(ref.read(paginatedSearchProvider.notifier).search(filter.value));
+    }
+
+    ref.listen(connectionStateProvider, (prev, next) {
+      final cameOnline =
+          prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
+      if (!cameOnline) return;
+      maybeRetrySearch();
+    });
+
+    ref.listen(curatorOsTransportUsableProvider, (prev, next) {
+      if (prev != false || next != true) return;
+      maybeRetrySearch();
+    });
 
     // TODO: Use ref.listen with `fireImmediately` in the new riverpod version.
     useEffect(() {
@@ -757,7 +780,10 @@ class DriftSearchPage extends HookConsumerWidget {
           if (filter.value.isEmpty)
             const _SearchSuggestions()
           else
-            _SearchResultGrid(onScrollEnd: loadMoreSearchResults),
+            _SearchResultGrid(
+              onScrollEnd: loadMoreSearchResults,
+              onRetry: () => unawaited(ref.read(paginatedSearchProvider.notifier).search(filter.value)),
+            ),
         ],
       ),
     );
@@ -775,8 +801,9 @@ String _trOrFallback(BuildContext context, String key, String fallback) {
 
 class _SearchResultGrid extends ConsumerWidget {
   final VoidCallback onScrollEnd;
+  final VoidCallback onRetry;
 
-  const _SearchResultGrid({required this.onScrollEnd});
+  const _SearchResultGrid({required this.onScrollEnd, required this.onRetry});
 
   bool _onScrollUpdateNotification(ScrollNotification notification) {
     final metrics = notification.metrics;
@@ -827,6 +854,14 @@ class _SearchResultGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasAssets = ref.watch(paginatedSearchProvider.select((s) => s.assets.isNotEmpty));
     final isLoading = ref.watch(paginatedSearchProvider.select((s) => s.isLoading));
+    final error = ref.watch(paginatedSearchProvider.select((s) => s.error));
+
+    if (!hasAssets && !isLoading && error != null) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: ScaffoldErrorBody(onRetry: onRetry),
+      );
+    }
 
     if (!hasAssets && !isLoading) {
       return const _SearchNoResults();

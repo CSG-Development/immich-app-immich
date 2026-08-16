@@ -2,8 +2,15 @@ import { cancelImageUrl } from '$lib/utils/sw-messaging';
 
 export function loadImage(src: string, onLoad: () => void, onError: () => void, onStart?: () => void) {
   let destroyed = false;
+  let loaded = false;
 
-  const handleLoad = () => !destroyed && onLoad();
+  const handleLoad = () => {
+    if (destroyed) {
+      return;
+    }
+    loaded = true;
+    onLoad();
+  };
   const handleError = () => !destroyed && onError();
 
   const img = document.createElement('img');
@@ -17,7 +24,10 @@ export function loadImage(src: string, onLoad: () => void, onError: () => void, 
     destroyed = true;
     img.removeEventListener('load', handleLoad);
     img.removeEventListener('error', handleError);
-    cancelImageUrl(src);
+    // Keep completed responses in the service worker pending map for remounts.
+    if (!loaded) {
+      cancelImageUrl(src);
+    }
     img.remove();
   };
 }

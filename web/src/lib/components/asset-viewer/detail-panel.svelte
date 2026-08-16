@@ -356,7 +356,7 @@
         class="flex w-full text-start justify-between place-items-start gap-4 py-4"
         onclick={handleChangeDate}
         title={isOwner ? $t('edit_date') : ''}
-        class:hover:text-primary={isOwner}
+        class:hover:text-primary-700={isOwner}
       >
         <div class="flex gap-4">
           <div>
@@ -417,7 +417,7 @@
         <div class="min-w-0">
           <p class="break-all whitespace-pre-wrap">{asset.originalFileName}</p>
           {#if showAssetPath}
-            <p class="text-xs opacity-50 break-all pb-2 hover:text-primary" transition:slide={{ duration: 250 }}>
+            <p class="text-xs opacity-50 break-all pb-2 hover:text-primary-700" transition:slide={{ duration: 250 }}>
               <!-- eslint-disable-next-line svelte/no-navigation-without-resolve this is supposed to be treated as an absolute/external link -->
               <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap">
                 {asset.originalPath}
@@ -472,7 +472,7 @@
                   model: asset.exifInfo?.model ?? undefined,
                 })}
                 title="{$t('search_for')} {asset.exifInfo.make || ''} {asset.exifInfo.model || ''}"
-                class="hover:text-primary"
+                class="hover:text-primary-700"
               >
                 {asset.exifInfo.make || ''}
                 {asset.exifInfo.model || ''}
@@ -503,7 +503,7 @@
               <a
                 href={Route.search({ lensModel: asset.exifInfo.lensModel })}
                 title="{$t('search_for')} {asset.exifInfo.lensModel}"
-                class="hover:text-primary line-clamp-1"
+                class="hover:text-primary-700 line-clamp-1"
               >
                 {asset.exifInfo.lensModel}
               </a>
@@ -571,7 +571,7 @@
             <a
               href="https://www.openstreetmap.org/?mlat={lat}&mlon={lon}&zoom=13#map=15/{lat}/{lon}"
               target="_blank"
-              class="font-medium text-primary underline focus:outline-none"
+              class="font-medium text-primary-700 underline focus:outline-none"
             >
               {$t('open_in_openstreetmap')}
             </a>

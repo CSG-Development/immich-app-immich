@@ -207,7 +207,7 @@
     {#if !isShowLoadingDone}
       <button
         type="button"
-        class="justify-self-end rounded-lg p-2 text-primary hover:bg-immich-dark-primary hover:dark:bg-immich-dark-primary/50 font-medium"
+        class="justify-self-end rounded-lg p-2 text-primary-700 hover:bg-immich-dark-primary hover:dark:bg-immich-dark-primary/50 font-medium"
         onclick={() => handleEditFaces()}
       >
         {$t('done')}
@@ -341,7 +341,7 @@
                   <div
                     class="flex place-content-center place-items-center rounded-full bg-[#d3d3d3] p-1 transition-all absolute start-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform"
                   >
-                    <Icon color="primary" icon={mdiAccountOffOutline} aria-hidden size="24" />
+                    <Icon class="text-primary-700" icon={mdiAccountOffOutline} aria-hidden size="24" />
                   </div>
                 {/if}
               </div>

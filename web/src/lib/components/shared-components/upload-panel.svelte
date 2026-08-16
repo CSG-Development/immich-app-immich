@@ -186,7 +186,7 @@
           type="button"
           in:scale={{ duration: 250, easing: quartInOut }}
           onclick={() => (showDetail = true)}
-          class="flex h-16 w-16 place-content-center place-items-center rounded-full bg-subtle p-5 text-sm text-primary shadow-lg"
+          class="flex h-16 w-16 place-content-center place-items-center rounded-full bg-subtle p-5 text-sm text-primary-700 shadow-lg"
         >
           <div class="animate-pulse">
             <Icon icon={mdiCloudUploadOutline} size="30" />

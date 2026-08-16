@@ -48,11 +48,18 @@ describe('Image component', () => {
     expect(onError.mock.calls[0][0].message).toBe('Failed to load image: /test.jpg');
   });
 
-  it('calls cancelImageUrl on unmount', () => {
+  it('cancels in-flight request on unmount before load', () => {
     const { unmount } = render(Image, { src: '/test.jpg' });
     expect(cancelImageUrl).not.toHaveBeenCalled();
     unmount();
     expect(cancelImageUrl).toHaveBeenCalledWith('/test.jpg');
+  });
+
+  it('does not cancel after a successful load on unmount', async () => {
+    const { baseElement, unmount } = render(Image, { src: '/test.jpg' });
+    await fireEvent.load(baseElement.querySelector('img')!);
+    unmount();
+    expect(cancelImageUrl).not.toHaveBeenCalled();
   });
 
   it('updates the img src when the src prop changes', async () => {
@@ -66,6 +73,16 @@ describe('Image component', () => {
     expect(baseElement.querySelector('img')!.getAttribute('src')).toBe('/second.jpg');
     expect(onStart).toHaveBeenCalledTimes(2);
     expect(cancelImageUrl).toHaveBeenCalledWith('/first.jpg');
+  });
+
+  it('does not cancel previous url when changing src after load', async () => {
+    const { baseElement, rerender } = render(Image, { src: '/first.jpg' });
+    await fireEvent.load(baseElement.querySelector('img')!);
+    vi.clearAllMocks();
+
+    await rerender({ src: '/second.jpg' });
+
+    expect(cancelImageUrl).not.toHaveBeenCalled();
   });
 
   it('does not call onLoad after unmount', async () => {

@@ -45,10 +45,20 @@ Cancelable<T?> runInIsolateGentle<T>({
         BackgroundIsolateBinaryMessenger.ensureInitialized(token);
         DartPluginRegistrant.ensureInitialized();
 
+        // iOS shares one native URLSession across isolates via cupertino_http.
+        // If this isolate is torn down while a request is in flight, the
+        // request's delegate later fires into the now-dead isolate and aborts
+        // the process. Track in-flight requests so they can be drained before
+        // teardown. Must run before NetworkRepository.init. See [DrainingHttpClient].
+        NetworkRepository.enableShutdownTracking();
+
         final (isar, drift, logDb) = await Bootstrap.initDB();
         await Bootstrap.initDomain(isar, drift, logDb, shouldBufferLogs: false, listenStoreUpdates: false);
 
         await HttpCertPinningManager.ensureInitialized();
+        // ensureInitialized is once-per-isolate and may skip init() on a reused
+        // pooled worker after [NetworkRepository.shutdown] cleared the client.
+        await NetworkRepository.init();
 
         final remoteAccessDependencies = await initHCDevice(
           httpClientProvider: () => NetworkRepository.client,
@@ -79,6 +89,10 @@ Cancelable<T?> runInIsolateGentle<T>({
           log.severe("Error in runInIsolateGentle ${debugLabel == null ? '' : ' for $debugLabel'}", error, stack);
         } finally {
           try {
+            // Abort and drain in-flight HTTP while this isolate is still alive,
+            // so no cupertino_http delegate can call back into it after teardown.
+            await NetworkRepository.shutdown();
+
             await Store.dispose();
             await LogService.I.dispose();
             await logDb.close();

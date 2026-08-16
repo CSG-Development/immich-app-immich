@@ -407,7 +407,7 @@
       >
         {#snippet children({ feature }: { feature: Feature })}
           {#if useLocationPin}
-            <Icon icon={mdiMapMarker} size="50px" class="text-primary -translate-y-[50%]" />
+            <Icon icon={mdiMapMarker} size="50px" class="text-primary-700 -translate-y-[50%]" />
           {:else}
             <img
               src={getAssetMediaUrl({ id: feature.properties?.id })}

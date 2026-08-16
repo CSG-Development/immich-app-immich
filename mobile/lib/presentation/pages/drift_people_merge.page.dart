@@ -14,9 +14,12 @@ import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
+import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/search/people.provider.dart';
+import 'package:immich_mobile/services/api.service.dart' show ConnectionRecoveryInterceptor;
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:immich_mobile/widgets/common/scaffold_error_body.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 
 @RoutePage()
@@ -39,23 +42,46 @@ class DriftPeopleMergePage extends HookConsumerWidget {
     final isLoadingMerge = useState<bool>(false);
 
     final peopleParams = withClosestPersonId.value ? sourcePersonId.value : null;
+    final transportUsable = ref.watch(curatorOsTransportUsableProvider);
     final allPeople = peopleAsync.value ?? [];
     final isLoading = peopleAsync.isLoading;
-    final isError = peopleAsync.error != null;
+    final isError = peopleAsync.hasError;
+    // Offline + empty can still be AsyncData([]) if a failure was swallowed or
+    // wrapped; don't show "no matching people" while the OS has no transport.
+    final isOfflineEmpty = !isLoading && !isError && allPeople.isEmpty && !transportUsable;
+    final shouldShowLoadError = isError || isOfflineEmpty;
 
-    void refreshPeopleIfEmpty() {
-      final async = ref.read(getAllPeopleWithParamsProvider(peopleParams));
-      if (async.isLoading) return;
-      if ((async.value ?? []).isNotEmpty) return;
+    void retryLoadPeople() {
       ref.invalidate(getAllPeopleWithParamsProvider(peopleParams));
     }
 
-    // After recovery the monitor publishes connected — refresh empty list only.
+    bool shouldAutoRetry(AsyncValue<List<PersonDto>> async, {required bool fromOfflineTransport}) {
+      if (async.isLoading) return false;
+      if (async.hasError) {
+        final error = async.error;
+        return error != null && ConnectionRecoveryInterceptor.isTransportFailure(error);
+      }
+      // Empty while OS transport was down — likely a swallowed network failure.
+      return fromOfflineTransport && async.hasValue && async.requireValue.isEmpty;
+    }
+
+    void maybeAutoRetry({required bool fromOfflineTransport}) {
+      final async = ref.read(getAllPeopleWithParamsProvider(peopleParams));
+      if (!shouldAutoRetry(async, fromOfflineTransport: fromOfflineTransport)) return;
+      retryLoadPeople();
+    }
+
+    // Airplane toggle updates OS transport before connectionState reaches connected.
+    ref.listen(curatorOsTransportUsableProvider, (prev, next) {
+      if (prev != false || next != true) return;
+      maybeAutoRetry(fromOfflineTransport: true);
+    });
+
     ref.listen(connectionStateProvider, (prev, next) {
-      final stabilized =
+      final cameOnline =
           prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
-      if (!stabilized) return;
-      refreshPeopleIfEmpty();
+      if (!cameOnline) return;
+      maybeAutoRetry(fromOfflineTransport: false);
     });
 
     List<PersonDto> filteredPeople = allPeople.where((p) {
@@ -264,8 +290,14 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                 ),
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : isError
-                    ? Center(child: Text('error'.tr()))
+                    : shouldShowLoadError
+                    ? Center(
+                        child: ScaffoldErrorBody(
+                          icon: Icons.wifi_off_rounded,
+                          errorMsg: 'curator.network.no_internet'.tr(),
+                          onRetry: retryLoadPeople,
+                        ),
+                      )
                     : filteredPeople.isEmpty
                     ? Center(
                         child: Text(

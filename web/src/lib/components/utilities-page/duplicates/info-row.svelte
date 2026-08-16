@@ -14,14 +14,14 @@
   let { icon, children, borderBottom = true, highlight = false, active = false, title }: Props = $props();
 
   const iconClass = $derived(
-    active ? 'text-white dark:text-white' : highlight ? 'text-primary/75' : 'text-dark/25',
+    active ? 'text-white dark:text-white' : highlight ? 'text-primary-700/75' : 'text-dark/25',
   );
 
   const textClass = $derived(
     highlight
       ? active
         ? 'text-white dark:text-white'
-        : 'text-primary'
+        : 'text-primary-700'
       : active
         ? 'text-white/90 dark:text-white/90'
         : '',

@@ -98,7 +98,7 @@
                 </div>
               </div>
               <p class="whitespace-nowrap text-right">
-                <span class="text-primary font-medium">
+                <span class="text-primary-700 font-medium">
                   {(download.percentage / 100).toLocaleString($locale, { style: 'percent' })}
                 </span>
               </p>

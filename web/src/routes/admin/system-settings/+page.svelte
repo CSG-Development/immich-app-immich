@@ -212,7 +212,7 @@
     {#if featureFlagsManager.value.configFile}
       <Alert color="warning" class="text-dark my-4" title={$t('admin.config_set_by_file')} />
     {/if}
-    <div>
+    <div class="mx-auto mb-4 w-full max-w-200">
       <SearchBar placeholder={$t('search_settings')} bind:name={searchQuery} showLoadingSpinner={false} />
     </div>
     <SettingAccordionState queryParam={QueryParameter.IS_OPEN}>

@@ -8,10 +8,11 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
+import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
-import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -48,6 +49,15 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   bool _isConnectionError(dynamic error) => isTransportFailure(error);
 
   static bool isTransportFailure(Object error) {
+    // PerformanceHttpClient wraps sockets/TLS as ApiException — unwrap those.
+    if (error is ApiException) {
+      final inner = error.innerException;
+      if (inner != null && isTransportFailure(inner)) {
+        return true;
+      }
+      final message = error.message ?? '';
+      return message.contains('Socket operation failed') || message.contains('TLS/SSL communication failed');
+    }
     if (error is SocketException ||
         error is TimeoutException ||
         error is TlsException ||
@@ -440,6 +450,11 @@ class ApiService implements Authentication {
         // a no-op switch too: the session may have changed while the host did not.
         await updateHeaders();
 
+        // Include no-op reconnects (same host after a drop): unfinished tiles may
+        // have failed with timeouts while the path was unreachable. Thumbnail
+        // widgets only re-fetch when the remote image never decoded.
+        EventStream.shared.emit(const RemoteImagesInvalidateEvent());
+
         stopwatch.stop();
         _log.info(
           'endpoint_switch success '
@@ -704,18 +719,6 @@ class ApiService implements Authentication {
     if (serverEndpoint != null && serverEndpoint.isNotEmpty) {
       urls.add(serverEndpoint);
     }
-    final localEndpoint = Store.tryGet(StoreKey.localEndpoint);
-    if (localEndpoint != null && localEndpoint.isNotEmpty) {
-      urls.add(localEndpoint);
-    }
-    final externalJson = Store.tryGet(StoreKey.externalEndpointList);
-    if (externalJson != null) {
-      final List<dynamic> list = jsonDecode(externalJson);
-      for (final entry in list) {
-        final url = AuxilaryEndpoint.fromJson(entry).url;
-        if (url.isNotEmpty) urls.add(url);
-      }
-    }
     return urls;
   }
 
@@ -728,6 +731,16 @@ class ApiService implements Authentication {
       getServerUrls(),
       token: _accessToken ?? Store.tryGet(StoreKey.accessToken),
     );
+    if (_httpClientInitialized) {
+      _syncHttpClientFromRepository();
+    }
+    _apiClient.client = _httpClient;
+  }
+
+  /// Rebuilds the shared native session / Dart client after a background
+  /// isolate may have orphaned cupertino_http callbacks, then re-points OpenAPI.
+  Future<void> refreshConnection() async {
+    await NetworkRepository.refresh();
     if (_httpClientInitialized) {
       _syncHttpClientFromRepository();
     }

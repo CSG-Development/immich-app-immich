@@ -9,6 +9,7 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/asset.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/asset.provider.dart';
@@ -171,6 +172,13 @@ class ActionNotifier extends Notifier<void> {
     ref.read(multiSelectProvider.notifier).reset();
   }
 
+  void _removeFromSearchResults(Iterable<String> ids) {
+    if (ids.isEmpty) {
+      return;
+    }
+    ref.read(paginatedSearchProvider.notifier).removeAssets(ids);
+  }
+
   Future<ActionResult> archive(ActionSource source) async {
     final ids = _getOwnedRemoteIdsForSource(source);
     try {
@@ -223,6 +231,7 @@ class ActionNotifier extends Notifier<void> {
     try {
       await _service.trash(ids);
       _resetMultiSelect();
+      _removeFromSearchResults(ids);
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to trash assets', error, stack);
@@ -289,6 +298,7 @@ class ActionNotifier extends Notifier<void> {
     try {
       await _service.trashRemoteAndDeleteLocal(ids, localIds);
       _resetMultiSelect();
+      _removeFromSearchResults([...ids, ...localIds]);
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logDeleteAuthPath(error);
@@ -303,6 +313,7 @@ class ActionNotifier extends Notifier<void> {
     try {
       await _service.deleteRemoteAndLocal(ids, localIds);
       _resetMultiSelect();
+      _removeFromSearchResults([...ids, ...localIds]);
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logDeleteAuthPath(error);

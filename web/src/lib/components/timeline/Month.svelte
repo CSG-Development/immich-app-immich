@@ -86,7 +86,7 @@
           onkeydown={() => onTimelineDaySelect(timelineDay, assetsSnapshot(timelineDay.getAssets()))}
         >
           {#if isTimelineDaySelected}
-            <Icon icon={mdiCheckCircle} size="24" class="text-primary" />
+            <Icon icon={mdiCheckCircle} size="24" class="text-primary-700" />
           {:else}
             <Icon icon={mdiCircleOutline} size="24" class="text-light-500" />
           {/if}

@@ -157,7 +157,7 @@
           {$t('selected_gps_coordinates')}
         </Text>
         <Text
-          class="rounded-3xl text-xs text-primary px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
+          class="rounded-3xl text-xs text-primary-700 px-2 py-1 transition-all duration-100 ease-in-out {locationUpdated
             ? 'bg-primary/90 text-light font-semibold scale-105'
             : ''}"
           title={`${$t('latitude')}, ${$t('longitude')}`}

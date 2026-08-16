@@ -1,9 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/etag.entity.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/user.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
@@ -33,13 +31,5 @@ class AuthRepository extends DatabaseRepository {
         db.users.clear(),
       ]);
     });
-  }
-
-  bool getEndpointSwitchingFeature() {
-    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? false;
-  }
-
-  String? getPreferredWifiName() {
-    return Store.tryGet(StoreKey.preferredWifiName);
   }
 }

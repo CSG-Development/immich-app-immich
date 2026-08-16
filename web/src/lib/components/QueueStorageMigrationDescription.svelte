@@ -10,7 +10,7 @@
   values={{ template: $t('admin.storage_template_settings') }}
 >
   {#snippet children({ message })}
-    <a href={Route.systemSettings({ isOpen: OpenQueryParam.STORAGE_TEMPLATE })} class="text-primary">
+    <a href={Route.systemSettings({ isOpen: OpenQueryParam.STORAGE_TEMPLATE })} class="text-primary-700">
       {message}
     </a>
   {/snippet}

@@ -39,6 +39,12 @@
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { user } from '$lib/stores/user.store';
   import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import {
+    albumAccessMessageKey,
+    checkAlbumEditAccess,
+    classifyAlbumAccessError,
+    type AlbumEditAccessResult,
+  } from '$lib/utils/album-access';
   import { handleError } from '$lib/utils/handle-error';
   import { isAlbumsRoute, navigate, type AssetGridRouteSearchParams } from '$lib/utils/navigation';
   import {
@@ -95,6 +101,22 @@
 
   const timelineMultiSelectManager = new AssetMultiSelectManager();
 
+  const notifyAlbumAccessResult = (result: Exclude<AlbumEditAccessResult, { kind: 'allowed' }>) => {
+    const message = $t(albumAccessMessageKey(result));
+    if (result.kind === 'view_only') {
+      toastManager.warning(message);
+    } else {
+      toastManager.danger(message);
+    }
+  };
+
+  const handleLostAlbumAccess = async (
+    result: Extract<AlbumEditAccessResult, { kind: 'access_denied' | 'deleted' }>,
+  ) => {
+    notifyAlbumAccessResult(result);
+    await goto(Route.albums());
+  };
+
   const handleFavorite = async () => {
     try {
       await activityManager.toggleLike();
@@ -124,7 +146,11 @@
   };
 
   const refreshAlbum = async () => {
-    album = await getAlbumInfo({ id: album.id, withoutAssets: true });
+    try {
+      album = await getAlbumInfo({ id: album.id, withoutAssets: true });
+    } catch (error) {
+      await handleLostAlbumAccess({ kind: classifyAlbumAccessError(error) });
+    }
   };
 
   const setModeToView = async () => {
@@ -140,6 +166,33 @@
   const handleCloseSelectAssets = async () => {
     timelineMultiSelectManager.clear();
     await setModeToView();
+  };
+
+  const enterSelectAssetsMode = async () => {
+    timelineManager.suspendTransitions = true;
+    viewMode = AlbumPageViewMode.SELECT_ASSETS;
+    oldAt = { at: assetViewerManager.gridScrollTarget?.at };
+    await navigate(
+      { targetRoute: 'current', assetId: null, assetGridRouteSearchParams: { at: null } },
+      { replaceState: true },
+    );
+  };
+
+  const handleAddPhotos = async () => {
+    const access = await checkAlbumEditAccess(album.id, $user.id);
+    if (access.kind === 'allowed') {
+      album = access.album;
+      await enterSelectAssetsMode();
+      return;
+    }
+
+    if (access.kind === 'view_only') {
+      album = access.album;
+      notifyAlbumAccessResult(access);
+      return;
+    }
+
+    await handleLostAlbumAccess(access);
   };
 
   const handleSetVisibility = (assetIds: string[]) => {
@@ -272,11 +325,17 @@
     await refreshAlbum();
   };
 
-  const onAlbumDelete = async ({ id }: AlbumResponseDto) => {
-    if (id === album.id) {
-      await goto(Route.albums());
-      viewMode = AlbumPageViewMode.VIEW;
+  const onAlbumDelete = async (deletedAlbum: AlbumResponseDto) => {
+    if (deletedAlbum.id !== album.id) {
+      return;
     }
+
+    if (deletedAlbum.ownerId !== $user.id) {
+      toastManager.danger($t('album_deleted_by_owner'));
+    }
+
+    await goto(Route.albums());
+    viewMode = AlbumPageViewMode.VIEW;
   };
 
   const onAlbumAddAssets = async ({ albumIds }: { albumIds: string[] }) => {
@@ -303,6 +362,47 @@
       albumUser.user.id === userId ? { ...albumUser, role } : albumUser,
     );
     album = { ...album, albumUsers };
+
+    if (userId === $user.id && role !== AlbumUserRole.Editor && viewMode === AlbumPageViewMode.SELECT_ASSETS) {
+      notifyAlbumAccessResult({ kind: 'view_only', album });
+      void handleCloseSelectAssets();
+    }
+  };
+
+  const onAlbumUserDelete = async ({ albumId, userId }: { albumId: string; userId: string }) => {
+    if (albumId !== album.id) {
+      return;
+    }
+
+    if (userId === $user.id) {
+      await handleLostAlbumAccess({ kind: 'access_denied' });
+      return;
+    }
+
+    await refreshAlbum();
+  };
+
+  const onAlbumAccessLost = async ({
+    albumId,
+    result,
+  }: {
+    albumId: string;
+    result: AlbumEditAccessResult;
+  }) => {
+    if (albumId !== album.id) {
+      return;
+    }
+
+    if (result.kind === 'view_only') {
+      album = result.album;
+      if (viewMode === AlbumPageViewMode.SELECT_ASSETS) {
+        await handleCloseSelectAssets();
+      }
+      return;
+    }
+
+    // Redirect is handled by the emitter for access_denied / deleted.
+    viewMode = AlbumPageViewMode.VIEW;
   };
 
   const onAlbumUpdate = async (newAlbum: AlbumResponseDto) => {
@@ -470,7 +570,8 @@
   {onAlbumAddAssets}
   {onAlbumShare}
   {onAlbumUserUpdate}
-  onAlbumUserDelete={refreshAlbum}
+  {onAlbumUserDelete}
+  {onAlbumAccessLost}
   {onAlbumUpdate}
 />
 <CommandPaletteDefaultProvider name={$t('album')} actions={[AddAssets, Upload, Close]} />
@@ -561,16 +662,16 @@
             </section>
           {/if}
 
-          {#if album.assetCount === 0}
+          {#if album.assetCount === 0 && isEditor}
             <section id="empty-album" class="flex place-content-center place-items-center">
               <div class="w-full max-w-100 md:w-auto">
                 <p class="p-4 uppercase text-xs font-medium">{$t('add_photos')}</p>
                 <button
                   type="button"
-                  onclick={() => (viewMode = AlbumPageViewMode.SELECT_ASSETS)}
-                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
+                  onclick={() => void handleAddPhotos()}
+                  class="w-full md:w-[320px] h-[104px] flex place-items-center gap-6 border px-8 py-8 transition-all hover:bg-gray-100 dark:hover:bg-gray-500/20 hover:text-primary-700 rounded-[20px] bg-immich-gray-file-loader border-immich-gray-border dark:border-immich-dark-gray-border dark:bg-immich-dark-bg-gray"
                 >
-                  <span class="text-primary">
+                  <span class="text-primary-700">
                     <Icon icon={mdiPlus} size="24" />
                   </span>
                   <span>{$t('select_photos')}</span>
@@ -621,15 +722,7 @@
                 shape="round"
                 color="secondary"
                 aria-label={$t('add_photos')}
-                onclick={async () => {
-                  timelineManager.suspendTransitions = true;
-                  viewMode = AlbumPageViewMode.SELECT_ASSETS;
-                  oldAt = { at: assetViewerManager.gridScrollTarget?.at };
-                  await navigate(
-                    { targetRoute: 'current', assetId: null, assetGridRouteSearchParams: { at: null } },
-                    { replaceState: true },
-                  );
-                }}
+                onclick={() => void handleAddPhotos()}
                 icon={mdiImagePlusOutline}
               />
             {/if}

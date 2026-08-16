@@ -55,7 +55,7 @@
     <div class="sm:ms-8 flex flex-col gap-4">
       {#if currentSession}
         <div class="mb-6">
-          <h3 class="mb-3 font-medium text-primary">
+          <h3 class="mb-3 font-medium text-primary-700">
             {$t('current_device')}
           </h3>
           <DeviceCard session={currentSession} />
@@ -63,7 +63,7 @@
       {/if}
       {#if otherSessions.length > 0}
         <div class="mb-6">
-          <h3 class="mb-3 font-medium text-primary">
+          <h3 class="mb-3 font-medium text-primary-700">
             {$t('other_devices')}
           </h3>
           {#each otherSessions as session, index (session.id)}

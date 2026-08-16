@@ -78,7 +78,7 @@
         {#if icon}
           <Icon path={icon} class="text-immich-primary dark:text-immich-dark-primary" size="24" ariaHidden />
         {/if}
-        <h2 class="font-medium text-primary pl-2">
+        <h2 class="font-medium text-primary-700 pl-2">
           {title}
         </h2>
         <div class="bg-immich-bg-gray-mt dark:bg-immich-dark-bg-gray-mt rounded-lg text-xs font-bold px-2 py-1">

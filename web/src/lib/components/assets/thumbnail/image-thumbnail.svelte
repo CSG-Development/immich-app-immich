@@ -45,10 +45,13 @@
 
   let loaded = $state(false);
   let errored = $state(false);
+  let lastUrl: string | undefined = undefined;
 
-  // Retry when the URL changes (e.g. thumbhash arrives after thumbnail generation).
   $effect(() => {
-    void url;
+    if (url === lastUrl) {
+      return;
+    }
+    lastUrl = url;
     loaded = false;
     errored = false;
   });

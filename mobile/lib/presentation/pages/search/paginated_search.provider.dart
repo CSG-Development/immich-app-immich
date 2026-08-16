@@ -27,8 +27,9 @@ class SearchState {
   final List<BaseAsset> assets;
   final int? nextPage;
   final bool isLoading;
+  final Object? error;
 
-  const SearchState({this.assets = const [], this.nextPage = 1, this.isLoading = false});
+  const SearchState({this.assets = const [], this.nextPage = 1, this.isLoading = false, this.error});
 }
 
 final paginatedSearchProvider = StateNotifierProvider<PaginatedSearchNotifier, SearchState>(
@@ -45,35 +46,72 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
   Stream<int> get assetCount => _assetCountController.stream;
 
   Future<void> search(SearchFilter filter) async {
-    if (state.nextPage == null || state.isLoading) return;
+    if (state.isLoading) return;
 
-    final page = state.nextPage!;
+    final page = state.error != null ? (state.nextPage ?? 1) : state.nextPage;
+    if (page == null) return;
+
     final generation = ++_searchGeneration;
     state = SearchState(assets: state.assets, nextPage: page, isLoading: true);
 
-    final result = await _searchService.search(filter, page);
+    try {
+      final result = await _searchService.search(filter, page);
 
-    if (generation != _searchGeneration) {
-      return;
+      if (generation != _searchGeneration) {
+        return;
+      }
+
+      if (result == null) {
+        state = SearchState(assets: state.assets, nextPage: null);
+        return;
+      }
+
+      final existingTags = state.assets.map((a) => a.heroTag).toSet();
+      final newAssets = result.assets.where((a) => !existingTags.contains(a.heroTag)).toList();
+      final assets = [...state.assets, ...newAssets];
+      state = SearchState(assets: assets, nextPage: result.nextPage);
+
+      _assetCountController.add(assets.length);
+    } catch (error, _) {
+      if (generation != _searchGeneration) {
+        return;
+      }
+      state = SearchState(assets: state.assets, nextPage: page, error: error);
     }
-
-    if (result == null) {
-      state = SearchState(assets: state.assets, nextPage: null);
-      return;
-    }
-
-    final existingTags = state.assets.map((a) => a.heroTag).toSet();
-    final newAssets = result.assets.where((a) => !existingTags.contains(a.heroTag)).toList();
-    final assets = [...state.assets, ...newAssets];
-    state = SearchState(assets: assets, nextPage: result.nextPage);
-
-    _assetCountController.add(assets.length);
   }
 
   void clear() {
     _searchGeneration++;
     state = const SearchState();
     _assetCountController.add(0);
+  }
+
+  /// Removes assets from the in-memory search results (e.g. after trash/delete).
+  void removeAssets(Iterable<String> ids) {
+    if (ids.isEmpty || state.assets.isEmpty) {
+      return;
+    }
+
+    final idSet = ids.toSet();
+    final assets = state.assets
+        .where((asset) {
+          final remoteId = asset.remoteId;
+          final localId = asset.localId;
+          return (remoteId == null || !idSet.contains(remoteId)) && (localId == null || !idSet.contains(localId));
+        })
+        .toList(growable: false);
+
+    if (assets.length == state.assets.length) {
+      return;
+    }
+
+    state = SearchState(
+      assets: assets,
+      nextPage: state.nextPage,
+      isLoading: state.isLoading,
+      error: state.error,
+    );
+    _assetCountController.add(assets.length);
   }
 
   @override

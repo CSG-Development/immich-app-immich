@@ -1,14 +1,14 @@
 <script lang="ts">
-  import AppDownloadModal from '$lib/modals/AppDownloadModal.svelte';
-  import ObtainiumConfigModal from '$lib/modals/ObtainiumConfigModal.svelte';
+  // import AppDownloadModal from '$lib/modals/AppDownloadModal.svelte';
+  // import ObtainiumConfigModal from '$lib/modals/ObtainiumConfigModal.svelte';
   import { Route } from '$lib/route';
-  import { Icon, modalManager, Text } from '@immich/ui';
+  import { Icon, /* modalManager, */ Text } from '@immich/ui';
   import {
-    mdiCellphoneArrowDownVariant,
+    // mdiCellphoneArrowDownVariant,
     mdiContentDuplicate,
     mdiCrosshairsGps,
     mdiImageSizeSelectLarge,
-    mdiLinkEdit,
+    // mdiLinkEdit,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -25,11 +25,12 @@
 
   {#each links as link (link.href)}
     <a href={link.href} class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4">
-      <span><Icon icon={link.icon} class="text-primary" size="24" /> </span>
+      <span><Icon icon={link.icon} class="text-primary-700" size="24" /> </span>
       {link.label}
     </a>
   {/each}
 </div>
+<!-- Download section — not required for this application
 <br />
 <div class="border border-gray-300 dark:border-immich-dark-gray rounded-3xl pt-1 pb-6 dark:text-white">
   <Text size="tiny" color="muted" fontWeight="medium" class="p-4">{$t('download')}</Text>
@@ -40,7 +41,7 @@
     class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4"
   >
     <span>
-      <Icon icon={mdiLinkEdit} class="text-immich-primary dark:text-immich-dark-primary" size="24" />
+      <Icon icon={mdiLinkEdit} class="text-primary-700" size="24" />
     </span>
     {$t('obtainium_configurator')}
   </button>
@@ -50,8 +51,9 @@
     class="w-full hover:bg-gray-100 dark:hover:bg-immich-dark-gray flex items-center gap-4 p-4"
   >
     <span>
-      <Icon icon={mdiCellphoneArrowDownVariant} class="text-immich-primary dark:text-immich-dark-primary" size="24" />
+      <Icon icon={mdiCellphoneArrowDownVariant} class="text-primary-700" size="24" />
     </span>
     {$t('app_download_links')}
   </button>
 </div>
+-->

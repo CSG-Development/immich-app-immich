@@ -32,7 +32,7 @@
   in:fade={{ duration: 100 }}
   out:fade={{ duration: 100 }}
   id="account-info-panel"
-  class="absolute z-1 end-[25px] top-[75px] w-[min(360px,100vw-50px)] rounded-lg bg-gray-200 shadow-lg dark:border dark:border-immich-dark-gray dark:bg-immich-dark-bg-gray-mt"
+  class="absolute z-1 end-[25px] top-[75px] w-[min(360px,100vw-50px)] rounded-lg bg-bg shadow-lg dark:border dark:border-immich-dark-gray dark:bg-immich-dark-bg-gray-mt"
   use:focusTrap
 >
   <div
@@ -107,7 +107,7 @@
 
     <button
       type="button"
-      class="text-center mt-4 underline text-xs text-primary"
+      class="text-center mt-4 underline text-xs text-primary-700"
       onclick={async () => {
         onClose();
         if (info) {

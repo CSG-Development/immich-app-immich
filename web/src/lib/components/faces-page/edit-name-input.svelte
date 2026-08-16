@@ -41,7 +41,7 @@
       bind:searchedPeopleLocal={suggestedPeople}
       type="input"
       numberPeopleToSearch={5}
-      inputClass="w-full font-bold gap-2 bg-white text-primary dark:bg-immich-dark-gray-card"
+      inputClass="w-full font-bold gap-2 bg-white text-primary-700 dark:bg-immich-dark-gray-card"
       bind:showLoadingSpinner={isSearchingPeople}
     />
     <Button class="rounded-3xl w-16.25 h-7 font-normal text-sm" type="submit">{$t('done')}</Button>

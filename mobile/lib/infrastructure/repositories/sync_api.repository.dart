@@ -176,7 +176,11 @@ class SyncApiRepository {
       );
       return Future.error(error, stack);
     } finally {
-      client.close();
+      // Never close the shared NetworkRepository.client — that only nulls the
+      // Dart wrapper and leaves init() short-circuiting on the same pointer.
+      if (!identical(client, NetworkRepository.client)) {
+        client.close();
+      }
     }
     stopwatch.stop();
     _logger.info("Remote Sync completed in ${stopwatch.elapsed.inMilliseconds}ms");

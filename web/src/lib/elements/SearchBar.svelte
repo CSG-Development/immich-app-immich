@@ -40,7 +40,7 @@
 <div
   class="flex items-center text-sm {roundedBottom
     ? 'rounded-3xl'
-    : 'rounded-t-lg'} p-2 bg-immich-primary-12 dark:bg-immich-dark-primary-12 gap-2 place-items-center h-10 md:h-full border border-immich-gray-border dark:border-immich-dark-gray-border"
+    : 'rounded-t-lg'} p-2 bg-primary/12 gap-2 place-items-center h-10 md:h-full border border-immich-gray-border dark:border-immich-dark-gray-border"
 >
   <div class="w-14">
     <IconButton

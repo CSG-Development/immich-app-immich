@@ -59,17 +59,44 @@ final Map<ImmichColorPreset, ImmichTheme> _themePresets = {
       dynamicSchemeVariant: DynamicSchemeVariant.neutral,
     ),
   ),
-  ImmichColorPreset.curator: ImmichTheme(
+  // Login-derived SG green:
+  // - primary: focus rings, links, loaders, text/filled buttons (#2F743C / #8CD873)
+  // - cta: elevated CTAs + selection highlights (#6EBE49, pressed #55A72F)
+  ImmichColorPreset.sg: ImmichTheme(
     light: ColorScheme.fromSeed(
-      seedColor: curatorBrandColorLight,
+      seedColor: sgBrandColorLight,
     ).copyWith(
-      primary: curatorBrandColorLight,
+      primary: sgBrandColorLight,
       onSurface: const Color.fromARGB(255, 34, 31, 32),
+      surface: sgSurfaceLight,
+      surfaceContainerLowest: sgSurfaceLight,
+      surfaceContainerLow: sgSurfaceLight,
+      surfaceContainer: sgSurfaceLight,
+      surfaceContainerHigh: sgSurfaceLight,
+      surfaceContainerHighest: sgSurfaceLight,
+      surfaceBright: sgSurfaceLight,
+      surfaceDim: sgSurfaceLight,
     ),
     dark: ColorScheme.fromSeed(
-      seedColor: curatorBrandColorDark,
+      seedColor: sgBrandColorDark,
       brightness: Brightness.dark,
-    ).copyWith(primary: curatorBrandColorDark),
+    ).copyWith(
+      primary: sgBrandColorDark,
+      surface: sgSurfaceDark,
+      surfaceContainerLowest: sgSurfaceDark,
+      surfaceContainerLow: sgSurfaceDark,
+      surfaceContainer: sgSurfaceDark,
+      surfaceContainerHigh: sgSurfaceDark,
+      surfaceContainerHighest: sgSurfaceDark,
+      surfaceBright: sgSurfaceDark,
+      surfaceDim: sgSurfaceDark,
+    ),
+    ctaColor: sgCtaColor,
+    ctaPressedColor: sgCtaPressedColor,
+    timelineSurfaceLight: sgTimelineSurfaceLight,
+    timelineSurfaceDark: sgTimelineSurfaceDark,
+    chromeSurfaceLight: sgChromeSurfaceLight,
+    chromeSurfaceDark: sgChromeSurfaceDark,
   ),
 };
 

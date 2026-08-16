@@ -28,14 +28,14 @@
   href={getLink(node.path)}
   onclick={handleClick}
   title={node.value}
-  class={`flex grow place-items-center ps-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 hover:font-semibold ${isTarget ? 'bg-slate-100 dark:bg-slate-700 font-semibold text-primary' : 'dark:text-black/60'}`}
+  class={`flex grow place-items-center ps-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 hover:font-semibold ${isTarget ? 'bg-slate-100 dark:bg-slate-700 font-semibold text-primary-700' : 'dark:text-black/60'}`}
   data-sveltekit-keepfocus
 >
   {#if node.size > 0}
     <button type="button" {onclick}>
       <Icon
         icon={isOpen ? mdiChevronDown : mdiChevronRight}
-        class={isActive ? 'text-primary' : 'text-black/60 dark:text-white/70'}
+        class={isActive ? 'text-primary-700' : 'text-black/60 dark:text-white/70'}
         size="24"
       />
     </button>
@@ -43,14 +43,14 @@
   <div class={node.size === 0 ? 'ml-6' : ''}>
     <Icon
       icon={isActive ? icons.active : icons.default}
-      class={isActive ? 'text-primary' : 'text-black/60 dark:text-white/70'}
+      class={isActive ? 'text-primary-700' : 'text-black/60 dark:text-white/70'}
       color={node.color}
       size="24"
     />
   </div>
   <span
     class="text-nowrap overflow-hidden text-ellipsis ps-4 whitespace-pre-wrap {isActive
-      ? 'text-primary'
+      ? 'text-primary-700'
       : 'text-black/60 dark:text-white/70'} font-medium"
   >
     {node.value}

@@ -46,7 +46,7 @@
     InteractiveFabricObject.ownDefaults = {
       ...InteractiveFabricObject.ownDefaults,
       cornerStyle: 'circle',
-      cornerColor: theme === Theme.Light ? 'rgb(25,118,210)' : 'rgb(100,181,246)',
+      cornerColor: theme === Theme.Light ? 'rgb(47,116,60)' : 'rgb(140,216,115)',
       borderColor: 'rgb(255,255,255)',
       cornerSize: 9,
       padding: 8,
@@ -66,8 +66,8 @@
 
     // eslint-disable-next-line tscompat/tscompat
     faceRect = new Rect({
-      fill: theme === Theme.Light ? 'rgba(25,118,210,0.24)' : 'rgba(100,181,246,0.24)',
-      stroke: theme === Theme.Light ? 'rgb(25,118,210)' : 'rgb(100,181,246)',
+      fill: theme === Theme.Light ? 'rgba(47,116,60,0.24)' : 'rgba(140,216,115,0.24)',
+      stroke: theme === Theme.Light ? 'rgb(47,116,60)' : 'rgb(140,216,115)',
       strokeWidth: 2,
       strokeUniform: true,
       width: 112,

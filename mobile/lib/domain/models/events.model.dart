@@ -40,3 +40,9 @@ class MultiSelectToggleEvent extends Event {
 class MapMarkerReloadEvent extends Event {
   const MapMarkerReloadEvent();
 }
+
+/// Emitted after a successful endpoint activation (including same-host reconnect).
+/// Visible thumbnails that never finished loading can retry against the active URL.
+class RemoteImagesInvalidateEvent extends Event {
+  const RemoteImagesInvalidateEvent();
+}

@@ -50,14 +50,14 @@
   {#if shareType === SharedLinkType.Album}
     <div class="text-sm">
       {$t('public_album')} |
-      <span class="text-primary">{sharedLink.album?.albumName}</span>
+      <span class="text-primary-700">{sharedLink.album?.albumName}</span>
     </div>
   {/if}
 
   {#if shareType === SharedLinkType.Individual}
     <div class="text-sm">
       {$t('individual_share')} |
-      <span class="text-primary">{sharedLink.description || ''}</span>
+      <span class="text-primary-700">{sharedLink.description || ''}</span>
     </div>
   {/if}
 

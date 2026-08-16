@@ -186,7 +186,7 @@
           {:else if reaction.type === ReactionType.Like}
             <div class="relative">
               <div class="flex py-3 ps-3 mt-3 gap-4 items-center text-sm">
-                <div class="text-primary"><Icon icon={mdiThumbUp} size="20" /></div>
+                <div class="text-primary-700"><Icon icon={mdiThumbUp} size="20" /></div>
 
                 <div class="w-full" title={`${reaction.user.name} (${reaction.user.email})`}>
                   {$t('user_liked', {

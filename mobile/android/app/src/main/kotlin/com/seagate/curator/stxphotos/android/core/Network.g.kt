@@ -189,6 +189,11 @@ interface NetworkApi {
   fun registerTrustedChain(host: String, chainCertificatesBase64: List<String>)
   fun unregisterTrustedChain(host: String)
   fun cancelInFlightHttpRequests()
+  /**
+   * Recreates the shared native URLSession so a fresh Dart client can bind to
+   * live callbacks after a background isolate was destroyed.
+   */
+  fun recreateSession()
 
   companion object {
     /** The codec used by NetworkApi. */
@@ -365,6 +370,22 @@ interface NetworkApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               api.cancelInFlightHttpRequests()
+              listOf(null)
+            } catch (exception: Throwable) {
+              NetworkPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.personal_cloud_photos.NetworkApi.recreateSession$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.recreateSession()
               listOf(null)
             } catch (exception: Throwable) {
               NetworkPigeonUtils.wrapError(exception)

@@ -30,19 +30,23 @@ export async function loadFromTimeBuckets(
   }
 
   if (options.timelineAlbumId) {
-    const albumAssets = await getTimeBucket(
-      {
-        ...authManager.params,
-        albumId: options.timelineAlbumId,
-        timeBucket,
-      },
-      { signal },
-    );
-    if (!albumAssets) {
-      return;
-    }
-    for (const id of albumAssets.id) {
-      timelineManager.albumAssets.add(id);
+    try {
+      const albumAssets = await getTimeBucket(
+        {
+          ...authManager.params,
+          albumId: options.timelineAlbumId,
+          timeBucket,
+        },
+        { signal },
+      );
+      if (albumAssets) {
+        for (const id of albumAssets.id) {
+          timelineManager.albumAssets.add(id);
+        }
+      }
+    } catch {
+      // Album access may have been revoked while selecting assets to add.
+      // Continue loading the user's library so the UI does not get stuck.
     }
   }
 

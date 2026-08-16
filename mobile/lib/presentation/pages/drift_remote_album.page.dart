@@ -241,6 +241,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
   late final TextEditingController titleController;
   late final TextEditingController descriptionController;
   final formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -259,7 +260,9 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
   }
 
   Future<void> _handleSave() async {
-    if (formKey.currentState?.validate() != true) return;
+    if (_isSaving || formKey.currentState?.validate() != true) return;
+
+    setState(() => _isSaving = true);
 
     try {
       final newTitle = titleController.text.trim();
@@ -276,6 +279,7 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isSaving = false);
         ImmichToast.show(
           context: context,
           msg: 'album_update_error'.t(context: context),
@@ -287,79 +291,93 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          constraints: const BoxConstraints(maxWidth: 550),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.edit_outlined, color: context.colorScheme.primary, size: 24),
-                    const SizedBox(width: 12),
-                    Text('edit_album'.t(context: context), style: context.textTheme.titleMedium),
-                  ],
-                ),
-                const SizedBox(height: 24),
+    return PopScope(
+      canPop: !_isSaving,
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(24),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            constraints: const BoxConstraints(maxWidth: 550),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.edit_outlined, color: context.colorScheme.primary, size: 24),
+                      const SizedBox(width: 12),
+                      Text('edit_album'.t(context: context), style: context.textTheme.titleMedium),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
-                // Album Name
-                Text(
-                  'album_name'.t(context: context).toUpperCase(),
-                  style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                TextFormField(
-                  controller: titleController,
-                  maxLines: 1,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecorations.outlineDecoration(context: context),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'album_name_required'.t(context: context);
-                    }
+                  // Album Name
+                  Text(
+                    'album_name'.t(context: context).toUpperCase(),
+                    style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: titleController,
+                    maxLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
+                    enabled: !_isSaving,
+                    decoration: InputDecorations.outlineDecoration(context: context),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'album_name_required'.t(context: context);
+                      }
 
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 18),
 
-                // Description
-                Text(
-                  'description'.t(context: context).toUpperCase(),
-                  style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                TextFormField(
-                  controller: descriptionController,
-                  maxLines: 4,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecorations.outlineDecoration(context: context),
-                ),
-                const SizedBox(height: 24),
+                  // Description
+                  Text(
+                    'description'.t(context: context).toUpperCase(),
+                    style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: descriptionController,
+                    maxLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    enabled: !_isSaving,
+                    decoration: InputDecorations.outlineDecoration(context: context),
+                  ),
+                  const SizedBox(height: 24),
 
-                // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(null),
-                      child: Text('cancel'.t(context: context)),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _handleSave,
-                      child: Text('save'.t(context: context)),
-                    ),
-                  ],
-                ),
-              ],
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _isSaving ? null : () => Navigator.of(context).pop(null),
+                        child: Text('cancel'.t(context: context)),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton(
+                        onPressed: _isSaving ? null : _handleSave,
+                        child: _isSaving
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: context.colorScheme.onPrimary,
+                                ),
+                              )
+                            : Text('save'.t(context: context)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

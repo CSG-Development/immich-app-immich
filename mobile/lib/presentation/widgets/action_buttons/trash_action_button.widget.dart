@@ -6,6 +6,7 @@ import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -25,6 +26,16 @@ class TrashActionButton extends ConsumerWidget {
       return;
     }
 
+    if (ref.read(connectionStateProvider).isDisconnected) {
+      ImmichToast.show(
+        context: context,
+        msg: 'curator.network.no_internet'.t(context: context),
+        gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
+      );
+      return;
+    }
+
     final actionNotifier = ref.read(actionProvider.notifier);
 
     // Capture the remote IDs that will be trashed so we can restore them on undo,
@@ -32,11 +43,11 @@ class TrashActionButton extends ConsumerWidget {
     final remoteIds = actionNotifier.getOwnedRemoteIdsForSource(source);
     final messenger = ScaffoldMessenger.maybeOf(context);
 
-    if (source == ActionSource.viewer) {
+    final result = await actionNotifier.trash(source);
+
+    if (source == ActionSource.viewer && result.success) {
       EventStream.shared.emit(const ViewerReloadAssetEvent());
     }
-
-    final result = await actionNotifier.trash(source);
 
     final feedbackContext = context.mounted ? context : messenger?.context;
     if (feedbackContext == null) {

@@ -17,7 +17,7 @@
   <div>
     <a href={url} target="_blank" rel="noreferrer">
       <Icon {icon} size="1.5em" class="inline-block" />
-      <p class="font-medium text-primary text-sm underline inline-block">
+      <p class="font-medium text-primary-700 text-sm underline inline-block">
         {text}
       </p>
     </a>

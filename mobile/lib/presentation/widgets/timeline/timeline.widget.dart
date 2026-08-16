@@ -28,6 +28,7 @@ import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.da
 import 'package:immich_mobile/providers/infrastructure/setting.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/common/curator_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/mesmerizing_sliver_app_bar.dart';
 import 'package:immich_mobile/widgets/common/selection_sliver_app_bar.dart';
@@ -68,7 +69,11 @@ class Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final timelineBackground =
+        Theme.of(context).extension<ImmichBrandColors>()?.timelineSurface ?? context.colorScheme.surface;
+
     return Scaffold(
+      backgroundColor: timelineBackground,
       resizeToAvoidBottomInset: false,
       floatingActionButton: showClipboardPaste
           ? const Column(

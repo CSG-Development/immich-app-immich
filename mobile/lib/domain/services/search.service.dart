@@ -48,8 +48,8 @@ class SearchService {
       );
     } catch (error, stackTrace) {
       _log.severe("Failed to search for assets", error, stackTrace);
+      rethrow;
     }
-    return null;
   }
 }
 

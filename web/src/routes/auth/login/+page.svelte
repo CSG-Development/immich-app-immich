@@ -30,7 +30,7 @@
   const canSubmit = $derived(email.trim().length > 0 && password.length > 0);
 
   const inputClass =
-    'bg-neutral-50! border-neutral-300 focus-within:border-neutral-400 dark:bg-neutral-800! dark:border-neutral-600';
+    'bg-neutral-50! border-neutral-300 focus-within:border-neutral-400 dark:bg-neutral-800! dark:border-neutral-600 overflow-hidden [&_input]:min-w-0 [&_button]:h-10! [&_button]:w-10!';
 
   const onSuccess = async (user: LoginResponseDto) => {
     await goto(data.continueUrl, { invalidateAll: true });

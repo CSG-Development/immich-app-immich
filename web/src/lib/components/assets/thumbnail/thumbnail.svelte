@@ -85,10 +85,14 @@
   let mouseOver = $state(false);
   let loaded = $state(false);
   let thumbError = $state(false);
+  let lastThumbhash: string | null | undefined = undefined;
 
-  // When thumbhash arrives after generation, allow the thumbnail to load again.
   $effect(() => {
-    void asset.thumbhash;
+    const thumbhash = asset.thumbhash;
+    if (thumbhash === lastThumbhash) {
+      return;
+    }
+    lastThumbhash = thumbhash;
     loaded = false;
     thumbError = false;
   });
@@ -463,7 +467,7 @@
           <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-zinc-800" />
         {:else if selected}
           <div class="rounded-full bg-[#D9DCEF] dark:bg-[#232932]">
-            <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-primary" />
+            <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-primary-700" />
           </div>
         {:else}
           <Icon data-icon-select icon={mdiCheckCircle} size="24" class="text-white/80 hover:text-white" />
