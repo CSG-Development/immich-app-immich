@@ -8,7 +8,7 @@ import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
-import 'package:immich_mobile/utils/selection_handlers.dart';
+import 'package:immich_mobile/utils/undo_info_card.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 /// This delete action has the following behavior:

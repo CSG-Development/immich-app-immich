@@ -55,4 +55,6 @@ abstract class NetworkApi {
   /// Recreates the shared native URLSession so a fresh Dart client can bind to
   /// live callbacks after a background isolate was destroyed.
   void recreateSession();
+
+  String getAppGroupId();
 }

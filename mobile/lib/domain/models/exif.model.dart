@@ -9,6 +9,8 @@ class ExifInfo {
   final DateTime? modifyDate;
   final String? projectionType;
   final int? rating;
+  final int? width;
+  final int? height;
 
   // GPS
   final double? latitude;
@@ -29,7 +31,7 @@ class ExifInfo {
   bool get hasCoordinates => latitude != null && longitude != null && latitude != 0 && longitude != 0;
 
   String get exposureTime {
-    if (exposureSeconds == null) {
+    if (exposureSeconds == null || exposureSeconds! <= 0 || exposureSeconds!.isNaN) {
       return "";
     }
     if (exposureSeconds! < 1) {
@@ -52,6 +54,8 @@ class ExifInfo {
     this.modifyDate,
     this.projectionType,
     this.rating,
+    this.width,
+    this.height,
     this.isFlipped = false,
     this.latitude,
     this.longitude,
@@ -69,7 +73,9 @@ class ExifInfo {
 
   @override
   bool operator ==(covariant ExifInfo other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.fileSize == fileSize &&
         other.description == description &&
@@ -80,6 +86,8 @@ class ExifInfo {
         other.modifyDate == modifyDate &&
         other.projectionType == projectionType &&
         other.rating == rating &&
+        other.width == width &&
+        other.height == height &&
         other.latitude == latitude &&
         other.longitude == longitude &&
         other.city == city &&
@@ -106,6 +114,8 @@ class ExifInfo {
         modifyDate.hashCode ^
         projectionType.hashCode ^
         rating.hashCode ^
+        width.hashCode ^
+        height.hashCode ^
         latitude.hashCode ^
         longitude.hashCode ^
         city.hashCode ^
@@ -133,6 +143,8 @@ dateTimeOriginal: ${dateTimeOriginal ?? 'NA'},
 modifyDate: ${modifyDate ?? 'NA'},
 projectionType: ${projectionType ?? 'NA'},
 rating: ${rating ?? 'NA'},
+width: ${width ?? 'NA'},
+height: ${height ?? 'NA'},
 latitude: ${latitude ?? 'NA'},
 longitude: ${longitude ?? 'NA'},
 city: ${city ?? 'NA'},
@@ -158,6 +170,8 @@ exposureSeconds: ${exposureSeconds ?? 'NA'},
     DateTime? modifyDate,
     String? projectionType,
     int? rating,
+    int? width,
+    int? height,
     double? latitude,
     double? longitude,
     String? city,
@@ -182,6 +196,8 @@ exposureSeconds: ${exposureSeconds ?? 'NA'},
       modifyDate: modifyDate ?? this.modifyDate,
       projectionType: projectionType ?? this.projectionType,
       rating: rating ?? this.rating,
+      width: width ?? this.width,
+      height: height ?? this.height,
       isFlipped: isFlipped ?? this.isFlipped,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,

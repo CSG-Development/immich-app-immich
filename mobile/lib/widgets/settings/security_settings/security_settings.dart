@@ -129,7 +129,7 @@ class SecuritySettings extends HookConsumerWidget {
                 if (value != null) {
                   appLockTimeoutIndex.value = value.index;
                 }
-                context.pop();
+                Navigator.of(context).pop();
               },
             ),
           ),

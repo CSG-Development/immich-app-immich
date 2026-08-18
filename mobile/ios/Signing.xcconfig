@@ -1,0 +1,30 @@
+// Xcode Signing Constants
+//
+// These are integrated into the Xcode project at build time to allow for dynamic signing configs
+// across our many targets.
+//
+// Create `Signing.local.xcconfig` overriding each variable to provide your own personal signing
+// overrides during local development:
+//     IMMICH_TEAM_ID = ABCDE12345
+//     IMMICH_BUNDLE_ID_PROD = com.customuniqueid.immich
+//     IMMICH_BUNDLE_ID_DEV = com.customuniqueid.immichdev
+//     IMMICH_GROUP_ID = group.com.customuniqueid.immich
+
+// Apple Developer Team ID used for automatically provisioning signing credentials
+IMMICH_TEAM_ID = 57HJ3KH2XC
+
+// Root bundle identifier for the Release configuration.
+// Extension suffixes (`.ShareExtension`/`.WidgetExtension`) will be appended
+IMMICH_BUNDLE_ID_PROD = com.seagate.curator.stxphotos.ios
+
+// Root bundle identifier for the Debug-dev / Release-dev / Profile-dev configurations.
+// Build scheme suffixes (`.vdebug`) will be appended
+IMMICH_BUNDLE_ID_DEV = com.seagate.curator.stxphotos.ios.dev
+
+// App Group identifier used by Runner, ShareExtension, and WidgetExtension.
+// The Seagate Apple portal has this single group; do not append flavor suffixes
+// (.debug/.profile/.dev) unless matching App Groups are registered.
+IMMICH_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share
+
+// Optional per-developer configuration override
+#include? "Signing.local.xcconfig"

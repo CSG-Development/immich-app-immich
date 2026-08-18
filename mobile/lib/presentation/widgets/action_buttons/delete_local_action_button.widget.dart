@@ -11,6 +11,7 @@ import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
+import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 
 /// This delete action has the following behavior:
 /// - Prompt to delete the asset locally

@@ -4,21 +4,18 @@ import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' hide AssetType;
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/platform/native_clipboard_api.g.dart';
-import 'package:immich_mobile/utils/hash.dart';
-import 'package:immich_mobile/providers/asset.provider.dart';
-import 'package:immich_mobile/providers/album/album.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/providers/clipboard.provider.dart';
 import 'package:logging/logging.dart';
 
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:http/http.dart' as http;
@@ -41,29 +38,19 @@ class BaseSuffix {
 }
 
 final clipboardServiceProvider = Provider(
-  (ref) => ClipboardService(
-    ref.watch(assetProvider.notifier),
-    ref.watch(albumProvider.notifier),
-    ref.watch(currentUserProvider),
-  ),
+  (ref) => ClipboardService(ref.watch(currentUserProvider)),
 );
 
 class ClipboardService {
-  final AssetNotifier _assetNotifier;
-  final AlbumNotifier _albumNotifier;
   final UserDto? _currentUser;
 
-  ClipboardService(
-    this._assetNotifier,
-    this._albumNotifier,
-    this._currentUser,
-  );
+  ClipboardService(this._currentUser);
 
   /// Copy assets to clipboard
   static Future<ClipboardCopyResult> copyToClipboard(
     BuildContext context,
     WidgetRef ref,
-    Set<Asset> selectedAssets,
+    Set<BaseAsset> selectedAssets,
   ) async {
     final tempFiles = <File>[];
     final Logger _log = Logger("ClipboardService");
@@ -130,52 +117,52 @@ class ClipboardService {
   }
 
   static Future<_FilePreparationResult> _prepareAssetFile(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref,
     Logger log,
   ) async {
-    if (asset.isLocal) {
+    if (asset.hasLocal) {
       return await _prepareLocalAsset(asset, log);
-    } else if (asset.isRemote) {
+    } else if (asset.hasRemote) {
       return await _prepareRemoteAsset(asset, ref, log);
     }
     return _FilePreparationResult(
-      error: 'Asset ${asset.fileName} is neither local nor remote',
+      error: 'Asset ${asset.name} is neither local nor remote',
     );
   }
 
   static Future<_FilePreparationResult> _prepareLocalAsset(
-    Asset asset,
+    BaseAsset asset,
     Logger log,
   ) async {
-    final local = asset.local;
-    if (local == null) {
-      return _FilePreparationResult(error: 'Local asset has no local reference: ${asset.fileName}');
+    final localId = asset.localId;
+    if (localId == null) {
+      return _FilePreparationResult(error: 'Local asset has no local reference: ${asset.name}');
     }
 
     try {
-      final sourceFile = await local.originFile;
+      final sourceFile = await StorageRepository().getFileForAsset(localId);
       if (sourceFile == null || !await sourceFile.exists()) {
-        return _FilePreparationResult(error: 'Cannot access local file: ${asset.fileName}');
+        return _FilePreparationResult(error: 'Cannot access local file: ${asset.name}');
       }
 
-      final tempFile = await _createTempFile(asset.fileName, prefix: 'clipboard_local_');
+      final tempFile = await _createTempFile(asset.name, prefix: 'clipboard_local_');
       await sourceFile.copy(tempFile.path);
 
-      final validation = await _validateAndPrepareFile(tempFile, asset.fileName, log);
+      final validation = await _validateAndPrepareFile(tempFile, asset.name, log);
       return _FilePreparationResult(
         filePath: validation.filePath,
         tempFile: validation.filePath != null ? tempFile : null,
         error: validation.error,
       );
     } catch (e, stackTrace) {
-      log.warning('Error accessing local file ${asset.fileName}', e, stackTrace);
-      return _FilePreparationResult(error: 'Error accessing local file ${asset.fileName}: ${e.toString()}');
+      log.warning('Error accessing local file ${asset.name}', e, stackTrace);
+      return _FilePreparationResult(error: 'Error accessing local file ${asset.name}: ${e.toString()}');
     }
   }
 
   static Future<_FilePreparationResult> _prepareRemoteAsset(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref,
     Logger log,
   ) async {
@@ -185,21 +172,21 @@ class ClipboardService {
 
       final res = await ref.read(apiServiceProvider).assetsApi.downloadAssetWithHttpInfo(asset.remoteId!);
       if (res.statusCode != 200) {
-        return _FilePreparationResult(error: 'Failed to download ${asset.fileName}: HTTP ${res.statusCode}');
+        return _FilePreparationResult(error: 'Failed to download ${asset.name}: HTTP ${res.statusCode}');
       }
 
       await tempFile.writeAsBytes(res.bodyBytes, flush: true);
       await Future.delayed(const Duration(milliseconds: 50));
 
-      final validation = await _validateAndPrepareFile(tempFile, asset.fileName, log);
+      final validation = await _validateAndPrepareFile(tempFile, asset.name, log);
       return _FilePreparationResult(
         filePath: validation.filePath,
         tempFile: validation.filePath != null ? tempFile : null,
         error: validation.error,
       );
     } catch (e, stackTrace) {
-      log.severe('Error downloading ${asset.fileName}', e, stackTrace);
-      return _FilePreparationResult(error: 'Error downloading ${asset.fileName}: ${e.toString()}');
+      log.severe('Error downloading ${asset.name}', e, stackTrace);
+      return _FilePreparationResult(error: 'Error downloading ${asset.name}: ${e.toString()}');
     }
   }
 
@@ -278,8 +265,8 @@ class ClipboardService {
     return validFilePaths;
   }
 
-  static String _normalizeFileName(Asset asset, Logger log) {
-    String fileName = asset.fileName;
+  static String _normalizeFileName(BaseAsset asset, Logger log) {
+    String fileName = asset.name;
     if (fileName.isEmpty || fileName == 'Unknown' || fileName == 'Unknown.jpeg') {
       final extension = asset.isImage
           ? (fileName.toLowerCase().endsWith('.heic') || fileName.toLowerCase().endsWith('.heif') ? 'heic' : 'jpg')
@@ -345,7 +332,7 @@ class ClipboardService {
       }
 
       final errors = <String>[];
-      final savedAssets = <Asset>[];
+      final savedAssets = <RemoteAsset>[];
 
       for (final filePath in filePaths) {
         try {
@@ -388,7 +375,7 @@ class ClipboardService {
   }
 
   /// Process a single clipboard file by uploading directly to server
-  Future<Asset?> _processClipboardFile(String filePath) async {
+  Future<RemoteAsset?> _processClipboardFile(String filePath) async {
     final file = File(filePath);
     if (!await file.exists()) {
       throw Exception('File not found: ${file.path}');
@@ -417,7 +404,7 @@ class ClipboardService {
   static Future<ClipboardPasteResult> duplicateAssets(
     BuildContext context,
     WidgetRef ref,
-    Set<Asset> selectedAssets,
+    Set<BaseAsset> selectedAssets,
   ) async {
     if (selectedAssets.isEmpty) {
       return const ClipboardPasteResult(
@@ -429,13 +416,13 @@ class ClipboardService {
     }
 
     final errors = <String>[];
-    final savedAssets = <Asset>[];
+    final savedAssets = <RemoteAsset>[];
     final clipboardService = ref.read(clipboardServiceProvider);
     final nextSuffixPerBase = <String, int>{};
 
     for (final asset in selectedAssets) {
       try {
-        final baseAndSuffix = _parseBaseAndSuffix(asset.fileName);
+        final baseAndSuffix = _parseBaseAndSuffix(asset.name);
         final startingSuffix = math.max(
           nextSuffixPerBase[baseAndSuffix.base] ?? 1,
           (baseAndSuffix.suffix ?? 0) + 1,
@@ -452,21 +439,17 @@ class ClipboardService {
         if (result != null) {
           savedAssets.add(result);
         } else {
-          errors.add('Failed to duplicate ${asset.fileName}');
+          errors.add('Failed to duplicate ${asset.name}');
         }
 
         nextSuffixPerBase[baseAndSuffix.base] = startingSuffix + 1;
       } catch (e) {
-        errors.add('Error duplicating ${asset.fileName}: $e');
+        errors.add('Error duplicating ${asset.name}: $e');
       }
     }
 
     if (savedAssets.isNotEmpty) {
-      if (Store.isBetaTimelineEnabled) {
-        await ref.read(backgroundSyncProvider).syncRemote();
-      } else {
-        await ref.read(assetProvider.notifier).getAllAsset();
-      }
+      await ref.read(backgroundSyncProvider).syncRemote();
     }
 
     return ClipboardPasteResult(
@@ -479,29 +462,26 @@ class ClipboardService {
   }
 
   /// Duplicate a single asset
-  static Future<Asset?> _duplicateSingleAsset(
+  static Future<RemoteAsset?> _duplicateSingleAsset(
     BuildContext context,
     WidgetRef ref,
-    Asset asset,
+    BaseAsset asset,
     ClipboardService clipboardService, {
     int? startingSuffix,
   }) async {
     File? sourceFile;
     String? fileName;
 
-    if (asset.isLocal) {
-      final local = asset.local;
-      if (local != null) {
-        final file = await local.originFile;
-        if (file != null) {
-          sourceFile = file;
-          fileName = asset.fileName;
-        }
+    if (asset.hasLocal && asset.localId != null) {
+      final file = await StorageRepository().getFileForAsset(asset.localId!);
+      if (file != null) {
+        sourceFile = file;
+        fileName = asset.name;
       }
-    } else if (asset.isRemote) {
+    } else if (asset.hasRemote) {
       try {
         final cacheDir = await getTemporaryDirectory();
-        fileName = asset.fileName;
+        fileName = asset.name;
         final tempFile = File('${cacheDir.path}/duplicate_${DateTime.now().millisecondsSinceEpoch}_$fileName');
 
         final res = await ref.read(apiServiceProvider).assetsApi.downloadAssetWithHttpInfo(asset.remoteId!);
@@ -550,7 +530,7 @@ class ClipboardService {
       startingSuffix: startingSuffix,
     );
 
-    if (asset.isRemote && sourceFile.path.contains('duplicate_')) {
+    if (asset.hasRemote && sourceFile.path.contains('duplicate_')) {
       try {
         await sourceFile.delete();
       } catch (_) {}
@@ -560,7 +540,7 @@ class ClipboardService {
   }
 
   /// Upload file directly to server using HTTP (immediate upload)
-  Future<Asset?> _uploadFileDirectly(
+  Future<RemoteAsset?> _uploadFileDirectly(
     File file,
     String fileName,
     FileStat stats, {
@@ -590,7 +570,7 @@ class ClipboardService {
   }
 
   /// Upload a specific file to server
-  Future<Asset?> _uploadFile(File file, String fileName, FileStat stats) async {
+  Future<RemoteAsset?> _uploadFile(File file, String fileName, FileStat stats) async {
     try {
       final serverEndpoint = Store.get(StoreKey.serverEndpoint);
       final url = Uri.parse('$serverEndpoint/assets');
@@ -630,19 +610,19 @@ class ClipboardService {
         return null;
       }
 
-      return Asset(
-        checksum: '',
+      return RemoteAsset(
+        id: remoteId,
         localId: deviceAssetId,
-        ownerId: fastHash(_currentUser?.id ?? ''),
-        fileCreatedAt: stats.changed,
-        fileModifiedAt: stats.modified,
-        updatedAt: DateTime.now(),
-        durationInSeconds: 0,
+        name: fileName,
+        ownerId: _currentUser?.id ?? '',
+        checksum: null,
         type: _isImageFile(fileName) ? AssetType.image : AssetType.video,
-        fileName: fileName,
+        createdAt: stats.changed,
+        updatedAt: DateTime.now(),
+        durationMs: 0,
         width: 0,
         height: 0,
-        remoteId: remoteId,
+        isEdited: false,
       );
     } catch (_) {
       return null;
@@ -705,12 +685,7 @@ class ClipboardService {
   }
 
   Future<void> _refreshUI(Ref ref) async {
-    if (Store.isBetaTimelineEnabled) {
-      await ref.read(backgroundSyncProvider).syncRemote();
-    } else {
-      await _albumNotifier.refreshDeviceAlbums();
-      await _assetNotifier.getAllAsset(clear: false);
-    }
+    await ref.read(backgroundSyncProvider).syncRemote();
   }
 
   bool _isImageFile(String fileName) {
@@ -782,28 +757,8 @@ class ClipboardService {
     return null;
   }
 
-  static Map<String, String> duplicateUnsupportedReasonsForAssets(Set<Asset> assets) {
-    final reasons = <String, String>{};
-    if (assets.isEmpty) {
-      reasons['selection'] = 'no assets selected';
-      return reasons;
-    }
-
-    for (final asset in assets) {
-      final reason = _duplicateUnsupportedReasonForFile(asset.isImage, asset.fileName);
-      if (reason != null) {
-        reasons[asset.fileName] = reason;
-        continue;
-      }
-      if (_isTooHeavyForDuplicate(
-        width: asset.width,
-        height: asset.height,
-        fileSizeBytes: asset.exifInfo?.fileSize,
-      )) {
-        reasons[asset.fileName] = 'too large';
-      }
-    }
-    return reasons;
+  static Map<String, String> duplicateUnsupportedReasonsForAssets(Set<BaseAsset> assets) {
+    return duplicateUnsupportedReasons(assets);
   }
 
   static bool _isTooHeavyForDuplicate({int? width, int? height, int? fileSizeBytes}) {
@@ -846,7 +801,7 @@ class ClipboardService {
     return 'duplicate_error'.t(context: context);
   }
 
-  static bool isDuplicateSupportedForSelection(Set<Asset> assets) {
+  static bool isDuplicateSupportedForSelection(Set<BaseAsset> assets) {
     return duplicateUnsupportedReasonsForAssets(assets).isEmpty;
   }
 
@@ -864,14 +819,14 @@ class ClipboardService {
     return true;
   }
 
-  static bool isCopySupportedForSelection(Set<Asset> assets) {
+  static bool isCopySupportedForSelection(Set<BaseAsset> assets) {
     if (assets.isEmpty) return false;
 
     const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm'];
     final supportedExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)");
 
     for (final asset in assets) {
-      final name = asset.fileName.toLowerCase();
+      final name = asset.name.toLowerCase();
       if (videoExtensions.any((ext) => name.endsWith(ext)) || !supportedExtensions.hasMatch(name)) {
         return false;
       }
@@ -914,14 +869,14 @@ class ClipboardPasteResult {
   final int savedCount;
   final int errorCount;
   final List<String> errors;
-  final List<Asset> newAssets;
+  final List<RemoteAsset> newAssets;
 
   const ClipboardPasteResult({
     required this.success,
     required this.savedCount,
     required this.errorCount,
     required this.errors,
-    this.newAssets = const [],
+    this.newAssets = const <RemoteAsset>[],
   });
 
   bool get hasErrors => errorCount > 0;

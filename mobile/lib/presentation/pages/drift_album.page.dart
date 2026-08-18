@@ -46,6 +46,7 @@ class _DriftAlbumsPageState extends ConsumerState<DriftAlbumsPage> {
 
     final scrollView = CustomScrollView(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         CuratorSliverAppBar(
           snap: false,

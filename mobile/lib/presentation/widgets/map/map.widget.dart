@@ -11,11 +11,11 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/bottom_sheet/base_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/map_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/map/map.state.dart';
 import 'package:immich_mobile/presentation/widgets/map/map_utils.dart';
 import 'package:immich_mobile/providers/routes.provider.dart';
-import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/async_mutex.dart';
 import 'package:immich_mobile/utils/debounce.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -53,6 +53,7 @@ class _DriftMapState extends ConsumerState<DriftMap> {
   final _reloadMutex = AsyncMutex();
   final _debouncer = Debouncer(interval: const Duration(milliseconds: 500), maxWaitTime: const Duration(seconds: 2));
   final ValueNotifier<double> bottomSheetOffset = ValueNotifier(0.25);
+  final GlobalKey _bottomSheetKey = GlobalKey();
   StreamSubscription? _eventSubscription;
 
   @override
@@ -131,8 +132,7 @@ class _DriftMapState extends ConsumerState<DriftMap> {
     // When the AssetViewer is open, the DriftMap route stays alive in the background.
     // If we continue to update bounds, the map-scoped timeline service gets recreated and the previous one disposed,
     // which can invalidate the TimelineService instance that was passed into AssetViewerRoute (causing "loading forever").
-    final currentRoute = ref.read(currentRouteNameProvider);
-    if (currentRoute == AssetViewerRoute.name || currentRoute == GalleryViewerRoute.name) {
+    if (ref.read(isAssetViewerOpenProvider)) {
       return;
     }
 
@@ -181,10 +181,15 @@ class _DriftMapState extends ConsumerState<DriftMap> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(isAssetViewerOpenProvider, (previous, current) {
+      if (previous == true && !current) {
+        _debouncer.run(() => setBounds(forceReload: true));
+      }
+    });
     return Stack(
       children: [
         _Map(initialLocation: widget.initialLocation, onMapCreated: onMapCreated, onMapReady: onMapReady),
-        _DynamicBottomSheet(bottomSheetOffset: bottomSheetOffset),
+        _DynamicBottomSheet(bottomSheetOffset: bottomSheetOffset, sheetKey: _bottomSheetKey),
         _DynamicMyLocationButton(onZoomToLocation: onZoomToLocation, bottomSheetOffset: bottomSheetOffset),
       ],
     );
@@ -224,8 +229,9 @@ class _Map extends StatelessWidget {
 
 class _DynamicBottomSheet extends StatefulWidget {
   final ValueNotifier<double> bottomSheetOffset;
+  final GlobalKey sheetKey;
 
-  const _DynamicBottomSheet({required this.bottomSheetOffset});
+  const _DynamicBottomSheet({required this.bottomSheetOffset, required this.sheetKey});
 
   @override
   State<_DynamicBottomSheet> createState() => _DynamicBottomSheetState();
@@ -236,10 +242,13 @@ class _DynamicBottomSheetState extends State<_DynamicBottomSheet> {
   Widget build(BuildContext context) {
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (notification) {
-        widget.bottomSheetOffset.value = notification.extent;
-        return true;
+        final sheet = notification.context.findAncestorWidgetOfExactType<BaseBottomSheet>();
+        if (sheet?.key == widget.sheetKey) {
+          widget.bottomSheetOffset.value = notification.extent;
+        }
+        return false;
       },
-      child: const MapBottomSheet(),
+      child: MapBottomSheet(sheetKey: widget.sheetKey),
     );
   }
 }

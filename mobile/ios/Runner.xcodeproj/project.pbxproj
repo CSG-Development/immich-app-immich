@@ -9,10 +9,9 @@
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		65F32F31299BD2F800CE9261 /* BackgroundServicePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F32F30299BD2F800CE9261 /* BackgroundServicePlugin.swift */; };
-		65F32F33299D349D00CE9261 /* BackgroundSyncWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F32F32299D349D00CE9261 /* BackgroundSyncWorker.swift */; };
 		6C09D1DE56E57611ED5C42A2 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 92E1452C45B88FEE215B7C9E /* Pods_Runner.framework */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -23,6 +22,8 @@
 		B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */; };
 		B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */; };
 		B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */; };
+		B2EE00022E72CA15008B6CA7 /* PermissionApi.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EE00012E72CA15008B6CA7 /* PermissionApi.g.swift */; };
+		B2EE00042E72CA15008B6CA7 /* PermissionApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EE00032E72CA15008B6CA7 /* PermissionApiImpl.swift */; };
 		BD363D302F55866A00461B35 /* Debug-dev.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */; };
 		BD363D322F55868000461B35 /* Release-dev.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BD363D312F55868000461B35 /* Release-dev.xcconfig */; };
 		CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE12B3F02E82D81C003BF43C /* ClipboardImpl.swift */; };
@@ -101,13 +102,13 @@
 		35C65A681575C27D80C6EDC8 /* Pods-Runner.release-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-dev.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		51446DBB49588D4234695302 /* Pods-ShareExtension.profile-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.profile-dev.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.profile-dev.xcconfig"; sourceTree = "<group>"; };
+		51516E0F2A0000000000C0F1 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		5E2F4A9664B7C6932F84BEB9 /* Pods-ShareExtension.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.debug-dev.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.debug-dev.xcconfig"; sourceTree = "<group>"; };
 		5F0D159B2476069274C80A0C /* Pods_ShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		65F32F30299BD2F800CE9261 /* BackgroundServicePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundServicePlugin.swift; sourceTree = "<group>"; };
-		65F32F32299D349D00CE9261 /* BackgroundSyncWorker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackgroundSyncWorker.swift; sourceTree = "<group>"; };
 		6735E4DB933D6013131244FB /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		7BD6F4218C4E0A4F8FB5E39C /* Pods-Runner.profile-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-dev.xcconfig"; sourceTree = "<group>"; };
 		88A2D956D419EE074561A2B7 /* Pods-ShareExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.release.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.release.xcconfig"; sourceTree = "<group>"; };
@@ -126,6 +127,8 @@
 		B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connectivity.g.swift; sourceTree = "<group>"; };
 		B25D377B2E72CA20008B6CA7 /* ConnectivityApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityApiImpl.swift; sourceTree = "<group>"; };
 		B2BE315E2E5E5229006EEF88 /* BackgroundWorker.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.g.swift; sourceTree = "<group>"; };
+		B2EE00012E72CA15008B6CA7 /* PermissionApi.g.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionApi.g.swift; sourceTree = "<group>"; };
+		B2EE00032E72CA15008B6CA7 /* PermissionApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionApiImpl.swift; sourceTree = "<group>"; };
 		BD363D2F2F55866A00461B35 /* Debug-dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Debug-dev.xcconfig"; path = "Flutter/Debug-dev.xcconfig"; sourceTree = "<group>"; };
 		BD363D312F55868000461B35 /* Release-dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Release-dev.xcconfig"; path = "Flutter/Release-dev.xcconfig"; sourceTree = "<group>"; };
 		CDF59D0C01AE5B92872865C0 /* Pods-ShareExtension.release-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.release-dev.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.release-dev.xcconfig"; sourceTree = "<group>"; };
@@ -225,6 +228,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 				CE3A44FE2E12A7D200910D0A /* telemetry.xcframework in Frameworks */,
 				FEE084F82EC172460045228E /* SQLiteData in Frameworks */,
 				FEE084FB2EC1725A0045228E /* RawStructuredFieldValues in Frameworks */,
@@ -285,18 +289,10 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		65DD438629917FAD0047FFA8 /* BackgroundSync */ = {
-			isa = PBXGroup;
-			children = (
-				65F32F32299D349D00CE9261 /* BackgroundSyncWorker.swift */,
-				65F32F30299BD2F800CE9261 /* BackgroundServicePlugin.swift */,
-			);
-			path = BackgroundSync;
-			sourceTree = "<group>";
-		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
 			isa = PBXGroup;
 			children = (
+				78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */,
 				3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */,
 				9740EEB21CF90195004384FC /* Debug.xcconfig */,
 				7AFA3C8E1D35360C0083082E /* Release.xcconfig */,
@@ -310,6 +306,7 @@
 		97C146E51CF9000F007C117D = {
 			isa = PBXGroup;
 			children = (
+				51516E0F2A0000000000C0F1 /* Signing.xcconfig */,
 				CE8353CB2DEEE8B800C413E8 /* GoogleService-Info.plist */,
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
@@ -343,8 +340,8 @@
 				CE408BDE2E44C83700B1E17A /* AirPlayManager.swift */,
 				CE14E3DD2E0D6E6E0024489C /* TelemetryWrapperPlugin.swift */,
 				B2CF7F8C2DDE4EBB00744BF6 /* Sync */,
+				B2EE00052E72CA15008B6CA7 /* Permission */,
 				FA9973382CF6DF4B000EF859 /* Runner.entitlements */,
-				65DD438629917FAD0047FFA8 /* BackgroundSync */,
 				FAC7416727DB9F5500C668D8 /* RunnerProfile.entitlements */,
 				CE83EA5F2E603F5E00CEDFEF /* Clipboard */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
@@ -377,6 +374,15 @@
 				B25D37782E72CA15008B6CA7 /* Connectivity.g.swift */,
 			);
 			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		B2EE00052E72CA15008B6CA7 /* Permission */ = {
+			isa = PBXGroup;
+			children = (
+				B2EE00032E72CA15008B6CA7 /* PermissionApiImpl.swift */,
+				B2EE00012E72CA15008B6CA7 /* PermissionApi.g.swift */,
+			);
+			path = Permission;
 			sourceTree = "<group>";
 		};
 		CE83EA5F2E603F5E00CEDFEF /* Clipboard */ = {
@@ -429,7 +435,6 @@
 				FAC6F89A2D287C890078CB2F /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				6D6B21D46AFA424369EF7418 /* [CP] Embed Pods Frameworks */,
-				751BB4445B6AD680DA472670 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -444,6 +449,9 @@
 				FEE084F22EC172080045228E /* Schemas */,
 			);
 			name = Runner;
+			packageProductDependencies = (
+				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
+			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Personal Cloud Photos-Debug.app */;
 			productType = "com.apple.product-type.application";
@@ -521,6 +529,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
+				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
 				FEE084F62EC172460045228E /* XCRemoteSwiftPackageReference "sqlite-data" */,
 				FEE084F92EC1725A0045228E /* XCRemoteSwiftPackageReference "swift-http-structured-headers" */,
 			);
@@ -647,23 +656,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		751BB4445B6AD680DA472670 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -677,7 +669,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
+			shellScript = "/bin/bash \"$SRCROOT/scripts/xcode_flutter_build.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -686,7 +678,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				65F32F31299BD2F800CE9261 /* BackgroundServicePlugin.swift in Sources */,
 				CE12B3F12E82D81C003BF43C /* ClipboardImpl.swift in Sources */,
 				CE12B3F22E82D81C003BF43C /* Clipboard.g.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
@@ -697,6 +688,8 @@
 				FE5499F42F1197D8006016CB /* RemoteImages.g.swift in Sources */,
 				FE5FE4AE2F30FBC000A71243 /* ImageProcessing.swift in Sources */,
 				B25D377A2E72CA15008B6CA7 /* Connectivity.g.swift in Sources */,
+				B2EE00022E72CA15008B6CA7 /* PermissionApi.g.swift in Sources */,
+				B2EE00042E72CA15008B6CA7 /* PermissionApiImpl.swift in Sources */,
 				FE5499F82F1198E2006016CB /* RemoteImagesImpl.swift in Sources */,
 				FEAFA8732E4D42F4001E47FE /* Thumbhash.swift in Sources */,
 				B25D377C2E72CA26008B6CA7 /* ConnectivityApiImpl.swift in Sources */,
@@ -704,7 +697,6 @@
 				CE408BDF2E44C83700B1E17A /* AirPlayManager.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				B2BE315F2E5E5229006EEF88 /* BackgroundWorker.g.swift in Sources */,
-				65F32F33299D349D00CE9261 /* BackgroundSyncWorker.swift in Sources */,
 				CE14E3DE2E0D6E710024489C /* TelemetryWrapperPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -769,6 +761,7 @@
 /* Begin XCBuildConfiguration section */
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -799,6 +792,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -811,7 +805,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				NEW_SETTING = "";
 				SDKROOT = iphoneos;
@@ -834,17 +828,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD)";
 				PRODUCT_NAME = "Personal Cloud Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -855,6 +848,7 @@
 		};
 		97C147031CF9000F007C117D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
@@ -885,6 +879,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -903,7 +898,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				NEW_SETTING = "";
 				ONLY_ACTIVE_ARCH = YES;
@@ -916,6 +911,7 @@
 		};
 		97C147041CF9000F007C117D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
@@ -946,6 +942,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -958,7 +955,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				NEW_SETTING = "";
 				SDKROOT = iphoneos;
@@ -981,17 +978,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).vdebug";
 				PRODUCT_NAME = "Personal Cloud Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1012,17 +1008,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD)";
 				PRODUCT_NAME = "Personal Cloud Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -1035,6 +1030,7 @@
 		};
 		CE96182D2DE46A5F00FDAC5F /* Debug-dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
@@ -1065,6 +1061,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1083,7 +1080,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				NEW_SETTING = "";
 				ONLY_ACTIVE_ARCH = YES;
@@ -1105,17 +1102,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).vdebug";
 				PRODUCT_NAME = "Personal Cloud Photos-Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1139,8 +1135,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1157,7 +1152,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).vdebug.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1171,6 +1166,7 @@
 		};
 		CE9618332DE46A7A00FDAC5F /* Release-dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
@@ -1201,6 +1197,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1213,7 +1210,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				NEW_SETTING = "";
 				SDKROOT = iphoneos;
@@ -1238,17 +1235,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV)";
 				PRODUCT_NAME = "Personal Cloud Photos";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1271,8 +1267,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1288,7 +1283,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1300,6 +1295,7 @@
 		};
 		CE9618392DE46A8F00FDAC5F /* Profile-dev */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51516E0F2A0000000000C0F1 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1330,6 +1326,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CUSTOM_GROUP_ID = "$(IMMICH_GROUP_ID)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1342,7 +1339,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				NEW_SETTING = "";
 				SDKROOT = iphoneos;
@@ -1363,17 +1360,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.121.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV)";
 				PRODUCT_NAME = "Personal Cloud Photos-Profile";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -1398,8 +1394,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1415,7 +1410,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1440,7 +1435,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1457,7 +1452,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.vdebug.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).vdebug.WidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -1483,7 +1478,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1499,7 +1494,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).WidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1523,7 +1518,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1539,7 +1534,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.dev.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_DEV).WidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1563,7 +1558,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1580,7 +1575,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).vdebug.WidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -1606,7 +1601,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1622,7 +1617,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).WidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1646,7 +1641,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 210;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1662,7 +1657,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.Widget;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).Widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1685,8 +1680,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1703,7 +1697,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.vdebug.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).vdebug.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1729,8 +1723,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1746,7 +1739,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1770,8 +1763,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 205;
-				CUSTOM_GROUP_ID = group.com.seagate.curator.stxphotos.ios.share;
-				DEVELOPMENT_TEAM = 57HJ3KH2XC;
+				DEVELOPMENT_TEAM = "$(IMMICH_TEAM_ID)";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1787,7 +1779,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.seagate.curator.stxphotos.ios.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(IMMICH_BUNDLE_ID_PROD).ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1854,13 +1846,20 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		FEE084F62EC172460045228E /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.3.0;
+				minimumVersion = 1.6.1;
 			};
 		};
 		FEE084F92EC1725A0045228E /* XCRemoteSwiftPackageReference "swift-http-structured-headers" */ = {
@@ -1868,12 +1867,16 @@
 			repositoryURL = "https://github.com/apple/swift-http-structured-headers.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
+				minimumVersion = 1.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
+		};
 		FEE084F72EC172460045228E /* SQLiteData */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FEE084F62EC172460045228E /* XCRemoteSwiftPackageReference "sqlite-data" */;

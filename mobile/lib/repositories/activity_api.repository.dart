@@ -26,8 +26,8 @@ class ActivityApiRepository extends ApiRepository {
     final dto = ActivityCreateDto(
       albumId: albumId,
       type: type == ActivityType.comment ? ReactionType.comment : ReactionType.like,
-      assetId: assetId,
-      comment: comment,
+      assetId: assetId == null ? const Optional.absent() : Optional.present(assetId),
+      comment: comment == null ? const Optional.absent() : Optional.present(comment),
     );
     final response = await checkNull(_api.createActivity(dto));
     return _toActivity(response);
@@ -48,6 +48,6 @@ class ActivityApiRepository extends ApiRepository {
     type: dto.type == ReactionType.comment ? ActivityType.comment : ActivityType.like,
     user: UserConverter.fromSimpleUserDto(dto.user),
     assetId: dto.assetId,
-    comment: dto.comment,
+    comment: dto.comment.orElse(null),
   );
 }

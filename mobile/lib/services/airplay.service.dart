@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' as timeline;
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:logging/logging.dart';
@@ -58,10 +57,10 @@ class AirplayService {
   }
 
   static Future<String?> downloadVideoForAirPlay(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
-    if (!asset.isRemote || asset.remoteId == null) {
+    if (!asset.hasRemote || asset.remoteId == null) {
       return null;
     }
 
@@ -72,11 +71,11 @@ class AirplayService {
     }
 
     try {
-      _log.info('Downloading video for AirPlay: ${asset.fileName}');
+      _log.info('Downloading video for AirPlay: ${asset.name}');
 
       // Get temporary directory
       final cacheDir = await getTemporaryDirectory();
-      final fileName = asset.fileName;
+      final fileName = asset.name;
       final tempFile = File(
         '${cacheDir.path}/airplay_${DateTime.now().millisecondsSinceEpoch}_$fileName',
       );
@@ -199,7 +198,7 @@ class AirplayService {
   }
 
   static Future<String?> preConvertPhotoForAirPlay(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
     if (!asset.isImage) {
@@ -207,7 +206,7 @@ class AirplayService {
     }
 
     // Check if already converted
-    final assetId = asset.remoteId ?? asset.id;
+    final assetId = asset.remoteId ?? asset.localId ?? asset.heroTag;
     final videoKey = '${assetId}_single_frame_video';
     final existingFile = _tempFiles[videoKey];
     if (existingFile != null && await existingFile.exists()) {
@@ -220,7 +219,7 @@ class AirplayService {
   }
 
   static Future<String?> preConvertTimelinePhotoForAirPlay(
-    timeline.BaseAsset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
     if (!asset.isImage) {
@@ -239,7 +238,7 @@ class AirplayService {
   /// Resolves a local file path for AirPlay playback of a timeline asset.
   /// Returns null when AirPlay is inactive or a local file is not required.
   static Future<String?> resolveTimelineLocalPlaybackPath(
-    timeline.BaseAsset asset,
+    BaseAsset asset,
     WidgetRef ref, {
     required bool airPlayActive,
   }) async {
@@ -252,7 +251,7 @@ class AirplayService {
       return null;
     }
 
-    if (asset.isVideo && !asset.hasLocal && asset is timeline.RemoteAsset) {
+    if (asset.isVideo && !asset.hasLocal && asset is RemoteAsset) {
       return preDownloadTimelineVideoForAirPlay(asset, ref);
     }
 
@@ -264,7 +263,7 @@ class AirplayService {
   }
 
   static Future<String?> convertTimelinePhotoToVideoForAirPlay(
-    timeline.BaseAsset asset,
+    BaseAsset asset,
     WidgetRef ref, {
     int durationSeconds = 1,
     int fps = 1,
@@ -310,19 +309,19 @@ class AirplayService {
   }
 
   static Future<img.Image?> _decodeTimelineImageBytes(
-    timeline.BaseAsset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
     Uint8List? imageBytes;
 
-    if (asset is timeline.LocalAsset) {
+    if (asset is LocalAsset) {
       final file = await StorageRepository().getFileForAsset(asset.id);
       if (file == null) {
         _log.warning('Local file not found for timeline AirPlay photo conversion');
         return null;
       }
       imageBytes = await file.readAsBytes();
-    } else if (asset is timeline.RemoteAsset) {
+    } else if (asset is RemoteAsset) {
       final apiService = ref.read(apiServiceProvider);
       final res = await apiService.assetsApi.downloadAssetWithHttpInfo(asset.id);
       if (res.statusCode != 200) {
@@ -343,10 +342,10 @@ class AirplayService {
   }
 
   static Future<String?> preDownloadTimelineVideoForAirPlay(
-    timeline.BaseAsset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
-    if (!asset.isVideo || !asset.hasRemote || asset is! timeline.RemoteAsset) {
+    if (!asset.isVideo || !asset.hasRemote || asset is! RemoteAsset) {
       return null;
     }
 
@@ -381,7 +380,7 @@ class AirplayService {
   }
 
   static Future<void> preProcessTimelineAssetsForAirPlay(
-    List<timeline.BaseAsset> assets,
+    List<BaseAsset> assets,
     WidgetRef ref,
   ) async {
     for (final a in assets) {
@@ -394,10 +393,10 @@ class AirplayService {
   }
 
   static Future<String?> preDownloadVideoForAirPlay(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref,
   ) async {
-    if (!asset.isVideo || !asset.isRemote || asset.remoteId == null) {
+    if (!asset.isVideo || !asset.hasRemote || asset.remoteId == null) {
       return null;
     }
 
@@ -413,14 +412,14 @@ class AirplayService {
   }
 
   static Future<void> preProcessAssetsForAirPlay(
-    List<Asset> assets,
+    List<BaseAsset> assets,
     WidgetRef ref,
   ) async {
     for (final asset in assets) {
       if (asset.isImage) {
         // Pre-convert photos
         preConvertPhotoForAirPlay(asset, ref);
-      } else if (asset.isVideo && asset.isRemote) {
+      } else if (asset.isVideo && asset.hasRemote) {
         // Pre-download remote videos
         preDownloadVideoForAirPlay(asset, ref);
       }
@@ -428,116 +427,18 @@ class AirplayService {
   }
 
   static Future<String?> convertPhotoToVideoForAirPlay(
-    Asset asset,
+    BaseAsset asset,
     WidgetRef ref, {
     int durationSeconds =
         1, // Single frame duration (1 second minimum for AirPlay)
     int fps = 1, // 1 FPS for single frame
   }) async {
-    if (!asset.isImage) {
-      _log.warning('Cannot convert photo to video: asset is not an image');
-
-      return null;
-    }
-
-    // Check if we already have this photo converted
-    final assetId = asset.remoteId ?? asset.id;
-    final videoKey = '${assetId}_single_frame_video';
-    final existingFile = _tempFiles[videoKey];
-    if (existingFile != null && await existingFile.exists()) {
-      return existingFile.path;
-    }
-
-    try {
-      _log.info(
-        'Converting photo to single-frame video for AirPlay: ${asset.fileName} (Local: ${asset.isLocal}, Remote: ${asset.isRemote})',
-      );
-
-      // Get image bytes - handle both local and remote photos
-      Uint8List imageBytes;
-
-      // Debug logging to understand asset state
-      _log.info(
-        'Asset state: isLocal=${asset.isLocal}, isRemote=${asset.isRemote}, hasLocal=${asset.local != null}, hasRemoteId=${asset.remoteId != null}',
-      );
-
-      if (asset.local != null) {
-        // Use local file (prioritize local for both local-only and merged assets)
-        final file = await asset.local!.file;
-        if (file == null) {
-          _log.warning('Local file not found for photo conversion');
-          return null;
-        }
-        imageBytes = await file.readAsBytes();
-        _log.info(
-          'Using local file for photo-to-video conversion: ${file.path} (${imageBytes.length} bytes)',
-        );
-      } else if (asset.isRemote && asset.remoteId != null) {
-        // Download remote image (only for remote-only assets)
-        final apiService = ref.read(apiServiceProvider);
-        _log.info('Downloading remote image for photo-to-video conversion...');
-
-        final res = await apiService.assetsApi
-            .downloadAssetWithHttpInfo(asset.remoteId!);
-
-        if (res.statusCode != 200) {
-          _log.warning(
-            'Failed to download image for video conversion: ${res.statusCode}',
-          );
-          return null;
-        }
-        imageBytes = res.bodyBytes;
-        _log.info(
-          'Remote image downloaded successfully, starting photo-to-video conversion...',
-        );
-      } else {
-        _log.warning(
-          'Cannot convert photo: no local file or remote ID available',
-        );
-        return null;
-      }
-
-      // Decode the image
-      final image = img.decodeImage(imageBytes);
-      if (image == null) {
-        _log.warning('Failed to decode image for video conversion');
-        return null;
-      }
-
-      // Create video file
-      final cacheDir = await getTemporaryDirectory();
-      final videoFile = File(
-        '${cacheDir.path}/airplay_photo_video_${DateTime.now().millisecondsSinceEpoch}_${asset.fileName}.mp4',
-      );
-      _log.info('Creating photo-to-video file: ${videoFile.path}');
-
-      // Create a single-frame video from the photo
-      _log.info('Starting FFmpeg single-frame video conversion...');
-      final success = await _createVideoSlideshow(
-        image,
-        videoFile,
-        durationSeconds: durationSeconds,
-        fps: fps,
-      );
-
-      if (success) {
-        // Store reference for cleanup
-        _tempFiles[videoKey] = videoFile;
-        _log.info(
-          'Photo converted to video successfully for AirPlay: ${videoFile.path}',
-        );
-
-        return videoFile.path;
-      } else {
-        _log.warning('Failed to create photo-to-video');
-
-        return null;
-      }
-    } catch (e) {
-      _log.severe('Error converting photo to video for AirPlay: $e');
-
-      return null;
-    }
+    return convertTimelinePhotoToVideoForAirPlay(
+      asset,
+      ref,
+      durationSeconds: durationSeconds,
+      fps: fps,
+    );
   }
 
   static Future<bool> _createVideoSlideshow(

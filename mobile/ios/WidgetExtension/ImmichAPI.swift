@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 import WidgetKit
 
-let IMMICH_SHARE_GROUP = "group.com.seagate.curator.stxphotos.ios.share"
+let IMMICH_SHARE_GROUP = Bundle.main.object(forInfoDictionaryKey: "AppGroupId") as! String
 
 enum WidgetError: Error, Codable {
   case noLogin
@@ -25,7 +25,7 @@ extension WidgetError: LocalizedError {
       return "Login to Personal Cloud Photos"
 
     case .fetchFailed:
-      return "Unable to connect to your Personal Cloud Photos instance"
+      return "Unable to connect to Personal Cloud Photos"
 
     case .albumNotFound:
       return "Album not found"
@@ -203,7 +203,10 @@ class ImmichAPI {
 
   func fetchMemory(for date: Date) async throws -> [MemoryResult] {
     // get URL
-    let memoryParams = [URLQueryItem(name: "for", value: date.ISO8601Format())]
+    let localDay = date.formatted(
+      Date.ISO8601FormatStyle(timeZone: .current).year().month().day().dateSeparator(.dash)
+    )
+    let memoryParams = [URLQueryItem(name: "for", value: localDay)]
     guard
       let searchURL = buildRequestURL(
         serverConfig: serverConfig,

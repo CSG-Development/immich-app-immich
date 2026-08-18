@@ -1,3 +1,5 @@
+import 'package:openapi/api.dart';
+
 class Tag {
   final String id;
   final String name;
@@ -17,13 +19,13 @@ class Tag {
     required this.updatedAt,
   });
 
-  factory Tag.fromDto(dynamic dto) {
+  factory Tag.fromDto(TagResponseDto dto) {
     return Tag(
       id: dto.id,
       name: dto.name,
       value: dto.value,
-      color: dto.color,
-      parentId: dto.parentId,
+      color: dto.color.orElse(null),
+      parentId: dto.parentId.orElse(null),
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     );

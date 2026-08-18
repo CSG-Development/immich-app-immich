@@ -18,6 +18,7 @@ import 'package:immich_mobile/providers/infrastructure/trash_sync.provider.dart'
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/fork_server_version.dart';
 import 'package:immich_mobile/widgets/settings/beta_sync_settings/entity_count_tile.dart';
 import 'package:immich_mobile/widgets/settings/setting_group_title.dart';
 import 'package:immich_mobile/widgets/settings/setting_list_tile.dart';
@@ -142,7 +143,7 @@ class SyncStatusAndActions extends HookConsumerWidget {
             ref.read(backgroundSyncProvider).syncRemote();
           },
         ),
-        if (CurrentPlatform.isIOS && serverVersion.isAtLeast(major: 2, minor: 5))
+        if (CurrentPlatform.isIOS && serverVersion.isAtLeastV1_31)
           SettingListTile(
             title: "Sync Cloud Ids".t(context: context),
             leading: const Icon(Icons.cloud_circle_rounded),
@@ -244,10 +245,7 @@ class _SyncStatsCounts extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Center(
-                  child: Text(
-                    "reset_db_prompt".t(context: context),
-                    style: context.textTheme.bodyLarge,
-                  ),
+                  child: Text("reset_db_prompt".t(context: context), style: context.textTheme.bodyLarge),
                 ),
               ),
             ],
