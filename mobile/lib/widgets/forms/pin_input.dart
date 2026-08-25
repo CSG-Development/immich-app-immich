@@ -15,6 +15,7 @@ class PinInput extends StatelessWidget {
   final PinTheme? focusedPinTheme;
   final PinTheme? errorPinTheme;
   final Widget? cursor;
+  final Widget Function(int)? separatorBuilder;
 
   const PinInput({
     super.key,
@@ -30,6 +31,7 @@ class PinInput extends StatelessWidget {
     this.focusedPinTheme,
     this.errorPinTheme,
     this.cursor,
+    this.separatorBuilder,
   });
 
   @override
@@ -107,7 +109,7 @@ class PinInput extends StatelessWidget {
           autofocus: autoFocus ?? false,
           obscureText: obscureText ?? false,
           obscuringWidget: Icon(Icons.vpn_key_rounded, color: context.primaryColor, size: 20),
-          separatorBuilder: (index) => const SizedBox(height: 64, width: 3),
+          separatorBuilder: separatorBuilder ?? (index) => const SizedBox(width: 3),
           cursor: baseCursor,
           defaultPinTheme: baseDefaultPinTheme,
           focusedPinTheme: baseFocusedPinTheme,
