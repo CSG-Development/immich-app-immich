@@ -2,6 +2,7 @@
   import { shortcut } from '$lib/actions/shortcut';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import FaceCreateTagModal from '$lib/modals/CreateFaceModal.svelte';
   import { getPeopleThumbnailUrl } from '$lib/utils';
   import { getNaturalSize, scaleToFit } from '$lib/utils/container-utils';
@@ -328,8 +329,8 @@
         },
       });
 
-      await assetViewerManager.setAssetId(assetId);
-      onClose();
+      const updated = await assetViewerManager.setAssetId(assetId);
+      eventManager.emit('AssetUpdate', updated);
     } catch (error) {
       handleError(error, 'Error tagging face');
     }

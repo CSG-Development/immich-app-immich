@@ -177,9 +177,16 @@
 
       eventManager.emit('PersonAssetDelete', { id: face.person.id, assetId });
 
+      // Removing the hovered thumbnail skips mouseleave, so clear the highlight explicitly.
+      $boundingBoxesArray = $boundingBoxesArray.filter((b) => b.id !== face.id);
       peopleWithFaces = peopleWithFaces.filter((f) => f.id !== face.id);
 
-      await assetViewerManager.setAssetId(assetId);
+      const updated = await assetViewerManager.setAssetId(assetId);
+      eventManager.emit('AssetUpdate', updated);
+
+      if (peopleWithFaces.length === 0) {
+        onClose();
+      }
     } catch (error) {
       handleError(error, $t('error_delete_face'));
     }
