@@ -15,7 +15,7 @@ import orjson
 from fastapi import Depends, FastAPI, File, Form, HTTPException
 from fastapi.responses import ORJSONResponse, PlainTextResponse
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidProtobuf, NoSuchFile
-from PIL.Image import Image
+from PIL.Image import Image, new, open
 from pydantic import ValidationError
 from starlette.formparsers import MultiPartParser
 
@@ -183,7 +183,7 @@ def fit_image_to_224_square(image: Image) -> Image:
         image = image.convert("RGB")
         background_color = (0, 0, 0)
 
-    canvas = Image.new(
+    canvas = new(
         image.mode,
         (side, side),
         background_color,
