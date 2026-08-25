@@ -118,6 +118,42 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
     _assetCountController.add(assets.length);
   }
 
+  /// Updates favorite status in the in-memory search results so the grid
+  /// reflects the change without re-running the search query.
+  void updateFavorite(Iterable<String> ids, bool isFavorite) {
+    if (ids.isEmpty || state.assets.isEmpty) {
+      return;
+    }
+
+    final idSet = ids.toSet();
+    var changed = false;
+    final assets = state.assets.map((asset) {
+      final remoteId = asset.remoteId;
+      if (remoteId == null || !idSet.contains(remoteId) || asset.isFavorite == isFavorite) {
+        return asset;
+      }
+
+      changed = true;
+      return switch (asset) {
+        final RemoteAsset remote => remote.copyWith(isFavorite: isFavorite),
+        final LocalAsset local => local.copyWith(isFavorite: isFavorite),
+      };
+    }).toList(growable: false);
+
+    if (!changed) {
+      return;
+    }
+
+    state = SearchState(
+      assets: assets,
+      nextPage: state.nextPage,
+      isLoading: state.isLoading,
+      error: state.error,
+    );
+    // Count is unchanged; still emit so the search timeline reloads its buffer.
+    _assetCountController.add(assets.length);
+  }
+
   @override
   void dispose() {
     _assetCountController.close();
