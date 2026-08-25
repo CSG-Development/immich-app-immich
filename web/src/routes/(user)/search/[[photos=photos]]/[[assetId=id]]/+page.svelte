@@ -16,6 +16,7 @@
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { handlePromiseError } from '$lib/utils';
   import { parseUtcDate } from '$lib/utils/date-time';
@@ -244,10 +245,60 @@
 
 <OnEvents {onAlbumAddAssets} />
 
+{#if assetMultiSelectManager.selectionActive}
+  <div class="fixed top-0 start-0 w-full z-2">
+    <AssetSelectControlBar>
+      {@const Actions = getAssetBulkActions($t)}
+      <CommandPaletteDefaultProvider name={$t('assets')} actions={Object.values(Actions)} />
+
+      <CreateSharedLink />
+      <IconButton
+        shape="round"
+        color="secondary"
+        variant="ghost"
+        aria-label={$t('select_all')}
+        icon={mdiSelectAll}
+        onclick={handleSelectAll}
+      />
+      <ActionButton action={Actions.AddToAlbum} />
+      {#if assetMultiSelectManager.isAllUserOwned}
+        <FavoriteAction
+          removeFavorite={assetMultiSelectManager.isAllFavorite}
+          onFavorite={(ids, isFavorite) => {
+            for (const id of ids) {
+              const asset = searchResultAssets.find((asset) => asset.id === id);
+              if (asset) {
+                asset.isFavorite = isFavorite;
+              }
+            }
+          }}
+        />
+
+        <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
+      {:else}
+        <DownloadAction />
+      {/if}
+    </AssetSelectControlBar>
+  </div>
+{:else}
+  <div class="fixed top-0 start-0 w-full z-2">
+    <ControlAppBar isSearch onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
+      <div class="max-w-256 m-auto flex-1 px-4">
+        <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
+      </div>
+      {#snippet trailing()}
+        {#if !mobileDevice.maxMd}
+          <div class="w-18"></div>
+        {/if}
+      {/snippet}
+    </ControlAppBar>
+  </div>
+{/if}
+
 {#if terms}
   <section
     id="search-chips"
-    class="mt-24 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
+    class="mt-21 md:mt-27.5 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
   >
     {#each getObjectKeys(terms) as searchKey (searchKey)}
       {@const value = terms[searchKey]}
@@ -286,7 +337,7 @@
 {/if}
 
 <section
-  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4 max-h-screen"
+  class="mb-12 mt-6 mx-4 min-h-[calc(100dvh-8rem)]"
   bind:clientHeight={viewport.height}
   bind:clientWidth={viewport.width}
   bind:this={searchResultsElement}
@@ -315,54 +366,6 @@
     {#if isLoading}
       <div class="flex justify-center py-16 items-center">
         <LoadingSpinner size="giant" />
-      </div>
-    {/if}
-  </section>
-
-  <section>
-    {#if assetMultiSelectManager.selectionActive}
-      <div class="fixed top-0 start-0 w-full z-2">
-        <AssetSelectControlBar>
-          {@const Actions = getAssetBulkActions($t)}
-          <CommandPaletteDefaultProvider name={$t('assets')} actions={Object.values(Actions)} />
-
-          <CreateSharedLink />
-          <IconButton
-            shape="round"
-            color="secondary"
-            variant="ghost"
-            aria-label={$t('select_all')}
-            icon={mdiSelectAll}
-            onclick={handleSelectAll}
-          />
-          <ActionButton action={Actions.AddToAlbum} />
-          {#if assetMultiSelectManager.isAllUserOwned}
-            <FavoriteAction
-              removeFavorite={assetMultiSelectManager.isAllFavorite}
-              onFavorite={(ids, isFavorite) => {
-                for (const id of ids) {
-                  const asset = searchResultAssets.find((asset) => asset.id === id);
-                  if (asset) {
-                    asset.isFavorite = isFavorite;
-                  }
-                }
-              }}
-            />
-
-            <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
-          {:else}
-            <DownloadAction />
-          {/if}
-        </AssetSelectControlBar>
-      </div>
-    {:else}
-      <div class="fixed top-0 start-0 w-full z-2">
-        <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
-          <div class="absolute bg-light"></div>
-          <div class="w-full flex-1 ps-4">
-            <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
-          </div>
-        </ControlAppBar>
       </div>
     {/if}
   </section>
