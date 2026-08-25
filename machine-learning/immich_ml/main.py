@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import math
 import os
 import signal
 import threading
@@ -164,6 +165,38 @@ def get_entries(entries: str = Form()) -> InferenceEntries:
         raise HTTPException(422, "Invalid request format.")
 
 
+def fit_image_to_224_square(image: Image) -> Image:
+    width, height = image.size
+    max_dimension = max(width, height)
+    side = math.ceil(max_dimension / 224) * 224
+
+    if width == side and height == side:
+        return image
+
+    if image.mode == "RGBA":
+        background_color = (0, 0, 0, 255)
+    elif image.mode == "RGB":
+        background_color = (0, 0, 0)
+    elif image.mode == "L":
+        background_color = 0
+    else:
+        image = image.convert("RGB")
+        background_color = (0, 0, 0)
+
+    canvas = Image.new(
+        image.mode,
+        (side, side),
+        background_color,
+    )
+
+    x = (side - width) // 2
+    y = (side - height) // 2
+
+    canvas.paste(image, (x, y))
+
+    return canvas
+
+
 app = FastAPI(lifespan=lifespan)
 
 declare_endpoints(app) # Search Query Analyzer Endpoints
@@ -185,7 +218,7 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
-        inputs: Image | str = await run(lambda: decode_pil(image))
+        inputs: Image | str = await run(lambda: fit_image_to_224_square(decode_pil(image)))
     elif text is not None:
         inputs = text
     else:
