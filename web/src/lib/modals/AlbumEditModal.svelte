@@ -1,6 +1,7 @@
 <script lang="ts">
   import AlbumCover from '$lib/components/album-page/album-cover.svelte';
   import { handleUpdateAlbum } from '$lib/services/album.service';
+  import { resolveAlbumName } from '$lib/utils/album-name';
   import { type AlbumResponseDto } from '@immich/sdk';
   import { Field, FormModal, Input, Textarea } from '@immich/ui';
   import { mdiRenameOutline } from '@mdi/js';
@@ -17,7 +18,10 @@
   let description = $state(album.description);
 
   const onSubmit = async () => {
-    const success = await handleUpdateAlbum(album, { albumName, description });
+    const success = await handleUpdateAlbum(album, {
+      albumName: resolveAlbumName(albumName),
+      description,
+    });
     if (success) {
       onClose();
     }

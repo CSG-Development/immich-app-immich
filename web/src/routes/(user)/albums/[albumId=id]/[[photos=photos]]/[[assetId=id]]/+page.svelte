@@ -46,7 +46,7 @@
     type AlbumEditAccessResult,
   } from '$lib/utils/album-access';
   import { handleError } from '$lib/utils/handle-error';
-  import { isAlbumsRoute, navigate, type AssetGridRouteSearchParams } from '$lib/utils/navigation';
+  import { navigate, type AssetGridRouteSearchParams } from '$lib/utils/navigation';
   import {
     AlbumUserRole,
     AssetVisibility,
@@ -248,12 +248,18 @@
   let albumId = $derived(album.id);
 
   onNavigate(async ({ to }) => {
-    const currentAlbum = data.album;
+    // Use live album state (not data.album) so assetCount reflects photos added this session.
+    const currentAlbum = album;
     if (!currentAlbum) {
       return;
     }
 
-    if (!isAlbumsRoute(to?.route.id) && currentAlbum.assetCount === 0 && !currentAlbum.albumName) {
+    // Stay within the albums section (list or detail) without treating empty drafts as abandoned.
+    if (to?.route.id?.startsWith('/(user)/albums')) {
+      return;
+    }
+
+    if (currentAlbum.assetCount === 0 && !currentAlbum.albumName) {
       await handleDeleteAlbum(currentAlbum, { notify: false, prompt: false });
     }
   });
