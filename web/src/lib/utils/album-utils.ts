@@ -38,10 +38,21 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
   }
 };
 
+let isCreatingAlbum = false;
+
 export const createAlbumAndRedirect = async (name?: string, assetIds?: string[]) => {
-  const newAlbum = await createAlbum(name, assetIds);
-  if (newAlbum) {
-    await goto(Route.viewAlbum(newAlbum));
+  if (isCreatingAlbum) {
+    return;
+  }
+
+  isCreatingAlbum = true;
+  try {
+    const newAlbum = await createAlbum(name, assetIds);
+    if (newAlbum) {
+      await goto(Route.viewAlbum(newAlbum));
+    }
+  } finally {
+    isCreatingAlbum = false;
   }
 };
 
