@@ -23,6 +23,7 @@
   import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { isAssetViewerRoute, navigate } from '$lib/utils/navigation';
+  import { isAssetUnavailableError } from '$lib/utils/slideshow-utils';
   import { getTimes, type ScrubberListener } from '$lib/utils/timeline-util';
   import { getAssetInfo, type AlbumResponseDto, type PersonResponseDto, type UserResponseDto } from '@immich/sdk';
   import { DateTime } from 'luxon';
@@ -407,6 +408,21 @@
     }
   };
 
+  const tryViewAsset = async (asset: TimelineAsset, preload?: TimelineAsset) => {
+    try {
+      await viewAssetWithPreload({ asset, preload });
+      return true;
+    } catch (error) {
+      if (!isAssetUnavailableError(error)) {
+        throw error;
+      }
+
+      assetInteraction.removeAssetFromMultiselectGroup(asset.id);
+      timelineManager.removeAssets([asset.id]);
+      return false;
+    }
+  };
+
   const shuffleTimelineAssets = async () => {
     const assets = await timelineManager.getAssets();
 
@@ -434,29 +450,35 @@
   });
 
   const handlePreviousFromSelectedAssets = async () => {
-    const index = selectedAssets.findIndex((el) => el.id === assetViewerManager.asset?.id);
-    const previous = selectedAssets[index - 1];
-    if (!previous) {
-      return false;
+    const assets = [...selectedAssets];
+    let index = assets.findIndex((el) => el.id === assetViewerManager.asset?.id);
+
+    while (index > 0) {
+      index--;
+      const previous = assets[index];
+      if (await tryViewAsset(previous, assets[index - 1])) {
+        return true;
+      }
     }
 
-    const preload = selectedAssets[index - 2];
-    await viewAssetWithPreload({ asset: previous, preload });
-    return true;
+    return false;
   };
 
   const handlePreviousFromTimeline = async () => {
     if (!assetViewerManager.asset) {
       return false;
     }
-    const previous = await timelineManager.getLaterAsset(assetViewerManager.asset);
+    let previous = await timelineManager.getLaterAsset(assetViewerManager.asset);
 
-    if (!previous) {
-      return false;
+    while (previous) {
+      const preload = await timelineManager.getLaterAsset(previous);
+      if (await tryViewAsset(previous, preload)) {
+        return true;
+      }
+      previous = preload;
     }
-    const preload = await timelineManager.getLaterAsset(previous);
-    await viewAssetWithPreload({ asset: previous, preload });
-    return true;
+
+    return false;
   };
 
   const handlePrevious = async () => {
@@ -464,29 +486,35 @@
   };
 
   const handleNextFromSelectedAssets = async () => {
-    const index = selectedAssets.findIndex((el) => el.id === assetViewerManager.asset?.id);
-    const next = selectedAssets[index + 1];
-    if (!next) {
-      return false;
+    const assets = [...selectedAssets];
+    let index = assets.findIndex((el) => el.id === assetViewerManager.asset?.id);
+
+    while (index + 1 < assets.length) {
+      index++;
+      const next = assets[index];
+      if (await tryViewAsset(next, assets[index + 1])) {
+        return true;
+      }
     }
 
-    const preload = selectedAssets[index + 2];
-    await viewAssetWithPreload({ asset: next, preload });
-    return true;
+    return false;
   };
 
   const handleNextFromTimeline = async () => {
     if (!assetViewerManager.asset) {
       return false;
     }
-    const next = await timelineManager.getEarlierAsset(assetViewerManager.asset);
-    if (!next) {
-      return false;
+    let next = await timelineManager.getEarlierAsset(assetViewerManager.asset);
+
+    while (next) {
+      const preload = await timelineManager.getEarlierAsset(next);
+      if (await tryViewAsset(next, preload)) {
+        return true;
+      }
+      next = preload;
     }
 
-    const preload = await timelineManager.getEarlierAsset(next);
-    await viewAssetWithPreload({ asset: next, preload });
-    return true;
+    return false;
   };
 
   const handleNext = async () => {
@@ -494,20 +522,25 @@
   };
 
   const handleRandom = async () => {
-    const index =
-      selectedAssets.length > 0
-        ? shuffledSelectedAssets.findIndex((el) => el.id === assetViewerManager.asset?.id)
-        : shuffledTimelineAssets.findIndex((el) => el.id === assetViewerManager.asset?.id);
+    const pool = selectedAssets.length > 0 ? shuffledSelectedAssets : shuffledTimelineAssets;
+    let index = pool.findIndex((el) => el.id === assetViewerManager.asset?.id);
 
-    const next = selectedAssets.length > 0 ? shuffledSelectedAssets[index + 1] : shuffledTimelineAssets[index + 1];
-    if (!next) {
-      return undefined;
+    while (index + 1 < pool.length) {
+      index++;
+      const next = pool[index];
+      try {
+        return await viewAssetWithPreload({ asset: next, returnFullAsset: true });
+      } catch (error) {
+        if (!isAssetUnavailableError(error)) {
+          throw error;
+        }
+
+        assetInteraction.removeAssetFromMultiselectGroup(next.id);
+        timelineManager.removeAssets([next.id]);
+      }
     }
 
-    if (next) {
-      const asset = await viewAssetWithPreload({ asset: next, returnFullAsset: true });
-      return asset;
-    }
+    return undefined;
   };
 
   const handlePlaySlideshow = async () => {

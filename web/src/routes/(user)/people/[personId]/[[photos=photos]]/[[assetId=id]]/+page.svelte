@@ -17,7 +17,6 @@
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { PersonPageViewMode, QueryParameter, SessionStorageKey } from '$lib/constants';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
-  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import PersonMergeSuggestionModal from '$lib/modals/PersonMergeSuggestionModal.svelte';
@@ -25,11 +24,12 @@
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { getPersonActions } from '$lib/services/person.service';
-  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
   import { websocketEvents } from '$lib/stores/websocket';
-  import { getFirstSlideshowAsset, getPeopleThumbnailUrl, handlePromiseError, toDate } from '$lib/utils';
+  import { getPeopleThumbnailUrl } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
   import { isExternalUrl } from '$lib/utils/navigation';
+  import { startSelectionSlideshow } from '$lib/utils/slideshow-utils';
   import { AssetVisibility, searchPerson, updatePerson, type PersonResponseDto } from '@immich/sdk';
   import {
     ActionButton,
@@ -328,22 +328,12 @@
     },
   };
 
-  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let { slideshowNavigation } = slideshowStore;
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
-  const handleStartSlideshow = () => {
-    assetMultiSelectManager.selectedAssets.sort(
-      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
-    );
-    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
-    const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(assetMultiSelectManager.selectedAssets, shuffledSelectedAssets, nav);
-    if (asset) {
-      handlePromiseError(
-        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
-      );
-    }
+  const handleStartSlideshow = async () => {
+    shuffledSelectedAssets = await startSelectionSlideshow(get(slideshowNavigation));
   };
 
   const FixIncorrectMatch: ActionItem = {
