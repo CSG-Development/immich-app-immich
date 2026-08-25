@@ -4,6 +4,7 @@ import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/repositories/api.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/album_access.dart';
 // ignore: import_rule_openapi
 import 'package:openapi/api.dart' hide AlbumUserRole;
 
@@ -109,6 +110,19 @@ class DriftAlbumApiRepository extends ApiRepository {
   Future<RemoteAlbum> refreshAlbum(String albumId, UserDto owner) async {
     final response = await checkNull(_api.getAlbumInfo(albumId));
     return response.toRemoteAlbum(owner);
+  }
+
+  Future<AlbumEditAccessResult> checkAlbumEditAccess(String albumId, String userId, UserDto owner) async {
+    try {
+      final response = await checkNull(_api.getAlbumInfo(albumId));
+      final album = response.toRemoteAlbum(owner);
+      if (isAlbumEditor(response, userId)) {
+        return AlbumEditAccessAllowed(album);
+      }
+      return AlbumEditAccessViewOnly(album);
+    } catch (error) {
+      return classifyAlbumAccessError(error);
+    }
   }
 
   Future<void> addUsers(String albumId, Iterable<String> userIds) async {
