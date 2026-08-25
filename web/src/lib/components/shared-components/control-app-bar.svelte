@@ -71,7 +71,7 @@
     ]}
   >
     <div
-      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {isSearch
+      class="flex min-w-0 place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {isSearch
         ? ''
         : 'w-full'} {forceDark ? 'dark' : ''}"
     >
@@ -86,7 +86,7 @@
           size="large"
         />
       {/if}
-      <span class={isSearch ? '' : 'w-full'}>{@render leading?.()}</span>
+      <span class={isSearch ? '' : 'min-w-0 w-full'}>{@render leading?.()}</span>
     </div>
 
     {#if children}
