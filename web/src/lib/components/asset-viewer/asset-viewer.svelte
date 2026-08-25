@@ -91,7 +91,7 @@
     onClose,
     onRemoveFromAlbum,
     onRandom,
-    onPlaySlideshow = () => {},
+    onPlaySlideshow = () => slideshowStore.slideshowState.set(SlideshowState.PlaySlideshow),
     onPrevious,
     onNext,
   }: Props = $props();
