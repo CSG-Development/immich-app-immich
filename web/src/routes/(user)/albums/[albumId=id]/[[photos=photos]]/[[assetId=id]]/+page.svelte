@@ -764,17 +764,20 @@
       {#if viewMode === AlbumPageViewMode.SELECT_ASSETS}
         <ControlAppBar onClose={handleCloseSelectAssets}>
           {#snippet leading()}
-            <p class="text-lg dark:text-immich-dark-fg w-40">
+            <div class="text-lg dark:text-immich-dark-fg min-w-0">
               {#if !timelineMultiSelectManager.selectionActive}
-                {$t('add_to_album')}
+                <p class="truncate">{$t('add_to_album')}</p>
               {:else}
-                {$t('selected_count', { values: { count: timelineMultiSelectManager.assets.length } })}
+                <p class="block sm:hidden">{timelineMultiSelectManager.assets.length}</p>
+                <p class="hidden sm:block">
+                  {$t('selected_count', { values: { count: timelineMultiSelectManager.assets.length } })}
+                </p>
               {/if}
-            </p>
+            </div>
           {/snippet}
 
           {#snippet trailing()}
-            <HeaderActionButton action={Upload} />
+            <HeaderActionButton action={Upload} iconOnlyBelow="sm" />
             <HeaderActionButton action={AddAssets} />
           {/snippet}
         </ControlAppBar>
