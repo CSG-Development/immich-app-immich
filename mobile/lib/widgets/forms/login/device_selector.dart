@@ -50,7 +50,9 @@ class DeviceSelector extends HookWidget {
         composing: TextRange.empty,
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!context.mounted) {
+          return;
+        }
         controller.value = TextEditingValue(
           text: currentText,
           selection: TextSelection.collapsed(offset: currentText.length),
@@ -62,7 +64,9 @@ class DeviceSelector extends HookWidget {
     // Use useEffect to handle controller text updates
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!context.mounted) {
+          return;
+        }
         final DeviceItem? selected = selectedDevice is DeviceItem ? selectedDevice as DeviceItem : null;
         final String text = selected?.name ?? '';
         if (controller.text != text) {
@@ -78,7 +82,9 @@ class DeviceSelector extends HookWidget {
 
     // Track focus changes to update dropdown state
     useEffect(() {
-      if (focusNode == null) return null;
+      if (focusNode == null) {
+        return null;
+      }
 
       void onFocusChange() {
         isDropdownOpen.value = focusNode!.hasFocus;
@@ -133,21 +139,7 @@ class DeviceSelector extends HookWidget {
           child: RawAutocomplete<DeviceItem>(
             textEditingController: controller,
             focusNode: focusNode,
-            optionsBuilder: (value) {
-              final query = value.text.trim().toLowerCase();
-              if (query.isEmpty) {
-                return items;
-              }
-              final hasExactMatch = items.any(
-                (device) => device.name.trim().toLowerCase() == query,
-              );
-              if (hasExactMatch) {
-                return items;
-              }
-              return items.where(
-                (device) => device.name.toLowerCase().contains(query),
-              );
-            },
+            optionsBuilder: (_) => items,
             displayStringForOption: (value) => value.name,
             onSelected: (option) {
               isDropdownOpen.value = false;
@@ -161,6 +153,7 @@ class DeviceSelector extends HookWidget {
                 leadingIcon: buildIconDevice(selectedDevice),
                 isDetecting: isDetecting,
                 isEmpty: devices.isEmpty,
+                readOnly: true,
                 suffixIcon: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -180,13 +173,6 @@ class DeviceSelector extends HookWidget {
                     }
                   },
                 ),
-                onSubmit: () {
-                  if (controller.text.isEmpty) {
-                    onDeviceSelected(null);
-                  } else {
-                    onFieldSubmitted();
-                  }
-                },
               );
             },
             optionsViewBuilder: (context, onSelected, options) {
