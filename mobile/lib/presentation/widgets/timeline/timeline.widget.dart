@@ -443,9 +443,15 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> with WidgetsBi
               final topPadding = context.padding.top + (widget.appBar == null ? 0 : kToolbarHeight) + 10;
 
               const bottomSheetOpenModifier = 120.0;
-              final contentBottomPadding =
-                  context.padding.bottom +
-                  (isMultiSelectEnabled || widget.persistentBottomBar ? bottomSheetOpenModifier : 0);
+              const selectionSheetClearance = 100.0;
+              const bottomSheetMinFraction = 0.23;
+              final sheetInset = isMultiSelectEnabled || widget.persistentBottomBar
+                  ? math.max(
+                      bottomSheetOpenModifier + selectionSheetClearance,
+                      maxHeight * bottomSheetMinFraction,
+                    )
+                  : 0.0;
+              final contentBottomPadding = context.padding.bottom + sheetInset;
               final scrubberBottomPadding = contentBottomPadding + kScrubberThumbHeight;
 
               final grid = CustomScrollView(
