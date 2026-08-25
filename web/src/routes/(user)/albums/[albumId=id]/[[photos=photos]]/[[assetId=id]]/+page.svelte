@@ -36,9 +36,9 @@
   import { getGlobalActions } from '$lib/services/app.service';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
-  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
   import { user } from '$lib/stores/user.store';
-  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { handlePromiseError } from '$lib/utils';
   import {
     albumAccessMessageKey,
     checkAlbumEditAccess,
@@ -47,6 +47,7 @@
   } from '$lib/utils/album-access';
   import { handleError } from '$lib/utils/handle-error';
   import { navigate, type AssetGridRouteSearchParams } from '$lib/utils/navigation';
+  import { startSelectionSlideshow } from '$lib/utils/slideshow-utils';
   import {
     AlbumUserRole,
     AssetVisibility,
@@ -92,7 +93,7 @@
 
   let { data = $bindable() }: Props = $props();
 
-  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let { slideshowNavigation } = slideshowStore;
   let oldAt: AssetGridRouteSearchParams | null | undefined = $state();
 
   let viewMode: AlbumPageViewMode = $state(AlbumPageViewMode.VIEW);
@@ -296,7 +297,10 @@
     handlePromiseError(activityManager.init(album.id));
   });
 
-  onDestroy(() => activityManager.reset());
+  onDestroy(() => {
+    activityManager.reset();
+    timelineMultiSelectManager.destroy();
+  });
 
   let isOwned = $derived($user.id == album.ownerId);
 
@@ -433,31 +437,18 @@
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = async () => {
-    assetMultiSelectManager.selectedAssets.sort(
-      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
-    );
-    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
 
-    const firstAsset =
-      nav === SlideshowNavigation.Shuffle
-        ? await timelineManager.getRandomAsset()
-        : nav === SlideshowNavigation.AscendingOrder
-          ? timelineManager.months.at(-1)?.timelineDays.at(-1)?.viewerAssets.at(-1)?.asset
-          : timelineManager.months[0]?.timelineDays[0]?.viewerAssets[0]?.asset;
-    const firstSelectedAsset = getFirstSlideshowAsset(
-      assetMultiSelectManager.selectedAssets,
-      shuffledSelectedAssets,
-      nav,
-    );
+    const fallbackAsset =
+      assetMultiSelectManager.selectedAssets.length > 0
+        ? undefined
+        : nav === SlideshowNavigation.Shuffle
+          ? await timelineManager.getRandomAsset()
+          : nav === SlideshowNavigation.AscendingOrder
+            ? timelineManager.months.at(-1)?.timelineDays.at(-1)?.viewerAssets.at(-1)?.asset
+            : timelineManager.months[0]?.timelineDays[0]?.viewerAssets[0]?.asset;
 
-    const asset = assetMultiSelectManager.selectedAssets.length > 0 ? firstSelectedAsset : firstAsset;
-
-    if (asset) {
-      handlePromiseError(
-        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
-      );
-    }
+    shuffledSelectedAssets = await startSelectionSlideshow(nav, { fallbackAsset });
   };
 
   const handleRemoveFromAlbum = async () => {

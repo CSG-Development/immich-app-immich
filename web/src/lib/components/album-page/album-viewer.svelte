@@ -15,9 +15,10 @@
   import { handleDownloadAlbum } from '$lib/services/album.service';
   import { getGlobalActions } from '$lib/services/app.service';
   import { dragAndDropFilesStore } from '$lib/stores/drag-and-drop-files.store';
-  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { SlideshowNavigation, slideshowStore } from '$lib/stores/slideshow.store';
+  import { handlePromiseError } from '$lib/utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { startSelectionSlideshow } from '$lib/utils/slideshow-utils';
   import type { AlbumResponseDto, SharedLinkResponseDto } from '@immich/sdk';
   import { ActionButton, IconButton } from '@immich/ui';
   import { mdiArrowLeft, mdiDownload, mdiFileImagePlusOutline, mdiPresentationPlay } from '@mdi/js';
@@ -35,7 +36,7 @@
 
   const album = sharedLink.album as AlbumResponseDto;
 
-  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let { slideshowNavigation } = slideshowStore;
 
   const options = $derived({ albumId: album.id, order: album.order });
   let timelineManager = $state<TimelineManager>() as TimelineManager;
@@ -50,31 +51,18 @@
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
   const handleStartSlideshow = async () => {
-    assetMultiSelectManager.selectedAssets.sort(
-      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
-    );
-    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
     const nav = get(slideshowNavigation);
 
-    const firstAsset =
-      nav === SlideshowNavigation.Shuffle
-        ? await timelineManager.getRandomAsset()
-        : nav === SlideshowNavigation.AscendingOrder
-          ? timelineManager.months.at(-1)?.timelineDays.at(-1)?.viewerAssets.at(-1)?.asset
-          : timelineManager.months[0]?.timelineDays[0]?.viewerAssets[0]?.asset;
-    const firstSelectedAsset = getFirstSlideshowAsset(
-      assetMultiSelectManager.selectedAssets,
-      shuffledSelectedAssets,
-      nav,
-    );
+    const fallbackAsset =
+      assetMultiSelectManager.selectedAssets.length > 0
+        ? undefined
+        : nav === SlideshowNavigation.Shuffle
+          ? await timelineManager.getRandomAsset()
+          : nav === SlideshowNavigation.AscendingOrder
+            ? timelineManager.months.at(-1)?.timelineDays.at(-1)?.viewerAssets.at(-1)?.asset
+            : timelineManager.months[0]?.timelineDays[0]?.viewerAssets[0]?.asset;
 
-    const asset = assetMultiSelectManager.selectedGroup.size > 0 ? firstSelectedAsset : firstAsset;
-
-    if (asset) {
-      handlePromiseError(
-        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
-      );
-    }
+    shuffledSelectedAssets = await startSelectionSlideshow(nav, { fallbackAsset });
   };
 
   const { Cast } = $derived(getGlobalActions($t));

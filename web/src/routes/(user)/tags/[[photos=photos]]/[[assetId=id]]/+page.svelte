@@ -14,15 +14,14 @@
   import { AssetAction } from '$lib/constants';
   import SkipLink from '$lib/elements/SkipLink.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
-  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
   import { getTagActions } from '$lib/services/tag.service';
-  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
-  import { getFirstSlideshowAsset, handlePromiseError, toDate } from '$lib/utils';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
+  import { startSelectionSlideshow } from '$lib/utils/slideshow-utils';
   import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { joinPaths, TreeNode } from '$lib/utils/tree-utils';
   import { getAllTags, type TagResponseDto } from '@immich/sdk';
@@ -79,22 +78,12 @@
 
   let pageItemCount = $derived(tag.hasAssets ? (timelineManager?.assetCount ?? 0) : tag.children.length);
 
-  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let { slideshowNavigation } = slideshowStore;
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
-  const handleStartSlideshow = () => {
-    assetMultiSelectManager.selectedAssets.sort(
-      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
-    );
-    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
-    const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(assetMultiSelectManager.selectedAssets, shuffledSelectedAssets, nav);
-    if (asset) {
-      handlePromiseError(
-        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
-      );
-    }
+  const handleStartSlideshow = async () => {
+    shuffledSelectedAssets = await startSelectionSlideshow(get(slideshowNavigation));
   };
 
   const menuItems = $derived(

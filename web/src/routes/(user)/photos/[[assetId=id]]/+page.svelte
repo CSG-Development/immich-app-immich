@@ -16,16 +16,14 @@
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
-  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { slideshowStore } from '$lib/stores/slideshow.store';
   import { preferences } from '$lib/stores/user.store';
   import { locale } from '$lib/stores/preferences.store';
   import {
     getAssetMediaUrl,
     getAssetOriginalUrl,
-    getFirstSlideshowAsset,
     handlePromiseError,
     memoryLaneTitle,
-    toDate,
   } from '$lib/utils';
   import {
     updateStackedAssetInTimeline,
@@ -36,6 +34,7 @@
   import { canvasToBlob, getFileExtension, isWebCompatibleImage, makeImageUnique } from '$lib/utils/asset-utils';
   import { fileUploadHandler, openFileUploadDialog } from '$lib/utils/file-uploader';
   import { handleError } from '$lib/utils/handle-error';
+  import { startSelectionSlideshow } from '$lib/utils/slideshow-utils';
   import { formatPageTitleWithCount } from '$lib/utils/string-utils';
   import { getAltText } from '$lib/utils/thumbnail-util';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
@@ -99,22 +98,12 @@
     assetMultiSelectManager.clear();
   };
 
-  let { slideshowState, slideshowNavigation } = slideshowStore;
+  let { slideshowNavigation } = slideshowStore;
 
   let shuffledSelectedAssets: TimelineAsset[] = $derived([]);
 
-  const handleStartSlideshow = () => {
-    assetMultiSelectManager.selectedAssets.sort(
-      (a, b) => toDate(b.fileCreatedAt).getTime() - toDate(a.fileCreatedAt).getTime(),
-    );
-    shuffledSelectedAssets = [...assetMultiSelectManager.selectedAssets].sort(() => Math.random() - 0.5);
-    const nav = get(slideshowNavigation);
-    const asset = getFirstSlideshowAsset(assetMultiSelectManager.selectedAssets, shuffledSelectedAssets, nav);
-    if (asset) {
-      handlePromiseError(
-        assetViewerManager.setAssetId(asset.id).then(() => ($slideshowState = SlideshowState.PlaySlideshow)),
-      );
-    }
+  const handleStartSlideshow = async () => {
+    shuffledSelectedAssets = await startSelectionSlideshow(get(slideshowNavigation));
   };
 
   const menuItems = $derived(
