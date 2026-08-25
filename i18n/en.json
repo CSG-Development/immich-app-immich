@@ -1375,7 +1375,8 @@
     "unable_to_upload_file_shared_album": "You can only view this album. Contact the album owner for permission to add photos.",
     "unable_to_upload_file_type": "Upload failed. This file type is not supported.",
     "undo_delete_failed": "Failed to undo delete",
-    "unsupported_file_type_notification": "Unable to upload file <b>{filename}</b>. The selected file type is not supported."
+    "unsupported_file_type_notification": "Unable to upload file <b>{filename}</b>. The selected file type is not supported.",
+    "value_must_be_between": "Value must be between {min} and {max}"
   },
   "errors_text": "Errors",
   "exclusion_pattern": "Exclusion pattern",
