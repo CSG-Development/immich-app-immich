@@ -14,6 +14,7 @@ class ServerEndpointInput extends StatelessWidget {
   final String? hintText;
   final bool isDetecting;
   final bool isEmpty;
+  final bool readOnly;
 
   const ServerEndpointInput({
     super.key,
@@ -27,6 +28,7 @@ class ServerEndpointInput extends StatelessWidget {
     this.hintText,
     this.isDetecting = false,
     this.isEmpty = true,
+    this.readOnly = false,
   });
 
   @override
@@ -34,10 +36,14 @@ class ServerEndpointInput extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([controller, focusNode]),
       builder: (context, _) {
-        final bool shouldShowClearButton = controller.text.isNotEmpty && focusNode.hasFocus;
+        final bool shouldShowClearButton = !readOnly && controller.text.isNotEmpty && focusNode.hasFocus;
         return TextFormField(
           controller: controller,
-          inputFormatters: const [TrimFormatter()],
+          readOnly: readOnly,
+          showCursor: !readOnly,
+          enableInteractiveSelection: !readOnly,
+          mouseCursor: readOnly ? SystemMouseCursors.click : null,
+          inputFormatters: readOnly ? const [] : const [TrimFormatter()],
           decoration: InputDecorations.baseDecoration(
             context: context,
             labelText: label ?? 'curator.login_form_endpoint_url'.tr(),
@@ -57,11 +63,11 @@ class ServerEndpointInput extends StatelessWidget {
           ),
           autovalidateMode: AutovalidateMode.always,
           focusNode: focusNode,
-          autofillHints: const [AutofillHints.url],
-          keyboardType: TextInputType.url,
+          autofillHints: readOnly ? null : const [AutofillHints.url],
+          keyboardType: readOnly ? TextInputType.none : TextInputType.url,
           autocorrect: false,
-          onFieldSubmitted: (_) => onSubmit?.call(),
-          textInputAction: TextInputAction.go,
+          onFieldSubmitted: readOnly ? null : (_) => onSubmit?.call(),
+          textInputAction: readOnly ? TextInputAction.none : TextInputAction.go,
         );
       },
     );
