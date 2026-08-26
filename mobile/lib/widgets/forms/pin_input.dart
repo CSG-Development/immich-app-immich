@@ -48,6 +48,7 @@ class PinInput extends StatelessWidget {
       return Size(pinWidth, pinHeight);
     }
 
+    // outlineVariant keeps slots visible when SG flattens surface shades to one color.
     final baseDefaultPinTheme =
         defaultPinTheme ??
         PinTheme(
@@ -56,7 +57,7 @@ class PinInput extends StatelessWidget {
           textStyle: TextStyle(fontSize: 24, color: context.colorScheme.onSurface),
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(19)),
-            border: Border.all(color: context.colorScheme.surfaceBright),
+            border: Border.all(color: context.colorScheme.outlineVariant),
             color: context.colorScheme.surfaceContainerHigh,
           ),
         );
@@ -66,7 +67,7 @@ class PinInput extends StatelessWidget {
         baseDefaultPinTheme.copyWith(
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(19)),
-            border: Border.all(color: context.primaryColor.withValues(alpha: 0.5), width: 2),
+            border: Border.all(color: context.primaryColor, width: 2),
             color: context.colorScheme.surfaceContainerHigh,
           ),
         );
