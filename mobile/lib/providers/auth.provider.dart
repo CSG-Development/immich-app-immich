@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_udid/flutter_udid.dart';
@@ -13,15 +14,15 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/auth/auth_state.model.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/user.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/auth.service.dart';
+import 'package:immich_mobile/services/background_upload.service.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
-import 'package:immich_mobile/services/background_upload.service.dart';
 import 'package:immich_mobile/services/widget.service.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
-import 'package:immich_mobile/utils/hash.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -108,7 +109,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await Store.put(StoreKey.enableBiometric, false);
 
       try {
-        await _authService.logout().timeout(const Duration(seconds: 8));
+        // Remote logout is capped inside AuthService; budget here covers local cleanup.
+        await _authService.logout().timeout(const Duration(seconds: 12));
       } on TimeoutException {
         _log.warning("Timeout during auth service logout");
       }
@@ -168,7 +170,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _log.warning("Missing serverEndpoint while saving auth info");
       return false;
     }
-    final customHeaders = Store.tryGet(StoreKey.customHeaders);
+    final headerMap = _ref.read(appConfigProvider).network.customHeaders;
+    final customHeaders = headerMap.isEmpty ? null : jsonEncode(headerMap);
     await _widgetService.writeCredentials(serverEndpoint, accessToken, customHeaders);
 
     // Get the deviceid from the store if it exists, otherwise generate a new one
@@ -185,7 +188,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Due to the flow of the code, this will always happen on first login
         user = serverUser;
         await Store.put(StoreKey.deviceId, deviceId);
-        await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
       }
     } on ApiException catch (error, stackTrace) {
       final message = error.message ?? '';
@@ -203,7 +205,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           if (serverUser != null) {
             user = serverUser;
             await Store.put(StoreKey.deviceId, deviceId);
-            await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
           }
         } catch (retryError, retryStackTrace) {
           _log.warning('Retry after resolver recovery failed', retryError, retryStackTrace);
@@ -254,7 +255,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         user = serverUser;
         await Store.put(StoreKey.deviceId, deviceId);
-        await Store.put(StoreKey.deviceIdHash, fastHash(deviceId));
       }
     } on ApiException catch (error, stackTrace) {
       if (error.code == 401) {

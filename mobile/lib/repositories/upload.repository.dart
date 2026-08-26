@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
-import 'package:cancellation_token/cancellation_token.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart';
 import 'package:immich_mobile/constants/constants.dart';
@@ -13,13 +12,6 @@ import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:logging/logging.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
-
-class UploadTaskWithFile {
-  final File file;
-  final UploadTask task;
-
-  const UploadTaskWithFile({required this.file, required this.task});
-}
 
 typedef PhotosHttpClientProvider = Client Function();
 
@@ -105,148 +97,27 @@ class UploadRepository {
     );
   }
 
-  /// Upload one backup asset via HTTP. Uses [StoreKey.serverEndpoint] per request (path resolver).
-  /// [Client] uses the shared native HTTP client with certificate pinning.
-  Future<({bool success, bool isDuplicate, String? remoteAssetId})> uploadBackupAsset(
-    UploadTaskWithFile candidate,
-    CancellationToken cancelToken,
-  ) async {
-    final logger = Logger('UploadRepository');
-    if (cancelToken.isCancelled) {
-      return (success: false, isDuplicate: false, remoteAssetId: null);
-    }
-
-    try {
-      final fileStream = candidate.file.openRead();
-      final assetRawUploadData = MultipartFile(
-        'assetData',
-        fileStream,
-        candidate.file.lengthSync(),
-        filename: candidate.task.filename,
-      );
-
-      final currentEndpoint = Store.get(StoreKey.serverEndpoint);
-      final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
-
-      baseRequest.headers.addAll(candidate.task.headers);
-      baseRequest.headers[kUploadRequestHeader] = '1';
-      baseRequest.fields.addAll(candidate.task.fields);
-      baseRequest.files.add(assetRawUploadData);
-
-      final response = await _httpClientProvider().send(baseRequest);
-      final responseBody = jsonDecode(await response.stream.bytesToString()) as Map<String, dynamic>;
-
-      if (![200, 201].contains(response.statusCode)) {
-        logger.warning(
-          'Error uploading ${candidate.task.filename} | status=${response.statusCode} | ${responseBody['error']}',
-        );
-        return (success: false, isDuplicate: false, remoteAssetId: null);
-      }
-
-      final remoteAssetId = responseBody['id'] as String?;
-      return (success: true, isDuplicate: response.statusCode == 200, remoteAssetId: remoteAssetId);
-    } on CancelledException {
-      rethrow;
-    } catch (error, stackTrace) {
-      logger.warning('Error uploading asset ${candidate.task.taskId}', error, stackTrace);
-      return (success: false, isDuplicate: false, remoteAssetId: null);
-    }
-  }
-
-  Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
-    final totalTasks = tasks.length;
-    int processed = 0;
-
-    Logger logger = Logger('UploadRepository');
-    logger.info(
-      'upload_telemetry source=dart_http stage=batch_start '
-      'endpoint=${Store.get(StoreKey.serverEndpoint)} taskCount=$totalTasks',
-    );
-    for (final candidate in tasks) {
-      if (cancelToken.isCancelled) {
-        logger.warning("Backup was cancelled by the user");
-        break;
-      }
-
-      try {
-        final fileStream = candidate.file.openRead();
-        final assetRawUploadData = MultipartFile(
-          "assetData",
-          fileStream,
-          candidate.file.lengthSync(),
-          filename: candidate.task.filename,
-        );
-
-        // Read current endpoint at request boundary so endpoint reselection
-        // (local/public winner changes) is reflected during long upload batches.
-        final currentEndpoint = Store.get(StoreKey.serverEndpoint);
-        final baseRequest = MultipartRequest('POST', Uri.parse('$currentEndpoint/assets'));
-
-        baseRequest.headers.addAll(ApiService.getRequestHeaders());
-        baseRequest.headers.addAll(candidate.task.headers);
-        baseRequest.headers[kUploadRequestHeader] = '1';
-        baseRequest.fields.addAll(candidate.task.fields);
-        baseRequest.files.add(assetRawUploadData);
-
-        final response = await _httpClientProvider().send(baseRequest);
-
-        final responseBody = jsonDecode(await response.stream.bytesToString());
-        processed++;
-
-        if (![200, 201].contains(response.statusCode)) {
-          final error = responseBody;
-
-          logger.warning(
-            "Error(${error['statusCode']}) uploading ${candidate.task.filename} | Created on ${candidate.task.fields["fileCreatedAt"]} | ${error['error']}",
-          );
-          logger.info(
-            'upload_telemetry source=dart_http stage=item_error index=$processed status=${response.statusCode} '
-            'taskId=${candidate.task.taskId} endpoint=$currentEndpoint',
-          );
-
-          continue;
-        }
-        logger.info(
-          'upload_telemetry source=dart_http stage=item_success index=$processed taskId=${candidate.task.taskId} '
-          'status=${response.statusCode} endpoint=$currentEndpoint',
-        );
-      } on CancelledException {
-        logger.warning("Backup was cancelled by the user");
-        break;
-      } catch (error, stackTrace) {
-        processed++;
-        logger.warning("Error backup asset: ${error.toString()}: $stackTrace");
-        logger.info(
-          'upload_telemetry source=dart_http stage=item_exception index=$processed taskId=${candidate.task.taskId} '
-          'error=${error.runtimeType} endpoint=${Store.get(StoreKey.serverEndpoint)}',
-        );
-        continue;
-      }
-    }
-  }
-
   Future<UploadResult> uploadFile({
     required File file,
     required String originalFileName,
     required Map<String, String> fields,
-    required CancellationToken cancelToken,
-    required void Function(int bytes, int totalBytes) onProgress,
+    required Completer<void>? cancelToken,
+    void Function(int bytes, int totalBytes)? onProgress,
     required String logContext,
   }) async {
     final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
-    if (cancelToken.isCancelled) {
+    if (cancelToken?.isCompleted ?? false) {
       return UploadResult.cancelled();
     }
 
-    final abortTrigger = _AbortTrigger(cancelToken);
     try {
       final fileStream = file.openRead();
       final assetRawUploadData = MultipartFile("assetData", fileStream, file.lengthSync(), filename: originalFileName);
 
-      final baseRequest = _ProgressMultipartRequest(
+      final baseRequest = ProgressMultipartRequest(
         'POST',
         Uri.parse('$savedEndpoint/assets'),
-        abortTrigger: abortTrigger.future,
+        abortTrigger: cancelToken?.future,
         onProgress: onProgress,
       );
 
@@ -286,14 +157,15 @@ class UploadRepository {
         // not read as a transport failure and get retried into a duplicate.
         return UploadResult.error(statusCode: response.statusCode, errorMessage: 'Failed to parse server response');
       }
+    } on RequestAbortedException {
+      logger.warning('Upload $logContext was cancelled');
+      return UploadResult.cancelled();
     } catch (error, stackTrace) {
-      if (cancelToken.isCancelled || error is RequestAbortedException) {
+      if (cancelToken?.isCompleted ?? false) {
         return UploadResult.cancelled();
       }
-      logger.warning('Error uploading asset', error, stackTrace);
+      logger.warning('Error uploading $logContext', error, stackTrace);
       return UploadResult.error(errorMessage: error.toString());
-    } finally {
-      abortTrigger.dispose();
     }
   }
 }
@@ -326,58 +198,32 @@ class UploadResult {
   }
 }
 
-class _ProgressMultipartRequest extends MultipartRequest with Abortable {
-  _ProgressMultipartRequest(super.method, super.url, {this.abortTrigger, required this.onProgress});
+class ProgressMultipartRequest extends MultipartRequest with Abortable {
+  ProgressMultipartRequest(super.method, super.url, {this.abortTrigger, this.onProgress});
 
   @override
   final Future<void>? abortTrigger;
 
-  final void Function(int bytes, int totalBytes) onProgress;
+  final void Function(int bytes, int totalBytes)? onProgress;
 
   @override
   ByteStream finalize() {
     final byteStream = super.finalize();
+    if (onProgress == null) {
+      return byteStream;
+    }
+
     final total = contentLength;
     var bytes = 0;
 
     final t = StreamTransformer.fromHandlers(
       handleData: (List<int> data, EventSink<List<int>> sink) {
         bytes += data.length;
-        onProgress.call(bytes, total);
+        onProgress!(bytes, total);
         sink.add(data);
       },
     );
     final stream = byteStream.transform(t);
     return ByteStream(stream);
-  }
-}
-
-/// Bridges a [CancellationToken] to the `abortTrigger` future understood by the
-/// http client, so cancelling a backup aborts the request already in flight
-/// instead of waiting for it to time out.
-class _AbortTrigger with Cancellable {
-  _AbortTrigger(CancellationToken? token) {
-    maybeAttach(token);
-  }
-
-  final _completer = Completer<void>();
-
-  Future<void> get future => _completer.future;
-
-  @override
-  void onCancel(Exception cancelException) {
-    super.onCancel(cancelException);
-    _complete();
-  }
-
-  void dispose() {
-    detach();
-    _complete();
-  }
-
-  void _complete() {
-    if (!_completer.isCompleted) {
-      _completer.complete();
-    }
   }
 }

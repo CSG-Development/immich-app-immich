@@ -7,101 +7,112 @@ import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/services/auth.service.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
 class AuthGuard extends AutoRouteGuard {
-  AuthGuard(this._apiService);
+  AuthGuard(this._apiService, this._authService);
 
   final ApiService _apiService;
+  final AuthService _authService;
   final _log = Logger("AuthGuard");
   static const Duration _validationRetryDelay = Duration(milliseconds: 450);
-
-  static int _validationGeneration = 0;
+  bool _validateInFlight = false;
 
   String get _authPathContext =>
       'store=${Store.tryGet(StoreKey.serverEndpoint)} api=${_apiService.apiClient.basePath} switching=${_apiService.isEndpointSwitchInProgress}';
 
   @override
-  void onNavigation(NavigationResolver resolver, StackRouter router) async {
-    resolver.next(true);
-
-    final generation = ++_validationGeneration;
-
+  void onNavigation(NavigationResolver resolver, StackRouter router) {
     try {
-      // Look in the store for an access token
       Store.get(StoreKey.accessToken);
-
-      if (_apiService.isEndpointSwitchInProgress) {
-        _log.fine('[auth-path] validation skipped $_authPathContext');
-        return;
-      }
-
-      // Validate the access token with the server
-      final res = await _apiService.authenticationApi.validateAccessToken();
-      if (generation != _validationGeneration) {
-        return;
-      }
-
-      if (res != null && res.authStatus != true) {
-        final recovered = await _retryValidationAfterFailure(generation, reason: 'auth_status_false');
-        if (!recovered) {
-          _log.fine('User token is invalid. Redirecting to login');
-          _redirectToLogin(router, reason: 'validate_access_token_false');
-        }
-      }
     } on StoreKeyNotFoundException catch (_) {
-      if (generation != _validationGeneration) {
-        return;
-      }
       _log.warning('No access token in the store.');
+      resolver.next(false);
       _redirectToLogin(router, reason: 'missing_access_token_in_store');
       return;
-    } on ApiException catch (e) {
-      if (generation != _validationGeneration) {
+    }
+
+    resolver.next(true);
+    unawaited(_validateAccessTokenInBackground(router));
+  }
+
+  Future<void> _validateAccessTokenInBackground(StackRouter router) async {
+    if (_apiService.isEndpointSwitchInProgress) {
+      _log.fine('[auth-path] validation skipped $_authPathContext');
+      return;
+    }
+    if (_validateInFlight) {
+      return;
+    }
+    final token = Store.tryGet(StoreKey.accessToken);
+    if (token == null) {
+      return;
+    }
+    _validateInFlight = true;
+    try {
+      final res = await _apiService.authenticationApi.validateAccessToken();
+      if (Store.tryGet(StoreKey.accessToken) != token) {
         return;
       }
-      if (e.code == HttpStatus.unauthorized) {
-        final recovered = await _retryValidationAfterFailure(generation, reason: 'validate_access_token_401');
+      if (res != null && res.authStatus != true) {
+        final recovered = await _retryValidationAfterFailure(token, reason: 'auth_status_false');
         if (!recovered) {
-          _log.warning("Unauthorized access token.");
-          _redirectToLogin(router, reason: 'validate_access_token_401');
+          if (Store.tryGet(StoreKey.accessToken) != token) {
+            return;
+          }
+          _log.fine('User token is invalid. Redirecting to login');
+          _redirectToLogin(router, reason: 'validate_access_token_false', clearLocalData: true);
         }
+      }
+    } on ApiException catch (e) {
+      if (e.code != HttpStatus.unauthorized) {
         return;
+      }
+      if (Store.tryGet(StoreKey.accessToken) != token) {
+        return;
+      }
+      final recovered = await _retryValidationAfterFailure(token, reason: 'validate_access_token_401');
+      if (!recovered) {
+        if (Store.tryGet(StoreKey.accessToken) != token) {
+          return;
+        }
+        _log.warning("Unauthorized access token.");
+        _redirectToLogin(router, reason: 'validate_access_token_401', clearLocalData: true);
       }
     } catch (e) {
       _log.warning('Error validating access token from server: $e');
+    } finally {
+      _validateInFlight = false;
     }
   }
 
   Future<bool> _retryValidationAfterFailure(
-    int generation, {
+    String token, {
     required String reason,
   }) async {
-    if (generation != _validationGeneration) {
-      return true;
-    }
     _log.info(
       'Auth validation retry scheduled reason=$reason endpointSwitchInProgress=${_apiService.isEndpointSwitchInProgress}',
     );
     await _apiService.waitForEndpointSwitchToSettle();
-    if (generation != _validationGeneration) {
+    if (Store.tryGet(StoreKey.accessToken) != token) {
       return true;
     }
     await Future<void>.delayed(_validationRetryDelay);
-    if (generation != _validationGeneration) {
+    if (Store.tryGet(StoreKey.accessToken) != token) {
       return true;
     }
     try {
       final retry = await _apiService.authenticationApi.validateAccessToken();
-      if (generation != _validationGeneration) {
+      if (Store.tryGet(StoreKey.accessToken) != token) {
         return true;
       }
       final success = retry == null || retry.authStatus == true;
       _log.info('Auth validation retry result reason=$reason success=$success');
       return success;
     } on ApiException catch (e) {
-      if (generation != _validationGeneration) {
+      if (Store.tryGet(StoreKey.accessToken) != token) {
         return true;
       }
       _log.warning(
@@ -114,7 +125,11 @@ class AuthGuard extends AutoRouteGuard {
     }
   }
 
-  void _redirectToLogin(StackRouter router, {required String reason}) {
+  void _redirectToLogin(
+    StackRouter router, {
+    required String reason,
+    bool clearLocalData = false,
+  }) {
     if (router.current.name == LoginRoute.name) {
       _log.info('Auth redirect skipped: already on login route reason=$reason');
       return;
@@ -123,6 +138,11 @@ class AuthGuard extends AutoRouteGuard {
     _log.warning(
       'Auth redirect to login reason=$reason currentRoute=${router.current.name} endpointSwitchInProgress=${_apiService.isEndpointSwitchInProgress}',
     );
-    unawaited(router.replaceAll([const LoginRoute()]));
+    final navigation = router.replaceAll([const LoginRoute()]);
+    if (clearLocalData) {
+      unawaited(navigation.then((_) => _authService.clearLocalData()));
+    } else {
+      unawaited(navigation);
+    }
   }
 }

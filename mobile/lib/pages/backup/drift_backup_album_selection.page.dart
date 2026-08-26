@@ -8,13 +8,13 @@ import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/domain/services/sync_linked_album.service.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
-import 'package:immich_mobile/providers/app_settings.provider.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/backup_album.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
-import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/widgets/backup/drift_album_info_list_tile.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 import 'package:logging/logging.dart';
@@ -48,7 +48,7 @@ class _DriftBackupAlbumSelectionPageState extends ConsumerState<DriftBackupAlbum
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
 
-    _enableSyncUploadAlbum.value = ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.syncAlbums);
+    _enableSyncUploadAlbum.value = ref.read(appConfigProvider).backup.syncAlbums;
 
     _initialTotalAssetCount = ref.read(driftBackupProvider.select((p) => p.totalCount));
   }
@@ -59,7 +59,7 @@ class _DriftBackupAlbumSelectionPageState extends ConsumerState<DriftBackupAlbum
       return;
     }
 
-    final enableSyncUploadAlbum = ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.syncAlbums);
+    final enableSyncUploadAlbum = ref.read(appConfigProvider).backup.syncAlbums;
     final selectedAlbums = ref
         .read(backupAlbumProvider)
         .where((a) => a.backupSelection == BackupSelection.selected)
@@ -88,7 +88,9 @@ class _DriftBackupAlbumSelectionPageState extends ConsumerState<DriftBackupAlbum
     final albumCount = albums.length;
     // Filter albums based on search query
     final filteredAlbums = albums.where((album) {
-      if (_searchQuery.isEmpty) return true;
+      if (_searchQuery.isEmpty) {
+        return true;
+      }
       return album.name.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
@@ -106,7 +108,7 @@ class _DriftBackupAlbumSelectionPageState extends ConsumerState<DriftBackupAlbum
             return;
           }
 
-          final isBackupEnabled = ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup);
+          final isBackupEnabled = SettingsRepository.instance.appConfig.backup.enabled;
           await ref.read(driftBackupProvider.notifier).getBackupStatus(user.id);
           final currentTotalAssetCount = ref.read(driftBackupProvider.select((p) => p.totalCount));
           final totalChanged = currentTotalAssetCount != _initialTotalAssetCount;
@@ -453,14 +455,18 @@ class _SelectAllButton extends ConsumerWidget {
             child: ElevatedButton.icon(
               onPressed: canSelectAll
                   ? () {
-                      final toSelect = filteredAlbums
-                          .where((album) => album.backupSelection != BackupSelection.selected)
-                          .toList();
-                      ref.read(backupAlbumProvider.notifier).selectAlbums(toSelect);
+                      for (final album in filteredAlbums) {
+                        if (album.backupSelection != BackupSelection.selected) {
+                          ref.read(backupAlbumProvider.notifier).selectAlbum(album);
+                        }
+                      }
                     }
                   : null,
               icon: const Icon(Icons.select_all),
-              label: Text("select_all".t(context: context)),
+              label: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Text("select_all".t(context: context)),
+              ),
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12.0)),
             ),
           ),
@@ -469,10 +475,11 @@ class _SelectAllButton extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: selectedBackupAlbums.isNotEmpty
                   ? () {
-                      final toDeselect = filteredAlbums
-                          .where((album) => album.backupSelection == BackupSelection.selected)
-                          .toList();
-                      ref.read(backupAlbumProvider.notifier).deselectAlbums(toDeselect);
+                      for (final album in filteredAlbums) {
+                        if (album.backupSelection == BackupSelection.selected) {
+                          ref.read(backupAlbumProvider.notifier).deselectAlbum(album);
+                        }
+                      }
                     }
                   : null,
               icon: const Icon(Icons.deselect),

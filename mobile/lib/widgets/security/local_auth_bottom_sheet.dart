@@ -40,7 +40,7 @@ class LocalAuthBottomSheet extends HookConsumerWidget {
     void onAuthSuccess() async {
       isAuthSuccess.value = true;
       await Future.delayed(const Duration(milliseconds: 500));
-      context.pop();
+      Navigator.of(context).pop();
       onSuccess();
     }
 

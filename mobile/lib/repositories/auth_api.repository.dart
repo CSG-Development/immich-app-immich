@@ -19,7 +19,7 @@ class AuthApiRepository extends ApiRepository {
   AuthApiRepository(this._apiService, this._deviceProvider);
 
   Future<void> changePassword(String newPassword) async {
-    await _apiService.usersApi.updateMyUser(UserUpdateMeDto(password: newPassword));
+    await _apiService.usersApi.updateMyUser(UserUpdateMeDto(password: Optional.present(newPassword)));
   }
 
   Future<LoginResponse> login(String email, String password) async {
@@ -31,9 +31,12 @@ class AuthApiRepository extends ApiRepository {
   }
 
   Future<void> logout() async {
-    if (_apiService.apiClient.basePath.isEmpty) return;
+    if (_apiService.apiClient.basePath.isEmpty) {
+      return;
+    }
 
-    await _apiService.authenticationApi.logout().timeout(const Duration(seconds: 7));
+    // Best-effort only: unreachable hosts must not block local sign-out.
+    await _apiService.authenticationApi.logout().timeout(const Duration(seconds: 3));
   }
 
   Future<void> requestPasswordReset(String email) async {
@@ -66,7 +69,7 @@ class AuthApiRepository extends ApiRepository {
 
   Future<bool> unlockPinCode(String pinCode) async {
     try {
-      await _apiService.authenticationApi.unlockAuthSession(SessionUnlockDto(pinCode: pinCode));
+      await _apiService.authenticationApi.unlockAuthSession(SessionUnlockDto(pinCode: Optional.present(pinCode)));
       return true;
     } catch (_) {
       return false;

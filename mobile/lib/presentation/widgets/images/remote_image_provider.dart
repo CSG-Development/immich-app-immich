@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
-import 'package:immich_mobile/domain/models/setting.model.dart';
-import 'package:immich_mobile/domain/services/setting.service.dart';
 import 'package:immich_mobile/infrastructure/loaders/image_request.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/presentation/widgets/images/animated_image_stream_completer.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/presentation/widgets/images/one_frame_multi_image_stream_completer.dart';
@@ -20,15 +19,16 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
   /// so endpoint switches (local ↔ remote) do not keep a stale host.
   final String? assetId;
   final String? thumbhash;
+  final bool edited;
 
-  RemoteImageProvider({required String url}) : _fixedUrl = url, assetId = null, thumbhash = null;
+  RemoteImageProvider({required String url, this.edited = true}) : _fixedUrl = url, assetId = null, thumbhash = null;
 
-  RemoteImageProvider.thumbnail({required String assetId, required String thumbhash})
+  RemoteImageProvider.thumbnail({required String assetId, required String thumbhash, this.edited = true})
     : assetId = assetId,
       thumbhash = thumbhash,
       _fixedUrl = null;
 
-  String get url => _fixedUrl ?? getThumbnailUrlForRemoteId(assetId!, thumbhash: thumbhash);
+  String get url => _fixedUrl ?? getThumbnailUrlForRemoteId(assetId!, thumbhash: thumbhash, edited: edited);
 
   @override
   Future<RemoteImageProvider> obtainKey(ImageConfiguration configuration) {
@@ -54,8 +54,15 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! RemoteImageProvider) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! RemoteImageProvider) {
+      return false;
+    }
+    if (edited != other.edited) {
+      return false;
+    }
     if (assetId != null || other.assetId != null) {
       return assetId == other.assetId && thumbhash == other.thumbhash;
     }
@@ -63,7 +70,7 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
   }
 
   @override
-  int get hashCode => assetId != null ? Object.hash(assetId, thumbhash) : _fixedUrl.hashCode;
+  int get hashCode => assetId != null ? Object.hash(assetId, thumbhash, edited) : Object.hash(_fixedUrl, edited);
 }
 
 class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImageProvider>
@@ -72,12 +79,14 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
   final String thumbhash;
   final AssetType assetType;
   final bool isAnimated;
+  final bool edited;
 
   RemoteFullImageProvider({
     required this.assetId,
     required this.thumbhash,
     required this.assetType,
     required this.isAnimated,
+    this.edited = true,
   });
 
   @override
@@ -91,7 +100,9 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
       return AnimatedImageStreamCompleter(
         stream: _animatedCodec(key, decode),
         scale: 1.0,
-        initialImage: getInitialImage(RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash)),
+        initialImage: getInitialImage(
+          RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash, edited: key.edited),
+        ),
         informationCollector: () => <DiagnosticsNode>[
           DiagnosticsProperty<ImageProvider>('Image provider', this),
           DiagnosticsProperty<String>('Asset Id', key.assetId),
@@ -103,7 +114,9 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
 
     return OneFramePlaceholderImageStreamCompleter(
       _codec(key, decode),
-      initialImage: getInitialImage(RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash)),
+      initialImage: getInitialImage(
+        RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash, edited: key.edited),
+      ),
       informationCollector: () => <DiagnosticsNode>[
         DiagnosticsProperty<ImageProvider>('Image provider', this),
         DiagnosticsProperty<String>('Asset Id', key.assetId),
@@ -121,10 +134,15 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
     }
 
     final previewRequest = request = RemoteImageRequest(
-      uri: getThumbnailUrlForRemoteId(key.assetId, type: AssetMediaSize.preview, thumbhash: key.thumbhash),
+      uri: getThumbnailUrlForRemoteId(
+        key.assetId,
+        type: AssetMediaSize.preview,
+        thumbhash: key.thumbhash,
+        edited: key.edited,
+      ),
       headers: ApiService.getRequestHeaders(),
     );
-    final loadOriginal = assetType == AssetType.image && AppSetting.get(Setting.loadOriginal);
+    final loadOriginal = assetType == AssetType.image && SettingsRepository.instance.appConfig.image.loadOriginal;
     yield* loadRequest(previewRequest, decode, isFinal: !loadOriginal);
 
     if (!loadOriginal) {
@@ -136,7 +154,7 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
     }
 
     final originalRequest = request = RemoteImageRequest(
-      uri: getOriginalUrlForRemoteId(key.assetId),
+      uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
     yield* loadRequest(originalRequest, decode, isFinal: true);
@@ -150,7 +168,12 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
     }
 
     final previewRequest = request = RemoteImageRequest(
-      uri: getThumbnailUrlForRemoteId(key.assetId, type: AssetMediaSize.preview, thumbhash: key.thumbhash),
+      uri: getThumbnailUrlForRemoteId(
+        key.assetId,
+        type: AssetMediaSize.preview,
+        thumbhash: key.thumbhash,
+        edited: key.edited,
+      ),
       headers: ApiService.getRequestHeaders(),
     );
     yield* loadRequest(previewRequest, decode, isFinal: false);
@@ -161,7 +184,7 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
 
     // always try original for animated, since previews don't support animation
     final originalRequest = request = RemoteImageRequest(
-      uri: getOriginalUrlForRemoteId(key.assetId),
+      uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
     final codec = await loadCodecRequest(originalRequest, isFinal: true);
@@ -176,16 +199,21 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     if (other is RemoteFullImageProvider) {
-      return assetId == other.assetId && thumbhash == other.thumbhash && isAnimated == other.isAnimated;
+      return assetId == other.assetId &&
+          thumbhash == other.thumbhash &&
+          isAnimated == other.isAnimated &&
+          edited == other.edited;
     }
 
     return false;
   }
 
   @override
-  int get hashCode => assetId.hashCode ^ thumbhash.hashCode ^ isAnimated.hashCode;
+  int get hashCode => assetId.hashCode ^ thumbhash.hashCode ^ isAnimated.hashCode ^ edited.hashCode;
 }
 
 /// Remote image provider that always loads the original image file only.
@@ -197,8 +225,9 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
 class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOriginalImageProvider>
     with CancellableImageProviderMixin<RemoteOriginalImageProvider> {
   final String assetId;
+  final bool edited;
 
-  RemoteOriginalImageProvider({required this.assetId});
+  RemoteOriginalImageProvider({required this.assetId, this.edited = true});
 
   @override
   Future<RemoteOriginalImageProvider> obtainKey(ImageConfiguration configuration) {
@@ -224,7 +253,7 @@ class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOrigina
     }
 
     final request = this.request = RemoteImageRequest(
-      uri: getOriginalUrlForRemoteId(key.assetId),
+      uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
     yield* loadRequest(request, decode, isFinal: true);
@@ -232,14 +261,16 @@ class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOrigina
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     if (other is RemoteOriginalImageProvider) {
-      return assetId == other.assetId;
+      return assetId == other.assetId && edited == other.edited;
     }
 
     return false;
   }
 
   @override
-  int get hashCode => assetId.hashCode;
+  int get hashCode => Object.hash(assetId, edited);
 }

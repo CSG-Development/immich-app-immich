@@ -1,13 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/asset_edit.model.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
 import 'package:immich_mobile/domain/models/stack.model.dart';
-import 'package:immich_mobile/infrastructure/entities/exif.entity.dart' hide ExifInfo;
+import 'package:immich_mobile/infrastructure/entities/asset_edit.entity.dart';
+import 'package:immich_mobile/infrastructure/entities/exif.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/exif.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/remote_asset.entity.dart';
 import 'package:immich_mobile/infrastructure/entities/remote_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/entities/stack.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
+import 'package:immich_mobile/utils/option.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 class RemoteAssetRepository extends DriftDatabaseRepository {
@@ -180,47 +183,6 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
     });
   }
 
-  Future<void> updateLocation(
-    List<String> ids,
-    LatLng location, {
-    String? city,
-    String? state,
-    String? country,
-  }) {
-    return _db.batch((batch) async {
-      for (final id in ids) {
-        batch.update(
-          _db.remoteExifEntity,
-          RemoteExifEntityCompanion(
-            latitude: Value(location.latitude),
-            longitude: Value(location.longitude),
-            city: Value(city),
-            state: Value(state),
-            country: Value(country),
-          ),
-          where: (e) => e.assetId.equals(id),
-        );
-      }
-    });
-  }
-
-  Future<void> updateDateTime(List<String> ids, DateTime dateTime) {
-    return _db.batch((batch) async {
-      for (final id in ids) {
-        batch.update(
-          _db.remoteExifEntity,
-          RemoteExifEntityCompanion(dateTimeOriginal: Value(dateTime)),
-          where: (e) => e.assetId.equals(id),
-        );
-        batch.update(
-          _db.remoteAssetEntity,
-          RemoteAssetEntityCompanion(createdAt: Value(dateTime)),
-          where: (e) => e.id.equals(id),
-        );
-      }
-    });
-  }
-
   Future<void> stack(String userId, StackResponse stack) {
     return _db.transaction(() async {
       final stackIds = await _db.managers.stackEntity
@@ -277,7 +239,7 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
     );
   }
 
-  Future<void> updateRating(String assetId, int rating) async {
+  Future<void> updateRating(String assetId, int? rating) async {
     await (_db.remoteExifEntity.update()..where((row) => row.assetId.equals(assetId))).write(
       RemoteExifEntityCompanion(rating: Value(rating)),
     );
@@ -285,5 +247,79 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
 
   Future<int> getCount() {
     return _db.managers.remoteAssetEntity.count();
+  }
+
+  Future<List<AssetEdit>> getAssetEdits(String assetId) {
+    final query = _db.assetEditEntity.select()
+      ..where((row) => row.assetId.equals(assetId) & row.action.equals(AssetEditAction.other.index).not())
+      ..orderBy([(row) => OrderingTerm.asc(row.sequence)]);
+    return query.map((row) => row.toDto()!).get();
+  }
+
+  Future<void> update(
+    List<String> remoteIds, {
+    Option<bool> isFavorite = const .none(),
+    Option<AssetVisibility> visibility = const .none(),
+    Option<DateTime> createdAt = const .none(),
+  }) async {
+    if ([isFavorite, visibility, createdAt].every((option) => option.isNone)) {
+      return;
+    }
+
+    final companion = RemoteAssetEntityCompanion(
+      visibility: visibility.toDriftValue(),
+      isFavorite: isFavorite.toDriftValue(),
+      createdAt: createdAt.toDriftValue(),
+    );
+    return _db.batch((batch) {
+      for (final remoteId in remoteIds) {
+        batch.update(_db.remoteAssetEntity, companion, where: (e) => e.id.equals(remoteId));
+      }
+    });
+  }
+
+  // TODO(shenlong): remove after action migration
+  Future<void> updateLocation(
+    List<String> ids,
+    LatLng location, {
+    String? city,
+    String? state,
+    String? country,
+  }) {
+    return _db.batch((batch) async {
+      for (final id in ids) {
+        batch.update(
+          _db.remoteExifEntity,
+          RemoteExifEntityCompanion(
+            latitude: Value(location.latitude),
+            longitude: Value(location.longitude),
+            city: Value(city),
+            state: Value(state),
+            country: Value(country),
+          ),
+          where: (e) => e.assetId.equals(id),
+        );
+      }
+    });
+  }
+
+  Future<void> updateDateTime(List<String> ids, DateTime dateTime, {String? timeZone}) {
+    return _db.batch((batch) async {
+      for (final id in ids) {
+        batch.update(
+          _db.remoteExifEntity,
+          RemoteExifEntityCompanion(
+            dateTimeOriginal: Value(dateTime),
+            timeZone: timeZone == null ? const Value.absent() : Value(timeZone),
+          ),
+          where: (e) => e.assetId.equals(id),
+        );
+        batch.update(
+          _db.remoteAssetEntity,
+          RemoteAssetEntityCompanion(createdAt: Value(dateTime)),
+          where: (e) => e.id.equals(id),
+        );
+      }
+    });
   }
 }

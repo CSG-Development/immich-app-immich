@@ -48,7 +48,9 @@ class MultiSelectState {
 
   @override
   bool operator ==(covariant MultiSelectState other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     final setEquals = const DeepCollectionEquality().equals;
 
     return setEquals(other.selectedAssets, selectedAssets) &&
@@ -124,7 +126,9 @@ class MultiSelectNotifier extends Notifier<MultiSelectState> {
   }
 
   void toggleBucketSelectionByAssets(List<BaseAsset> bucketAssets) {
-    if (bucketAssets.isEmpty) return;
+    if (bucketAssets.isEmpty) {
+      return;
+    }
 
     // Check if all assets in this bucket are currently selected
     final allSelected = bucketAssets.every((asset) => state.selectedAssets.contains(asset));
@@ -150,7 +154,9 @@ class MultiSelectNotifier extends Notifier<MultiSelectState> {
 final bucketSelectionProvider = Provider.family<bool, List<BaseAsset>>((ref, bucketAssets) {
   // Copy the list defensively to avoid concurrent modification if the backing
   // collection changes while Riverpod is evaluating this provider.
-  if (bucketAssets.isEmpty) return false;
+  if (bucketAssets.isEmpty) {
+    return false;
+  }
   final bucketSnapshot = List<BaseAsset>.from(bucketAssets);
 
   final selectedAssets = ref.watch(multiSelectProvider.select((s) => s.selectedAssets));

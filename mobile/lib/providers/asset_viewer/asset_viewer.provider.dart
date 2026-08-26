@@ -10,6 +10,7 @@ class AssetViewerState {
   final bool showingDetails;
   final bool showingControls;
   final bool isZoomed;
+  final bool showingOcr;
   final BaseAsset? currentAsset;
   final int stackIndex;
 
@@ -18,6 +19,7 @@ class AssetViewerState {
     this.showingDetails = false,
     this.showingControls = true,
     this.isZoomed = false,
+    this.showingOcr = false,
     this.currentAsset,
     this.stackIndex = 0,
   });
@@ -27,6 +29,7 @@ class AssetViewerState {
     bool? showingDetails,
     bool? showingControls,
     bool? isZoomed,
+    bool? showingOcr,
     BaseAsset? currentAsset,
     int? stackIndex,
   }) {
@@ -35,6 +38,7 @@ class AssetViewerState {
       showingDetails: showingDetails ?? this.showingDetails,
       showingControls: showingControls ?? this.showingControls,
       isZoomed: isZoomed ?? this.isZoomed,
+      showingOcr: showingOcr ?? this.showingOcr,
       currentAsset: currentAsset ?? this.currentAsset,
       stackIndex: stackIndex ?? this.stackIndex,
     );
@@ -42,18 +46,23 @@ class AssetViewerState {
 
   @override
   String toString() {
-    return 'AssetViewerState(opacity: $backgroundOpacity, showingDetails: $showingDetails, controls: $showingControls, isZoomed: $isZoomed)';
+    return 'AssetViewerState(opacity: $backgroundOpacity, showingDetails: $showingDetails, controls: $showingControls, isZoomed: $isZoomed, showingOcr: $showingOcr)';
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other.runtimeType != runtimeType) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is AssetViewerState &&
         other.backgroundOpacity == backgroundOpacity &&
         other.showingDetails == showingDetails &&
         other.showingControls == showingControls &&
         other.isZoomed == isZoomed &&
+        other.showingOcr == showingOcr &&
         other.currentAsset == currentAsset &&
         other.stackIndex == stackIndex;
   }
@@ -64,6 +73,7 @@ class AssetViewerState {
       showingDetails.hashCode ^
       showingControls.hashCode ^
       isZoomed.hashCode ^
+      showingOcr.hashCode ^
       currentAsset.hashCode ^
       stackIndex.hashCode;
 }
@@ -87,7 +97,7 @@ class AssetViewerStateNotifier extends Notifier<AssetViewerState> {
     if (asset == state.currentAsset) {
       return;
     }
-    state = state.copyWith(currentAsset: asset, stackIndex: 0);
+    state = state.copyWith(currentAsset: asset, stackIndex: 0, showingOcr: false);
     _watchCurrentAsset(asset);
   }
 
@@ -161,6 +171,10 @@ class AssetViewerStateNotifier extends Notifier<AssetViewerState> {
       return;
     }
     state = state.copyWith(stackIndex: index);
+  }
+
+  void toggleOcr() {
+    state = state.copyWith(showingOcr: !state.showingOcr);
   }
 }
 

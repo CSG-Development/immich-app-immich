@@ -2,26 +2,26 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cancellation_token/cancellation_token.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/asset/asset_metadata.model.dart';
-import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' hide AssetVisibility;
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
-import 'package:immich_mobile/extensions/network_capability_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/platform/connectivity_api.g.dart';
-import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/storage.provider.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:immich_mobile/repositories/upload.repository.dart';
-import 'package:immich_mobile/services/app_settings.service.dart';
+import 'package:immich_mobile/utils/backup_connectivity.dart';
 import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:logging/logging.dart';
+import 'package:openapi/api.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
 
@@ -41,7 +41,6 @@ final foregroundUploadServiceProvider = Provider((ref) {
     ref.watch(storageRepositoryProvider),
     ref.watch(backupRepositoryProvider),
     ref.watch(connectivityApiProvider),
-    ref.watch(appSettingsServiceProvider),
     ref.watch(assetMediaRepositoryProvider),
   );
 });
@@ -57,7 +56,6 @@ class ForegroundUploadService {
     this._storageRepository,
     this._backupRepository,
     this._connectivityApi,
-    this._appSettingsService,
     this._assetMediaRepository,
   );
 
@@ -65,7 +63,6 @@ class ForegroundUploadService {
   final StorageRepository _storageRepository;
   final DriftBackupRepository _backupRepository;
   final ConnectivityApi _connectivityApi;
-  final AppSettingsService _appSettingsService;
   final AssetMediaRepository _assetMediaRepository;
   final Logger _logger = Logger('ForegroundUploadService');
 
@@ -86,7 +83,7 @@ class ForegroundUploadService {
   /// Bulk upload of backup candidates from selected albums
   Future<void> uploadCandidates(
     String userId,
-    CancellationToken cancelToken, {
+    Completer<void> cancelToken, {
     UploadCallbacks callbacks = const UploadCallbacks(),
     bool useSequentialUpload = false,
   }) async {
@@ -95,9 +92,10 @@ class ForegroundUploadService {
       return;
     }
 
-    final networkCapabilities = await _connectivityApi.getCapabilities();
-    final hasWifi = networkCapabilities.hasWifi;
-    _logger.info('Network capabilities: $networkCapabilities, hasWifi: $hasWifi');
+    // Wi‑Fi transport, not metered — same rule as isBackupNetworkBlocked.
+    final hasWifi = await resolveBackupHasWifi(connectivityApi: _connectivityApi);
+    final wifiSkipped = candidates.where((asset) => _shouldRequireWiFi(asset) && !hasWifi).length;
+    _logger.info('Backup network check: hasWifi=$hasWifi candidates=${candidates.length} wifiSkipped=$wifiSkipped');
 
     if (useSequentialUpload) {
       await _uploadSequentially(items: candidates, cancelToken: cancelToken, hasWifi: hasWifi, callbacks: callbacks);
@@ -105,11 +103,8 @@ class ForegroundUploadService {
       await _executeWithWorkerPool<LocalAsset>(
         items: candidates,
         cancelToken: cancelToken,
-        shouldSkip: (asset) {
-          final requireWifi = _shouldRequireWiFi(asset);
-          return requireWifi && !hasWifi;
-        },
-        processItem: (asset) => _uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
+        shouldSkip: (asset) => _shouldRequireWiFi(asset) && !hasWifi,
+        processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
       );
     }
   }
@@ -117,7 +112,7 @@ class ForegroundUploadService {
   /// Sequential upload - used for background isolate where concurrent HTTP clients may cause issues
   Future<void> _uploadSequentially({
     required List<LocalAsset> items,
-    required CancellationToken cancelToken,
+    required Completer<void> cancelToken,
     required bool hasWifi,
     required UploadCallbacks callbacks,
   }) async {
@@ -127,17 +122,15 @@ class ForegroundUploadService {
     UploadActivity.begin();
     try {
       for (final asset in items) {
-        if (shouldAbortUpload || cancelToken.isCancelled) {
+        if (shouldAbortUpload || cancelToken.isCompleted) {
           break;
         }
 
-        final requireWifi = _shouldRequireWiFi(asset);
-        if (requireWifi && !hasWifi) {
-          _logger.warning('Skipping upload for ${asset.id} because it requires WiFi');
+        if (_shouldRequireWiFi(asset) && !hasWifi) {
           continue;
         }
 
-        await _uploadSingleAsset(asset, cancelToken, callbacks: callbacks);
+        await uploadSingleAsset(asset, cancelToken, callbacks: callbacks);
       }
     } finally {
       UploadActivity.end();
@@ -147,7 +140,7 @@ class ForegroundUploadService {
   /// Manually upload picked local assets
   Future<void> uploadManual(
     List<LocalAsset> localAssets, {
-    CancellationToken? cancelToken,
+    Completer<void>? cancelToken,
     UploadCallbacks callbacks = const UploadCallbacks(),
   }) async {
     if (localAssets.isEmpty) {
@@ -157,16 +150,16 @@ class ForegroundUploadService {
     await _executeWithWorkerPool<LocalAsset>(
       items: localAssets,
       cancelToken: cancelToken,
-      processItem: (asset) => _uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
+      processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
     );
   }
 
   /// Upload files from shared intent
   Future<void> uploadShareIntent(
     List<File> files, {
-    CancellationToken? cancelToken,
+    Completer<void>? cancelToken,
     void Function(String fileId, int bytes, int totalBytes)? onProgress,
-    void Function(String fileId)? onSuccess,
+    void Function(String fileId, String remoteAssetId)? onSuccess,
     void Function(String fileId, String errorMessage)? onError,
   }) async {
     if (files.isEmpty) {
@@ -186,7 +179,7 @@ class ForegroundUploadService {
         );
 
         if (result.isSuccess) {
-          onSuccess?.call(fileId);
+          onSuccess?.call(fileId, result.remoteAssetId!);
         } else if (!result.isCancelled && result.errorMessage != null) {
           onError?.call(fileId, result.errorMessage!);
         }
@@ -207,7 +200,7 @@ class ForegroundUploadService {
   /// [concurrentWorkers] - Number of concurrent workers (default: 3)
   Future<void> _executeWithWorkerPool<T>({
     required List<T> items,
-    required CancellationToken? cancelToken,
+    required Completer<void>? cancelToken,
     required Future<void> Function(T item) processItem,
     bool Function(T item)? shouldSkip,
     int concurrentWorkers = 3,
@@ -219,7 +212,7 @@ class ForegroundUploadService {
 
     Future<void> worker() async {
       while (true) {
-        if (shouldAbortUpload || (cancelToken != null && cancelToken.isCancelled)) {
+        if (shouldAbortUpload || (cancelToken != null && cancelToken.isCompleted)) {
           break;
         }
 
@@ -258,7 +251,7 @@ class ForegroundUploadService {
     required File file,
     required String originalFileName,
     required Map<String, String> fields,
-    required CancellationToken cancelToken,
+    required Completer<void> cancelToken,
     required void Function(int bytes, int totalBytes) onProgress,
     required String logContext,
   }) async {
@@ -273,7 +266,7 @@ class ForegroundUploadService {
       );
 
       final isTransportFailure = !result.isSuccess && !result.isCancelled && result.statusCode == null;
-      if (!isTransportFailure || attempt >= _uploadRetries || shouldAbortUpload || cancelToken.isCancelled) {
+      if (!isTransportFailure || attempt >= _uploadRetries || shouldAbortUpload || cancelToken.isCompleted) {
         return result;
       }
 
@@ -287,9 +280,10 @@ class ForegroundUploadService {
     }
   }
 
-  Future<void> _uploadSingleAsset(
+  @visibleForTesting
+  Future<void> uploadSingleAsset(
     LocalAsset asset,
-    CancellationToken? cancelToken, {
+    Completer<void>? cancelToken, {
     required UploadCallbacks callbacks,
   }) async {
     File? file;
@@ -361,39 +355,33 @@ class ForegroundUploadService {
         return;
       }
 
-      String fileName = await _assetMediaRepository.getOriginalFilename(asset.id) ?? asset.name;
-
-      /// Handle special file name from DJI or Fusion app
-      /// If the file name has no extension, likely due to special renaming template by specific apps
-      /// we append the original extension from the asset name
-      final hasExtension = p.extension(fileName).isNotEmpty;
-      if (!hasExtension) {
-        fileName = p.setExtension(fileName, p.extension(asset.name));
-      }
-
-      final originalFileName = entity.isLivePhoto ? p.setExtension(fileName, p.extension(file.path)) : fileName;
+      final fileName = await _assetMediaRepository.getOriginalFilename(asset.id) ?? asset.name;
+      // Some apps (e.g. DJI/Fusion) return names without an extension; fall back to the asset name for those.
+      final extension = p.extension(file.path).isNotEmpty ? p.extension(file.path) : p.extension(asset.name);
+      final originalFileName = p.setExtension(fileName, extension);
       final deviceId = Store.get(StoreKey.deviceId);
 
       final fields = {
+        // deviceAssetId/deviceId required by server v2.7.5 and below (drop in v4.0 per #27818).
         'deviceAssetId': asset.localId!,
         'deviceId': deviceId,
         'fileCreatedAt': asset.createdAt.toUtc().toIso8601String(),
         'fileModifiedAt': asset.updatedAt.toUtc().toIso8601String(),
         'isFavorite': asset.isFavorite.toString(),
-        'duration': asset.duration.toString(),
+        'duration': (asset.durationMs ?? 0).toString(),
       };
 
       // Upload live photo video first if available
       String? livePhotoVideoId;
       if (entity.isLivePhoto && livePhotoFile != null) {
         final livePhotoTitle = p.setExtension(originalFileName, p.extension(livePhotoFile.path));
-        final livePhotoCancelToken = cancelToken ?? CancellationToken();
+        final livePhotoCancelToken = cancelToken ?? Completer<void>();
 
         final onProgress = callbacks.onProgress;
         final livePhotoResult = await _uploadRepository.uploadFile(
           file: livePhotoFile,
           originalFileName: livePhotoTitle,
-          fields: fields,
+          fields: {...fields, 'visibility': AssetVisibility.hidden.toString()},
           cancelToken: livePhotoCancelToken,
           onProgress: (bytes, totalBytes) =>
               onProgress?.call(asset.localId!, livePhotoTitle, bytes, totalBytes),
@@ -426,7 +414,7 @@ class ForegroundUploadService {
       }
 
       final onProgress = callbacks.onProgress;
-      final uploadCancelToken = cancelToken ?? CancellationToken();
+      final uploadCancelToken = cancelToken ?? Completer<void>();
       final result = await _uploadWithRetry(
         file: file,
         originalFileName: originalFileName,
@@ -440,10 +428,7 @@ class ForegroundUploadService {
       if (result.isSuccess && result.remoteAssetId != null) {
         callbacks.onSuccess?.call(asset.localId!, result.remoteAssetId!);
       } else if (result.isCancelled) {
-        // Deliberately does not set shouldAbortUpload: that field is shared by
-        // every run, while a cancellation belongs to one. A cancelled run stops
-        // through its own token, which the worker loop checks. Flipping the
-        // shared flag here would also kill the run that replaces this one.
+        // Cancellation is per-run via cancelToken; do not flip the shared shouldAbortUpload flag.
         _logger.warning(() => "Backup was cancelled by the user");
       } else if (result.errorMessage != null) {
         _logger.severe(
@@ -475,7 +460,7 @@ class ForegroundUploadService {
   Future<UploadResult> _uploadSingleFile(
     File file, {
     required String deviceAssetId,
-    required CancellationToken? cancelToken,
+    required Completer<void>? cancelToken,
     void Function(int bytes, int totalBytes)? onProgress,
   }) async {
     try {
@@ -485,6 +470,7 @@ class ForegroundUploadService {
       final filename = p.basename(file.path);
 
       final fields = {
+        // deviceAssetId/deviceId required by server v2.7.5 and below (drop in v4.0 per #27818).
         'deviceAssetId': deviceAssetId,
         'deviceId': Store.get(StoreKey.deviceId),
         'fileCreatedAt': fileCreatedAt.toUtc().toIso8601String(),
@@ -493,7 +479,7 @@ class ForegroundUploadService {
         'duration': '0',
       };
 
-      final uploadCancelToken = cancelToken ?? CancellationToken();
+      final uploadCancelToken = cancelToken ?? Completer<void>();
       return await _uploadRepository.uploadFile(
         file: file,
         originalFileName: filename,
@@ -508,14 +494,13 @@ class ForegroundUploadService {
   }
 
   bool _shouldRequireWiFi(LocalAsset asset) {
-    bool requiresWiFi = true;
-
-    if (asset.isVideo && _appSettingsService.getSetting(AppSettingsEnum.useCellularForUploadVideos)) {
-      requiresWiFi = false;
-    } else if (!asset.isVideo && _appSettingsService.getSetting(AppSettingsEnum.useCellularForUploadPhotos)) {
-      requiresWiFi = false;
+    final backup = SettingsRepository.instance.appConfig.backup;
+    if (asset.isVideo && backup.useCellularForVideos) {
+      return false;
     }
-
-    return requiresWiFi;
+    if (!asset.isVideo && backup.useCellularForPhotos) {
+      return false;
+    }
+    return true;
   }
 }

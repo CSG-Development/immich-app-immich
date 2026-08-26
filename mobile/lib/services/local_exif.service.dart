@@ -3,33 +3,11 @@ import 'dart:io';
 import 'package:exif/exif.dart';
 import 'package:immich_mobile/domain/models/advanced_exif.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:logging/logging.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class LocalExifService {
   final Logger _log = Logger('LocalExifService');
-
-  Future<AdvancedExifInfo> getAdvancedExif(Asset asset) async {
-    if (!asset.isLocal || asset.local == null) {
-      return AdvancedExifInfo.empty;
-    }
-
-    try {
-      final File? file = await asset.local!.file;
-      if (file == null || !file.existsSync()) {
-        return AdvancedExifInfo.empty;
-      }
-      final parsed = await _readExifFromFile(file, label: asset.fileName);
-      if (parsed.hasData) {
-        return parsed;
-      }
-      return await _fallbackFromLegacyAsset(asset, file);
-    } catch (error, stackTrace) {
-      _log.warning('Failed to parse local EXIF for ${asset.fileName}', error, stackTrace);
-      return AdvancedExifInfo.empty;
-    }
-  }
 
   /// Beta timeline / drift: [BaseAsset] with a gallery [localId] (LocalAsset.id or RemoteAsset.localId).
   Future<AdvancedExifInfo> getAdvancedExifFromBaseAsset(BaseAsset asset) async {
@@ -255,72 +233,6 @@ class LocalExifService {
     return rendered.isEmpty ? null : rendered;
   }
 
-  Future<AdvancedExifInfo> _fallbackFromLegacyAsset(Asset asset, File file) async {
-    final format = await _detectFormatFromFile(file);
-    final sections = <AdvancedExifSection>[
-      AdvancedExifSection(
-        key: 'advanced_exif_section_image',
-        items: [
-          if (asset.width != null)
-            AdvancedExifItem(
-              key: 'advanced_exif_image_width',
-              value: asset.width.toString(),
-              source: AdvancedExifValueSource.local,
-            ),
-          if (asset.height != null)
-            AdvancedExifItem(
-              key: 'advanced_exif_image_height',
-              value: asset.height.toString(),
-              source: AdvancedExifValueSource.local,
-            ),
-        ],
-      ),
-      AdvancedExifSection(
-        key: 'advanced_exif_section_location',
-        items: [
-          if (asset.exifInfo?.latitude != null)
-            AdvancedExifItem(
-              key: 'advanced_exif_location_latitude',
-              value: asset.exifInfo!.latitude!.toString(),
-              source: AdvancedExifValueSource.local,
-            ),
-          if (asset.exifInfo?.longitude != null)
-            AdvancedExifItem(
-              key: 'advanced_exif_location_longitude',
-              value: asset.exifInfo!.longitude!.toString(),
-              source: AdvancedExifValueSource.local,
-            ),
-        ],
-      ),
-      AdvancedExifSection(
-        key: 'advanced_exif_section_file',
-        items: [
-          AdvancedExifItem(
-            key: 'advanced_exif_file_name',
-            value: asset.fileName,
-            source: AdvancedExifValueSource.local,
-          ),
-          AdvancedExifItem(
-            key: 'advanced_exif_file_type_extension',
-            value: _extensionFromPath(file.path),
-            source: AdvancedExifValueSource.local,
-          ),
-          AdvancedExifItem(
-            key: 'advanced_exif_image_type',
-            value: format,
-            source: AdvancedExifValueSource.local,
-          ),
-          AdvancedExifItem(
-            key: 'advanced_exif_file_size_bytes',
-            value: file.lengthSync().toString(),
-            source: AdvancedExifValueSource.local,
-          ),
-        ],
-      ),
-    ];
-    return AdvancedExifInfo(sections: sections.where((s) => s.items.isNotEmpty).toList());
-  }
-
   Future<AdvancedExifInfo> _fallbackFromBaseAsset(BaseAsset asset, AssetEntity entity, File file) async {
     final format = await _detectFormatFromFile(file);
     final sections = <AdvancedExifSection>[
@@ -396,10 +308,10 @@ class LocalExifService {
             value: file.lengthSync().toString(),
             source: AdvancedExifValueSource.local,
           ),
-          if (asset.durationInSeconds != null)
+          if (asset.durationMs != null && asset.durationMs! > 0)
             AdvancedExifItem(
               key: 'advanced_exif_dynamic_media_duration_seconds',
-              value: asset.durationInSeconds.toString(),
+              value: asset.duration.inSeconds.toString(),
               source: AdvancedExifValueSource.local,
             ),
         ],

@@ -6,14 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
 import 'package:immich_mobile/domain/models/tag.model.dart';
 import 'package:immich_mobile/domain/models/timeline.model.dart';
 import 'package:immich_mobile/domain/services/timeline.service.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/models/connection_state.model.dart';
+import 'package:immich_mobile/generated/translations.g.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
 import 'package:immich_mobile/presentation/utils/use_scroll_notifier.dart';
@@ -27,6 +28,7 @@ import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/search/search_input_focus.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/fork_server_version.dart';
 import 'package:immich_mobile/widgets/common/feature_check.dart';
 import 'package:immich_mobile/widgets/common/scaffold_error_body.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
@@ -116,8 +118,7 @@ class DriftSearchPage extends HookConsumerWidget {
     }
 
     ref.listen(connectionStateProvider, (prev, next) {
-      final cameOnline =
-          prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
+      final cameOnline = prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
       if (!cameOnline) return;
       maybeRetrySearch();
     });
@@ -135,16 +136,20 @@ class DriftSearchPage extends HookConsumerWidget {
 
       Future.microtask(() {
         textSearchController.clear();
+        peopleCurrentFilterWidget.value = null;
+        dateRangeCurrentFilterWidget.value = null;
+        cameraCurrentFilterWidget.value = null;
+        tagCurrentFilterWidget.value = null;
+        mediaTypeCurrentFilterWidget.value = null;
+        ratingCurrentFilterWidget.value = null;
+        displayOptionCurrentFilterWidget.value = null;
+        locationCurrentFilterWidget.value = preFilter.location.city != null
+            ? Text(preFilter.location.city!, style: context.textTheme.labelLarge)
+            : null;
+        exifCurrentFilterWidget.value = preFilter.completedExifFilters.isNotEmpty
+            ? Text(_buildExifFilterSummary(preFilter.completedExifFilters), style: context.textTheme.labelLarge)
+            : null;
         search(preFilter);
-        if (preFilter.location.city != null) {
-          locationCurrentFilterWidget.value = Text(preFilter.location.city!, style: context.textTheme.labelLarge);
-        }
-        if (preFilter.completedExifFilters.isNotEmpty) {
-          exifCurrentFilterWidget.value = Text(
-            _buildExifFilterSummary(preFilter.completedExifFilters),
-            style: context.textTheme.labelLarge,
-          );
-        }
       });
 
       return null;
@@ -222,7 +227,7 @@ class DriftSearchPage extends HookConsumerWidget {
             expanded: true,
             onSearch: handleApply,
             onClear: handleClear,
-            child: TagPicker(onSelect: handleOnSelect, filter: (filter.value.tagIds ?? []).toSet()),
+            child: TagPicker(onSelectExistingTag: handleOnSelect, filter: (filter.value.tagIds ?? []).toSet()),
           ),
         ),
       );
@@ -384,11 +389,11 @@ class DriftSearchPage extends HookConsumerWidget {
           child: QuickDatePicker(
             currentInput: dateInputFilter.value,
             onRequestPicker: () {
-              context.pop();
+              ContextHelper(context).pop();
               showDatePicker();
             },
             onSelect: (date) {
-              context.pop();
+              ContextHelper(context).pop();
               datePicked(date);
             },
           ),
@@ -440,12 +445,15 @@ class DriftSearchPage extends HookConsumerWidget {
 
       handleClear() {
         ratingCurrentFilterWidget.value = null;
-        search(filter.value.copyWith(rating: SearchRatingFilter(rating: null)));
+        search(filter.value.copyWith(rating: SearchRatingFilter()));
       }
 
       handleApply() {
-        ratingCurrentFilterWidget.value = rating.rating != null
-            ? Text('rating_count'.t(args: {'count': rating.rating!}), style: context.textTheme.labelLarge)
+        ratingCurrentFilterWidget.value = rating.rating.isSome
+            ? Text(
+                'rating_count'.t(args: {'count': rating.rating.unwrapOrNull ?? 0}),
+                style: context.textTheme.labelLarge,
+              )
             : null;
         search(filter.value.copyWith(rating: rating));
       }
@@ -808,7 +816,9 @@ class _SearchResultGrid extends ConsumerWidget {
   bool _onScrollUpdateNotification(ScrollNotification notification) {
     final metrics = notification.metrics;
 
-    if (metrics.axis != Axis.vertical) return false;
+    if (metrics.axis != Axis.vertical) {
+      return false;
+    }
 
     final isBottomSheet = notification.context?.findAncestorWidgetOfExactType<DraggableScrollableSheet>() != null;
     final remaining = metrics.maxScrollExtent - metrics.pixels;
@@ -835,7 +845,9 @@ class _SearchResultGrid extends ConsumerWidget {
 
     final hasMore = ref.watch(paginatedSearchProvider.select((s) => s.nextPage != null));
 
-    if (hasMore) return null;
+    if (hasMore) {
+      return null;
+    }
 
     return SliverToBoxAdapter(
       child: Padding(
@@ -857,10 +869,7 @@ class _SearchResultGrid extends ConsumerWidget {
     final error = ref.watch(paginatedSearchProvider.select((s) => s.error));
 
     if (!hasAssets && !isLoading && error != null) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: ScaffoldErrorBody(onRetry: onRetry),
-      );
+      return SliverFillRemaining(hasScrollBody: false, child: ScaffoldErrorBody(onRetry: onRetry));
     }
 
     if (!hasAssets && !isLoading) {
@@ -952,11 +961,13 @@ class _SearchSuggestions extends StatelessWidget {
   }
 }
 
-class _QuickLinkList extends StatelessWidget {
+class _QuickLinkList extends ConsumerWidget {
   const _QuickLinkList();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final supportsRecentlyAdded = ref.watch(serverInfoProvider.select((s) => s.serverVersion)).isAtLeastImmich3;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Radius.circular(20)),
@@ -981,6 +992,12 @@ class _QuickLinkList extends StatelessWidget {
             isTop: true,
             onTap: () => context.pushRoute(const DriftRecentlyTakenRoute()),
           ),
+          if (supportsRecentlyAdded)
+            _QuickLink(
+              title: context.t.recently_added,
+              icon: Icons.upload_outlined,
+              onTap: () => context.pushRoute(const DriftRecentlyAddedRoute()),
+            ),
           _QuickLink(
             title: 'videos'.t(context: context),
             icon: Icons.play_circle_outline_rounded,

@@ -2,7 +2,8 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:punycode/punycode.dart';
 
-String sanitizeUrl(String url) {
+/// Normalizes a server URL, guaranteeing that it has a schema and no trailing slashes
+String normalizeServerUrl(String url) {
   var normalized = url.trim();
 
   // Fix common scheme typos first (e.g. "https//host", "http//host").
@@ -22,13 +23,29 @@ String sanitizeUrl(String url) {
     (m) => '${m.group(2)}://',
   );
 
-  // Add schema if none is set.
-  if (!normalized.startsWith(RegExp(r'https?://', caseSensitive: false))) {
+  // Add schema if none is set
+  if (!normalized.contains('://')) {
     normalized = 'https://$normalized';
   }
 
-  // Remove trailing slash(es).
+  // Remove trailing slash(es)
   return normalized.replaceFirst(RegExp(r"/+$"), "");
+}
+
+/// Validates a user-entered server URL
+bool _validateServerUrl(String url) {
+  final parsedUrl = Uri.tryParse(url);
+  return parsedUrl != null && parsedUrl.scheme.startsWith(RegExp(r'^https?$')) && parsedUrl.host.isNotEmpty;
+}
+
+/// Normalizes and validates that a server URL is supported
+bool normalizeAndValidateServerUrl(String? url) {
+  if (url == null || url.isEmpty) {
+    return true;
+  }
+
+  final normalizedUrl = normalizeServerUrl(url);
+  return _validateServerUrl(normalizedUrl);
 }
 
 String? getServerUrl() {
@@ -43,6 +60,17 @@ String? getServerUrl() {
         ? "${serverUri.scheme}://${serverUri.host}:${serverUri.port}"
         : "${serverUri.scheme}://${serverUri.host}",
   );
+}
+
+String? buildSharedLinkUrl({required String? baseUrl, required String key, String? slug}) {
+  if (baseUrl == null || baseUrl.isEmpty) {
+    return null;
+  }
+
+  final normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+  final path = (slug != null && slug.isNotEmpty) ? 's/$slug' : 'share/$key';
+
+  return '$normalizedBaseUrl$path';
 }
 
 /// Converts a Unicode URL to its ASCII-compatible encoding (Punycode).
@@ -63,13 +91,17 @@ String? getServerUrl() {
 ///
 String punycodeEncodeUrl(String serverUrl) {
   final serverUri = Uri.tryParse(serverUrl);
-  if (serverUri == null || serverUri.host.isEmpty) return '';
+  if (serverUri == null || serverUri.host.isEmpty) {
+    return '';
+  }
 
   final encodedHost = Uri.decodeComponent(serverUri.host)
       .split('.')
       .map((segment) {
         // If segment is already ASCII, then return as it is.
-        if (segment.runes.every((c) => c < 0x80)) return segment;
+        if (segment.runes.every((c) => c < 0x80)) {
+          return segment;
+        }
         return 'xn--${punycodeEncode(segment)}';
       })
       .join('.');
@@ -96,7 +128,9 @@ String punycodeEncodeUrl(String serverUrl) {
 ///
 String? punycodeDecodeUrl(String? serverUrl) {
   final serverUri = serverUrl != null ? Uri.tryParse(serverUrl) : null;
-  if (serverUri == null || serverUri.host.isEmpty) return null;
+  if (serverUri == null || serverUri.host.isEmpty) {
+    return null;
+  }
 
   final decodedHost = serverUri.host
       .split('.')

@@ -23,17 +23,16 @@ class CameraPicker extends HookConsumerWidget {
     final selectedMake = useState<String?>(filter?.make);
     final selectedModel = useState<String?>(filter?.model);
 
-    // Cache last non-empty values to avoid empty dropdowns during loading
     final cachedMakeOptions = useState<List<String>>(<String>[]);
     final cachedModelOptions = useState<List<String>>(<String>[]);
 
-    final make = ref.watch(
+    final make = ref.watch(getSearchSuggestionsProvider(SearchSuggestionArgs(type: SearchSuggestionType.cameraMake)));
+
+    final models = ref.watch(
       getSearchSuggestionsProvider(
-        SearchSuggestionType.cameraMake,
+        SearchSuggestionArgs(type: SearchSuggestionType.cameraModel, make: selectedMake.value),
       ),
     );
-
-    final models = ref.watch(getSearchSuggestionsProvider(SearchSuggestionType.cameraModel, make: selectedMake.value));
 
     // Show error toast if make suggestions fail to load
     final makeErrorToastShown = useState<bool>(false);

@@ -4,20 +4,20 @@ import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathT
 import 'package:hc_device/api/remote_access.swagger.dart' show DevicePath;
 import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/settings_key.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/utils/background_sync.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/models/auth/login_response.model.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
-import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/hc_path_resolver.provider.dart';
 import 'package:immich_mobile/repositories/auth.repository.dart';
 import 'package:immich_mobile/repositories/auth_api.repository.dart';
-import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
-import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:logging/logging.dart';
@@ -28,7 +28,6 @@ final authServiceProvider = Provider(
     ref.watch(authRepositoryProvider),
     ref.watch(apiServiceProvider),
     ref.watch(backgroundSyncProvider),
-    ref.watch(appSettingsServiceProvider),
     ref.watch(hcPathResolverProvider),
     HcDeviceEndpointResolver(
       ref.watch(apiServiceProvider),
@@ -43,7 +42,6 @@ class AuthService {
   final AuthRepository _authRepository;
   final ApiService _apiService;
   final BackgroundSyncManager _backgroundSyncManager;
-  final AppSettingsService _appSettingsService;
   final HcPathResolver _hcPathResolver;
   final HcDeviceEndpointResolver _endpointResolver;
   final DeviceProvider _deviceProvider;
@@ -54,7 +52,6 @@ class AuthService {
     this._authRepository,
     this._apiService,
     this._backgroundSyncManager,
-    this._appSettingsService,
     this._hcPathResolver,
     this._endpointResolver,
     this._deviceProvider,
@@ -109,22 +106,30 @@ class AuthService {
 
   /// Performs user logout operation by making a server request and clearing local data.
   ///
-  /// This method attempts to log out the user through the authentication API repository.
-  /// If the server request fails, the error is logged but local data is still cleared.
-  /// The local data cleanup is guaranteed to execute regardless of the server request outcome.
-  ///
-  /// Throws any unhandled exceptions from the API request or local data clearing operations.
+  /// Remote logout is best-effort: timeouts and network errors are expected when the
+  /// device/server is unreachable. Local data cleanup always runs afterward.
   Future<void> logout() async {
     try {
-      await _authApiRepository.logout();
+      await NetworkRepository.cancelInFlightHttpRequests().timeout(
+        const Duration(seconds: 1),
+        onTimeout: () {},
+      );
     } catch (error, stackTrace) {
-      _log.severe("Error logging out", error, stackTrace);
+      _log.warning("Failed to cancel in-flight requests before logout", error, stackTrace);
+    }
+
+    try {
+      await _authApiRepository.logout();
+    } on TimeoutException catch (error, stackTrace) {
+      _log.warning("Server logout timed out; continuing with local cleanup", error, stackTrace);
+    } catch (error, stackTrace) {
+      _log.warning("Error logging out from server; continuing with local cleanup", error, stackTrace);
     } finally {
       await clearLocalData().catchError((error, stackTrace) {
         _log.severe("Error clearing local data", error, stackTrace);
       });
 
-      await _appSettingsService.setSetting(AppSettingsEnum.enableBackup, false);
+      await SettingsRepository.instance.write(SettingsKey.backupEnabled, false);
     }
   }
 
@@ -133,12 +138,17 @@ class AuthService {
   /// This method performs a concurrent deletion of:
   /// - Authentication repository data
   /// - Current user information
-  /// - Asset ETag
+  /// - Access token
+  /// - Server-specific endpoint configuration
   ///
   /// All deletions are executed in parallel using [Future.wait].
   Future<void> clearLocalData() async {
     // Cancel any ongoing background sync operations before clearing data
-    await _backgroundSyncManager.cancel();
+    try {
+      await _backgroundSyncManager.cancel().timeout(const Duration(seconds: 3));
+    } on TimeoutException {
+      _log.warning("Timeout cancelling background sync during logout");
+    }
     await _hcPathResolver.clearPhotosSession();
     await _apiService.clearAccessToken();
     _apiService.setEndpoint('');
@@ -151,9 +161,12 @@ class AuthService {
     await Future.wait([
       _authRepository.clearLocalData(),
       Store.delete(StoreKey.currentUser),
-      Store.delete(StoreKey.assetETag),
-      // Keep serverEndpoint/serverVersion so in-flight UI (thumbnails, avatars)
-      // does not hit StoreKeyNotFoundException during logout navigation.
+      SettingsRepository.instance.clear(const [
+        .networkAutoEndpointSwitching,
+        .networkPreferredWifiName,
+        .networkLocalEndpoint,
+        .networkExternalEndpointList,
+      ]),
     ]);
   }
 

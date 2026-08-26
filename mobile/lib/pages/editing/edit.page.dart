@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:auto_route/auto_route.dart';
-import 'package:cancellation_token_http/http.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,13 +9,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_editor/image_editor.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
-import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -29,7 +26,6 @@ import 'package:path/path.dart' as p;
 /// It also includes a conversion method to convert an [Image] to a [Uint8List] to save the image on the user's phone
 /// They automatically navigate to the [HomePage] with the edited image saved and they eventually get backed up to the server.
 @immutable
-@RoutePage()
 class EditImagePage extends HookConsumerWidget {
   final BaseAsset asset;
   final Image image;
@@ -108,7 +104,7 @@ class EditImagePage extends HookConsumerWidget {
         return;
       }
 
-      await ref.read(foregroundUploadServiceProvider).uploadManual([localAsset], cancelToken: CancellationToken());
+      await ref.read(foregroundUploadServiceProvider).uploadManual([localAsset], cancelToken: Completer<void>());
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,
@@ -123,10 +119,7 @@ class EditImagePage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Memoize the future so it is not recreated (and the network fetch restarted)
     // on every rebuild. A timeout guarantees the loader can't spin forever.
-    final imageFuture = useMemoized(
-      () => _imageToUint8List(asset).timeout(_loadTimeout),
-      [asset],
-    );
+    final imageFuture = useMemoized(() => _imageToUint8List(asset).timeout(_loadTimeout), [asset]);
 
     String trOr(String primaryKey, {String? fallbackKey, String? fallbackText}) {
       final primaryValue = primaryKey.tr();
@@ -326,7 +319,7 @@ class _EditorBackButton extends StatelessWidget {
         alignment: Alignment.topLeft,
         child: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.maybePop(),
+          onPressed: () => context.navigator.maybePop(),
         ),
       ),
     );
@@ -339,7 +332,10 @@ class _EditorLoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Stack(
-      children: [Center(child: CircularProgressIndicator()), _EditorBackButton()],
+      children: [
+        Center(child: CircularProgressIndicator()),
+        _EditorBackButton(),
+      ],
     );
   }
 }
@@ -369,7 +365,7 @@ class _EditorErrorView extends StatelessWidget {
                   style: const TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(onPressed: () => context.maybePop(), child: Text('back'.tr())),
+                ElevatedButton(onPressed: () => context.navigator.maybePop(), child: Text('back'.tr())),
               ],
             ),
           ),

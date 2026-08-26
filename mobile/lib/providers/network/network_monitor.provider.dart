@@ -22,9 +22,6 @@ final hcDeviceEndpointResolverProvider = Provider<HcDeviceEndpointResolver>(
     ref.watch(apiServiceProvider),
     ref.watch(hcPathResolverProvider),
     onEndpointActivated: () async {
-      if (!Store.isBetaTimelineEnabled) {
-        return;
-      }
       if (Store.tryGet(StoreKey.accessToken)?.isNotEmpty != true) {
         return;
       }

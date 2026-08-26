@@ -40,16 +40,7 @@ class BaseActionButton extends ConsumerWidget {
     final miniWidth = minWidth ?? (context.isMobile ? context.width / 4.5 : 75.0);
     final iconTheme = IconTheme.of(context);
     final iconSize = iconTheme.size ?? 24.0;
-    final iconColor = this.iconColor ?? iconTheme.color ?? context.themeData.iconTheme.color;
     final textColor = context.themeData.textTheme.labelLarge?.color;
-
-    final actionIcon = isLoading
-        ? SizedBox(
-            width: iconSize,
-            height: iconSize,
-            child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
-          )
-        : Icon(iconData, size: iconSize, color: iconColor);
     final effectiveOnPressed = isLoading || isBlocked ? null : onPressed;
 
     Widget wrapBlocked(Widget child) {
@@ -60,61 +51,89 @@ class BaseActionButton extends ConsumerWidget {
     }
 
     if (iconOnly) {
+      final iconColor = this.iconColor ?? iconTheme.color ?? context.themeData.iconTheme.color;
+      final actionIcon = isLoading
+          ? SizedBox(
+              width: iconSize,
+              height: iconSize,
+              child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
+            )
+          : Icon(iconData, size: iconSize, color: iconColor);
+
       return wrapBlocked(
         IconButton(
           onPressed: effectiveOnPressed,
+          onLongPress: isLoading || isBlocked ? null : onLongPressed,
           icon: actionIcon,
         ),
       );
     }
 
     if (menuItem) {
-      final theme = context.themeData;
-      final effectiveIconColor = iconColor ?? theme.iconTheme.color ?? theme.colorScheme.onSurfaceVariant;
+      final iconColor = this.iconColor;
+      final onPressed = effectiveOnPressed;
 
       return wrapBlocked(
         MenuItemButton(
-          style: MenuItemButton.styleFrom(alignment: Alignment.centerLeft, padding: const EdgeInsets.all(16)),
+          closeOnActivate: false,
+          style: MenuItemButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
           leadingIcon: isLoading
               ? SizedBox(
-                  width: iconSize,
-                  height: iconSize,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: effectiveIconColor),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
                 )
-              : Icon(iconData, color: effectiveIconColor),
-          onPressed: effectiveOnPressed,
-          child: Text(label, style: theme.textTheme.labelLarge?.copyWith(fontSize: 16, color: iconColor)),
+              : Icon(iconData, color: iconColor, size: 20),
+          onPressed: onPressed == null
+              ? null
+              : () {
+                  onPressed();
+                  MenuController.maybeOf(context)?.close();
+                },
+          child: Text(label, style: TextStyle(fontSize: 15, color: iconColor)),
         ),
       );
     }
 
+    final iconColor = this.iconColor ?? iconTheme.color ?? context.themeData.iconTheme.color;
+    final actionIcon = isLoading
+        ? SizedBox(
+            width: iconSize,
+            height: iconSize,
+            child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
+          )
+        : Icon(iconData, size: iconSize, color: iconColor);
+
     return wrapBlocked(
       ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: MaterialButton(
-        padding: const EdgeInsets.all(10),
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        textColor: textColor,
-        onPressed: effectiveOnPressed,
-        onLongPress: isLoading || isBlocked ? null : onLongPressed,
-        minWidth: miniWidth,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            actionIcon,
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w400),
-              maxLines: 3,
-              textAlign: TextAlign.center,
-              softWrap: true,
-            ),
-          ],
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: MaterialButton(
+          padding: const EdgeInsets.all(10),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+          textColor: textColor,
+          onPressed: effectiveOnPressed,
+          onLongPress: isLoading || isBlocked ? null : onLongPressed,
+          minWidth: miniWidth,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              actionIcon,
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w400),
+                maxLines: 3,
+                textAlign: TextAlign.center,
+                softWrap: true,
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

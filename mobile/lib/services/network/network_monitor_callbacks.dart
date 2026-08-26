@@ -7,10 +7,10 @@ import 'package:hc_device/hc_device.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/models/connection_state.model.dart' as conn;
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
-import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
@@ -18,7 +18,6 @@ import 'package:immich_mobile/providers/network/network_monitor.provider.dart';
 import 'package:immich_mobile/providers/sync_status.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
-import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/services/network/native_network_status.dart';
 import 'package:immich_mobile/services/network/network_monitor.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
@@ -188,7 +187,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
     await Future<void>.delayed(const Duration(milliseconds: 500));
     await _ref.read(websocketProvider.notifier).connect(force: true);
 
-    if (Store.isBetaTimelineEnabled && Store.tryGet(StoreKey.accessToken)?.isNotEmpty == true) {
+    if (Store.tryGet(StoreKey.accessToken)?.isNotEmpty == true) {
       await _ref.read(backgroundSyncProvider).syncRemote();
     }
 
@@ -234,7 +233,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
       if (shouldRunRemoteRecovery) {
         final remoteOk = await backgroundSync.syncRemote();
         remoteSyncSucceeded = remoteOk;
-        if (remoteOk && Store.get(StoreKey.syncAlbums, false)) {
+        if (remoteOk && SettingsRepository.instance.appConfig.backup.syncAlbums) {
           await backgroundSync.syncLinkedAlbum();
         }
       }
@@ -250,7 +249,7 @@ class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallback
   }
 
   Future<void> _resumeBackupIfNeeded() async {
-    if (!_ref.read(appSettingsServiceProvider).getSetting(AppSettingsEnum.enableBackup)) {
+    if (!SettingsRepository.instance.appConfig.backup.enabled) {
       return;
     }
 

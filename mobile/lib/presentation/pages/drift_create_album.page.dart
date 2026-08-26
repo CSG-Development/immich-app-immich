@@ -10,6 +10,7 @@ import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart'
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/album/album_action_filled_button.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 @RoutePage()
 class DriftCreateAlbumPage extends ConsumerStatefulWidget {
@@ -25,13 +26,17 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   FocusNode albumTitleTextFieldFocusNode = FocusNode();
   FocusNode albumDescriptionTextFieldFocusNode = FocusNode();
   bool isAlbumTitleTextFieldFocus = false;
-  bool _isCreating = false;
+  bool isCreatingAlbum = false;
   Set<BaseAsset> selectedAssets = {};
 
   @override
   void initState() {
     super.initState();
     albumTitleController.addListener(_onTitleChanged);
+  }
+
+  void _onTitleChanged() {
+    setState(() {});
   }
 
   @override
@@ -44,11 +49,7 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
     super.dispose();
   }
 
-  void _onTitleChanged() {
-    setState(() {});
-  }
-
-  bool get _canCreateAlbum => albumTitleController.text.isNotEmpty && !_isCreating;
+  bool get _canCreateAlbum => albumTitleController.text.trim().isNotEmpty && !isCreatingAlbum;
 
   String _getEffectiveTitle() {
     return albumTitleController.text.isNotEmpty
@@ -167,40 +168,34 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   }
 
   Future<void> createAlbum() async {
-    if (_isCreating) return;
-    setState(() => _isCreating = true);
-
-    onBackgroundTapped();
-
-    final title = _getEffectiveTitle().trim();
-    if (title.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('create_album_title_required'.t()), backgroundColor: context.colorScheme.error),
-        );
-      }
-      setState(() => _isCreating = false);
+    if (isCreatingAlbum) {
       return;
     }
 
+    onBackgroundTapped();
+    setState(() => isCreatingAlbum = true);
+
+    final title = _getEffectiveTitle().trim();
+
     try {
       final album = await ref
-          .watch(remoteAlbumProvider.notifier)
-          .createAlbum(
+          .read(remoteAlbumProvider.notifier)
+          .createAlbumWithAssets(
             title: title,
             description: albumDescriptionController.text.trim(),
-            assetIds: selectedAssets.map((asset) {
-              final remoteAsset = asset as RemoteAsset;
-              return remoteAsset.id;
-            }).toList(),
+            assets: selectedAssets,
           );
 
-      if (album != null) {
+      if (album != null && context.mounted) {
         unawaited(context.replaceRoute(RemoteAlbumRoute(album: album)));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ImmichToast.show(context: context, toastType: ToastType.error, msg: 'errors.failed_to_create_album'.t());
       }
     } finally {
       if (mounted) {
-        setState(() => _isCreating = false);
+        setState(() => isCreatingAlbum = false);
       }
     }
   }

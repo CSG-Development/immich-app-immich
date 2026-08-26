@@ -9,12 +9,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/models/backup/backup_state.model.dart';
 import 'package:immich_mobile/pages/common/settings.page.dart';
-import 'package:immich_mobile/providers/asset.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/backup/backup.provider.dart';
-import 'package:immich_mobile/providers/backup/manual_upload.provider.dart';
+import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
+import 'package:immich_mobile/models/server_info/server_disk_info.model.dart';
 import 'package:immich_mobile/providers/infrastructure/readonly_mode.provider.dart';
 import 'package:immich_mobile/providers/locale_provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -33,7 +32,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
-    BackUpState backupState = ref.watch(backupProvider);
+    ServerDiskInfo diskInfo = ref.watch(backupProvider);
     final theme = context.themeData;
     final user = ref.watch(currentUserProvider);
     final isLoggingOut = useState(false);
@@ -87,7 +86,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
         Icons.settings_outlined,
         "settings",
         () {
-          context.pop();
+          Navigator.of(context).pop();
           context.pushRoute(const SettingsRoute());
         },
       );
@@ -98,7 +97,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
         Icons.cleaning_services_outlined,
         "free_up_space",
         () {
-          context.pop();
+          Navigator.of(context).pop();
           context.pushRoute(SettingsSubRoute(section: SettingSection.freeUpSpace));
         },
       );
@@ -109,7 +108,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
         Icons.assignment_outlined,
         "profile_drawer_app_logs",
         () {
-          context.pop();
+          Navigator.of(context).pop();
           context.pushRoute(const AppLogRoute());
         },
       );
@@ -150,19 +149,8 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
                             },
                           );
 
-                      ref.read(manualUploadProvider.notifier).cancelBackup();
-                      ref.read(backupProvider.notifier).cancelBackup();
+                      await ref.read(driftBackupProvider.notifier).cancel();
                       ref.read(websocketProvider.notifier).disconnect();
-
-                      await ref
-                          .read(assetProvider.notifier)
-                          .clearAllAssets()
-                          .timeout(
-                            const Duration(seconds: 5),
-                            onTimeout: () {
-                              dPrint(() => "clearAllAssets timeout, continuing");
-                            },
-                          );
                     } catch (error) {
                       dPrint(() => "Error during logout: $error");
                     } finally {
@@ -209,9 +197,9 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
     }
 
     Widget buildStorageInformation() {
-      var percentage = backupState.serverInfo.diskUsagePercentage / 100;
-      var usedDiskSpace = backupState.serverInfo.diskUse;
-      var totalDiskSpace = backupState.serverInfo.diskSize;
+      var percentage = diskInfo.diskUsagePercentage / 100;
+      var usedDiskSpace = diskInfo.diskUse;
+      var totalDiskSpace = diskInfo.diskSize;
 
       if (user != null && user.hasQuota) {
         usedDiskSpace = formatBytes(user.quotaUsageInBytes);
@@ -304,7 +292,7 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
             ),
           ),
         ),
-        if (Store.isBetaTimelineEnabled && isReadonlyModeEnabled) buildReadonlyMessage(),
+        if (isReadonlyModeEnabled) buildReadonlyMessage(),
         buildAppLogButton(),
         buildFreeUpSpaceButton(),
         buildSettingButton(),
@@ -330,27 +318,23 @@ class CuratorAppBarDrawer extends HookConsumerWidget {
     );
 
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-    final panelColor =
-        Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface ?? context.colorScheme.surfaceContainer;
 
     return Drawer(
+      backgroundColor: drawerBodyColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(color: drawerBodyColor),
-          child: isLandscape
-              ? SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: IntrinsicHeight(
-                      child: drawerContent,
-                    ),
+        child: isLandscape
+            ? SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height,
                   ),
-                )
-              : drawerContent,
-        ),
+                  child: IntrinsicHeight(
+                    child: drawerContent,
+                  ),
+                ),
+              )
+            : drawerContent,
       ),
     );
   }

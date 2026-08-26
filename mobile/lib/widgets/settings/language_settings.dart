@@ -1,12 +1,13 @@
 import 'dart:async';
+
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:immich_mobile/constants/locales.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/services/localization.service.dart';
-import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
 
 class LanguageSettings extends HookConsumerWidget {
@@ -95,7 +96,7 @@ class LanguageSettings extends HookConsumerWidget {
                     padding: const EdgeInsets.all(8),
                     itemCount: filteredLocaleEntries.value.length,
                     itemExtent: 64.0,
-                    cacheExtent: 100,
+                    scrollCacheExtent: const .pixels(100),
                     itemBuilder: (context, index) {
                       final countryName = filteredLocaleEntries.value[index].key;
                       final localeValue = filteredLocaleEntries.value[index].value;
@@ -248,12 +249,13 @@ class _LanguageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: context.colorScheme.surfaceContainerLowest.withValues(alpha: .6),
+      child: Material(
+        color: context.colorScheme.surfaceContainerLowest.withValues(alpha: .6),
+        shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-          border: Border.all(color: context.colorScheme.outlineVariant.withValues(alpha: .4), width: 1.0),
+          side: BorderSide(color: context.colorScheme.outlineVariant.withValues(alpha: .4), width: 1.0),
         ),
+        clipBehavior: Clip.antiAlias,
         child: ListTile(
           title: Text(
             countryName,

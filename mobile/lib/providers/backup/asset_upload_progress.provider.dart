@@ -1,4 +1,5 @@
-import 'package:cancellation_token_http/http.dart' as http;
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Tracks per-asset upload progress.
@@ -30,4 +31,5 @@ final assetUploadProgressProvider = NotifierProvider<AssetUploadProgressNotifier
   AssetUploadProgressNotifier.new,
 );
 
-final manualUploadCancelTokenProvider = StateProvider<http.CancellationToken?>((ref) => null);
+/// Completer used to abort an in-flight manual upload. Complete it to cancel.
+final manualUploadCancelTokenProvider = StateProvider<Completer<void>?>((ref) => null);

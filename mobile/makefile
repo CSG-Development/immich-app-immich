@@ -1,4 +1,4 @@
-.PHONY: build watch create_app_icon create_splash build_release_android pigeon test analyze format
+.PHONY: build watch create_app_icon create_splash build_release_android pigeon test analyze format migration translation
 
 build:
 	dart run build_runner build --delete-conflicting-outputs
@@ -17,6 +17,7 @@ pigeon:
 	dart run pigeon --input pigeon/certificate_fetcher_api.dart
 	dart run pigeon --input pigeon/network_api.dart
 	dart run pigeon --input pigeon/network_monitor_api.dart
+	dart run pigeon --input pigeon/permission_api.dart
 	dart format lib/platform/native_sync_api.g.dart
 	dart format lib/platform/local_image_api.g.dart
 	dart format lib/platform/remote_image_api.g.dart
@@ -28,6 +29,7 @@ pigeon:
 	dart format lib/platform/update_api.g.dart
 	dart format lib/platform/certificate_fetcher_api.g.dart
 	dart format lib/platform/network_api.g.dart
+	dart format lib/platform/permission_api.g.dart
 
 watch:
 	dart run build_runner watch --delete-conflicting-outputs

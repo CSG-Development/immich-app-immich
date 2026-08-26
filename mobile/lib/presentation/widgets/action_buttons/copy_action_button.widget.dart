@@ -5,7 +5,6 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
-import 'package:immich_mobile/presentation/widgets/action_buttons/action_button_helpers.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/services/clipboard.service.dart';
@@ -28,14 +27,11 @@ class CopyActionButton extends ConsumerWidget {
       return;
     }
 
-    final resolved = await ActionButtonHelpers.resolveEntities(ref, selection);
-    if (resolved.isEmpty) {
+    final result = await ClipboardService.copyToClipboard(context, ref, selection);
+
+    if (!context.mounted) {
       return;
     }
-
-    final result = await ClipboardService.copyToClipboard(context, ref, resolved);
-
-    if (!context.mounted) return;
     if (source == ActionSource.timeline) {
       ref.read(multiSelectProvider.notifier).reset();
     }
@@ -76,17 +72,19 @@ class CopyActionButton extends ConsumerWidget {
   }
 
   bool _isCopySupportedForSelection(Set<BaseAsset> assets) {
-    if (assets.isEmpty) return false;
+    if (assets.isEmpty) {
+      return false;
+    }
     final supportedImageExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)", caseSensitive: false);
     for (final a in assets) {
-      if (!a.isImage) return false;
+      if (!a.isImage) {
+        return false;
+      }
       final name = a.name.toLowerCase();
-      if (!supportedImageExtensions.hasMatch(name)) return false;
-      // Allow both remote and local-only assets for clipboard copy
-      // Local assets are now supported by copying to FileProvider-accessible location
+      if (!supportedImageExtensions.hasMatch(name)) {
+        return false;
+      }
     }
     return true;
   }
 }
-
-

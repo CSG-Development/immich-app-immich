@@ -52,7 +52,9 @@ class Activity {
 
   @override
   bool operator ==(covariant Activity other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.id == id &&
         other.assetId == assetId &&

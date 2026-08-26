@@ -11,7 +11,9 @@ import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 // Reusable helper: move to locked folder from any source (e.g called from menu)
 Future<void> performMoveToLockFolderAction(BuildContext context, WidgetRef ref, {required ActionSource source}) async {
-  if (!context.mounted) return;
+  if (!context.mounted) {
+    return;
+  }
 
   final result = await ref.read(actionProvider.notifier).moveToLockFolder(source);
 
