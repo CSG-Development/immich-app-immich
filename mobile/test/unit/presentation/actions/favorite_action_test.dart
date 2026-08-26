@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/services/search.service.dart';
 import 'package:immich_mobile/presentation/actions/favorite.action.dart';
+import 'package:immich_mobile/presentation/pages/search/paginated_search.provider.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../service.mocks.dart';
 import '../../factories/remote_asset_factory.dart';
 import '../presentation_context.dart';
+
+class _MockSearchService extends Mock implements SearchService {}
 
 void main() {
   late PresentationContext context;
@@ -73,6 +77,32 @@ void main() {
       await tester.pumpUntilFound(find.byType(SnackBar));
 
       expect(find.byType(SnackBar), findsOneWidget);
+    });
+  });
+
+  group('PaginatedSearchNotifier.updateFavorite', () {
+    test('updates matching assets and leaves others unchanged', () {
+      final asset = owned();
+      final other = owned();
+      final notifier = PaginatedSearchNotifier(_MockSearchService())
+        ..state = SearchState(assets: [asset, other], nextPage: null);
+
+      notifier.updateFavorite([asset.id], true);
+
+      expect(notifier.state.assets[0].isFavorite, isTrue);
+      expect(notifier.state.assets[1].isFavorite, isFalse);
+      expect(notifier.state.assets[0].remoteId, asset.id);
+    });
+
+    test('is a no-op when ids are not in the result set', () {
+      final asset = owned();
+      final notifier = PaginatedSearchNotifier(_MockSearchService())
+        ..state = SearchState(assets: [asset], nextPage: null);
+
+      notifier.updateFavorite(['missing-id'], true);
+
+      expect(identical(notifier.state.assets[0], asset), isTrue);
+      expect(notifier.state.assets[0].isFavorite, isFalse);
     });
   });
 }
