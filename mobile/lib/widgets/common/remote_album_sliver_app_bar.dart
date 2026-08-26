@@ -90,10 +90,11 @@ class _MesmerizingSliverAppBarState extends ConsumerState<RemoteAlbumSliverAppBa
               onPressed: () => context.maybePop(),
             ),
       actions: [
-        IconButton(
-          onPressed: () => context.pushRoute(DriftSlideshowRoute(timeline: ref.read(timelineServiceProvider))),
-          icon: Icon(Icons.slideshow_outlined, color: actionIconColor, shadows: actionIconShadows),
-        ),
+        if (ref.watch(timelineServiceProvider.select((s) => s.totalAssets)) > 0)
+          IconButton(
+            onPressed: () => context.pushRoute(DriftSlideshowRoute(timeline: ref.read(timelineServiceProvider))),
+            icon: Icon(Icons.slideshow_outlined, color: actionIconColor, shadows: actionIconShadows),
+          ),
         if (currentAlbum.isActivityEnabled && currentAlbum.isShared)
           IconButton(
             icon: Icon(Icons.chat_outlined, color: actionIconColor, shadows: actionIconShadows),
