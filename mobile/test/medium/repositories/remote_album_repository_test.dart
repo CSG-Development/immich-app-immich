@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
+import 'package:immich_mobile/infrastructure/entities/remote_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/remote_album.repository.dart';
 
 import '../repository_context.dart';
@@ -265,6 +266,29 @@ void main() {
       expect(result, [album1.id, album2.id, album3.id]);
     });
 
+    test('excludes trashed assets from the sort date', () async {
+      // Album 1: Assets from Jan 10 to Jan 20, but Jan 20 is trashed (effective end: Jan 10)
+      final album1 = await ctx.newRemoteAlbum(ownerId: userId);
+      final asset1 = await ctx.newRemoteAsset(ownerId: userId, createdAt: DateTime(2024, 1, 10));
+      final asset2 = await ctx.newRemoteAsset(
+        ownerId: userId,
+        createdAt: DateTime(2024, 1, 20),
+        deletedAt: DateTime(2025, 1, 1),
+      );
+      await ctx.newRemoteAlbumAsset(albumId: album1.id, assetId: asset1.id);
+      await ctx.newRemoteAlbumAsset(albumId: album1.id, assetId: asset2.id);
+
+      // Album 2: Single asset from Jan 15 (end: Jan 15)
+      final album2 = await ctx.newRemoteAlbum(ownerId: userId);
+      final asset3 = await ctx.newRemoteAsset(ownerId: userId, createdAt: DateTime(2024, 1, 15));
+      await ctx.newRemoteAlbumAsset(albumId: album2.id, assetId: asset3.id);
+
+      final result = await sut.getSortedAlbumIds([album1.id, album2.id], aggregation: AssetDateAggregation.end);
+
+      // Without the trashed asset, album1 ends on Jan 10 and sorts before album2 (Jan 15)
+      expect(result, [album1.id, album2.id]);
+    });
+
     test('handles album with multiple assets correctly', () async {
       final album1 = await ctx.newRemoteAlbum(ownerId: userId);
       // Album 1 has 5 assets from Jan 5 to Jan 25
@@ -292,6 +316,65 @@ void main() {
 
       // album2 (Jan 1) should come before album1 (Jan 25)
       expect(resultEnd, [album2.id, album1.id]);
+    });
+  });
+
+  group('watchDateRange', () {
+    test('excludes trashed assets from the date range', () async {
+      final user = await ctx.newUser();
+      final album = await ctx.newRemoteAlbum(ownerId: user.id);
+      final oldest = await ctx.newRemoteAsset(ownerId: user.id, createdAt: DateTime(2026, 8, 20));
+      final newest = await ctx.newRemoteAsset(
+        ownerId: user.id,
+        createdAt: DateTime(2026, 8, 25),
+        deletedAt: DateTime(2026, 8, 26),
+      );
+      await ctx.newRemoteAlbumAsset(albumId: album.id, assetId: oldest.id);
+      await ctx.newRemoteAlbumAsset(albumId: album.id, assetId: newest.id);
+
+      final range = await sut.watchDateRange(album.id).first;
+
+      expect(range.$1, DateTime(2026, 8, 20).toUtc());
+      expect(range.$2, DateTime(2026, 8, 20).toUtc());
+    });
+
+    test('re-emits the narrowed range when the newest asset is trashed', () async {
+      final user = await ctx.newUser();
+      final album = await ctx.newRemoteAlbum(ownerId: user.id);
+      final oldest = await ctx.newRemoteAsset(ownerId: user.id, createdAt: DateTime(2026, 8, 20));
+      final newest = await ctx.newRemoteAsset(ownerId: user.id, createdAt: DateTime(2026, 8, 25));
+      await ctx.newRemoteAlbumAsset(albumId: album.id, assetId: oldest.id);
+      await ctx.newRemoteAlbumAsset(albumId: album.id, assetId: newest.id);
+
+      final emissions = expectLater(
+        sut.watchDateRange(album.id),
+        emitsInOrder([
+          predicate<(DateTime, DateTime)>(
+            (r) => r.$1 == DateTime(2026, 8, 20).toUtc() && r.$2 == DateTime(2026, 8, 25).toUtc(),
+          ),
+          predicate<(DateTime, DateTime)>(
+            (r) => r.$1 == DateTime(2026, 8, 20).toUtc() && r.$2 == DateTime(2026, 8, 20).toUtc(),
+          ),
+        ]),
+      );
+
+      // Same update RemoteAssetRepository.trash performs: soft-delete via deletedAt
+      await (ctx.db.update(ctx.db.remoteAssetEntity)..where((t) => t.id.equals(newest.id))).write(
+        RemoteAssetEntityCompanion(deletedAt: .new(DateTime(2026, 8, 26))),
+      );
+      await emissions;
+    });
+
+    test('collapses to a single point when all assets are trashed', () async {
+      final user = await ctx.newUser();
+      final album = await ctx.newRemoteAlbum(ownerId: user.id);
+      final asset = await ctx.newRemoteAsset(ownerId: user.id, deletedAt: DateTime(2025, 1, 1));
+      await ctx.newRemoteAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      // No active assets: the aggregate row is NULL and the repository falls back to now()
+      final range = await sut.watchDateRange(album.id).first;
+
+      expect(range.$1, range.$2);
     });
   });
 
