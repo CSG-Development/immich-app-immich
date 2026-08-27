@@ -16,8 +16,27 @@
 }
 
 @utility immich-scrollbar {
-  /* width */
   scrollbar-width: thin;
+  scrollbar-color: rgba(85, 86, 87, 0.408) #f1f1f1;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(85, 86, 87, 0.408);
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #2f743cad;
+  }
 }
 
 @utility scrollbar-hidden {
