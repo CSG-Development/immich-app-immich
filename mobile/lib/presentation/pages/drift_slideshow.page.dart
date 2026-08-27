@@ -270,10 +270,12 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   void _onTapUp() async {
     await (_showAppBar ? SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive) : restoreEdgeToEdge());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _showAppBar = !_showAppBar;
-      });
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _showAppBar = !_showAppBar;
     });
   }
 
