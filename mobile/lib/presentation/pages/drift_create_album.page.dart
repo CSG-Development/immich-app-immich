@@ -30,18 +30,7 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   Set<BaseAsset> selectedAssets = {};
 
   @override
-  void initState() {
-    super.initState();
-    albumTitleController.addListener(_onTitleChanged);
-  }
-
-  void _onTitleChanged() {
-    setState(() {});
-  }
-
-  @override
   void dispose() {
-    albumTitleController.removeListener(_onTitleChanged);
     albumTitleController.dispose();
     albumDescriptionController.dispose();
     albumTitleTextFieldFocusNode.dispose();
@@ -49,7 +38,7 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
     super.dispose();
   }
 
-  bool get _canCreateAlbum => albumTitleController.text.trim().isNotEmpty && !isCreatingAlbum;
+  bool _canCreateAlbum(String title) => title.trim().isNotEmpty && !isCreatingAlbum;
 
   String _getEffectiveTitle() {
     return albumTitleController.text.isNotEmpty
@@ -255,15 +244,21 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
         leading: IconButton(onPressed: () => context.maybePop(), icon: const Icon(Icons.close_rounded)),
         title: const Text('create_album').t(),
         actions: [
-          TextButton(
-            onPressed: _canCreateAlbum ? createAlbum : null,
-            child: Text(
-              'create'.t(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: _canCreateAlbum ? context.primaryColor : context.themeData.disabledColor,
-              ),
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: albumTitleController,
+            builder: (context, value, _) {
+              final canCreate = _canCreateAlbum(value.text);
+              return TextButton(
+                onPressed: canCreate ? createAlbum : null,
+                child: Text(
+                  'create'.t(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: canCreate ? context.primaryColor : context.themeData.disabledColor,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -311,44 +306,49 @@ class _AlbumTitleTextFieldState extends State<_AlbumTitleTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      focusNode: widget.focusNode,
-      style: TextStyle(fontSize: 28.0, color: context.colorScheme.onSurface, fontWeight: FontWeight.bold),
-      controller: widget.textController,
-      onTap: () {
-        if (widget.textController.text == 'create_album_page_untitled'.t(context: context)) {
-          widget.textController.clear();
-        }
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.textController,
+      builder: (context, value, _) {
+        return TextField(
+          focusNode: widget.focusNode,
+          style: TextStyle(fontSize: 28.0, color: context.colorScheme.onSurface, fontWeight: FontWeight.bold),
+          controller: widget.textController,
+          onTap: () {
+            if (widget.textController.text == 'create_album_page_untitled'.t(context: context)) {
+              widget.textController.clear();
+            }
+          },
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+            suffixIcon: value.text.isNotEmpty && widget.isFocus
+                ? IconButton(
+                    onPressed: () {
+                      widget.textController.clear();
+                    },
+                    icon: Icon(Icons.cancel_rounded, color: context.primaryColor),
+                    splashRadius: 10.0,
+                  )
+                : null,
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.transparent),
+              borderRadius: BorderRadius.all(Radius.circular(16.0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: context.primaryColor.withValues(alpha: 0.3)),
+              borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+            ),
+            hintText: 'add_a_title'.t(),
+            hintStyle: context.themeData.inputDecorationTheme.hintStyle?.copyWith(
+              fontSize: 28.0,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
+            focusColor: Colors.grey[300],
+            fillColor: context.colorScheme.surfaceContainerHigh,
+            filled: true,
+          ),
+        );
       },
-      decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-        suffixIcon: widget.textController.text.isNotEmpty && widget.isFocus
-            ? IconButton(
-                onPressed: () {
-                  widget.textController.clear();
-                },
-                icon: Icon(Icons.cancel_rounded, color: context.primaryColor),
-                splashRadius: 10.0,
-              )
-            : null,
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.transparent),
-          borderRadius: BorderRadius.all(Radius.circular(16.0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: context.primaryColor.withValues(alpha: 0.3)),
-          borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-        ),
-        hintText: 'add_a_title'.t(),
-        hintStyle: context.themeData.inputDecorationTheme.hintStyle?.copyWith(
-          fontSize: 28.0,
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ),
-        focusColor: Colors.grey[300],
-        fillColor: context.colorScheme.surfaceContainerHigh,
-        filled: true,
-      ),
     );
   }
 }

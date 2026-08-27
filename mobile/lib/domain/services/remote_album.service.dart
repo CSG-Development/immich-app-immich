@@ -315,6 +315,10 @@ class RemoteAlbumService {
     await _repository.deleteAlbum(albumId);
   }
 
+  Future<void> deleteAlbumLocally(String albumId) {
+    return _repository.deleteAlbum(albumId);
+  }
+
   Future<void> addUsers({required String albumId, required List<String> userIds}) async {
     await _albumApiRepository.addUsers(albumId, userIds);
 

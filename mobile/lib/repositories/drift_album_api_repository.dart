@@ -116,12 +116,15 @@ class DriftAlbumApiRepository extends ApiRepository {
     try {
       final response = await checkNull(_api.getAlbumInfo(albumId));
       final album = response.toRemoteAlbum(owner);
-      if (isAlbumEditor(response, userId)) {
+      if (isAlbumEditor(response, userId, owner.id)) {
         return AlbumEditAccessAllowed(album);
       }
       return AlbumEditAccessViewOnly(album);
     } catch (error) {
-      return classifyAlbumAccessError(error);
+      if (isAlbumPermissionError(error)) {
+        return classifyAlbumAccessError(error);
+      }
+      rethrow;
     }
   }
 

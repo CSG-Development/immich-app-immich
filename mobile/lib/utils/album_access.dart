@@ -26,12 +26,11 @@ final class AlbumEditAccessDeleted extends AlbumEditAccessResult {
   const AlbumEditAccessDeleted();
 }
 
-bool isAlbumEditor(openapi.AlbumResponseDto album, String userId) {
-  return album.albumUsers.any(
-    (albumUser) =>
-        albumUser.user.id == userId &&
-        (albumUser.role == openapi.AlbumUserRole.editor || albumUser.role == openapi.AlbumUserRole.owner),
-  );
+bool isAlbumEditor(openapi.AlbumResponseDto album, String userId, String ownerId) {
+  return ownerId == userId ||
+      album.albumUsers.any(
+        (albumUser) => albumUser.user.id == userId && albumUser.role == openapi.AlbumUserRole.editor,
+      );
 }
 
 AlbumEditAccessResult classifyAlbumAccessError(Object error) {

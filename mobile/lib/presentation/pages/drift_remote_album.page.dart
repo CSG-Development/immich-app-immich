@@ -50,6 +50,7 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
   }
 
   Future<void> _handleLostAlbumAccess(BuildContext context, AlbumEditAccessResult result) async {
+    await ref.read(remoteAlbumProvider.notifier).deleteAlbumLocally(_album.id);
     if (!context.mounted) {
       return;
     }

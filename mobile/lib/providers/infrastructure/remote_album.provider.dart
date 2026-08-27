@@ -213,6 +213,13 @@ class RemoteAlbumNotifier extends Notifier<RemoteAlbumState> {
     state = state.copyWith(albums: updatedAlbums);
   }
 
+  Future<void> deleteAlbumLocally(String albumId) async {
+    await _remoteAlbumService.deleteAlbumLocally(albumId);
+
+    final updatedAlbums = state.albums.where((album) => album.id != albumId).toList();
+    state = state.copyWith(albums: updatedAlbums);
+  }
+
   Future<List<RemoteAsset>> getAssets(String albumId) {
     return _remoteAlbumService.getAssets(albumId);
   }
