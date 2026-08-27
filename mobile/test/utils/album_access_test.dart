@@ -5,6 +5,64 @@ import 'package:openapi/api.dart';
 void main() {
   ApiException apiError(String message) => ApiException(400, '{"message":"$message"}');
 
+  AlbumResponseDto album({
+    List<AlbumUserResponseDto> albumUsers = const [],
+  }) {
+    return AlbumResponseDto(
+      albumName: 'test',
+      albumThumbnailAssetId: null,
+      albumUsers: albumUsers,
+      assetCount: 0,
+      createdAt: DateTime(2024),
+      description: '',
+      hasSharedLink: false,
+      id: 'album-id',
+      isActivityEnabled: true,
+      shared: albumUsers.isNotEmpty,
+      updatedAt: DateTime(2024),
+    );
+  }
+
+  AlbumUserResponseDto albumUser(String id, AlbumUserRole role) {
+    return AlbumUserResponseDto(
+      role: role,
+      user: UserResponseDto(
+        avatarColor: UserAvatarColor.primary,
+        email: '$id@example.com',
+        id: id,
+        name: id,
+        profileChangedAt: DateTime(2024),
+        profileImagePath: '',
+      ),
+    );
+  }
+
+  group('isAlbumEditor', () {
+    const ownerId = 'owner-id';
+    const editorId = 'editor-id';
+    const viewerId = 'viewer-id';
+
+    final shared = album(
+      albumUsers: [
+        albumUser(editorId, AlbumUserRole.editor),
+        albumUser(viewerId, AlbumUserRole.viewer),
+      ],
+    );
+
+    test('returns true for the album owner', () {
+      expect(isAlbumEditor(shared, ownerId, ownerId), isTrue);
+      expect(isAlbumEditor(album(), ownerId, ownerId), isTrue);
+    });
+
+    test('returns true for editors', () {
+      expect(isAlbumEditor(shared, editorId, ownerId), isTrue);
+    });
+
+    test('returns false for viewers', () {
+      expect(isAlbumEditor(shared, viewerId, ownerId), isFalse);
+    });
+  });
+
   group('classifyAlbumAccessError', () {
     test('detects deleted album', () {
       expect(classifyAlbumAccessError(apiError('Album has been deleted')), isA<AlbumEditAccessDeleted>());
