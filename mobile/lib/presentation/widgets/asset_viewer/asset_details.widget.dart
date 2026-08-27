@@ -7,6 +7,7 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/appears_in_details.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/date_time_details.widget.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/description.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/drag_handle.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/location_details.widget.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_details/people_details.widget.dart';
@@ -27,6 +28,19 @@ class AssetDetails extends HookConsumerWidget {
     final exifInfo = ref.watch(assetExifProvider(asset)).valueOrNull;
     final tabController = useTabController(initialLength: 2);
     final advancedExifAsync = ref.watch(mergedAdvancedExifProvider(asset));
+
+    // Unfocus (and thus save) description when leaving Overview so the
+    // keyboard does not stay open on the Advanced tab.
+    useEffect(() {
+      void onTabChange() {
+        if (tabController.index != 0) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        }
+      }
+
+      tabController.addListener(onTabChange);
+      return () => tabController.removeListener(onTabChange);
+    }, [tabController]);
 
     return Container(
       constraints: BoxConstraints(minHeight: minHeight),
@@ -62,23 +76,42 @@ class AssetDetails extends HookConsumerWidget {
             AnimatedBuilder(
               animation: tabController,
               builder: (context, _) {
-                if (tabController.index == 0) {
-                  return _OverviewTab(asset: asset, exifInfo: exifInfo);
-                }
+                final isOverview = tabController.index == 0;
 
-                return advancedExifAsync.when(
-                  data: (info) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: AdvancedExifTab(info: info),
-                  ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (error, stackTrace) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                    child: Text('advanced_exif_load_error'.t(context: context)),
-                  ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Keep Overview mounted (heightFactor: 0) so the description
+                    // TextField state survives switching to Advanced and back.
+                    ClipRect(
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        heightFactor: isOverview ? 1.0 : 0.0,
+                        child: IgnorePointer(
+                          ignoring: !isOverview,
+                          child: TickerMode(
+                            enabled: isOverview,
+                            child: _OverviewTab(asset: asset, exifInfo: exifInfo),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!isOverview)
+                      advancedExifAsync.when(
+                        data: (info) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: AdvancedExifTab(info: info),
+                        ),
+                        loading: () => const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (error, stackTrace) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                          child: Text('advanced_exif_load_error'.t(context: context)),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -102,6 +135,7 @@ class _OverviewTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DateTimeDetails(asset: asset, exifInfo: exifInfo),
+        SheetAssetDescription(asset: asset, exifInfo: exifInfo),
         PeopleDetails(asset: asset),
         LocationDetails(asset: asset, exifInfo: exifInfo),
         const SheetTagsDetailsBeta(),

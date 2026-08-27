@@ -517,6 +517,15 @@ class ActionNotifier extends Notifier<void> {
 
     try {
       final isUpdated = await _service.updateDescription(ids.first, description);
+      if (isUpdated && source == ActionSource.viewer) {
+        // This must be called since editing description
+        // does not update the currentAsset which means
+        // the exif provider will not be refreshed automatically
+        final currentAsset = ref.read(assetViewerProvider).currentAsset;
+        if (currentAsset != null) {
+          ref.invalidate(assetExifProvider(currentAsset));
+        }
+      }
       return ActionResult(count: 1, success: isUpdated);
     } catch (error, stack) {
       _logger.severe('Failed to update description for asset', error, stack);
