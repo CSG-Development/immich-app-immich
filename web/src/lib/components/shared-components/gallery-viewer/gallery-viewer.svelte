@@ -41,6 +41,8 @@
     slidingWindowOffset?: number;
     arrowNavigation?: boolean;
     allowDeletion?: boolean;
+    /** Scroll container when the page does not scroll the document (e.g. search). */
+    scrollRoot?: HTMLElement | undefined;
   };
 
   let {
@@ -57,6 +59,7 @@
     pageHeaderOffset = 0,
     arrowNavigation = true,
     allowDeletion = true,
+    scrollRoot = undefined,
   }: Props = $props();
 
   const navigationAssets = $derived(viewerAssets ?? assets);
@@ -101,7 +104,19 @@
     assets[index] = asset;
   };
 
-  const updateSlidingWindow = () => (scrollTop = document.scrollingElement?.scrollTop ?? 0);
+  const updateSlidingWindow = () => {
+    scrollTop = scrollRoot?.scrollTop ?? document.scrollingElement?.scrollTop ?? 0;
+  };
+
+  $effect(() => {
+    const root = scrollRoot;
+    if (!root) {
+      return;
+    }
+    updateSlidingWindow();
+    root.addEventListener('scroll', updateSlidingWindow, { passive: true });
+    return () => root.removeEventListener('scroll', updateSlidingWindow);
+  });
 
   const debouncedOnIntersected = debounce(() => onIntersected?.(), 750, { maxWait: 100, leading: true });
 
