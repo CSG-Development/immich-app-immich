@@ -140,6 +140,7 @@
         max={SLIDESHOW_DELAY_MAX}
         step={1}
         bind:value={tempSlideshowDelay}
+        onkeydown={(event) => event.stopPropagation()}
       />
       {#if !isDurationValid}
         <HelperText color="danger">
