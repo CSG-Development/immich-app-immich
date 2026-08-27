@@ -136,15 +136,13 @@ class _ActionsToolbarState extends State<_ActionsToolbar> {
     return RepaintBoundary(
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) => notification.metrics.axis == Axis.horizontal,
-        child: SizedBox(
-          height: 120,
-          child: ListView.builder(
-            controller: _scrollController,
-            primary: false,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            itemCount: widget.actions.length,
-            itemBuilder: (context, index) => widget.actions[index],
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: widget.actions,
           ),
         ),
       ),
