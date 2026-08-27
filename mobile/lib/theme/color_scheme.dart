@@ -60,8 +60,8 @@ final Map<ImmichColorPreset, ImmichTheme> _themePresets = {
     ),
   ),
   // Login-derived SG green:
-  // - primary: focus rings, links, loaders, text/filled buttons (#2F743C / #8CD873)
-  // - cta: elevated CTAs + selection highlights (#6EBE49, pressed #55A72F)
+  // - primary: links, loaders, text/filled buttons (#2F743C / #8CD873)
+  // - cta: elevated CTAs, selection highlights, focused input borders (#6EBE49, pressed #55A72F)
   ImmichColorPreset.sg: ImmichTheme(
     light: ColorScheme.fromSeed(
       seedColor: sgBrandColorLight,
