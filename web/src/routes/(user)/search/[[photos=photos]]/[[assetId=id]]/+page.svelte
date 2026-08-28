@@ -16,6 +16,7 @@
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getAssetSelectMenuItems } from '$lib/services/asset-select-menu.service';
+  import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { lang, locale } from '$lib/stores/preferences.store';
   import { handlePromiseError } from '$lib/utils';
   import { parseUtcDate } from '$lib/utils/date-time';
@@ -39,6 +40,7 @@
 
   const viewport: Viewport = $state({ width: 0, height: 0 });
   let searchResultsElement: HTMLElement | undefined = $state();
+  let scrollContainer: HTMLElement | undefined = $state();
 
   // The GalleryViewer pushes it's own history state, which causes weird
   // behavior for history.back(). To prevent that we store the previous page
@@ -87,7 +89,7 @@
 
     tick()
       .then(() => {
-        window.scrollTo(0, scrollYHistory);
+        scrollContainer?.scrollTo(0, scrollYHistory);
       })
       .catch(() => {
         // do nothing
@@ -240,130 +242,139 @@
   );
 </script>
 
-<svelte:window bind:scrollY />
-
 <OnEvents {onAlbumAddAssets} />
 
-{#if terms}
-  <section
-    id="search-chips"
-    class="mt-24 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
-  >
-    {#each getObjectKeys(terms) as searchKey (searchKey)}
-      {@const value = terms[searchKey]}
-      <div class="flex place-content-center place-items-center items-stretch text-xs">
-        <div
-          class="flex items-center justify-center bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
-          {value === true ? 'rounded-full' : 'rounded-s-full'}"
-        >
-          {getHumanReadableSearchKey(searchKey as keyof SearchTerms)}
-        </div>
+<div class="flex h-dvh w-full flex-col overflow-hidden">
+  <div class="relative z-50 w-full shrink-0 bg-white dark:bg-black">
+    {#if assetMultiSelectManager.selectionActive}
+      <AssetSelectControlBar flush>
+        {@const Actions = getAssetBulkActions($t)}
+        <CommandPaletteDefaultProvider name={$t('assets')} actions={Object.values(Actions)} />
 
-        {#if value !== true}
-          <div class="bg-gray-300 py-2 px-4 dark:bg-gray-800 dark:text-white rounded-e-full">
-            {#if (searchKey === 'takenAfter' || searchKey === 'takenBefore') && typeof value === 'string'}
-              {getHumanReadableDate(value)}
-            {:else if searchKey === 'personIds' && Array.isArray(value)}
-              {#await getPersonName(value) then personName}
-                {personName}
-              {/await}
-            {:else if searchKey === 'tagIds' && (Array.isArray(value) || value === null)}
-              {#await getTagNames(value) then tagNames}
-                {tagNames}
-              {/await}
-            {:else if searchKey === 'rating'}
-              {$t('rating_count', { values: { count: value ?? 0 } })}
-            {:else if value === null || value === ''}
-              {$t('unknown')}
-            {:else}
-              {value}
+        <CreateSharedLink />
+        <IconButton
+          shape="round"
+          color="secondary"
+          variant="ghost"
+          aria-label={$t('select_all')}
+          icon={mdiSelectAll}
+          onclick={handleSelectAll}
+        />
+        <ActionButton action={Actions.AddToAlbum} />
+        {#if assetMultiSelectManager.isAllUserOwned}
+          <FavoriteAction
+            removeFavorite={assetMultiSelectManager.isAllFavorite}
+            onFavorite={(ids, isFavorite) => {
+              for (const id of ids) {
+                const asset = searchResultAssets.find((asset) => asset.id === id);
+                if (asset) {
+                  asset.isFavorite = isFavorite;
+                }
+              }
+            }}
+          />
+
+          <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
+        {:else}
+          <DownloadAction />
+        {/if}
+      </AssetSelectControlBar>
+    {:else}
+      <ControlAppBar isSearch onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
+        <div class="max-w-256 m-auto flex-1 px-4">
+          <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
+        </div>
+        {#snippet trailing()}
+          {#if !mobileDevice.maxMd}
+            <div class="w-18"></div>
+          {/if}
+        {/snippet}
+      </ControlAppBar>
+    {/if}
+  </div>
+
+  <div
+    class="immich-scrollbar relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden"
+    bind:this={scrollContainer}
+    bind:clientHeight={viewport.height}
+    onscroll={() => {
+      scrollY = scrollContainer?.scrollTop ?? 0;
+    }}
+  >
+    {#if terms}
+      <section
+        id="search-chips"
+        class="mt-4 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
+      >
+        {#each getObjectKeys(terms) as searchKey (searchKey)}
+          {@const value = terms[searchKey]}
+          <div class="flex place-content-center place-items-center items-stretch text-xs">
+            <div
+              class="flex items-center justify-center bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
+              {value === true ? 'rounded-full' : 'rounded-s-full'}"
+            >
+              {getHumanReadableSearchKey(searchKey as keyof SearchTerms)}
+            </div>
+
+            {#if value !== true}
+              <div class="bg-gray-300 py-2 px-4 dark:bg-gray-800 dark:text-white rounded-e-full">
+                {#if (searchKey === 'takenAfter' || searchKey === 'takenBefore') && typeof value === 'string'}
+                  {getHumanReadableDate(value)}
+                {:else if searchKey === 'personIds' && Array.isArray(value)}
+                  {#await getPersonName(value) then personName}
+                    {personName}
+                  {/await}
+                {:else if searchKey === 'tagIds' && (Array.isArray(value) || value === null)}
+                  {#await getTagNames(value) then tagNames}
+                    {tagNames}
+                  {/await}
+                {:else if searchKey === 'rating'}
+                  {$t('rating_count', { values: { count: value ?? 0 } })}
+                {:else if value === null || value === ''}
+                  {$t('unknown')}
+                {:else}
+                  {value}
+                {/if}
+              </div>
             {/if}
           </div>
-        {/if}
-      </div>
-    {/each}
-  </section>
-{/if}
-
-<section
-  class="mb-12 bg-immich-bg dark:bg-immich-dark-bg m-4 max-h-screen"
-  bind:clientHeight={viewport.height}
-  bind:clientWidth={viewport.width}
-  bind:this={searchResultsElement}
->
-  <section id="search-content">
-    {#if searchResultAssets.length > 0}
-      <GalleryViewer
-        assets={searchResultAssets}
-        assetInteraction={assetMultiSelectManager}
-        onIntersected={loadNextPage}
-        showArchiveIcon={true}
-        {viewport}
-        onReload={onSearchQueryUpdate}
-        slidingWindowOffset={searchResultsElement.offsetTop}
-      />
-    {:else if !isLoading}
-      <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
-        <div class="flex flex-col content-center items-center text-center">
-          <Icon icon={mdiImageOffOutline} size="3.5em" />
-          <p class="mt-5 text-3xl font-medium">{$t('no_results')}</p>
-          <p class="text-base font-normal">{$t('no_results_description')}</p>
-        </div>
-      </div>
+        {/each}
+      </section>
     {/if}
 
-    {#if isLoading}
-      <div class="flex justify-center py-16 items-center">
-        <LoadingSpinner size="giant" />
-      </div>
-    {/if}
-  </section>
-
-  <section>
-    {#if assetMultiSelectManager.selectionActive}
-      <div class="fixed top-0 start-0 w-full z-2">
-        <AssetSelectControlBar>
-          {@const Actions = getAssetBulkActions($t)}
-          <CommandPaletteDefaultProvider name={$t('assets')} actions={Object.values(Actions)} />
-
-          <CreateSharedLink />
-          <IconButton
-            shape="round"
-            color="secondary"
-            variant="ghost"
-            aria-label={$t('select_all')}
-            icon={mdiSelectAll}
-            onclick={handleSelectAll}
+    <section
+      class="mb-12 mt-6 mx-4"
+      bind:this={searchResultsElement}
+      bind:clientWidth={viewport.width}
+    >
+      <section id="search-content">
+        {#if searchResultAssets.length > 0}
+          <GalleryViewer
+            assets={searchResultAssets}
+            assetInteraction={assetMultiSelectManager}
+            onIntersected={loadNextPage}
+            showArchiveIcon={true}
+            {viewport}
+            onReload={onSearchQueryUpdate}
+            slidingWindowOffset={searchResultsElement?.offsetTop ?? 0}
+            scrollRoot={scrollContainer}
           />
-          <ActionButton action={Actions.AddToAlbum} />
-          {#if assetMultiSelectManager.isAllUserOwned}
-            <FavoriteAction
-              removeFavorite={assetMultiSelectManager.isAllFavorite}
-              onFavorite={(ids, isFavorite) => {
-                for (const id of ids) {
-                  const asset = searchResultAssets.find((asset) => asset.id === id);
-                  if (asset) {
-                    asset.isFavorite = isFavorite;
-                  }
-                }
-              }}
-            />
-
-            <ContextMenuButton icon={mdiDotsVertical} aria-label={$t('menu')} items={menuItems} />
-          {:else}
-            <DownloadAction />
-          {/if}
-        </AssetSelectControlBar>
-      </div>
-    {:else}
-      <div class="fixed top-0 start-0 w-full z-2">
-        <ControlAppBar onClose={() => goto(previousRoute)} backIcon={mdiArrowLeft}>
-          <div class="absolute bg-light"></div>
-          <div class="w-full flex-1 ps-4">
-            <SearchBar grayTheme={false} value={terms?.query ?? ''} searchQuery={terms} />
+        {:else if !isLoading}
+          <div class="flex min-h-[calc(66vh-11rem)] w-full place-content-center items-center dark:text-white">
+            <div class="flex flex-col content-center items-center text-center">
+              <Icon icon={mdiImageOffOutline} size="3.5em" />
+              <p class="mt-5 text-3xl font-medium">{$t('no_results')}</p>
+              <p class="text-base font-normal">{$t('no_results_description')}</p>
+            </div>
           </div>
-        </ControlAppBar>
-      </div>
-    {/if}
-  </section>
-</section>
+        {/if}
+
+        {#if isLoading}
+          <div class="flex justify-center py-16 items-center">
+            <LoadingSpinner size="giant" />
+          </div>
+        {/if}
+      </section>
+    </section>
+  </div>
+</div>

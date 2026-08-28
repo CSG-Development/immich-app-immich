@@ -30,6 +30,12 @@ class ViewerExitAfterPlacesLocationEditEvent extends Event {
   const ViewerExitAfterPlacesLocationEditEvent();
 }
 
+class ViewerStackAssetDeletedEvent extends Event {
+  final int stackIndex;
+
+  const ViewerStackAssetDeletedEvent({required this.stackIndex});
+}
+
 // Multi-Select Events
 class MultiSelectToggleEvent extends Event {
   final bool isEnabled;

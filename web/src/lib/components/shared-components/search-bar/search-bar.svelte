@@ -267,7 +267,7 @@
         name="q"
         id="main-search-bar"
         class="w-full transition-all border-1 ps-14 py-4 max-md:py-2 text-immich-fg/75 dark:text-immich-dark-fg h-13 md:h-15.5 placeholder:text-base placeholder:text-immich-gray-text dark:placeholder:text-immich-dark-gray-text
-          {showClearIcon ? 'pe-[90px]' : 'pe-14'}
+          {showClearIcon ? 'pe-24 md:pe-[90px]' : 'pe-14'}
           {grayTheme ? 'dark:bg-immich-dark-gray-search-bar' : 'dark:bg-immich-dark-bg'}
           {showSuggestions && isSearchSuggestions ? 'rounded-t-3xl' : 'rounded-3xl bg-primary/12'}
           {searchStore.isSearchEnabled
@@ -312,8 +312,7 @@
 
     <div
       id={searchTypeId}
-      class="absolute inset-y-0 flex items-center end-16"
-      class:max-md:hidden={value}
+      class="absolute inset-y-0 hidden md:flex items-center end-16"
       class:end-28={value.length > 0}
     >
       <div class="relative" use:focusOutside={{ onFocusOut: closeSearchTypeDropdown }}>

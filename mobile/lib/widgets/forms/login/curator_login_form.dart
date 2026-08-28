@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
@@ -19,6 +20,7 @@ import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/view_intent/view_intent_handler.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/network/local_network_permission_otp_gate.dart';
@@ -30,7 +32,8 @@ import 'package:immich_mobile/utils/version_compatibility.dart';
 import 'package:immich_mobile/widgets/forms/login/device_selector.dart';
 import 'package:immich_mobile/widgets/forms/login/loading_icon.dart';
 import 'package:immich_mobile/widgets/forms/login/login_brand_header.dart';
-import 'package:immich_mobile/widgets/forms/login/login_button.dart';
+import 'package:immich_mobile/widgets/forms/login/login_submit_button.dart';
+import 'package:immich_mobile/utils/semver.dart';
 import 'package:immich_mobile/widgets/forms/login/password_input.dart';
 import 'package:immich_mobile/widgets/forms/login/remote_code_dialog.dart';
 import 'package:logging/logging.dart';
@@ -133,7 +136,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         context.pushRoute(
           UnableToDetectRoute(
             onRetry: () {
-              context.pop();
+              Navigator.of(context).pop();
               onStartDiscovery();
             },
           ),
@@ -407,22 +410,17 @@ class CuratorLoginForm extends HookConsumerWidget {
     Future<void> updateVersionCompatibilityWarning() async {
       try {
         final packageInfo = await PackageInfo.fromPlatform();
-        final appVersion = packageInfo.version;
-        final appMajorVersion = int.parse(appVersion.split('.')[0]);
-        final appMinorVersion = int.parse(appVersion.split('.')[1]);
-        final serverMajorVersion = serverInfo.serverVersion.major;
-        final serverMinorVersion = serverInfo.serverVersion.minor;
+        final appSemVer = SemVer.fromString(packageInfo.version);
+        final serverSemVer = serverInfo.serverVersion;
 
-        if (serverMajorVersion == 0 && serverMinorVersion == 0) {
+        if (serverSemVer.major == 0 && serverSemVer.minor == 0) {
           warningMessage.value = null;
           return;
         }
 
         final message = getVersionCompatibilityMessage(
-          appMajorVersion,
-          appMinorVersion,
-          serverMajorVersion,
-          serverMinorVersion,
+          serverVersion: serverSemVer,
+          appVersion: appSemVer,
         );
 
         if (message != null) {
@@ -520,7 +518,7 @@ class CuratorLoginForm extends HookConsumerWidget {
       DevicePathType? pathType,
     }) async {
       final normalizedBaseUrl = buildDevicePhotosBaseUrl(baseUrl);
-      final sanitizedServerUrl = sanitizeUrl(normalizedBaseUrl);
+      final sanitizedServerUrl = normalizeServerUrl(normalizedBaseUrl);
       final normalizedServerUrl = punycodeEncodeUrl(sanitizedServerUrl);
 
       if (normalizedServerUrl.isEmpty) {
@@ -958,12 +956,14 @@ class CuratorLoginForm extends HookConsumerWidget {
 
     Future<void> handleSyncFlow() async {
       final backgroundManager = ref.read(backgroundSyncProvider);
+      final viewIntentHandler = ref.read(viewIntentHandlerProvider);
 
       await backgroundManager.syncLocal(full: true);
       await backgroundManager.syncRemote();
+      await viewIntentHandler.flushDeferredViewIntent();
       await backgroundManager.hashAssets();
 
-      if (Store.get(StoreKey.syncAlbums, false)) {
+      if (SettingsRepository.instance.appConfig.backup.syncAlbums) {
         await backgroundManager.syncLinkedAlbum();
       }
     }
@@ -997,7 +997,7 @@ class CuratorLoginForm extends HookConsumerWidget {
           context.pushRoute(
             UnableToConnectRoute(
               onRetry: () {
-                context.pop();
+                Navigator.of(context).pop();
                 login();
               },
             ),
@@ -1053,29 +1053,16 @@ class CuratorLoginForm extends HookConsumerWidget {
         } else {
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (!onboardingWasShown) {
-            if (Store.isBetaTimelineEnabled) {
-              // Start remote sync during onboarding so the timeline is ready after permissions.
-              unawaited(ref.read(backgroundSyncProvider).syncRemote());
-              ref.read(websocketProvider.notifier).connect();
-            }
+            unawaited(ref.read(backgroundSyncProvider).syncRemote());
+            ref.read(websocketProvider.notifier).connect();
             context.replaceRoute(const CuratorOnboardingRoute());
             return;
           }
 
-          final isBeta = Store.isBetaTimelineEnabled;
-          if (isBeta) {
-            await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-            unawaited(handleSyncFlow());
-            ref.read(websocketProvider.notifier).connect();
-            context.replaceRoute(const TabShellRoute());
-            return;
-          }
-
-          if (ref.read(galleryPermissionNotifier.notifier).hasPermission) {
-            unawaited(ref.read(backupProvider.notifier).resumeBackup());
-          }
+          await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+          unawaited(handleSyncFlow());
           ref.read(websocketProvider.notifier).connect();
-          context.replaceRoute(const TabControllerRoute());
+          context.replaceRoute(const TabShellRoute());
         }
       } on ApiException catch (e) {
         if (e.code == 400 || e.code == 401 || e.code == 403) {
@@ -1090,7 +1077,7 @@ class CuratorLoginForm extends HookConsumerWidget {
         context.pushRoute(
           UnableToConnectRoute(
             onRetry: () {
-              context.pop();
+              Navigator.of(context).pop();
               login();
             },
           ),
@@ -1252,7 +1239,7 @@ class CuratorLoginForm extends HookConsumerWidget {
                 animation: Listenable.merge([passwordController, hasPreviousLoginFailed]),
                 builder: (_, __) {
                   final canSubmit = areRequiredFieldsFilled() && !hasPreviousLoginFailed.value;
-                  return LoginButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);
+                  return LoginSubmitButton(onPressed: login, withIcon: false, isDisabled: !canSubmit);
                 },
               ),
       ],

@@ -1,9 +1,7 @@
 import { Route } from '$lib/route';
-import { albumPreviousRoute } from '$lib/stores/navigation.store';
 import { authenticate } from '$lib/utils/auth';
 import { getAlbumInfo, type AlbumResponseDto } from '@immich/sdk';
 import { redirect } from '@sveltejs/kit';
-import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
 
 export const load = (async ({ params, url, depends }) => {
@@ -15,14 +13,10 @@ export const load = (async ({ params, url, depends }) => {
 
   try {
     album = await getAlbumInfo({ id: params.albumId, withoutAssets: true });
-  } catch (error) {
-    const prev = get(albumPreviousRoute);
-
-    if (!prev) {
-      redirect(302, Route.albums());
-    }
-
-    redirect(302, prev);
+  } catch {
+    // Always leave the album route on failure. Redirecting to a persisted "previous"
+    // album URL can re-enter this load and cause a redirect loop.
+    redirect(302, Route.albums());
   }
 
   return {

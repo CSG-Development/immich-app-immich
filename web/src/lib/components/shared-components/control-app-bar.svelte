@@ -17,6 +17,8 @@
     children?: Snippet;
     trailing?: Snippet;
     isSearch?: boolean;
+    /** Skip md inset margins / rounded corners (full-bleed). */
+    flush?: boolean;
   }
 
   let {
@@ -30,6 +32,7 @@
     children,
     trailing,
     isSearch = false,
+    flush = false,
   }: Props = $props();
 
   let appBarBorder = $state('bg-light border border-transparent');
@@ -59,19 +62,22 @@
   });
 </script>
 
-<div in:fly={{ y: 10, duration: 200 }} class="absolute top-0 w-full bg-transparent">
+<div
+  in:fly={{ y: 10, duration: 200 }}
+  class={[isSearch || flush ? 'relative' : 'absolute top-0 bg-transparent', 'w-full']}
+>
   <nav
     id="asset-selection-app-bar"
     class={[
-      'flex h-18 md:h-21.5 relative z-50',
+      'flex h-18 md:h-21.5 relative z-50 place-items-center transition-all',
       appBarBorder,
-      'md:mx-2 md:my-2 place-items-center md:rounded-lg p-2 max-md:p-0 transition-all',
+      isSearch || flush ? 'p-2 max-md:p-0' : 'md:mx-2 md:my-2 md:rounded-lg p-2 max-md:p-0',
       tailwindClasses,
       forceDark ? 'bg-black! text-white' : 'bg-white dark:bg-black',
     ]}
   >
     <div
-      class="flex place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {isSearch
+      class="flex min-w-0 place-items-center sm:gap-6 justify-self-start dark:text-immich-dark-fg font-medium {isSearch
         ? ''
         : 'w-full'} {forceDark ? 'dark' : ''}"
     >
@@ -86,7 +92,7 @@
           size="large"
         />
       {/if}
-      <span class={isSearch ? '' : 'w-full'}>{@render leading?.()}</span>
+      <span class={isSearch ? '' : 'min-w-0 w-full'}>{@render leading?.()}</span>
     </div>
 
     {#if children}

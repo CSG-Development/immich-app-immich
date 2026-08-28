@@ -1,18 +1,23 @@
 import 'package:collection/collection.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/models/activities/activity.model.dart';
 import 'package:immich_mobile/providers/activity_service.provider.dart';
-import 'package:immich_mobile/providers/activity_statistics.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'activity.provider.g.dart';
 
 // ignore: unintended_html_in_doc_comment
 /// Maintains the current list of all activities for <share-album-id, asset>
-@riverpod
-class AlbumActivity extends _$AlbumActivity {
+
+final albumActivityProvider = AsyncNotifierProvider.autoDispose
+    .family<AlbumActivity, List<Activity>, (String albumId, String? assetId)>(AlbumActivity.new);
+
+class AlbumActivity extends AutoDisposeFamilyAsyncNotifier<List<Activity>, (String albumId, String? assetId)> {
+  late String albumId;
+  late String? assetId;
+
   @override
-  Future<List<Activity>> build(String albumId, [String? assetId]) async {
+  Future<List<Activity>> build((String albumId, String? assetId) args) async {
+    albumId = args.$1;
+    assetId = args.$2;
     return ref.watch(activityServiceProvider).getAllActivities(albumId, assetId: assetId);
   }
 
@@ -24,14 +29,7 @@ class AlbumActivity extends _$AlbumActivity {
       }
 
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._removeFromState(id);
-      }
-
-      if (removedActivity.type == ActivityType.comment) {
-        ref.watch(activityStatisticsProvider(albumId, assetId).notifier).removeActivity();
-        if (assetId != null) {
-          ref.watch(activityStatisticsProvider(albumId).notifier).removeActivity();
-        }
+        ref.read(albumActivityProvider((albumId, null)).notifier)._removeFromState(id);
       }
     }
   }
@@ -41,13 +39,12 @@ class AlbumActivity extends _$AlbumActivity {
     if (activity.hasValue) {
       _addToState(activity.requireValue);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._addToState(activity.requireValue);
+        ref.read(albumActivityProvider((albumId, null)).notifier)._addToState(activity.requireValue);
       }
     }
   }
 
   Future<void> addComment(String comment) async {
-    // Optimistic: create a pending activity immediately and return right away
     final user = ref.read(currentUserProvider);
     if (user == null) {
       return;
@@ -64,10 +61,9 @@ class AlbumActivity extends _$AlbumActivity {
     );
     _addToState(pendingActivity);
     if (assetId != null) {
-      ref.read(albumActivityProvider(albumId).notifier)._addToState(pendingActivity);
+      ref.read(albumActivityProvider((albumId, null)).notifier)._addToState(pendingActivity);
     }
 
-    // Fire-and-forget: send to server in the background
     _sendToServer(localId, comment);
   }
 
@@ -79,31 +75,25 @@ class AlbumActivity extends _$AlbumActivity {
     if (activity.hasValue) {
       _replaceActivity(localId, activity.requireValue);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._replaceActivity(localId, activity.requireValue);
-      }
-      ref.read(activityStatisticsProvider(albumId, assetId).notifier).addActivity();
-      if (assetId != null) {
-        ref.read(activityStatisticsProvider(albumId).notifier).addActivity();
+        ref.read(albumActivityProvider((albumId, null)).notifier)._replaceActivity(localId, activity.requireValue);
       }
     } else {
       _markFailed(localId);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._markFailed(localId);
+        ref.read(albumActivityProvider((albumId, null)).notifier)._markFailed(localId);
       }
     }
   }
 
-  /// Retry sending a failed activity
   Future<void> retryFailedActivity(String id) async {
     final activity = _getActivityById(id);
     if (activity == null || !activity.isFailed || activity.type != ActivityType.comment) {
       return;
     }
 
-    // Set back to pending
     _markPending(id);
     if (assetId != null) {
-      ref.read(albumActivityProvider(albumId).notifier)._markPending(id);
+      ref.read(albumActivityProvider((albumId, null)).notifier)._markPending(id);
     }
 
     final result = await ref
@@ -113,16 +103,12 @@ class AlbumActivity extends _$AlbumActivity {
     if (result.hasValue) {
       _replaceActivity(id, result.requireValue);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._replaceActivity(id, result.requireValue);
-      }
-      ref.watch(activityStatisticsProvider(albumId, assetId).notifier).addActivity();
-      if (assetId != null) {
-        ref.watch(activityStatisticsProvider(albumId).notifier).addActivity();
+        ref.read(albumActivityProvider((albumId, null)).notifier)._replaceActivity(id, result.requireValue);
       }
     } else {
       _markFailed(id);
       if (assetId != null) {
-        ref.read(albumActivityProvider(albumId).notifier)._markFailed(id);
+        ref.read(albumActivityProvider((albumId, null)).notifier)._markFailed(id);
       }
     }
   }
@@ -173,6 +159,3 @@ class AlbumActivity extends _$AlbumActivity {
     return activity;
   }
 }
-
-/// Mock class for testing
-abstract class AlbumActivityInternal extends _$AlbumActivity {}

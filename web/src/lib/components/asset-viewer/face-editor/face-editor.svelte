@@ -2,6 +2,7 @@
   import { shortcut } from '$lib/actions/shortcut';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import FaceCreateTagModal from '$lib/modals/CreateFaceModal.svelte';
   import { getPeopleThumbnailUrl } from '$lib/utils';
   import { getNaturalSize, scaleToFit } from '$lib/utils/container-utils';
@@ -328,11 +329,10 @@
         },
       });
 
-      await assetViewerManager.setAssetId(assetId);
+      const updated = await assetViewerManager.setAssetId(assetId);
+      eventManager.emit('AssetUpdate', updated);
     } catch (error) {
       handleError(error, 'Error tagging face');
-    } finally {
-      onClose();
     }
   };
 
@@ -420,11 +420,10 @@
       {/if}
     </div>
 
-    <Button size="small" fullWidth onclick={showCreateFaceModal} variant="outline" class="mt-2">
-      {$t('create_person')}
-    </Button>
-
-    <div class="px-3 py-4 border-t immich-border">
+    <div class="px-3 pt-2 pb-4 border-t immich-border flex flex-col gap-2">
+      <Button size="standard-large" fullWidth onclick={showCreateFaceModal} variant="outline">
+        {$t('create_person')}
+      </Button>
       <Button size="standard-large" fullWidth onclick={onClose} color="danger">{$t('cancel')}</Button>
     </div>
   </div>

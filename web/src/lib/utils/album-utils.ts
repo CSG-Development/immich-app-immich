@@ -10,12 +10,15 @@ import {
   locale,
   type AlbumViewSettings,
 } from '$lib/stores/preferences.store';
+import { resolveAlbumName } from '$lib/utils/album-name';
 import { handleError } from '$lib/utils/handle-error';
 import type { AlbumResponseDto } from '@immich/sdk';
 import * as sdk from '@immich/sdk';
 import { orderBy } from 'lodash-es';
 import { t } from 'svelte-i18n';
 import { get } from 'svelte/store';
+
+export { DEFAULT_ALBUM_NAME, resolveAlbumName } from '$lib/utils/album-name';
 
 /**
  * -------------------------
@@ -26,7 +29,7 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
   try {
     const newAlbum: AlbumResponseDto = await sdk.createAlbum({
       createAlbumDto: {
-        albumName: name ?? '',
+        albumName: resolveAlbumName(name),
         assetIds,
       },
     });
@@ -38,10 +41,21 @@ export const createAlbum = async (name?: string, assetIds?: string[]) => {
   }
 };
 
+let isCreatingAlbum = false;
+
 export const createAlbumAndRedirect = async (name?: string, assetIds?: string[]) => {
-  const newAlbum = await createAlbum(name, assetIds);
-  if (newAlbum) {
-    await goto(Route.viewAlbum(newAlbum));
+  if (isCreatingAlbum) {
+    return;
+  }
+
+  isCreatingAlbum = true;
+  try {
+    const newAlbum = await createAlbum(name, assetIds);
+    if (newAlbum) {
+      await goto(Route.viewAlbum(newAlbum));
+    }
+  } finally {
+    isCreatingAlbum = false;
   }
 };
 

@@ -1,68 +1,15 @@
-import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 
 enum AppSettingsEnum<T> {
-  loadPreview<bool>(StoreKey.loadPreview, "loadPreview", true),
-  loadOriginal<bool>(StoreKey.loadOriginal, "loadOriginal", false),
-  themeMode<String>(StoreKey.themeMode, "themeMode", "system"), // "light","dark","system"
-  primaryColor<String>(StoreKey.primaryColor, "primaryColor", defaultColorPresetName),
-  dynamicTheme<bool>(StoreKey.dynamicTheme, "dynamicTheme", false),
-  colorfulInterface<bool>(StoreKey.colorfulInterface, "colorfulInterface", true),
-  tilesPerRow<int>(StoreKey.tilesPerRow, "tilesPerRow", 4),
-  dynamicLayout<bool>(StoreKey.dynamicLayout, "dynamicLayout", false),
-  groupAssetsBy<int>(StoreKey.groupAssetsBy, "groupBy", 0),
-  uploadErrorNotificationGracePeriod<int>(
-    StoreKey.uploadErrorNotificationGracePeriod,
-    "uploadErrorNotificationGracePeriod",
-    2,
-  ),
-  backgroundBackupTotalProgress<bool>(StoreKey.backgroundBackupTotalProgress, "backgroundBackupTotalProgress", true),
-  backgroundBackupSingleProgress<bool>(
-    StoreKey.backgroundBackupSingleProgress,
-    "backgroundBackupSingleProgress",
-    false,
-  ),
-  storageIndicator<bool>(StoreKey.storageIndicator, "storageIndicator", true),
-  thumbnailCacheSize<int>(StoreKey.thumbnailCacheSize, "thumbnailCacheSize", 10000),
-  imageCacheSize<int>(StoreKey.imageCacheSize, "imageCacheSize", 350),
-  albumThumbnailCacheSize<int>(StoreKey.albumThumbnailCacheSize, "albumThumbnailCacheSize", 200),
-  selectedAlbumSortOrder<int>(StoreKey.selectedAlbumSortOrder, "selectedAlbumSortOrder", 2),
   advancedTroubleshooting<bool>(StoreKey.advancedTroubleshooting, null, false),
   manageLocalMediaAndroid<bool>(StoreKey.manageLocalMediaAndroid, null, false),
-  logLevel<int>(StoreKey.logLevel, null, 5), // Level.INFO = 5
-  preferRemoteImage<bool>(StoreKey.preferRemoteImage, null, false),
-  loopVideo<bool>(StoreKey.loopVideo, "loopVideo", true),
-  loadOriginalVideo<bool>(StoreKey.loadOriginalVideo, "loadOriginalVideo", false),
-  autoPlayVideo<bool>(StoreKey.autoPlayVideo, "autoPlayVideo", true),
-  tapToNavigate<bool>(StoreKey.tapToNavigate, "tapToNavigate", false),
-  mapThemeMode<int>(StoreKey.mapThemeMode, null, 0),
-  mapShowFavoriteOnly<bool>(StoreKey.mapShowFavoriteOnly, null, false),
-  mapIncludeArchived<bool>(StoreKey.mapIncludeArchived, null, false),
-  mapwithPartners<bool>(StoreKey.mapwithPartners, null, false),
-  mapRelativeDate<int>(StoreKey.mapRelativeDate, null, 0),
-  allowSelfSignedSSLCert<bool>(StoreKey.selfSignedCert, null, true),
-  ignoreIcloudAssets<bool>(StoreKey.ignoreIcloudAssets, null, false),
-  selectedAlbumSortReverse<bool>(StoreKey.selectedAlbumSortReverse, null, true),
+  allowSelfSignedSSLCert<bool>(StoreKey.selfSignedCert, null, false),
   enableHapticFeedback<bool>(StoreKey.enableHapticFeedback, null, true),
-  syncAlbums<bool>(StoreKey.syncAlbums, null, false),
-  photoManagerCustomFilter<bool>(StoreKey.photoManagerCustomFilter, null, false),
-  betaTimeline<bool>(StoreKey.betaTimeline, null, false),
-  enableBackup<bool>(StoreKey.enableBackup, null, false),
-  useCellularForUploadVideos<bool>(StoreKey.useWifiForUploadVideos, null, false),
-  useCellularForUploadPhotos<bool>(StoreKey.useWifiForUploadPhotos, null, false),
   readonlyModeEnabled<bool>(StoreKey.readonlyModeEnabled, "readonlyModeEnabled", false),
-  albumGridView<bool>(StoreKey.albumGridView, "albumGridView", false),
-  backupRequireCharging<bool>(StoreKey.backupRequireCharging, null, false),
-  backupTriggerDelay<int>(StoreKey.backupTriggerDelay, null, 30),
   backupUploadTelemetry<bool>(StoreKey.backupUploadTelemetry, null, true),
   enableBiometric<bool>(StoreKey.enableBiometric, null, false),
-  appLockTimeoutIndex<int>(StoreKey.appLockTimeoutIndex, null, 0),
-  cleanupKeepFavorites<bool>(StoreKey.cleanupKeepFavorites, null, true),
-  cleanupKeepMediaType<int>(StoreKey.cleanupKeepMediaType, null, 0),
-  cleanupKeepAlbumIds<String>(StoreKey.cleanupKeepAlbumIds, null, ""),
-  cleanupCutoffDaysAgo<int>(StoreKey.cleanupCutoffDaysAgo, null, -1),
-  cleanupDefaultsInitialized<bool>(StoreKey.cleanupDefaultsInitialized, null, false);
+  appLockTimeoutIndex<int>(StoreKey.appLockTimeoutIndex, null, 0);
 
   const AppSettingsEnum(this.storeKey, this.hiveKey, this.defaultValue);
 

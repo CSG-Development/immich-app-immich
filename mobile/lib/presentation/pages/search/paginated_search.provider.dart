@@ -46,10 +46,14 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
   Stream<int> get assetCount => _assetCountController.stream;
 
   Future<void> search(SearchFilter filter) async {
-    if (state.isLoading) return;
+    if (state.isLoading) {
+      return;
+    }
 
     final page = state.error != null ? (state.nextPage ?? 1) : state.nextPage;
-    if (page == null) return;
+    if (page == null) {
+      return;
+    }
 
     final generation = ++_searchGeneration;
     state = SearchState(assets: state.assets, nextPage: page, isLoading: true);
@@ -111,6 +115,42 @@ class PaginatedSearchNotifier extends StateNotifier<SearchState> {
       isLoading: state.isLoading,
       error: state.error,
     );
+    _assetCountController.add(assets.length);
+  }
+
+  /// Updates favorite status in the in-memory search results so the grid
+  /// reflects the change without re-running the search query.
+  void updateFavorite(Iterable<String> ids, bool isFavorite) {
+    if (ids.isEmpty || state.assets.isEmpty) {
+      return;
+    }
+
+    final idSet = ids.toSet();
+    var changed = false;
+    final assets = state.assets.map((asset) {
+      final remoteId = asset.remoteId;
+      if (remoteId == null || !idSet.contains(remoteId) || asset.isFavorite == isFavorite) {
+        return asset;
+      }
+
+      changed = true;
+      return switch (asset) {
+        final RemoteAsset remote => remote.copyWith(isFavorite: isFavorite),
+        final LocalAsset local => local.copyWith(isFavorite: isFavorite),
+      };
+    }).toList(growable: false);
+
+    if (!changed) {
+      return;
+    }
+
+    state = SearchState(
+      assets: assets,
+      nextPage: state.nextPage,
+      isLoading: state.isLoading,
+      error: state.error,
+    );
+    // Count is unchanged; still emit so the search timeline reloads its buffer.
     _assetCountController.add(assets.length);
   }
 

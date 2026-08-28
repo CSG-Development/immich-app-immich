@@ -22,7 +22,7 @@ class LockScreenPage extends HookConsumerWidget {
 
     hideLockScreen() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.pop(true);
+        Navigator.of(context).pop(true);
       });
     }
 

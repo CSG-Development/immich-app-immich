@@ -40,7 +40,9 @@ class _DriftUploadDetailPageState extends ConsumerState<DriftUploadDetailPage> {
     }
 
     for (final item in uploadingItems) {
-      if (_taskSlotAssignments.containsKey(item.taskId)) continue;
+      if (_taskSlotAssignments.containsKey(item.taskId)) {
+        continue;
+      }
 
       for (int i = 0; i < _maxSlots; i++) {
         if (slots[i] == null) {
@@ -57,9 +59,6 @@ class _DriftUploadDetailPageState extends ConsumerState<DriftUploadDetailPage> {
   @override
   Widget build(BuildContext context) {
     final uploadItems = ref.watch(driftBackupProvider.select((state) => state.uploadItems));
-    final isHttpBackupActive = ref.watch(driftBackupProvider.select((state) => state.isHttpBackupActive));
-    final processedCount = ref.watch(driftBackupProvider.select((state) => state.enqueueCount));
-    final totalCount = ref.watch(driftBackupProvider.select((state) => state.enqueueTotalCount));
     final iCloudProgress = ref.watch(driftBackupProvider.select((state) => state.iCloudDownloadProgress));
 
     for (final item in uploadItems.values) {
@@ -79,12 +78,6 @@ class _DriftUploadDetailPageState extends ConsumerState<DriftUploadDetailPage> {
     final uploadingItems = uploadItems.values.where((item) => item.progress < 1.0 && item.isFailed != true).toList();
     final failedItems = uploadItems.values.where((item) => item.isFailed == true).toList();
 
-    final body = uploadItems.isNotEmpty
-        ? _buildTwoSectionLayout(context, uploadingItems, failedItems, iCloudProgress)
-        : isHttpBackupActive && totalCount > 0
-        ? _buildHttpBackupProgress(context, processedCount, totalCount)
-        : _buildEmptyState(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text("upload_details".t(context: context)),
@@ -92,7 +85,7 @@ class _DriftUploadDetailPageState extends ConsumerState<DriftUploadDetailPage> {
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
-      body: body,
+      body: _buildTwoSectionLayout(context, uploadingItems, failedItems, iCloudProgress),
     );
   }
 
@@ -207,82 +200,6 @@ class _DriftUploadDetailPageState extends ConsumerState<DriftUploadDetailPage> {
         ],
       ),
     );
-  }
-
-  Widget _buildHttpBackupProgress(BuildContext context, int processedCount, int totalCount) {
-    final progress = totalCount > 0 ? (processedCount / totalCount).clamp(0.0, 1.0) : 0.0;
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_upload_outlined, size: 64, color: context.primaryColor.withValues(alpha: 0.8)),
-          const SizedBox(height: 24),
-          Text(
-            "uploading".t(context: context),
-            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "queue_status".t(
-              context: context,
-              args: {'count': processedCount.toString(), 'total': totalCount.toString()},
-            ),
-            style: context.textTheme.bodyLarge?.copyWith(color: context.colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 24),
-          LinearProgressIndicator(
-            minHeight: 8,
-            value: progress,
-            borderRadius: const BorderRadius.all(Radius.circular(8)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.upload_rounded, size: 56, color: context.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
-            const SizedBox(height: 12),
-            Text(
-              "upload_details".t(context: context),
-              style: context.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "empty".t(context: context),
-              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUploadList(Map<String, DriftUploadStatus> uploadItems) {
-    return ListView.separated(
-      addAutomaticKeepAlives: true,
-      padding: const EdgeInsets.all(16),
-      itemCount: uploadItems.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        final item = uploadItems.values.elementAt(index);
-        return _buildUploadCard(context, item);
-      },
-    );
-  }
-
-  Widget _buildUploadCard(BuildContext context, DriftUploadStatus item) {
-    return _buildCurrentUploadCard(context, item);
   }
 
   Widget _buildICloudDownloadCard(BuildContext context, String assetId, double progress) {

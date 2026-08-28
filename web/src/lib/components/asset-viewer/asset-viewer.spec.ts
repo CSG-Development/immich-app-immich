@@ -8,6 +8,7 @@ import { assetFactory } from '@test-data/factories/asset-factory';
 import { preferencesFactory } from '@test-data/factories/preferences-factory';
 import { userAdminFactory } from '@test-data/factories/user-factory';
 import { fireEvent, waitFor } from '@testing-library/svelte';
+import { get } from 'svelte/store';
 import AssetViewer from './asset-viewer.svelte';
 
 vi.mock('$lib/managers/feature-flags-manager.svelte', () => ({
@@ -74,5 +75,24 @@ describe('AssetViewer', () => {
       expect(updateAsset).toHaveBeenCalledWith({ id: asset.id, updateAssetDto: { isFavorite: true } }),
     );
     await waitFor(() => expect(getByLabelText('unfavorite')).toBeInTheDocument());
+  });
+
+  it('starts slideshow from the more menu when no onPlaySlideshow handler is provided', async () => {
+    const ownerId = 'owner-id';
+    const user = userAdminFactory.build({ id: ownerId });
+    const asset = assetFactory.build({ ownerId, isTrashed: false });
+
+    userStore.set(user);
+    preferencesStore.set(preferencesFactory.build({ cast: { gCastEnabled: false } }));
+
+    const { getByLabelText, findByRole } = renderWithTooltips(AssetViewer, {
+      cursor: { current: asset },
+      showNavigation: false,
+    });
+
+    await fireEvent.click(getByLabelText('more'));
+    await fireEvent.click(await findByRole('menuitem', { name: 'slideshow' }));
+
+    await waitFor(() => expect(get(slideshowStore.slideshowState)).toBe(SlideshowState.PlaySlideshow));
   });
 });

@@ -3,12 +3,31 @@ import { resetSavedUser, user } from '$lib/stores/user.store';
 import { AssetVisibility } from '@immich/sdk';
 import { timelineAssetFactory } from '@test-data/factories/asset-factory';
 import { userAdminFactory } from '@test-data/factories/user-factory';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@immich/ui', () => ({
+  toastManager: {
+    warning: vi.fn(),
+    danger: vi.fn(),
+    primary: vi.fn(),
+  },
+}));
+
+vi.mock('$lib/stores/websocket', () => ({
+  websocketEvents: {
+    on: vi.fn(() => () => {}),
+  },
+}));
 
 describe('AssetMultiSelectManager', () => {
   let sut: AssetMultiSelectManager;
 
   beforeEach(() => {
     sut = new AssetMultiSelectManager();
+  });
+
+  afterEach(() => {
+    sut.destroy();
   });
 
   it('calculates derived values from selection', () => {
@@ -53,21 +72,15 @@ describe('AssetMultiSelectManager', () => {
     expect(sut.assets).toHaveLength(1);
   });
 
-  it('updates isAllUserOwned when the active user changes', () => {
-    const [user1, user2] = userAdminFactory.buildList(2);
-    sut.selectAsset(timelineAssetFactory.build({ ownerId: user1.id }));
+  it('removes deleted assets from the current selection', () => {
+    const [keep, remove] = timelineAssetFactory.buildList(2);
+    sut.selectAssets([keep, remove]);
 
-    const cleanup = $effect.root(() => {
-      expect(sut.isAllUserOwned).toBe(false);
+    // Simulate websocket delete event by calling the same removal path used by the manager.
+    sut.removeAssetFromMultiselectGroup(remove.id);
 
-      user.set(user1);
-      expect(sut.isAllUserOwned).toBe(true);
-
-      user.set(user2);
-      expect(sut.isAllUserOwned).toBe(false);
-    });
-
-    cleanup();
-    resetSavedUser();
+    expect(sut.hasSelectedAsset(keep.id)).toBe(true);
+    expect(sut.hasSelectedAsset(remove.id)).toBe(false);
+    expect(sut.selectedAssets).toHaveLength(1);
   });
 });

@@ -8,6 +8,7 @@ import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/presentation/widgets/album/pending_uploads_banner.widget.dart';
 import 'package:immich_mobile/presentation/widgets/bottom_sheet/remote_album_bottom_sheet.widget.dart';
 import 'package:immich_mobile/presentation/widgets/remote_album/drift_album_option.widget.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
@@ -17,6 +18,7 @@ import 'package:immich_mobile/providers/infrastructure/remote_album.provider.dar
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/utils/album_access.dart';
 import 'package:immich_mobile/utils/input_decorations.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_mobile/widgets/common/remote_album_sliver_app_bar.dart';
@@ -39,8 +41,50 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
     _album = widget.album;
   }
 
+  void _notifyAlbumAccessResult(BuildContext context, AlbumEditAccessResult result) {
+    ImmichToast.show(
+      context: context,
+      msg: albumAccessMessageKey(result).t(context: context),
+      toastType: result is AlbumEditAccessViewOnly ? ToastType.info : ToastType.error,
+    );
+  }
+
+  Future<void> _handleLostAlbumAccess(BuildContext context, AlbumEditAccessResult result) async {
+    await ref.read(remoteAlbumProvider.notifier).deleteAlbumLocally(_album.id);
+    if (!context.mounted) {
+      return;
+    }
+    _notifyAlbumAccessResult(context, result);
+    if (context.mounted) {
+      unawaited(context.navigateTo(const DriftAlbumsRoute()));
+    }
+  }
+
   Future<void> addAssets(BuildContext context) async {
-    final albumAssets = await ref.read(remoteAlbumProvider.notifier).getAssets(_album.id);
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      return;
+    }
+
+    final access = await ref.read(remoteAlbumServiceProvider).checkAlbumEditAccess(_album.id, user.id);
+    if (!context.mounted) {
+      return;
+    }
+
+    switch (access) {
+      case AlbumEditAccessAllowed(:final album):
+        setState(() => _album = album);
+      case AlbumEditAccessViewOnly(:final album):
+        setState(() => _album = album);
+        _notifyAlbumAccessResult(context, access);
+        return;
+      case AlbumEditAccessDenied() || AlbumEditAccessDeleted():
+        await _handleLostAlbumAccess(context, access);
+        return;
+    }
+
+    final notifier = ref.read(remoteAlbumProvider.notifier);
+    final albumAssets = await notifier.getAssets(_album.id);
 
     final newAssets = await context.pushRoute<Set<BaseAsset>>(
       DriftAssetSelectionTimelineRoute(lockedSelectionAssets: albumAssets.toSet()),
@@ -50,22 +94,22 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
       return;
     }
 
-    final added = await ref
-        .read(remoteAlbumProvider.notifier)
-        .addAssets(
-          _album.id,
-          newAssets.map((asset) {
-            final remoteAsset = asset as RemoteAsset;
-            return remoteAsset.id;
-          }).toList(),
-        );
+    try {
+      final added = await notifier.addAssetsToAlbum(_album.id, newAssets);
 
-    if (added > 0) {
-      ImmichToast.show(
-        context: context,
-        msg: "assets_added_to_album_count".t(context: context, args: {'count': added.toString()}),
-        toastType: ToastType.success,
-      );
+      if (added > 0 && context.mounted) {
+        ImmichToast.show(
+          context: context,
+          msg: "assets_added_to_album_count".t(context: context, args: {'count': added.toString()}),
+          toastType: ToastType.success,
+        );
+      }
+    } catch (error) {
+      if (isAlbumPermissionError(error) && context.mounted) {
+        await _handleLostAlbumAccess(context, classifyAlbumAccessError(error));
+        return;
+      }
+      rethrow;
     }
   }
 
@@ -199,6 +243,7 @@ class _RemoteAlbumPageState extends ConsumerState<RemoteAlbumPage> {
           currentRemoteAlbumScopedProvider.overrideWithValue(_album),
         ],
         child: Timeline(
+          topSliverWidget: PendingUploadsBanner(albumId: _album.id),
           appBar: RemoteAlbumSliverAppBar(
             icon: Icons.photo_album_outlined,
             kebabMenu: _AlbumKebabMenu(
@@ -260,7 +305,9 @@ class _EditAlbumDialogState extends ConsumerState<_EditAlbumDialog> {
   }
 
   Future<void> _handleSave() async {
-    if (_isSaving || formKey.currentState?.validate() != true) return;
+    if (_isSaving || formKey.currentState?.validate() != true) {
+      return;
+    }
 
     setState(() => _isSaving = true);
 

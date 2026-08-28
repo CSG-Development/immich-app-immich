@@ -20,7 +20,9 @@ class _SelectionSliverAppBarState extends ConsumerState<SelectionSliverAppBar> {
     final toExclude = ref.watch(multiSelectProvider.select((s) => s.lockedSelectionAssets));
 
     final filteredAssets = selection.where((asset) {
-      return !toExclude.contains(asset);
+      // Same identity rules as lock selection: album assets may lack localId
+      // while timeline tiles are merged copies.
+      return !toExclude.any((locked) => locked.refersToSameAsset(asset));
     }).toSet();
 
     onDone(Set<BaseAsset> selected) {

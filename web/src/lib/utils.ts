@@ -7,6 +7,7 @@ import { alwaysLoadOriginalFile, lang } from '$lib/stores/preferences.store';
 import { SlideshowNavigation } from '$lib/stores/slideshow.store';
 import { isWebCompatibleImage } from '$lib/utils/asset-utils';
 import { handleError } from '$lib/utils/handle-error';
+import { getOrderedSlideshowAssets } from '$lib/utils/slideshow-utils';
 import type { TimelineDateTime } from '$lib/utils/timeline-util';
 import {
   AssetMediaSize,
@@ -422,11 +423,7 @@ export const getFirstSlideshowAsset = (
   shuffledAssets: TimelineAsset[],
   nav: SlideshowNavigation,
 ) => {
-  return nav === SlideshowNavigation.Shuffle
-    ? shuffledAssets[0]
-    : nav === SlideshowNavigation.AscendingOrder
-      ? assets.at(-1)
-      : assets[0];
+  return getOrderedSlideshowAssets(assets, shuffledAssets, nav)[0];
 };
 
 export const convertOrientationValue = (value: string) => {

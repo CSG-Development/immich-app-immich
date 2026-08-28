@@ -10,6 +10,7 @@ import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart'
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/widgets/album/album_action_filled_button.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 @RoutePage()
 class DriftCreateAlbumPage extends ConsumerStatefulWidget {
@@ -25,18 +26,11 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   FocusNode albumTitleTextFieldFocusNode = FocusNode();
   FocusNode albumDescriptionTextFieldFocusNode = FocusNode();
   bool isAlbumTitleTextFieldFocus = false;
-  bool _isCreating = false;
+  bool isCreatingAlbum = false;
   Set<BaseAsset> selectedAssets = {};
 
   @override
-  void initState() {
-    super.initState();
-    albumTitleController.addListener(_onTitleChanged);
-  }
-
-  @override
   void dispose() {
-    albumTitleController.removeListener(_onTitleChanged);
     albumTitleController.dispose();
     albumDescriptionController.dispose();
     albumTitleTextFieldFocusNode.dispose();
@@ -44,11 +38,7 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
     super.dispose();
   }
 
-  void _onTitleChanged() {
-    setState(() {});
-  }
-
-  bool get _canCreateAlbum => albumTitleController.text.isNotEmpty && !_isCreating;
+  bool _canCreateAlbum(String title) => title.trim().isNotEmpty && !isCreatingAlbum;
 
   String _getEffectiveTitle() {
     return albumTitleController.text.isNotEmpty
@@ -167,40 +157,34 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
   }
 
   Future<void> createAlbum() async {
-    if (_isCreating) return;
-    setState(() => _isCreating = true);
-
-    onBackgroundTapped();
-
-    final title = _getEffectiveTitle().trim();
-    if (title.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('create_album_title_required'.t()), backgroundColor: context.colorScheme.error),
-        );
-      }
-      setState(() => _isCreating = false);
+    if (isCreatingAlbum) {
       return;
     }
 
+    onBackgroundTapped();
+    setState(() => isCreatingAlbum = true);
+
+    final title = _getEffectiveTitle().trim();
+
     try {
       final album = await ref
-          .watch(remoteAlbumProvider.notifier)
-          .createAlbum(
+          .read(remoteAlbumProvider.notifier)
+          .createAlbumWithAssets(
             title: title,
             description: albumDescriptionController.text.trim(),
-            assetIds: selectedAssets.map((asset) {
-              final remoteAsset = asset as RemoteAsset;
-              return remoteAsset.id;
-            }).toList(),
+            assets: selectedAssets,
           );
 
-      if (album != null) {
+      if (album != null && context.mounted) {
         unawaited(context.replaceRoute(RemoteAlbumRoute(album: album)));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ImmichToast.show(context: context, toastType: ToastType.error, msg: 'errors.failed_to_create_album'.t());
       }
     } finally {
       if (mounted) {
-        setState(() => _isCreating = false);
+        setState(() => isCreatingAlbum = false);
       }
     }
   }
@@ -260,15 +244,21 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
         leading: IconButton(onPressed: () => context.maybePop(), icon: const Icon(Icons.close_rounded)),
         title: const Text('create_album').t(),
         actions: [
-          TextButton(
-            onPressed: _canCreateAlbum ? createAlbum : null,
-            child: Text(
-              'create'.t(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: _canCreateAlbum ? context.primaryColor : context.themeData.disabledColor,
-              ),
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: albumTitleController,
+            builder: (context, value, _) {
+              final canCreate = _canCreateAlbum(value.text);
+              return TextButton(
+                onPressed: canCreate ? createAlbum : null,
+                child: Text(
+                  'create'.t(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: canCreate ? context.primaryColor : context.themeData.disabledColor,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -316,44 +306,49 @@ class _AlbumTitleTextFieldState extends State<_AlbumTitleTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      focusNode: widget.focusNode,
-      style: TextStyle(fontSize: 28.0, color: context.colorScheme.onSurface, fontWeight: FontWeight.bold),
-      controller: widget.textController,
-      onTap: () {
-        if (widget.textController.text == 'create_album_page_untitled'.t(context: context)) {
-          widget.textController.clear();
-        }
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.textController,
+      builder: (context, value, _) {
+        return TextField(
+          focusNode: widget.focusNode,
+          style: TextStyle(fontSize: 28.0, color: context.colorScheme.onSurface, fontWeight: FontWeight.bold),
+          controller: widget.textController,
+          onTap: () {
+            if (widget.textController.text == 'create_album_page_untitled'.t(context: context)) {
+              widget.textController.clear();
+            }
+          },
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+            suffixIcon: value.text.isNotEmpty && widget.isFocus
+                ? IconButton(
+                    onPressed: () {
+                      widget.textController.clear();
+                    },
+                    icon: Icon(Icons.cancel_rounded, color: context.primaryColor),
+                    splashRadius: 10.0,
+                  )
+                : null,
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.transparent),
+              borderRadius: BorderRadius.all(Radius.circular(16.0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: context.primaryColor.withValues(alpha: 0.3)),
+              borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+            ),
+            hintText: 'add_a_title'.t(),
+            hintStyle: context.themeData.inputDecorationTheme.hintStyle?.copyWith(
+              fontSize: 28.0,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
+            focusColor: Colors.grey[300],
+            fillColor: context.colorScheme.surfaceContainerHigh,
+            filled: true,
+          ),
+        );
       },
-      decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-        suffixIcon: widget.textController.text.isNotEmpty && widget.isFocus
-            ? IconButton(
-                onPressed: () {
-                  widget.textController.clear();
-                },
-                icon: Icon(Icons.cancel_rounded, color: context.primaryColor),
-                splashRadius: 10.0,
-              )
-            : null,
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.transparent),
-          borderRadius: BorderRadius.all(Radius.circular(16.0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: context.primaryColor.withValues(alpha: 0.3)),
-          borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-        ),
-        hintText: 'add_a_title'.t(),
-        hintStyle: context.themeData.inputDecorationTheme.hintStyle?.copyWith(
-          fontSize: 28.0,
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ),
-        focusColor: Colors.grey[300],
-        fillColor: context.colorScheme.surfaceContainerHigh,
-        filled: true,
-      ),
     );
   }
 }

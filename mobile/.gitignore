@@ -62,3 +62,6 @@ libisar.so
 
 # Translation file
 lib/generated/
+
+# FVM Version Cache
+.fvm/

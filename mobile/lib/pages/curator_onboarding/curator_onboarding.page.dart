@@ -11,8 +11,10 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
+import 'package:immich_mobile/providers/view_intent/view_intent_handler.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 
 final _onboardingSteps = kCuratorOnboardingSlidesData;
@@ -75,12 +77,14 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
 
   Future<void> _runSyncFlow() async {
     final backgroundManager = ref.read(backgroundSyncProvider);
+    final viewIntentHandler = ref.read(viewIntentHandlerProvider);
 
     await backgroundManager.syncLocal(full: true);
     await backgroundManager.syncRemote();
+    await viewIntentHandler.flushDeferredViewIntent();
     await backgroundManager.hashAssets();
 
-    if (Store.get(StoreKey.syncAlbums, false)) {
+    if (SettingsRepository.instance.appConfig.backup.syncAlbums) {
       await backgroundManager.syncLinkedAlbum();
     }
   }
@@ -92,18 +96,13 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
       return;
     }
 
-    final isBeta = Store.isBetaTimelineEnabled;
-    if (isBeta) {
-      await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
-      if (!mounted) {
-        return;
-      }
-      unawaited(_runSyncFlow());
-      unawaited(ref.read(websocketProvider.notifier).connect());
-      unawaited(context.replaceRoute(const TabShellRoute()));
+    await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
+    if (!mounted) {
       return;
     }
-    unawaited(context.replaceRoute(const TabControllerRoute()));
+    unawaited(_runSyncFlow());
+    unawaited(ref.read(websocketProvider.notifier).connect());
+    unawaited(context.replaceRoute(const TabShellRoute()));
   }
 
   Widget _buildScrollableStep(OnboardingSlide step, bool isTablet, bool isLandscape, int index) {

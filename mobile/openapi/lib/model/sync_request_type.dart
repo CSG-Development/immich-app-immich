@@ -10,70 +10,55 @@
 
 part of openapi.api;
 
-/// Sync request types
-class SyncRequestType {
-  /// Instantiate a new enum with the provided [value].
-  const SyncRequestType._(this.value);
+/// Sync request type
+enum SyncRequestType {
+  albumsV1._(r'AlbumsV1'),
+  albumsV2._(r'AlbumsV2'),
+  albumUsersV1._(r'AlbumUsersV1'),
+  albumToAssetsV1._(r'AlbumToAssetsV1'),
+  albumAssetsV1._(r'AlbumAssetsV1'),
+  albumAssetsV2._(r'AlbumAssetsV2'),
+  albumAssetExifsV1._(r'AlbumAssetExifsV1'),
+  assetsV1._(r'AssetsV1'),
+  assetsV2._(r'AssetsV2'),
+  assetExifsV1._(r'AssetExifsV1'),
+  assetEditsV1._(r'AssetEditsV1'),
+  assetMetadataV1._(r'AssetMetadataV1'),
+  assetOcrV1._(r'AssetOcrV1'),
+  authUsersV1._(r'AuthUsersV1'),
+  memoriesV1._(r'MemoriesV1'),
+  memoryToAssetsV1._(r'MemoryToAssetsV1'),
+  partnersV1._(r'PartnersV1'),
+  partnerAssetsV1._(r'PartnerAssetsV1'),
+  partnerAssetsV2._(r'PartnerAssetsV2'),
+  partnerAssetExifsV1._(r'PartnerAssetExifsV1'),
+  partnerStacksV1._(r'PartnerStacksV1'),
+  stacksV1._(r'StacksV1'),
+  usersV1._(r'UsersV1'),
+  peopleV1._(r'PeopleV1'),
+  assetFacesV1._(r'AssetFacesV1'),
+  assetFacesV2._(r'AssetFacesV2'),
+  userMetadataV1._(r'UserMetadataV1'),
+  ;
+
+  /// Instantiate a new enum with the provided value.
+  const SyncRequestType._(this._value);
 
   /// The underlying value of this enum member.
-  final String value;
+  final String _value;
 
   @override
-  String toString() => value;
+  String toString() => _value;
 
-  String toJson() => value;
+  /// Encodes this enum as a value suitable for JSON.
+  String toJson() => _value;
 
-  static const albumsV1 = SyncRequestType._(r'AlbumsV1');
-  static const albumUsersV1 = SyncRequestType._(r'AlbumUsersV1');
-  static const albumToAssetsV1 = SyncRequestType._(r'AlbumToAssetsV1');
-  static const albumAssetsV1 = SyncRequestType._(r'AlbumAssetsV1');
-  static const albumAssetExifsV1 = SyncRequestType._(r'AlbumAssetExifsV1');
-  static const assetsV1 = SyncRequestType._(r'AssetsV1');
-  static const assetExifsV1 = SyncRequestType._(r'AssetExifsV1');
-  static const assetEditsV1 = SyncRequestType._(r'AssetEditsV1');
-  static const assetMetadataV1 = SyncRequestType._(r'AssetMetadataV1');
-  static const authUsersV1 = SyncRequestType._(r'AuthUsersV1');
-  static const memoriesV1 = SyncRequestType._(r'MemoriesV1');
-  static const memoryToAssetsV1 = SyncRequestType._(r'MemoryToAssetsV1');
-  static const partnersV1 = SyncRequestType._(r'PartnersV1');
-  static const partnerAssetsV1 = SyncRequestType._(r'PartnerAssetsV1');
-  static const partnerAssetExifsV1 = SyncRequestType._(r'PartnerAssetExifsV1');
-  static const partnerStacksV1 = SyncRequestType._(r'PartnerStacksV1');
-  static const stacksV1 = SyncRequestType._(r'StacksV1');
-  static const usersV1 = SyncRequestType._(r'UsersV1');
-  static const peopleV1 = SyncRequestType._(r'PeopleV1');
-  static const assetFacesV1 = SyncRequestType._(r'AssetFacesV1');
-  static const assetFacesV2 = SyncRequestType._(r'AssetFacesV2');
-  static const userMetadataV1 = SyncRequestType._(r'UserMetadataV1');
-
-  /// List of all possible values in this [enum][SyncRequestType].
-  static const values = <SyncRequestType>[
-    albumsV1,
-    albumUsersV1,
-    albumToAssetsV1,
-    albumAssetsV1,
-    albumAssetExifsV1,
-    assetsV1,
-    assetExifsV1,
-    assetEditsV1,
-    assetMetadataV1,
-    authUsersV1,
-    memoriesV1,
-    memoryToAssetsV1,
-    partnersV1,
-    partnerAssetsV1,
-    partnerAssetExifsV1,
-    partnerStacksV1,
-    stacksV1,
-    usersV1,
-    peopleV1,
-    assetFacesV1,
-    assetFacesV2,
-    userMetadataV1,
-  ];
-
+  /// Returns the instance of [SyncRequestType] that was successfully decoded
+  /// from the passed [value] on success, null otherwise.
   static SyncRequestType? fromJson(dynamic value) => SyncRequestTypeTypeTransformer().decode(value);
 
+  /// Returns a [List] containing instances of [SyncRequestType]
+  /// that were successfully decoded from the passed [JSON][json].
   static List<SyncRequestType> listFromJson(dynamic json, {bool growable = false,}) {
     final result = <SyncRequestType>[];
     if (json is List && json.isNotEmpty) {
@@ -95,9 +80,11 @@ class SyncRequestTypeTypeTransformer {
 
   const SyncRequestTypeTypeTransformer._();
 
-  String encode(SyncRequestType data) => data.value;
+  /// Encodes this enum as a value suitable for JSON.
+  String encode(SyncRequestType data) => data._value;
 
-  /// Decodes a [dynamic value][data] to a SyncRequestType.
+  /// Returns the instance of [SyncRequestType] that was successfully decoded
+  /// from the passed [data] value on success, null otherwise.
   ///
   /// If [allowNull] is true and the [dynamic value][data] cannot be decoded successfully,
   /// then null is returned. However, if [allowNull] is false and the [dynamic value][data]
@@ -106,22 +93,30 @@ class SyncRequestTypeTypeTransformer {
   /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
   /// and users are still using an old app with the old code.
   SyncRequestType? decode(dynamic data, {bool allowNull = true}) {
+    if (data is SyncRequestType) {
+      return data;
+    }
     if (data != null) {
       switch (data) {
         case r'AlbumsV1': return SyncRequestType.albumsV1;
+        case r'AlbumsV2': return SyncRequestType.albumsV2;
         case r'AlbumUsersV1': return SyncRequestType.albumUsersV1;
         case r'AlbumToAssetsV1': return SyncRequestType.albumToAssetsV1;
         case r'AlbumAssetsV1': return SyncRequestType.albumAssetsV1;
+        case r'AlbumAssetsV2': return SyncRequestType.albumAssetsV2;
         case r'AlbumAssetExifsV1': return SyncRequestType.albumAssetExifsV1;
         case r'AssetsV1': return SyncRequestType.assetsV1;
+        case r'AssetsV2': return SyncRequestType.assetsV2;
         case r'AssetExifsV1': return SyncRequestType.assetExifsV1;
         case r'AssetEditsV1': return SyncRequestType.assetEditsV1;
         case r'AssetMetadataV1': return SyncRequestType.assetMetadataV1;
+        case r'AssetOcrV1': return SyncRequestType.assetOcrV1;
         case r'AuthUsersV1': return SyncRequestType.authUsersV1;
         case r'MemoriesV1': return SyncRequestType.memoriesV1;
         case r'MemoryToAssetsV1': return SyncRequestType.memoryToAssetsV1;
         case r'PartnersV1': return SyncRequestType.partnersV1;
         case r'PartnerAssetsV1': return SyncRequestType.partnerAssetsV1;
+        case r'PartnerAssetsV2': return SyncRequestType.partnerAssetsV2;
         case r'PartnerAssetExifsV1': return SyncRequestType.partnerAssetExifsV1;
         case r'PartnerStacksV1': return SyncRequestType.partnerStacksV1;
         case r'StacksV1': return SyncRequestType.stacksV1;
@@ -139,7 +134,7 @@ class SyncRequestTypeTypeTransformer {
     return null;
   }
 
-  /// Singleton [SyncRequestTypeTypeTransformer] instance.
+  /// The singleton instance of this transformer.
   static SyncRequestTypeTypeTransformer? _instance;
 }
 

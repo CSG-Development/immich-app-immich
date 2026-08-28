@@ -2,6 +2,7 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart' hide As
 import 'package:immich_mobile/infrastructure/repositories/api.repository.dart';
 import 'package:immich_mobile/models/search/search_filter.model.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/option.dart';
 import 'package:openapi/api.dart';
 
 class SearchApiRepository extends ApiRepository {
@@ -18,81 +19,70 @@ class SearchApiRepository extends ApiRepository {
       type = AssetTypeEnum.VIDEO;
     }
 
-    if ((filter.context != null && filter.context!.isNotEmpty) ||
-        (filter.assetId != null && filter.assetId!.isNotEmpty)) {
-      return _api.searchSmart(
-        SmartSearchDto(
-          query: filter.context,
-          queryAssetId: filter.assetId,
-          language: filter.language,
-          country: filter.location.country,
-          state: filter.location.state,
-          city: filter.location.city,
-          make: filter.camera.make,
-          model: filter.camera.model,
-          takenAfter: filter.date.takenAfter,
-          takenBefore: filter.date.takenBefore,
-          visibility: filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline,
-          rating: filter.rating.rating,
-          isFavorite: filter.display.isFavorite ? true : null,
-          isNotInAlbum: filter.display.isNotInAlbum ? true : null,
-          personIds: filter.people.map((e) => e.id).toList(),
-          tagIds: filter.tagIds,
-          type: type,
-          page: page,
-          size: 100,
-        ),
-      );
-    }
-
     final exifPlaceholders = _buildExifPlaceholders(filter.completedExifFilters);
 
-    if (filter.context != null && filter.context!.isNotEmpty) {
+    if ((filter.context != null && filter.context!.isNotEmpty) ||
+        (filter.assetId != null && filter.assetId!.isNotEmpty)) {
       final request = SmartSearchDto(
-        query: filter.context!,
-        language: filter.language,
-        country: filter.location.country,
-        ocr: filter.ocr != null && filter.ocr!.isNotEmpty ? filter.ocr : null,
-        state: filter.location.state,
-        city: filter.location.city,
-        make: filter.camera.make,
-        model: filter.camera.model,
-        takenAfter: filter.date.takenAfter,
-        takenBefore: filter.date.takenBefore,
-        visibility: filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline,
-        rating: filter.rating.rating,
-        isFavorite: filter.display.isFavorite ? true : null,
-        isNotInAlbum: filter.display.isNotInAlbum ? true : null,
-        personIds: filter.people.map((e) => e.id).toList(),
-        tagIds: filter.tagIds,
-        type: type,
-        page: page,
-        size: 100,
+        query: filter.context == null ? const Optional.absent() : Optional.present(filter.context!),
+        queryAssetId: filter.assetId == null ? const Optional.absent() : Optional.present(filter.assetId!),
+        language: filter.language == null ? const Optional.absent() : Optional.present(filter.language!),
+        country: filter.location.country == null
+            ? const Optional.absent()
+            : Optional.present(filter.location.country!),
+        ocr: filter.ocr != null && filter.ocr!.isNotEmpty ? Optional.present(filter.ocr!) : const Optional.absent(),
+        state: filter.location.state == null ? const Optional.absent() : Optional.present(filter.location.state!),
+        city: filter.location.city == null ? const Optional.absent() : Optional.present(filter.location.city!),
+        make: filter.camera.make == null ? const Optional.absent() : Optional.present(filter.camera.make!),
+        model: filter.camera.model == null ? const Optional.absent() : Optional.present(filter.camera.model!),
+        takenAfter: filter.date.takenAfter == null
+            ? const Optional.absent()
+            : Optional.present(filter.date.takenAfter!),
+        takenBefore: filter.date.takenBefore == null
+            ? const Optional.absent()
+            : Optional.present(filter.date.takenBefore!),
+        visibility: Optional.present(filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline),
+        rating: filter.rating.rating.toOptional(),
+        isFavorite: filter.display.isFavorite ? const Optional.present(true) : const Optional.absent(),
+        isNotInAlbum: filter.display.isNotInAlbum ? const Optional.present(true) : const Optional.absent(),
+        personIds: Optional.present(filter.people.map((e) => e.id).toList()),
+        tagIds: filter.tagIds == null ? const Optional.absent() : Optional.present(filter.tagIds!),
+        type: type == null ? const Optional.absent() : Optional.present(type),
+        page: Optional.present(page),
+        size: const Optional.present(100),
       );
       _applyExifPlaceholders(request, exifPlaceholders);
       return _api.searchSmart(request);
     }
 
     final request = MetadataSearchDto(
-      originalFileName: filter.filename != null && filter.filename!.isNotEmpty ? filter.filename : null,
-      country: filter.location.country,
-      description: filter.description != null && filter.description!.isNotEmpty ? filter.description : null,
-      ocr: filter.ocr != null && filter.ocr!.isNotEmpty ? filter.ocr : null,
-      state: filter.location.state,
-      city: filter.location.city,
-      make: filter.camera.make,
-      model: filter.camera.model,
-      takenAfter: filter.date.takenAfter,
-      takenBefore: filter.date.takenBefore,
-      visibility: filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline,
-      rating: filter.rating.rating,
-      isFavorite: filter.display.isFavorite ? true : null,
-      isNotInAlbum: filter.display.isNotInAlbum ? true : null,
-      personIds: filter.people.map((e) => e.id).toList(),
-      tagIds: filter.tagIds ?? const [],
-      type: type,
-      page: page,
-      size: 1000,
+      originalFileName: filter.filename != null && filter.filename!.isNotEmpty
+          ? Optional.present(filter.filename!)
+          : const Optional.absent(),
+      country: filter.location.country == null ? const Optional.absent() : Optional.present(filter.location.country!),
+      description: filter.description != null && filter.description!.isNotEmpty
+          ? Optional.present(filter.description!)
+          : const Optional.absent(),
+      ocr: filter.ocr != null && filter.ocr!.isNotEmpty ? Optional.present(filter.ocr!) : const Optional.absent(),
+      state: filter.location.state == null ? const Optional.absent() : Optional.present(filter.location.state!),
+      city: filter.location.city == null ? const Optional.absent() : Optional.present(filter.location.city!),
+      make: filter.camera.make == null ? const Optional.absent() : Optional.present(filter.camera.make!),
+      model: filter.camera.model == null ? const Optional.absent() : Optional.present(filter.camera.model!),
+      takenAfter: filter.date.takenAfter == null
+          ? const Optional.absent()
+          : Optional.present(filter.date.takenAfter!),
+      takenBefore: filter.date.takenBefore == null
+          ? const Optional.absent()
+          : Optional.present(filter.date.takenBefore!),
+      visibility: Optional.present(filter.display.isArchive ? AssetVisibility.archive : AssetVisibility.timeline),
+      rating: filter.rating.rating.toOptional(),
+      isFavorite: filter.display.isFavorite ? const Optional.present(true) : const Optional.absent(),
+      isNotInAlbum: filter.display.isNotInAlbum ? const Optional.present(true) : const Optional.absent(),
+      personIds: Optional.present(filter.people.map((e) => e.id).toList()),
+      tagIds: filter.tagIds == null ? const Optional.absent() : Optional.present(filter.tagIds!),
+      type: type == null ? const Optional.absent() : Optional.present(type),
+      page: Optional.present(page),
+      size: const Optional.present(1000),
     );
     _applyExifPlaceholders(request, exifPlaceholders);
     return _api.searchAssets(request);

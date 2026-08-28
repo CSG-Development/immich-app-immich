@@ -1,6 +1,7 @@
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { user } from '$lib/stores/user.store';
+import { websocketEvents } from '$lib/stores/websocket';
 import { AssetVisibility, type UserAdminResponseDto } from '@immich/sdk';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { fromStore } from 'svelte/store';
@@ -31,17 +32,31 @@ export class AssetMultiSelectManager {
   isAllFavorite = $derived(this.assets.every((asset) => asset.isFavorite));
   isAllUserOwned = $derived(this.assets.every((asset) => asset.ownerId === this.#userId));
 
-  #unsubscribe?: () => void;
+  #unsubscribers: Array<() => void> = [];
 
   constructor(options?: AssetMultiSelectOptions) {
     const { resetOnNavigate = false } = options ?? {};
     if (resetOnNavigate) {
-      this.#unsubscribe = eventManager.on({ AppNavigate: () => this.clear() });
+      this.#unsubscribers.push(eventManager.on({ AppNavigate: () => this.clear() }));
     }
+
+    // Keep selection in sync when assets are removed in another tab/session.
+    this.#unsubscribers.push(
+      websocketEvents.on('on_asset_delete', (id) => this.removeAssetFromMultiselectGroup(id)),
+      websocketEvents.on('on_asset_trash', (ids) => {
+        for (const id of ids) {
+          this.removeAssetFromMultiselectGroup(id);
+        }
+      }),
+      websocketEvents.on('on_asset_hidden', (id) => this.removeAssetFromMultiselectGroup(id)),
+    );
   }
 
   destroy() {
-    this.#unsubscribe?.();
+    for (const unsubscribe of this.#unsubscribers) {
+      unsubscribe();
+    }
+    this.#unsubscribers = [];
   }
 
   getOwnedAssets() {

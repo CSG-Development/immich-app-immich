@@ -11,7 +11,15 @@
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import SettingDropdown from '../components/shared-components/settings/setting-dropdown.svelte';
-  import { SlideshowLook, SlideshowNavigation, SlideshowState, slideshowStore } from '../stores/slideshow.store';
+  import {
+    clampSlideshowDelay,
+    SLIDESHOW_DELAY_MAX,
+    SLIDESHOW_DELAY_MIN,
+    SlideshowLook,
+    SlideshowNavigation,
+    SlideshowState,
+    slideshowStore,
+  } from '../stores/slideshow.store';
 
   const {
     slideshowDelay,
@@ -39,6 +47,13 @@
   let tempSlideshowAutoplay = $state($slideshowAutoplay);
   let tempSlideshowRepeat = $state($slideshowRepeat);
 
+  const isDurationValid = $derived(
+    typeof tempSlideshowDelay === 'number' &&
+      Number.isFinite(tempSlideshowDelay) &&
+      tempSlideshowDelay >= SLIDESHOW_DELAY_MIN &&
+      tempSlideshowDelay <= SLIDESHOW_DELAY_MAX,
+  );
+
   const navigationOptions: Record<SlideshowNavigation, RenderedOption> = {
     [SlideshowNavigation.Shuffle]: { icon: mdiShuffle, title: $t('shuffle') },
     [SlideshowNavigation.AscendingOrder]: { icon: mdiArrowUpThin, title: $t('backward') },
@@ -63,7 +78,11 @@
   };
 
   const onSubmit = () => {
-    $slideshowDelay = tempSlideshowDelay;
+    if (!isDurationValid) {
+      return;
+    }
+
+    $slideshowDelay = clampSlideshowDelay(tempSlideshowDelay);
     $showProgressBar = tempShowProgressBar;
     $slideshowNavigation = tempSlideshowNavigation;
     $slideshowLook = tempSlideshowLook;
@@ -75,7 +94,7 @@
   };
 </script>
 
-<FormModal size="small" title={$t('slideshow_settings')} {onClose} {onSubmit}>
+<FormModal size="small" title={$t('slideshow_settings')} {onClose} {onSubmit} disabled={!isDurationValid}>
   <div class="flex flex-col gap-4">
     <SettingDropdown
       title={$t('direction')}
@@ -115,8 +134,21 @@
       <Switch bind:checked={tempSlideshowRepeat} />
     </Field>
 
-    <Field label={$t('duration')}>
-      <NumberInput min={1} bind:value={tempSlideshowDelay} />
+    <Field label={$t('duration')} invalid={!isDurationValid}>
+      <NumberInput
+        min={SLIDESHOW_DELAY_MIN}
+        max={SLIDESHOW_DELAY_MAX}
+        step={1}
+        bind:value={tempSlideshowDelay}
+        onkeydown={(event) => event.stopPropagation()}
+      />
+      {#if !isDurationValid}
+        <HelperText color="danger">
+          {$t('errors.value_must_be_between', {
+            values: { min: SLIDESHOW_DELAY_MIN, max: SLIDESHOW_DELAY_MAX },
+          })}
+        </HelperText>
+      {/if}
       <HelperText>{$t('admin.slideshow_duration_description')}</HelperText>
     </Field>
   </div>

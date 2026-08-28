@@ -2,8 +2,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/person.model.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
+import 'package:immich_mobile/utils/option.dart';
 
 class SearchLocationFilter {
   String? country;
@@ -37,7 +38,9 @@ class SearchLocationFilter {
 
   @override
   bool operator ==(covariant SearchLocationFilter other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.country == country && other.state == state && other.city == city;
   }
@@ -76,7 +79,9 @@ class SearchCameraFilter {
 
   @override
   bool operator ==(covariant SearchCameraFilter other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.make == make && other.model == model;
   }
@@ -118,7 +123,9 @@ class SearchDateFilter {
 
   @override
   bool operator ==(covariant SearchDateFilter other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.takenBefore == takenBefore && other.takenAfter == takenAfter;
   }
@@ -128,19 +135,26 @@ class SearchDateFilter {
 }
 
 class SearchRatingFilter {
-  int? rating;
-  SearchRatingFilter({this.rating});
+  /// none = no filter; some(null) = filter for unrated; some(1-5) = filter for that rating
+  Option<int?> rating;
+  SearchRatingFilter({this.rating = const Option.none()});
 
-  SearchRatingFilter copyWith({int? rating}) {
+  SearchRatingFilter copyWith({Option<int?>? rating}) {
     return SearchRatingFilter(rating: rating ?? this.rating);
   }
 
   Map<String, dynamic> toMap() {
-    return <String, dynamic>{'rating': rating};
+    if (rating.isNone) {
+      return <String, dynamic>{'active': false};
+    }
+    return <String, dynamic>{'active': true, 'value': rating.unwrapOrNull};
   }
 
   factory SearchRatingFilter.fromMap(Map<String, dynamic> map) {
-    return SearchRatingFilter(rating: map['rating'] != null ? map['rating'] as int : null);
+    if (!(map['active'] as bool? ?? false)) {
+      return SearchRatingFilter();
+    }
+    return SearchRatingFilter(rating: Option.some(map['value'] as int?));
   }
 
   String toJson() => json.encode(toMap());
@@ -153,7 +167,9 @@ class SearchRatingFilter {
 
   @override
   bool operator ==(covariant SearchRatingFilter other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.rating == rating;
   }
@@ -199,7 +215,9 @@ class SearchDisplayFilters {
 
   @override
   bool operator ==(covariant SearchDisplayFilters other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.isNotInAlbum == isNotInAlbum && other.isArchive == isArchive && other.isFavorite == isFavorite;
   }
@@ -308,7 +326,7 @@ class SearchFilter {
         display.isArchive == false &&
         display.isFavorite == false &&
         completedExifFilters.isEmpty &&
-        rating.rating == null &&
+        rating.rating.isNone &&
         mediaType == AssetType.other;
   }
 
@@ -355,7 +373,9 @@ class SearchFilter {
 
   @override
   bool operator ==(covariant SearchFilter other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other.context == context &&
         other.filename == filename &&

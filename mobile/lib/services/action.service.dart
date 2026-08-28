@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/models/asset_edit.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/domain/services/tag.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/infrastructure/repositories/local_asset.repository.dart';
@@ -24,8 +26,8 @@ import 'package:immich_mobile/services/map.service.dart';
 import 'package:immich_mobile/utils/timezone.dart';
 import 'package:immich_mobile/widgets/common/date_time_picker.dart';
 import 'package:immich_mobile/widgets/common/location_picker.dart';
+import 'package:immich_mobile/widgets/common/tag_picker.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' as maplibre;
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 final actionServiceProvider = Provider<ActionService>(
   (ref) => ActionService(
@@ -38,6 +40,7 @@ final actionServiceProvider = Provider<ActionService>(
     ref.watch(assetMediaRepositoryProvider),
     ref.watch(downloadRepositoryProvider),
     ref.watch(mapServiceProvider),
+    ref.watch(tagServiceProvider),
   ),
 );
 
@@ -51,6 +54,7 @@ class ActionService {
   final AssetMediaRepository _assetMediaRepository;
   final DownloadRepository _downloadRepository;
   final MapService _mapService;
+  final TagService _tagService;
 
   const ActionService(
     this._assetApiRepository,
@@ -62,6 +66,7 @@ class ActionService {
     this._assetMediaRepository,
     this._downloadRepository,
     this._mapService,
+    this._tagService,
   );
 
   Future<void> shareLink(List<String> remoteIds, BuildContext context) async {
@@ -79,22 +84,22 @@ class ActionService {
   }
 
   Future<void> archive(List<String> remoteIds) async {
-    await _assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.archive);
+    await _assetApiRepository.updateVisibility(remoteIds, .archive);
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.archive);
   }
 
   Future<void> unArchive(List<String> remoteIds) async {
-    await _assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.timeline);
+    await _assetApiRepository.updateVisibility(remoteIds, .timeline);
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.timeline);
   }
 
   Future<void> moveToLockFolder(List<String> remoteIds) async {
-    await _assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.locked);
+    await _assetApiRepository.updateVisibility(remoteIds, .locked);
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.locked);
   }
 
   Future<void> removeFromLockFolder(List<String> remoteIds) async {
-    await _assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.timeline);
+    await _assetApiRepository.updateVisibility(remoteIds, .timeline);
     await _remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.timeline);
   }
 
@@ -225,13 +230,22 @@ class ActionService {
       return false;
     }
 
-    // convert dateTime to DateTime object
-    final parsedDateTime = DateTime.parse(dateTime);
-
-    await _assetApiRepository.updateDateTime(remoteIds, parsedDateTime);
-    await _remoteAssetRepository.updateDateTime(remoteIds, parsedDateTime);
+    await applyDateTime(remoteIds, dateTime);
 
     return true;
+  }
+
+  @visibleForTesting
+  Future<void> applyDateTime(List<String> remoteIds, String dateTime) async {
+    final parsedDateTime = DateTime.parse(dateTime);
+    final offset = RegExp(r'[+-]\d{2}:\d{2}$').firstMatch(dateTime)?.group(0);
+
+    await _assetApiRepository.updateDateTime(remoteIds, dateTime);
+    await _remoteAssetRepository.updateDateTime(
+      remoteIds,
+      parsedDateTime,
+      timeZone: offset == null ? null : 'UTC$offset',
+    );
   }
 
   Future<int> removeFromAlbum(List<String> remoteIds, String albumId) async {
@@ -250,12 +264,32 @@ class ActionService {
     return true;
   }
 
-  Future<bool> updateRating(String assetId, int rating) async {
+  Future<bool> updateRating(String assetId, int? rating) async {
     // update remote first, then local to ensure consistency
     await _assetApiRepository.updateRating(assetId, rating);
     await _remoteAssetRepository.updateRating(assetId, rating);
 
     return true;
+  }
+
+  Future<int?> tagAssets(List<String> remoteIds, BuildContext context) async {
+    final tagResults = await showTagPickerModal(context: context);
+    if (tagResults == null) {
+      // user cancelled
+      return null;
+    }
+
+    final selectedTagIds = Set<String>.from(tagResults.$1);
+    final selectedNewTagValues = tagResults.$2;
+
+    if (selectedNewTagValues.isNotEmpty) {
+      final upsertedTags = await _tagService.upsertTags(selectedNewTagValues.toList());
+      selectedTagIds.addAll(upsertedTags.map((t) => t.id));
+    }
+    if (selectedTagIds.isEmpty) {
+      return 0;
+    }
+    return _tagService.bulkTagAssets(remoteIds, selectedTagIds.toList());
   }
 
   Future<void> stack(String userId, List<String> remoteIds) async {
@@ -268,8 +302,20 @@ class ActionService {
     await _assetApiRepository.unStack(stackIds);
   }
 
-  Future<int> shareAssets(List<BaseAsset> assets, BuildContext context, {Completer<void>? cancelCompleter}) {
-    return _assetMediaRepository.shareAssets(assets, context, cancelCompleter: cancelCompleter);
+  Future<int> shareAssets(
+    List<BaseAsset> assets,
+    BuildContext context, {
+    ShareAssetType fileType = ShareAssetType.original,
+    Completer<void>? cancelCompleter,
+    void Function(double progress)? onAssetDownloadProgress,
+  }) {
+    return _assetMediaRepository.shareAssets(
+      assets,
+      context,
+      fileType: fileType,
+      cancelCompleter: cancelCompleter,
+      onAssetDownloadProgress: onAssetDownloadProgress,
+    );
   }
 
   Future<List<bool>> downloadAll(List<RemoteAsset> assets) {
@@ -277,9 +323,18 @@ class ActionService {
   }
 
   Future<bool> setAlbumCover(String albumId, String assetId) async {
-    final updatedAlbum = await _albumApiRepository.updateAlbum(albumId, thumbnailAssetId: assetId);
+    final owner = await _remoteAlbumRepository.getOwner(albumId);
+    final updatedAlbum = await _albumApiRepository.updateAlbum(albumId, owner, thumbnailAssetId: assetId);
     await _remoteAlbumRepository.update(updatedAlbum);
     return true;
+  }
+
+  Future<void> applyEdits(String remoteId, List<AssetEdit> edits) async {
+    if (edits.isEmpty) {
+      await _assetApiRepository.removeEdits(remoteId);
+    } else {
+      await _assetApiRepository.editAsset(remoteId, edits);
+    }
   }
 
   Future<int> _deleteLocalAssets(List<String> localIds) async {

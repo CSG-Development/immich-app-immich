@@ -98,18 +98,18 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
         return PersonOptionSheet(
           onEditName: () async {
             await handleEditName(context);
-            context.pop();
+            ContextHelper(context).pop();
           },
           onEditBirthday: () async {
             await handleEditBirthday(context);
-            context.pop();
+            ContextHelper(context).pop();
           },
           onMerge: () {
-            context.pop();
+            Navigator.of(context).pop();
             handleMerge();
           },
           onToggleFavorite: () {
-            context.pop();
+            Navigator.of(context).pop();
             handleToggleFavorite();
           },
           birthdayExists: _person.birthDate != null,

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cupertino_http/cupertino_http.dart' show NSErrorClientException;
@@ -15,6 +14,7 @@ import 'package:immich_mobile/infrastructure/repositories/network.repository.dar
 import 'package:immich_mobile/models/connection_state.model.dart';
 import 'package:immich_mobile/services/firebase_performance_wrapper.dart';
 import 'package:immich_mobile/utils/certificates_pinning/http_cert_pinning_manager.dart';
+import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:immich_mobile/utils/upload_activity.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
@@ -197,7 +197,7 @@ class PerformanceHttpClient extends BaseClient {
 }
 
 class ApiService implements Authentication {
-  late ApiClient _apiClient;
+  late final ApiClient _apiClient = ApiClient(basePath: '', authentication: this);
   late PerformanceHttpClient _httpClient;
   late ConnectionRecoveryInterceptor _connectionRecoveryInterceptor;
   late Client _baseClient;
@@ -378,7 +378,7 @@ class ApiService implements Authentication {
   void setEndpoint(String endpoint) {
     _initHttpClient();
 
-    _apiClient = ApiClient(basePath: endpoint, authentication: this);
+    _apiClient.basePath = endpoint;
     _apiClient.client = _httpClient;
     usersApi = UsersApi(_apiClient);
     authenticationApi = AuthenticationApi(_apiClient);
@@ -591,8 +591,8 @@ class ApiService implements Authentication {
   }
 
   String _normalizeEndpoint(String serverUrl) {
-    String url = sanitizeUrl(serverUrl);
-    final normalized = sanitizeUrl(_getWellKnownEndpoint(url));
+    String url = normalizeServerUrl(serverUrl);
+    final normalized = normalizeServerUrl(_getWellKnownEndpoint(url));
     return normalized;
   }
 
@@ -648,7 +648,7 @@ class ApiService implements Authentication {
 
   // Temporary
   String _getWellKnownEndpoint(String baseUrl) {
-    final normalized = sanitizeUrl(baseUrl);
+    final normalized = normalizeServerUrl(baseUrl);
     if (normalized.endsWith('/photos/api') || normalized.endsWith('/api')) {
       return normalized;
     }
@@ -688,18 +688,7 @@ class ApiService implements Authentication {
   }
 
   static Map<String, String> getRequestHeaders() {
-    var customHeadersStr = Store.get(StoreKey.customHeaders, "");
-    var header = <String, String>{};
-    if (customHeadersStr.isEmpty) {
-      return header;
-    }
-
-    var customHeaders = jsonDecode(customHeadersStr) as Map;
-    customHeaders.forEach((key, value) {
-      header[key] = value;
-    });
-
-    return header;
+    return SettingsRepository.instance.appConfig.network.customHeaders;
   }
 
   /// Custom headers plus the current access token for transports that do not use
@@ -718,6 +707,16 @@ class ApiService implements Authentication {
     final serverEndpoint = Store.tryGet(StoreKey.serverEndpoint);
     if (serverEndpoint != null && serverEndpoint.isNotEmpty) {
       urls.add(serverEndpoint);
+    }
+    final network = SettingsRepository.instance.appConfig.network;
+    final localEndpoint = network.localEndpoint;
+    if (localEndpoint != null && localEndpoint.isNotEmpty) {
+      urls.add(localEndpoint);
+    }
+    for (final url in network.externalEndpointList) {
+      if (url.isNotEmpty) {
+        urls.add(url);
+      }
     }
     return urls;
   }

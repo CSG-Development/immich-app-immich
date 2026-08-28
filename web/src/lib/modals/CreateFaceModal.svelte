@@ -1,5 +1,6 @@
 <script lang="ts">
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { delay } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { createFace, createPerson } from '@immich/sdk';
@@ -53,7 +54,8 @@
       });
 
       await delay(1500);
-      await assetViewerManager.setAssetId(assetId);
+      const updated = await assetViewerManager.setAssetId(assetId);
+      eventManager.emit('AssetUpdate', updated);
       onClose(true);
     } catch (error) {
       handleError(error, 'Error creating and tagging face');

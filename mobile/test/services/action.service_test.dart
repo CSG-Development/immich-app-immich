@@ -2,14 +2,12 @@ import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
-import 'package:immich_mobile/repositories/download.repository.dart';
 import 'package:immich_mobile/services/action.service.dart';
 import 'package:immich_mobile/services/map.service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,7 +15,6 @@ import 'package:mocktail/mocktail.dart';
 import '../infrastructure/repository.mock.dart';
 import '../repository.mocks.dart';
 
-class MockDownloadRepository extends Mock implements DownloadRepository {}
 class MockMapService extends Mock implements MapService {}
 
 void main() {
@@ -32,6 +29,7 @@ void main() {
   late MockAssetMediaRepository assetMediaRepository;
   late MockDownloadRepository downloadRepository;
   late MockMapService mapService;
+  late MockTagService tagService;
 
   late Drift db;
 
@@ -59,6 +57,7 @@ void main() {
     assetMediaRepository = MockAssetMediaRepository();
     downloadRepository = MockDownloadRepository();
     mapService = MockMapService();
+    tagService = MockTagService();
 
     sut = ActionService(
       assetApiRepository,
@@ -70,6 +69,7 @@ void main() {
       assetMediaRepository,
       downloadRepository,
       mapService,
+      tagService,
     );
   });
 
@@ -82,7 +82,7 @@ void main() {
       const remoteIds = ['remote-1', 'remote-2'];
 
       when(
-        () => assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.locked),
+        () => assetApiRepository.updateVisibility(remoteIds, AssetVisibility.locked),
       ).thenAnswer((_) async {});
       when(
         () => remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.locked),
@@ -90,10 +90,79 @@ void main() {
 
       await sut.moveToLockFolder(remoteIds);
 
-      verify(() => assetApiRepository.updateVisibility(remoteIds, AssetVisibilityEnum.locked)).called(1);
+      verify(() => assetApiRepository.updateVisibility(remoteIds, AssetVisibility.locked)).called(1);
       verify(() => remoteAssetRepository.updateVisibility(remoteIds, AssetVisibility.locked)).called(1);
       verifyNever(() => assetMediaRepository.deleteAll(any()));
       verifyNever(() => localAssetRepository.delete(any()));
+    });
+  });
+
+  group('ActionService.updateRating', () {
+    const assetId = 'asset_id_1';
+
+    test('calls both repositories with the given rating', () async {
+      when(() => assetApiRepository.updateRating(assetId, 3)).thenAnswer((_) async {});
+      when(() => remoteAssetRepository.updateRating(assetId, 3)).thenAnswer((_) async {});
+
+      final result = await sut.updateRating(assetId, 3);
+
+      expect(result, isTrue);
+      verify(() => assetApiRepository.updateRating(assetId, 3)).called(1);
+      verify(() => remoteAssetRepository.updateRating(assetId, 3)).called(1);
+    });
+
+    test('calls both repositories with null to clear rating', () async {
+      when(() => assetApiRepository.updateRating(assetId, null)).thenAnswer((_) async {});
+      when(() => remoteAssetRepository.updateRating(assetId, null)).thenAnswer((_) async {});
+
+      final result = await sut.updateRating(assetId, null);
+
+      expect(result, isTrue);
+      verify(() => assetApiRepository.updateRating(assetId, null)).called(1);
+      verify(() => remoteAssetRepository.updateRating(assetId, null)).called(1);
+    });
+  });
+
+  group('ActionService.applyDateTime', () {
+    const ids = ['asset_id_1'];
+
+    test('sends the picked value to the api with its offset intact', () async {
+      const picked = '2026-06-10T19:15:00.000+06:00';
+      when(() => assetApiRepository.updateDateTime(ids, picked)).thenAnswer((_) async {});
+      when(
+        () => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: 'UTC+06:00'),
+      ).thenAnswer((_) async {});
+
+      await sut.applyDateTime(ids, picked);
+
+      verify(() => assetApiRepository.updateDateTime(ids, picked)).called(1);
+      verify(() => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: 'UTC+06:00')).called(1);
+    });
+
+    test('handles negative offsets', () async {
+      const picked = '2026-01-05T08:00:00.000-05:30';
+      when(() => assetApiRepository.updateDateTime(ids, picked)).thenAnswer((_) async {});
+      when(
+        () => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: 'UTC-05:30'),
+      ).thenAnswer((_) async {});
+
+      await sut.applyDateTime(ids, picked);
+
+      verify(() => assetApiRepository.updateDateTime(ids, picked)).called(1);
+      verify(() => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: 'UTC-05:30')).called(1);
+    });
+
+    test('writes no timezone when the value has no offset', () async {
+      const picked = '2026-06-10T13:15:00.000Z';
+      when(() => assetApiRepository.updateDateTime(ids, picked)).thenAnswer((_) async {});
+      when(
+        () => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: null),
+      ).thenAnswer((_) async {});
+
+      await sut.applyDateTime(ids, picked);
+
+      verify(() => assetApiRepository.updateDateTime(ids, picked)).called(1);
+      verify(() => remoteAssetRepository.updateDateTime(ids, DateTime.parse(picked), timeZone: null)).called(1);
     });
   });
 

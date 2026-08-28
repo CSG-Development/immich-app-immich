@@ -33,6 +33,7 @@ class StorageRepository {
     return file;
   }
 
+  // TODO(agg23): Unify these methods
   Future<File?> getMotionFileForAsset(LocalAsset asset) async {
     return getMotionFileById(asset.id);
   }
