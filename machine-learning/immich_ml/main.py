@@ -197,6 +197,48 @@ def fit_image_to_224_square(image: Image) -> Image:
     return canvas
 
 
+def generate_overlapping_parts(image: Image) -> list[dict[str, Any]]:
+    width, height = image.size
+    part_width = math.ceil(width / 2)
+    part_height = math.ceil(height / 2)
+    step_x = max(1, part_width // 2)
+    step_y = max(1, part_height // 2)
+
+    x_positions = list(range(0, max(1, width - part_width + 1), step_x))
+    y_positions = list(range(0, max(1, height - part_height + 1), step_y))
+
+    last_x = width - part_width
+    last_y = height - part_height
+
+    if x_positions[-1] != last_x:
+        x_positions.append(last_x)
+
+    if y_positions[-1] != last_y:
+        y_positions.append(last_y)
+
+    parts = []
+    index = 0
+
+    for y in y_positions:
+        for x in x_positions:
+            index += 1
+            x1 = x + part_width
+            y1 = y + part_height
+
+            parts.append({
+                "index": index,
+                "x": x,
+                "y": y,
+                "x1": x1,
+                "y1": y1,
+                "width": part_width,
+                "height": part_height,
+                "image": image.crop((x, y, x1, y1)),
+            })
+
+    return parts
+
+
 app = FastAPI(lifespan=lifespan)
 
 declare_endpoints(app) # Search Query Analyzer Endpoints
@@ -218,7 +260,20 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
-        inputs: Image | str = await run(lambda: fit_image_to_224_square(decode_pil(image)))
+        original = await run(decode_pil, image)
+        fitted = await run(fit_image_to_224_square, original)
+
+        original_parts = await run(generate_overlapping_parts, original)
+        fitted_parts = await run(generate_overlapping_parts, fitted)
+
+        log.info(
+            f"Original image: {original.size}, parts: {len(original_parts)}"
+        )
+        log.info(
+            f"Fitted image: {fitted.size}, parts: {len(fitted_parts)}"
+        )
+
+        inputs: Image | str = fitted
     elif text is not None:
         inputs = text
     else:
