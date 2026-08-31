@@ -260,11 +260,14 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
-        original = await run(decode_pil, image)
-        fitted = await run(fit_image_to_224_square, original)
+        log.info(
+            f"Image processing"
+        )
+        original = await run(lambda: decode_pil(image))
+        fitted = await run(lambda: fit_image_to_224_square(original))
 
-        original_parts = await run(generate_overlapping_parts, original)
-        fitted_parts = await run(generate_overlapping_parts, fitted)
+        original_parts = await run(lambda: generate_overlapping_parts(original))
+        fitted_parts = await run(lambda:generate_overlapping_parts(fitted))
 
         log.info(
             f"Original image: {original.size}, parts: {len(original_parts)}"
