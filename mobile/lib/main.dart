@@ -172,6 +172,7 @@ class ImmichApp extends ConsumerStatefulWidget {
 class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserver {
   int? _androidSdkInt;
   StreamSubscription<conn.ConnectionState>? _connectionStateSubscription;
+  Timer? _rotationRecoveryFrame;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -203,6 +204,26 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
         ref.read(appStateProvider.notifier).handleAppHidden();
         break;
     }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!Platform.isAndroid) {
+      return;
+    }
+    // Workaround for an Android engine race (flutter/flutter#182242,
+    // fixed in #182326) where the first frame after a view size change
+    // (e.g. device rotation) is rejected because the platform surface
+    // buffer has not finished resizing, and is never retried. The last
+    // good frame — laid out at the previous size — stays on screen,
+    // showing a black bar and a misaligned bottom navigation. Schedule a
+    // follow-up forced frame once the buffer has settled so the UI
+    // repaints at the correct size.
+    _rotationRecoveryFrame?.cancel();
+    _rotationRecoveryFrame = Timer(const Duration(milliseconds: 150), () {
+      WidgetsBinding.instance.scheduleForcedFrame();
+    });
   }
 
   Future<void> initApp() async {
@@ -320,6 +341,8 @@ class ImmichAppState extends ConsumerState<ImmichApp> with WidgetsBindingObserve
     ref.read(apiServiceProvider).curatorNetworkForceReconnectHandler = null;
     _connectionStateSubscription?.cancel();
     _connectionStateSubscription = null;
+    _rotationRecoveryFrame?.cancel();
+    _rotationRecoveryFrame = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
