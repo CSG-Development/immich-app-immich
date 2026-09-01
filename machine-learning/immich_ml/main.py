@@ -260,18 +260,12 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
-        log.info(
-            f"Image processing"
-        )
         inputs: Image | str = await run(lambda: decode_pil(image))
     elif text is not None:
         inputs = text
     else:
         raise HTTPException(400, "Either image or text must be provided")
     response = await run_inference(inputs, entries)
-    log.info(
-        f"Response: {response}"
-    )
     return ORJSONResponse(response)
 
 
@@ -280,9 +274,6 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
     response: InferenceResponse = {}
 
     async def _run_inference(entry: InferenceEntry) -> None:
-        log.info(
-            f"Entry: {entry}"
-        )
         model = await model_cache.get(
             entry["name"], entry["type"], entry["task"], ttl=settings.model_ttl, **entry["options"]
         )
@@ -299,13 +290,6 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
             fitted = await run(lambda: fit_image_to_224_square(payload))
             original_parts = await run(lambda: generate_overlapping_parts(payload))
             fitted_parts = await run(lambda: generate_overlapping_parts(fitted))
-
-            log.info(
-                f"Original image: {payload.size}, parts: {len(original_parts)}"
-            )
-            log.info(
-                f"Fitted image: {fitted.size}, parts: {len(fitted_parts)}"
-            )
 
             embeddings = []
 
