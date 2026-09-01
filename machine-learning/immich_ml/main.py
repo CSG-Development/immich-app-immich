@@ -282,6 +282,9 @@ async def predict(
     else:
         raise HTTPException(400, "Either image or text must be provided")
     response = await run_inference(inputs, entries)
+    log.info(
+        f"Response: {response}"
+    )
     return ORJSONResponse(response)
 
 
@@ -290,6 +293,9 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
     response: InferenceResponse = {}
 
     async def _run_inference(entry: InferenceEntry) -> None:
+        log.info(
+            f"Entry: {entry}"
+        )
         model = await model_cache.get(
             entry["name"], entry["type"], entry["task"], ttl=settings.model_ttl, **entry["options"]
         )
