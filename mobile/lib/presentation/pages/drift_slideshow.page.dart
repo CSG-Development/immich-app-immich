@@ -143,12 +143,26 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
     _nextIndex = switch (_config.direction) {
       SlideshowDirection.forward => _index + 1,
       SlideshowDirection.backward => _index - 1,
-      SlideshowDirection.shuffle => widget.timeline.getIndex(widget.timeline.getRandomAsset().heroTag)!,
+      SlideshowDirection.shuffle => _nextShuffleIndex(),
     };
 
     if (!widget.timeline.hasRange(_nextIndex, 1)) {
       widget.timeline.preloadAssets(_nextIndex);
     }
+  }
+
+  int _nextShuffleIndex() {
+    final total = widget.timeline.totalAssets;
+    if (total <= 1) {
+      return 0;
+    }
+
+    final random = Random();
+    var next = random.nextInt(total);
+    while (next == _index) {
+      next = random.nextInt(total);
+    }
+    return next;
   }
 
   void _nextPage() async {
