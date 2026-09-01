@@ -331,7 +331,7 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                     output = json.loads(output)
                 embeddings.append(output)
 
-            output = embeddings
+            output = str(embeddings)
 
         else:
             output = await run(model.predict, *inputs, **entry["options"])
