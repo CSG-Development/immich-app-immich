@@ -260,23 +260,7 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
-        log.info(
-            f"Image processing"
-        )
-        original = await run(lambda: decode_pil(image))
-        fitted = await run(lambda: fit_image_to_224_square(original))
-
-        original_parts = await run(lambda: generate_overlapping_parts(original))
-        fitted_parts = await run(lambda:generate_overlapping_parts(fitted))
-
-        log.info(
-            f"Original image: {original.size}, parts: {len(original_parts)}"
-        )
-        log.info(
-            f"Fitted image: {fitted.size}, parts: {len(fitted_parts)}"
-        )
-
-        inputs: Image | str = fitted
+        inputs: Image | str = await run(lambda: decode_pil(image))
     elif text is not None:
         inputs = text
     else:
@@ -307,7 +291,68 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                 message = f"Task {entry['task']} of type {entry['type']} depends on output of {dep}"
                 raise HTTPException(400, message)
         model = await load(model)
-        output = await run(model.predict, *inputs, **entry["options"])
+
+        if (
+            isinstance(payload, Image)
+            and entry["task"] == "clip"
+            and entry["type"] == "visual"
+        ):
+            fitted = await run(lambda: fit_image_to_224_square(payload))
+            original_parts = await run(lambda: generate_overlapping_parts(payload))
+            fitted_parts = await run(lambda: generate_overlapping_parts(fitted))
+
+            log.info(
+                f"Original image: {payload.size}, parts: {len(original_parts)}"
+            )
+            log.info(
+                f"Fitted image: {fitted.size}, parts: {len(fitted_parts)}"
+            )
+
+            embeddings = []
+
+            embeddings.append(
+                await run(
+                    model.predict,
+                    payload,
+                    **entry["options"],
+                )
+            )
+
+            embeddings.append(
+                await run(
+                    model.predict,
+                    fitted,
+                    **entry["options"],
+                )
+            )
+
+            for part in original_parts:
+                embeddings.append(
+                    await run(
+                        model.predict,
+                        part["image"],
+                        **entry["options"],
+                    )
+                )
+
+            for part in fitted_parts:
+                embeddings.append(
+                    await run(
+                        model.predict,
+                        part["image"],
+                        **entry["options"],
+                    )
+                )
+
+            output = []
+            for embedding in embeddings:
+                if isinstance(embedding, str):
+                    embedding = orjson.loads(embedding)
+                output.extend(embedding)
+
+        else:
+            output = await run(model.predict, *inputs, **entry["options"])
+
         outputs[model.identity] = output
         response[entry["task"]] = output
 
@@ -334,7 +379,7 @@ async def load(model: InferenceModel) -> InferenceModel:
 
     def _load(model: InferenceModel) -> InferenceModel:
         if model.load_attempts > 1:
-            raise HTTPException(500, f"Failed to load model '{model}'")
+            raise HTTPException(500, f"Failed to load model '{model.model_name}'")
         with lock:
             try:
                 model.load()
