@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import json
 import math
 import os
 import signal
@@ -11,7 +12,6 @@ from functools import partial
 from typing import Any, AsyncGenerator, Callable, Iterator
 from zipfile import BadZipFile
 
-import orjson
 from fastapi import Depends, FastAPI, File, Form, HTTPException
 from fastapi.responses import ORJSONResponse, PlainTextResponse
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidProtobuf, NoSuchFile
@@ -146,7 +146,7 @@ def update_state() -> Iterator[None]:
 
 def get_entries(entries: str = Form()) -> InferenceEntries:
     try:
-        request: PipelineRequest = orjson.loads(entries)
+        request: PipelineRequest = json.loads(entries)
         without_deps: list[InferenceEntry] = []
         with_deps: list[InferenceEntry] = []
         for task, types in request.items():
@@ -160,7 +160,7 @@ def get_entries(entries: str = Form()) -> InferenceEntries:
                 dep = get_model_deps(parsed["name"], type, task)
                 (with_deps if dep else without_deps).append(parsed)
         return without_deps, with_deps
-    except (orjson.JSONDecodeError, ValidationError, KeyError, AttributeError) as e:
+    except (json.JSONDecodeError, ValidationError, KeyError, AttributeError) as e:
         log.error(f"Invalid request format: {e}")
         raise HTTPException(422, "Invalid request format.")
 
@@ -260,6 +260,9 @@ async def predict(
     text: str | None = Form(default=None),
 ) -> Any:
     if image is not None:
+        log.info(
+            f"Image processing"
+        )
         inputs: Image | str = await run(lambda: decode_pil(image))
     elif text is not None:
         inputs = text
@@ -292,11 +295,7 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                 raise HTTPException(400, message)
         model = await load(model)
 
-        if (
-            isinstance(payload, Image)
-            and entry["task"] == "clip"
-            and entry["type"] == "visual"
-        ):
+        if isinstance(payload, Image) and entry["task"] == "clip" and entry["type"] == "visual":
             fitted = await run(lambda: fit_image_to_224_square(payload))
             original_parts = await run(lambda: generate_overlapping_parts(payload))
             fitted_parts = await run(lambda: generate_overlapping_parts(fitted))
@@ -310,45 +309,29 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
 
             embeddings = []
 
-            embeddings.append(
-                await run(
-                    model.predict,
-                    payload,
-                    **entry["options"],
-                )
-            )
+            output = await run(model.predict, payload, **entry["options"])
+            if isinstance(output, str):
+                output = json.loads(output)
+            embeddings.append(output)
 
-            embeddings.append(
-                await run(
-                    model.predict,
-                    fitted,
-                    **entry["options"],
-                )
-            )
+            output = await run(model.predict, fitted, **entry["options"])
+            if isinstance(output, str):
+                output = json.loads(output)
+            embeddings.append(output)
 
             for part in original_parts:
-                embeddings.append(
-                    await run(
-                        model.predict,
-                        part["image"],
-                        **entry["options"],
-                    )
-                )
+                output = await run(model.predict, part["image"], **entry["options"])
+                if isinstance(output, str):
+                    output = json.loads(output)
+                embeddings.append(output)
 
             for part in fitted_parts:
-                embeddings.append(
-                    await run(
-                        model.predict,
-                        part["image"],
-                        **entry["options"],
-                    )
-                )
+                output = await run(model.predict, part["image"], **entry["options"])
+                if isinstance(output, str):
+                    output = json.loads(output)
+                embeddings.append(output)
 
-            output = []
-            for embedding in embeddings:
-                if isinstance(embedding, str):
-                    embedding = orjson.loads(embedding)
-                output.extend(embedding)
+            output = embeddings
 
         else:
             output = await run(model.predict, *inputs, **entry["options"])
