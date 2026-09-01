@@ -209,7 +209,7 @@ export class MachineLearningRepository {
   async encodeImage(imagePath: string, { modelName }: CLIPConfig) {
     const request = { [ModelTask.SEARCH]: { [ModelType.VISUAL]: { modelName } } };
     const response = await this.predict<ClipVisualResponse>({ imagePath }, request);
-    return JSON.parse(response[ModelTask.SEARCH])[0];
+    return JSON.stringify(JSON.parse(response[ModelTask.SEARCH])[0]);
   }
 
   async encodeText(text: string, { language, modelName }: TextEncodingOptions) {
