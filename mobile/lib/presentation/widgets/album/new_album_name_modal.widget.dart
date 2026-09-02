@@ -10,7 +10,22 @@ class NewAlbumNameModal extends StatefulWidget {
 }
 
 class _NewAlbumNameModalState extends State<NewAlbumNameModal> {
-  TextEditingController nameController = TextEditingController();
+  late final TextEditingController nameController;
+  bool _canCreate = true;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: 'untitled_album'.tr());
+    nameController.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() {
+    final canCreate = nameController.text.trim().isNotEmpty;
+    if (canCreate != _canCreate) {
+      setState(() => _canCreate = canCreate);
+    }
+  }
 
   @override
   void dispose() {
@@ -39,12 +54,17 @@ class _NewAlbumNameModalState extends State<NewAlbumNameModal> {
           ).tr(),
         ),
         TextButton(
-          onPressed: () {
-            context.pop(nameController.text.trim());
-          },
+          onPressed: _canCreate
+              ? () {
+                  context.pop(nameController.text.trim());
+                }
+              : null,
           child: Text(
             "create_album",
-            style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _canCreate ? context.primaryColor : context.colorScheme.onSurface.withValues(alpha: 0.38),
+              fontWeight: FontWeight.bold,
+            ),
           ).tr(),
         ),
       ],
