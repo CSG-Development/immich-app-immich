@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/services/auth.service.dart';
 import 'package:immich_mobile/services/local_auth.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
@@ -35,8 +36,12 @@ class LockedGuard extends AutoRouteGuard {
     }
 
     if (authStatus.isElevated) {
-      resolver.next(true);
-      return;
+      if (pinUnlockedInThisProcess) {
+        resolver.next(true);
+        return;
+      }
+
+      unawaited(_apiService.authenticationApi.lockAuthSession().catchError((_) {}));
     }
 
     /// Check if the user has the pincode saved in secure storage, meaning
@@ -56,6 +61,7 @@ class LockedGuard extends AutoRouteGuard {
       }
 
       await _apiService.authenticationApi.unlockAuthSession(SessionUnlockDto(pinCode: Optional.present(securePinCode)));
+      pinUnlockedInThisProcess = true;
 
       resolver.next(true);
     } on PlatformException catch (error) {

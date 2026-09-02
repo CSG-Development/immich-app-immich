@@ -22,6 +22,9 @@ import 'package:immich_mobile/services/device_endpoint_utils.dart';
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:logging/logging.dart';
 
+/// True once this process has unlocked the PIN session; a fresh process starts false.
+bool pinUnlockedInThisProcess = false;
+
 final authServiceProvider = Provider(
   (ref) => AuthService(
     ref.watch(authApiRepositoryProvider),
@@ -179,8 +182,12 @@ class AuthService {
     }
   }
 
-  Future<bool> unlockPinCode(String pinCode) {
-    return _authApiRepository.unlockPinCode(pinCode);
+  Future<bool> unlockPinCode(String pinCode) async {
+    final isUnlocked = await _authApiRepository.unlockPinCode(pinCode);
+    if (isUnlocked) {
+      pinUnlockedInThisProcess = true;
+    }
+    return isUnlocked;
   }
 
   Future<void> lockPinCode() {
