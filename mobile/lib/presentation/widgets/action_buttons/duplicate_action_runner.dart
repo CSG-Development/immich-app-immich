@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -15,14 +17,21 @@ class DuplicateActionRunner {
     Set<BaseAsset> selection, {
     bool resetSelection = true,
   }) {
+    // Read while the widget is still alive: the action sheet may be disposed
+    // while duplication is in flight (user dismisses the selection), and using
+    // a disposed WidgetRef later throws StateError — which used to prevent the
+    // "Duplicating..." lock from being released.
+    final duplicateLock = ref.read(duplicateInProgressProvider.notifier);
+    final multiSelectNotifier = ref.read(multiSelectProvider.notifier);
     return _run(
       context,
       ref,
+      duplicateLock,
       unsupported: ClipboardService.duplicateUnsupportedReasons(selection),
       duplicate: () => ClipboardService.duplicateAssets(context, ref, selection),
       onFinished: (result) {
         if (resetSelection) {
-          ref.read(multiSelectProvider.notifier).reset();
+          multiSelectNotifier.reset();
         }
       },
     );
@@ -30,7 +39,8 @@ class DuplicateActionRunner {
 
   static Future<void> _run(
     BuildContext context,
-    WidgetRef ref, {
+    WidgetRef ref,
+    StateController<bool> duplicateLock, {
     required Map<String, String> unsupported,
     required Future<ClipboardPasteResult> Function() duplicate,
     void Function(ClipboardPasteResult result)? onFinished,
@@ -39,13 +49,21 @@ class DuplicateActionRunner {
       _showToast(context, ClipboardService.unsupportedSelectionMessage(context, unsupported), ToastType.error);
       return;
     }
-    if (ref.read(duplicateInProgressProvider)) {
+    if (duplicateLock.state) {
       return;
     }
 
-    ref.read(duplicateInProgressProvider.notifier).state = true;
+    duplicateLock.state = true;
     try {
-      final result = await duplicate();
+      // The pipeline awaits unbounded steps (isolate decode, HTTP upload);
+      // if one hangs the future never completes and the "Duplicating..." lock
+      // would stay forever. Bound the whole operation so the lock is always
+      // released. Note: timeout does not cancel the pipeline — it may finish
+      // in the background later (its finally is a no-op on the lock by then).
+      final result = await duplicate().timeout(
+        const Duration(minutes: 10),
+        onTimeout: () => throw TimeoutException('duplicate timed out'),
+      );
       onFinished?.call(result);
       if (!context.mounted) {
         return;
@@ -57,8 +75,12 @@ class DuplicateActionRunner {
             : ClipboardService.duplicateFailureMessage(context, result),
         result.success ? ToastType.success : ToastType.error,
       );
+    } on TimeoutException {
+      if (context.mounted) {
+        _showToast(context, 'duplicate_error'.t(context: context), ToastType.error);
+      }
     } finally {
-      ref.read(duplicateInProgressProvider.notifier).state = false;
+      duplicateLock.state = false;
     }
   }
 

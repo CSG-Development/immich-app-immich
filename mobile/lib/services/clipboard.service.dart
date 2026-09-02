@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:isolate';
@@ -417,7 +418,12 @@ class ClipboardService {
 
     final errors = <String>[];
     final savedAssets = <RemoteAsset>[];
+    // Capture everything needed from [ref] before the first await: the caller's
+    // widget (action sheet) may be disposed while duplication is in flight, and
+    // using a disposed WidgetRef throws StateError.
     final clipboardService = ref.read(clipboardServiceProvider);
+    final backgroundSync = ref.read(backgroundSyncProvider);
+    final apiService = ref.read(apiServiceProvider);
     final nextSuffixPerBase = <String, int>{};
 
     for (final asset in selectedAssets) {
@@ -430,7 +436,7 @@ class ClipboardService {
 
         final result = await _duplicateSingleAsset(
           context,
-          ref,
+          apiService,
           asset,
           clipboardService,
           startingSuffix: startingSuffix,
@@ -449,7 +455,12 @@ class ClipboardService {
     }
 
     if (savedAssets.isNotEmpty) {
-      await ref.read(backgroundSyncProvider).syncRemote();
+      // Fire-and-forget: the duplication (upload) is already done. syncRemote()
+      // only refreshes the local DB and must not hold the "Duplicating..." UI
+      // lock — awaiting it kept the action sheet disabled for the whole sync
+      // (and forever if the worker isolate pool stalled). It never throws
+      // (all errors are caught and coerced to `false` inside syncRemote()).
+      unawaited(backgroundSync.syncRemote());
     }
 
     return ClipboardPasteResult(
@@ -464,7 +475,7 @@ class ClipboardService {
   /// Duplicate a single asset
   static Future<RemoteAsset?> _duplicateSingleAsset(
     BuildContext context,
-    WidgetRef ref,
+    ApiService apiService,
     BaseAsset asset,
     ClipboardService clipboardService, {
     int? startingSuffix,
@@ -484,7 +495,7 @@ class ClipboardService {
         fileName = asset.name;
         final tempFile = File('${cacheDir.path}/duplicate_${DateTime.now().millisecondsSinceEpoch}_$fileName');
 
-        final res = await ref.read(apiServiceProvider).assetsApi.downloadAssetWithHttpInfo(asset.remoteId!);
+        final res = await apiService.assetsApi.downloadAssetWithHttpInfo(asset.remoteId!);
         if (res.statusCode == 200) {
           if (_isTooHeavyForDuplicate(fileSizeBytes: res.bodyBytes.length)) {
             throw Exception('too large');
