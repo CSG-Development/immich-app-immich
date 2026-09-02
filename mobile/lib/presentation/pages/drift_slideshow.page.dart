@@ -58,7 +58,11 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
     super.initState();
     _config = ref.read(appConfigProvider.select((s) => s.slideshow));
     final asset = ref.read(assetViewerProvider).currentAsset;
-    _index = asset == null ? 0 : widget.timeline.getIndex(asset.heroTag) ?? 0;
+    var index = asset == null ? 0 : widget.timeline.getIndex(asset.heroTag) ?? 0;
+    if (asset == null && _config.direction == SlideshowDirection.backward) {
+      index = widget.timeline.totalAssets > 0 ? widget.timeline.totalAssets - 1 : 0;
+    }
+    _index = index;
     _pageController = PageController(initialPage: _index);
     _crossfadeController = AnimationController(vsync: this, duration: Durations.extralong2);
     _crossfadeOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(_crossfadeController);
