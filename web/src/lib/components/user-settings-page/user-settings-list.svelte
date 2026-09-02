@@ -9,7 +9,6 @@
   import { type ApiKeyResponseDto, type SessionResponseDto } from '@immich/sdk';
   import {
     mdiAccountGroupOutline,
-    mdiAccountOutline,
     mdiApi,
     mdiBellOutline,
     mdiCogOutline,
@@ -26,7 +25,6 @@
   import DeviceList from './device-list.svelte';
   import PartnerSettings from './partner-settings.svelte';
   import UserAPIKeyList from './user-api-key-list.svelte';
-  import UserProfileSettings from './user-profile-settings.svelte';
 
   interface Props {
     keys?: ApiKeyResponseDto[];
@@ -47,9 +45,9 @@
     <AppSettings />
   </SettingAccordion>
 
-  <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>
+  <!-- <SettingAccordion icon={mdiAccountOutline} key="account" title={$t('account')} subtitle={$t('manage_your_account')}>
     <UserProfileSettings />
-  </SettingAccordion>
+  </SettingAccordion> -->
 
   <SettingAccordion
     child={false}
