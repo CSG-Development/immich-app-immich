@@ -14,6 +14,7 @@ class AssetPreloader {
   Timer? _timer;
   ImageStream? _prevStream;
   ImageStream? _nextStream;
+  ImageStream? _warmStream;
 
   AssetPreloader({required this.timelineService, required this.mounted});
 
@@ -38,6 +39,17 @@ class AssetPreloader {
     });
   }
 
+  void preloadAsset(BaseAsset asset, Size size) {
+    _timer?.cancel();
+    _timer = Timer(Durations.medium4, () {
+      if (!mounted()) {
+        return;
+      }
+      _warmStream?.removeListener(_dummyListener);
+      _warmStream = _resolveImage(asset, size);
+    });
+  }
+
   ImageStream _resolveImage(BaseAsset asset, Size size) {
     return getFullImageProvider(asset, size: size).resolve(ImageConfiguration.empty)..addListener(_dummyListener);
   }
@@ -46,5 +58,6 @@ class AssetPreloader {
     _timer?.cancel();
     _prevStream?.removeListener(_dummyListener);
     _nextStream?.removeListener(_dummyListener);
+    _warmStream?.removeListener(_dummyListener);
   }
 }
