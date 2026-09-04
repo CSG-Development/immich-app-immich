@@ -619,7 +619,9 @@ class ActionNotifier extends Notifier<void> {
     List<LocalAsset>? assets,
     FutureOr<void> Function(LocalAsset asset, String remoteId)? onAssetUploaded,
   }) async {
-    final assetsToUpload = assets ?? _getAssets(source).whereType<LocalAsset>().toList();
+    final assetsToUpload = (assets ?? _getAssets(source).whereType<LocalAsset>())
+        .where((asset) => asset.isLocalOnly)
+        .toList(growable: false);
     final assetById = {for (final a in assetsToUpload) a.id: a};
     final uploadedAssetIds = <String>{};
     final failedAssetIds = <String>{};

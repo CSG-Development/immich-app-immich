@@ -8,14 +8,20 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_button.widget.dart';
+import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/backup/asset_upload_progress.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/view_intent/view_intent_file_path.provider.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/services/view_intent.service.dart';
+import 'package:immich_mobile/utils/asset_filter.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_ui/immich_ui.dart';
+
+List<LocalAsset> _uploadableLocalAssets(Iterable<BaseAsset> assets) {
+  return AssetFilter(assets).backedUp(isBackedUp: false).local().toList(growable: false);
+}
 
 class UploadActionButton extends ConsumerWidget {
   final ActionSource source;
@@ -37,7 +43,7 @@ class UploadActionButton extends ConsumerWidget {
     Future<void>? uploadDialogFuture;
 
     if (source == ActionSource.timeline) {
-      assets = ref.read(multiSelectProvider).selectedAssets.whereType<LocalAsset>().toList();
+      assets = _uploadableLocalAssets(ref.read(multiSelectProvider).selectedAssets);
       if (assets.isEmpty) {
         return;
       }
@@ -98,6 +104,25 @@ class UploadActionButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bool hasUploadable;
+    switch (source) {
+      case ActionSource.timeline:
+        hasUploadable = ref.watch(
+          multiSelectProvider.select((s) => _uploadableLocalAssets(s.selectedAssets).isNotEmpty),
+        );
+      case ActionSource.viewer:
+        if (ref.watch(viewIntentFilePathProvider) != null) {
+          hasUploadable = true;
+        } else {
+          final asset = ref.watch(assetViewerProvider.select((s) => s.currentAsset));
+          hasUploadable = asset != null && _uploadableLocalAssets({asset}).isNotEmpty;
+        }
+    }
+
+    if (!hasUploadable) {
+      return const SizedBox.shrink();
+    }
+
     return BaseActionButton(
       iconData: Icons.backup_outlined,
       label: "upload".t(context: context),
