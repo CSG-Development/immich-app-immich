@@ -133,20 +133,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
   Future<void> init() async {
     try {
-      _runId = BackupTrace.newRunId();
-      logBackupTrace(
-        _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.uplStart,
-        phase: BackupTracePhase.trigger,
-        step: 'TRIGGER_RECEIVED',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: 'background_worker_init',
-        status: BackupTraceStatus.ok,
-        reasonCode: 'BG_WORKER_INIT_START',
-        runId: _runId,
-      );
+      _runId = Bkp.runBg();
       final certs = await HttpCertPinningManager.loadDefaultRootCertsBytes();
 
       await Future.wait(
@@ -181,37 +168,9 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
 
       // Notify the host that the background worker service has been initialized and is ready to use
       unawaited(_backgroundHostApi.onInitialized());
-      logBackupTrace(
-        _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.uplStart,
-        phase: BackupTracePhase.trigger,
-        step: 'TRIGGER_DEDUPED',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: 'background_worker_init',
-        status: BackupTraceStatus.ok,
-        reasonCode: 'BG_WORKER_INIT_COMPLETE',
-        runId: _runId,
-      );
     } catch (error, stack) {
       _logger.severe("Failed to initialize background worker", error, stack);
       unawaited(_backgroundHostApi.close());
-      logBackupTrace(
-        _logger,
-        level: Level.SEVERE,
-        event: BackupTraceEvent.runSummary,
-        phase: BackupTracePhase.summary,
-        step: 'RUN_SUMMARY',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: 'background_worker_init',
-        status: BackupTraceStatus.fail,
-        reasonCode: 'BG_WORKER_INIT_FAILED',
-        runId: _runId,
-        error: error,
-        stackTrace: stack,
-      );
     }
   }
 
@@ -234,27 +193,14 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
   Future<void> onIosUpload(bool isRefresh, int? maxSeconds) async {
     _logger.info('iOS background upload started with maxSeconds: ${maxSeconds}s');
     final sw = Stopwatch()..start();
-    _runId = BackupTrace.newRunId();
-    var finalStatus = BackupTraceStatus.ok;
+    _runId = Bkp.runBg();
+    var finalStatus = 'ok';
     var finalReasonCode = 'IOS_BG_UPLOAD_END';
     final trigger = isRefresh ? 'ios_bg_refresh' : 'ios_bg_processing';
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplStart,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'BG_WORKER',
-      appState: 'PAUSED',
-      trigger: trigger,
-      status: BackupTraceStatus.ok,
-      reasonCode: 'IOS_BG_UPLOAD_START',
-      runId: _runId,
-      extra: {'maxSeconds': maxSeconds ?? -1},
-    );
+    Bkp.bg(_logger, 'START', run: _runId, reason: trigger, data: {'maxSeconds': maxSeconds ?? -1});
     try {
       if (!await _isEndpointReady(trigger)) {
-        finalStatus = BackupTraceStatus.skip;
+        finalStatus = 'skip';
         finalReasonCode = 'BG_ENDPOINT_UNRESOLVED';
         return;
       }
@@ -284,7 +230,7 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
           },
         );
         if (timedOut) {
-          finalStatus = BackupTraceStatus.partial;
+          finalStatus = 'partial';
           finalReasonCode = 'IOS_BG_TIMEOUT_WINDOW';
         }
       } else {
@@ -292,26 +238,20 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       }
     } catch (error, stack) {
       _logger.severe("Failed to complete iOS background upload", error, stack);
-      finalStatus = BackupTraceStatus.fail;
+      finalStatus = 'fail';
       finalReasonCode = 'IOS_BG_UPLOAD_EXCEPTION';
     } finally {
       sw.stop();
       _logger.info("iOS background upload completed in ${sw.elapsed.inSeconds}s");
-      await _cleanup();
-      logBackupTrace(
+      Bkp.bg(
         _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.runSummary,
-        phase: BackupTracePhase.summary,
-        step: 'RUN_SUMMARY',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: trigger,
+        'END',
+        run: _runId,
+        reason: finalReasonCode,
         status: finalStatus,
-        reasonCode: finalReasonCode,
-        runId: _runId,
-        elapsedMs: sw.elapsedMilliseconds,
+        ms: sw.elapsedMilliseconds,
       );
+      await _cleanup();
     }
   }
 
@@ -327,46 +267,19 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       '$debugLabel started hashTimeout: ${hashTimeout.inSeconds}s, backupTimeout: ${backupTimeout?.inSeconds ?? '~'}s',
     );
     final sw = Stopwatch()..start();
-    _runId = BackupTrace.newRunId();
-    var finalStatus = BackupTraceStatus.ok;
+    _runId = Bkp.runBg();
+    var finalStatus = 'ok';
     var finalReasonCode = '${reasonPrefix}_UPLOAD_END';
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplStart,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'BG_WORKER',
-      appState: 'PAUSED',
-      trigger: trigger,
-      status: BackupTraceStatus.ok,
-      reasonCode: '${reasonPrefix}_UPLOAD_START',
-      runId: _runId,
-      extra: extra,
-    );
+    Bkp.bg(_logger, 'START', run: _runId, reason: '${reasonPrefix}_START', data: extra);
     try {
       if (!await _isEndpointReady(trigger)) {
-        finalStatus = BackupTraceStatus.skip;
+        finalStatus = 'skip';
         finalReasonCode = 'BG_ENDPOINT_UNRESOLVED';
         return;
       }
       if (!await _syncAssets(hashTimeout: hashTimeout)) {
         _logger.warning("Remote sync did not complete successfully, skipping backup");
-        logBackupTrace(
-          _logger,
-          level: Level.WARNING,
-          event: BackupTraceEvent.runSummary,
-          phase: BackupTracePhase.summary,
-          step: 'RUN_SUMMARY',
-          source: 'BG_WORKER',
-          appState: 'PAUSED',
-          trigger: trigger,
-          status: BackupTraceStatus.partial,
-          reasonCode: '${reasonPrefix}_SYNC_FAILED_SKIP_BACKUP',
-          runId: _runId,
-          elapsedMs: sw.elapsedMilliseconds,
-        );
-        finalStatus = BackupTraceStatus.partial;
+        finalStatus = 'partial';
         finalReasonCode = '${reasonPrefix}_SYNC_FAILED_SKIP_BACKUP';
         return;
       }
@@ -389,31 +302,25 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
         cancelTimer?.cancel();
       }
       if (timedOut) {
-        finalStatus = BackupTraceStatus.partial;
+        finalStatus = 'partial';
         finalReasonCode = '${reasonPrefix}_TIMEOUT_WINDOW';
       }
     } catch (error, stack) {
       _logger.severe("Failed to complete $debugLabel", error, stack);
-      finalStatus = BackupTraceStatus.fail;
+      finalStatus = 'fail';
       finalReasonCode = '${reasonPrefix}_UPLOAD_EXCEPTION';
     } finally {
       sw.stop();
       _logger.info("$debugLabel completed in ${sw.elapsed.inSeconds}s");
-      await _cleanup();
-      logBackupTrace(
+      Bkp.bg(
         _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.runSummary,
-        phase: BackupTracePhase.summary,
-        step: 'RUN_SUMMARY',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: trigger,
+        'END',
+        run: _runId,
+        reason: finalReasonCode,
         status: finalStatus,
-        reasonCode: finalReasonCode,
-        runId: _runId,
-        elapsedMs: sw.elapsedMilliseconds,
+        ms: sw.elapsedMilliseconds,
       );
+      await _cleanup();
     }
   }
 
@@ -421,19 +328,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     final endpoint = _resolvedEndpoint ?? _ref?.read(apiServiceProvider).apiClient.basePath;
     if (endpoint == null || endpoint.isEmpty) {
       _logger.warning("Skipping background worker run: endpoint unresolved");
-      logBackupTrace(
-        _logger,
-        level: Level.WARNING,
-        event: BackupTraceEvent.runSummary,
-        phase: BackupTracePhase.summary,
-        step: 'RUN_SUMMARY',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: trigger,
-        status: BackupTraceStatus.skip,
-        reasonCode: 'BG_ENDPOINT_UNRESOLVED',
-        runId: _runId,
-      );
       return false;
     }
     return true;
@@ -444,19 +338,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     _logger.warning("Background worker cancelled");
     try {
       await _cleanup();
-      logBackupTrace(
-        _logger,
-        level: Level.WARNING,
-        event: BackupTraceEvent.uplCancel,
-        phase: BackupTracePhase.trigger,
-        step: 'TRIGGER_SKIPPED',
-        source: 'BG_WORKER',
-        appState: 'PAUSED',
-        trigger: 'background_cancel',
-        status: BackupTraceStatus.retry,
-        reasonCode: 'BG_WORKER_CANCELLED',
-        runId: _runId,
-      );
     } catch (error, stack) {
       dPrint(() => 'Failed to cleanup background worker: $error with stack: $stack');
     }
@@ -508,62 +389,23 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     await runZonedGuarded(
       () async {
         if (_isCleanedUp) {
-          logBackupTrace(
-            _logger,
-            level: Level.WARNING,
-            event: BackupTraceEvent.runSummary,
-            phase: BackupTracePhase.summary,
-            step: 'RUN_SUMMARY',
-            source: 'BG_WORKER',
-            appState: 'PAUSED',
-            trigger: 'background_task',
-            status: BackupTraceStatus.skip,
-            reasonCode: 'BG_WORKER_ALREADY_CLEANED',
-            runId: _runId,
-          );
           return;
         }
 
         if (!_isBackupEnabled) {
           _logger.info("Backup is disabled. Skipping backup routine");
-          logBackupTrace(
-            _logger,
-            level: Level.INFO,
-            event: BackupTraceEvent.runSummary,
-            phase: BackupTracePhase.summary,
-            step: 'RUN_SUMMARY',
-            source: 'BG_WORKER',
-            appState: 'PAUSED',
-            trigger: 'background_task',
-            status: BackupTraceStatus.skip,
-            reasonCode: 'BACKUP_DISABLED',
-            runId: _runId,
-          );
           return;
         }
 
         final currentUser = _ref?.read(currentUserProvider);
         if (currentUser == null) {
           _logger.warning("No current user found. Skipping backup from background");
-          logBackupTrace(
-            _logger,
-            level: Level.WARNING,
-            event: BackupTraceEvent.runSummary,
-            phase: BackupTracePhase.summary,
-            step: 'RUN_SUMMARY',
-            source: 'BG_WORKER',
-            appState: 'PAUSED',
-            trigger: 'background_task',
-            status: BackupTraceStatus.skip,
-            reasonCode: 'NO_CURRENT_USER',
-            runId: _runId,
-          );
           return;
         }
 
         await _ref?.read(connectivityApiProvider).getCapabilities();
         if (Platform.isIOS) {
-          return _ref?.read(driftBackupProvider.notifier).startBackupWithURLSession(currentUser.id);
+          return _ref?.read(driftBackupProvider.notifier).startBackupWithURLSession(currentUser.id, traceRunId: _runId);
         }
 
         return _ref
@@ -572,27 +414,11 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
       },
       (error, stack) {
         dPrint(() => "Error in backup zone $error, $stack");
-        logBackupTrace(
-          _logger,
-          level: Level.SEVERE,
-          event: BackupTraceEvent.runSummary,
-          phase: BackupTracePhase.summary,
-          step: 'RUN_SUMMARY',
-          source: 'BG_WORKER',
-          appState: 'PAUSED',
-          trigger: 'background_task',
-          status: BackupTraceStatus.fail,
-          reasonCode: 'BG_BACKUP_ZONE_ERROR',
-          runId: _runId,
-          error: error,
-          stackTrace: stack,
-        );
       },
     );
   }
 
   Future<bool> _syncAssets({Duration? hashTimeout}) async {
-    final sw = Stopwatch()..start();
     await _localSyncService.sync();
     if (_isCleanedUp) {
       return false;
@@ -614,20 +440,6 @@ class BackgroundWorkerBgService extends BackgroundWorkerFlutterApi {
     }
 
     await hashFuture;
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.syncEnd,
-      phase: BackupTracePhase.sync,
-      step: 'SYNC_END',
-      source: 'BG_WORKER',
-      appState: 'PAUSED',
-      trigger: 'background_task',
-      status: isSuccess ? BackupTraceStatus.ok : BackupTraceStatus.partial,
-      reasonCode: isSuccess ? 'BG_SYNC_OK' : 'BG_SYNC_REMOTE_FAILED',
-      runId: _runId,
-      elapsedMs: sw.elapsedMilliseconds,
-    );
     return isSuccess;
   }
 }

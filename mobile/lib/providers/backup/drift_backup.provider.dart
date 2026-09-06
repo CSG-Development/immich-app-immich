@@ -334,19 +334,13 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       connectivityApi: _ref.read(connectivityApiProvider),
     )) {
       updateError(BackupError.noWifiPermission);
-      logBackupTrace(
+      Bkp.fg(
         _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.uplResumeSkipped,
-        phase: BackupTracePhase.trigger,
-        step: 'TRIGGER_SKIPPED',
-        source: 'APP_RESUME',
-        appState: 'RESUMED',
-        trigger: 'foreground_resume',
-        status: BackupTraceStatus.skip,
-        reasonCode: 'FOREGROUND_BACKUP_NETWORK_BLOCKED',
-        runId: _runId,
-        extra: {'userId': userId},
+        'SKIP',
+        run: _runId,
+        reason: 'NET_BLOCKED',
+        status: 'skip',
+        data: {'userId': userId},
       );
       return;
     }
@@ -356,28 +350,25 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
       stopForegroundBackup();
     }
 
-    _runId ??= BackupTrace.newRunId();
+    // Fresh runId per attempt so START/END pairs stay correlatable.
+    final runId = Bkp.runFg();
+    _runId = runId;
     state = state.copyWith(error: BackupError.none);
 
     // A pause during the recount below nulls _cancelToken, so the run keeps its own reference.
     final cancelToken = Completer<void>();
     _cancelToken = cancelToken;
 
-    logBackupTrace(
+    Bkp.fg(
       _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplStart,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'APP_RESUME',
-      appState: 'RESUMED',
-      trigger: 'foreground_resume',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'FOREGROUND_BACKUP_START',
-      runId: _runId,
-      extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+      'START',
+      run: runId,
+      reason: 'FG_BACKUP',
+      data: {'userId': userId, ..._foregroundBackupStateSnapshot()},
     );
 
+    var endStatus = 'ok';
+    var endReason = 'FG_COMPLETE';
     try {
       await getBackupStatus(userId);
       if (state.processingCount > 0 || _ref.read(syncStatusProvider).isHashing) {
@@ -397,24 +388,29 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
           onICloudProgress: _handleICloudProgress,
         ),
       );
+    } catch (error, stack) {
+      endStatus = 'fail';
+      endReason = 'FG_UPLOAD_ERROR';
+      _logger.severe('Foreground backup failed', error, stack);
     } finally {
       if (identical(_cancelToken, cancelToken)) {
         _cancelToken = null;
       }
-      logBackupTrace(
+      if (cancelToken.isCompleted && endStatus != 'fail') {
+        endStatus = 'partial';
+        endReason = 'FG_ABORTED';
+      }
+      Bkp.fg(
         _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.runSummary,
-        phase: BackupTracePhase.summary,
-        step: 'RUN_SUMMARY',
-        source: 'APP_RESUME',
-        appState: 'RESUMED',
-        trigger: 'foreground_resume',
-        status: cancelToken.isCompleted ? BackupTraceStatus.partial : BackupTraceStatus.ok,
-        reasonCode: cancelToken.isCompleted ? 'FOREGROUND_BACKUP_ABORTED' : 'FOREGROUND_BACKUP_COMPLETE',
-        runId: _runId,
-        extra: {'userId': userId, ..._foregroundBackupStateSnapshot()},
+        'END',
+        run: runId,
+        reason: endReason,
+        status: endStatus,
+        data: {'userId': userId, ..._foregroundBackupStateSnapshot()},
       );
+      if (identical(_runId, runId)) {
+        _runId = null;
+      }
       await _reconcileBackupCounts(userId);
     }
   }
@@ -423,21 +419,15 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     final existingToken = _cancelToken;
     if (existingToken != null) {
       _logger.info('Foreground backup cancelled');
+      Bkp.fg(
+        _logger,
+        'CANCEL',
+        run: _runId,
+        reason: 'FG_STOP',
+        status: 'skip',
+        data: _foregroundBackupStateSnapshot(),
+      );
     }
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplCancel,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_SKIPPED',
-      source: 'APP_RESUME',
-      appState: 'PAUSED',
-      trigger: 'foreground_stop',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'FOREGROUND_BACKUP_CANCEL',
-      runId: _runId,
-      extra: _foregroundBackupStateSnapshot(),
-    );
     _completeCancelToken(existingToken);
     _cancelToken = null;
     _foregroundUploadService.cancel();
@@ -545,13 +535,18 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
     _uploadSpeedManager.removeTask(localAssetId);
   }
 
-  Future<void> startBackupWithURLSession(String userId) async {
+  Future<void> startBackupWithURLSession(String userId, {String? traceRunId}) async {
     if (!mounted) {
       _logger.warning("Skip handleBackupResume (pre-call): notifier disposed");
       return;
     }
     _logger.info("Start background backup sequence");
     state = state.copyWith(error: BackupError.none);
+    // Network-recovery path (main isolate) has no worker START — mint a runId here.
+    final runId = traceRunId ?? Bkp.runBg();
+    if (traceRunId == null) {
+      Bkp.bg(_logger, 'START', run: runId, reason: 'URLSESSION_RESUME');
+    }
     final tasks = await _backgroundUploadService.getActiveTasks(kBackupGroup);
     if (!mounted) {
       _logger.warning("Skip handleBackupResume (post-call): notifier disposed");
@@ -561,10 +556,17 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
 
     if (tasks.isEmpty) {
       _logger.info("No pending tasks, starting new upload");
-      return _backgroundUploadService.uploadBackupCandidates(userId);
+      return _backgroundUploadService.uploadBackupCandidates(userId, traceRunId: runId);
     }
 
     _logger.info("Resuming upload ${tasks.length} assets");
+    Bkp.bg(
+      _logger,
+      'QUEUE',
+      run: runId,
+      reason: 'RESUME_PENDING',
+      data: {'userId': userId, 'pending': tasks.length},
+    );
     return _backgroundUploadService.resume();
   }
 }
