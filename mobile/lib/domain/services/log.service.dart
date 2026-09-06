@@ -145,7 +145,7 @@ class LogService {
   }
 
   bool _shouldDropBackupUploadTelemetry(String message) {
-    final isBackupOrUploadTelemetry = message.startsWith(kBackupTraceTag) || message.startsWith(_uploadTelemetryTag);
+    final isBackupOrUploadTelemetry = isBackupTraceMessage(message) || message.startsWith(_uploadTelemetryTag);
     if (!isBackupOrUploadTelemetry) {
       return false;
     }

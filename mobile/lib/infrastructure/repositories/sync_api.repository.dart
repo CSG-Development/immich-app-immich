@@ -7,7 +7,6 @@ import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
-import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/fork_server_version.dart';
 import 'package:immich_mobile/utils/semver.dart';
 import 'package:logging/logging.dart';
@@ -35,22 +34,7 @@ class SyncApiRepository {
     Future<void>? abortSignal,
   }) async {
     final stopwatch = Stopwatch()..start();
-    final runId = BackupTrace.newRunId();
     final client = httpClient ?? NetworkRepository.client;
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.syncStart,
-      phase: BackupTracePhase.sync,
-      step: 'SYNC_START',
-      source: 'APP_RESUME',
-      appState: 'RESUMED',
-      trigger: 'sync_request',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'SYNC_STREAM_START',
-      runId: runId,
-      extra: {'batchSize': batchSize},
-    );
     final basePath = _api.apiClient.basePath;
     if (basePath.isEmpty) {
       throw ApiException(HttpStatus.serviceUnavailable, 'Unable to resolve server endpoint');
@@ -134,20 +118,6 @@ class SyncApiRepository {
         }
 
         await onData(_parseLines(lines), abort, reset);
-        logBackupTrace(
-          _logger,
-          level: Level.INFO,
-          event: BackupTraceEvent.syncBatch,
-          phase: BackupTracePhase.sync,
-          step: 'SYNC_BATCH_PROCESSED',
-          source: 'APP_RESUME',
-          appState: 'RESUMED',
-          trigger: 'sync_stream_batch',
-          status: BackupTraceStatus.ok,
-          reasonCode: 'SYNC_BATCH_OK',
-          runId: runId,
-          extra: {'batchSize': lines.length},
-        );
         lines.clear();
       }
 
@@ -155,22 +125,6 @@ class SyncApiRepository {
         await onData(_parseLines(lines), abort, reset);
       }
     } catch (error, stack) {
-      logBackupTrace(
-        _logger,
-        level: Level.SEVERE,
-        event: BackupTraceEvent.syncEnd,
-        phase: BackupTracePhase.sync,
-        step: 'SYNC_FAIL',
-        source: 'APP_RESUME',
-        appState: 'RESUMED',
-        trigger: 'sync_request',
-        status: BackupTraceStatus.fail,
-        reasonCode: 'SYNC_STREAM_ERROR',
-        runId: runId,
-        elapsedMs: stopwatch.elapsedMilliseconds,
-        error: error,
-        stackTrace: stack,
-      );
       return Future.error(error, stack);
     } finally {
       // Never close the shared NetworkRepository.client — that only nulls the
@@ -181,20 +135,6 @@ class SyncApiRepository {
     }
     stopwatch.stop();
     _logger.info("Remote Sync completed in ${stopwatch.elapsed.inMilliseconds}ms");
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.syncEnd,
-      phase: BackupTracePhase.sync,
-      step: 'SYNC_END',
-      source: 'APP_RESUME',
-      appState: 'RESUMED',
-      trigger: 'sync_request',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'SYNC_STREAM_COMPLETE',
-      runId: runId,
-      elapsedMs: stopwatch.elapsedMilliseconds,
-    );
   }
 
   List<SyncEvent> _parseLines(List<String> lines) {
