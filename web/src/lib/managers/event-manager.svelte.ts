@@ -46,7 +46,7 @@ export type Events = {
   AlbumDelete: [AlbumResponseDto];
   AlbumShare: [];
   AlbumUserUpdate: [{ albumId: string; userId: string; role: AlbumUserRole }];
-  AlbumUserDelete: [{ albumId: string; userId: string }];
+  AlbumUserDelete: [{ albumId: string; userId: string; selfLeft?: boolean }];
   AlbumAccessLost: [{ albumId: string; result: AlbumEditAccessResult }];
 
   PersonUpdate: [PersonResponseDto];

@@ -7,7 +7,12 @@ import AlbumOptionsModal from '$lib/modals/AlbumOptionsModal.svelte';
 import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
 import { Route } from '$lib/route';
 import { user } from '$lib/stores/user.store';
-import { checkAlbumEditAccess, isAlbumPermissionError, albumAccessMessageKey } from '$lib/utils/album-access';
+import {
+  albumAccessMessageKey,
+  checkAlbumEditAccess,
+  isAlbumEditor,
+  isAlbumPermissionError,
+} from '$lib/utils/album-access';
 import { createAlbumAndRedirect } from '$lib/utils/album-utils';
 import { downloadArchive } from '$lib/utils/asset-utils';
 import { openFileUploadDialog } from '$lib/utils/file-uploader';
@@ -46,7 +51,9 @@ export const getAlbumsActions = ($t: MessageFormatter) => {
 };
 
 export const getAlbumActions = ($t: MessageFormatter, album: AlbumResponseDto) => {
-  const isOwned = get(user).id === album.ownerId;
+  const currentUserId = get(user).id;
+  const isOwned = currentUserId === album.ownerId;
+  const canManageAlbum = isAlbumEditor(album, currentUserId);
 
   const Share: ActionItem = {
     title: $t('share'),
@@ -61,6 +68,7 @@ export const getAlbumActions = ($t: MessageFormatter, album: AlbumResponseDto) =
     type: $t('command'),
     icon: mdiPlus,
     color: 'primary',
+    $if: () => canManageAlbum,
     onAction: () => modalManager.show(AlbumAddUsersModal, { album }),
   };
 
@@ -69,6 +77,7 @@ export const getAlbumActions = ($t: MessageFormatter, album: AlbumResponseDto) =
     type: $t('command'),
     icon: mdiLink,
     color: 'primary',
+    $if: () => canManageAlbum,
     onAction: () => modalManager.show(SharedLinkCreateModal, { albumId: album.id }),
   };
 
@@ -229,6 +238,32 @@ export const handleRemoveUserFromAlbum = async (album: AlbumResponseDto, albumUs
     eventManager.emit('AlbumUserDelete', { albumId: album.id, userId: albumUser.id });
   } catch (error) {
     handleError(error, $t('errors.unable_to_remove_album_users'));
+  }
+};
+
+export const confirmLeaveAlbum = async (album: AlbumResponseDto) => {
+  const $t = await getFormatter();
+
+  return modalManager.showDialog({
+    title: $t('album_leave'),
+    prompt: $t('album_leave_confirmation', { values: { album: album.albumName } }),
+    confirmText: $t('leave'),
+  });
+};
+
+export const handleLeaveAlbum = async (album: AlbumResponseDto) => {
+  const $t = await getFormatter();
+  const currentUserId = get(user).id;
+
+  try {
+    await removeUserFromAlbum({ id: album.id, userId: 'me' });
+    eventManager.emit('AlbumUserDelete', { albumId: album.id, userId: currentUserId, selfLeft: true });
+    toastManager.primary($t('you_left_the_album'));
+    await goto(Route.albums());
+    return true;
+  } catch (error) {
+    handleError(error, $t('album_viewer_appbar_share_err_leave'));
+    return false;
   }
 };
 
