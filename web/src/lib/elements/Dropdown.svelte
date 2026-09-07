@@ -160,7 +160,7 @@
           : 'transition-all hover:bg-immich-primary-12 dark:hover:bg-immich-dark-primary-24'}
         <button
           type="button"
-          class="grid grid-cols-[24px_1fr] place-items-center py-[15px] px-[18px] gap-4 disabled:opacity-40 {buttonStyle}"
+          class="grid w-full grid-cols-[24px_1fr] items-center justify-items-start text-start py-[15px] px-[18px] gap-4 disabled:opacity-40 {buttonStyle}"
           disabled={renderedOption.disabled}
           onclick={() => !renderedOption.disabled && handleSelectOption(option)}
         >
@@ -168,12 +168,12 @@
             <div class="text-primary-700">
               <Icon icon={mdiCheck} size="24" />
             </div>
-            <p class="justify-self-start text-primary-700">
+            <p class="w-full text-start whitespace-nowrap text-primary-700">
               {renderedOption.title}
             </p>
           {:else}
             <div></div>
-            <p class="justify-self-start font-normal text-base">
+            <p class="w-full text-start whitespace-nowrap font-normal text-base">
               {renderedOption.title}
             </p>
           {/if}
