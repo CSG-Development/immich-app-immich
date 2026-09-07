@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:pinput/pinput.dart';
 
@@ -16,6 +17,7 @@ class PinInput extends StatelessWidget {
   final PinTheme? errorPinTheme;
   final Widget? cursor;
   final Widget Function(int)? separatorBuilder;
+  final TextInputType? keyboardType;
 
   const PinInput({
     super.key,
@@ -32,6 +34,7 @@ class PinInput extends StatelessWidget {
     this.errorPinTheme,
     this.cursor,
     this.separatorBuilder,
+    this.keyboardType,
   });
 
   @override
@@ -93,6 +96,14 @@ class PinInput extends StatelessWidget {
           ],
         );
 
+    // iPadOS shows a floating mini numpad for TextInputType.number that often
+    // freezes after rotation. signed: true forces the docked full keyboard.
+    final isIpad = context.isTablet && Theme.of(context).platform == TargetPlatform.iOS;
+    final effectiveKeyboardType = keyboardType ??
+        (isIpad
+            ? const TextInputType.numberWithOptions(signed: true)
+            : TextInputType.number);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -116,6 +127,8 @@ class PinInput extends StatelessWidget {
           errorPinTheme: baseErrorPinTheme,
           pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
           length: length ?? 6,
+          keyboardType: effectiveKeyboardType,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: onChanged,
           onCompleted: onCompleted,
         ),
