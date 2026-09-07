@@ -379,12 +379,24 @@
     }
   };
 
-  const onAlbumUserDelete = async ({ albumId, userId }: { albumId: string; userId: string }) => {
+  const onAlbumUserDelete = async ({
+    albumId,
+    userId,
+    selfLeft,
+  }: {
+    albumId: string;
+    userId: string;
+    selfLeft?: boolean;
+  }) => {
     if (albumId !== album.id) {
       return;
     }
 
     if (userId === $user.id) {
+      if (selfLeft) {
+        return;
+      }
+
       await handleLostAlbumAccess({ kind: 'access_denied' });
       return;
     }

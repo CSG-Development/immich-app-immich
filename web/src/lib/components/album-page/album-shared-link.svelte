@@ -9,9 +9,10 @@
   type Props = {
     album: AlbumResponseDto;
     sharedLink: SharedLinkResponseDto;
+    canManage?: boolean;
   };
 
-  const { album, sharedLink }: Props = $props();
+  const { album, sharedLink, canManage = true }: Props = $props();
 
   const getShareProperties = () =>
     [
@@ -42,6 +43,8 @@
   <div class="flex">
     <ActionButton action={ViewQrCode} />
     <ActionButton action={Copy} />
-    <ActionButton action={Delete} />
+    {#if canManage}
+      <ActionButton action={Delete} />
+    {/if}
   </div>
 </div>
