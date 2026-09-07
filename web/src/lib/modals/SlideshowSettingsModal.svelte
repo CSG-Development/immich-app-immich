@@ -115,7 +115,7 @@
         tempSlideshowLook = handleToggle(option, lookOptions) || tempSlideshowLook;
       }}
       position="bottom-right"
-      class="!min-w-[220px]"
+      class="!min-w-[280px]"
     />
 
     <Field label={$t('autoplay_slideshow')}>
