@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
@@ -15,8 +16,7 @@ class DownloadStatusFloatingButton extends ConsumerWidget {
     final isDownloading = ref
         .watch(downloadStateProvider.select((state) => state.taskProgress))
         .values
-        .where((element) => element.progress != 1)
-        .isNotEmpty;
+        .any((element) => element.status != TaskStatus.complete && element.progress != 1);
 
     return shouldShow
         ? Badge.count(
