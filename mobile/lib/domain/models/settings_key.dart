@@ -51,6 +51,8 @@ enum SettingsKey<T> {
 
   // Log
   logLevel<LogLevel>(codec: EnumCodec(LogLevel.values)),
+  logRetainSessions<int>(),
+  logRetainBackgroundSessions<int>(),
 
   // Map
   mapShowFavoriteOnly<bool>(),

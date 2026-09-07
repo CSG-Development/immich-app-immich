@@ -10,16 +10,26 @@ import 'package:immich_mobile/infrastructure/repositories/settings.repository.da
 import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 
 /// Service responsible for handling application logging.
 ///
 /// It listens to Dart's [Logger.root], buffers logs in memory (optionally),
 /// writes them to a persistent [LogRepository], and manages log levels via
 /// [SettingsRepository].
+///
+/// Each foreground / background process opens a new log session. Isolates join
+/// the parent session that spawned them so their logs appear under the same
+/// filter entry. Retention keeps the latest sessions per [LogRuntime] and
+/// enforces [kLogSoftCap] on startup.
 class LogService {
   static const String _uploadTelemetryTag = 'upload_telemetry';
+  static const _uuid = Uuid();
+
   final LogRepository _logRepository;
   final SettingsRepository _settingsRepository;
+  final String _sessionId;
+  final LogRuntime _runtime;
 
   final List<LogMessage> _msgBuffer = [];
 
@@ -40,15 +50,22 @@ class LogService {
     return _instance!;
   }
 
+  String get sessionId => _sessionId;
+  LogRuntime get runtime => _runtime;
+
   static Future<LogService> init({
     required LogRepository logRepository,
     required SettingsRepository settingsRepository,
     bool shouldBuffer = true,
+    LogRuntime runtime = LogRuntime.foreground,
+    String? sessionId,
   }) async {
     _instance ??= await create(
       logRepository: logRepository,
       settingsRepository: settingsRepository,
       shouldBuffer: shouldBuffer,
+      runtime: runtime,
+      sessionId: sessionId,
     );
     return _instance!;
   }
@@ -57,15 +74,33 @@ class LogService {
     required LogRepository logRepository,
     required SettingsRepository settingsRepository,
     bool shouldBuffer = true,
+    LogRuntime runtime = LogRuntime.foreground,
+    String? sessionId,
   }) async {
-    final instance = LogService._(logRepository, settingsRepository, shouldBuffer);
-    await logRepository.truncate(limit: kLogTruncateLimit);
+    final isNewSession = sessionId == null;
+    final instance = LogService._(
+      logRepository,
+      settingsRepository,
+      shouldBuffer,
+      sessionId: sessionId ?? _uuid.v4(),
+      runtime: runtime,
+    );
+    // Isolates join the parent session — skip prune to avoid racing the parent writer.
+    if (isNewSession) {
+      await instance._pruneWithConfiguredRetention();
+    }
     final level = instance._settingsRepository.appConfig.logLevel;
     Logger.root.level = Level.LEVELS.elementAtOrNull(level.index) ?? Level.INFO;
     return instance;
   }
 
-  LogService._(this._logRepository, this._settingsRepository, this._shouldBuffer) {
+  LogService._(
+    this._logRepository,
+    this._settingsRepository,
+    this._shouldBuffer, {
+    required this._sessionId,
+    required this._runtime,
+  }) {
     _logSubscription = Logger.root.onRecord.listen(_handleLogRecord);
   }
 
@@ -88,6 +123,8 @@ class LogService {
       logger: r.loggerName,
       error: r.error?.toString(),
       stack: r.stackTrace?.toString(),
+      sessionId: _sessionId,
+      runtime: _runtime,
     );
 
     if (_shouldBuffer) {
@@ -103,9 +140,67 @@ class LogService {
     Logger.root.level = level.toLevel();
   }
 
-  Future<List<LogMessage>> getMessages() async {
-    final logsFromDb = await _logRepository.getAll();
+  Future<void> setRetainSessions(int count) async {
+    final clamped = count.clamp(kLogRetainSessionsMin, kLogRetainSessionsMax);
+    await _settingsRepository.write(SettingsKey.logRetainSessions, clamped);
+    await _pruneWithConfiguredRetention();
+  }
+
+  Future<void> setRetainBackgroundSessions(int count) async {
+    final clamped = count.clamp(kLogRetainSessionsMin, kLogRetainSessionsMax);
+    await _settingsRepository.write(SettingsKey.logRetainBackgroundSessions, clamped);
+    await _pruneWithConfiguredRetention();
+  }
+
+  Future<void> _pruneWithConfiguredRetention() {
+    final config = _settingsRepository.appConfig;
+    return _logRepository.pruneSessions(
+      retainByRuntime: {
+        LogRuntime.foreground: config.logRetainSessions,
+        LogRuntime.background: config.logRetainBackgroundSessions,
+        LogRuntime.isolate: kLogRetainIsolateSessions,
+      },
+    );
+  }
+
+  Future<List<LogMessage>> getMessages({String? sessionId}) async {
+    final logsFromDb = sessionId == null
+        ? await _logRepository.getAll()
+        : await _logRepository.getBySessionId(sessionId);
+
+    final includeBuffer = sessionId == null || sessionId == _sessionId;
+    if (!includeBuffer || _msgBuffer.isEmpty) {
+      return logsFromDb;
+    }
+
     return [..._msgBuffer.reversed, ...logsFromDb];
+  }
+
+  Future<List<LogSessionInfo>> getSessions() async {
+    final sessions = await _logRepository.getSessions();
+    final bufferCount = _msgBuffer.length;
+    if (bufferCount == 0) {
+      return sessions;
+    }
+
+    final idx = sessions.indexWhere((s) => s.sessionId == _sessionId);
+    if (idx >= 0) {
+      final existing = sessions[idx];
+      return [
+        for (var i = 0; i < sessions.length; i++)
+          if (i == idx) existing.copyWith(rowCount: existing.rowCount + bufferCount) else sessions[i],
+      ];
+    }
+
+    return [
+      LogSessionInfo(
+        sessionId: _sessionId,
+        runtime: _runtime,
+        startedAt: _msgBuffer.first.createdAt,
+        rowCount: bufferCount,
+      ),
+      ...sessions,
+    ];
   }
 
   Future<void> clearLogs() async {

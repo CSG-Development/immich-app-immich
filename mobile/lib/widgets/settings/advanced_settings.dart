@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
@@ -36,6 +37,8 @@ class AdvancedSettings extends HookConsumerWidget {
     final isManageMediaSupported = useState(false);
     final manageMediaAndroidPermission = useState(false);
     final levelId = useState<int>(ref.read(appConfigProvider).logLevel.index);
+    final retainSessions = useState<int>(ref.read(appConfigProvider).logRetainSessions);
+    final retainBackgroundSessions = useState<int>(ref.read(appConfigProvider).logRetainBackgroundSessions);
     final preferRemote = useState(ref.read(appConfigProvider).image.preferRemote);
     useValueChanged(
       preferRemote.value,
@@ -107,7 +110,7 @@ class AdvancedSettings extends HookConsumerWidget {
             ),
           ],
         ),
-      if (logLevelVisibility.isVisible)
+      if (logLevelVisibility.isVisible) ...[
         SettingsSliderListTile(
           text: "advanced_settings_log_level_title".tr(namedArgs: {'level': logLevel}),
           valueNotifier: levelId,
@@ -116,6 +119,27 @@ class AdvancedSettings extends HookConsumerWidget {
           noDivisons: 7,
           label: logLevel,
         ),
+        SettingsSliderListTile(
+          text: "advanced_settings_log_retain_sessions_title".tr(namedArgs: {'count': '${retainSessions.value}'}),
+          valueNotifier: retainSessions,
+          maxValue: kLogRetainSessionsMax.toDouble(),
+          minValue: kLogRetainSessionsMin.toDouble(),
+          noDivisons: kLogRetainSessionsMax - kLogRetainSessionsMin,
+          label: '${retainSessions.value}',
+          onChangeEnd: (value) => LogService.I.setRetainSessions(value),
+        ),
+        SettingsSliderListTile(
+          text: "advanced_settings_log_retain_background_sessions_title".tr(
+            namedArgs: {'count': '${retainBackgroundSessions.value}'},
+          ),
+          valueNotifier: retainBackgroundSessions,
+          maxValue: kLogRetainSessionsMax.toDouble(),
+          minValue: kLogRetainSessionsMin.toDouble(),
+          noDivisons: kLogRetainSessionsMax - kLogRetainSessionsMin,
+          label: '${retainBackgroundSessions.value}',
+          onChangeEnd: (value) => LogService.I.setRetainBackgroundSessions(value),
+        ),
+      ],
       SettingsSwitchListTile(
         valueNotifier: backupUploadTelemetry,
         title: "advanced_settings_backup_upload_diagnostic_logs".tr(),

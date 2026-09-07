@@ -1,5 +1,6 @@
 import 'package:background_downloader/background_downloader.dart';
 import 'package:immich_mobile/constants/constants.dart';
+import 'package:immich_mobile/domain/models/log.model.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
@@ -44,7 +45,12 @@ void configureFileDownloaderNotifications() {
 }
 
 abstract final class Bootstrap {
-  static Future<(Drift, DriftLogger)> initDomain({bool listenStoreUpdates = true, bool shouldBufferLogs = true}) async {
+  static Future<(Drift, DriftLogger)> initDomain({
+    bool listenStoreUpdates = true,
+    bool shouldBufferLogs = true,
+    LogRuntime logRuntime = LogRuntime.foreground,
+    String? logSessionId,
+  }) async {
     await configureSqliteCache();
     final (db, updatePool) = await openSqliteConnectionWithUpdatePool(name: 'immich');
     final drift = Drift.sqlite(db, updatePool);
@@ -53,7 +59,12 @@ abstract final class Bootstrap {
     await StoreService.init(storeRepository: storeRepo, listenUpdates: listenStoreUpdates);
 
     final settingsRepo = await SettingsRepository.ensureInitialized(drift);
-    final logDb = await _initLogger(settingsRepository: settingsRepo, shouldBufferLogs: shouldBufferLogs);
+    final logDb = await _initLogger(
+      settingsRepository: settingsRepo,
+      shouldBufferLogs: shouldBufferLogs,
+      logRuntime: logRuntime,
+      logSessionId: logSessionId,
+    );
 
     // NetworkRepository.init runs after HttpCertPinningManager.initialize() in main().
     // Remove once all asset operations are migrated to Native APIs
@@ -62,7 +73,12 @@ abstract final class Bootstrap {
   }
 }
 
-Future<DriftLogger> _initLogger({required SettingsRepository settingsRepository, bool shouldBufferLogs = true}) async {
+Future<DriftLogger> _initLogger({
+  required SettingsRepository settingsRepository,
+  bool shouldBufferLogs = true,
+  LogRuntime logRuntime = LogRuntime.foreground,
+  String? logSessionId,
+}) async {
   Future<DriftLogger> open() async => DriftLogger.sqlite(await openSqliteConnection(name: 'immich_logs'));
 
   DriftLogger logDb = await open();
@@ -85,6 +101,8 @@ Future<DriftLogger> _initLogger({required SettingsRepository settingsRepository,
     logRepository: LogRepository(logDb),
     settingsRepository: settingsRepository,
     shouldBuffer: shouldBufferLogs,
+    runtime: logRuntime,
+    sessionId: logSessionId,
   );
   if (wasCorrupt) {
     Logger('bootstrap:initLogger').warning('Logs database was corrupt and has been recreated');

@@ -14,11 +14,34 @@ import 'package:immich_mobile/services/immich_logger.service.dart';
 class AppLogPage extends HookConsumerWidget {
   const AppLogPage({super.key});
 
+  static const _allSessionsKey = '';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final immichLogger = LogService.I;
     final shouldReload = useState(false);
-    final logMessages = useFuture(useMemoized(() => immichLogger.getMessages(), [shouldReload.value]));
+    final selectedSessionId = useState<String?>(null);
+
+    final sessions = useFuture(useMemoized(() => immichLogger.getSessions(), [shouldReload.value]));
+    final logMessages = useFuture(
+      useMemoized(
+        () => immichLogger.getMessages(sessionId: selectedSessionId.value),
+        [shouldReload.value, selectedSessionId.value],
+      ),
+    );
+
+    // Drop stale filter if the session was cleared / pruned away.
+    useEffect(() {
+      final sessionId = selectedSessionId.value;
+      final data = sessions.data;
+      if (sessionId == null || data == null) {
+        return null;
+      }
+      if (!data.any((s) => s.sessionId == sessionId)) {
+        selectedSessionId.value = null;
+      }
+      return null;
+    }, [sessions.data]);
 
     Widget colorStatusIndicator(Color color) {
       return Column(
@@ -47,6 +70,13 @@ class AppLogPage extends HookConsumerWidget {
       _ => context.primaryColor.withValues(alpha: 0.1),
     };
 
+    String formatSessionLabel(LogSessionInfo session) {
+      final shortId = session.sessionId.length > 8 ? session.sessionId.substring(0, 8) : session.sessionId;
+      final when = DateFormat('MMM d HH:mm').format(session.startedAt.toLocal());
+      final current = session.sessionId == immichLogger.sessionId ? ' · ${'logs_current_session'.tr()}' : '';
+      return '${session.runtime.name} · $when · $shortId · ${session.rowCount}$current';
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('logs'.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
@@ -60,8 +90,9 @@ class AppLogPage extends HookConsumerWidget {
               semanticLabel: "clear_logs".tr(),
               size: 20.0,
             ),
-            onPressed: () {
-              immichLogger.clearLogs();
+            onPressed: () async {
+              await immichLogger.clearLogs();
+              selectedSessionId.value = null;
               shouldReload.value = !shouldReload.value;
             },
           ),
@@ -75,7 +106,12 @@ class AppLogPage extends HookConsumerWidget {
                   size: 20.0,
                 ),
                 onPressed: () {
-                  ImmichLogger.shareLogs(iconContext);
+                  // Share exactly what is shown for the current filter.
+                  ImmichLogger.shareLogs(
+                    iconContext,
+                    sessionId: selectedSessionId.value,
+                    messages: logMessages.data,
+                  );
                 },
               );
             },
@@ -89,31 +125,60 @@ class AppLogPage extends HookConsumerWidget {
         ),
         centerTitle: true,
       ),
-      body: ListView.separated(
-        separatorBuilder: (context, index) {
-          return const Divider(height: 0);
-        },
-        itemCount: logMessages.data?.length ?? 0,
-        itemBuilder: (context, index) {
-          var logMessage = logMessages.data![index];
-          return ListTile(
-            onTap: () => context.pushRoute(AppLogDetailRoute(logMessage: logMessage)),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded),
-            visualDensity: VisualDensity.compact,
-            dense: true,
-            tileColor: getTileColor(logMessage.level),
-            minLeadingWidth: 10,
-            title: Text(
-              truncateLogMessage(logMessage.message, 4),
-              style: TextStyle(fontSize: 14.0, color: context.colorScheme.onSurface),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: DropdownMenu<String>(
+              key: ValueKey('session-filter-${shouldReload.value}-${sessions.data?.length ?? 0}'),
+              initialSelection: selectedSessionId.value ?? _allSessionsKey,
+              expandedInsets: EdgeInsets.zero,
+              label: Text('logs_session_filter'.tr()),
+              dropdownMenuEntries: [
+                DropdownMenuEntry(value: _allSessionsKey, label: 'logs_all_sessions'.tr()),
+                for (final session in sessions.data ?? const <LogSessionInfo>[])
+                  DropdownMenuEntry(value: session.sessionId, label: formatSessionLabel(session)),
+              ],
+              onSelected: (value) {
+                selectedSessionId.value = (value == null || value == _allSessionsKey) ? null : value;
+              },
+              menuStyle: const MenuStyle(
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
+                ),
+              ),
             ),
-            subtitle: Text(
-              "at ${DateFormat("HH:mm:ss.SSS").format(logMessage.createdAt)} in ${logMessage.logger}",
-              style: TextStyle(fontSize: 12.0, color: context.colorScheme.onSurfaceSecondary),
+          ),
+          Expanded(
+            child: ListView.separated(
+              separatorBuilder: (context, index) {
+                return const Divider(height: 0);
+              },
+              itemCount: logMessages.data?.length ?? 0,
+              itemBuilder: (context, index) {
+                var logMessage = logMessages.data![index];
+                return ListTile(
+                  onTap: () => context.pushRoute(AppLogDetailRoute(logMessage: logMessage)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded),
+                  visualDensity: VisualDensity.compact,
+                  dense: true,
+                  tileColor: getTileColor(logMessage.level),
+                  minLeadingWidth: 10,
+                  title: Text(
+                    truncateLogMessage(logMessage.message, 4),
+                    style: TextStyle(fontSize: 14.0, color: context.colorScheme.onSurface),
+                  ),
+                  subtitle: Text(
+                    "at ${DateFormat("HH:mm:ss.SSS").format(logMessage.createdAt)} in ${logMessage.logger}"
+                    " · ${logMessage.runtime.name}",
+                    style: TextStyle(fontSize: 12.0, color: context.colorScheme.onSurfaceSecondary),
+                  ),
+                  leading: buildLeadingIcon(logMessage.level),
+                );
+              },
             ),
-            leading: buildLeadingIcon(logMessage.level),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

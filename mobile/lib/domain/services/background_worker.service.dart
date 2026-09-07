@@ -9,6 +9,7 @@ import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
+import 'package:immich_mobile/domain/models/log.model.dart';
 import 'package:immich_mobile/domain/services/hash.service.dart';
 import 'package:immich_mobile/domain/services/local_sync.service.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
@@ -470,7 +471,11 @@ Future<void> backgroundSyncNativeEntrypoint() async {
 
   NetworkRepository.enableShutdownTracking();
 
-  final (drift, logDB) = await Bootstrap.initDomain(shouldBufferLogs: false, listenStoreUpdates: false);
+  final (drift, logDB) = await Bootstrap.initDomain(
+    shouldBufferLogs: false,
+    listenStoreUpdates: false,
+    logRuntime: LogRuntime.background,
+  );
   await HttpCertPinningManager.ensureInitialized();
   await NetworkRepository.init();
 
