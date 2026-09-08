@@ -5,6 +5,8 @@ import 'package:immich_mobile/infrastructure/entities/log.entity.drift.dart'
     as i1;
 import 'package:immich_mobile/domain/models/log.model.dart' as i2;
 import 'package:immich_mobile/infrastructure/entities/log.entity.dart' as i3;
+import 'package:drift/src/runtime/query_builder/query_builder.dart' as i4;
+import 'package:immich_mobile/constants/constants.dart' as i5;
 
 typedef $$LogMessageEntityTableCreateCompanionBuilder =
     i1.LogMessageEntityCompanion Function({
@@ -15,6 +17,8 @@ typedef $$LogMessageEntityTableCreateCompanionBuilder =
       required DateTime createdAt,
       i0.Value<String?> logger,
       i0.Value<String?> stack,
+      i0.Value<String> sessionId,
+      i0.Value<i2.LogRuntime> runtime,
     });
 typedef $$LogMessageEntityTableUpdateCompanionBuilder =
     i1.LogMessageEntityCompanion Function({
@@ -25,6 +29,8 @@ typedef $$LogMessageEntityTableUpdateCompanionBuilder =
       i0.Value<DateTime> createdAt,
       i0.Value<String?> logger,
       i0.Value<String?> stack,
+      i0.Value<String> sessionId,
+      i0.Value<i2.LogRuntime> runtime,
     });
 
 class $$LogMessageEntityTableFilterComposer
@@ -71,6 +77,17 @@ class $$LogMessageEntityTableFilterComposer
     column: $table.stack,
     builder: (column) => i0.ColumnFilters(column),
   );
+
+  i0.ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => i0.ColumnFilters(column),
+  );
+
+  i0.ColumnWithTypeConverterFilters<i2.LogRuntime, i2.LogRuntime, int>
+  get runtime => $composableBuilder(
+    column: $table.runtime,
+    builder: (column) => i0.ColumnWithTypeConverterFilters(column),
+  );
 }
 
 class $$LogMessageEntityTableOrderingComposer
@@ -116,6 +133,16 @@ class $$LogMessageEntityTableOrderingComposer
     column: $table.stack,
     builder: (column) => i0.ColumnOrderings(column),
   );
+
+  i0.ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => i0.ColumnOrderings(column),
+  );
+
+  i0.ColumnOrderings<int> get runtime => $composableBuilder(
+    column: $table.runtime,
+    builder: (column) => i0.ColumnOrderings(column),
+  );
 }
 
 class $$LogMessageEntityTableAnnotationComposer
@@ -147,6 +174,12 @@ class $$LogMessageEntityTableAnnotationComposer
 
   i0.GeneratedColumn<String> get stack =>
       $composableBuilder(column: $table.stack, builder: (column) => column);
+
+  i0.GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  i0.GeneratedColumnWithTypeConverter<i2.LogRuntime, int> get runtime =>
+      $composableBuilder(column: $table.runtime, builder: (column) => column);
 }
 
 class $$LogMessageEntityTableTableManager
@@ -196,6 +229,8 @@ class $$LogMessageEntityTableTableManager
                 i0.Value<DateTime> createdAt = const i0.Value.absent(),
                 i0.Value<String?> logger = const i0.Value.absent(),
                 i0.Value<String?> stack = const i0.Value.absent(),
+                i0.Value<String> sessionId = const i0.Value.absent(),
+                i0.Value<i2.LogRuntime> runtime = const i0.Value.absent(),
               }) => i1.LogMessageEntityCompanion(
                 id: id,
                 message: message,
@@ -204,6 +239,8 @@ class $$LogMessageEntityTableTableManager
                 createdAt: createdAt,
                 logger: logger,
                 stack: stack,
+                sessionId: sessionId,
+                runtime: runtime,
               ),
           createCompanionCallback:
               ({
@@ -214,6 +251,8 @@ class $$LogMessageEntityTableTableManager
                 required DateTime createdAt,
                 i0.Value<String?> logger = const i0.Value.absent(),
                 i0.Value<String?> stack = const i0.Value.absent(),
+                i0.Value<String> sessionId = const i0.Value.absent(),
+                i0.Value<i2.LogRuntime> runtime = const i0.Value.absent(),
               }) => i1.LogMessageEntityCompanion.insert(
                 id: id,
                 message: message,
@@ -222,6 +261,8 @@ class $$LogMessageEntityTableTableManager
                 createdAt: createdAt,
                 logger: logger,
                 stack: stack,
+                sessionId: sessionId,
+                runtime: runtime,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), i0.BaseReferences(db, table, e)))
@@ -252,6 +293,10 @@ typedef $$LogMessageEntityTableProcessedTableManager =
       i1.LogMessageEntityData,
       i0.PrefetchHooks Function()
     >;
+i0.Index get idxLoggerMessagesSessionId => i0.Index(
+  'idx_logger_messages_session_id',
+  'CREATE INDEX IF NOT EXISTS idx_logger_messages_session_id ON logger_messages (session_id)',
+);
 
 class $LogMessageEntityTable extends i3.LogMessageEntity
     with i0.TableInfo<$LogMessageEntityTable, i1.LogMessageEntityData> {
@@ -337,6 +382,30 @@ class $LogMessageEntityTable extends i3.LogMessageEntity
     type: i0.DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const i0.VerificationMeta _sessionIdMeta = const i0.VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final i0.GeneratedColumn<String> sessionId = i0.GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: i0.DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const i4.Constant(i5.kLogLegacySessionId),
+  );
+  @override
+  late final i0.GeneratedColumnWithTypeConverter<i2.LogRuntime, int> runtime =
+      i0.GeneratedColumn<int>(
+        'runtime',
+        aliasedName,
+        false,
+        type: i0.DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: i4.Constant(i2.LogRuntime.foreground.index),
+      ).withConverter<i2.LogRuntime>(
+        i1.$LogMessageEntityTable.$converterruntime,
+      );
   @override
   List<i0.GeneratedColumn> get $columns => [
     id,
@@ -346,6 +415,8 @@ class $LogMessageEntityTable extends i3.LogMessageEntity
     createdAt,
     logger,
     stack,
+    sessionId,
+    runtime,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -396,6 +467,12 @@ class $LogMessageEntityTable extends i3.LogMessageEntity
         stack.isAcceptableOrUnknown(data['stack']!, _stackMeta),
       );
     }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    }
     return context;
   }
 
@@ -438,6 +515,16 @@ class $LogMessageEntityTable extends i3.LogMessageEntity
         i0.DriftSqlType.string,
         data['${effectivePrefix}stack'],
       ),
+      sessionId: attachedDatabase.typeMapping.read(
+        i0.DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      runtime: i1.$LogMessageEntityTable.$converterruntime.fromSql(
+        attachedDatabase.typeMapping.read(
+          i0.DriftSqlType.int,
+          data['${effectivePrefix}runtime'],
+        )!,
+      ),
     );
   }
 
@@ -448,6 +535,8 @@ class $LogMessageEntityTable extends i3.LogMessageEntity
 
   static i0.JsonTypeConverter2<i2.LogLevel, int, int> $converterlevel =
       const i0.EnumIndexConverter<i2.LogLevel>(i2.LogLevel.values);
+  static i0.JsonTypeConverter2<i2.LogRuntime, int, int> $converterruntime =
+      const i0.EnumIndexConverter<i2.LogRuntime>(i2.LogRuntime.values);
 }
 
 class LogMessageEntityData extends i0.DataClass
@@ -459,6 +548,8 @@ class LogMessageEntityData extends i0.DataClass
   final DateTime createdAt;
   final String? logger;
   final String? stack;
+  final String sessionId;
+  final i2.LogRuntime runtime;
   const LogMessageEntityData({
     required this.id,
     required this.message,
@@ -467,6 +558,8 @@ class LogMessageEntityData extends i0.DataClass
     required this.createdAt,
     this.logger,
     this.stack,
+    required this.sessionId,
+    required this.runtime,
   });
   @override
   Map<String, i0.Expression> toColumns(bool nullToAbsent) {
@@ -488,6 +581,12 @@ class LogMessageEntityData extends i0.DataClass
     if (!nullToAbsent || stack != null) {
       map['stack'] = i0.Variable<String>(stack);
     }
+    map['session_id'] = i0.Variable<String>(sessionId);
+    {
+      map['runtime'] = i0.Variable<int>(
+        i1.$LogMessageEntityTable.$converterruntime.toSql(runtime),
+      );
+    }
     return map;
   }
 
@@ -506,6 +605,10 @@ class LogMessageEntityData extends i0.DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       logger: serializer.fromJson<String?>(json['logger']),
       stack: serializer.fromJson<String?>(json['stack']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      runtime: i1.$LogMessageEntityTable.$converterruntime.fromJson(
+        serializer.fromJson<int>(json['runtime']),
+      ),
     );
   }
   @override
@@ -521,6 +624,10 @@ class LogMessageEntityData extends i0.DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'logger': serializer.toJson<String?>(logger),
       'stack': serializer.toJson<String?>(stack),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'runtime': serializer.toJson<int>(
+        i1.$LogMessageEntityTable.$converterruntime.toJson(runtime),
+      ),
     };
   }
 
@@ -532,6 +639,8 @@ class LogMessageEntityData extends i0.DataClass
     DateTime? createdAt,
     i0.Value<String?> logger = const i0.Value.absent(),
     i0.Value<String?> stack = const i0.Value.absent(),
+    String? sessionId,
+    i2.LogRuntime? runtime,
   }) => i1.LogMessageEntityData(
     id: id ?? this.id,
     message: message ?? this.message,
@@ -540,6 +649,8 @@ class LogMessageEntityData extends i0.DataClass
     createdAt: createdAt ?? this.createdAt,
     logger: logger.present ? logger.value : this.logger,
     stack: stack.present ? stack.value : this.stack,
+    sessionId: sessionId ?? this.sessionId,
+    runtime: runtime ?? this.runtime,
   );
   LogMessageEntityData copyWithCompanion(i1.LogMessageEntityCompanion data) {
     return LogMessageEntityData(
@@ -550,6 +661,8 @@ class LogMessageEntityData extends i0.DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       logger: data.logger.present ? data.logger.value : this.logger,
       stack: data.stack.present ? data.stack.value : this.stack,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      runtime: data.runtime.present ? data.runtime.value : this.runtime,
     );
   }
 
@@ -562,14 +675,25 @@ class LogMessageEntityData extends i0.DataClass
           ..write('level: $level, ')
           ..write('createdAt: $createdAt, ')
           ..write('logger: $logger, ')
-          ..write('stack: $stack')
+          ..write('stack: $stack, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('runtime: $runtime')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, message, details, level, createdAt, logger, stack);
+  int get hashCode => Object.hash(
+    id,
+    message,
+    details,
+    level,
+    createdAt,
+    logger,
+    stack,
+    sessionId,
+    runtime,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -580,7 +704,9 @@ class LogMessageEntityData extends i0.DataClass
           other.level == this.level &&
           other.createdAt == this.createdAt &&
           other.logger == this.logger &&
-          other.stack == this.stack);
+          other.stack == this.stack &&
+          other.sessionId == this.sessionId &&
+          other.runtime == this.runtime);
 }
 
 class LogMessageEntityCompanion
@@ -592,6 +718,8 @@ class LogMessageEntityCompanion
   final i0.Value<DateTime> createdAt;
   final i0.Value<String?> logger;
   final i0.Value<String?> stack;
+  final i0.Value<String> sessionId;
+  final i0.Value<i2.LogRuntime> runtime;
   const LogMessageEntityCompanion({
     this.id = const i0.Value.absent(),
     this.message = const i0.Value.absent(),
@@ -600,6 +728,8 @@ class LogMessageEntityCompanion
     this.createdAt = const i0.Value.absent(),
     this.logger = const i0.Value.absent(),
     this.stack = const i0.Value.absent(),
+    this.sessionId = const i0.Value.absent(),
+    this.runtime = const i0.Value.absent(),
   });
   LogMessageEntityCompanion.insert({
     this.id = const i0.Value.absent(),
@@ -609,6 +739,8 @@ class LogMessageEntityCompanion
     required DateTime createdAt,
     this.logger = const i0.Value.absent(),
     this.stack = const i0.Value.absent(),
+    this.sessionId = const i0.Value.absent(),
+    this.runtime = const i0.Value.absent(),
   }) : message = i0.Value(message),
        level = i0.Value(level),
        createdAt = i0.Value(createdAt);
@@ -620,6 +752,8 @@ class LogMessageEntityCompanion
     i0.Expression<DateTime>? createdAt,
     i0.Expression<String>? logger,
     i0.Expression<String>? stack,
+    i0.Expression<String>? sessionId,
+    i0.Expression<int>? runtime,
   }) {
     return i0.RawValuesInsertable({
       if (id != null) 'id': id,
@@ -629,6 +763,8 @@ class LogMessageEntityCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (logger != null) 'logger': logger,
       if (stack != null) 'stack': stack,
+      if (sessionId != null) 'session_id': sessionId,
+      if (runtime != null) 'runtime': runtime,
     });
   }
 
@@ -640,6 +776,8 @@ class LogMessageEntityCompanion
     i0.Value<DateTime>? createdAt,
     i0.Value<String?>? logger,
     i0.Value<String?>? stack,
+    i0.Value<String>? sessionId,
+    i0.Value<i2.LogRuntime>? runtime,
   }) {
     return i1.LogMessageEntityCompanion(
       id: id ?? this.id,
@@ -649,6 +787,8 @@ class LogMessageEntityCompanion
       createdAt: createdAt ?? this.createdAt,
       logger: logger ?? this.logger,
       stack: stack ?? this.stack,
+      sessionId: sessionId ?? this.sessionId,
+      runtime: runtime ?? this.runtime,
     );
   }
 
@@ -678,6 +818,14 @@ class LogMessageEntityCompanion
     if (stack.present) {
       map['stack'] = i0.Variable<String>(stack.value);
     }
+    if (sessionId.present) {
+      map['session_id'] = i0.Variable<String>(sessionId.value);
+    }
+    if (runtime.present) {
+      map['runtime'] = i0.Variable<int>(
+        i1.$LogMessageEntityTable.$converterruntime.toSql(runtime.value),
+      );
+    }
     return map;
   }
 
@@ -690,7 +838,9 @@ class LogMessageEntityCompanion
           ..write('level: $level, ')
           ..write('createdAt: $createdAt, ')
           ..write('logger: $logger, ')
-          ..write('stack: $stack')
+          ..write('stack: $stack, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('runtime: $runtime')
           ..write(')'))
         .toString();
   }

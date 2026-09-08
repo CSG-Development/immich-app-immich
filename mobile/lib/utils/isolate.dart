@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:hc_device/providers/hcdevice.provider.dart';
 import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/log.model.dart';
 import 'package:immich_mobile/domain/services/log.service.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
@@ -36,6 +37,17 @@ Cancelable<T?> runInIsolateGentle<T>({
     throw const InvalidIsolateUsageException();
   }
 
+  // Capture parent log session on the calling isolate so worker logs land in the
+  // same session (not a separate "isolate" filter entry).
+  String? parentSessionId;
+  var parentRuntime = LogRuntime.foreground;
+  try {
+    parentSessionId = LogService.I.sessionId;
+    parentRuntime = LogService.I.runtime;
+  } on LoggerUnInitializedException {
+    // Parent logger missing — isolate will open its own session.
+  }
+
   return workerManagerPatch.executeGentle((onCancel) async {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
     DartPluginRegistrant.ensureInitialized();
@@ -43,7 +55,12 @@ Cancelable<T?> runInIsolateGentle<T>({
     NetworkRepository.enableShutdownTracking();
 
     final log = Logger("IsolateLogger");
-    final (drift, logDb) = await Bootstrap.initDomain(shouldBufferLogs: false, listenStoreUpdates: false);
+    final (drift, logDb) = await Bootstrap.initDomain(
+      shouldBufferLogs: false,
+      listenStoreUpdates: false,
+      logRuntime: parentRuntime,
+      logSessionId: parentSessionId,
+    );
 
     await HttpCertPinningManager.ensureInitialized();
     await NetworkRepository.init();

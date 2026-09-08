@@ -2,8 +2,20 @@ import 'dart:io';
 
 const String kMobileMetadataKey = "mobile-app";
 
-// Number of log entries retained in the log DB (trimmed on app start).
-const int kLogTruncateLimit = 10000;
+/// Soft cap on total persisted log rows across all sessions (trimmed on start).
+const int kLogSoftCap = 50000;
+
+/// Default / bounds for how many most-recent log sessions to keep per runtime.
+const int kLogRetainForegroundSessions = 15;
+const int kLogRetainBackgroundSessions = 15;
+const int kLogRetainSessionsMin = 1;
+const int kLogRetainSessionsMax = 50;
+
+/// Legacy isolate-only sessions (pre parent-linking) still pruned with this cap.
+const int kLogRetainIsolateSessions = 5;
+
+/// Session id assigned to rows that existed before session-based logging.
+const String kLogLegacySessionId = 'legacy';
 
 // In-memory ring buffer for the network debug overlay (resolver / monitor / OTP).
 const int kNetworkDebugLogBufferLimit = 5000;

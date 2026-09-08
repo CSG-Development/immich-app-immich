@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/constants/colors.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/config/album_config.dart';
 import 'package:immich_mobile/domain/models/config/backup_config.dart';
@@ -23,6 +24,8 @@ const defaultConfig = AppConfig();
 
 class AppConfig {
   final LogLevel logLevel;
+  final int logRetainSessions;
+  final int logRetainBackgroundSessions;
   final ThemeConfig theme;
   final CleanupConfig cleanup;
   final MapConfig map;
@@ -38,6 +41,8 @@ class AppConfig {
 
   const AppConfig({
     this.logLevel = .info,
+    this.logRetainSessions = kLogRetainForegroundSessions,
+    this.logRetainBackgroundSessions = kLogRetainBackgroundSessions,
     this.theme = const .new(),
     this.cleanup = const .new(),
     this.map = const .new(),
@@ -54,6 +59,8 @@ class AppConfig {
 
   AppConfig copyWith({
     LogLevel? logLevel,
+    int? logRetainSessions,
+    int? logRetainBackgroundSessions,
     ThemeConfig? theme,
     CleanupConfig? cleanup,
     MapConfig? map,
@@ -68,6 +75,8 @@ class AppConfig {
     FeatureMessageConfig? featureMessage,
   }) => .new(
     logLevel: logLevel ?? this.logLevel,
+    logRetainSessions: logRetainSessions ?? this.logRetainSessions,
+    logRetainBackgroundSessions: logRetainBackgroundSessions ?? this.logRetainBackgroundSessions,
     theme: theme ?? this.theme,
     cleanup: cleanup ?? this.cleanup,
     map: map ?? this.map,
@@ -87,6 +96,8 @@ class AppConfig {
       identical(this, other) ||
       (other is AppConfig &&
           other.logLevel == logLevel &&
+          other.logRetainSessions == logRetainSessions &&
+          other.logRetainBackgroundSessions == logRetainBackgroundSessions &&
           other.theme == theme &&
           other.cleanup == cleanup &&
           other.map == map &&
@@ -103,6 +114,8 @@ class AppConfig {
   @override
   int get hashCode => Object.hash(
     logLevel,
+    logRetainSessions,
+    logRetainBackgroundSessions,
     theme,
     cleanup,
     map,
@@ -119,11 +132,13 @@ class AppConfig {
 
   @override
   String toString() =>
-      'AppConfig(logLevel: $logLevel, theme: $theme, cleanup: $cleanup, map: $map, timeline: $timeline, image: $image, viewer: $viewer, slideshow: $slideshow, album: $album, backup: $backup, network: $network, share: $share, featureMessage: $featureMessage)';
+      'AppConfig(logLevel: $logLevel, logRetainSessions: $logRetainSessions, logRetainBackgroundSessions: $logRetainBackgroundSessions, theme: $theme, cleanup: $cleanup, map: $map, timeline: $timeline, image: $image, viewer: $viewer, slideshow: $slideshow, album: $album, backup: $backup, network: $network, share: $share, featureMessage: $featureMessage)';
 
   T read<T>(SettingsKey<T> key) =>
       (switch (key) {
             .logLevel => logLevel,
+            .logRetainSessions => logRetainSessions,
+            .logRetainBackgroundSessions => logRetainBackgroundSessions,
             .themePrimaryColor => theme.primaryColor,
             .themeMode => theme.mode,
             .themeDynamic => theme.dynamicTheme,
@@ -178,6 +193,8 @@ class AppConfig {
   AppConfig write<T, U extends T>(SettingsKey<T> key, U value) {
     return switch (key) {
       .logLevel => copyWith(logLevel: value as LogLevel),
+      .logRetainSessions => copyWith(logRetainSessions: value as int),
+      .logRetainBackgroundSessions => copyWith(logRetainBackgroundSessions: value as int),
       .themePrimaryColor => copyWith(theme: theme.copyWith(primaryColor: value as ImmichColorPreset)),
       .themeMode => copyWith(theme: theme.copyWith(mode: value as ThemeMode)),
       .themeDynamic => copyWith(theme: theme.copyWith(dynamicTheme: value as bool)),
