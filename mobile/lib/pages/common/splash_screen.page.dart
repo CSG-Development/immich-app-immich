@@ -21,6 +21,7 @@ import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/backup/drift_backup.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/app_update.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/view_intent/view_intent_handler.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -376,6 +377,8 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     final backgroundManager = ref.read(backgroundSyncProvider);
     final backupNotifier = ref.read(driftBackupProvider.notifier);
     final viewIntentHandler = ref.read(viewIntentHandlerProvider);
+    // Capture before async work: splash may be replaced while sync is still running.
+    final shareIntentUpload = ref.read(shareIntentUploadProvider.notifier);
 
     unawaited(
       authNotifier.saveAuthInfo(accessToken: accessToken).then(
@@ -394,6 +397,7 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
             ]);
 
             await viewIntentHandler.flushDeferredViewIntent();
+            await shareIntentUpload.flushDeferredShareIntent();
 
             if (syncSuccess) {
               await Future.wait([

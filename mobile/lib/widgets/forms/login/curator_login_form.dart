@@ -20,6 +20,7 @@ import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/view_intent/view_intent_handler.provider.dart';
 import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
@@ -957,10 +958,13 @@ class CuratorLoginForm extends HookConsumerWidget {
     Future<void> handleSyncFlow() async {
       final backgroundManager = ref.read(backgroundSyncProvider);
       final viewIntentHandler = ref.read(viewIntentHandlerProvider);
+      // Capture before awaits: login route is replaced while sync is still running.
+      final shareIntentUpload = ref.read(shareIntentUploadProvider.notifier);
 
       await backgroundManager.syncLocal(full: true);
       await backgroundManager.syncRemote();
       await viewIntentHandler.flushDeferredViewIntent();
+      await shareIntentUpload.flushDeferredShareIntent();
       await backgroundManager.hashAssets();
 
       if (SettingsRepository.instance.appConfig.backup.syncAlbums) {
