@@ -12,6 +12,7 @@ import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
+import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
 import 'package:immich_mobile/providers/view_intent/view_intent_handler.provider.dart';
@@ -78,10 +79,13 @@ class _CuratorOnboardingPageState extends ConsumerState<CuratorOnboardingPage> {
   Future<void> _runSyncFlow() async {
     final backgroundManager = ref.read(backgroundSyncProvider);
     final viewIntentHandler = ref.read(viewIntentHandlerProvider);
+    // Capture before awaits: onboarding is replaced while sync is still running.
+    final shareIntentUpload = ref.read(shareIntentUploadProvider.notifier);
 
     await backgroundManager.syncLocal(full: true);
     await backgroundManager.syncRemote();
     await viewIntentHandler.flushDeferredViewIntent();
+    await shareIntentUpload.flushDeferredShareIntent();
     await backgroundManager.hashAssets();
 
     if (SettingsRepository.instance.appConfig.backup.syncAlbums) {
