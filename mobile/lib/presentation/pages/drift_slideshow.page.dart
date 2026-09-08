@@ -45,7 +45,8 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   late SlideshowConfig _config;
   late final PageController _pageController;
   late final Stopwatch _stopwatch;
-  late Timer _timer;
+  // Initialized so cancel is safe when the first slide is a video (no photo timer).
+  Timer _timer = Timer(Duration.zero, () {})..cancel();
   late int _index;
   late int _nextIndex;
   bool _paused = false;
@@ -109,11 +110,16 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
     _stopwatch = Stopwatch();
     _preloader = AssetPreloader(timelineService: widget.timeline, mounted: () => mounted);
 
+    // Photo timer only for images. onPageChanged does not fire for initialPage,
+    // so starting it for a first video would cut playback short after duration.
+    final initial = asset ?? _resolveAsset(index);
+    if (initial != null && initial.isImage) {
+      _createTimer();
+    }
     if (!widget.timeline.hasRange(index, 1)) {
-      unawaited(_ensureIndexLoaded(index));
+      unawaited(_ensureIndexLoaded(index, startTimerIfReady: initial == null));
     }
 
-    _createTimer();
     _updateNextIndex();
     ref.listenManual(appConfigProvider.select((s) => s.slideshow), _onConfigChanged);
     _eventSubscription = EventStream.shared.listen<TimelineReloadEvent>(_onTimelineReload);
