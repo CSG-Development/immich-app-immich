@@ -6,6 +6,7 @@
   import { Route } from '$lib/route';
   import { locale } from '$lib/stores/preferences.store';
   import { getAssetMediaUrl } from '$lib/utils';
+  import { activityAlreadyDeletedMessageKey, isActivityNotFoundError } from '$lib/utils/activity-access';
   import { getAssetType } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { isTenMinutesApart } from '$lib/utils/timesince';
@@ -72,9 +73,9 @@
     hour12: false,
   };
 
-  const handleDeleteReaction = async (reaction: ActivityResponseDto, index: number) => {
+  const handleDeleteReaction = async (reaction: ActivityResponseDto) => {
     try {
-      await activityManager.deleteActivity(reaction, index);
+      await activityManager.deleteActivity(reaction);
 
       const deleteMessages: Record<ReactionType, string> = {
         [ReactionType.Comment]: $t('comment_deleted'),
@@ -82,16 +83,20 @@
       };
       toastManager.primary(deleteMessages[reaction.type]);
     } catch (error) {
+      if (isActivityNotFoundError(error)) {
+        toastManager.danger($t(activityAlreadyDeletedMessageKey(reaction.type)));
+        return;
+      }
       handleError(error, $t('errors.unable_to_remove_reaction'));
     }
   };
 
-  const getReactionMenuItems = (reaction: ActivityResponseDto, index: number): ActionItem[] => [
+  const getReactionMenuItems = (reaction: ActivityResponseDto): ActionItem[] => [
     {
       title: $t('remove'),
       icon: mdiDeleteOutline,
       color: 'danger',
-      onAction: () => handleDeleteReaction(reaction, index),
+      onAction: () => handleDeleteReaction(reaction),
     },
   ];
 
@@ -169,7 +174,7 @@
                     aria-label={$t('comment_options')}
                     position="top-right"
                     size="small"
-                    items={getReactionMenuItems(reaction, index)}
+                    items={getReactionMenuItems(reaction)}
                   />
                 </div>
               {/if}
@@ -215,7 +220,7 @@
                       aria-label={$t('reaction_options')}
                       position="top-right"
                       size="small"
-                      items={getReactionMenuItems(reaction, index)}
+                      items={getReactionMenuItems(reaction)}
                     />
                   </div>
                 {/if}
