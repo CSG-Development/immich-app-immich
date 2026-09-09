@@ -1,6 +1,6 @@
 ARG DEVICE=cpu
 
-FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS builder-cpu
+FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS builder-cpu
 
 FROM builder-cpu AS builder-openvino
 
@@ -68,11 +68,11 @@ RUN if [ "$DEVICE" = "rocm" ]; then \
     uv pip install /opt/onnxruntime_rocm-*.whl; \
     fi
 
-FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS prod-cpu
+FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS prod-cpu
 
 ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
-FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS prod-openvino
+FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS prod-openvino
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -yqq ocl-icd-libopencl1 wget && \
