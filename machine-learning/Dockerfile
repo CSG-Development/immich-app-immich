@@ -1,8 +1,8 @@
 ARG DEVICE=cpu
 
-FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS builder-cpu
+FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS builder-cpu
 
-FROM builder-cpu AS builder-openvino
+FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS builder-openvino
 
 FROM builder-cpu AS builder-cuda
 
@@ -22,7 +22,7 @@ FROM builder-cpu AS builder-rknn
 
 # Warning: 25GiB+ disk space required to pull this image
 # TODO: find a way to reduce the image size
-FROM rocm/dev-ubuntu-22.04:6.4.3-complete@sha256:1f7e92ca7e3a3785680473329ed1091fc99db3e90fcb3a1688f2933e870ed76b AS builder-rocm
+FROM rocm/dev-ubuntu-24.04:7.2-complete@sha256:86e11093b4a7ec2a79b1b6701d10e840a6994f21c7e05929b51eb9be361c683a AS builder-rocm
 
 # renovate: datasource=github-releases depName=Microsoft/onnxruntime
 ARG ONNXRUNTIME_VERSION="v1.20.1"
@@ -68,7 +68,7 @@ RUN if [ "$DEVICE" = "rocm" ]; then \
     uv pip install /opt/onnxruntime_rocm-*.whl; \
     fi
 
-FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS prod-cpu
+FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS prod-cpu
 
 ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
 
@@ -107,7 +107,7 @@ COPY --from=builder-cuda /usr/local/bin/python3 /usr/local/bin/python3
 COPY --from=builder-cuda /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder-cuda /usr/local/lib/libpython3.11.so /usr/local/lib/libpython3.11.so
 
-FROM rocm/dev-ubuntu-22.04:6.4.3-complete@sha256:1f7e92ca7e3a3785680473329ed1091fc99db3e90fcb3a1688f2933e870ed76b AS prod-rocm
+FROM rocm/dev-ubuntu-24.04:7.2-complete@sha256:86e11093b4a7ec2a79b1b6701d10e840a6994f21c7e05929b51eb9be361c683a AS prod-rocm
 
 FROM prod-cpu AS prod-armnn
 
