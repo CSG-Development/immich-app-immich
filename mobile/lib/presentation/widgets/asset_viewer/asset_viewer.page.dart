@@ -112,6 +112,9 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
   /// lock, delete, etc.). Prevents timeline reload from jumping back to it.
   String? _dismissedHeroTag;
 
+  /// Index before [ViewerReloadAssetEvent]; used when the list shrinks under us.
+  int? _reloadFromIndex;
+
   /// Guards against stale async asset loads reverting the viewer after dismissal.
   int _assetChangeGeneration = 0;
 
@@ -292,13 +295,31 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       return;
     }
 
-    _dismissedHeroTag = ref.read(assetViewerProvider).currentAsset?.heroTag;
+    final currentAsset = ref.read(assetViewerProvider).currentAsset;
+    _dismissedHeroTag = currentAsset?.heroTag;
 
     final index = _pageController.page?.round() ?? _currentPage;
+    final timelineService = ref.read(timelineServiceProvider);
+
+    // Already removed (e.g. search optimistic remove) — next item is at `index`.
+    if (currentAsset != null &&
+        timelineService.totalAssets < _totalAssets &&
+        timelineService.getIndex(currentAsset.heroTag) == null) {
+      _reloadFromIndex = null;
+      final maxIndex = math.max(0, timelineService.totalAssets - 1);
+      final target = index.clamp(0, maxIndex).toInt();
+      _currentPage = target;
+      unawaited(_onAssetChanged(target));
+      if (_totalAssets != timelineService.totalAssets && mounted) {
+        setState(() => _totalAssets = timelineService.totalAssets);
+      }
+      return;
+    }
+
+    _reloadFromIndex = index;
     final target = index >= _totalAssets - 1 ? index - 1 : index + 1;
 
-    // Always advance the page index immediately so a pending timeline reload
-    // cannot snap back to the dismissed asset while the buffer is still stale.
+    // Advance immediately so a stale timeline reload cannot snap back.
     _currentPage = target;
 
     unawaited(_prefetchAdjacentAsset(target));
@@ -388,6 +409,25 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
 
     final currentAsset = ref.read(assetViewerProvider).currentAsset;
     final dismissedHeroTag = _dismissedHeroTag;
+    final reloadFromIndex = _reloadFromIndex;
+
+    // Advanced past a dismissed asset that later left the list — land where it was.
+    if (reloadFromIndex != null &&
+        totalAssets < _totalAssets &&
+        (dismissedHeroTag == null || timelineService.getIndex(dismissedHeroTag) == null)) {
+      final target = reloadFromIndex.clamp(0, totalAssets - 1).toInt();
+      _reloadFromIndex = null;
+      _dismissedHeroTag = null;
+      _currentPage = target;
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(target);
+      }
+      unawaited(_onAssetChanged(target));
+      if (mounted) {
+        setState(() => _totalAssets = totalAssets);
+      }
+      return;
+    }
 
     if (currentAsset?.heroTag == dismissedHeroTag) {
       if (_totalAssets != totalAssets && mounted) {
@@ -414,6 +454,7 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
     final displayedAsset = ref.read(assetViewerProvider).currentAsset;
     if (dismissedHeroTag != null && displayedAsset?.heroTag != dismissedHeroTag) {
       _dismissedHeroTag = null;
+      _reloadFromIndex = null;
     }
 
     if (_totalAssets != totalAssets && mounted) {
