@@ -138,9 +138,9 @@
   onAlbumUpdate={(newAlbum) => (album = newAlbum)}
 />
 
-<Modal title={$t('options')} onClose={closeModal} size="small" class="overflow-visible">
-  <ModalBody>
-    <Stack gap={6}>
+<Modal title={$t('options')} onClose={closeModal} size="small" class="overflow-visible!">
+  <ModalBody class="overflow-visible!">
+    <Stack gap={6} class="min-w-0" fullWidth>
       {#if canEdit}
         <div>
           <h2 class="text-xs mb-2 font-medium">{$t('settings').toUpperCase()}</h2>
@@ -167,17 +167,17 @@
         </div>
       {/if}
 
-      <div>
+      <div class="min-w-0">
         <HStack fullWidth class="justify-between mb-2">
           <Text size="medium" fontWeight="semi-bold">{$t('people')}</Text>
           <HeaderActionButton action={AddUsers} />
         </HStack>
-        <div class="ps-2">
-          <div class="flex items-center gap-2 mb-2">
-            <div>
+        <div class="min-w-0 ps-2">
+          <div class="mb-2 flex min-w-0 items-center gap-2">
+            <div class="shrink-0">
               <UserAvatar user={album.owner} size="md" />
             </div>
-            <Text class="w-full" size="small">{album.owner.name}</Text>
+            <Text class="min-w-0 flex-1 truncate" size="small" title={album.owner.name}>{album.owner.name}</Text>
             <Field disabled class="w-32 shrink-0">
               <Select options={[{ label: $t('owner'), value: 'owner' }]} value="owner" />
             </Field>
@@ -185,14 +185,14 @@
 
           {#each album.albumUsers as { user: albumUser, role } (albumUser.id)}
             {@const isCurrentUser = albumUser.id === currentUserId}
-            <div class="flex items-center justify-between gap-4 py-2">
-              <div class="flex flex-row items-center gap-2">
-                <div>
+            <div class="flex min-w-0 items-center gap-4 py-2">
+              <div class="flex min-w-0 flex-1 items-center gap-2">
+                <div class="shrink-0">
                   <UserAvatar user={albumUser} size="md" />
                 </div>
-                <Text size="small">{albumUser.name}</Text>
+                <Text class="min-w-0 flex-1 truncate" size="small" title={albumUser.name}>{albumUser.name}</Text>
               </div>
-              <Field class="w-32" disabled={!canEdit}>
+              <Field class="w-32 shrink-0" disabled={!canEdit}>
                 <Select
                   value={role}
                   options={getRoleOptions(isCurrentUser)}
