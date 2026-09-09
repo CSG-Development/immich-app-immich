@@ -10,6 +10,7 @@ import 'package:image_editor/src/features/ai_editor/ai_editor_stub.dart'
     if (dart.library.io) 'package:image_editor/src/features/ai_editor/ai_editor.dart';
 import 'package:image_editor/src/features/vignette_editor/vignette_editor.dart';
 import 'package:image_editor/src/features/watermark_editor/watermark_editor.dart';
+import 'package:image_editor/src/utils/session_image_capture.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 class _EditorToolItem {
@@ -45,8 +46,13 @@ class EditorBottomBar extends StatelessWidget {
   void openVignetteEditor({required BuildContext context}) async {
     final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
-    var currentBytes = await editor.editorImage?.safeByteArray();
-    currentBytes ??= await editor.captureEditorImage();
+
+    final stateManager = editor.stateManager;
+    final bakeSessionImage = sessionNeedsPixelBake(stateManager);
+    final currentBytes = await captureSessionImageBytes(
+      editor,
+      bakeSession: bakeSessionImage,
+    );
     if (currentBytes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -58,13 +64,16 @@ class EditorBottomBar extends StatelessWidget {
 
     final theme = editor.configs.theme ?? ThemeData.dark();
     final sizesManager = editor.sizesManager;
-    final stateManager = editor.stateManager;
 
     final callbacks = editor.callbacks.copyWith(
       onImageEditingComplete: (Uint8List bytes) async {
-        await editor.updateBackgroundImage(EditorImage(byteArray: bytes));
-        editor.setState(() {});
-        editor.mainEditorCallbacks?.handleUpdateUI();
+        if (bakeSessionImage) {
+          await commitBakedSessionImage(editor, bytes);
+        } else {
+          await editor.updateBackgroundImage(EditorImage(byteArray: bytes));
+          editor.setState(() {});
+          editor.mainEditorCallbacks?.handleUpdateUI();
+        }
       },
     );
     await editor.openPage(
@@ -75,8 +84,15 @@ class EditorBottomBar extends StatelessWidget {
             theme: theme,
             configs: editor.configs,
             callbacks: callbacks,
-            transformConfigs: stateManager.transformConfigs,
-            mainImageSize: sizesManager.decodedImageSize,
+            transformConfigs: bakeSessionImage
+                ? TransformConfigs.empty()
+                : stateManager.transformConfigs,
+            mainImageSize: bakeSessionImage
+                ? sessionBakePreviewSize(
+                    stateManager,
+                    sizesManager.decodedImageSize,
+                  )
+                : sizesManager.decodedImageSize,
             mainBodySize: sizesManager.bodySize,
             appliedBlurFactor: 0,
             appliedFilters: const [],
@@ -93,8 +109,15 @@ class EditorBottomBar extends StatelessWidget {
   void openAiEditor({required BuildContext context}) async {
     final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
-    var currentBytes = await editor.editorImage?.safeByteArray();
-    currentBytes ??= await editor.captureEditorImage();
+
+    final stateManager = editor.stateManager;
+    // Crop/filters/tune/blur/layers are composed at capture time; raw
+    // editorImage bytes stay original. AI tools operate on those bytes.
+    final bakeSessionImage = sessionNeedsPixelBake(stateManager);
+    final currentBytes = await captureSessionImageBytes(
+      editor,
+      bakeSession: bakeSessionImage,
+    );
     if (currentBytes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -106,13 +129,16 @@ class EditorBottomBar extends StatelessWidget {
 
     final theme = editor.configs.theme ?? ThemeData.dark();
     final sizesManager = editor.sizesManager;
-    final stateManager = editor.stateManager;
 
     final callbacks = editor.callbacks.copyWith(
       onImageEditingComplete: (Uint8List bytes) async {
-        await editor.updateBackgroundImage(EditorImage(byteArray: bytes));
-        editor.setState(() {});
-        editor.mainEditorCallbacks?.handleUpdateUI();
+        if (bakeSessionImage) {
+          await commitBakedSessionImage(editor, bytes);
+        } else {
+          await editor.updateBackgroundImage(EditorImage(byteArray: bytes));
+          editor.setState(() {});
+          editor.mainEditorCallbacks?.handleUpdateUI();
+        }
       },
     );
 
@@ -124,8 +150,16 @@ class EditorBottomBar extends StatelessWidget {
             theme: theme,
             configs: editor.configs,
             callbacks: callbacks,
-            transformConfigs: stateManager.transformConfigs,
-            mainImageSize: sizesManager.decodedImageSize,
+            // Session edits are baked into [currentBytes] when needed.
+            transformConfigs: bakeSessionImage
+                ? TransformConfigs.empty()
+                : stateManager.transformConfigs,
+            mainImageSize: bakeSessionImage
+                ? sessionBakePreviewSize(
+                    stateManager,
+                    sizesManager.decodedImageSize,
+                  )
+                : sizesManager.decodedImageSize,
             mainBodySize: sizesManager.bodySize,
             appliedBlurFactor: 0,
             appliedFilters: const [],
@@ -141,8 +175,18 @@ class EditorBottomBar extends StatelessWidget {
   void openWatermarkEditor({required BuildContext context}) async {
     final tr = ImageEditorTranslationScope.of(context);
     if (!context.mounted) return;
-    var currentBytes = await editor.editorImage?.safeByteArray();
-    currentBytes ??= await editor.captureEditorImage();
+
+    final stateManager = editor.stateManager;
+    // Preview-only bake. Layers stay live on the main editor (watermark is a
+    // WidgetLayer), so exclude them to avoid double-drawing in the preview.
+    final bakePreview = sessionNeedsPixelBake(
+      stateManager,
+      includeLayers: false,
+    );
+    final currentBytes = await captureSessionImageBytes(
+      editor,
+      bakeSession: bakePreview,
+    );
     if (currentBytes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -154,6 +198,9 @@ class EditorBottomBar extends StatelessWidget {
 
     final theme = editor.configs.theme ?? ThemeData.dark();
     final sizesManager = editor.sizesManager;
+    final previewSize = bakePreview
+        ? sessionBakePreviewSize(stateManager, sizesManager.decodedImageSize)
+        : sizesManager.decodedImageSize;
 
     await editor.openPage(
       HeroMode(
@@ -161,7 +208,7 @@ class EditorBottomBar extends StatelessWidget {
           currentBytes,
           editor: editor,
           theme: theme,
-          mainImageSize: sizesManager.decodedImageSize,
+          mainImageSize: previewSize,
           mainBodySize: sizesManager.bodySize,
           onDone: () {},
         ),
