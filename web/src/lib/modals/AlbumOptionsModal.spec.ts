@@ -8,7 +8,7 @@ import { user as userStore } from '$lib/stores/user.store';
 import { AlbumUserRole } from '@immich/sdk';
 import { albumFactory } from '@test-data/factories/album-factory';
 import { userAdminFactory, userFactory } from '@test-data/factories/user-factory';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { render, screen, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('$lib/services/album.service', async (importOriginal) => {
@@ -109,5 +109,40 @@ describe('AlbumOptionsModal', () => {
 
     expect(onClose).not.toHaveBeenCalled();
     expect(handleLeaveAlbum).not.toHaveBeenCalled();
+  });
+
+  it('shows every user role option when the sharing dropdown is opened', async () => {
+    userStore.set(owner);
+    const album = sharedAlbum();
+    render(AlbumOptionsModal, { album, onClose });
+
+    const editorRow = (await screen.findByText(editor.name)).closest('div.flex.min-w-0.items-center.gap-4');
+    expect(editorRow).toBeTruthy();
+
+    await userEvent.click(within(editorRow as HTMLElement).getByRole('combobox'));
+
+    expect(await screen.findByRole('option', { name: 'role_editor' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'role_viewer' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'remove_user' })).toBeVisible();
+  });
+
+  it('truncates a long shared user name and keeps the role control in the row', async () => {
+    const longName = 'test11'.repeat(40);
+    const longNamedUser = userFactory.build({ name: longName });
+    userStore.set(owner);
+    render(AlbumOptionsModal, {
+      album: albumFactory.build({
+        ownerId: owner.id,
+        owner: userFactory.build({ id: owner.id, name: owner.name }),
+        albumUsers: [{ user: longNamedUser, role: AlbumUserRole.Editor }],
+      }),
+      onClose,
+    });
+
+    const name = await screen.findByText(longName);
+    expect(name).toHaveClass('truncate');
+
+    const row = name.closest('div.flex.min-w-0.items-center.gap-4') as HTMLElement;
+    expect(within(row).getByRole('combobox')).toBeInTheDocument();
   });
 });
