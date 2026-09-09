@@ -555,6 +555,9 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
         disableScaleGestures: true,
         filterQuality: FilterQuality.high,
         initialScale: scale,
+        childSize: asset.width != null && asset.height != null
+            ? Size(asset.width!.toDouble(), asset.height!.toDouble())
+            : null,
         child: NativeVideoViewer(
           asset: asset,
           isCurrent: isCurrent,
