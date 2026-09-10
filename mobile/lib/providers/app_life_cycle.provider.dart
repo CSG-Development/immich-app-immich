@@ -23,7 +23,6 @@ import 'package:immich_mobile/providers/websocket.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/airplay.service.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';
-import 'package:immich_mobile/utils/backup_trace.dart';
 import 'package:logging/logging.dart';
 
 enum AppLifeCycleEnum { active, inactive, paused, resumed, detached, hidden }
@@ -223,21 +222,6 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
       return;
     }
 
-    final runId = BackupTrace.newRunId();
-    logBackupTrace(
-      _log,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplResume,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'APP_RESUME',
-      appState: 'RESUMED',
-      trigger: 'lifecycle_resume',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'APP_RESUME_BACKUP_RESUME',
-      runId: runId,
-      extra: {'userId': currentUser.id},
-    );
     await _safeRun(
       _ref.read(driftBackupProvider.notifier).startForegroundBackup(currentUser.id),
       'startForegroundBackup',

@@ -140,6 +140,12 @@ class TimelineService {
   Future<List<BaseAsset>> loadAssets(int index, int count) => _mutex.run(() => _loadAssets(index, count));
 
   Future<List<BaseAsset>> _loadAssets(int index, int count) async {
+    if (index < 0 || index >= _totalAssets || count <= 0) {
+      return [];
+    }
+
+    count = math.min(count, _totalAssets - index);
+
     if (hasRange(index, count)) {
       return getAssets(index, count);
     }
@@ -161,7 +167,7 @@ class TimelineService {
           : (len > kTimelineAssetLoadBatchSize ? index : index + count - len),
     );
 
-    _buffer = await _assetSource(start, len);
+    _buffer = await _assetSource(start, math.min(len, _totalAssets - start));
     _bufferOffset = start;
 
     return getAssets(index, count);
@@ -176,7 +182,8 @@ class TimelineService {
 
   List<BaseAsset> getAssets(int index, int count) {
     if (!hasRange(index, count)) {
-      throw RangeError('TimelineService::getAssets Index out of range');
+      // Buffer can shift between a hasRange() check and this call when buckets reload.
+      return [];
     }
     int start = index - _bufferOffset;
     return _buffer.slice(start, start + count);

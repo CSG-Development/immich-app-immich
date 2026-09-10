@@ -2,143 +2,117 @@ import 'dart:math';
 
 import 'package:logging/logging.dart';
 
-const String kBackupTraceTag = 'backup_trace';
+/// Compact foreground backup telemetry (`grep bkp_fg`).
+const String kBkpFgTag = 'bkp_fg';
 
-enum BackupTraceStatus { ok, partial, fail, retry, skip }
+/// Compact background backup telemetry (`grep bkp_bg`).
+const String kBkpBgTag = 'bkp_bg';
 
-enum BackupTracePhase {
-  trigger,
-  endpoint,
-  sync,
-  hash,
-  queue,
-  upload,
-  postSync,
-  summary,
-}
+bool isBackupTraceMessage(String message) =>
+    message.startsWith(kBkpFgTag) || message.startsWith(kBkpBgTag);
 
-class BackupTraceEvent {
-  static const String uplStart = 'BKP-UPL-START';
-  static const String uplBatchEnqueued = 'BKP-UPL-BATCH-ENQUEUED';
-  static const String uplQueueSummary = 'BKP-UPL-QUEUE-SUMMARY';
-  static const String uplResume = 'BKP-UPL-RESUME';
-  static const String uplCancel = 'BKP-UPL-CANCEL';
-  static const String uplTaskFail = 'BKP-UPL-TASK-FAIL';
-  static const String uplTaskComplete = 'BKP-UPL-TASK-COMPLETE';
-  static const String uplResumeSkipped = 'BKP-UPL-RESUME-SKIPPED';
-  static const String syncStart = 'BKP-SYNC-START';
-  static const String syncEnd = 'BKP-SYNC-END';
-  static const String syncBatch = 'BKP-SYNC-BATCH';
-  static const String syncWsBatch = 'BKP-SYNC-WS-BATCH';
-  static const String hashStart = 'BKP-HASH-START';
-  static const String hashEnd = 'BKP-HASH-END';
-  static const String hashAssetFail = 'BKP-HASH-ASSET-FAIL';
-  static const String endpointLocalFail = 'BKP-ENDPOINT-LOCAL-FAIL';
-  static const String endpointSelected = 'BKP-ENDPOINT-SELECTED';
-  static const String endpointFallback = 'BKP-ENDPOINT-FALLBACK';
-  static const String runSummary = 'BKP-RUN-SUMMARY';
-}
+/// Fork-only backup run telemetry. Keep [Bkp.fg]/[Bkp.bg] calls in:
+/// - [DriftBackupNotifier] (FG)
+/// - [BackgroundWorkerBgService] (BG)
+/// - [BackgroundUploadService] (iOS URLSession queue)
+class Bkp {
+  Bkp._();
 
-class BackupTrace {
-  BackupTrace._();
+  static String runFg() => _id('F');
 
-  static final String _sessionId = _genId('S');
+  static String runBg() => _id('B');
 
-  static String get sessionId => _sessionId;
-
-  static String newRunId() => _genId('R');
-
-  static String phaseValue(BackupTracePhase phase) {
-    return switch (phase) {
-      BackupTracePhase.trigger => 'PHASE_TRIGGER',
-      BackupTracePhase.endpoint => 'PHASE_ENDPOINT',
-      BackupTracePhase.sync => 'PHASE_SYNC',
-      BackupTracePhase.hash => 'PHASE_HASH',
-      BackupTracePhase.queue => 'PHASE_QUEUE',
-      BackupTracePhase.upload => 'PHASE_UPLOAD',
-      BackupTracePhase.postSync => 'PHASE_POST_SYNC',
-      BackupTracePhase.summary => 'PHASE_SUMMARY',
-    };
-  }
-
-  static String statusValue(BackupTraceStatus status) {
-    return switch (status) {
-      BackupTraceStatus.ok => 'ok',
-      BackupTraceStatus.partial => 'partial',
-      BackupTraceStatus.fail => 'fail',
-      BackupTraceStatus.retry => 'retry',
-      BackupTraceStatus.skip => 'skip',
-    };
-  }
-
-  static String format({
-    required String event,
-    required BackupTracePhase phase,
-    required String step,
-    required String source,
-    required String appState,
-    required String trigger,
-    required BackupTraceStatus status,
-    required String reasonCode,
-    String? runId,
-    int? elapsedMs,
-    Map<String, Object?> extra = const {},
+  static void fg(
+    Logger log,
+    String evt, {
+    String? run,
+    String reason = '',
+    String status = 'ok',
+    int? ms,
+    Map<String, Object?>? data,
+    Level level = Level.INFO,
+    Object? error,
+    StackTrace? stack,
   }) {
-    final fields = <String, Object?>{
-      'event': event,
-      'phase': phaseValue(phase),
-      'step': step,
-      'source': source,
-      'appState': appState,
-      'trigger': trigger,
-      'runId': runId ?? 'RUN_UNKNOWN',
-      'sessionId': sessionId,
-      'status': statusValue(status),
-      'reasonCode': reasonCode,
-      if (elapsedMs != null) 'elapsedMs': elapsedMs,
-      ...extra,
-    };
-
-    final payload = fields.entries.map((e) => '${e.key}=${e.value}').join(' ');
-    return '$kBackupTraceTag $payload';
+    _write(
+      log,
+      kBkpFgTag,
+      evt,
+      run: run,
+      reason: reason,
+      status: status,
+      ms: ms,
+      data: data,
+      level: level,
+      error: error,
+      stack: stack,
+    );
   }
 
-  static String _genId(String prefix) {
+  static void bg(
+    Logger log,
+    String evt, {
+    String? run,
+    String reason = '',
+    String status = 'ok',
+    int? ms,
+    Map<String, Object?>? data,
+    Level level = Level.INFO,
+    Object? error,
+    StackTrace? stack,
+  }) {
+    _write(
+      log,
+      kBkpBgTag,
+      evt,
+      run: run,
+      reason: reason,
+      status: status,
+      ms: ms,
+      data: data,
+      level: level,
+      error: error,
+      stack: stack,
+    );
+  }
+
+  static void _write(
+    Logger log,
+    String tag,
+    String evt, {
+    String? run,
+    required String reason,
+    required String status,
+    int? ms,
+    Map<String, Object?>? data,
+    required Level level,
+    Object? error,
+    StackTrace? stack,
+  }) {
+    final buf = StringBuffer('$tag evt=$evt status=$status');
+    if (run != null) {
+      buf.write(' run=$run');
+    }
+    if (reason.isNotEmpty) {
+      buf.write(' reason=$reason');
+    }
+    if (ms != null) {
+      buf.write(' ms=$ms');
+    }
+    if (data != null) {
+      for (final entry in data.entries) {
+        final value = entry.value;
+        if (value != null) {
+          buf.write(' ${entry.key}=$value');
+        }
+      }
+    }
+    log.log(level, buf.toString(), error, stack);
+  }
+
+  static String _id(String prefix) {
     final ts = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    final rnd = Random().nextInt(1 << 20).toRadixString(36);
+    final rnd = Random().nextInt(1 << 16).toRadixString(36);
     return '${prefix}_$ts$rnd';
   }
-}
-
-void logBackupTrace(
-  Logger logger, {
-  required Level level,
-  required String event,
-  required BackupTracePhase phase,
-  required String step,
-  required String source,
-  required String appState,
-  required String trigger,
-  required BackupTraceStatus status,
-  required String reasonCode,
-  String? runId,
-  int? elapsedMs,
-  Map<String, Object?> extra = const {},
-  Object? error,
-  StackTrace? stackTrace,
-}) {
-  final msg = BackupTrace.format(
-    event: event,
-    phase: phase,
-    step: step,
-    source: source,
-    appState: appState,
-    trigger: trigger,
-    status: status,
-    reasonCode: reasonCode,
-    runId: runId,
-    elapsedMs: elapsedMs,
-    extra: extra,
-  );
-  logger.log(level, msg, error, stackTrace);
 }

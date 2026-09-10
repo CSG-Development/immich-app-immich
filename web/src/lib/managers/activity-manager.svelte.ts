@@ -98,7 +98,7 @@ class ActivityManager {
     return activity;
   }
 
-  async deleteActivity(activity: ActivityResponseDto, index?: number) {
+  async deleteActivity(activity: ActivityResponseDto) {
     if (!this.#albumId) {
       return;
     }
@@ -111,11 +111,20 @@ class ActivityManager {
       this.#likeCount--;
     }
 
-    this.#activities = index
-      ? this.#activities.splice(index, 1)
-      : this.#activities.filter(({ id }) => id !== activity.id);
+    this.#activities = this.#activities.filter(({ id }) => id !== activity.id);
 
-    await deleteActivity({ id: activity.id });
+    try {
+      await deleteActivity({ id: activity.id });
+    } catch (error) {
+      this.#invalidateCache(this.#albumId, this.#assetId);
+      try {
+        await this.refreshActivities(this.#albumId, this.#assetId);
+      } catch {
+        // Prefer the original delete error for the caller.
+      }
+      throw error;
+    }
+
     this.#invalidateCache(this.#albumId, this.#assetId);
     handlePromiseError(this.refreshActivities(this.#albumId, this.#assetId));
   }

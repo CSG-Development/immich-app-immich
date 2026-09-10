@@ -13,7 +13,10 @@ abstract class $DriftLogger extends i0.GeneratedDatabase {
   Iterable<i0.TableInfo<i0.Table, Object?>> get allTables =>
       allSchemaEntities.whereType<i0.TableInfo<i0.Table, Object?>>();
   @override
-  List<i0.DatabaseSchemaEntity> get allSchemaEntities => [logMessageEntity];
+  List<i0.DatabaseSchemaEntity> get allSchemaEntities => [
+    logMessageEntity,
+    i1.idxLoggerMessagesSessionId,
+  ];
   @override
   i0.DriftDatabaseOptions get options =>
       const i0.DriftDatabaseOptions(storeDateTimeAsText: true);

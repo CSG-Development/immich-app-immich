@@ -6,6 +6,7 @@
   import FaceEditor from '$lib/components/asset-viewer/face-editor/face-editor.svelte';
   import OcrBoundingBox from '$lib/components/asset-viewer/ocr-bounding-box.svelte';
   import AssetViewerEvents from '$lib/components/AssetViewerEvents.svelte';
+  import { assetViewerFadeDuration } from '$lib/constants';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { castManager } from '$lib/managers/cast-manager.svelte';
@@ -24,7 +25,10 @@
   import { onDestroy, untrack } from 'svelte';
   import { useSwipe, type SwipeCustomEvent } from 'svelte-gestures';
   import { t } from 'svelte-i18n';
+  import { fade } from 'svelte/transition';
   import type { AssetCursor } from './asset-viewer.svelte';
+
+  const STATIC_SLIDE_KEY = 'static';
 
   type Props = {
     cursor: AssetCursor;
@@ -37,16 +41,26 @@
 
   let { cursor, element = $bindable(), sharedLink, onReady, onError, onSwipe }: Props = $props();
 
-  const { slideshowState, slideshowLook } = slideshowStore;
+  const { slideshowState, slideshowLook, slideshowTransition } = slideshowStore;
   const asset = $derived(cursor.current);
+  const haveFadeTransition = $derived($slideshowState !== SlideshowState.None && $slideshowTransition);
+  const fadeDuration = $derived(haveFadeTransition ? assetViewerFadeDuration : 0);
 
   let visibleImageReady: boolean = $state(false);
+  let slideKey = $state(STATIC_SLIDE_KEY);
 
   let previousAssetId: string | undefined;
   $effect.pre(() => {
     const id = asset.id;
+    if (!haveFadeTransition) {
+      slideKey = STATIC_SLIDE_KEY;
+    }
+
     if (id === previousAssetId) {
       return;
+    }
+    if (haveFadeTransition && previousAssetId !== undefined) {
+      slideKey = id;
     }
     previousAssetId = id;
     untrack(() => {
@@ -229,99 +243,111 @@
   use:zoomImageAction={{ zoomTarget: adaptiveImage }}
   {...useSwipe((event) => onSwipe?.(event))}
 >
-  <AdaptiveImage
-    {asset}
-    {sharedLink}
-    {container}
-    objectFit={$slideshowState !== SlideshowState.None && $slideshowLook === SlideshowLook.Cover ? 'cover' : 'contain'}
-    {onUrlChange}
-    onImageReady={() => {
-      visibleImageReady = true;
-      onReady?.();
-    }}
-    onError={() => {
-      onError?.();
-      onReady?.();
-    }}
-    bind:imgRef={assetViewerManager.imgRef}
-    bind:ref={adaptiveImage}
-  >
-    {#snippet backdrop()}
-      {#if blurredSlideshow}
-        <canvas
-          use:thumbhash={{ base64ThumbHash: asset.thumbhash! }}
-          class="absolute top-0 left-0 inset-s-0 h-dvh w-dvw"
-        ></canvas>
-      {/if}
-    {/snippet}
-    {#snippet overlays()}
-      <div
-        class="absolute inset-0 pointer-events-none transition-opacity duration-150"
-        style:opacity={isHighlighting ? 1 : 0}
+  {#key slideKey}
+    <div
+      class={['h-full w-full', haveFadeTransition && 'absolute inset-0']}
+      data-testid="photo-viewer-slide"
+      data-fade-transition={haveFadeTransition ? 'true' : 'false'}
+      transition:fade={{ duration: fadeDuration }}
+    >
+      <AdaptiveImage
+        {asset}
+        {sharedLink}
+        {container}
+        objectFit={$slideshowState !== SlideshowState.None && $slideshowLook === SlideshowLook.Cover
+          ? 'cover'
+          : 'contain'}
+        {onUrlChange}
+        onImageReady={() => {
+          visibleImageReady = true;
+          onReady?.();
+        }}
+        onError={() => {
+          onError?.();
+          onReady?.();
+        }}
+        bind:imgRef={assetViewerManager.imgRef}
+        bind:ref={adaptiveImage}
       >
-        <svg class="absolute inset-0 w-full h-full">
-          <defs>
-            <mask id="face-dim-mask">
-              <rect width="100%" height="100%" fill="white" />
-              {#each visibleBoxes as box (box.id)}
-                <rect x={box.left} y={box.top} width={box.width} height={box.height} fill="black" rx="8" />
-              {/each}
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" mask="url(#face-dim-mask)" />
-        </svg>
-        {#each visibleBoxes as box (box.id)}
-          {@const overlay = faceOverlays.find((item) => item.id === box.id)}
-          <div
-            class="absolute border-solid border-white border-3 rounded-lg"
-            style="top: {box.top}px; left: {box.left}px; height: {box.height}px; width: {box.width}px;"
-          ></div>
-          {#if overlay?.name}
-            <div
-              aria-hidden="true"
-              class="absolute bg-white/90 text-black px-2 py-1 rounded text-sm font-medium whitespace-nowrap shadow-lg"
-              style="top: {box.top + box.height + 4}px; left: {box.left + box.width}px; transform: translateX(-100%);"
-            >
-              {overlay.name}
-            </div>
+        {#snippet backdrop()}
+          {#if blurredSlideshow}
+            <canvas
+              use:thumbhash={{ base64ThumbHash: asset.thumbhash! }}
+              class="absolute top-0 left-0 inset-s-0 h-dvh w-dvw"
+            ></canvas>
           {/if}
-        {/each}
-      </div>
-
-      {#each faceOverlays as overlay (overlay.id)}
-        {@const label = overlay.name || $t('person')}
-        {@const faceClass = `absolute rounded-lg pointer-events-auto ${canOpenPerson ? 'cursor-pointer' : ''}`}
-        {@const faceStyle = `top: ${overlay.top}px; left: ${overlay.left}px; height: ${overlay.height}px; width: ${overlay.width}px;`}
-        {#if canOpenPerson}
-          <a
-            href={Route.viewPerson(overlay.person, { previousRoute })}
-            class={faceClass}
-            style={faceStyle}
-            data-overlay-interactive
-            aria-label={label}
-            onpointerenter={() => onFacePointerEnter(overlay.face)}
-            onpointerleave={onFacePointerLeave}
-            ondblclick={stopZoomDblClick}
-          ></a>
-        {:else}
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
+        {/snippet}
+        {#snippet overlays()}
           <div
-            class={faceClass}
-            style={faceStyle}
-            data-overlay-interactive
-            role="presentation"
-            onpointerenter={() => onFacePointerEnter(overlay.face)}
-            onpointerleave={onFacePointerLeave}
-            ondblclick={stopZoomDblClick}
-          ></div>
-        {/if}
-      {/each}
+            class="absolute inset-0 pointer-events-none transition-opacity duration-150"
+            style:opacity={isHighlighting ? 1 : 0}
+          >
+            <svg class="absolute inset-0 w-full h-full">
+              <defs>
+                <mask id="face-dim-mask">
+                  <rect width="100%" height="100%" fill="white" />
+                  {#each visibleBoxes as box (box.id)}
+                    <rect x={box.left} y={box.top} width={box.width} height={box.height} fill="black" rx="8" />
+                  {/each}
+                </mask>
+              </defs>
+              <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" mask="url(#face-dim-mask)" />
+            </svg>
+            {#each visibleBoxes as box (box.id)}
+              {@const overlay = faceOverlays.find((item) => item.id === box.id)}
+              <div
+                class="absolute border-solid border-white border-3 rounded-lg"
+                style="top: {box.top}px; left: {box.left}px; height: {box.height}px; width: {box.width}px;"
+              ></div>
+              {#if overlay?.name}
+                <div
+                  aria-hidden="true"
+                  class="absolute bg-white/90 text-black px-2 py-1 rounded text-sm font-medium whitespace-nowrap shadow-lg"
+                  style="top: {box.top + box.height + 4}px; left: {box.left +
+                    box.width}px; transform: translateX(-100%);"
+                >
+                  {overlay.name}
+                </div>
+              {/if}
+            {/each}
+          </div>
 
-      {#each ocrBoxes as ocrBox (ocrBox.id)}
-        <OcrBoundingBox {ocrBox} />
-      {/each}
-    {/snippet}
-  </AdaptiveImage>
+          {#each faceOverlays as overlay (overlay.id)}
+            {@const label = overlay.name || $t('person')}
+            {@const faceClass = `absolute rounded-lg pointer-events-auto ${canOpenPerson ? 'cursor-pointer' : ''}`}
+            {@const faceStyle = `top: ${overlay.top}px; left: ${overlay.left}px; height: ${overlay.height}px; width: ${overlay.width}px;`}
+            {#if canOpenPerson}
+              <a
+                href={Route.viewPerson(overlay.person, { previousRoute })}
+                class={faceClass}
+                style={faceStyle}
+                data-overlay-interactive
+                aria-label={label}
+                onpointerenter={() => onFacePointerEnter(overlay.face)}
+                onpointerleave={onFacePointerLeave}
+                ondblclick={stopZoomDblClick}
+              ></a>
+            {:else}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class={faceClass}
+                style={faceStyle}
+                data-overlay-interactive
+                role="presentation"
+                onpointerenter={() => onFacePointerEnter(overlay.face)}
+                onpointerleave={onFacePointerLeave}
+                ondblclick={stopZoomDblClick}
+              ></div>
+            {/if}
+          {/each}
+
+          {#each ocrBoxes as ocrBox (ocrBox.id)}
+            <OcrBoundingBox {ocrBox} />
+          {/each}
+        {/snippet}
+      </AdaptiveImage>
+    </div>
+  {/key}
 
   {#if assetViewerManager.isFaceEditMode && assetViewerManager.imgRef}
     <FaceEditor htmlElement={assetViewerManager.imgRef} {containerWidth} {containerHeight} assetId={asset.id} />

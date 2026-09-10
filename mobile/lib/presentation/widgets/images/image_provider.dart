@@ -61,6 +61,10 @@ mixin CancellableImageProviderMixin<T extends Object> on CancellableImageProvide
       final image = await request.load(decode);
       if (isCancelled || image == null) {
         image?.dispose();
+        // Avoid caching a blank completer (e.g. cancelled face thumbnail loads).
+        if (isFinal) {
+          PaintingBinding.instance.imageCache.evict(this);
+        }
         return;
       }
       isFinished = isFinal;

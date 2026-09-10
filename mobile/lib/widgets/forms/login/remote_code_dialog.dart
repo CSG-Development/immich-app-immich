@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hc_device/hc_device.dart';
 import 'package:hc_device/data/errors/domain_errors.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/pages/security/widgets/lock_utils.dart';
 import 'package:immich_mobile/services/client_device_name.helper.dart';
 import 'package:immich_mobile/widgets/forms/pin_input.dart';
 import 'package:logging/logging.dart';
@@ -58,10 +59,18 @@ class RemoteCodeModal extends HookWidget {
         emailNotAllowed.value = false;
         return;
       }
+
+      if (result.retryAfterSeconds != null) {
+        resendCooldownSeconds.value = result.retryAfterSeconds!;
+      }
+
       remoteCodeInitiateError.value = true;
       if (result.error == RemoteCodeModalError.notAllowed) {
         remoteCodeErrorText.value = 'curator.email_not_registered_error'.tr();
         emailNotAllowed.value = true;
+      } else if (result.error == RemoteCodeModalError.tooManyRequests) {
+        remoteCodeErrorText.value = 'curator.email_too_many_requests_description'.tr();
+        emailNotAllowed.value = false;
       } else {
         remoteCodeErrorText.value = 'curator.remote_access_server_unreachable'.tr();
       }
@@ -234,7 +243,109 @@ class RemoteCodeModal extends HookWidget {
         },
     ];
 
-    final isWide = context.isTablet || context.orientation == Orientation.landscape;
+    final mediaQuery = MediaQuery.of(context);
+    final useLandscapePhoneLayout = isLandscapePhone(context);
+    final isWide = context.isTablet || mediaQuery.orientation == Orientation.landscape;
+
+    final landscapeDialogWidth = useLandscapePhoneLayout
+        ? (mediaQuery.size.width - mediaQuery.padding.horizontal - 48).clamp(280.0, 400.0)
+        : null;
+
+    // Dialog horizontal inset (24) + inner padding (24) on each side.
+    const dialogHorizontalInsets = 24.0 * 4;
+    final pinContentWidth = landscapeDialogWidth != null
+        ? landscapeDialogWidth - 40
+        : isWide
+        ? 400.0
+        : (mediaQuery.size.width - dialogHorizontalInsets);
+    const gapWidth = 3.0;
+    var pinWidth = (pinContentWidth - (gapWidth * 5)) / 6;
+    final maxPinWidth = useLandscapePhoneLayout ? 44.0 : 60.0;
+    if (pinWidth > maxPinWidth) {
+      pinWidth = maxPinWidth;
+    }
+    final pinHeight = pinWidth / (60 / 64);
+
+    final customDefaultPinTheme = PinTheme(
+      width: pinWidth,
+      height: pinHeight,
+      textStyle: TextStyle(fontSize: 24, color: context.colorScheme.onSurface),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(19)),
+        border: Border.all(
+          color: context.colorScheme.outlineVariant,
+        ),
+        color: Colors.transparent,
+      ),
+    );
+
+    final customFocusedPinTheme = customDefaultPinTheme.copyWith(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(19)),
+        border: Border.all(
+          color: context.colorScheme.primary,
+          width: 2,
+        ),
+        color: Colors.transparent,
+      ),
+    );
+
+    final customErrorPinTheme = customDefaultPinTheme.copyWith(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(19)),
+        border: Border.all(
+          color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
+          width: 2,
+        ),
+        color: Colors.transparent,
+      ),
+    );
+
+    final builtActions = actions.map((actionBuilder) => actionBuilder()).toList();
+
+    Widget buildPinField() {
+      return Opacity(
+        opacity: (remoteCodeLoading.value || isValidating.value) ? 0.5 : 1.0,
+        child: AbsorbPointer(
+          absorbing: remoteCodeLoading.value || isValidating.value,
+          child: PinInput(
+            controller: remoteCodeController,
+            onChanged: (value) {
+              if (remoteCodeErrorText.value != null) {
+                remoteCodeErrorText.value = null;
+              }
+            },
+            length: 6,
+            autoFocus: true,
+            hasError: remoteCodeErrorText.value != null,
+            defaultPinTheme: customDefaultPinTheme,
+            focusedPinTheme: customFocusedPinTheme,
+            errorPinTheme: customErrorPinTheme,
+            cursor: Align(
+              alignment: Alignment.center,
+              child: Container(width: 2, height: 22, color: context.primaryColor),
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget? buildErrorText() {
+      if (remoteCodeErrorText.value == null) {
+        return null;
+      }
+      return Padding(
+        padding: const EdgeInsets.only(left: 16, top: 4),
+        child: Text(
+          remoteCodeErrorText.value!,
+          textAlign: TextAlign.left,
+          style: context.textTheme.bodySmall?.copyWith(
+            color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
+          ),
+          maxLines: 3,
+        ),
+      );
+    }
 
     if (emailNotAllowed.value == true) {
       return AlertDialog(
@@ -251,6 +362,69 @@ class RemoteCodeModal extends HookWidget {
         ],
       );
     }
+    if (useLandscapePhoneLayout) {
+      // Pin to the top with fixed insets. Do not fold viewInsets into padding/constraints:
+      // that re-centers or shrinks the route and pushes the dialog off-screen.
+      final keyboardHeight = mediaQuery.viewInsets.bottom;
+      const verticalChrome = 52.0; // top inset + dialog vertical padding
+      final maxScrollHeight = (mediaQuery.size.height -
+              mediaQuery.padding.top -
+              keyboardHeight -
+              verticalChrome)
+          .clamp(120.0, mediaQuery.size.height);
+      final dialogWidth = landscapeDialogWidth!;
+
+      final landscapeDialog = Dialog(
+        alignment: Alignment.topCenter,
+        insetPadding: EdgeInsets.fromLTRB(
+          24 + mediaQuery.padding.left,
+          mediaQuery.padding.top + 8,
+          24 + mediaQuery.padding.right,
+          16,
+        ),
+        child: SizedBox(
+          width: dialogWidth,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxScrollHeight),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'curator.sign_in_screen_remote_code_title'.tr(),
+                      style: context.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'curator.sign_in_screen_remote_code_description'.tr(),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    buildPinField(),
+                    if (buildErrorText() case final errorText?) errorText,
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(children: builtActions),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      return MediaQuery.removeViewInsets(
+        context: context,
+        removeBottom: true,
+        child: landscapeDialog,
+      );
+    }
+
     return AlertDialog(
       title: Text('curator.sign_in_screen_remote_code_title'.tr()),
       content: ConstrainedBox(
@@ -259,101 +433,17 @@ class RemoteCodeModal extends HookWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('curator.sign_in_screen_remote_code_description'.tr(), style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 24),
-            Opacity(
-              opacity: (remoteCodeLoading.value || isValidating.value) ? 0.5 : 1.0,
-              child: AbsorbPointer(
-                absorbing: remoteCodeLoading.value || isValidating.value,
-                child: Builder(
-                  builder: (context) {
-                    // Compute pin size for custom themes
-                    const minimumPadding = 18.0;
-                    const gapWidth = 3.0;
-                    final screenWidth = MediaQuery.sizeOf(context).width;
-                    double pinWidth = (screenWidth - (minimumPadding * 2) - (gapWidth * 5)) / 6;
-                    if (pinWidth > 60) pinWidth = 60;
-                    final pinHeight = pinWidth / (60 / 64);
-
-                    // Custom default theme: grey border, no background
-                    final customDefaultPinTheme = PinTheme(
-                      width: pinWidth,
-                      height: pinHeight,
-                      textStyle: TextStyle(fontSize: 24, color: context.colorScheme.onSurface),
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(19)),
-                        border: Border.all(
-                          color: context.colorScheme.outlineVariant,
-                        ),
-                        color: Colors.transparent,
-                      ),
-                    );
-
-                    // Custom focused theme: primary border, no background
-                    final customFocusedPinTheme = customDefaultPinTheme.copyWith(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(19)),
-                        border: Border.all(
-                          color: context.colorScheme.primary,
-                          width: 2,
-                        ),
-                        color: Colors.transparent,
-                      ),
-                    );
-
-                    // Custom error theme: specific error colors, no background
-                    final customErrorPinTheme = customDefaultPinTheme.copyWith(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(19)),
-                        border: Border.all(
-                          color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-                          width: 2,
-                        ),
-                        color: Colors.transparent,
-                      ),
-                    );
-
-                    return PinInput(
-                      controller: remoteCodeController,
-                      onChanged: (value) {
-                        if (remoteCodeErrorText.value != null) {
-                          remoteCodeErrorText.value = null;
-                        }
-                      },
-                      length: 6,
-                      autoFocus: true,
-                      hasError: remoteCodeErrorText.value != null,
-                      defaultPinTheme: customDefaultPinTheme,
-                      focusedPinTheme: customFocusedPinTheme,
-                      errorPinTheme: customErrorPinTheme,
-                      cursor: Align(
-                        alignment: Alignment.center,
-                        child: Container(width: 2, height: 22, color: context.primaryColor),
-                      ),
-                    );
-                  },
-                ),
-              ),
+            Text(
+              'curator.sign_in_screen_remote_code_description'.tr(),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            // Error message display
-            if (remoteCodeErrorText.value != null) ...[
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Text(
-                  remoteCodeErrorText.value!,
-                  textAlign: TextAlign.left,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.isDarkTheme ? const Color(0xFFF28F8C) : const Color(0xFFF44336),
-                  ),
-                  maxLines: 2,
-                ),
-              ),
-            ],
+            const SizedBox(height: 24),
+            buildPinField(),
+            if (buildErrorText() case final errorText?) errorText,
           ],
         ),
       ),
-      actions: actions.map((actionBuilder) => actionBuilder()).toList(),
+      actions: builtActions,
     );
   }
 }
@@ -442,7 +532,8 @@ Future<void> _presentRemoteCodeModal({
         final retryAfter = extractRetryAfterSeconds(response);
         _otpLog.info('[OTP] sendCode rate-limited retryAfter=${retryAfter}s email=$email');
         return RemoteCodeInitiateResult(
-          success: true,
+          success: false,
+          error: RemoteCodeModalError.tooManyRequests,
           retryAfterSeconds: retryAfter,
         );
       }

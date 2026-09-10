@@ -98,7 +98,12 @@ class ForegroundUploadService {
     _logger.info('Backup network check: hasWifi=$hasWifi candidates=${candidates.length} wifiSkipped=$wifiSkipped');
 
     if (useSequentialUpload) {
-      await _uploadSequentially(items: candidates, cancelToken: cancelToken, hasWifi: hasWifi, callbacks: callbacks);
+      await _uploadSequentially(
+        items: candidates,
+        cancelToken: cancelToken,
+        hasWifi: hasWifi,
+        callbacks: callbacks,
+      );
     } else {
       await _executeWithWorkerPool<LocalAsset>(
         items: candidates,

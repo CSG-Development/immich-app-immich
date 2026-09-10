@@ -235,7 +235,7 @@ ThemeData getThemeData({
     ),
     inputDecorationTheme: InputDecorationTheme(
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: normalizedColorScheme.primary),
+        borderSide: BorderSide(color: brandColors.cta),
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       focusedErrorBorder: OutlineInputBorder(

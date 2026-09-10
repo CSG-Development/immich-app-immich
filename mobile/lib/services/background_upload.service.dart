@@ -159,27 +159,14 @@ class BackgroundUploadService {
   ///
   /// Finds backup candidates, builds upload tasks, and enqueues them
   /// for background processing.
-  Future<void> uploadBackupCandidates(String userId) async {
+  Future<void> uploadBackupCandidates(String userId, {String? traceRunId}) async {
     await _storageRepository.clearCache();
     shouldAbortQueuingTasks = false;
-    _currentRunId = BackupTrace.newRunId();
+    _currentRunId = traceRunId ?? Bkp.runBg();
 
     final candidates = await _backupRepository.getCandidates(userId);
     if (candidates.isEmpty) {
-      logBackupTrace(
-        _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.uplStart,
-        phase: BackupTracePhase.queue,
-        step: 'QUEUE_START',
-        source: 'BG_URLSESSION',
-        appState: 'ACTIVE',
-        trigger: 'background_queue',
-        status: BackupTraceStatus.skip,
-        reasonCode: 'QUEUE_NO_CANDIDATES',
-        runId: _currentRunId,
-        extra: {'userId': userId},
-      );
+      Bkp.bg(_logger, 'QUEUE', run: _currentRunId, reason: 'NO_CANDIDATES', status: 'skip', data: {'userId': userId});
       _logger.info("No new backup candidates found, finishing background upload");
       return;
     }
@@ -200,44 +187,30 @@ class BackgroundUploadService {
     if (tasks.isNotEmpty && !shouldAbortQueuingTasks) {
       _logger.info("Enqueuing ${tasks.length} background upload tasks");
       await enqueueTasks(tasks);
-      logBackupTrace(
+      Bkp.bg(
         _logger,
-        level: Level.INFO,
-        event: BackupTraceEvent.uplBatchEnqueued,
-        phase: BackupTracePhase.queue,
-        step: 'QUEUE_BATCH_ENQUEUED',
-        source: 'BG_URLSESSION',
-        appState: 'ACTIVE',
-        trigger: 'background_queue',
-        status: BackupTraceStatus.ok,
-        reasonCode: 'QUEUE_BATCH_READY',
-        runId: _currentRunId,
-        extra: {
-          'userId': userId,
-          'candidates': candidates.length,
-          'enqueued': tasks.length,
-        },
+        'QUEUE',
+        run: _currentRunId,
+        reason: 'BATCH_ENQUEUED',
+        data: {'userId': userId, 'candidates': candidates.length, 'enqueued': tasks.length},
       );
+      return;
     }
+
+    Bkp.bg(
+      _logger,
+      'QUEUE',
+      run: _currentRunId,
+      reason: shouldAbortQueuingTasks ? 'QUEUE_ABORTED' : 'NO_TASKS',
+      status: 'skip',
+      data: {'userId': userId, 'candidates': candidates.length, 'built': tasks.length},
+    );
   }
 
   /// Cancel all ongoing background uploads and reset the upload queue
   ///
   /// Returns the number of tasks left in the queue
   Future<int> cancel() async {
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplCancel,
-      phase: BackupTracePhase.queue,
-      step: 'QUEUE_ABORTED',
-      source: 'BG_URLSESSION',
-      appState: 'ACTIVE',
-      trigger: 'background_cancel',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'QUEUE_CANCEL',
-      runId: _currentRunId,
-    );
     shouldAbortQueuingTasks = true;
 
     await _storageRepository.clearCache();
@@ -252,19 +225,6 @@ class BackgroundUploadService {
 
   /// Resume background backup processing
   Future<void> resume() {
-    logBackupTrace(
-      _logger,
-      level: Level.INFO,
-      event: BackupTraceEvent.uplResume,
-      phase: BackupTracePhase.trigger,
-      step: 'TRIGGER_RECEIVED',
-      source: 'BG_URLSESSION',
-      appState: 'RESUMED',
-      trigger: 'background_resume',
-      status: BackupTraceStatus.ok,
-      reasonCode: 'QUEUE_RESUME',
-      runId: _currentRunId,
-    );
     return _uploadRepository.start();
   }
 
@@ -282,6 +242,12 @@ class BackgroundUploadService {
           }
         }
 
+        break;
+
+      case TaskStatus.failed:
+        break;
+
+      case TaskStatus.waitingToRetry:
         break;
 
       default:

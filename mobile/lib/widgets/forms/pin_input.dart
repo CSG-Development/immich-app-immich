@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:pinput/pinput.dart';
 
@@ -15,6 +16,8 @@ class PinInput extends StatelessWidget {
   final PinTheme? focusedPinTheme;
   final PinTheme? errorPinTheme;
   final Widget? cursor;
+  final Widget Function(int)? separatorBuilder;
+  final TextInputType? keyboardType;
 
   const PinInput({
     super.key,
@@ -30,6 +33,8 @@ class PinInput extends StatelessWidget {
     this.focusedPinTheme,
     this.errorPinTheme,
     this.cursor,
+    this.separatorBuilder,
+    this.keyboardType,
   });
 
   @override
@@ -91,6 +96,14 @@ class PinInput extends StatelessWidget {
           ],
         );
 
+    // iPadOS shows a floating mini numpad for TextInputType.number that often
+    // freezes after rotation. signed: true forces the docked full keyboard.
+    final isIpad = context.isTablet && Theme.of(context).platform == TargetPlatform.iOS;
+    final effectiveKeyboardType = keyboardType ??
+        (isIpad
+            ? const TextInputType.numberWithOptions(signed: true)
+            : TextInputType.number);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -107,13 +120,15 @@ class PinInput extends StatelessWidget {
           autofocus: autoFocus ?? false,
           obscureText: obscureText ?? false,
           obscuringWidget: Icon(Icons.vpn_key_rounded, color: context.primaryColor, size: 20),
-          separatorBuilder: (index) => const SizedBox(height: 64, width: 3),
+          separatorBuilder: separatorBuilder ?? (index) => const SizedBox(width: 3),
           cursor: baseCursor,
           defaultPinTheme: baseDefaultPinTheme,
           focusedPinTheme: baseFocusedPinTheme,
           errorPinTheme: baseErrorPinTheme,
           pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
           length: length ?? 6,
+          keyboardType: effectiveKeyboardType,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: onChanged,
           onCompleted: onCompleted,
         ),

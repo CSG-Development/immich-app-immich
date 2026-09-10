@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class InputDecorations {
   static Color _hintColor(BuildContext context) =>
@@ -27,12 +28,14 @@ class InputDecorations {
     double borderRadius = 15.0,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    // SG brand green (#6EBE49) for focused input borders; other presets keep [ColorScheme.primary].
+    final focusColor = Theme.of(context).extension<ImmichBrandColors>()?.cta ?? colorScheme.primary;
 
     return OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       borderSide: BorderSide(
         width: 2.0,
-        color: isError ? _errorColor(context) : colorScheme.primary,
+        color: isError ? _errorColor(context) : focusColor,
       ),
     );
   }

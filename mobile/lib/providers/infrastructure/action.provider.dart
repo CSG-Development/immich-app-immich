@@ -517,6 +517,15 @@ class ActionNotifier extends Notifier<void> {
 
     try {
       final isUpdated = await _service.updateDescription(ids.first, description);
+      if (isUpdated && source == ActionSource.viewer) {
+        // This must be called since editing description
+        // does not update the currentAsset which means
+        // the exif provider will not be refreshed automatically
+        final currentAsset = ref.read(assetViewerProvider).currentAsset;
+        if (currentAsset != null) {
+          ref.invalidate(assetExifProvider(currentAsset));
+        }
+      }
       return ActionResult(count: 1, success: isUpdated);
     } catch (error, stack) {
       _logger.severe('Failed to update description for asset', error, stack);
@@ -610,7 +619,9 @@ class ActionNotifier extends Notifier<void> {
     List<LocalAsset>? assets,
     FutureOr<void> Function(LocalAsset asset, String remoteId)? onAssetUploaded,
   }) async {
-    final assetsToUpload = assets ?? _getAssets(source).whereType<LocalAsset>().toList();
+    final assetsToUpload = (assets ?? _getAssets(source).whereType<LocalAsset>())
+        .where((asset) => asset.isLocalOnly)
+        .toList(growable: false);
     final assetById = {for (final a in assetsToUpload) a.id: a};
     final uploadedAssetIds = <String>{};
     final failedAssetIds = <String>{};

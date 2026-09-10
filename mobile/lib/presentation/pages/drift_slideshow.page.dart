@@ -4,15 +4,20 @@ import 'dart:ui';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/enums.dart';
+import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/config/slideshow_config.dart';
+import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/domain/services/timeline.service.dart';
+import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/scroll_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/pages/common/settings.page.dart';
+import 'package:immich_mobile/presentation/widgets/asset_viewer/asset_preloader.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/video_viewer.widget.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
@@ -40,7 +45,8 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   late SlideshowConfig _config;
   late final PageController _pageController;
   late final Stopwatch _stopwatch;
-  late Timer _timer;
+  // Initialized so cancel is safe when the first slide is a video (no photo timer).
+  Timer _timer = Timer(Duration.zero, () {})..cancel();
   late int _index;
   late int _nextIndex;
   bool _paused = false;
@@ -52,20 +58,71 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   int? _crossfadeToIndex;
   int _zoomCycle = 0;
   bool _disableAnimations = false;
+  StreamSubscription<TimelineReloadEvent>? _eventSubscription;
+  late final AssetPreloader _preloader;
+  Size _viewportSize = const Size(1080, 1920);
+  String? _warmedTag;
+  bool _timerActive = false;
+
+  // Shuffle preload can evict the on-screen asset from the timeline buffer;
+  // keep a small LRU so current/crossfade slides stay resolvable.
+  static const int _maxAssetCacheSize = 32;
+  final Map<int, BaseAsset> _assetCache = {};
+
+  bool get _isInFrame =>
+      SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks ||
+      SchedulerBinding.instance.schedulerPhase == SchedulerPhase.transientCallbacks;
+
+  BaseAsset? _resolveAsset(int index) {
+    final live = widget.timeline.getAssetSafe(index);
+    if (live != null) {
+      _cacheAsset(index, live);
+      return live;
+    }
+    final cached = _assetCache.remove(index);
+    if (cached != null) {
+      _assetCache[index] = cached;
+    }
+    return cached;
+  }
+
+  void _cacheAsset(int index, BaseAsset asset) {
+    _assetCache.remove(index);
+    _assetCache[index] = asset;
+    while (_assetCache.length > _maxAssetCacheSize) {
+      _assetCache.remove(_assetCache.keys.first);
+    }
+  }
 
   @override
   initState() {
     super.initState();
     _config = ref.read(appConfigProvider.select((s) => s.slideshow));
     final asset = ref.read(assetViewerProvider).currentAsset;
-    _index = asset == null ? 0 : widget.timeline.getIndex(asset.heroTag) ?? 0;
+    var index = asset == null ? 0 : widget.timeline.getIndex(asset.heroTag) ?? 0;
+    if (asset == null && _config.direction == SlideshowDirection.backward) {
+      index = widget.timeline.totalAssets > 0 ? widget.timeline.totalAssets - 1 : 0;
+    }
+    _index = index;
     _pageController = PageController(initialPage: _index);
     _crossfadeController = AnimationController(vsync: this, duration: Durations.extralong2);
     _crossfadeOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(_crossfadeController);
     _stopwatch = Stopwatch();
-    _createTimer();
+    _preloader = AssetPreloader(timelineService: widget.timeline, mounted: () => mounted);
+
+    // Photo timer only for images. onPageChanged does not fire for initialPage,
+    // so starting it for a first video would cut playback short after duration.
+    final initial = asset ?? _resolveAsset(index);
+    if (initial != null && initial.isImage) {
+      _createTimer();
+    }
+    if (!widget.timeline.hasRange(index, 1)) {
+      unawaited(_ensureIndexLoaded(index, startTimerIfReady: initial == null));
+    }
+
     _updateNextIndex();
     ref.listenManual(appConfigProvider.select((s) => s.slideshow), _onConfigChanged);
+    _eventSubscription = EventStream.shared.listen<TimelineReloadEvent>(_onTimelineReload);
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
     unawaited(WakelockPlus.enable());
@@ -81,6 +138,8 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   dispose() {
     _timer.cancel();
     _stopwatch.stop();
+    _eventSubscription?.cancel();
+    _preloader.dispose();
     _pageController.dispose();
     _crossfadeController.dispose();
     unawaited(WakelockPlus.disable());
@@ -89,7 +148,19 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   }
 
   void _play() {
-    final asset = widget.timeline.getAssetSafe(_index)!;
+    final asset = _resolveAsset(_index);
+
+    if (asset == null) {
+      setState(() {
+        _paused = false;
+      });
+      unawaited(_ensureIndexLoaded(_index, startTimerIfReady: true).then((_) {
+        if (mounted && !_paused) {
+          _updateNextIndex();
+        }
+      }));
+      return;
+    }
 
     if (asset.isImage) {
       _createTimer();
@@ -108,11 +179,12 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
 
   void _pause() {
     _timer.cancel();
+    _timerActive = false;
     _stopwatch.stop();
 
-    final asset = widget.timeline.getAssetSafe(_index)!;
+    final asset = _resolveAsset(_index);
 
-    if (!asset.isImage) {
+    if (asset != null && !asset.isImage) {
       ref.read(videoPlayerProvider(asset.heroTag).notifier).pause();
     }
 
@@ -130,7 +202,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
     _config = next;
     _updateNextIndex();
 
-    final asset = widget.timeline.getAssetSafe(_index);
+    final asset = _resolveAsset(_index);
     if (durationChanged && !_paused && asset?.isImage == true) {
       _timer.cancel();
       _createTimer();
@@ -143,19 +215,94 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
     _nextIndex = switch (_config.direction) {
       SlideshowDirection.forward => _index + 1,
       SlideshowDirection.backward => _index - 1,
-      SlideshowDirection.shuffle => widget.timeline.getIndex(widget.timeline.getRandomAsset().heroTag)!,
+      SlideshowDirection.shuffle => _nextShuffleIndex(),
     };
 
-    if (!widget.timeline.hasRange(_nextIndex, 1)) {
-      widget.timeline.preloadAssets(_nextIndex);
+    if (widget.timeline.hasRange(_nextIndex, 1)) {
+      final asset = _resolveAsset(_nextIndex);
+      if (asset != null) {
+        _warmImage(asset);
+      }
+    } else {
+      unawaited(_ensureIndexLoaded(_nextIndex));
     }
   }
 
+  Future<void> _ensureIndexLoaded(int index, {bool startTimerIfReady = false}) async {
+    await widget.timeline.preloadAssets(index);
+    if (!mounted) {
+      return;
+    }
+
+    final asset = _resolveAsset(index);
+    if (asset != null) {
+      _warmImage(asset);
+      if (startTimerIfReady && index == _index && asset.isImage && !_paused && !_timerActive) {
+        _createTimer();
+      }
+    }
+    setState(() {});
+  }
+
+  void _warmImage(BaseAsset asset) {
+    if (!asset.isImage || _warmedTag == asset.heroTag) {
+      return;
+    }
+    _warmedTag = asset.heroTag;
+    _preloader.preloadAsset(asset, _viewportSize);
+  }
+
+  void _onTimelineReload(TimelineReloadEvent _) {
+    if (!mounted) {
+      return;
+    }
+
+    // Bucket changes can remap index → asset; drop stale entries.
+    _assetCache.clear();
+
+    final asset = _resolveAsset(_index);
+    if (asset != null && asset.isImage && !_paused && !_timerActive) {
+      _createTimer();
+    }
+
+    final nextAsset = _resolveAsset(_nextIndex);
+    if (nextAsset != null) {
+      _warmImage(nextAsset);
+    }
+
+    setState(() {});
+  }
+
+  int _nextShuffleIndex() {
+    final total = widget.timeline.totalAssets;
+    if (total <= 1) {
+      return 0;
+    }
+
+    final random = Random();
+    var next = random.nextInt(total);
+    while (next == _index) {
+      next = random.nextInt(total);
+    }
+    return next;
+  }
+
   void _nextPage() async {
+    if (_isInFrame) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) {
+        return;
+      }
+    }
+
     if (_nextIndex < 0 || _nextIndex >= widget.timeline.totalAssets) {
       if (_config.repeat) {
         final wrapped = _config.direction == SlideshowDirection.forward ? 0 : widget.timeline.totalAssets - 1;
         await widget.timeline.preloadAssets(wrapped);
+        final wrappedAsset = _resolveAsset(wrapped);
+        if (wrappedAsset != null) {
+          _warmImage(wrappedAsset);
+        }
         _pageController.jumpToPage(wrapped);
       } else {
         setState(() {
@@ -167,6 +314,11 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
 
     if (!widget.timeline.hasRange(_nextIndex, 1)) {
       await widget.timeline.preloadAssets(_nextIndex);
+    }
+
+    final nextAsset = _resolveAsset(_nextIndex);
+    if (nextAsset != null) {
+      _warmImage(nextAsset);
     }
 
     _crossFadeToPage(_nextIndex);
@@ -195,7 +347,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   }
 
   Widget _getCrossfadeLayer(BuildContext context, int index, {required bool isIncoming}) {
-    final asset = widget.timeline.getAssetSafe(index);
+    final asset = _resolveAsset(index);
 
     final Widget child;
     if (isIncoming && asset?.isImage == true) {
@@ -213,7 +365,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   }
 
   Widget _getCrossfadeChild(BuildContext context, int index, double zoom) {
-    final asset = widget.timeline.getAssetSafe(index);
+    final asset = _resolveAsset(index);
 
     if (asset == null) {
       return const SizedBox.shrink();
@@ -236,31 +388,46 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
 
   void _createTimer() {
     _timer = Timer(Duration(milliseconds: _config.duration * 1000 - _stopwatch.elapsedMilliseconds), () {
+      _timerActive = false;
       _stopwatch.stop();
       _stopwatch.reset();
       _nextPage();
     });
 
     _stopwatch.start();
+    _timerActive = true;
   }
 
   void _pageChanged(int page) {
-    final asset = widget.timeline.getAssetSafe(page)!;
+    if (_isInFrame) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _applyPageChanged(page));
+      return;
+    }
+    _applyPageChanged(page);
+  }
+
+  void _applyPageChanged(int page) {
+    if (!mounted) {
+      return;
+    }
+
+    final asset = _resolveAsset(page);
 
     setState(() {
       _index = page;
       _zoomCycle++;
 
-      if (!asset.isImage) {
+      if (asset != null && !asset.isImage) {
         _paused = false;
       }
     });
 
     _timer.cancel();
+    _timerActive = false;
     _stopwatch.stop();
     _stopwatch.reset();
 
-    if (!_paused && asset.isImage) {
+    if (asset != null && !_paused && asset.isImage) {
       _createTimer();
     }
 
@@ -270,15 +437,17 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   void _onTapUp() async {
     await (_showAppBar ? SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive) : restoreEdgeToEdge());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _showAppBar = !_showAppBar;
-      });
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _showAppBar = !_showAppBar;
     });
   }
 
   Widget _getProgressBar(BuildContext context) {
-    final asset = widget.timeline.getAssetSafe(_index);
+    final asset = _resolveAsset(_index);
 
     if (asset == null) {
       return Container();
@@ -305,7 +474,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   }
 
   Widget _getBlur(BuildContext context, int index) {
-    final asset = widget.timeline.getAssetSafe(index);
+    final asset = _resolveAsset(index);
 
     if (asset == null) {
       return Container();
@@ -326,7 +495,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
   }
 
   Widget _getPhotoView(BuildContext context, int index) {
-    final asset = widget.timeline.getAssetSafe(index);
+    final asset = _resolveAsset(index);
 
     if (asset == null) {
       return const Center(child: ImmichLoadingIndicator());
@@ -386,6 +555,9 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
         disableScaleGestures: true,
         filterQuality: FilterQuality.high,
         initialScale: scale,
+        childSize: asset.width != null && asset.height != null
+            ? Size(asset.width!.toDouble(), asset.height!.toDouble())
+            : null,
         child: NativeVideoViewer(
           asset: asset,
           isCurrent: isCurrent,
@@ -397,6 +569,7 @@ class _DriftSlideshowPageState extends ConsumerState<DriftSlideshowPage> with Si
 
   @override
   Widget build(BuildContext context) {
+    _viewportSize = context.sizeData;
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size(AppBar().preferredSize.width, AppBar().preferredSize.height + 5),
