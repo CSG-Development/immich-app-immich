@@ -70,23 +70,25 @@ RUN if [ "$DEVICE" = "rocm" ]; then \
 
 FROM dhi.io/python:3.11-debian13-dev@sha256:decaef109e54254566a94da61c08fff67f73254d2b455c9324489ac7c4344448 AS prod-cpu
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3 \
+    MACHINE_LEARNING_MODEL_ARENA=false
 
 FROM dhi.io/python:3.13-debian13-dev@sha256:901a66c250f72f33997f97ac7d2ebfdf5303b1e003896d4cdfcf1effea87b888 AS prod-openvino
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -yqq ocl-icd-libopencl1 wget && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /tmp/intel-neo && \
-    cd /tmp/intel-neo && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-core_1.0.17384.11_amd64.deb && \
-    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17384.11/intel-igc-opencl_1.0.17384.11_amd64.deb && \
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/intel-opencl-icd_24.31.30508.7_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.36.3/intel-igc-core-2_2.36.3+21719_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/v2.36.3/intel-igc-opencl-2_2.36.3+21719_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/26.22.38646.4/intel-opencl-icd_26.22.38646.4-0_amd64.deb &&  \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17537.24/intel-igc-core_1.0.17537.24_amd64.deb && \
+    wget -nv https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17537.24/intel-igc-opencl_1.0.17537.24_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/24.35.30872.36/intel-opencl-icd-legacy1_24.35.30872.36_amd64.deb && \
     # TODO: Figure out how to get renovate to manage this differently versioned libigdgmm file
-    wget -nv https://github.com/intel/compute-runtime/releases/download/24.31.30508.7/libigdgmm12_22.4.1_amd64.deb && \
+    wget -nv https://github.com/intel/compute-runtime/releases/download/26.22.38646.4/libigdgmm12_22.10.0_amd64.deb && \
     dpkg -i *.deb && \
-    rm -rf /tmp/intel-neo
+    rm *.deb && \
+    apt-get remove wget -yqq && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /etc/OpenCL/vendors && \
     rm -f /etc/OpenCL/vendors/*.icd || true && \
@@ -96,10 +98,12 @@ RUN ldconfig
 
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04@sha256:94c1577b2cd9dd6c0312dc04dff9cb2fdce2b268018abc3d7c2dbcacf1155000 AS prod-cuda
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3 \
+    MACHINE_LEARNING_MODEL_ARENA=false
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -yqq libcudnn9-cuda-12 && \
+    # Pascal support was dropped in 9.11
+    apt-get install --no-install-recommends -yqq libcudnn9-cuda-12=9.10.2.21-1 tzdata && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -109,10 +113,15 @@ COPY --from=builder-cuda /usr/local/lib/libpython3.11.so /usr/local/lib/libpytho
 
 FROM rocm/dev-ubuntu-24.04:7.2-complete@sha256:86e11093b4a7ec2a79b1b6701d10e840a6994f21c7e05929b51eb9be361c683a AS prod-rocm
 
+RUN apt-get update && apt-get install --no-install-recommends -yqq migraphx miopen-hip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 FROM prod-cpu AS prod-armnn
 
 ENV LD_LIBRARY_PATH=/opt/armnn \
-    LD_PRELOAD=/usr/lib/libmimalloc.so.3
+    LD_PRELOAD=/usr/lib/libmimalloc.so.3 \
+    MACHINE_LEARNING_MODEL_ARENA=false
 
 RUN apt-get update && apt-get install -y --no-install-recommends ocl-icd-libopencl1 mesa-opencl-icd libgomp1 && \
     rm -rf /var/lib/apt/lists/* && \
@@ -135,9 +144,10 @@ FROM prod-cpu AS prod-rknn
 # renovate: datasource=github-tags depName=airockchip/rknn-toolkit2
 ARG RKNN_TOOLKIT_VERSION="v2.3.0"
 
-ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3
+ENV LD_PRELOAD=/usr/lib/libmimalloc.so.3 \
+    MACHINE_LEARNING_MODEL_ARENA=false
 
-ADD --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574f34885 "https://github.com/airockchip/rknn-toolkit2/raw/refs/tags/${RKNN_TOOLKIT_VERSION}/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so" /usr/lib/
+ADD --chmod=644 --checksum=sha256:73993ed4b440460825f21611731564503cc1d5a0c123746477da6cd574f34885 "https://github.com/airockchip/rknn-toolkit2/raw/refs/tags/${RKNN_TOOLKIT_VERSION}/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so" /usr/lib/
 
 FROM prod-${DEVICE} AS prod
 
