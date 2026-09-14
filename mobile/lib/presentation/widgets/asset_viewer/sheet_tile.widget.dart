@@ -30,7 +30,7 @@ class SheetTile extends ConsumerWidget {
     ImmichToast.show(
       context: context,
       msg: 'copied_to_clipboard'.t(context: context),
-      toastType: ToastType.info,
+      toastType: ToastType.success,
     );
     ref.read(hapticFeedbackProvider.notifier).selectionClick();
   }

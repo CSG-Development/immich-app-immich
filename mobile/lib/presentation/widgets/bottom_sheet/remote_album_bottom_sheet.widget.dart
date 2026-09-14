@@ -78,6 +78,7 @@ class _RemoteAlbumBottomSheetState extends ConsumerState<RemoteAlbumBottomSheet>
         msg: result.count == 0
             ? 'add_to_album_bottom_sheet_already_exists'.t(context: context, args: {"album": album.name})
             : 'add_to_album_bottom_sheet_added'.t(context: context, args: {"album": album.name}),
+        toastType: result.count == 0 ? ToastType.info : ToastType.success,
       );
     }
 
