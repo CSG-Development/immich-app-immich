@@ -23,6 +23,20 @@ class LockedGuard extends AutoRouteGuard {
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) async {
+    if (pinUnlockedInThisProcess) {
+      resolver.next(true);
+      return;
+    }
+
+    // Prefer local secure-storage check so PIN UI is not blocked on getAuthStatus.
+    final securePinCode = await _secureStorageService.read(kSecuredPinCode);
+    if (securePinCode == null) {
+      // Abort first so PIN is not stacked over a pending Locked Folder route.
+      resolver.next(false);
+      unawaited(router.push(PinAuthRoute()));
+      return;
+    }
+
     final authStatus = await _apiService.authenticationApi.getAuthStatus();
 
     if (authStatus == null) {
@@ -32,24 +46,13 @@ class LockedGuard extends AutoRouteGuard {
 
     /// Check if a pincode has been created but this user. Show the form to create if not exist
     if (!authStatus.pinCode) {
+      resolver.next(false);
       unawaited(router.push(PinAuthRoute(createPinCode: true)));
+      return;
     }
 
     if (authStatus.isElevated) {
-      if (pinUnlockedInThisProcess) {
-        resolver.next(true);
-        return;
-      }
-
       unawaited(_apiService.authenticationApi.lockAuthSession().catchError((_) {}));
-    }
-
-    /// Check if the user has the pincode saved in secure storage, meaning
-    /// the user has enabled the biometric authentication
-    final securePinCode = await _secureStorageService.read(kSecuredPinCode);
-    if (securePinCode == null) {
-      unawaited(router.push(PinAuthRoute()));
-      return;
     }
 
     try {
@@ -81,6 +84,7 @@ class LockedGuard extends AutoRouteGuard {
     } on ApiException {
       // PIN code has changed, need to re-enter to access
       await _secureStorageService.delete(kSecuredPinCode);
+      resolver.next(false);
       unawaited(router.push(PinAuthRoute()));
     } catch (error) {
       _log.severe("Failed to access locked page", error);
