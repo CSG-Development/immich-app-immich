@@ -20,6 +20,7 @@ import 'package:immich_mobile/widgets/settings/notification_setting.dart';
 import 'package:immich_mobile/widgets/settings/preference_settings/preference_setting.dart';
 import 'package:immich_mobile/widgets/settings/settings_card.dart';
 import 'package:immich_mobile/widgets/settings/security_settings/security_settings.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 enum SettingSection {
   advanced('advanced', Icons.build_outlined, "advanced_settings_tile_subtitle"),
@@ -65,20 +66,23 @@ class SettingsPage extends HookConsumerWidget {
     final logsVisibility = ref.watch(protectedFeatureVisibilityProvider);
     final logsVisibilityNotifier = ref.read(protectedFeatureVisibilityProvider.notifier);
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: GestureDetector(onTap: logsVisibilityNotifier.handleTap, child: const Text('settings').tr()),
-        actions: [
-          if (logsVisibility.isVisible)
-            IconButton(
-              icon: Icon(Icons.article_outlined, color: context.primaryColor),
-              tooltip: 'check_logs'.tr(),
-              onPressed: () => context.pushRoute(const AppLogRoute()),
-            ),
-        ],
+    return Theme(
+      data: resolveSgSettingsTheme(Theme.of(context)),
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: false,
+          title: GestureDetector(onTap: logsVisibilityNotifier.handleTap, child: const Text('settings').tr()),
+          actions: [
+            if (logsVisibility.isVisible)
+              IconButton(
+                icon: Icon(Icons.article_outlined, color: context.primaryColor),
+                tooltip: 'check_logs'.tr(),
+                onPressed: () => context.pushRoute(const AppLogRoute()),
+              ),
+          ],
+        ),
+        body: context.isMobile ? const _MobileLayout() : const _TabletLayout(),
       ),
-      body: context.isMobile ? const _MobileLayout() : const _TabletLayout(),
     );
   }
 }
@@ -196,13 +200,16 @@ class SettingsSubPage extends HookConsumerWidget {
           )
         : titleWidget;
 
-    return SafeArea(
-      bottom: true,
-      top: false,
-      right: true,
-      child: Scaffold(
-        appBar: AppBar(centerTitle: false, title: appBarTitle),
-        body: Padding(padding: const EdgeInsets.only(bottom: 60.0), child: section.widget),
+    return Theme(
+      data: resolveSgSettingsTheme(Theme.of(context)),
+      child: SafeArea(
+        bottom: true,
+        top: false,
+        right: true,
+        child: Scaffold(
+          appBar: AppBar(centerTitle: false, title: appBarTitle),
+          body: Padding(padding: const EdgeInsets.only(bottom: 60.0), child: section.widget),
+        ),
       ),
     );
   }

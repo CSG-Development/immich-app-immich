@@ -21,7 +21,7 @@ const Color sgSurfaceDark = Color(0xFF4F4F4F);
 
 /// AppBar and bottom tab bar backgrounds.
 const Color sgChromeSurfaceLight = Color(0xFFFFFFFF);
-const Color sgChromeSurfaceDark = Color(0xFF000000);
+const Color sgChromeSurfaceDark = Color(0xFF191919);
 
 /// Timeline grid background (same as app surface).
 const Color sgTimelineSurfaceLight = Color(0xFFEAEFF4);

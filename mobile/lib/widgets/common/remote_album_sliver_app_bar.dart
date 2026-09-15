@@ -19,6 +19,7 @@ import 'package:immich_mobile/providers/infrastructure/remote_album.provider.dar
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/album/remote_album_shared_user_icons.dart';
 
 class RemoteAlbumSliverAppBar extends ConsumerStatefulWidget {
@@ -112,7 +113,11 @@ class _MesmerizingSliverAppBarState extends ConsumerState<RemoteAlbumSliverAppBa
             child: scrollProgress > 0.95
                 ? Text(
                     currentAlbum.name,
-                    style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.w600, fontSize: 18),
+                    style: TextStyle(
+                      color: resolveAppBarTitleColor(context),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
                   )
                 : null,
           );
