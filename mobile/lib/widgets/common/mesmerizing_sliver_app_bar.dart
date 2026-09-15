@@ -12,6 +12,7 @@ import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class MesmerizingSliverAppBar extends ConsumerStatefulWidget {
   const MesmerizingSliverAppBar({super.key, required this.title, this.icon = Icons.camera});
@@ -90,7 +91,11 @@ class _MesmerizingSliverAppBarState extends ConsumerState<MesmerizingSliverAppBa
                     child: scrollProgress > 0.95
                         ? Text(
                             widget.title,
-                            style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.w600, fontSize: 18),
+                            style: TextStyle(
+                              color: resolveAppBarTitleColor(context),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
                           )
                         : null,
                   ),

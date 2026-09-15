@@ -74,8 +74,11 @@ class LocalNetworkPreference extends HookConsumerWidget {
                           ? const Text("http://local-ip:2283")
                           : Text(
                               localEndpoint,
-                              style: context.textTheme.labelLarge?.copyWith(
-                                color: enabled ? context.primaryColor : context.colorScheme.onSurface.withAlpha(100),
+                              style: context.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: enabled
+                                    ? context.colorScheme.onSurface
+                                    : context.colorScheme.onSurface.withAlpha(100),
                               ),
                             ),
                       trailing: const IconButton(onPressed: null, icon: Icon(Icons.edit_rounded)),

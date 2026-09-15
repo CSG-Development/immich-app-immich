@@ -139,6 +139,7 @@ class _AppBarBackButton extends ConsumerWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: showingDetails ? context.colorScheme.surface : Colors.transparent,
         shape: const CircleBorder(),
+        side: BorderSide.none,
         iconSize: 22,
         iconColor: showingDetails ? context.colorScheme.onSurface : Colors.white,
         padding: const EdgeInsets.all(10.0),

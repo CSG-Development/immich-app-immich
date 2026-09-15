@@ -191,6 +191,24 @@ Color resolveSgChipBackground(BuildContext context, {required Color fallback}) {
   return fallback;
 }
 
+/// AppBar title color (SG: onSurface).
+Color resolveAppBarTitleColor(BuildContext context) {
+  return Theme.of(context).appBarTheme.titleTextStyle?.color ?? Theme.of(context).colorScheme.primary;
+}
+
+/// SG settings scaffold (= chrome).
+ThemeData resolveSgSettingsTheme(ThemeData theme) {
+  final chrome = theme.extension<ImmichBrandColors>()?.chromeSurface;
+  if (chrome != sgChromeSurfaceLight && chrome != sgChromeSurfaceDark) {
+    return theme;
+  }
+
+  return theme.copyWith(
+    scaffoldBackgroundColor: chrome,
+    colorScheme: theme.colorScheme.copyWith(surface: chrome),
+  );
+}
+
 ColorScheme normalizeColorScheme(ColorScheme colorScheme) {
   final isDark = colorScheme.brightness == Brightness.dark;
 
@@ -219,6 +237,8 @@ ThemeData getThemeData({
     chromeSurface: resolvedChrome,
   );
   final toastColors = isDark ? ImmichToastColors.dark : ImmichToastColors.light;
+  final isSg = ctaColor != null;
+  final appBarTitleColor = isSg ? normalizedColorScheme.onSurface : normalizedColorScheme.primary;
 
   return ThemeData(
     useMaterial3: true,
@@ -243,17 +263,23 @@ ThemeData getThemeData({
     ),
     appBarTheme: AppBarTheme(
       titleTextStyle: TextStyle(
-        color: normalizedColorScheme.primary,
+        color: appBarTitleColor,
         fontFamily: _getFontFamilyFromLocale(locale),
         fontWeight: FontWeight.w600,
         fontSize: 18,
       ),
       backgroundColor: resolvedChrome,
       foregroundColor: normalizedColorScheme.primary,
+      iconTheme: IconThemeData(color: normalizedColorScheme.primary),
+      actionsIconTheme: IconThemeData(color: normalizedColorScheme.primary),
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
-      systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: resolvedChrome,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

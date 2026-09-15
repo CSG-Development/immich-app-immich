@@ -4,11 +4,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/colors.dart';
 import 'package:immich_mobile/constants/locales.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/services/localization.service.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/common/search_field.dart';
+
+bool _isSgTheme(BuildContext context) {
+  final chrome = Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface;
+  return chrome == sgChromeSurfaceLight || chrome == sgChromeSurfaceDark;
+}
 
 class LanguageSettings extends HookConsumerWidget {
   const LanguageSettings({super.key});
@@ -58,7 +65,9 @@ class LanguageSettings extends HookConsumerWidget {
                   final aPriority = aKey.startsWith(search) ? 0 : 1;
                   final bPriority = bKey.startsWith(search) ? 0 : 1;
 
-                  if (aPriority != bPriority) return aPriority.compareTo(bPriority);
+                  if (aPriority != bPriority) {
+                    return aPriority.compareTo(bPriority);
+                  }
 
                   return aKey.compareTo(bKey);
                 });
@@ -93,7 +102,7 @@ class LanguageSettings extends HookConsumerWidget {
             child: filteredLocaleEntries.value.isEmpty
                 ? const _LanguageNotFound()
                 : ListView.builder(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     itemCount: filteredLocaleEntries.value.length,
                     itemExtent: 64.0,
                     scrollCacheExtent: const .pixels(100),
@@ -140,36 +149,63 @@ class _LanguageSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(top: 16, bottom: 8, left: 50, right: 50),
-      decoration: BoxDecoration(color: context.colorScheme.surface),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(24)),
-          gradient: LinearGradient(
-            colors: [
-              context.colorScheme.primary.withValues(alpha: 0.075),
-              context.colorScheme.primary.withValues(alpha: 0.09),
-              context.colorScheme.primary.withValues(alpha: 0.075),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SearchField(
-          autofocus: false,
-          contentPadding: const EdgeInsets.all(12),
-          hintText: 'language_search_hint'.t(context: context),
-          prefixIcon: const Icon(Icons.search_rounded),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(icon: const Icon(Icons.clear_rounded), onPressed: onClear)
-              : null,
-          controller: controller,
-          onChanged: onChanged,
-          focusNode: focusNode,
-          onTapOutside: (_) => focusNode.unfocus(),
-        ),
-      ),
+    final isSg = _isSgTheme(context);
+    final primary = context.colorScheme.primary;
+    final searchFill = isSg
+        ? primary.withValues(alpha: context.isDarkTheme ? 0.22 : 0.10)
+        : null;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 16, 32, 8),
+      child: isSg
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: searchFill,
+                borderRadius: const BorderRadius.all(Radius.circular(24)),
+              ),
+              child: SearchField(
+                autofocus: false,
+                filled: false,
+                borderless: true,
+                contentPadding: const EdgeInsets.all(12),
+                hintText: 'language_search_hint'.t(context: context),
+                prefixIcon: Icon(Icons.search_rounded, color: primary),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(icon: Icon(Icons.clear_rounded, color: primary), onPressed: onClear)
+                    : null,
+                controller: controller,
+                onChanged: onChanged,
+                focusNode: focusNode,
+                onTapOutside: (_) => focusNode.unfocus(),
+              ),
+            )
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(24)),
+                gradient: LinearGradient(
+                  colors: [
+                    primary.withValues(alpha: 0.075),
+                    primary.withValues(alpha: 0.09),
+                    primary.withValues(alpha: 0.075),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: SearchField(
+                autofocus: false,
+                contentPadding: const EdgeInsets.all(12),
+                hintText: 'language_search_hint'.t(context: context),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(icon: const Icon(Icons.clear_rounded), onPressed: onClear)
+                    : null,
+                controller: controller,
+                onChanged: onChanged,
+                focusNode: focusNode,
+                onTapOutside: (_) => focusNode.unfocus(),
+              ),
+            ),
     );
   }
 }
@@ -209,22 +245,19 @@ class _LanguageApplyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(color: context.colorScheme.surface),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: isDisabled ? null : onPressed,
-            child: isLoading
-                ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(
-                    'setting_languages_apply'.t(context: context),
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.0),
-                  ),
-          ),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: ElevatedButton(
+          onPressed: isDisabled ? null : onPressed,
+          child: isLoading
+              ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(
+                  'setting_languages_apply'.t(context: context),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.0),
+                ),
         ),
       ),
     );
@@ -247,27 +280,50 @@ class _LanguageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSg = _isSgTheme(context);
+    final primary = context.colorScheme.primary;
+    final onSurface = context.colorScheme.onSurface;
+
+    final Color background;
+    final Color foreground;
+    final BorderSide borderSide;
+    if (isSg) {
+      background = isSelected
+          ? primary.withValues(alpha: context.isDarkTheme ? 0.22 : 0.12)
+          : (context.isDarkTheme ? sgSurfaceDark : const Color(0xFFF0F1F5));
+      foreground = isSelected ? primary : onSurface;
+      borderSide = isSelected
+          ? BorderSide(color: context.isDarkTheme ? const Color(0xFF5D5D5D) : const Color(0xFFE7E7E7))
+          : BorderSide.none;
+    } else {
+      background = isSelected
+          ? primary.withValues(alpha: 0.15)
+          : context.colorScheme.surfaceContainerLowest.withValues(alpha: .6);
+      foreground = isSelected ? primary : context.colorScheme.onSurfaceVariant;
+      borderSide = BorderSide(color: context.colorScheme.outlineVariant.withValues(alpha: .4), width: 1.0);
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Material(
-        color: context.colorScheme.surfaceContainerLowest.withValues(alpha: .6),
+        color: background,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-          side: BorderSide(color: context.colorScheme.outlineVariant.withValues(alpha: .4), width: 1.0),
+          side: borderSide,
         ),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           title: Text(
             countryName,
             style: context.textTheme.titleSmall?.copyWith(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? context.colorScheme.primary : context.colorScheme.onSurfaceVariant,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: foreground,
             ),
           ),
-          trailing: isSelected ? Icon(Icons.check, color: context.colorScheme.primary, size: 20) : null,
+          trailing: isSelected ? Icon(Icons.check, color: primary, size: 20) : null,
           onTap: onTap,
           selected: isSelected,
-          selectedTileColor: context.colorScheme.primary.withValues(alpha: .15),
+          selectedTileColor: Colors.transparent,
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
         ),

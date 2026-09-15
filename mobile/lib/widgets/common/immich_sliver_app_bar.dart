@@ -18,6 +18,7 @@ import 'package:immich_mobile/providers/sync_status.provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/asset_viewer/cast_dialog.dart';
 import 'package:immich_mobile/widgets/common/app_bar_dialog/app_bar_dialog.dart';
 import 'package:immich_mobile/widgets/common/user_circle_avatar.dart';
@@ -48,16 +49,20 @@ class ImmichSliverAppBar extends ConsumerWidget {
     final isReadonlyModeEnabled = ref.watch(readonlyModeProvider);
     final isMultiSelectEnabled = ref.watch(multiSelectProvider.select((s) => s.isEnabled));
 
+    final chromeColor =
+        Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface ?? context.colorScheme.surface;
+
     return SliverIgnorePointer(
       ignoring: isMultiSelectEnabled,
       sliver: SliverAnimatedOpacity(
         duration: Durations.medium1,
         opacity: isMultiSelectEnabled ? 0 : 1,
         sliver: SliverAppBar(
-          backgroundColor: context.colorScheme.surface,
-          surfaceTintColor: context.colorScheme.surfaceTint,
+          backgroundColor: chromeColor,
+          surfaceTintColor: Colors.transparent,
+          forceMaterialTransparency: false,
           elevation: 0,
-          scrolledUnderElevation: 1.0,
+          scrolledUnderElevation: 0,
           floating: floating,
           pinned: pinned,
           snap: snap,
@@ -65,6 +70,8 @@ class ImmichSliverAppBar extends ConsumerWidget {
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(5))),
           automaticallyImplyLeading: false,
           centerTitle: false,
+          titleSpacing: 0.0,
+          flexibleSpace: ColoredBox(color: chromeColor),
           title: title ?? const _ImmichLogoWithText(),
           actions: [
             const _SyncStatusIndicator(),

@@ -18,6 +18,7 @@ import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
 import 'package:immich_mobile/utils/people.utils.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class PersonSliverAppBar extends ConsumerStatefulWidget {
   const PersonSliverAppBar({
@@ -118,7 +119,11 @@ class _MesmerizingSliverAppBarState extends ConsumerState<PersonSliverAppBar> {
                     child: scrollProgress > 0.95
                         ? Text(
                             widget.person.name,
-                            style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.w600, fontSize: 18),
+                            style: TextStyle(
+                              color: resolveAppBarTitleColor(context),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
                           )
                         : null,
                   ),
