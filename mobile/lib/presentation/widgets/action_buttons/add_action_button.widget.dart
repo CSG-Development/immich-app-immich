@@ -160,6 +160,7 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
       ImmichToast.show(
         context: context,
         msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
+        toastType: ToastType.success,
       );
 
       final remoteId = latest.remoteId;
@@ -176,6 +177,7 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
       ImmichToast.show(
         context: context,
         msg: 'add_to_album_bottom_sheet_already_exists'.tr(namedArgs: {'album': album.name}),
+        toastType: ToastType.info,
       );
     }
 

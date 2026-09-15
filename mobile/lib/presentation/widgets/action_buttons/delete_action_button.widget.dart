@@ -11,7 +11,6 @@ import 'package:immich_mobile/presentation/widgets/action_buttons/base_action_bu
 import 'package:immich_mobile/providers/asset_viewer/asset_viewer.provider.dart';
 import 'package:immich_mobile/providers/connection_state.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
-import 'package:immich_mobile/utils/undo_info_card.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 /// This delete action has the following behavior:
@@ -98,35 +97,22 @@ class DeleteActionButton extends ConsumerWidget {
       args: {'count': result.count.toString()},
     );
 
-    if (result.success && remoteIds.isNotEmpty && messenger != null) {
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: EdgeInsets.zero,
-          content: buildUndoInfoCard(
-            context: feedbackContext,
-            title: 'info'.t(context: feedbackContext),
-            message: successMessage,
-            onClose: () => messenger.hideCurrentSnackBar(),
-            onUndo: () async {
-              messenger.hideCurrentSnackBar();
-              final undoResult = await actionNotifier.restoreTrashByIds(remoteIds);
-              if (!undoResult.success && feedbackContext.mounted) {
-                ImmichToast.show(
-                  context: feedbackContext,
-                  msg: 'scaffold_body_error_occurred'.t(context: feedbackContext),
-                  gravity: ToastGravity.BOTTOM,
-                  toastType: ToastType.error,
-                );
-              }
-            },
-          ),
-        ),
+    if (result.success && remoteIds.isNotEmpty) {
+      ImmichToastUndo.show(
+        context: feedbackContext,
+        title: 'info'.t(context: feedbackContext),
+        message: successMessage,
+        onUndo: () async {
+          final undoResult = await actionNotifier.restoreTrashByIds(remoteIds);
+          if (!undoResult.success && feedbackContext.mounted) {
+            ImmichToast.show(
+              context: feedbackContext,
+              msg: 'scaffold_body_error_occurred'.t(context: feedbackContext),
+              gravity: ToastGravity.BOTTOM,
+              toastType: ToastType.error,
+            );
+          }
+        },
       );
     } else {
       ImmichToast.show(

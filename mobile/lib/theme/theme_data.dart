@@ -72,12 +72,112 @@ class ImmichBrandColors extends ThemeExtension<ImmichBrandColors> {
 
   @override
   ImmichBrandColors lerp(ThemeExtension<ImmichBrandColors>? other, double t) {
-    if (other is! ImmichBrandColors) return this;
+    if (other is! ImmichBrandColors) {
+      return this;
+    }
     return ImmichBrandColors(
       cta: Color.lerp(cta, other.cta, t)!,
       ctaPressed: Color.lerp(ctaPressed, other.ctaPressed, t)!,
       timelineSurface: Color.lerp(timelineSurface, other.timelineSurface, t)!,
       chromeSurface: Color.lerp(chromeSurface, other.chromeSurface, t)!,
+    );
+  }
+}
+
+@immutable
+class ImmichToastColors extends ThemeExtension<ImmichToastColors> {
+  final Color info;
+  final Color success;
+  final Color error;
+  final Color actionInfo;
+  final Color actionDescription;
+  final Color actionCta;
+  final Color actionClose;
+  final Color background;
+  final Color border;
+
+  const ImmichToastColors({
+    required this.info,
+    required this.success,
+    required this.error,
+    required this.actionInfo,
+    required this.actionDescription,
+    required this.actionCta,
+    required this.actionClose,
+    required this.background,
+    required this.border,
+  });
+
+  static const light = ImmichToastColors(
+    info: Color(0xFFFF9800),
+    success: Color(0xFF4CAF50),
+    error: Color(0xFFF44336),
+    actionInfo: Color(0xFF2196F3),
+    actionDescription: Color(0xFF191919),
+    actionCta: sgBrandColorLight,
+    actionClose: Color(0xFF191919),
+    background: Color(0xFFFFFFFF),
+    border: Color(0xFFE7E7E7),
+  );
+
+  static const dark = ImmichToastColors(
+    info: Color(0xFFFF9800),
+    success: Color(0xFF4CAF50),
+    error: Color(0xFFEF9A9A),
+    actionInfo: Color(0xFF2196F3),
+    actionDescription: Color(0xFFF6F6F6),
+    actionCta: sgBrandColorDark,
+    actionClose: Color(0xFFF6F6F6),
+    background: Color(0xFF191919),
+    border: Color(0xFF5D5D5D),
+  );
+
+  factory ImmichToastColors.of(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return Theme.of(context).extension<ImmichToastColors>() ??
+        (brightness == Brightness.dark ? ImmichToastColors.dark : ImmichToastColors.light);
+  }
+
+  @override
+  ImmichToastColors copyWith({
+    Color? info,
+    Color? success,
+    Color? error,
+    Color? actionInfo,
+    Color? actionDescription,
+    Color? actionCta,
+    Color? actionClose,
+    Color? background,
+    Color? border,
+  }) {
+    return ImmichToastColors(
+      info: info ?? this.info,
+      success: success ?? this.success,
+      error: error ?? this.error,
+      actionInfo: actionInfo ?? this.actionInfo,
+      actionDescription: actionDescription ?? this.actionDescription,
+      actionCta: actionCta ?? this.actionCta,
+      actionClose: actionClose ?? this.actionClose,
+      background: background ?? this.background,
+      border: border ?? this.border,
+    );
+  }
+
+  @override
+  ImmichToastColors lerp(ThemeExtension<ImmichToastColors>? other, double t) {
+    if (other is! ImmichToastColors) {
+      return this;
+    }
+    return ImmichToastColors(
+      info: Color.lerp(info, other.info, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      error: Color.lerp(error, other.error, t)!,
+      actionInfo: Color.lerp(actionInfo, other.actionInfo, t)!,
+      actionDescription: Color.lerp(actionDescription, other.actionDescription, t)!,
+      actionCta: Color.lerp(actionCta, other.actionCta, t)!,
+      actionClose: Color.lerp(actionClose, other.actionClose, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      border: Color.lerp(border, other.border, t)!,
     );
   }
 }
@@ -118,6 +218,7 @@ ThemeData getThemeData({
     timelineSurface: timelineSurface ?? normalizedColorScheme.surface,
     chromeSurface: resolvedChrome,
   );
+  final toastColors = isDark ? ImmichToastColors.dark : ImmichToastColors.light;
 
   return ThemeData(
     useMaterial3: true,
@@ -131,7 +232,7 @@ ThemeData getThemeData({
     highlightColor: normalizedColorScheme.primary.withValues(alpha: 0.1),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: normalizedColorScheme.surfaceContainer),
     fontFamily: _getFontFamilyFromLocale(locale),
-    extensions: [brandColors],
+    extensions: [brandColors, toastColors],
     snackBarTheme: SnackBarThemeData(
       contentTextStyle: TextStyle(
         fontFamily: _getFontFamilyFromLocale(locale),

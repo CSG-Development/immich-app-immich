@@ -81,6 +81,7 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
         msg: result.count == 0
             ? 'add_to_album_bottom_sheet_already_exists'.tr(namedArgs: {'album': album.name})
             : 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
+        toastType: result.count == 0 ? ToastType.info : ToastType.success,
       );
     }
 

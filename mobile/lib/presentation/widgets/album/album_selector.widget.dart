@@ -829,6 +829,7 @@ class CreateAlbumButton extends ConsumerWidget {
       ImmichToast.show(
         context: context,
         msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
+        toastType: ToastType.success,
       );
 
       ref.invalidate(albumsContainingAssetProvider(asset.remoteId!));

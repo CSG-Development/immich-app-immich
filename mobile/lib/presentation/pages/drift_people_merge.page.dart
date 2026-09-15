@@ -155,7 +155,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
           context: context,
           msg: 'merge_people_limit'.t(),
           gravity: ToastGravity.BOTTOM,
-          toastType: ToastType.error,
+          toastType: ToastType.info,
         );
         return;
       }

@@ -98,6 +98,7 @@ class EditImagePage extends HookConsumerWidget {
         context: context,
         msg: 'image_saved_successfully'.tr(),
         gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.success,
       );
 
       if (localAsset == null) {
@@ -111,6 +112,7 @@ class EditImagePage extends HookConsumerWidget {
         context: context,
         msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
         gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
       );
     }
   }
