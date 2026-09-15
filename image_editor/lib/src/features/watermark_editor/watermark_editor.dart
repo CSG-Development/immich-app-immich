@@ -728,21 +728,27 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
   Future<void> _openPositionPickerModal() async {
     _unfocusWatermarkField();
+    final colorScheme = Theme.of(context).colorScheme;
     final selected = await showModalBottomSheet<WatermarkPosition>(
       context: context,
-      backgroundColor: const Color(0xFF1F1F1F),
+      backgroundColor: colorScheme.surfaceContainer,
       builder: (modalContext) {
+        final onSurface = Theme.of(modalContext).colorScheme.onSurface;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _t('image_editor.watermark.select_position', 'Select position'),
-                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: onSurface.withValues(alpha: 0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -750,9 +756,9 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                 ListTile(
                   leading: Icon(
                     option == _position ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                    color: Colors.white,
+                    color: onSurface,
                   ),
-                  title: Text(_positionLabel(option), style: const TextStyle(color: Colors.white)),
+                  title: Text(_positionLabel(option), style: TextStyle(color: onSurface)),
                   onTap: () => Navigator.of(modalContext).pop(option),
                 ),
             ],
@@ -767,10 +773,12 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
 
   Future<void> _openModePickerModal() async {
     _unfocusWatermarkField();
+    final colorScheme = Theme.of(context).colorScheme;
     final selected = await showModalBottomSheet<WatermarkMode>(
       context: context,
-      backgroundColor: const Color(0xFF1F1F1F),
+      backgroundColor: colorScheme.surfaceContainer,
       builder: (modalContext) {
+        final onSurface = Theme.of(modalContext).colorScheme.onSurface;
         final options = <WatermarkMode>[
           WatermarkMode.text,
           if (!kIsWeb) WatermarkMode.logo,
@@ -781,12 +789,16 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _t('image_editor.watermark.select_mode', 'Select mode'),
-                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: onSurface.withValues(alpha: 0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -794,17 +806,17 @@ class _WatermarkEditorState extends State<WatermarkEditor> {
                 ListTile(
                   leading: Icon(
                     option == _mode ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                    color: Colors.white,
+                    color: onSurface,
                   ),
-                  title: Text(_modeLabel(option), style: const TextStyle(color: Colors.white)),
+                  title: Text(_modeLabel(option), style: TextStyle(color: onSurface)),
                   onTap: () => Navigator.of(modalContext).pop(option),
                 ),
               if (kIsWeb)
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(
                     _t('image_editor.watermark.logo_modes_unavailable_web', 'Logo modes are unavailable on web'),
-                    style: TextStyle(color: Colors.white54, fontSize: 11),
+                    style: TextStyle(color: onSurface.withValues(alpha: 0.54), fontSize: 11),
                   ),
                 ),
             ],

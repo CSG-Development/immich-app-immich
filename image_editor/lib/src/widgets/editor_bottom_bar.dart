@@ -269,7 +269,12 @@ class EditorBottomBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (final tool in tools)
-                    _buildEditorButton(label: tool.label, icon: tool.icon, onPressed: tool.onPressed),
+                    _buildEditorButton(
+                      context: context,
+                      label: tool.label,
+                      icon: tool.icon,
+                      onPressed: tool.onPressed,
+                    ),
                 ],
               ),
             ),
@@ -280,24 +285,34 @@ class EditorBottomBar extends StatelessWidget {
   }
 
   Widget _buildEditorButton({
+    required BuildContext context,
     required String label,
     required IconData icon,
     required VoidCallback onPressed,
     Color? labelColor,
   }) {
+    final textStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          fontSize: 10.0,
+          color: labelColor ?? Colors.white,
+          fontWeight: FontWeight.w500,
+        ) ??
+        TextStyle(
+          fontSize: 10.0,
+          color: labelColor ?? Colors.white,
+          fontFamily: Theme.of(context).textTheme.bodySmall?.fontFamily,
+        );
+
     return Tooltip(
       message: label,
       child: Semantics(
         button: true,
         label: label,
         child: FlatIconTextButton(
-          label: Text(label, style: _bottomTextStyle.copyWith(color: labelColor)),
+          label: Text(label, style: textStyle),
           icon: Icon(icon, size: 22, color: Colors.white),
           onPressed: onPressed,
         ),
       ),
     );
   }
-
-  static const _bottomTextStyle = TextStyle(fontSize: 10.0, color: Colors.white);
 }
