@@ -100,11 +100,11 @@ class _TrashKebabMenu extends ConsumerWidget {
     return MenuAnchor(
       consumeOutsideTap: true,
       style: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(context.themeData.scaffoldBackgroundColor),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.grey),
-        elevation: const WidgetStatePropertyAll(4),
+        backgroundColor: WidgetStatePropertyAll(context.colorScheme.surfaceContainer),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(3),
         shape: const WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
         ),
         padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
       ),

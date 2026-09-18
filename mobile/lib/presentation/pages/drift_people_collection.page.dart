@@ -92,6 +92,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                   }).toList();
                 }
                 return GridView.builder(
+                  clipBehavior: Clip.none,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: isTablet ? 6 : 3,
                     childAspectRatio: 0.85,
@@ -106,6 +107,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                       key: ValueKey(person.id),
                       children: [
                         Stack(
+                          clipBehavior: Clip.none,
                           alignment: Alignment.center,
                           children: [
                             GestureDetector(
@@ -126,8 +128,8 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                             ),
                             if (person.isFavorite)
                               Positioned(
-                                left: 8,
-                                top: 8,
+                                left: -2,
+                                top: -2,
                                 child: IgnorePointer(
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
@@ -140,50 +142,50 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                                 ),
                               ),
                             Positioned(
-                              right: 0.0,
-                              top: 0.0,
-                              child: IconButton(
-                                icon: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.black.withValues(alpha: 0.7)
-                                        : context.colorScheme.surfaceContainer,
-                                    shape: BoxShape.circle,
-                                  ),
+                              right: -4,
+                              top: -4,
+                              child: Material(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.black.withValues(alpha: 0.7)
+                                    : context.colorScheme.surfaceContainer,
+                                shape: const CircleBorder(),
+                                elevation: 1,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: context.colorScheme.surfaceContainer,
+                                      builder: (sheetContext) {
+                                        return PersonOptionSheet(
+                                          onEditName: () {
+                                            Navigator.of(sheetContext).pop();
+                                            showNameEditModal(sheetContext, person);
+                                          },
+                                          onEditBirthday: () {
+                                            Navigator.of(sheetContext).pop();
+                                            showBirthdayEditModal(sheetContext, person);
+                                          },
+                                          onMerge: () {
+                                            Navigator.of(sheetContext).pop();
+                                            sheetContext.pushRoute(DriftPeopleMergeRoute(person: person));
+                                          },
+                                          onToggleFavorite: () {
+                                            Navigator.of(sheetContext).pop();
+                                            _toggleFavorite(person);
+                                          },
+                                          birthdayExists: person.birthDate != null,
+                                          isFavorite: person.isFavorite,
+                                        );
+                                      },
+                                    );
+                                  },
                                   child: const SizedBox(
-                                    width: 40.0,
-                                    height: 40.0,
-                                    child: Icon(Icons.more_vert, size: 24),
+                                    width: 36,
+                                    height: 36,
+                                    child: Icon(Icons.more_vert, size: 20),
                                   ),
                                 ),
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    backgroundColor: context.colorScheme.surface,
-                                    builder: (sheetContext) {
-                                      return PersonOptionSheet(
-                                        onEditName: () {
-                                          Navigator.of(sheetContext).pop();
-                                          showNameEditModal(sheetContext, person);
-                                        },
-                                        onEditBirthday: () {
-                                          Navigator.of(sheetContext).pop();
-                                          showBirthdayEditModal(sheetContext, person);
-                                        },
-                                        onMerge: () {
-                                          Navigator.of(sheetContext).pop();
-                                          sheetContext.pushRoute(DriftPeopleMergeRoute(person: person));
-                                        },
-                                        onToggleFavorite: () {
-                                          Navigator.of(sheetContext).pop();
-                                          _toggleFavorite(person);
-                                        },
-                                        birthdayExists: person.birthDate != null,
-                                        isFavorite: person.isFavorite,
-                                      );
-                                    },
-                                  );
-                                },
                               ),
                             ),
                           ],
