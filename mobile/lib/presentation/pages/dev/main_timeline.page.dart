@@ -6,6 +6,7 @@ import 'package:immich_mobile/presentation/widgets/timeline/asset_count_sliver.w
 import 'package:immich_mobile/presentation/widgets/timeline/sync_loading_overlay.widget.dart';
 import 'package:immich_mobile/presentation/widgets/timeline/timeline.widget.dart';
 import 'package:immich_mobile/presentation/widgets/feature_message/feature_message_dialog.widget.dart';
+import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/feature_message.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/memory.provider.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -40,6 +41,8 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
     });
   }
 
+  Future<void> _onRefresh() => ref.read(appStateProvider.notifier).refreshTimeline();
+
   @override
   Widget build(BuildContext context) {
     final hasMemories = ref.watch(driftMemoryFutureProvider.select((state) => state.value?.isNotEmpty ?? false));
@@ -56,6 +59,7 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
           topSliverWidgetHeight: topSliverHeight,
           showStorageIndicator: true,
           showClipboardPaste: true,
+          onRefresh: _onRefresh,
         ),
         SyncLoadingOverlay(topOffset: topSliverHeight + 80),
       ],
