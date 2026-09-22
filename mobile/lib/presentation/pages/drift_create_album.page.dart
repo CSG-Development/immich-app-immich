@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/domain/utils/asset_dedupe.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/thumbnail.widget.dart';
@@ -152,7 +153,9 @@ class _DriftCreateAlbumPageState extends ConsumerState<DriftCreateAlbumPage> {
     }
 
     setState(() {
-      selectedAssets = selectedAssets.union(assets);
+      // Selection can surface the same photo as multiple rows after backup /
+      // endpoint switch; collapse by content before create uses the set.
+      selectedAssets = dedupeAssetsByContent([...selectedAssets, ...assets]).toSet();
     });
   }
 

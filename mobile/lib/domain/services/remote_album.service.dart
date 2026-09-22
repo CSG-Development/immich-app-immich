@@ -5,6 +5,7 @@ import 'package:immich_mobile/constants/enums.dart';
 import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/domain/models/user.model.dart';
+import 'package:immich_mobile/domain/utils/asset_dedupe.dart';
 import 'package:immich_mobile/infrastructure/repositories/remote_album.repository.dart';
 import 'package:immich_mobile/models/albums/album_search.model.dart';
 import 'package:immich_mobile/providers/album/album_sort_by_options.provider.dart';
@@ -34,16 +35,26 @@ class RemoteAlbumService {
 
   /// Categorizes a heterogeneous asset selection into already-on-server IDs
   /// and local assets that still need to be uploaded.
+  ///
+  /// Collapses same-content rows via [dedupeAssetsByContent] so a photo that
+  /// exists as both a remote row and a local copy (or two local album copies)
+  /// is only linked / uploaded once.
   static AlbumAssetCandidates categorizeCandidates(Iterable<BaseAsset> assets) {
     final remoteIds = <String>[];
+    final seenRemoteIds = <String>{};
     final localToUpload = <LocalAsset>[];
-    for (final asset in assets) {
+
+    for (final asset in dedupeAssetsByContent(assets)) {
       if (asset is RemoteAsset) {
-        remoteIds.add(asset.id);
+        if (seenRemoteIds.add(asset.id)) {
+          remoteIds.add(asset.id);
+        }
       } else if (asset is LocalAsset) {
         final remoteId = asset.remoteId;
         if (remoteId != null) {
-          remoteIds.add(remoteId);
+          if (seenRemoteIds.add(remoteId)) {
+            remoteIds.add(remoteId);
+          }
         } else {
           localToUpload.add(asset);
         }
