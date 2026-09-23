@@ -29,7 +29,7 @@
     "@formatjs/icu-messageformat-parser": "^3.0.0",
     "@immich/justified-layout-wasm": "^0.4.3",
     "@immich/sdk": "file:../open-api/typescript-sdk",
-    "@immich/ui": "github:CSG-Development/immich-app-ui#build",
+    "@immich/ui": "github:CSG-Development/immich-app-ui#cb297993d5208644c922e806969bd5860ec3afea",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mdi/js": "^7.4.47",
     "@photo-sphere-viewer/core": "^5.14.1",

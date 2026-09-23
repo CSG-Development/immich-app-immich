@@ -57,6 +57,7 @@ services:
   redis:
     container_name: immich_redis
     image: dhi.io/valkey:9@sha256:080a4198f4a69c65ec1cd5bd663f8324547efed223b0155f9c381bdac4acd416
+# upstream   image: docker.io/valkey/valkey:9@sha256:8e8d64b405ce18f41b8e5ee20aa4687a8ed0022d1298f2ce31cdcf3a76e09411
     command: ["valkey-server", "--protected-mode", "no"]
     healthcheck:
       test: redis-cli ping || exit 1
@@ -86,7 +87,7 @@ services:
     container_name: immich_prometheus
     ports:
       - 9090:9090
-    image: prom/prometheus@sha256:dda13e28bf95a5e5ca5b8ed56852006094c1c8e8871d9c9dbeed30aa6e55271f
+    image: prom/prometheus@sha256:3c42b892cf723fa54d2f262c37a0e1f80aa8c8ddb1da7b9b0df9455a35a7f893
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
@@ -98,7 +99,7 @@ services:
     command: ['./run.sh', '-disable-reporting']
     ports:
       - 3000:3000
-    image: grafana/grafana:12.4.2-ubuntu@sha256:78839fe49e1425c02416fa8072591533a72bd9598e563b54a07d78f9e27fb5d3
+    image: grafana/grafana:12.4.5-ubuntu@sha256:00396460e499415c828b7c298f19287c8a0f95e72412ee37ac11723655c2d6b9
     volumes:
       - grafana-data:/var/lib/grafana
 
