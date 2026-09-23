@@ -72,6 +72,11 @@ class BaseActionButton extends ConsumerWidget {
     if (menuItem) {
       final iconColor = this.iconColor;
       final onPressed = effectiveOnPressed;
+      final menuTextStyle = context.textTheme.labelLarge?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: iconColor ?? textColor,
+      );
 
       return wrapBlocked(
         MenuItemButton(
@@ -93,7 +98,7 @@ class BaseActionButton extends ConsumerWidget {
                   onPressed();
                   MenuController.maybeOf(context)?.close();
                 },
-          child: Text(label, style: TextStyle(fontSize: 15, color: iconColor)),
+          child: Text(label, style: menuTextStyle),
         ),
       );
     }

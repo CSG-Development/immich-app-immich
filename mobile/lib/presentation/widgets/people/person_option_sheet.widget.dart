@@ -23,11 +23,11 @@ class PersonOptionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
+    final textStyle = context.textTheme.labelLarge;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0),
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: ListView(
           shrinkWrap: true,
           children: [
