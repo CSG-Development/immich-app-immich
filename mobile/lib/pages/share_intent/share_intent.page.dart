@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/models/upload/share_intent_attachment.model.dart';
@@ -8,6 +9,7 @@ import 'package:immich_mobile/pages/common/large_leading_tile.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_upload.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
+import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 @RoutePage()
 class ShareIntentPage extends ConsumerWidget {
@@ -24,7 +26,10 @@ class ShareIntentPage extends ConsumerWidget {
     final isUploaded =
         candidates.isNotEmpty &&
         candidates.every(
-          (candidate) => candidate.status == UploadStatus.complete || candidate.status == UploadStatus.failed,
+          (candidate) =>
+              candidate.status == UploadStatus.complete ||
+              candidate.status == UploadStatus.failed ||
+              candidate.status == UploadStatus.alreadyUploaded,
         );
 
     void removeAttachment(ShareIntentAttachment attachment) {
@@ -37,7 +42,16 @@ class ShareIntentPage extends ConsumerWidget {
 
     void upload() async {
       final files = candidates.map((candidate) => candidate.file).toList();
-      await ref.read(shareIntentUploadProvider.notifier).uploadAll(files);
+      final alreadyUploadedCount = await ref.read(shareIntentUploadProvider.notifier).uploadAll(files);
+
+      if (alreadyUploadedCount > 0 && context.mounted) {
+        ImmichToast.show(
+          context: context,
+          msg: 'share_intent_already_uploaded'.tr(),
+          gravity: ToastGravity.BOTTOM,
+          toastType: ToastType.info,
+        );
+      }
     }
 
     bool isSelected(ShareIntentAttachment attachment) {
@@ -201,6 +215,8 @@ class UploadStatusIcon extends StatelessWidget {
       ),
       UploadStatus.complete => Icon(Icons.check_circle_rounded, color: Colors.green, semanticLabel: 'completed'.tr()),
       UploadStatus.failed => Icon(Icons.error_rounded, color: Colors.red, semanticLabel: 'failed'.tr()),
+      UploadStatus.alreadyUploaded =>
+        Icon(Icons.cloud_done_rounded, color: Colors.green, semanticLabel: 'share_intent_already_uploaded'.tr()),
     };
 
     return statusIcon;
