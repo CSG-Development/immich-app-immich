@@ -33,8 +33,8 @@ describe('album-access utils', () => {
 
   const sharedAlbum = (): AlbumResponseDto =>
     albumFactory.build({
-      ownerId: owner.id,
       albumUsers: [
+        { user: owner, role: AlbumUserRole.Owner },
         { user: editor, role: AlbumUserRole.Editor },
         { user: viewer, role: AlbumUserRole.Viewer },
       ],

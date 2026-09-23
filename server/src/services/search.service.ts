@@ -201,8 +201,9 @@ export class SearchService extends BaseService {
         userIds: await userIds,
         embedding,
         visibility: dto.visibility ?? (auth.session?.hasElevatedPermission ? undefined : 'not-locked'),
-        counterEmbedding
+        counterEmbedding,
       },
+      config.machineLearning.clip.probabilityThreshold,
     );
 
     return this.mapResponse(items, hasNextPage ? (page + 1).toString() : null, { auth });

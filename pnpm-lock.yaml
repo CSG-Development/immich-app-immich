@@ -8,6 +8,7 @@ settings:
 overrides:
   canvas: 3.2.3
   sharp: ^0.34.5
+  cron: 4.4.0
 
 packageExtensionsChecksum: sha256-W6pFzyf+6QXnV91iA6oob0OGVkergPXDN1afLgoF53k=
 
@@ -804,10 +805,10 @@ importers:
         specifier: ^0.4.3
         version: 0.4.3
       '@immich/sdk':
-        specifier: file:../open-api/typescript-sdk
-        version: file:open-api/typescript-sdk
+        specifier: workspace:*
+        version: link:../packages/sdk
       '@immich/ui':
-        specifier: github:CSG-Development/immich-app-ui#cb297993d5208644c922e806969bd5860ec3afea
+        specifier: github:CSG-Development/immich-app-ui#build
         version: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/cb297993d5208644c922e806969bd5860ec3afea(@internationalized/date@3.10.0)(@sveltejs/kit@2.47.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.2(svelte@5.35.5)(vite@7.1.10(@types/node@24.13.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.101.0)(terser@5.44.0)(tsx@4.22.4)(yaml@2.9.1)))(svelte@5.35.5)(vite@7.1.10(@types/node@24.13.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.101.0)(terser@5.44.0)(tsx@4.22.4)(yaml@2.9.1)))(svelte@5.35.5)
       '@mapbox/mapbox-gl-rtl-text':
         specifier: 0.3.0
@@ -863,6 +864,12 @@ importers:
       happy-dom:
         specifier: ^20.0.4
         version: 20.0.4
+      hls-video-element:
+        specifier: ^1.5.11
+        version: 1.5.11
+      hls.js:
+        specifier: ^1.7.3
+        version: 1.7.3
       intl-messageformat:
         specifier: ^11.0.0
         version: 11.2.8
@@ -3298,9 +3305,6 @@ packages:
 
   '@immich/justified-layout-wasm@0.4.3':
     resolution: {integrity: sha512-fpcQ7zPhP3Cp1bEXhONVYSUeIANa2uzaQFGKufUZQo5FO7aFT77szTVChhlCy4XaVy5R4ZvgSkA/1TJmeORz7Q==}
-
-  '@immich/sdk@file:open-api/typescript-sdk':
-    resolution: {directory: open-api/typescript-sdk, type: directory}
 
   '@immich/sql-tools@0.5.2':
     resolution: {integrity: sha512-O1SJ+BbeFVsUTF4af1MfagJZM+lPgLjI8lQ3SZNjpo8SGJReSbUl2ii03OKuGni/G0yp2GnRLpOTNSHYGtVrcg==}
@@ -7070,10 +7074,6 @@ packages:
     engines: {node: '>=12.0.0'}
     deprecated: v4 is no longer maintained, upgrade to v5
 
-  cron@4.3.3:
-    resolution: {integrity: sha512-B/CJj5yL3sjtlun6RtYHvoSB26EmQ2NUmhq9ZiJSyKIM4K/fqfh9aelDFlIayD2YMeFZqWLi9hHV+c+pq2Djkw==}
-    engines: {node: '>=18.x'}
-
   cron@4.4.0:
     resolution: {integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==}
     engines: {node: '>=18.x'}
@@ -7213,6 +7213,9 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  custom-media-element@1.4.6:
+    resolution: {integrity: sha512-/HRYqJOa1ob5ik4q7FIJVYxTJCFs/FL3+cQPAJjUf2uiqrDEzbTgB315gQ2rG8oK3w094W9m5tcB8S5Qah+caA==}
 
   cytoscape-cose-bilkent@4.1.0:
     resolution: {integrity: sha512-wgQlVIUJF13Quxiv5e1gstZ08rnZj2XaLHGoFMYXz7SkNfCDOOteKBE6SYRfA9WxxI/iBc3ajfDoc6hb/MRAHQ==}
@@ -8591,6 +8594,12 @@ packages:
   history@4.10.1:
     resolution: {integrity: sha512-36nwAD620w12kuzPAsyINPWJqlNbij+hpK1k9XRloDtym8mxzGYl2c17LnV6IAGB2Dmg4tEa7G7DlawS0+qjew==}
 
+  hls-video-element@1.5.11:
+    resolution: {integrity: sha512-tJJ65/52CDxj8XFyIve6zT9nVVdUIc6mqvKR25X0ycPKHk07rpjp4xxVteeCefDUBSf/tFLhlICFmn3KWj37xA==}
+
+  hls.js@1.7.3:
+    resolution: {integrity: sha512-MsPlx6yVW4Qv4C7mEVou4/gk/5cN2dVxOTnrNjPSmyH2f0Ln+/UkG10Ax1PE6OvrmTVPKgQYozTtBaPOuCzq7A==}
+
   hogan.js@3.0.2:
     resolution: {integrity: sha512-RqGs4wavGYJWE07t35JQccByczmNUXQT0E12ZYV1VKYu5UiAU9lsos/yBAcf840+zrUQQxgVduCR5/B8nNtibg==}
     hasBin: true
@@ -9709,6 +9718,9 @@ packages:
 
   media-chrome@4.19.2:
     resolution: {integrity: sha512-4ai1ITN8wBhwugQcRgqe3tN0z6OSKGOXqHLNrS04MgKFfsLqu6Dm8MPq02pI9Y9ZKoXtFjIl85jOryIW9es3BA==}
+
+  media-tracks@0.3.5:
+    resolution: {integrity: sha512-l54rkKXlLBt3ob3zOLWHcnjvwUmX5bNEZ70igyapOZZC9imzqBmq1oz8p2roiV04KhjblFIi2hetLPF1oYVLRA==}
 
   media-typer@0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
@@ -15040,7 +15052,7 @@ snapshots:
       combine-promises: 1.2.0
       fs-extra: 11.3.2
       js-yaml: 4.1.0
-      lodash: 4.17.21
+      lodash: 4.18.1
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
       schema-dts: 1.1.5
@@ -16224,10 +16236,6 @@ snapshots:
 
   '@immich/justified-layout-wasm@0.4.3': {}
 
-  '@immich/sdk@file:open-api/typescript-sdk':
-    dependencies:
-      '@oazapfts/runtime': 1.0.4
-
   '@immich/sql-tools@0.5.2':
     dependencies:
       commander: 14.0.3
@@ -16255,8 +16263,8 @@ snapshots:
       svelte: 5.35.5
       svelte-highlight: 7.12.0
       tailwind-merge: 3.6.0
-      tailwind-variants: 3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.1.14)
-      tailwindcss: 4.1.14
+      tailwind-variants: 3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.3.3)
+      tailwindcss: 4.3.3
       timepicker-ui: 4.1.6
     transitivePeerDependencies:
       - '@internationalized/date'
@@ -16901,7 +16909,7 @@ snapshots:
     dependencies:
       '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.6)(@nestjs/websockets@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      cron: 4.3.3
+      cron: 4.4.0
 
   '@nestjs/schematics@11.0.9(@typescript/typescript6@6.0.2)(chokidar@4.0.3)':
     dependencies:
@@ -18743,7 +18751,7 @@ snapshots:
 
   '@types/through@0.0.33':
     dependencies:
-      '@types/node': 24.13.2
+      '@types/node': 24.13.6
 
   '@types/trusted-types@2.0.7':
     optional: true
@@ -20352,11 +20360,6 @@ snapshots:
     dependencies:
       luxon: 3.7.2
 
-  cron@4.3.3:
-    dependencies:
-      '@types/luxon': 3.7.1
-      luxon: 3.7.2
-
   cron@4.4.0:
     dependencies:
       '@types/luxon': 3.7.1
@@ -20519,6 +20522,8 @@ snapshots:
     optional: true
 
   csstype@3.1.3: {}
+
+  custom-media-element@1.4.6: {}
 
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.34.0):
     dependencies:
@@ -22333,6 +22338,14 @@ snapshots:
       tiny-warning: 1.0.3
       value-equal: 1.0.1
 
+  hls-video-element@1.5.11:
+    dependencies:
+      custom-media-element: 1.4.6
+      hls.js: 1.7.3
+      media-tracks: 0.3.5
+
+  hls.js@1.7.3: {}
+
   hogan.js@3.0.2:
     dependencies:
       mkdirp: 0.3.0
@@ -22811,7 +22824,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 24.13.2
+      '@types/node': 24.13.6
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -23528,6 +23541,8 @@ snapshots:
       ce-la-react: 0.3.2(react@19.2.0)
     transitivePeerDependencies:
       - react
+
+  media-tracks@0.3.5: {}
 
   media-typer@0.3.0: {}
 
@@ -26606,6 +26621,12 @@ snapshots:
   tailwind-variants@3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.1.14):
     dependencies:
       tailwindcss: 4.1.14
+    optionalDependencies:
+      tailwind-merge: 3.6.0
+
+  tailwind-variants@3.2.2(tailwind-merge@3.6.0)(tailwindcss@4.3.3):
+    dependencies:
+      tailwindcss: 4.3.3
     optionalDependencies:
       tailwind-merge: 3.6.0
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from '$lib/components/elements/icon.svelte';
-  import { getAccordionState } from '$lib/components/shared-components/settings/setting-accordion-state.svelte';
+  import { getAccordionState } from '$lib/components/shared-components/settings/SettingAccordionState.svelte';
   import { onDestroy, onMount, type Component, type Snippet } from 'svelte';
   import { slide } from 'svelte/transition';
 

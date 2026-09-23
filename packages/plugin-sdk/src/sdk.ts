@@ -1,9 +1,9 @@
-import { hostFunctions } from 'src/host-functions.js';
+import { hostFunctions } from './host-functions.js';
 import type {
   WorkflowEventPayload,
   WorkflowResponse,
   WorkflowStepConfig,
-} from 'src/types.js';
+} from './types.js';
 
 type Property = {
   type: 'string' | 'boolean' | 'number';

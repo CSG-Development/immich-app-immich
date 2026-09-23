@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { availableFunctions } from 'src/host-functions.js';
+import { availableFunctions } from './host-functions.js';
 
 const program = new Command('plugin-sdk');
 

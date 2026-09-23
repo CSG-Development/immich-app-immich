@@ -1,9 +1,9 @@
 <script lang="ts">
   import { clickOutside } from '$lib/actions/click-outside';
   import { listNavigation } from '$lib/actions/list-navigation';
-  import CoordinatesInput from '$lib/components/shared-components/coordinates-input.svelte';
+  import CoordinatesInput from '$lib/components/shared-components/CoordinatesInput.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
-  import type Map from '$lib/components/shared-components/map/map.svelte';
+  import type Map from '$lib/components/shared-components/map/Map.svelte';
   import { timeDebounceOnSearch, timeToLoadTheMap } from '$lib/constants';
   import SearchBar from '$lib/elements/SearchBar.svelte';
   import ConfirmModal from '$lib/modals/ConfirmModal.svelte';
@@ -188,7 +188,7 @@
 
       <span class="text-xl">{$t('pick_a_location')}</span>
       <div class="h-[500px] min-h-[300px] w-full z-0">
-        {#await import('../shared-components/map/map.svelte')}
+        {#await import('../shared-components/map/Map.svelte')}
           {#await delay(timeToLoadTheMap) then}
             <!-- show the loading spinner only if loading the map takes too much time -->
             <div class="flex items-center justify-center h-full w-full">

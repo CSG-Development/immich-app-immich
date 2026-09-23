@@ -50,7 +50,7 @@ describe('utils', () => {
         originalPath: 'image.gif',
         originalMimeType: 'image/gif',
         type: AssetTypeEnum.Image,
-        duration: '2.0',
+        duration: 2000,
       });
 
       const url = getAssetUrl({ asset });
@@ -65,7 +65,7 @@ describe('utils', () => {
         originalPath: 'image.webp',
         originalMimeType: 'image/webp',
         type: AssetTypeEnum.Image,
-        duration: '2.0',
+        duration: 2000,
       });
 
       const url = getAssetUrl({ asset });
@@ -119,7 +119,7 @@ describe('utils', () => {
         originalPath: 'image.gif',
         originalMimeType: 'image/gif',
         type: AssetTypeEnum.Image,
-        duration: '2.0',
+        duration: 2000,
       });
       const sharedLink = sharedLinkFactory.build({ allowDownload: true, showMetadata: true, assets: [asset] });
 
@@ -134,7 +134,7 @@ describe('utils', () => {
         originalPath: 'image.gif',
         originalMimeType: 'image/gif',
         type: AssetTypeEnum.Image,
-        duration: '2.0',
+        duration: 2000,
       });
       const sharedLink = sharedLinkFactory.build({ allowDownload: false, assets: [asset] });
 
@@ -150,7 +150,7 @@ describe('utils', () => {
         originalPath: 'image.gif',
         originalMimeType: 'image/gif',
         type: AssetTypeEnum.Image,
-        duration: '2.0',
+        duration: 2000,
       });
       const sharedLink = sharedLinkFactory.build({ showMetadata: false, assets: [asset] });
 
@@ -164,23 +164,23 @@ describe('utils', () => {
 
   describe(getReleaseType.name, () => {
     it('should return "major" for major version changes', () => {
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 2, minor: 0, patch: 0 })).toBe('major');
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 3, minor: 2, patch: 1 })).toBe('major');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 2, minor: 0, patch: 0, prerelease: null })).toBe('major');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 3, minor: 2, patch: 1, prerelease: null })).toBe('major');
     });
 
     it('should return "minor" for minor version changes', () => {
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 1, patch: 0 })).toBe('minor');
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 2, patch: 1 })).toBe('minor');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 1, minor: 1, patch: 0, prerelease: null })).toBe('minor');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 1, minor: 2, patch: 1, prerelease: null })).toBe('minor');
     });
 
     it('should return "patch" for patch version changes', () => {
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 1 })).toBe('patch');
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 5 })).toBe('patch');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 1, minor: 0, patch: 1, prerelease: null })).toBe('patch');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 1, minor: 0, patch: 5, prerelease: null })).toBe('patch');
     });
 
     it('should return "none" for matching versions', () => {
-      expect(getReleaseType({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 })).toBe('none');
-      expect(getReleaseType({ major: 1, minor: 2, patch: 3 }, { major: 1, minor: 2, patch: 3 })).toBe('none');
+      expect(getReleaseType({ major: 1, minor: 0, patch: 0, prerelease: null }, { major: 1, minor: 0, patch: 0, prerelease: null })).toBe('none');
+      expect(getReleaseType({ major: 1, minor: 2, patch: 3, prerelease: null }, { major: 1, minor: 2, patch: 3, prerelease: null })).toBe('none');
     });
   });
 });

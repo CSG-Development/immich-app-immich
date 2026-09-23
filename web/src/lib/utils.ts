@@ -1,11 +1,12 @@
 import { defaultLang, langs, locales } from '$lib/constants';
 import { authManager } from '$lib/managers/auth-manager.svelte';
+import { downloadManager } from '$lib/managers/download-manager.svelte';
 import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { Route } from '$lib/route';
 import { alwaysLoadOriginalFile, lang } from '$lib/stores/preferences.store';
 import { SlideshowNavigation } from '$lib/stores/slideshow.store';
-import { isWebCompatibleImage } from '$lib/utils/asset-utils';
+import { downloadBlob, isWebCompatibleImage } from '$lib/utils/asset-utils';
 import { handleError } from '$lib/utils/handle-error';
 import { getOrderedSlideshowAssets } from '$lib/utils/slideshow-utils';
 import type { TimelineDateTime } from '$lib/utils/timeline-util';
@@ -259,7 +260,7 @@ export function getAssetUrls(asset: AssetResponseDto, sharedLink?: SharedLinkRes
 }
 
 const forceUseOriginal = (asset: AssetResponseDto) => {
-  return asset.type === AssetTypeEnum.Image && asset.duration && !asset.duration.includes('0:00:00.000');
+  return asset.type === AssetTypeEnum.Image && asset.duration;
 };
 
 export const targetImageSize = (asset: AssetResponseDto, forceOriginal: boolean) => {
@@ -283,6 +284,14 @@ export const getAssetPlaybackUrl = (options: AssetUrlOptions) => {
   return createUrl(getAssetPlaybackPath(id), { ...authManager.params, c });
 };
 
+export const getAssetHlsUrl = (id: string) => {
+  return createUrl(`/assets/${id}/video/stream/main.m3u8`, authManager.params);
+};
+
+export const getAssetHlsSessionUrl = (id: string, sessionId: string) => {
+  return createUrl(`/assets/${id}/video/stream/${sessionId}`, authManager.params);
+};
+
 export const getProfileImageUrl = (user: UserResponseDto) =>
   createUrl(getUserProfileImagePath(user.id), { updatedAt: user.profileChangedAt });
 
@@ -298,6 +307,14 @@ export const copyToClipboard = async (secret: string) => {
   } catch (error) {
     handleError(error, $t('errors.unable_to_copy_to_clipboard'));
   }
+};
+
+export const downloadJson = (data: unknown, filename: string) => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadManager.add(filename, blob.size);
+  downloadManager.update(filename, blob.size);
+  downloadBlob(blob, filename);
+  setTimeout(() => downloadManager.clear(filename), 5000);
 };
 
 export const oauth = {
@@ -476,7 +493,8 @@ export const getReleaseType = (
   return 'none';
 };
 
-export const semverToName = ({ major, minor, patch }: ServerVersionResponseDto) => `v${major}.${minor}.${patch}`;
+export const semverToName = ({ major, minor, patch, prerelease }: ServerVersionResponseDto) =>
+  `v${major}.${minor}.${patch}${prerelease === null ? '' : `-rc.${prerelease}`}`;
 
 export const withoutIcons = (actions: ActionItem[]): ActionItem[] =>
   actions.map((action) => ({ ...action, icon: undefined }));

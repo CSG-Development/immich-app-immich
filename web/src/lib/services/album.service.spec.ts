@@ -49,9 +49,8 @@ describe('AlbumService', () => {
 
   const sharedAlbum = () =>
     albumFactory.build({
-      ownerId: owner.id,
-      owner: userFactory.build({ id: owner.id, name: owner.name }),
       albumUsers: [
+        { user: userFactory.build({ id: owner.id, name: owner.name }), role: AlbumUserRole.Owner },
         { user: userFactory.build({ id: editor.id, name: editor.name }), role: AlbumUserRole.Editor },
         { user: userFactory.build({ id: viewer.id, name: viewer.name }), role: AlbumUserRole.Viewer },
       ],

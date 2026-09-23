@@ -10,7 +10,7 @@
     mdiShuffle,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import SettingDropdown from '../components/shared-components/settings/setting-dropdown.svelte';
+  import SettingDropdown from '../components/shared-components/settings/SettingDropdown.svelte';
   import {
     clampSlideshowDelay,
     SLIDESHOW_DELAY_MAX,

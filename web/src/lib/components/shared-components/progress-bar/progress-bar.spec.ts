@@ -1,6 +1,6 @@
 import { render, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import ProgressBar from './progress-bar.svelte';
+import ProgressBar from './ProgressBar.svelte';
 
 const getProgressWidthPercent = (baseElement: HTMLElement): number => {
   const bar = baseElement.querySelector('span');

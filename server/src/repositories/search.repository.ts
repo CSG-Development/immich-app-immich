@@ -337,7 +337,7 @@ export class SearchRepository {
         .selectAll()
         .where('prob', '>=', probabilityThreshold)
         .orderBy('prob', 'desc')
-        .orderBy('asset.id', 'asc')
+        .orderBy('id', 'asc')
         .limit(pagination.size + 1)
         .offset((pagination.page - 1) * pagination.size)
         .execute();

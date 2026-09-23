@@ -5,7 +5,7 @@
   import AdminPageLayout from '$lib/components/layouts/AdminPageLayout.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
   import ServerStatisticsCard from '$lib/components/server-statistics/ServerStatisticsCard.svelte';
-  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/EmptyPlaceholder.svelte';
   import TableButton from '$lib/components/TableButton.svelte';
   import LibraryFolderAddModal from '$lib/modals/LibraryFolderAddModal.svelte';
   import { Route } from '$lib/route';
@@ -61,9 +61,9 @@
     <div class="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
       <Heading tag="h1" size="large" class="col-span-full my-4">{library.name}</Heading>
       <div class="flex flex-col lg:flex-row gap-4 col-span-full">
-        <ServerStatisticsCard icon={mdiCameraIris} title={$t('photos')} value={statistics.photos} />
-        <ServerStatisticsCard icon={mdiPlayCircle} title={$t('videos')} value={statistics.videos} />
-        <ServerStatisticsCard icon={mdiChartPie} title={$t('usage')} value={storageUsage} {unit} />
+        <ServerStatisticsCard icon={mdiCameraIris} title={$t('photos')} valuePromise={{ value: statistics.photos }} />
+        <ServerStatisticsCard icon={mdiPlayCircle} title={$t('videos')} valuePromise={{ value: statistics.videos }} />
+        <ServerStatisticsCard icon={mdiChartPie} title={$t('usage')} valuePromise={{ value: storageUsage, unit }} />
       </div>
 
       <AdminCard icon={mdiFolderOutline} title={$t('folders')} headerAction={AddFolder}>

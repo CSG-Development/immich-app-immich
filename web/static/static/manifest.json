@@ -31,5 +31,19 @@
   "lang": "en",
   "name": "Personal Cloud Photos",
   "short_name": "Personal Cloud Photos",
+  "shortcuts": [
+    {
+      "name": "Photos",
+      "url": "/photos"
+    },
+    {
+      "name": "Albums",
+      "url": "/albums"
+    },
+    {
+      "name": "Map",
+      "url": "/map"
+    }
+  ],
   "start_url": "/"
 }
