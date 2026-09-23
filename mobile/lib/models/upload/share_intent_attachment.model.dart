@@ -7,7 +7,7 @@ import 'package:path/path.dart';
 
 enum ShareIntentAttachmentType { image, video }
 
-enum UploadStatus { enqueued, running, complete, failed }
+enum UploadStatus { enqueued, running, complete, failed, alreadyUploaded }
 
 class ShareIntentAttachment {
   final String path;

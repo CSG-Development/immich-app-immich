@@ -65,6 +65,19 @@ class RemoteAssetRepository extends DriftDatabaseRepository {
     return query.map((row) => row.toDto()).getSingleOrNull();
   }
 
+  /// Whether [ownerId] already has a server-side asset with this checksum.
+  ///
+  /// Used by the share-intent flow to skip re-uploading files that are
+  /// already on the server.
+  Future<bool> existsByChecksumAndOwner(String checksum, String ownerId) async {
+    final query = _db.remoteAssetEntity.selectOnly()
+      ..addColumns([_db.remoteAssetEntity.id.count()])
+      ..where(_db.remoteAssetEntity.checksum.equals(checksum) & _db.remoteAssetEntity.ownerId.equals(ownerId));
+
+    final row = await query.getSingle();
+    return (row.read(_db.remoteAssetEntity.id.count()) ?? 0) > 0;
+  }
+
   Future<List<RemoteAsset>> getStackChildren(RemoteAsset asset) {
     final stackId = asset.stackId;
     if (stackId == null) {
