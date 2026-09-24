@@ -20,7 +20,7 @@ class EditorSolidSlider extends StatelessWidget {
   });
 
   final double value;
-  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChanged;
   final ValueChanged<double>? onChangeEnd;
   final ValueChanged<double>? onChangeStart;
   final double min;
@@ -33,6 +33,8 @@ class EditorSolidSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliderTheme(
       data: SliderTheme.of(context).copyWith(
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8, elevation: 1),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
         tickMarkShape: SliderTickMarkShape.noTickMark,
         activeTickMarkColor: Colors.transparent,
         inactiveTickMarkColor: Colors.transparent,
@@ -116,8 +118,7 @@ class _EditorFontScaleSliderState extends State<EditorFontScaleSlider> {
 Color inactiveTrackForSheet(Color sheetBackground) =>
     sheetBackground.computeLuminance() > 0.5 ? Colors.black38 : Colors.white38;
 
-Color onSheetColor(Color sheetBackground) =>
-    sheetBackground.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+Color onSheetColor(Color sheetBackground) => sheetBackground.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
 
 /// Factory matching pro_image_editor [CustomSlider] for solid tracks.
 ReactiveWidget Function(
@@ -126,7 +127,8 @@ ReactiveWidget Function(
   double value,
   Function(double value) onChanged,
   Function(double value) onChangeEnd,
-) solidCustomSliderBuilder<T>({
+)
+solidCustomSliderBuilder<T>({
   required double min,
   required double max,
   int? divisions,
@@ -157,7 +159,8 @@ ReactiveWidget Function(
   double value,
   Function(double value) onChanged,
   Function(double value) onChangeEnd,
-) fontScaleCustomSliderBuilder({
+)
+fontScaleCustomSliderBuilder({
   required double min,
   required double max,
   required int divisions,

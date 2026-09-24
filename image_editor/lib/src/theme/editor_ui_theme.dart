@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 /// Builds Immich-aligned theme + style overrides for [ProImageEditor].
@@ -19,12 +20,9 @@ class EditorUiTheme {
     final primary = appScheme.primary;
     final sheetBackground = appScheme.surfaceContainer;
     final onSheet = appScheme.onSurface;
-    final fontFamily = appTheme.textTheme.bodyLarge?.fontFamily;
-
     final sheetTitleStyle = (appTheme.textTheme.titleMedium ?? const TextStyle(fontSize: 18)).copyWith(
       color: onSheet,
       fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
     );
 
     final sliderTheme = SliderThemeData(
@@ -43,13 +41,18 @@ class EditorUiTheme {
     );
 
     // Keep a dark editor theme for toolbars/canvas; sheets use explicit colors.
-    final theme = ThemeData(
+    // copyWith keeps the app text theme and font instead of a fresh ThemeData.
+    // Explicit scaffold/appBar colors are required: otherwise light host themes
+    // leak into custom screens (vignette, watermark, AI) via scaffoldBackgroundColor.
+    const editorBackground = Color(0xFF121212);
+    final theme = appTheme.copyWith(
       brightness: Brightness.dark,
-      fontFamily: fontFamily,
+      scaffoldBackgroundColor: editorBackground,
+      canvasColor: editorBackground,
       colorScheme: ColorScheme.dark(
         primary: primary,
         secondary: primary,
-        surface: const Color(0xFF121212),
+        surface: editorBackground,
         onPrimary: appScheme.onPrimary,
         onSurface: Colors.white,
       ),
@@ -57,8 +60,16 @@ class EditorUiTheme {
       primaryColor: primary,
       primaryIconTheme: IconThemeData(color: primary),
       iconTheme: const IconThemeData(color: Colors.white),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.white),
+        actionsIconTheme: IconThemeData(color: Colors.white),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
       textTheme: appTheme.textTheme.apply(
-        fontFamily: fontFamily,
         bodyColor: Colors.white,
         displayColor: Colors.white,
       ),
