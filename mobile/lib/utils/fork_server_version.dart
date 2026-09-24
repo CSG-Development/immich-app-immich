@@ -13,8 +13,8 @@ abstract final class ForkServerVersion {
   static const v1_31_0 = SemVer(major: 1, minor: 31, patch: 0);
 
   /// First fork release that speaks Immich 3.x (assets/albums v2, OCR sync, recently added).
-  /// Null until the backend merge ships.
-  static const SemVer? vImmich3 = null;
+  /// Fork 1.34.0 = upstream Immich 3.0.0.
+  static const SemVer vImmich3 = SemVer(major: 1, minor: 34, patch: 0);
 
   static bool isAtLeastV1_31(SemVer server) {
     if (server.major == 0) {
@@ -33,8 +33,7 @@ abstract final class ForkServerVersion {
     if (server.major >= 2) {
       return server >= const SemVer(major: 3, minor: 0, patch: 0);
     }
-    final fork = vImmich3;
-    return fork != null && server >= fork;
+    return server >= vImmich3;
   }
 }
 
