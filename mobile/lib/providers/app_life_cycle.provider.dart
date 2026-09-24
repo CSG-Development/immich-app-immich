@@ -35,6 +35,7 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
   Completer<void>? _resumeOperation;
   Completer<void>? _pauseOperation;
+  Completer<void>? _manualRefreshOperation;
   final _log = Logger("AppLifeCycleNotifier");
 
   AppLifeCycleNotifier(this._ref) : super(AppLifeCycleEnum.active);
@@ -171,43 +172,100 @@ class AppLifeCycleNotifier extends StateNotifier<AppLifeCycleEnum> {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    final backgroundManager = _ref.read(backgroundSyncProvider);
-    final isAlbumLinkedSyncEnable = _ref.read(appConfigProvider).backup.syncAlbums;
-
     try {
-      bool syncSuccess = false;
-      await Future.wait([
-        _safeRun(backgroundManager.syncLocal(full: CurrentPlatform.isAndroid ? true : false), "syncLocal"),
-        _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemote"),
-      ]);
-      if (!syncSuccess) {
-        await Future<void>.delayed(const Duration(seconds: 2));
-        await _safeRun(backgroundManager.syncRemote().then((success) => syncSuccess = success), "syncRemoteRetry");
-      }
-      _ref.invalidate(driftMemoryFutureProvider);
-      final backupNotifier = _ref.read(driftBackupProvider.notifier);
-      if (syncSuccess) {
-        backupNotifier.updateError(BackupError.none);
-        await Future.wait([
-          _safeRun(backgroundManager.hashAssets(), "hashAssets").then((_) {
-            _resumeBackup();
-          }),
-          _resumeBackup(),
-        ]);
-      } else {
-        backupNotifier.updateError(BackupError.syncFailed);
-      }
-      await backupNotifier.refreshBackupNetworkGuard();
-      await _safeRun(backgroundManager.hashAssets(), "hashAssets");
-      if (syncSuccess && await backupNotifier.canResumeBackupOnCurrentNetwork()) {
-        await _resumeBackup();
-      }
-
-      if (isAlbumLinkedSyncEnable) {
-        await _safeRun(backgroundManager.syncLinkedAlbum(), "syncLinkedAlbum");
-      }
+      final syncSuccess = await _syncTimelineAssets(forceRemote: false);
+      await _runPostTimelineSync(syncSuccess);
     } catch (e, stackTrace) {
       _log.severe("Error during background sync", e, stackTrace);
+    }
+  }
+
+  /// Pull-to-refresh: force remote sync; hash/backup continue in background.
+  Future<void> refreshTimeline() async {
+    if (!_ref.read(authProvider).isAuthenticated) {
+      return;
+    }
+
+    // Coalesce with an in-flight resume or refresh.
+    if (_resumeOperation != null && !_resumeOperation!.isCompleted) {
+      await _resumeOperation!.future;
+      return;
+    }
+
+    if (_manualRefreshOperation != null && !_manualRefreshOperation!.isCompleted) {
+      await _manualRefreshOperation!.future;
+      return;
+    }
+
+    final operation = Completer<void>();
+    _manualRefreshOperation = operation;
+
+    unawaited(_ref.read(backgroundWorkerLockServiceProvider).lock());
+
+    try {
+      final syncSuccess = await _syncTimelineAssets(forceRemote: true);
+      final backupNotifier = _ref.read(driftBackupProvider.notifier);
+      await backupNotifier.refreshBackupNetworkGuard();
+      // Indicator dismisses after asset sync; hash/backup stay unawaited.
+      unawaited(_runPostTimelineSync(syncSuccess, skipNetworkGuard: true));
+    } catch (e, stackTrace) {
+      _log.severe("Error during timeline pull-to-refresh", e, stackTrace);
+    } finally {
+      if (!operation.isCompleted) {
+        operation.complete();
+      }
+      if (identical(_manualRefreshOperation, operation)) {
+        _manualRefreshOperation = null;
+      }
+    }
+  }
+
+  Future<bool> _syncTimelineAssets({required bool forceRemote}) async {
+    final backgroundManager = _ref.read(backgroundSyncProvider);
+    bool syncSuccess = false;
+
+    await Future.wait([
+      _safeRun(backgroundManager.syncLocal(full: CurrentPlatform.isAndroid ? true : false), "syncLocal"),
+      _safeRun(
+        backgroundManager.syncRemote(force: forceRemote).then((success) => syncSuccess = success),
+        "syncRemote",
+      ),
+    ]);
+    if (!syncSuccess) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      await _safeRun(
+        backgroundManager.syncRemote(force: forceRemote).then((success) => syncSuccess = success),
+        "syncRemoteRetry",
+      );
+    }
+
+    _ref.invalidate(driftMemoryFutureProvider);
+    final backupNotifier = _ref.read(driftBackupProvider.notifier);
+    if (syncSuccess) {
+      backupNotifier.updateError(BackupError.none);
+    } else {
+      backupNotifier.updateError(BackupError.syncFailed);
+    }
+
+    return syncSuccess;
+  }
+
+  Future<void> _runPostTimelineSync(bool syncSuccess, {bool skipNetworkGuard = false}) async {
+    final backgroundManager = _ref.read(backgroundSyncProvider);
+    final isAlbumLinkedSyncEnable = _ref.read(appConfigProvider).backup.syncAlbums;
+    final backupNotifier = _ref.read(driftBackupProvider.notifier);
+
+    if (!skipNetworkGuard) {
+      await backupNotifier.refreshBackupNetworkGuard();
+    }
+    await _safeRun(backgroundManager.hashAssets(), "hashAssets");
+    // One gated resume after hash to avoid cancel/restart storms.
+    if (syncSuccess && await backupNotifier.canResumeBackupOnCurrentNetwork()) {
+      await _resumeBackup();
+    }
+
+    if (isAlbumLinkedSyncEnable) {
+      await _safeRun(backgroundManager.syncLinkedAlbum(), "syncLinkedAlbum");
     }
   }
 

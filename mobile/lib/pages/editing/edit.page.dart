@@ -98,6 +98,7 @@ class EditImagePage extends HookConsumerWidget {
         context: context,
         msg: 'image_saved_successfully'.tr(),
         gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.success,
       );
 
       if (localAsset == null) {
@@ -111,6 +112,7 @@ class EditImagePage extends HookConsumerWidget {
         context: context,
         msg: "error_saving_image".tr(namedArgs: {'error': e.toString()}),
         gravity: ToastGravity.BOTTOM,
+        toastType: ToastType.error,
       );
     }
   }
@@ -146,6 +148,7 @@ class EditImagePage extends HookConsumerWidget {
             return ImageEditor(
               config: ImageEditorConfig(
                 imageBytes: snapshot.data!,
+                theme: Theme.of(context),
                 onImageEditingComplete: (bytes) {
                   // Fire-and-forget: this method pops the editor mid-flight.
                   // Awaiting it would resume ProImageEditor after dispose.

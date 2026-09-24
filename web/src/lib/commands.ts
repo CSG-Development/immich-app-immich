@@ -23,11 +23,13 @@ import {
   mdiMapMarkerOutline,
   mdiMapOutline,
   mdiServer,
+  mdiStateMachine,
   mdiSync,
   mdiTagMultipleOutline,
   mdiThemeLightDark,
   mdiToolboxOutline,
   mdiTrashCanOutline,
+  mdiWrench,
 } from '@mdi/js';
 import type { MessageFormatter } from 'svelte-i18n';
 
@@ -62,6 +64,12 @@ export const getPagesProvider = ($t: MessageFormatter) => {
       description: $t('admin.server_stats_page_description'),
       icon: mdiServer,
       onAction: () => goto(Route.systemStatistics()),
+    },
+    {
+      title: $t('admin.maintenance_settings'),
+      description: $t('admin.maintenance_settings_description'),
+      icon: mdiWrench,
+      onAction: () => goto(Route.systemMaintenance()),
     },
   ].map((route) => ({ ...route, $if: () => authManager.authenticated && authManager.user.isAdmin }));
 
@@ -145,6 +153,12 @@ export const getPagesProvider = ($t: MessageFormatter) => {
       title: $t('utilities'),
       icon: mdiToolboxOutline,
       onAction: () => goto(Route.utilities()),
+      $if: () => authManager.authenticated,
+    },
+    {
+      title: $t('workflows'),
+      icon: mdiStateMachine,
+      onAction: () => goto(Route.workflows()),
       $if: () => authManager.authenticated,
     },
     {

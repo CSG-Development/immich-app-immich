@@ -1,9 +1,9 @@
 <script lang="ts">
   import largeFilesUrl from '$lib/assets/large-files.svg';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
-  import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import LargeAssetData from '$lib/components/utilities-page/large-assets/large-asset-data.svelte';
+  import UserPageLayout from '$lib/components/layouts/UserPageLayout.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/EmptyPlaceholder.svelte';
+  import LargeAssetData from './LargeAssetData.svelte';
   import Portal from '$lib/elements/Portal.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { handlePromiseError } from '$lib/utils';
@@ -74,7 +74,7 @@
 </UserPageLayout>
 
 {#if assetViewerManager.isViewing}
-  {#await import('$lib/components/asset-viewer/asset-viewer.svelte') then { default: AssetViewer }}
+  {#await import('$lib/components/asset-viewer/AssetViewer.svelte') then { default: AssetViewer }}
     <Portal target="body">
       <AssetViewer
         bind:cursor={assetCursor}

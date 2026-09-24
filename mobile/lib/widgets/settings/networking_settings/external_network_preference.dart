@@ -68,9 +68,11 @@ class ExternalNetworkPreference extends HookConsumerWidget {
                       leading: const Icon(Icons.check_circle_rounded, color: Colors.green),
                       title: Text(
                         endpoint,
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: context.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: enabled ? context.primaryColor : context.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: enabled
+                              ? context.colorScheme.onSurface
+                              : context.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       subtitle: Text('From hc_device discovered paths', style: context.textTheme.bodySmall),

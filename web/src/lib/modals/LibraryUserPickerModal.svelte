@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SettingSelect from '$lib/components/shared-components/settings/setting-select.svelte';
+  import SettingSelect from '../../routes/admin/system-settings/SettingSelect.svelte';
   import { user } from '$lib/stores/user.store';
   import { searchUsersAdmin } from '@immich/sdk';
   import { Button, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';

@@ -37,6 +37,7 @@ class BackgroundSyncManager {
   /// stay immediate.
   static const Duration _remoteSyncCoalesceWindow = Duration(seconds: 10);
   DateTime? _lastRemoteSyncSuccessAt;
+  bool _syncQueued = false;
 
   Cancelable<bool?>? _syncTask;
   Cancelable<void>? _syncWebsocketTask;
@@ -144,15 +145,18 @@ class BackgroundSyncManager {
         });
   }
 
-  Future<bool> syncRemote() {
+  Future<bool> syncRemote({bool force = false, bool enqueue = false}) {
     if (_syncTask != null) {
+      if (enqueue) {
+        _syncQueued = true;
+      }
       return _syncTask!.future.then((result) => result ?? false).catchError((_) => false);
     }
 
     // Coalesce redundant re-triggers right after a successful sync. A failed
     // sync leaves the window unset so retries stay immediate.
     final lastSuccess = _lastRemoteSyncSuccessAt;
-    if (lastSuccess != null && DateTime.now().difference(lastSuccess) < _remoteSyncCoalesceWindow) {
+    if (!force && lastSuccess != null && DateTime.now().difference(lastSuccess) < _remoteSyncCoalesceWindow) {
       return Future.value(true);
     }
 
@@ -178,6 +182,11 @@ class BackgroundSyncManager {
         })
         .whenComplete(() {
           _syncTask = null;
+          if (_syncQueued) {
+            _syncQueued = false;
+            // ignore: discarded_futures
+            syncRemote(force: true);
+          }
         });
   }
 

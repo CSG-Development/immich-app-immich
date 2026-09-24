@@ -14,7 +14,7 @@
   import type { ExifResponseDto } from '@immich/sdk';
   import { mdiCalendar, mdiCrosshairsGps, mdiTune } from '@mdi/js';
   import { t } from 'svelte-i18n';
-  import SettingAccordionState from '../shared-components/settings/setting-accordion-state.svelte';
+  import SettingAccordionState from '../shared-components/settings/SettingAccordionState.svelte';
 
   interface Props {
     exifInfo?: ExifResponseDto;

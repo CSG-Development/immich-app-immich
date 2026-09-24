@@ -2474,6 +2474,7 @@
   "setup_pin_code": "Setup a PIN code",
   "share": "Share",
   "share_dialog_preparing": "Preparing...",
+  "share_intent_already_uploaded": "This photo is already uploaded to Curator Photos.",
   "share_link": "Share Link",
   "share_logs": "Share logs",
   "share_original": "Use original (large)",

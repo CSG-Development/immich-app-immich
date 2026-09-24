@@ -1,7 +1,7 @@
 <script lang="ts">
-  import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import PlacesControls from '$lib/components/places-page/places-controls.svelte';
-  import Places from '$lib/components/places-page/places-list.svelte';
+  import UserPageLayout from '$lib/components/layouts/UserPageLayout.svelte';
+  import PlacesControls from './PlacesControls.svelte';
+  import Places from './PlacesList.svelte';
   import SearchBar from '$lib/elements/SearchBar.svelte';
   import { mobileDevice } from '$lib/stores/mobile-device.svelte';
   import { locale, placesViewSettings } from '$lib/stores/preferences.store';

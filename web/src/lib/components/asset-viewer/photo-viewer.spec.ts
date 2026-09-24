@@ -1,5 +1,5 @@
 import { getAnimateMock } from '$lib/__mocks__/animate.mock';
-import PhotoViewer from '$lib/components/asset-viewer/photo-viewer.svelte';
+import PhotoViewer from '$lib/components/asset-viewer/PhotoViewer.svelte';
 import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
 import * as utils from '$lib/utils';
 import { AssetMediaSize } from '@immich/sdk';

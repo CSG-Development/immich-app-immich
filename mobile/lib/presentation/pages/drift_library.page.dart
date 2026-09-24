@@ -31,6 +31,7 @@ class DriftLibraryPage extends HookConsumerWidget {
     final scrollController = useScrollNotifier(ref);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: CustomScrollView(
         controller: scrollController,
         slivers: const [

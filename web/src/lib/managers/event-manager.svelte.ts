@@ -1,6 +1,7 @@
 import type { AlbumEditAccessResult } from '$lib/utils/album-access';
 import { BaseEventManager } from '$lib/utils/base-event-manager.svelte';
 import type { TreeNode } from '$lib/utils/tree-utils';
+import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import type {
   AlbumResponseDto,
   AlbumUserRole,
@@ -36,6 +37,8 @@ export type Events = {
 
   AssetUpdate: [AssetResponseDto];
   AssetsArchive: [string[]];
+  AssetsUnarchive: [TimelineAsset[]];
+  AssetsUndoArchive: [TimelineAsset[]];
   AssetsDelete: [string[]];
   AssetEditsApplied: [string];
   AssetsTag: [string[]];

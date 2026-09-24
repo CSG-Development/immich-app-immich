@@ -34,6 +34,7 @@ class PinVerificationForm extends HookConsumerWidget {
 
       if (isUnlocked) {
         isVerified.value = true;
+        FocusManager.instance.primaryFocus?.unfocus();
 
         await Future.delayed(const Duration(seconds: 1));
         onSuccess(pinCode);

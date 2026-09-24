@@ -16,15 +16,15 @@ const Color sgCtaBorderColor = Color(0xFF6D6D6D);
 const Color sgCtaForegroundColor = Color(0xFF000000);
 
 /// App scaffold / general background.
-const Color sgSurfaceLight = Color(0xFFEAEFF4);
+const Color sgSurfaceLight = Color(0xFFE7E7E7);
 const Color sgSurfaceDark = Color(0xFF4F4F4F);
 
 /// AppBar and bottom tab bar backgrounds.
 const Color sgChromeSurfaceLight = Color(0xFFFFFFFF);
-const Color sgChromeSurfaceDark = Color(0xFF000000);
+const Color sgChromeSurfaceDark = Color(0xFF191919);
 
 /// Timeline grid background (same as app surface).
-const Color sgTimelineSurfaceLight = Color(0xFFEAEFF4);
+const Color sgTimelineSurfaceLight = Color(0xFFE7E7E7);
 const Color sgTimelineSurfaceDark = Color(0xFF4F4F4F);
 
 const Color whiteOpacity75 = Color.fromRGBO(255, 255, 255, 0.75);

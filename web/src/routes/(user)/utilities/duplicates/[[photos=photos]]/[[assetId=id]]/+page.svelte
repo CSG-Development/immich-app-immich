@@ -3,10 +3,10 @@
   import { page } from '$app/state';
   import { shortcuts } from '$lib/actions/shortcut';
   import duplicatesUrl from '$lib/assets/duplicates.svg';
-  import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
-  import LinkToDocs from '$lib/components/LinkToDocs.svelte';
-  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import DuplicatesCompareControl from '$lib/components/utilities-page/duplicates/duplicates-compare-control.svelte';
+  import UserPageLayout from '$lib/components/layouts/UserPageLayout.svelte';
+  import LinkToDocs from './LinkToDocs.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/EmptyPlaceholder.svelte';
+  import DuplicatesCompareControl from './DuplicatesCompareControl.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import ShortcutsModal from '$lib/modals/ShortcutsModal.svelte';

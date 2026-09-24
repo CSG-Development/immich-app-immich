@@ -3,11 +3,11 @@
   import { browser } from '$app/environment';
   import { page } from '$app/state';
   import { getPagesProvider, getSettingsProvider } from '$lib/commands';
-  import DownloadPanel from '$lib/components/asset-viewer/download-panel.svelte';
-  import ErrorLayout from '$lib/components/layouts/ErrorLayout.svelte';
+  import DownloadPanel from './DownloadPanel.svelte';
+  import ErrorLayout from './ErrorLayout.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import NavigationLoadingBar from '$lib/components/shared-components/navigation-loading-bar.svelte';
-  import UploadPanel from '$lib/components/shared-components/upload-panel.svelte';
+  import NavigationLoadingBar from './NavigationLoadingBar.svelte';
+  import UploadPanel from './UploadPanel.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';

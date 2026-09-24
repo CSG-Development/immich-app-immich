@@ -1,14 +1,19 @@
 <script lang="ts">
   import emptyPeople from '$lib/assets/empty-people.svg';
   import emptyPlaces from '$lib/assets/empty-places.svg';
-  import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
-  import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import ImageThumbnail from '$lib/components/assets/thumbnail/ImageThumbnail.svelte';
+  import UserPageLayout from '$lib/components/layouts/UserPageLayout.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
-  import SingleGridRow from '$lib/components/shared-components/single-grid-row.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/EmptyPlaceholder.svelte';
+  import SingleGridRow from '$lib/components/shared-components/SingleGridRow.svelte';
+  import Portal from '$lib/elements/Portal.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { authManager } from '$lib/managers/auth-manager.svelte';
   import { Route } from '$lib/route';
   import { getAssetMediaUrl, getPeopleThumbnailUrl } from '$lib/utils';
-  import { AssetMediaSize, type SearchExploreResponseDto } from '@immich/sdk';
+  import { getAltText } from '$lib/utils/thumbnail-util';
+  import { toTimelineAsset } from '$lib/utils/timeline-util';
+  import { AssetMediaSize, getAssetInfo, type SearchExploreResponseDto } from '@immich/sdk';
   import { Icon } from '@immich/ui';
   import { mdiHeart } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -26,6 +31,9 @@
   };
 
   let places = $derived(getFieldItems(data.items, 'exifInfo.city'));
+  let recents = $derived(
+    getFieldItems(data.items, 'createdAt').sort((a, b) => new Date(b.value).getTime() - new Date(a.value).getTime()),
+  );
   let people = $state(data.response.people);
 
   let hasPeople = $derived(data.response.total > 0);
@@ -37,6 +45,15 @@
       }
     }
   };
+
+  const onViewAsset = async (id: string) => {
+    const asset = await getAssetInfo({ ...authManager.params, id });
+    assetViewerManager.setAsset(asset);
+  };
+
+  const assetCursor = $derived({
+    current: assetViewerManager.asset!,
+  });
 </script>
 
 <OnEvents {onPersonThumbnailReady} />
@@ -118,4 +135,47 @@
       <EmptyPlaceholder text={$t('search_no_places')} src={emptyPlaces} class="!mt-0" />
     {/if}
   </div>
+
+  {#if recents.length > 0}
+    <div class="mt-2 mb-6">
+      <div class="flex justify-between py-8">
+        <p class="font-medium dark:text-immich-dark-fg">{$t('recently_added')}</p>
+        <a
+          href={Route.recentlyAdded()}
+          class="pe-4 text-sm hover:text-immich-primary dark:text-immich-dark-fg dark:hover:text-immich-dark-primary"
+          draggable="false"
+        >
+          {$t('view_all')}
+        </a>
+      </div>
+      <div class="flex h-24 max-w-fit flex-wrap gap-x-1 overflow-hidden md:h-42">
+        {#each recents as item (item.data.id)}
+          <button
+            type="button"
+            class="relative h-full flex-auto"
+            onclick={() => onViewAsset(item.data.id)}
+            draggable="false"
+          >
+            <img
+              src={getAssetMediaUrl({ id: item.data.id, size: AssetMediaSize.Thumbnail })}
+              alt={$getAltText(toTimelineAsset(item.data))}
+              class="size-full min-w-max rounded-xl object-cover"
+            />
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
 </UserPageLayout>
+
+{#if assetViewerManager.isViewing}
+  {#await import('$lib/components/asset-viewer/AssetViewer.svelte') then { default: AssetViewer }}
+    <Portal target="body">
+      <AssetViewer
+        cursor={assetCursor}
+        showNavigation={false}
+        onClose={() => assetViewerManager.showAssetViewer(false)}
+      />
+    </Portal>
+  {/await}
+{/if}

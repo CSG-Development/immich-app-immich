@@ -1,16 +1,16 @@
 <script lang="ts">
   import { goto, invalidate, onNavigate } from '$app/navigation';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
-  import AlbumDescription from '$lib/components/album-page/album-description.svelte';
-  import AlbumMap from '$lib/components/album-page/album-map.svelte';
-  import AlbumSummary from '$lib/components/album-page/album-summary.svelte';
-  import AlbumTitle from '$lib/components/album-page/album-title.svelte';
-  import ActivityStatus from '$lib/components/asset-viewer/activity-status.svelte';
-  import ActivityViewer from '$lib/components/asset-viewer/activity-viewer.svelte';
+  import AlbumDescription from './AlbumDescription.svelte';
+  import AlbumMap from '$lib/components/album-page/AlbumMap.svelte';
+  import AlbumSummary from '$lib/components/album-page/AlbumSummary.svelte';
+  import AlbumTitle from './AlbumTitle.svelte';
+  import ActivityStatus from '$lib/components/asset-viewer/ActivityStatus.svelte';
+  import ActivityViewer from '$lib/components/asset-viewer/ActivityViewer.svelte';
   import HeaderActionButton from '$lib/components/HeaderActionButton.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
-  import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
+  import ControlAppBar from '$lib/components/shared-components/ControlAppBar.svelte';
+  import UserAvatar from '$lib/components/shared-components/UserAvatar.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
   import SelectAllAssets from '$lib/components/timeline/actions/SelectAllAction.svelte';
@@ -148,7 +148,7 @@
 
   const refreshAlbum = async () => {
     try {
-      album = await getAlbumInfo({ id: album.id, withoutAssets: true });
+      album = await getAlbumInfo({ id: album.id });
     } catch (error) {
       await handleLostAlbumAccess({ kind: classifyAlbumAccessError(error) });
     }
@@ -267,7 +267,7 @@
 
   const containsEditors = $derived(album?.shared && album.albumUsers.some(({ role }) => role === AlbumUserRole.Editor));
   const albumUsers = $derived(
-    showAlbumUsers && containsEditors ? [album.owner, ...album.albumUsers.map(({ user }) => user)] : [],
+    showAlbumUsers && containsEditors ? album.albumUsers.map(({ user }) => user) : [],
   );
 
   $effect(() => {
@@ -287,7 +287,7 @@
     return { albumId, order: album.order };
   });
 
-  const isShared = $derived(viewMode === AlbumPageViewMode.SELECT_ASSETS ? false : album.albumUsers.length > 0);
+  const isShared = $derived(viewMode === AlbumPageViewMode.SELECT_ASSETS ? false : album.albumUsers.length > 1);
 
   $effect(() => {
     if (assetViewerManager.isViewing || !isShared) {
@@ -302,7 +302,7 @@
     timelineMultiSelectManager.destroy();
   });
 
-  let isOwned = $derived($user.id == album.ownerId);
+  let isOwned = $derived($user.id == album.albumUsers[0]?.user.id);
 
   let showActivityStatus = $derived(
     album.albumUsers.length > 0 &&
@@ -311,7 +311,7 @@
   );
   let isEditor = $derived(
     album.albumUsers.find(({ user: { id } }) => id === $user.id)?.role === AlbumUserRole.Editor ||
-      album.ownerId === $user.id,
+      album.albumUsers[0]?.user.id === $user.id,
   );
 
   let albumHasViewers = $derived(album.albumUsers.some(({ role }) => role === AlbumUserRole.Viewer));
@@ -340,7 +340,7 @@
       return;
     }
 
-    if (deletedAlbum.ownerId !== $user.id) {
+    if (deletedAlbum.albumUsers[0]?.user.id !== $user.id) {
       toastManager.danger($t('album_deleted_by_owner'));
     }
 
@@ -638,7 +638,7 @@
 
                   <!-- owner -->
                   <button type="button" onclick={() => modalManager.show(AlbumOptionsModal, { album })}>
-                    <UserAvatar user={album.owner} size="md" />
+                    <UserAvatar user={album.albumUsers[0].user} size="md" />
                   </button>
 
                   <!-- users with write access (collaborators) -->
@@ -815,7 +815,7 @@
         <ActivityViewer
           user={$user}
           disabled={!album.isActivityEnabled}
-          albumOwnerId={album.ownerId}
+          albumOwnerId={album.albumUsers[0]?.user.id}
           albumId={album.id}
         />
       </div>

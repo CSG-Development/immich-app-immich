@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AlbumCover from '$lib/components/album-page/album-cover.svelte';
+  import AlbumCover from '$lib/components/album-page/AlbumCover.svelte';
   import { handleUpdateAlbum } from '$lib/services/album.service';
   import { resolveAlbumName } from '$lib/utils/album-name';
   import { type AlbumResponseDto } from '@immich/sdk';

@@ -92,7 +92,7 @@ class _DriftPersonPageState extends ConsumerState<DriftPersonPage> {
   void showOptionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: context.colorScheme.surface,
+      backgroundColor: context.colorScheme.surfaceContainer,
       isScrollControlled: false,
       builder: (context) {
         return PersonOptionSheet(

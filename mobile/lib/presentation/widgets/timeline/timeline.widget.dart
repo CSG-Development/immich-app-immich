@@ -50,6 +50,7 @@ class Timeline extends ConsumerWidget {
     this.persistentBottomBar = false,
     this.loadingWidget,
     this.showClipboardPaste = false,
+    this.onRefresh,
   });
 
   final Widget? topSliverWidget;
@@ -66,6 +67,9 @@ class Timeline extends ConsumerWidget {
   final bool persistentBottomBar;
   final Widget? loadingWidget;
   final bool showClipboardPaste;
+
+  /// Enables pull-to-refresh when set.
+  final Future<void> Function()? onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,6 +104,7 @@ class Timeline extends ConsumerWidget {
             maxWidth: constraints.maxWidth,
             loadingWidget: loadingWidget,
             showClipboardPaste: showClipboardPaste,
+            onRefresh: onRefresh,
           ),
         );
       },
@@ -131,6 +136,7 @@ class _SliverTimeline extends ConsumerStatefulWidget {
     this.maxWidth,
     this.loadingWidget,
     this.showClipboardPaste = false,
+    this.onRefresh,
   });
 
   final Widget? topSliverWidget;
@@ -144,6 +150,7 @@ class _SliverTimeline extends ConsumerStatefulWidget {
   final double? maxWidth;
   final Widget? loadingWidget;
   final bool showClipboardPaste;
+  final Future<void> Function()? onRefresh;
 
   @override
   ConsumerState createState() => _SliverTimelineState();
@@ -456,7 +463,9 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> with WidgetsBi
 
               final grid = CustomScrollView(
                 primary: true,
-                physics: _scrollPhysics,
+                physics: widget.onRefresh != null
+                    ? AlwaysScrollableScrollPhysics(parent: _scrollPhysics)
+                    : _scrollPhysics,
                 scrollCacheExtent: .pixels(maxHeight * 2),
                 slivers: [
                   if (isSelectionMode) const SelectionSliverAppBar() else if (widget.appBar != null) widget.appBar!,
@@ -498,6 +507,27 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> with WidgetsBi
                 timeline = grid;
               }
 
+              final onRefresh = widget.onRefresh;
+              final refreshableTimeline = onRefresh != null
+                  ? RefreshIndicator(
+                      onRefresh: () async {
+                        if (isMultiSelectEnabled || _dragging) {
+                          return;
+                        }
+                        await onRefresh();
+                      },
+                      notificationPredicate: (notification) {
+                        if (isMultiSelectEnabled || _dragging) {
+                          return false;
+                        }
+                        return defaultScrollNotificationPredicate(notification);
+                      },
+                      // Offset past the app bar so the spinner is visible.
+                      edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
+                      child: timeline,
+                    )
+                  : timeline;
+
               return RawGestureDetector(
                 gestures: {
                   CustomScaleGestureRecognizer: GestureRecognizerFactoryWithHandlers<CustomScaleGestureRecognizer>(
@@ -537,7 +567,7 @@ class _SliverTimelineState extends ConsumerState<_SliverTimeline> with WidgetsBi
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      timeline,
+                      refreshableTimeline,
                       if (isMultiSelectStatusVisible)
                         Positioned(
                           top: MediaQuery.paddingOf(context).top,

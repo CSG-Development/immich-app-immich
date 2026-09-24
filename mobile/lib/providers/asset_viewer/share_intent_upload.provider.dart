@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/models/upload/share_intent_attachment.model.dart';
 import 'package:immich_mobile/providers/asset_viewer/share_intent_pending.provider.dart';
+import 'package:immich_mobile/providers/auth.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/services/share_intent_service.dart';
@@ -132,14 +137,33 @@ class ShareIntentUploadStateNotifier extends StateNotifier<List<ShareIntentAttac
     state = [];
   }
 
-  Future<void> uploadAll(List<File> files) async {
+  /// Uploads [files], skipping files that are already on the server for the
+  /// current user (same checksum). Returns how many files were skipped.
+  Future<int> uploadAll(List<File> files) async {
+    final currentUserId = _ref.read(authProvider).userId;
+    final filesToUpload = <File>[];
+    var alreadyUploadedCount = 0;
+
     for (final file in files) {
+      if (await _isAlreadyUploaded(file, currentUserId)) {
+        alreadyUploadedCount++;
+        _updateStatus(p.hash(file.path).toString(), UploadStatus.alreadyUploaded, progress: 1.0);
+      } else {
+        filesToUpload.add(file);
+      }
+    }
+
+    if (filesToUpload.isEmpty) {
+      return alreadyUploadedCount;
+    }
+
+    for (final file in filesToUpload) {
       final fileId = p.hash(file.path).toString();
       _updateStatus(fileId, UploadStatus.running);
     }
 
     await _foregroundUploadService.uploadShareIntent(
-      files,
+      filesToUpload,
       onProgress: (fileId, bytes, totalBytes) {
         final progress = totalBytes > 0 ? bytes / totalBytes : 0.0;
         _updateProgress(fileId, progress);
@@ -152,6 +176,28 @@ class ShareIntentUploadStateNotifier extends StateNotifier<List<ShareIntentAttac
         _updateStatus(fileId, UploadStatus.failed);
       },
     );
+
+    return alreadyUploadedCount;
+  }
+
+  /// Checks whether [file] is already on the server for [userId] by matching
+  /// its checksum (Base64 SHA-1, same scheme as the native hash pipeline)
+  /// against the locally synced remote assets.
+  ///
+  /// Any failure falls back to `false` so the upload proceeds as before;
+  /// the server itself deduplicates by checksum, so no duplicate is created.
+  Future<bool> _isAlreadyUploaded(File file, String userId) async {
+    if (userId.isEmpty) {
+      return false;
+    }
+
+    try {
+      final checksum = await compute(_sha1Base64OfFile, file.path);
+      return await _ref.read(remoteAssetRepositoryProvider).existsByChecksumAndOwner(checksum, userId);
+    } catch (error, stackTrace) {
+      _logger.warning(() => "Duplicate pre-check failed for ${file.path}, uploading as usual: $error", stackTrace);
+      return false;
+    }
   }
 
   void _updateStatus(String fileId, UploadStatus status, {double? progress}) {
@@ -172,4 +218,13 @@ class ShareIntentUploadStateNotifier extends StateNotifier<List<ShareIntentAttac
         if (attachment.id == id) attachment.copyWith(uploadProgress: progress) else attachment,
     ];
   }
+}
+
+/// Computes the Base64-encoded SHA-1 of the file at [path] — the same
+/// checksum scheme the native sync pipeline stores in the asset tables.
+///
+/// Top-level so it can run in a separate isolate via [compute].
+String _sha1Base64OfFile(String path) {
+  final digest = sha1.convert(File(path).readAsBytesSync());
+  return base64Encode(digest.bytes);
 }

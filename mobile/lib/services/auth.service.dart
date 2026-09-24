@@ -191,6 +191,7 @@ class AuthService {
   }
 
   Future<void> lockPinCode() {
+    pinUnlockedInThisProcess = false;
     return _authApiRepository.lockPinCode();
   }
 

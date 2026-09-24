@@ -12,7 +12,7 @@ export const load = (async ({ params, url, depends }) => {
   let album: AlbumResponseDto;
 
   try {
-    album = await getAlbumInfo({ id: params.albumId, withoutAssets: true });
+    album = await getAlbumInfo({ id: params.albumId });
   } catch {
     // Always leave the album route on failure. Redirecting to a persisted "previous"
     // album URL can re-enter this load and cause a redirect loop.

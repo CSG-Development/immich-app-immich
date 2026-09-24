@@ -13,7 +13,7 @@
   import { mdiBackupRestore, mdiCropFree, mdiRotateLeft, mdiRotateRight, mdiSquareOutline } from '@mdi/js';
   import { tick } from 'svelte';
   import { t } from 'svelte-i18n';
-  import CropPreset from './crop-preset.svelte';
+  import CropPreset from './CropPreset.svelte';
   import { onImageLoad } from './image-loading';
 
   let rotateHorizontal = $derived([90, 270].includes($normaizedRorateDegrees));

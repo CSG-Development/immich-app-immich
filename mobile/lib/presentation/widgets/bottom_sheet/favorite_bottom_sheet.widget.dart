@@ -49,6 +49,7 @@ class FavoriteBottomSheet extends ConsumerWidget {
         ImmichToast.show(
           context: context,
           msg: 'add_to_album_bottom_sheet_some_local_assets'.t(context: context),
+          toastType: ToastType.info,
         );
       }
 
@@ -57,6 +58,7 @@ class FavoriteBottomSheet extends ConsumerWidget {
         ImmichToast.show(
           context: context,
           msg: 'add_to_album_bottom_sheet_added'.t(args: {"album": album.name}),
+          toastType: ToastType.success,
         );
       } else if (result.failed > 0) {
         ImmichToast.show(
@@ -68,6 +70,7 @@ class FavoriteBottomSheet extends ConsumerWidget {
         ImmichToast.show(
           context: context,
           msg: 'add_to_album_bottom_sheet_already_exists'.t(args: {"album": album.name}),
+          toastType: ToastType.info,
         );
       }
 

@@ -130,7 +130,7 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
           minChildSize: 0.3,
           maxChildSize: 0.95,
           expand: false,
-          backgroundColor: context.isDarkTheme ? Colors.black : Colors.white,
+          backgroundColor: context.colorScheme.surfaceContainer,
         );
       },
     );
@@ -160,6 +160,7 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
       ImmichToast.show(
         context: context,
         msg: 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
+        toastType: ToastType.success,
       );
 
       final remoteId = latest.remoteId;
@@ -176,6 +177,7 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
       ImmichToast.show(
         context: context,
         msg: 'add_to_album_bottom_sheet_already_exists'.tr(namedArgs: {'album': album.name}),
+        toastType: ToastType.info,
       );
     }
 
@@ -197,11 +199,11 @@ class _AddActionButtonState extends ConsumerState<AddActionButton> {
     return MenuAnchor(
       consumeOutsideTap: true,
       style: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(themeData.scaffoldBackgroundColor),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.grey),
-        elevation: const WidgetStatePropertyAll(4),
+        backgroundColor: WidgetStatePropertyAll(themeData.colorScheme.surfaceContainer),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(3),
         shape: const WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
         ),
         padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
       ),

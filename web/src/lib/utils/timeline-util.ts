@@ -1,7 +1,7 @@
 import type { AssetDescriptor, TimelineAsset, ViewportTopMonth } from '$lib/managers/timeline-manager/types';
 import { locale } from '$lib/stores/preferences.store';
 import { getAssetRatio } from '$lib/utils/asset-utils';
-import { AssetTypeEnum, type AssetResponseDto } from '@immich/sdk';
+import { AssetOrderBy, AssetTypeEnum, type AssetResponseDto } from '@immich/sdk';
 import { DateTime, type LocaleOptions } from 'luxon';
 import { SvelteSet } from 'svelte/reactivity';
 import { get } from 'svelte/store';
@@ -163,6 +163,9 @@ export const formatGroupTitleFull = (_date: DateTime): string => {
 export const getDateLocaleString = (date: DateTime, opts?: LocaleOptions): string =>
   date.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY, opts);
 
+export const getOrderingDate = (asset: TimelineAsset, order: AssetOrderBy) =>
+  order === AssetOrderBy.CreatedAt ? asset.createdAt : asset.localDateTime;
+
 export const toTimelineAsset = (unknownAsset: AssetResponseDto | TimelineAsset): TimelineAsset => {
   if (isTimelineAsset(unknownAsset)) {
     return unknownAsset;
@@ -174,7 +177,11 @@ export const toTimelineAsset = (unknownAsset: AssetResponseDto | TimelineAsset):
   const people = assetResponse.people?.map((person) => person.name) || [];
 
   const localDateTime = fromISODateTimeUTCToObject(assetResponse.localDateTime);
-  const fileCreatedAt = fromISODateTimeToObject(assetResponse.fileCreatedAt, assetResponse.exifInfo?.timeZone ?? 'UTC');
+  // Keep this consistent with the bucket loader (getTimes), which stores fileCreatedAt as UTC
+  // components. The timeline sorts assets within a day by fileCreatedAt, so a mismatched
+  // representation here would place re-inserted assets (e.g. undo archive) in the wrong spot.
+  const fileCreatedAt = fromISODateTimeUTCToObject(assetResponse.fileCreatedAt);
+  const createdAt = fromISODateTimeUTCToObject(assetResponse.createdAt);
 
   return {
     id: assetResponse.id,
@@ -183,6 +190,7 @@ export const toTimelineAsset = (unknownAsset: AssetResponseDto | TimelineAsset):
     ratio,
     thumbhash: assetResponse.thumbhash,
     localDateTime,
+    createdAt,
     fileCreatedAt,
     isFavorite: assetResponse.isFavorite,
     visibility: assetResponse.visibility,
