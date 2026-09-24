@@ -57,7 +57,8 @@ class _ImageEditorState extends State<ImageEditor> {
         ),
         configs: ProImageEditorConfigs(
           theme: ui.theme,
-          designMode: platformDesignMode,
+          // Material keeps editor labels on the app font. Cupertino on iOS uses SF.
+          designMode: ImageEditorDesignMode.material,
           imageGeneration: const ImageGenerationConfigs(
             // Never short-circuit export with raw input bytes.
             enableUseOriginalBytes: false,
@@ -75,12 +76,8 @@ class _ImageEditorState extends State<ImageEditor> {
             widgets: MainEditorWidgets(
               bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
                 stream: rebuildStream,
-                builder: (_) => EditorBottomBar(
-                  editor: editor,
-                  rebuildStream: rebuildStream,
-                  key: key,
-                  translations: tr,
-                ),
+                builder: (_) =>
+                    EditorBottomBar(editor: editor, rebuildStream: rebuildStream, key: key, translations: tr),
               ),
             ),
             enableZoom: true,
@@ -99,6 +96,22 @@ class _ImageEditorState extends State<ImageEditor> {
                 max: _paintMaxOpacity,
                 divisions: _paintOpacityDivisions,
                 inactiveTrackColor: sheetInactiveTrack,
+              ),
+              editOpacitySlider: (layer, setValue) => EditorSolidSlider(
+                value: layer.opacity,
+                min: _paintMinOpacity,
+                max: _paintMaxOpacity,
+                divisions: _paintOpacityDivisions,
+                inactiveTrackColor: sheetInactiveTrack,
+                onChanged: setValue,
+              ),
+              editStrokeWidthSlider: (layer, setValue) => EditorSolidSlider(
+                value: layer.item.strokeWidth,
+                min: _paintMinStroke,
+                max: _paintMaxStroke,
+                divisions: _paintStrokeDivisions,
+                inactiveTrackColor: sheetInactiveTrack,
+                onChanged: layer.item.fill && layer.item.canBeFilled ? null : setValue,
               ),
             ),
           ),
@@ -133,32 +146,11 @@ class _ImageEditorState extends State<ImageEditor> {
               ),
             ),
           ),
-          cropRotateEditor: CropRotateEditorConfigs(
-            style: ui.cropStyle,
-          ),
-          filterEditor: FilterEditorConfigs(
-            style: ui.filterStyle,
-          ),
+          cropRotateEditor: CropRotateEditorConfigs(style: ui.cropStyle),
+          filterEditor: FilterEditorConfigs(style: ui.filterStyle),
           tuneEditor: widget.config.enableTuneAdjustments
               ? TuneEditorConfigs(
                   style: ui.tuneStyle,
-                  widgets: TuneEditorWidgets(
-                    slider: (editorState, rebuildStream, value, onChanged, onChangeEnd) {
-                      final option = editorState.tuneAdjustmentList[editorState.selectedIndex];
-                      return ReactiveWidget(
-                        stream: rebuildStream,
-                        builder: (context) => EditorSolidSlider(
-                          value: value,
-                          min: option.min,
-                          max: option.max,
-                          divisions: option.divisions,
-                          label: (value * option.labelMultiplier).round().toString(),
-                          onChanged: onChanged,
-                          onChangeEnd: onChangeEnd,
-                        ),
-                      );
-                    },
-                  ),
                   tuneAdjustmentOptions: [
                     ...tunePresets(icons: icons, i18n: i18n.tuneEditor),
                     TuneAdjustmentItem(
@@ -210,9 +202,7 @@ class _ImageEditorState extends State<ImageEditor> {
                 )
               : TuneEditorConfigs(style: ui.tuneStyle),
           blurEditor: BlurEditorConfigs(
-            widgets: BlurEditorWidgets(
-              slider: solidCustomSliderBuilder(min: 0, max: 5, divisions: 100),
-            ),
+            widgets: BlurEditorWidgets(slider: solidCustomSliderBuilder(min: 0, max: 5, divisions: 100)),
           ),
         ),
       ),
