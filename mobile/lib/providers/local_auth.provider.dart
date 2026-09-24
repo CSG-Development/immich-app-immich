@@ -47,7 +47,7 @@ class LocalAuthNotifier extends StateNotifier<BiometricStatus> {
       switch (error.code) {
         case "NotEnrolled":
           _log.warning("User is not enrolled in biometrics");
-          errorMessage = "biometric_no_options".tr();
+          errorMessage = "biometric_not_enrolled".tr();
           break;
         case "NotAvailable":
           _log.warning("Biometric authentication is not available");

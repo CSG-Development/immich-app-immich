@@ -742,6 +742,7 @@
   "biometric_locked_out": "You are locked out of biometric authentication",
   "biometric_no_options": "No biometric options available",
   "biometric_not_available": "Biometric authentication is not available on this device",
+  "biometric_not_enrolled": "Set up biometric authentication in device settings",
   "birthdate_saved": "Date of birth saved successfully",
   "birthdate_set_description": "Date of birth is used to calculate the age of this person at the time of a photo.",
   "blurred_background": "Blurred background",
