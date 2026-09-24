@@ -26,6 +26,8 @@ export const featureFlags = writable<FeatureFlags>({
   configFile: false,
   trash: true,
   email: false,
+  ocr: false,
+  realtimeTranscoding: false,
 });
 
 export type ServerConfig = ServerConfigDto & { loaded: boolean };
@@ -42,6 +44,8 @@ export const serverConfig = writable<ServerConfig>({
   mapDarkStyleUrl: '',
   mapLightStyleUrl: '',
   publicUsers: true,
+  maintenanceMode: false,
+  minFaces: 1,
 });
 
 export type SystemConfig = SystemConfigDto & { loaded: boolean };

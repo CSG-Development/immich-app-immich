@@ -1,7 +1,7 @@
 <script lang="ts">
   import { thumbhash } from '$lib/actions/thumbhash';
   import AlphaBackground from '$lib/components/AlphaBackground.svelte';
-  import BrokenAsset from '$lib/components/assets/broken-asset.svelte';
+  import BrokenAsset from '$lib/components/assets/BrokenAsset.svelte';
   import DelayedLoadingSpinner from '$lib/components/DelayedLoadingSpinner.svelte';
   import ImageLayer from '$lib/components/ImageLayer.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';

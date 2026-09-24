@@ -224,7 +224,7 @@ export const getAssetSelectMenuItems = ($t: MessageFormatter, options: AssetSele
     icon: mdiText,
     $if: () => showChangeDescription,
     onAction: async () => {
-      const description = await modalManager.show(AssetUpdateDescriptionConfirmModal);
+      const description = await modalManager.show(AssetUpdateDescriptionConfirmModal, {});
       if (!description) {
         return;
       }
@@ -243,7 +243,7 @@ export const getAssetSelectMenuItems = ($t: MessageFormatter, options: AssetSele
     icon: mdiMapMarkerMultipleOutline,
     $if: () => showChangeLocation,
     onAction: async () => {
-      const point = await modalManager.show(GeolocationPointPickerModal, {});
+      const point = await modalManager.show(GeolocationPointPickerModal, { point: undefined });
       if (!point) {
         return;
       }

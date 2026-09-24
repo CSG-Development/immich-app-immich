@@ -3,7 +3,7 @@
     notificationController,
     NotificationType,
   } from '$lib/components/shared-components/notification/notification';
-  import ApiKeyGrid from '$lib/components/user-settings-page/user-api-key-grid.svelte';
+  import ApiKeyGrid from '$lib/components/user-settings-page/UserApiKeyGrid.svelte';
   import { Permission } from '@immich/sdk';
   import { Button, Checkbox, Field, HStack, IconButton, Input, Label, Modal, ModalBody, ModalFooter } from '@immich/ui';
   import { mdiClose, mdiKeyVariant } from '@mdi/js';

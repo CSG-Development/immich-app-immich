@@ -39,9 +39,9 @@
     <Text class="mb-2" fontWeight="medium">{$t('total_usage')}</Text>
 
     <div class="hidden justify-between lg:flex gap-4">
-      <StatsCard icon={mdiCameraIris} title={$t('photos')} value={stats.photos} />
-      <StatsCard icon={mdiPlayCircle} title={$t('videos')} value={stats.videos} />
-      <StatsCard icon={mdiChartPie} title={$t('storage')} value={statsUsage} unit={statsUsageUnit} />
+      <StatsCard icon={mdiCameraIris} title={$t('photos')} valuePromise={{ value: stats.photos }} />
+      <StatsCard icon={mdiPlayCircle} title={$t('videos')} valuePromise={{ value: stats.videos }} />
+      <StatsCard icon={mdiChartPie} title={$t('storage')} valuePromise={{ value: statsUsage, unit: statsUsageUnit }} />
     </div>
 
     <div class="mt-5 flex lg:hidden">

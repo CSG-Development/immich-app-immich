@@ -1,4 +1,4 @@
-import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
+import ImageThumbnail from '$lib/components/assets/thumbnail/ImageThumbnail.svelte';
 import { fireEvent, render } from '@testing-library/svelte';
 
 vi.mock('$lib/utils/sw-messaging', () => ({

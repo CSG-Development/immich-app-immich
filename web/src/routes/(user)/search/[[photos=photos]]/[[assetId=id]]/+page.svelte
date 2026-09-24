@@ -2,9 +2,9 @@
   import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
-  import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
-  import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
+  import ControlAppBar from '$lib/components/shared-components/ControlAppBar.svelte';
+  import GalleryViewer from '$lib/components/shared-components/gallery-viewer/GalleryViewer.svelte';
+  import SearchBar from '$lib/components/shared-components/search-bar/SearchBar.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
   import DownloadAction from '$lib/components/timeline/actions/DownloadAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';

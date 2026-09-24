@@ -1,5 +1,5 @@
 import { getServerErrorMessage } from '$lib/utils/handle-error';
-import { AlbumUserRole, getAlbumInfo, type AlbumResponseDto } from '@immich/sdk';
+import { AlbumUserRole, getAlbumInfo, type AlbumResponseDto, type UserResponseDto } from '@immich/sdk';
 
 export type AlbumEditAccessResult =
   | { kind: 'allowed'; album: AlbumResponseDto }
@@ -7,8 +7,13 @@ export type AlbumEditAccessResult =
   | { kind: 'access_denied' }
   | { kind: 'deleted' };
 
+/** First albumUsers entry is always the album owner (SDK contract since v3). */
+export const getAlbumOwner = (album: AlbumResponseDto): UserResponseDto | undefined => album.albumUsers[0]?.user;
+
+export const getAlbumOwnerId = (album: AlbumResponseDto): string | undefined => getAlbumOwner(album)?.id;
+
 export const isAlbumEditor = (album: AlbumResponseDto, userId: string): boolean =>
-  album.ownerId === userId ||
+  getAlbumOwnerId(album) === userId ||
   album.albumUsers.some(({ user, role }) => user.id === userId && role === AlbumUserRole.Editor);
 
 export const classifyAlbumAccessError = (error: unknown): 'access_denied' | 'deleted' => {
@@ -26,7 +31,7 @@ export const isAlbumPermissionError = (error: unknown): boolean => {
 
 export const checkAlbumEditAccess = async (albumId: string, userId: string): Promise<AlbumEditAccessResult> => {
   try {
-    const album = await getAlbumInfo({ id: albumId, withoutAssets: true });
+    const album = await getAlbumInfo({ id: albumId });
     if (isAlbumEditor(album, userId)) {
       return { kind: 'allowed', album };
     }

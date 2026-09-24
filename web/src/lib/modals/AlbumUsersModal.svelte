@@ -3,7 +3,7 @@
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
-  import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
+  import UserAvatar from '$lib/components/shared-components/UserAvatar.svelte';
   import { modalManager } from '$lib/managers/modal-manager.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import {
@@ -28,7 +28,7 @@
 
   let currentUser: UserResponseDto | undefined = $state();
 
-  let isOwned = $derived(currentUser?.id == album.ownerId);
+  let isOwned = $derived(currentUser?.id == album.albumUsers[0]?.user.id);
 
   onMount(async () => {
     try {
@@ -114,16 +114,16 @@
     <section class="immich-scrollbar max-h-[400px] overflow-y-auto pb-4">
       <div class="flex w-full place-items-center justify-between gap-4 p-5">
         <div class="flex place-items-center gap-4">
-          <UserAvatar user={album.owner} size="lg" />
+          <UserAvatar user={album.albumUsers[0].user} size="lg" />
           <div class="flex flex-col gap-4">
-            <p class="leading-none">{album.owner.name}</p>
-            <div id="icon-{album.owner.id}" class="flex place-items-center">
+            <p class="leading-none">{album.albumUsers[0].user.name}</p>
+            <div id="icon-{album.albumUsers[0].user.id}" class="flex place-items-center">
               <p class="text-sm leading-none">{$t('owner')}</p>
             </div>
           </div>
         </div>
       </div>
-      {#each album.albumUsers as { user, role } (user.id)}
+      {#each album.albumUsers.filter(({ role }) => role !== AlbumUserRole.Owner) as { user, role } (user.id)}
         <div
           class="flex w-full place-items-center justify-between gap-4 p-5 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
         >

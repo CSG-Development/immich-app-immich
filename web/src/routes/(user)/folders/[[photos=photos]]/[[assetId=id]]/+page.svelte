@@ -1,11 +1,11 @@
 <script lang="ts">
   import { afterNavigate, goto, invalidateAll } from '$app/navigation';
-  import UserPageLayout, { headerId } from '$lib/components/layouts/user-page-layout.svelte';
-  import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
-  import Breadcrumbs from '$lib/components/shared-components/tree/breadcrumbs.svelte';
-  import TreeItemThumbnails from '$lib/components/shared-components/tree/tree-item-thumbnails.svelte';
-  import TreeItems from '$lib/components/shared-components/tree/tree-items.svelte';
-  import Sidebar from '$lib/components/sidebar/sidebar.svelte';
+  import UserPageLayout, { headerId } from '$lib/components/layouts/UserPageLayout.svelte';
+  import GalleryViewer from '$lib/components/shared-components/gallery-viewer/GalleryViewer.svelte';
+  import Breadcrumbs from '$lib/components/shared-components/tree/Breadcrumbs.svelte';
+  import TreeItemThumbnails from '$lib/components/shared-components/tree/TreeItemThumbnails.svelte';
+  import TreeItems from '$lib/components/shared-components/tree/TreeItems.svelte';
+  import Sidebar from '$lib/components/sidebar/Sidebar.svelte';
   import CreateSharedLink from '$lib/components/timeline/actions/CreateSharedLinkAction.svelte';
   import FavoriteAction from '$lib/components/timeline/actions/FavoriteAction.svelte';
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';

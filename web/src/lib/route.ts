@@ -1,5 +1,5 @@
 import { OpenQueryParam, type SharedLinkTab } from '$lib/constants';
-import { getBaseUrl, QueueName, type MetadataSearchDto, type SmartSearchDto } from '@immich/sdk';
+import { getBaseUrl, IntegrityReport, QueueName, type MetadataSearchDto, type SmartSearchDto } from '@immich/sdk';
 import { omitBy } from 'lodash-es';
 
 const asQueueSlug = (name: QueueName) => {
@@ -101,6 +101,7 @@ export const Route = {
 
   // photos
   photos: (params?: { at?: string }) => `${base}/photos` + asQueryString(params),
+  recentlyAdded: () => `${base}/recently-added`,
   viewAsset: ({ id }: { id: string }) => `${base}/photos/${id}`,
   archive: () => `${base}/archive`,
   favorites: () => `${base}/favorites`,
@@ -131,6 +132,8 @@ export const Route = {
   systemSettings: (params?: { isOpen?: OpenQueryParam }) => `${base}/admin/system-settings` + asQueryString(params),
   systemStatistics: () => `${base}/admin/server-status`,
   systemMaintenance: (params?: { continue?: string }) => `${base}/admin/maintenance` + asQueryString(params),
+  systemMaintenanceIntegrityReport: ({ reportType }: { reportType: IntegrityReport }) =>
+    `${base}/admin/maintenance/integrity-report/${reportType}`,
 
   // tags
   tags: (params?: { path?: string }) => `${base}/tags` + asQueryString(params),
@@ -148,8 +151,8 @@ export const Route = {
   geolocationUtility: () => `${base}/utilities/geolocation`,
 
   // workflows
-  workflows: () => `${base}/utilities/workflows`,
-  viewWorkflow: ({ id }: { id: string }) => `${base}/utilities/workflows/${id}`,
+  workflows: () => `${base}/workflows`,
+  viewWorkflow: ({ id }: { id: string }) => `${base}/workflows/${id}`,
 
   // queues
   queues: () => `${base}/admin/queues`,
@@ -160,6 +163,7 @@ export const Route = {
 
   // integrity checks
   integrityReportFile: (reportId: string) => `${getBaseUrl()}/admin/integrity/report/${reportId}/file`,
+  integrityReportCsv: (reportType: IntegrityReport) => `${getBaseUrl()}/admin/integrity/report/${reportType}/csv`,
 
   // continue helper for ensuring same-origin URLs
   continue: (url: string | null, fallback: string): string | URL => {

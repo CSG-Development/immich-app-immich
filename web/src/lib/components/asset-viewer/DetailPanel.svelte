@@ -1,0 +1,545 @@
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import DetailPanelDescription from '$lib/components/asset-viewer/DetailPanelDescription.svelte';
+  import DetailPanelLocation from '$lib/components/asset-viewer/DetailPanelLocation.svelte';
+  import DetailPanelRating from '$lib/components/asset-viewer/DetailPanelStarRating.svelte';
+  import DetailPanelTags from '$lib/components/asset-viewer/DetailPanelTags.svelte';
+  import MetadataList from '$lib/components/asset-viewer/metadata-list.svelte';
+  import { timeToLoadTheMap } from '$lib/constants';
+  import Tab from '$lib/elements/Tab.svelte';
+  import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
+  import { authManager } from '$lib/managers/auth-manager.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
+  import AssetChangeDateModal from '$lib/modals/AssetChangeDateModal.svelte';
+  import { Route } from '$lib/route';
+  import { faceManager } from '$lib/stores/face.svelte';
+  import { locale, PhotoTabs } from '$lib/stores/preferences.store';
+  import { getAssetMediaUrl } from '$lib/utils';
+  import { delay, getDimensions } from '$lib/utils/asset-utils';
+  import { getByteUnitString } from '$lib/utils/byte-units';
+  import { handleError } from '$lib/utils/handle-error';
+  import { fromISODateTime, fromISODateTimeUTC, toTimelineAsset } from '$lib/utils/timeline-util';
+  import { getParentPath } from '$lib/utils/tree-utils';
+  import {
+    AssetMediaSize,
+    getAllAlbums,
+    getAssetInfo,
+    type AlbumResponseDto,
+    type AssetResponseDto,
+  } from '@immich/sdk';
+  import { Icon, IconButton, LoadingSpinner, modalManager, Text } from '@immich/ui';
+  import {
+    mdiCalendar,
+    mdiCamera,
+    mdiCameraIris,
+    mdiClose,
+    mdiImageOutline,
+    mdiInformationOutline,
+    mdiPencil,
+  } from '@mdi/js';
+  import { DateTime } from 'luxon';
+  import { onMount, untrack } from 'svelte';
+  import { t } from 'svelte-i18n';
+  import { slide } from 'svelte/transition';
+  import PersonSidePanel from '../faces-page/PersonSidePanel.svelte';
+  import OnEvents from '../OnEvents.svelte';
+  import DetailPanelPeople from './DetailPanelPeople.svelte';
+  import UserAvatar from '../shared-components/UserAvatar.svelte';
+  import AlbumListItemDetails from './AlbumListItemDetails.svelte';
+
+  interface Props {
+    asset: AssetResponseDto;
+    currentAlbum?: AlbumResponseDto | null;
+  }
+
+  let { asset: assetProp, currentAlbum = null }: Props = $props();
+
+  // Local copy so Basic + Metadata stay in sync after edits, even if the parent
+  // cursor/asset prop chain lags behind AssetUpdate.
+  let asset = $state(untrack(() => assetProp));
+
+  $effect(() => {
+    const incoming = assetProp;
+    if (incoming.id !== untrack(() => asset.id)) {
+      asset = incoming;
+    }
+  });
+
+  const onAssetUpdate = (updated: AssetResponseDto) => {
+    if (updated.id === asset.id) {
+      asset = updated;
+    }
+  };
+
+  // Must use onMount — eventManager.on reads/writes $state callbacks; doing that
+  // inside $effect re-triggers the effect and freezes the tab.
+  onMount(() => eventManager.on({ AssetUpdate: onAssetUpdate }));
+
+  let showAssetPath = $state(false);
+  let selectedTab = $state(PhotoTabs.Basic);
+  let isOwner = $derived(authManager.authenticated && authManager.user.id === asset.ownerId);
+  let timeZone = $derived(asset.exifInfo?.timeZone ?? undefined);
+  let dateTime = $derived(
+    timeZone && asset.exifInfo?.dateTimeOriginal
+      ? fromISODateTime(asset.exifInfo.dateTimeOriginal, timeZone)
+      : fromISODateTimeUTC(asset.localDateTime),
+  );
+  let latlng = $derived(
+    (() => {
+      const lat = asset.exifInfo?.latitude;
+      const lng = asset.exifInfo?.longitude;
+
+      if (lat && lng) {
+        return { lat: Number(lat.toFixed(7)), lng: Number(lng.toFixed(7)) };
+      }
+    })(),
+  );
+  let previousId: string | undefined = $state();
+  let previousRoute = $derived(currentAlbum?.id ? Route.viewAlbum(currentAlbum) : Route.photos());
+  let albums = $state<AlbumResponseDto[]>([]);
+  let albumsAssetId = $state<string | undefined>();
+
+  const refreshAlbums = async (assetId: string = asset.id) => {
+    if (authManager.isSharedLink) {
+      albums = [];
+      albumsAssetId = assetId;
+      return;
+    }
+
+    try {
+      const result = await getAllAlbums({ assetId });
+      // Ignore stale responses after navigating to another asset
+      if (assetId === asset.id) {
+        albums = result;
+        albumsAssetId = assetId;
+      }
+    } catch (error) {
+      handleError(error, 'Error getting asset album membership');
+      if (assetId === asset.id) {
+        albums = [];
+        albumsAssetId = assetId;
+      }
+    }
+  };
+
+  // Fetch by asset id only — not on every asset object identity change.
+  // `$derived(refreshAlbums())` recreated a promise on each identity change
+  // (websocket AssetUpdate, cursor reload), and `{#await}` hid the section while pending.
+  $effect(() => {
+    const assetId = asset.id;
+
+    if (assetId !== previousId) {
+      assetViewerManager.closeEditFacesPanel();
+      previousId = assetId;
+    }
+
+    if (albumsAssetId === assetId) {
+      return;
+    }
+
+    albums = [];
+    albumsAssetId = assetId;
+    void refreshAlbums(assetId);
+  });
+
+  const getMegapixel = (width: number, height: number): number | undefined => {
+    const megapixel = Math.round((height * width) / 1_000_000);
+
+    if (megapixel) {
+      return megapixel;
+    }
+
+    return undefined;
+  };
+
+  const handleRefreshPeople = async () => {
+    const updated = await getAssetInfo({ id: asset.id });
+    eventManager.emit('AssetUpdate', updated);
+    assetViewerManager.closeEditFacesPanel();
+    faceManager.clear();
+    await faceManager.getAssetFaces(asset.id);
+  };
+
+  const getAssetFolderHref = (asset: AssetResponseDto) => {
+    if (!asset.originalPath) {
+      return Route.folders({});
+    }
+    // Remove the last part of the path to get the parent path
+    return Route.folders({ path: getParentPath(asset.originalPath) });
+  };
+
+  const toggleAssetPath = () => (showAssetPath = !showAssetPath);
+
+  const handleChangeDate = async () => {
+    if (!isOwner) {
+      return;
+    }
+
+    await modalManager.show(AssetChangeDateModal, {
+      asset: toTimelineAsset(asset),
+      initialDate: dateTime,
+      initialTimeZone: timeZone,
+    });
+  };
+</script>
+
+<OnEvents onAlbumAddAssets={() => void refreshAlbums()} />
+
+<section class="relative p-2">
+  <div class="flex place-items-center gap-2">
+    <IconButton
+      icon={mdiClose}
+      aria-label={$t('close')}
+      onclick={() => assetViewerManager.closeDetailPanel()}
+      shape="round"
+      color="secondary"
+      variant="ghost"
+    />
+    <p class="text-lg text-immich-fg dark:text-immich-dark-fg">{$t('info')}</p>
+  </div>
+
+  <div class="p-3">
+    <Tab
+      label={$t('show_info')}
+      tabs={Object.values(PhotoTabs)}
+      selected={selectedTab}
+      onSelect={(selected) => (selectedTab = selected as PhotoTabs)}
+    />
+  </div>
+
+  <!-- Keep Basic details mounted across tab switches so edits (description, tags, etc.) survive. -->
+  <div class:hidden={selectedTab !== PhotoTabs.Basic}>
+    <DetailPanelDescription {asset} {isOwner} />
+
+  {#if asset.isOffline}
+    <section class="px-4 py-4">
+      <div role="alert">
+        <div class="rounded-t bg-red-500 px-4 py-2 font-bold text-white">
+          {$t('asset_offline')}
+        </div>
+        <div class="border border-t-0 border-red-400 bg-red-100 px-4 py-3 text-red-700">
+          <p>
+            {#if authManager.authenticated && authManager.user.isAdmin}
+              {$t('admin.asset_offline_description')}
+            {:else}
+              {$t('asset_offline_description')}
+            {/if}
+          </p>
+        </div>
+        <div class="rounded-b bg-red-500 px-4 py-2 text-white text-sm">
+          <p>{asset.originalPath}</p>
+        </div>
+      </div>
+    </section>
+  {/if}
+
+  <DetailPanelRating {asset} {isOwner} />
+
+  <DetailPanelPeople {asset} {isOwner} {previousRoute} />
+
+  <div class="px-4 py-4">
+    {#if asset.exifInfo}
+      <div class="flex h-10 w-full items-center justify-between text-sm">
+        <Text size="small" color="muted">{$t('details')}</Text>
+      </div>
+    {:else}
+      <Text size="small" color="muted">{$t('no_exif_info_available')}</Text>
+    {/if}
+
+    {#if dateTime}
+      <button
+        type="button"
+        class="flex w-full text-start justify-between place-items-start gap-4 py-4"
+        onclick={handleChangeDate}
+        title={isOwner ? $t('edit_date') : ''}
+        class:hover:text-primary-700={isOwner}
+      >
+        <div class="flex gap-4">
+          <div>
+            <Icon icon={mdiCalendar} size="24" />
+          </div>
+
+          <div>
+            <p>
+              {dateTime.toLocaleString(
+                {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                },
+                { locale: $locale },
+              )}
+            </p>
+            <div class="flex gap-2 text-sm">
+              <p>
+                {dateTime.toLocaleString(
+                  {
+                    weekday: 'short',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: timeZone ? 'longOffset' : undefined,
+                  },
+                  { locale: $locale },
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {#if isOwner}
+          <div class="p-1">
+            <Icon icon={mdiPencil} size="20" />
+          </div>
+        {/if}
+      </button>
+    {:else if !dateTime && isOwner}
+      <div class="flex justify-between place-items-start gap-4 py-4">
+        <div class="flex gap-4">
+          <div>
+            <Icon icon={mdiCalendar} size="24" />
+          </div>
+        </div>
+        <div class="p-1">
+          <Icon icon={mdiPencil} size="20" />
+        </div>
+      </div>
+    {/if}
+
+    <div class="flex w-full justify-between place-items-start gap-4 py-4">
+      <div class="flex min-w-0 gap-4">
+        <div><Icon icon={mdiImageOutline} size="24" /></div>
+
+        <div class="min-w-0">
+          <p class="break-all whitespace-pre-wrap">{asset.originalFileName}</p>
+          {#if showAssetPath}
+            <p class="text-xs opacity-50 break-all pb-2 hover:text-primary-700" transition:slide={{ duration: 250 }}>
+              <!-- eslint-disable-next-line svelte/no-navigation-without-resolve this is supposed to be treated as an absolute/external link -->
+              <a href={getAssetFolderHref(asset)} title={$t('go_to_folder')} class="whitespace-pre-wrap">
+                {asset.originalPath}
+              </a>
+            </p>
+          {/if}
+          {#if (asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth) || asset.exifInfo?.fileSizeInByte}
+            <div class="flex gap-2 text-sm">
+              {#if asset.exifInfo?.exifImageHeight && asset.exifInfo?.exifImageWidth}
+                {#if getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)}
+                  <p>
+                    {getMegapixel(asset.exifInfo.exifImageHeight, asset.exifInfo.exifImageWidth)} MP
+                  </p>
+                {/if}
+                {@const { width, height } = getDimensions(asset.exifInfo)}
+                <p>{width} x {height}</p>
+              {/if}
+              {#if asset.exifInfo?.fileSizeInByte}
+                <p>{getByteUnitString(asset.exifInfo.fileSizeInByte, $locale)}</p>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      {#if isOwner}
+        <div class="shrink-0">
+          <IconButton
+            icon={mdiInformationOutline}
+            aria-label={$t('show_file_location')}
+            size="small"
+            shape="round"
+            color="secondary"
+            variant="ghost"
+            class="[&_svg]:w-6 [&_svg]:h-6"
+            onclick={toggleAssetPath}
+          />
+        </div>
+      {/if}
+    </div>
+
+    {#if asset.exifInfo?.make || asset.exifInfo?.model || asset.exifInfo?.exposureTime || asset.exifInfo?.iso}
+      <div class="flex gap-4 py-4">
+        <div><Icon icon={mdiCamera} size="24" /></div>
+
+        <div>
+          {#if asset.exifInfo?.make || asset.exifInfo?.model}
+            <p>
+              <a
+                href={Route.search({
+                  make: asset.exifInfo?.make ?? undefined,
+                  model: asset.exifInfo?.model ?? undefined,
+                })}
+                title="{$t('search_for')} {asset.exifInfo.make || ''} {asset.exifInfo.model || ''}"
+                class="hover:text-primary-700"
+              >
+                {asset.exifInfo.make || ''}
+                {asset.exifInfo.model || ''}
+              </a>
+            </p>
+          {/if}
+
+          <div class="flex gap-2 text-sm">
+            {#if asset.exifInfo.exposureTime}
+              <p>{`${asset.exifInfo.exposureTime} s`}</p>
+            {/if}
+
+            {#if asset.exifInfo.iso}
+              <p>{`ISO ${asset.exifInfo.iso}`}</p>
+            {/if}
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    {#if asset.exifInfo?.lensModel || asset.exifInfo?.fNumber || asset.exifInfo?.focalLength}
+      <div class="flex gap-4 py-4">
+        <div><Icon icon={mdiCameraIris} size="24" /></div>
+
+        <div>
+          {#if asset.exifInfo?.lensModel}
+            <p>
+              <a
+                href={Route.search({ lensModel: asset.exifInfo.lensModel })}
+                title="{$t('search_for')} {asset.exifInfo.lensModel}"
+                class="hover:text-primary-700 line-clamp-1"
+              >
+                {asset.exifInfo.lensModel}
+              </a>
+            </p>
+          {/if}
+
+          <div class="flex gap-2 text-sm">
+            {#if asset.exifInfo?.fNumber}
+              <p>ƒ/{asset.exifInfo.fNumber.toLocaleString($locale)}</p>
+            {/if}
+
+            {#if asset.exifInfo.focalLength}
+              <p>{`${asset.exifInfo.focalLength.toLocaleString($locale)} mm`}</p>
+            {/if}
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <DetailPanelLocation {isOwner} {asset} />
+  </div>
+  </div>
+
+  <div class:hidden={selectedTab !== PhotoTabs.Metadata}>
+    <section class="px-4 py-4">
+      <MetadataList exifInfo={asset.exifInfo} />
+    </section>
+  </div>
+</section>
+
+<div class:hidden={selectedTab !== PhotoTabs.Basic}>
+{#if latlng && featureFlagsManager.value.map}
+  <div class="h-90">
+    {#await import('$lib/components/shared-components/map/Map.svelte')}
+      {#await delay(timeToLoadTheMap) then}
+        <!-- show the loading spinner only if loading the map takes too much time -->
+        <div class="flex items-center justify-center h-full w-full">
+          <LoadingSpinner />
+        </div>
+      {/await}
+    {:then { default: Map }}
+      <Map
+        mapMarkers={[
+          {
+            lat: latlng.lat,
+            lon: latlng.lng,
+            id: asset.id,
+            city: asset.exifInfo?.city ?? null,
+            state: asset.exifInfo?.state ?? null,
+            country: asset.exifInfo?.country ?? null,
+          },
+        ]}
+        center={latlng}
+        showSettings={false}
+        zoom={12.5}
+        simplified
+        useLocationPin
+          showSimpleControls={!assetViewerManager.isEditFacesPanelOpen}
+        onOpenInMapView={() => goto(Route.map({ ...latlng, zoom: 12.5 }))}
+      >
+        {#snippet popup({ marker })}
+          {@const { lat, lon } = marker}
+          <div class="flex flex-col items-center gap-1">
+            <p class="font-bold">{lat.toPrecision(6)}, {lon.toPrecision(6)}</p>
+            <a
+              href="https://www.openstreetmap.org/?mlat={lat}&mlon={lon}&zoom=13#map=15/{lat}/{lon}"
+              target="_blank"
+              class="font-medium text-primary-700 underline focus:outline-none"
+            >
+              {$t('open_in_openstreetmap')}
+            </a>
+          </div>
+        {/snippet}
+      </Map>
+    {/await}
+  </div>
+{/if}
+
+{#if currentAlbum && currentAlbum.albumUsers.length > 0 && asset.owner}
+  <section class="px-6 dark:text-immich-dark-fg mt-4">
+    <Text size="small" color="muted">{$t('shared_by')}</Text>
+    <div class="flex gap-4 pt-4">
+      <div>
+        <UserAvatar user={asset.owner} size="md" />
+      </div>
+
+      <div class="mb-auto mt-auto">
+        <p>
+          {asset.owner.name}
+        </p>
+      </div>
+    </div>
+  </section>
+{/if}
+
+{#if albums.length > 0}
+  <section class="px-6 py-6 dark:text-immich-dark-fg">
+    <div class="pb-4">
+      <Text size="small" color="muted">{$t('appears_in')}</Text>
+    </div>
+    {#each albums as album (album.id)}
+      <a href={Route.viewAlbum(album)}>
+        <div class="flex gap-4 pt-2 hover:cursor-pointer items-center">
+          <div>
+            <img
+              alt={album.albumName}
+              class="h-12.5 w-12.5 rounded object-cover"
+              src={album.albumThumbnailAssetId &&
+                getAssetMediaUrl({ id: album.albumThumbnailAssetId, size: AssetMediaSize.Preview })}
+              draggable="false"
+            />
+          </div>
+
+          <div class="mb-auto mt-auto">
+            <p class="dark:text-immich-dark-primary">{album.albumName}</p>
+            <div class="flex flex-col gap-0 text-sm">
+              <div>
+                <AlbumListItemDetails {album} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+    {/each}
+  </section>
+{/if}
+
+{#if authManager.authenticated && authManager.preferences.tags.enabled}
+  <section class="relative px-2 pb-12 dark:bg-immich-dark-bg dark:text-immich-dark-fg">
+    <DetailPanelTags {asset} {isOwner} />
+  </section>
+{/if}
+
+{#if assetViewerManager.isEditFacesPanelOpen}
+  <PersonSidePanel
+    assetId={asset.id}
+    assetType={asset.type}
+    onClose={() => assetViewerManager.closeEditFacesPanel()}
+    onRefresh={handleRefreshPeople}
+  />
+{/if}
+</div>

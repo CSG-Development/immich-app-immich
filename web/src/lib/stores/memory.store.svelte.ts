@@ -1,6 +1,5 @@
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
-import { asLocalTimeISO } from '$lib/utils/date-time';
 import { toTimelineAsset } from '$lib/utils/timeline-util';
 import { deleteMemory, type MemoryResponseDto, removeMemoryAssets, searchMemories, updateMemory } from '@immich/sdk';
 import { DateTime } from 'luxon';
@@ -21,7 +20,9 @@ export type MemoryAsset = MemoryIndex & {
 
 class MemoryStoreSvelte {
   constructor() {
-    eventManager.on('auth.logout', () => this.clearCache());
+    eventManager.on({
+      AuthLogout: () => this.clearCache(),
+    });
   }
 
   memories = $state<MemoryResponseDto[]>([]);
@@ -116,7 +117,7 @@ class MemoryStoreSvelte {
   }
 
   private async loadAllMemories() {
-    const memories = await searchMemories({ $for: asLocalTimeISO(DateTime.now()) });
+    const memories = await searchMemories({ $for: DateTime.now().toFormat('yyyy-MM-dd') });
     this.memories = memories.filter((memory) => memory.assets.length > 0);
   }
 }

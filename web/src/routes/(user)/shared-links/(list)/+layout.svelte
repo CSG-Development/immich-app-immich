@@ -1,9 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
+  import empty1Url from '$lib/assets/empty-1.svg';
+  import UserPageLayout from '$lib/components/layouts/UserPageLayout.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import SharedLinkCard from '$lib/components/sharedlinks-page/SharedLinkCard.svelte';
+  import EmptyPlaceholder from '$lib/components/shared-components/EmptyPlaceholder.svelte';
+  import SharedLinkCard from './SharedLinkCard.svelte';
   import { type SharedLinkTab } from '$lib/constants';
   import GroupTab from '$lib/elements/GroupTab.svelte';
   import { Route } from '$lib/route';
@@ -86,11 +88,7 @@
 
   <Container center size="medium">
     {#if sharedLinks.length === 0}
-      <div
-        class="flex place-content-center place-items-center rounded-lg bg-gray-100 dark:bg-immich-dark-gray dark:text-immich-gray p-12"
-      >
-        <p>{$t('you_dont_have_any_shared_links')}</p>
-      </div>
+      <EmptyPlaceholder text={$t('you_dont_have_any_shared_links')} src={empty1Url} class="mx-auto mt-10" />
     {:else}
       <div class="flex flex-col gap-2">
         {#each filteredSharedLinks as sharedLink (sharedLink.id)}

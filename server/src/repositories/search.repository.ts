@@ -1,25 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { ExpressionBuilder, Kysely, OrderByDirection, Selectable, ShallowDehydrateObject, sql } from 'kysely';
 import { InjectKysely } from 'nestjs-kysely';
-import { randomUUID } from 'node:crypto';
+import { columns } from 'src/database';
 import { DummyValue, GenerateSql } from 'src/decorators';
 import { MapAsset } from 'src/dtos/asset-response.dto';
+import { SearchFilter, SearchOrder } from 'src/dtos/search.dto';
 import { AssetStatus, AssetType, AssetVisibility, VectorIndex } from 'src/enum';
 import { probes } from 'src/repositories/database.repository';
 import { DB } from 'src/schema';
 import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
-import { anyUuid, searchAssetBuilder, withExifInner } from 'src/utils/database';
+import {
+  anyUuid,
+  searchAssetBuilder,
+  searchAssetBuilderLegacy,
+  searchMetadataV3Examples,
+  searchStatisticsV3Examples,
+  withExifInner,
+  withSearchOrder,
+} from 'src/utils/database';
 import { paginationHelper } from 'src/utils/pagination';
-import { isValidInteger } from 'src/validation';
+import z from 'zod';
 
 export interface SearchAssetIdOptions {
   checksum?: Buffer;
-  deviceAssetId?: string;
   id?: string;
 }
 
 export interface SearchUserIdOptions {
-  deviceId?: string;
   libraryId?: string | null;
   userIds?: string[];
 }
@@ -122,19 +129,35 @@ type BaseAssetSearchOptions = SearchDateOptions &
   SearchAlbumOptions &
   SearchOcrOptions;
 
-export type AssetSearchOptions = BaseAssetSearchOptions & SearchRelationOptions;
+export type AssetSearchOptions = Omit<BaseAssetSearchOptions, 'visibility'> &
+  SearchRelationOptions & { visibility?: AssetVisibility | 'not-locked' };
 
 export type AssetSearchBuilderOptions = Omit<AssetSearchOptions, 'orderDirection'>;
+
+export interface AssetSearchBuilderV3Options {
+  filter?: SearchFilter;
+  /** Server-derived ownership scope. Never client-controlled. */
+  userIds?: string[];
+  withExif?: boolean;
+  withFaces?: boolean;
+  withPeople?: boolean;
+  withStacked?: boolean;
+  order?: SearchOrder;
+}
+
+export interface AssetSearchPaginationV3Options {
+  size: number;
+}
 
 export type SmartSearchOptions = SearchDateOptions &
   SearchEmbeddingOptions &
   SearchExifOptions &
   SearchOneToOneRelationOptions &
-  SearchStatusOptions &
+  Omit<SearchStatusOptions, 'visibility'> &
   SearchUserIdOptions &
   SearchPeopleOptions &
   SearchTagOptions &
-  SearchOcrOptions;
+  SearchOcrOptions & { visibility?: AssetVisibility | 'not-locked' };
 
 export type OcrSearchOptions = SearchDateOptions & SearchOcrOptions;
 
@@ -200,9 +223,10 @@ export class SearchRepository {
   })
   async searchMetadata(pagination: SearchPaginationOptions, options: AssetSearchOptions) {
     const orderDirection = (options.orderDirection?.toLowerCase() || 'desc') as OrderByDirection;
-    const items = await searchAssetBuilder(this.db, options)
-      .selectAll('asset')
+    const items = await searchAssetBuilderLegacy(this.db, options)
+      .select(columns.searchAsset)
       .orderBy('asset.fileCreatedAt', orderDirection)
+      .orderBy('asset.id', orderDirection)
       .limit(pagination.size + 1)
       .offset((pagination.page - 1) * pagination.size)
       .execute();
@@ -221,7 +245,7 @@ export class SearchRepository {
     ],
   })
   searchStatistics(options: AssetSearchOptions) {
-    return searchAssetBuilder(this.db, options)
+    return searchAssetBuilderLegacy(this.db, options)
       .select((qb) => qb.fn.countAll<number>().as('total'))
       .executeTakeFirstOrThrow();
   }
@@ -239,20 +263,11 @@ export class SearchRepository {
     ],
   })
   async searchRandom(size: number, options: AssetSearchOptions) {
-    const uuid = randomUUID();
-    const builder = searchAssetBuilder(this.db, options);
-    const lessThan = builder
-      .selectAll('asset')
-      .where('asset.id', '<', uuid)
+    return searchAssetBuilderLegacy(this.db, options)
+      .select(columns.searchAsset)
       .orderBy(sql`random()`)
-      .limit(size);
-    const greaterThan = builder
-      .selectAll('asset')
-      .where('asset.id', '>', uuid)
-      .orderBy(sql`random()`)
-      .limit(size);
-    const { rows } = await sql<MapAsset>`${lessThan} union all ${greaterThan} limit ${size}`.execute(this.db);
-    return rows;
+      .limit(size)
+      .execute();
   }
 
   @GenerateSql({
@@ -269,8 +284,8 @@ export class SearchRepository {
   })
   searchLargeAssets(size: number, options: LargeAssetSearchOptions) {
     const orderDirection = (options.orderDirection?.toLowerCase() || 'desc') as OrderByDirection;
-    return searchAssetBuilder(this.db, options)
-      .selectAll('asset')
+    return searchAssetBuilderLegacy(this.db, options)
+      .select(columns.searchAsset)
       .$call(withExifInner)
       .where('asset_exif.fileSizeInByte', '>', options.minFileSize || 0)
       .orderBy('asset_exif.fileSizeInByte', orderDirection)
@@ -292,13 +307,13 @@ export class SearchRepository {
     ],
   })
   searchSmart(pagination: SearchPaginationOptions, options: SmartSearchOptions, probabilityThreshold: number) {
-    if (!isValidInteger(pagination.size, { min: 1, max: 1000 })) {
+    if (!z.int().min(1).max(1000).safeParse(pagination.size).success) {
       throw new Error(`Invalid value for 'size': ${pagination.size}`);
     }
 
     return this.db.transaction().execute(async (trx) => {
       await sql`set local vchordrq.probes = ${sql.lit(probes[VectorIndex.Clip])}`.execute(trx);
-      const baseQuery = searchAssetBuilder(trx, options)
+      const baseQuery = searchAssetBuilderLegacy(trx, options)
         .innerJoin('smart_search', 'asset.id', 'smart_search.assetId')
         .selectAll('asset')
         .select((eb) =>
@@ -313,11 +328,16 @@ export class SearchRepository {
             )
           `.as('prob')
         );
+      // TODO Check which will work
+      // 3.1.0
+      // const items = await searchAssetBuilderLegacy(trx, options)
+      //   .select(columns.searchAsset)
       const items = await trx
         .selectFrom(baseQuery.as('scored'))
         .selectAll()
         .where('prob', '>=', probabilityThreshold)
         .orderBy('prob', 'desc')
+        .orderBy('id', 'asc')
         .limit(pagination.size + 1)
         .offset((pagination.page - 1) * pagination.size)
         .execute();
@@ -343,7 +363,7 @@ export class SearchRepository {
     ],
   })
   searchFaces({ userIds, embedding, numResults, maxDistance, hasPerson, minBirthDate }: FaceEmbeddingSearch) {
-    if (!isValidInteger(numResults, { min: 1, max: 1000 })) {
+    if (!z.int().min(1).max(1000).safeParse(numResults).success) {
       throw new Error(`Invalid value for 'numResults': ${numResults}`);
     }
 
@@ -446,7 +466,7 @@ export class SearchRepository {
       .selectFrom('asset')
       .innerJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
       .innerJoin('cte', 'asset.id', 'cte.assetId')
-      .selectAll('asset')
+      .select(columns.searchAsset)
       .select((eb) =>
         eb
           .fn('to_jsonb', [eb.table('asset_exif')])
@@ -517,6 +537,24 @@ export class SearchRepository {
       .execute();
 
     return res.map((row) => row.lensModel!);
+  }
+
+  @GenerateSql(...searchMetadataV3Examples)
+  searchMetadataV3(
+    pagination: AssetSearchPaginationV3Options,
+    options: AssetSearchBuilderV3Options,
+  ): Promise<MapAsset[]> {
+    return withSearchOrder(searchAssetBuilder(this.db, options), options.order)
+      .select(columns.searchAsset)
+      .limit(pagination.size)
+      .execute();
+  }
+
+  @GenerateSql(...searchStatisticsV3Examples)
+  searchStatisticsV3(options: AssetSearchBuilderV3Options) {
+    return searchAssetBuilder(this.db, options)
+      .select((qb) => qb.fn.countAll<number>().as('total'))
+      .executeTakeFirstOrThrow();
   }
 
   private getExifField(field: 'city' | 'state' | 'country' | 'make' | 'model' | 'lensModel', userIds: string[]) {

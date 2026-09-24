@@ -1,18 +1,18 @@
 <script lang="ts">
-  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/combobox.svelte';
-  import type { MapSettings } from '$lib/stores/preferences.store';
+  import Combobox, { type ComboBoxOption } from '$lib/components/shared-components/Combobox.svelte';
+  import { mapSettings, type MapSettings } from '$lib/stores/preferences.store';
   import { Button, DateInput, Field, FormModal, Stack, Switch } from '@immich/ui';
   import { Duration } from 'luxon';
   import { t } from 'svelte-i18n';
   import { fly } from 'svelte/transition';
 
   type Props = {
-    settings: MapSettings;
+    settings?: MapSettings;
     onClose: (settings?: MapSettings) => void;
   };
 
   let { settings: initialValues, onClose }: Props = $props();
-  let settings = $state(initialValues);
+  let settings = $state({ ...(initialValues ?? $mapSettings) });
 
   let customDateRange = $state(!!settings.dateAfter || !!settings.dateBefore);
 

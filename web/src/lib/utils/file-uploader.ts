@@ -1,4 +1,3 @@
-import FormatMsg from '$lib/components/shared-components/format-msg.svelte';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { uploadManager } from '$lib/managers/upload-manager.svelte';
 import { addAssetsToAlbums } from '$lib/services/album.service';
@@ -10,8 +9,8 @@ import { isHEIC, isWebSupportedAssetMimeType } from '$lib/utils/asset-utils';
 import { ExecutorQueue } from '$lib/utils/executor-queue';
 import { asQueryString } from '$lib/utils/shared-links';
 import {
-  Action,
   AssetMediaStatus,
+  AssetUploadAction,
   AssetVisibility,
   checkBulkUpload,
   getBaseUrl,
@@ -160,7 +159,7 @@ async function fileUploader({
       fileCreatedAt,
       fileModifiedAt: new Date(assetFile.lastModified).toISOString(),
       isFavorite: 'false',
-      duration: '0:00:00.000000',
+      duration: '0',
       assetData: new File([assetFile], assetFile.name),
     })) {
       formData.append(key, value);
@@ -193,7 +192,7 @@ async function fileUploader({
           { assetBulkUploadCheckDto: { assets: [{ id: assetFile.name, checksum }] } },
           { signal },
         );
-        if (checkUploadResult.action === Action.Reject && checkUploadResult.assetId) {
+        if (checkUploadResult.action === AssetUploadAction.Reject && checkUploadResult.assetId) {
           responseData = {
             status: AssetMediaStatus.Duplicate,
             id: checkUploadResult.assetId,
@@ -274,13 +273,7 @@ async function fileUploader({
     }
 
     if ((error as Error)?.message === $t('errors.unable_to_upload_file_type')) {
-      const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'), {
-        type: FormatMsg,
-        props: {
-          key: 'errors.unsupported_file_type_notification',
-          values: { filename: assetFile.name },
-        },
-      });
+      const errorMessage = handleError(error, $t('errors.unable_to_upload_file_type'));
       uploadAssetsStore.track('error');
       uploadAssetsStore.updateItem(deviceAssetId, { state: UploadState.UNSUPPORTED_TYPE, error: errorMessage });
     } else {

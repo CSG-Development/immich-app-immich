@@ -1,8 +1,8 @@
 <script lang="ts">
-  import AlbumSharedLink from '$lib/components/album-page/album-shared-link.svelte';
+  import AlbumSharedLink from '$lib/components/album-page/AlbumSharedLink.svelte';
   import HeaderActionButton from '$lib/components/HeaderActionButton.svelte';
   import OnEvents from '$lib/components/OnEvents.svelte';
-  import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
+  import UserAvatar from '$lib/components/shared-components/UserAvatar.svelte';
   import {
     confirmLeaveAlbum,
     getAlbumActions,
@@ -47,7 +47,7 @@
 
   let closed = $state(false);
   const currentUserId = $derived($user.id);
-  const isOwned = $derived(album.ownerId === currentUserId);
+  const isOwned = $derived(album.albumUsers[0]?.user.id === currentUserId);
   const canEdit = $derived(isAlbumEditor(album, currentUserId));
 
   const closeModal = () => {
@@ -93,7 +93,7 @@
 
   const refreshAlbum = async () => {
     try {
-      album = await getAlbumInfo({ id: album.id, withoutAssets: true });
+      album = await getAlbumInfo({ id: album.id });
     } catch {
       closeModal();
     }
@@ -175,15 +175,17 @@
         <div class="min-w-0 ps-2">
           <div class="mb-2 flex min-w-0 items-center gap-2">
             <div class="shrink-0">
-              <UserAvatar user={album.owner} size="md" />
+              <UserAvatar user={album.albumUsers[0].user} size="md" />
             </div>
-            <Text class="min-w-0 flex-1 truncate" size="small" title={album.owner.name}>{album.owner.name}</Text>
+            <Text class="min-w-0 flex-1 truncate" size="small" title={album.albumUsers[0].user.name}
+              >{album.albumUsers[0].user.name}</Text
+            >
             <Field disabled class="w-32 shrink-0">
               <Select options={[{ label: $t('owner'), value: 'owner' }]} value="owner" />
             </Field>
           </div>
 
-          {#each album.albumUsers as { user: albumUser, role } (albumUser.id)}
+          {#each album.albumUsers.filter(({ role }) => role !== AlbumUserRole.Owner) as { user: albumUser, role } (albumUser.id)}
             {@const isCurrentUser = albumUser.id === currentUserId}
             <div class="flex min-w-0 items-center gap-4 py-2">
               <div class="flex min-w-0 flex-1 items-center gap-2">

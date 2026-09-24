@@ -1,5 +1,5 @@
 <script lang="ts">
-  import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
+  import UserAvatar from '$lib/components/shared-components/UserAvatar.svelte';
   import { handleAddUsersToAlbum } from '$lib/services/album.service';
   import { searchUsers, type AlbumResponseDto, type UserResponseDto } from '@immich/sdk';
   import { FormModal, ListButton, LoadingSpinner, Stack, Text } from '@immich/ui';
@@ -15,7 +15,7 @@
   const { album, onClose }: Props = $props();
 
   let users: UserResponseDto[] = $state([]);
-  const excludedUserIds = $derived([album.ownerId, ...album.albumUsers.map(({ user: { id } }) => id)]);
+  const excludedUserIds = $derived(album.albumUsers.map(({ user: { id } }) => id));
   const filteredUsers = $derived(users.filter(({ id }) => !excludedUserIds.includes(id)));
   const selectedUsers = new SvelteMap<string, UserResponseDto>();
   let loading = $state(true);

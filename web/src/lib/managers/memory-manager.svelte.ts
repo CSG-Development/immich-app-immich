@@ -1,7 +1,6 @@
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { user } from '$lib/stores/user.store';
-import { asLocalTimeISO } from '$lib/utils/date-time';
 import { toTimelineAsset } from '$lib/utils/timeline-util';
 import { deleteMemory, type MemoryResponseDto, removeMemoryAssets, searchMemories, updateMemory } from '@immich/sdk';
 import { DateTime } from 'luxon';
@@ -34,6 +33,8 @@ class MemoryManager {
     if (get(user)) {
       void this.initialize();
     }
+
+    this.scheduleHourlyRefresh();
   }
 
   ready() {
@@ -130,8 +131,30 @@ class MemoryManager {
   }
 
   private async load() {
-    const memories = await searchMemories({ $for: asLocalTimeISO(DateTime.now()) });
+    const memories = await searchMemories({ $for: DateTime.now().toFormat('yyyy-MM-dd') });
     this.memories = memories.filter((memory) => memory.assets.length > 0);
+  }
+
+  private scheduleHourlyRefresh() {
+    const now = DateTime.utc();
+    let nextEvent = now.set({ minute: 0, second: 5 });
+
+    if (nextEvent <= now) {
+      nextEvent = nextEvent.plus({ hours: 1 });
+    }
+
+    const initialDelay = nextEvent.diff(now).as('milliseconds');
+
+    setTimeout(() => {
+      this.#loading = this.load();
+
+      setInterval(
+        () => {
+          this.#loading = this.load();
+        },
+        60 * 60 * 1000,
+      );
+    }, initialDelay);
   }
 }
 
