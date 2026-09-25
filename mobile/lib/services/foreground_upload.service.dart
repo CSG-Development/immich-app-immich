@@ -11,9 +11,11 @@ import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/platform_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/remote_album.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/storage.repository.dart';
 import 'package:immich_mobile/platform/connectivity_api.g.dart';
+import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/storage.provider.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
@@ -42,6 +44,7 @@ final foregroundUploadServiceProvider = Provider((ref) {
     ref.watch(backupRepositoryProvider),
     ref.watch(connectivityApiProvider),
     ref.watch(assetMediaRepositoryProvider),
+    ref.watch(remoteAlbumRepository),
   );
 });
 
@@ -57,6 +60,7 @@ class ForegroundUploadService {
     this._backupRepository,
     this._connectivityApi,
     this._assetMediaRepository,
+    this._remoteAlbumRepository,
   );
 
   final UploadRepository _uploadRepository;
@@ -64,6 +68,7 @@ class ForegroundUploadService {
   final DriftBackupRepository _backupRepository;
   final ConnectivityApi _connectivityApi;
   final AssetMediaRepository _assetMediaRepository;
+  final DriftRemoteAlbumRepository _remoteAlbumRepository;
   final Logger _logger = Logger('ForegroundUploadService');
 
   /// Retries for uploads that failed on a transport error.
@@ -103,13 +108,14 @@ class ForegroundUploadService {
         cancelToken: cancelToken,
         hasWifi: hasWifi,
         callbacks: callbacks,
+        userId: userId,
       );
     } else {
       await _executeWithWorkerPool<LocalAsset>(
         items: candidates,
         cancelToken: cancelToken,
         shouldSkip: (asset) => _shouldRequireWiFi(asset) && !hasWifi,
-        processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
+        processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks, userId: userId),
       );
     }
   }
@@ -120,6 +126,7 @@ class ForegroundUploadService {
     required Completer<void> cancelToken,
     required bool hasWifi,
     required UploadCallbacks callbacks,
+    String? userId,
   }) async {
     await _storageRepository.clearCache();
     shouldAbortUpload = false;
@@ -135,7 +142,7 @@ class ForegroundUploadService {
           continue;
         }
 
-        await uploadSingleAsset(asset, cancelToken, callbacks: callbacks);
+        await uploadSingleAsset(asset, cancelToken, callbacks: callbacks, userId: userId);
       }
     } finally {
       UploadActivity.end();
@@ -147,6 +154,7 @@ class ForegroundUploadService {
     List<LocalAsset> localAssets, {
     Completer<void>? cancelToken,
     UploadCallbacks callbacks = const UploadCallbacks(),
+    String? userId,
   }) async {
     if (localAssets.isEmpty) {
       return;
@@ -155,7 +163,7 @@ class ForegroundUploadService {
     await _executeWithWorkerPool<LocalAsset>(
       items: localAssets,
       cancelToken: cancelToken,
-      processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks),
+      processItem: (asset) => uploadSingleAsset(asset, cancelToken, callbacks: callbacks, userId: userId),
     );
   }
 
@@ -290,6 +298,7 @@ class ForegroundUploadService {
     LocalAsset asset,
     Completer<void>? cancelToken, {
     required UploadCallbacks callbacks,
+    String? userId,
   }) async {
     File? file;
     File? livePhotoFile;
@@ -431,6 +440,29 @@ class ForegroundUploadService {
       );
 
       if (result.isSuccess && result.remoteAssetId != null) {
+        // Persist stub before onSuccess so Pause/Resume recount cannot race ahead
+        // of remote_asset_entity (WS AssetUploadReady may never arrive after disconnect).
+        final ownerId = userId ?? Store.tryGet(StoreKey.currentUser)?.id;
+        if (ownerId != null && ownerId.isNotEmpty) {
+          try {
+            await _remoteAlbumRepository.upsertRemoteAssetStub(
+              remoteId: result.remoteAssetId!,
+              ownerId: ownerId,
+              source: asset,
+            );
+          } catch (error, stackTrace) {
+            _logger.warning(
+              () => "Failed to upsert remote asset stub for ${asset.localId}: $error",
+              error,
+              stackTrace,
+            );
+          }
+        } else {
+          _logger.warning(
+            () => "Skipping stub upsert for ${asset.localId}: userId is null or empty",
+          );
+        }
+        // Always notify success — server already accepted the upload.
         callbacks.onSuccess?.call(asset.localId!, result.remoteAssetId!);
       } else if (result.isCancelled) {
         // Cancellation is per-run via cancelToken; do not flip the shared shouldAbortUpload flag.
