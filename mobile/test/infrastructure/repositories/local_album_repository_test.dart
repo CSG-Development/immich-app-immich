@@ -97,6 +97,22 @@ void main() {
       expect(await localAlbumRepo.getAssetIds('dst'), ['moved']);
     });
   });
+
+  group('resetBackupSelections', () {
+    test('resets selected and excluded albums to none without deleting rows', () async {
+      final localAlbumRepo = mediumFactory.getRepository<DriftLocalAlbumRepository>();
+      await localAlbumRepo.upsert(mediumFactory.localAlbum(id: '1', backupSelection: BackupSelection.selected));
+      await localAlbumRepo.upsert(mediumFactory.localAlbum(id: '2', backupSelection: BackupSelection.excluded));
+      await localAlbumRepo.upsert(mediumFactory.localAlbum(id: '3', backupSelection: BackupSelection.none));
+
+      await localAlbumRepo.resetBackupSelections();
+
+      final albums = await localAlbumRepo.getAll(sortBy: {SortLocalAlbumsBy.id});
+      expect(albums.map((a) => a.id), ['1', '2', '3']);
+      expect(albums.every((a) => a.backupSelection == BackupSelection.none), isTrue);
+      expect(await localAlbumRepo.getBackupAlbums(), isEmpty);
+    });
+  });
 }
 
 LocalAsset _localAsset(String id) => LocalAsset(
