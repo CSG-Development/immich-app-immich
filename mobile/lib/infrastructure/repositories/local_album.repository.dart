@@ -57,6 +57,16 @@ class DriftLocalAlbumRepository extends DriftDatabaseRepository {
     return query.map((row) => row.toDto()).get();
   }
 
+  /// Clears include/exclude backup preferences for all local albums.
+  ///
+  /// Used on logout so the next account on the same device does not inherit
+  /// the previous user's album selection (device-scoped column on [LocalAlbumEntity]).
+  Future<void> resetBackupSelections() {
+    return _db.localAlbumEntity.update().write(
+      const LocalAlbumEntityCompanion(backupSelection: Value(BackupSelection.none)),
+    );
+  }
+
   Future<void> delete(String albumId) => transaction(() async {
     // Remove all assets that are only in this particular album
     // We cannot remove all assets in the album because they might be in other albums in iOS
