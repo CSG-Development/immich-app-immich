@@ -193,9 +193,18 @@ class VideoPlayerNotifier extends StateNotifier<VideoPlayerState> {
       return;
     }
 
+    // Some devices surface STATE_READY before the duration is known
+    // (ExoPlayer reports Cms.DURATION_UNKNOWN = -1). Do not poison the state
+    // with a non-positive duration; a later ready event carries the real
+    // value once the player knows it.
+    final durationMs = videoInfo.duration;
+    if (durationMs <= 0) {
+      _log.warning('Playback ready with unknown duration (${durationMs}ms); keeping previous duration');
+    }
+
     state = state.copyWith(
       position: Duration(milliseconds: playbackInfo.position),
-      duration: Duration(milliseconds: videoInfo.duration),
+      duration: durationMs > 0 ? Duration(milliseconds: durationMs) : null,
       status: _mapStatus(playbackInfo.status),
     );
   }
