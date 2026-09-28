@@ -202,14 +202,9 @@ class SettingsSubPage extends HookConsumerWidget {
 
     return Theme(
       data: resolveSgSettingsTheme(Theme.of(context)),
-      child: SafeArea(
-        bottom: true,
-        top: false,
-        right: true,
-        child: Scaffold(
-          appBar: AppBar(centerTitle: false, title: appBarTitle),
-          body: Padding(padding: const EdgeInsets.only(bottom: 60.0), child: section.widget),
-        ),
+      child: Scaffold(
+        appBar: AppBar(centerTitle: false, title: appBarTitle),
+        body: section.widget,
       ),
     );
   }
