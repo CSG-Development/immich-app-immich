@@ -154,6 +154,9 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     }
   }
 
+  /// Zoomed with details hidden: vertical drag is the dismiss channel, upward drag pans the image.
+  bool get _zoomedPanMode => _isZoomed && !_showingDetails;
+
   void _updateDrag(DragUpdateDetails details) {
     if (_dragStart == null) {
       return;
@@ -170,15 +173,23 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     switch (_dragIntent) {
       case _DragIntent.none:
       case _DragIntent.scroll:
-        if (_drag == null) {
-          _startProxyDrag();
-        }
-        _drag?.update(details);
+        if (_zoomedPanMode) {
+          _panZoomedImage(details.localPosition - _dragStart!.localPosition);
+        } else {
+          if (_drag == null) {
+            _startProxyDrag();
+          }
+          _drag?.update(details);
 
-        _syncShowingDetails();
+          _syncShowingDetails();
+        }
       case _DragIntent.dismiss:
         _handleDragDown(context, details.localPosition - _dragStart!.localPosition);
     }
+  }
+
+  void _panZoomedImage(Offset delta) {
+    _viewController?.updateMultiple(position: _initialPhotoViewState.position + delta);
   }
 
   void _endDrag(DragEndDetails details) {
@@ -195,6 +206,12 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     switch (intent) {
       case _DragIntent.none:
       case _DragIntent.scroll:
+        if (_zoomedPanMode) {
+          // Snap the zoomed image back to center on release (mirrors onScaleEnd).
+          _viewController?.animateMultiple(position: Offset.zero);
+          _drag = null;
+          break;
+        }
         final scrollVelocity = -(details.primaryVelocity ?? 0.0);
         _viewer.setShowingDetails(!_willClose(scrollVelocity));
 
@@ -202,7 +219,10 @@ class _AssetPageState extends ConsumerState<AssetPage> {
         _drag = null;
       case _DragIntent.dismiss:
         const popThreshold = 75.0;
-        if (details.localPosition.dy - start!.localPosition.dy > popThreshold) {
+        const popFlingVelocity = 700.0;
+        final displacement = details.localPosition.dy - start!.localPosition.dy;
+        final flingVelocity = details.primaryVelocity ?? 0.0;
+        if (displacement > popThreshold || flingVelocity > popFlingVelocity) {
           context.maybePop();
           return;
         }
@@ -221,9 +241,6 @@ class _AssetPageState extends ConsumerState<AssetPage> {
     PhotoViewControllerBase controller,
     PhotoViewScaleStateController scaleStateController,
   ) {
-    if (!_showingDetails && _isZoomed) {
-      return;
-    }
     _beginDrag(details);
   }
 
