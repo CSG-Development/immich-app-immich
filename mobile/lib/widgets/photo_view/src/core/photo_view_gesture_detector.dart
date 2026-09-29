@@ -54,6 +54,9 @@ class PhotoViewGestureDetector extends StatelessWidget {
     final Axis? axis = scope?.axis;
     final touchSlopFactor = scope?.touchSlopFactor ?? 2;
 
+    final bool hasDragCallbacks = onDragStart != null || onDragEnd != null || onDragUpdate != null;
+    final Axis? competingAxis = hasDragCallbacks ? Axis.vertical : null;
+
     final Map<Type, GestureRecognizerFactory> gestures = <Type, GestureRecognizerFactory>{};
 
     if (onTapDown != null || onTapUp != null) {
@@ -67,7 +70,7 @@ class PhotoViewGestureDetector extends StatelessWidget {
       );
     }
 
-    if (onDragStart != null || onDragEnd != null || onDragUpdate != null) {
+    if (hasDragCallbacks) {
       gestures[VerticalDragGestureRecognizer] = GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
         () => VerticalDragGestureRecognizer(debugOwner: this),
         (VerticalDragGestureRecognizer instance) {
@@ -93,6 +96,7 @@ class PhotoViewGestureDetector extends StatelessWidget {
         debugOwner: this,
         validateAxis: axis,
         touchSlopFactor: touchSlopFactor,
+        competingAxis: competingAxis,
       ),
       (PhotoViewGestureRecognizer instance) {
         instance
@@ -122,14 +126,21 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
     this.validateAxis,
     this.touchSlopFactor = 1,
     PointerDeviceKind? kind,
+    this.competingAxis,
     this.disableScaleGestures = false,
   }) : super(supportedDevices: null);
   final HitCornersDetector? hitDetector;
   final Axis? validateAxis;
   final double touchSlopFactor;
+
+  /// Axis of the competing drag; a single-finger gesture along it is not accepted by this recognizer.
+  final Axis? competingAxis;
   bool disableScaleGestures;
 
   Map<int, Offset> _pointerLocations = <int, Offset>{};
+
+  /// Latched once a single-finger gesture has pointed along [competingAxis]; held for the gesture's lifetime.
+  bool _yieldedToCompetingDrag = false;
 
   Offset? _initialFocalPoint;
   Offset? _currentFocalPoint;
@@ -143,6 +154,7 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
     if (ready) {
       ready = false;
       _pointerLocations = <int, Offset>{};
+      _yieldedToCompetingDrag = false;
     }
     super.addAllowedPointer(event);
   }
@@ -208,9 +220,14 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
 
     // Accept gesture if movement is possible in the direction the user is swiping
     final bool isHorizontalGesture = move.dx.abs() > move.dy.abs();
-    final bool shouldMove = isHorizontalGesture
-        ? hitDetector!.shouldMove(move, Axis.horizontal)
-        : hitDetector!.shouldMove(move, Axis.vertical);
+    final Axis gestureAxis = isHorizontalGesture ? Axis.horizontal : Axis.vertical;
+
+    // Latch only once the move is meaningful — zero-length (synthetic) events would classify as vertical.
+    if (move.distance >= kTouchSlop * touchSlopFactor &&
+        competingAxis != null && gestureAxis == competingAxis && _pointerLocations.length == 1) {
+      _yieldedToCompetingDrag = true;
+    }
+    final bool shouldMove = !_yieldedToCompetingDrag && hitDetector!.shouldMove(move, gestureAxis);
 
     if (shouldMove || _pointerLocations.keys.length > 1) {
       final double spanDelta = (_currentSpan! - _initialSpan!).abs();
