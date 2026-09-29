@@ -485,6 +485,21 @@ class _AssetViewerState extends ConsumerState<AssetViewer> {
       });
     });
 
+    ref.listen(castProvider.select((value) => value.castError), (_, castError) {
+      if (castError == null) {
+        return;
+      }
+      context.scaffoldMessenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: Text(
+            "cast_load_failed".tr(),
+            style: context.textTheme.bodyLarge?.copyWith(color: context.primaryColor),
+          ),
+        ),
+      );
+    });
+
     ref.listen(assetViewerProvider.select((value) => (value.showingControls, value.showingDetails)), (_, state) {
       final (controls, details) = state;
       _setSystemUIMode(controls, details);

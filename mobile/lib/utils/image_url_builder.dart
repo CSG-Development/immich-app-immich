@@ -17,7 +17,7 @@ String getThumbnailUrlForRemoteId(
 }
 
 String getPlaybackUrlForRemoteId(final String id) {
-  return '${Store.get(StoreKey.serverEndpoint)}/assets/$id/video/playback?';
+  return '${Store.get(StoreKey.serverEndpoint)}/assets/$id/video/playback';
 }
 
 /// Optional [updatedAt] appends `?c=` as a client cache key; the API ignores it.

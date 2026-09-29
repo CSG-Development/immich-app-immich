@@ -41,6 +41,14 @@ class GCastService {
 
   void Function(CastState)? onCastState;
 
+  void Function(String)? onCastError;
+
+  /// A load request that was queued because the media receiver application
+  /// had not registered its transport yet. Flushed on the next
+  /// RECEIVER_STATUS that shows the application running.
+  (RemoteAsset, String, String)? _pendingLoad;
+  Timer? _pendingLoadTimer;
+
   GCastService(this._gCastRepository, this._sessionsApiService, this._assetApiRepository) {
     _gCastRepository.onCastStatus = _onCastStatusCallback;
     _gCastRepository.onCastMessage = _onCastMessageCallback;
@@ -63,7 +71,41 @@ class GCastService {
       case "MEDIA_STATUS":
         _handleMediaStatus(message);
         break;
+      case "LOAD_FAILED":
+        // The receiver could not fetch/decode the content URL (network, TLS,
+        // auth or codec). Surface it instead of leaving the user staring at
+        // the idle placeholder screen.
+        _pendingLoad = null;
+        _pendingLoadTimer?.cancel();
+        _mediaStatusPollingTimer?.cancel();
+        onCastState?.call(CastState.idle);
+        onCastError?.call(
+          "The cast device could not load the media. Make sure the Immich server "
+          "is reachable from the device and that its certificate is trusted.",
+        );
+        break;
+      case "RECEIVER_STATUS":
+        _flushPendingLoad(message);
+        break;
     }
+  }
+
+  void _flushPendingLoad(Map<String, dynamic> message) {
+    final pending = _pendingLoad;
+    if (pending == null) {
+      return;
+    }
+
+    final applications = (message["status"] as Map<String, dynamic>?)?["applications"];
+    // Media namespace messages are only delivered once the media receiver
+    // application is running. Latest load wins.
+    if (applications is! List || applications.isEmpty) {
+      return;
+    }
+
+    _pendingLoad = null;
+    _pendingLoadTimer?.cancel();
+    _sendLoad(pending.$1, pending.$2, pending.$3);
   }
 
   void _handleMediaStatus(Map<String, dynamic> message) {
@@ -127,6 +169,8 @@ class GCastService {
 
   Future<void> disconnect() async {
     onReceiverName?.call("");
+    _pendingLoad = null;
+    _pendingLoadTimer?.cancel();
     currentAssetId = null;
     await _gCastRepository.disconnect();
   }
@@ -147,47 +191,76 @@ class GCastService {
     return bufferedExpiration.isAfter(DateTime.now());
   }
 
-  void loadMedia(RemoteAsset asset, bool reload) async {
+  Future<void> loadMedia(RemoteAsset asset, bool reload) async {
     if (!isConnected) {
       return;
     } else if (asset.id == currentAssetId && !reload) {
       return;
     }
 
-    // create a session key
-    if (!isSessionValid()) {
-      sessionKey = await _sessionsApiService.createSession(
-        "Cast",
-        "Google Cast",
-        duration: const Duration(minutes: 15).inSeconds,
-      );
+    try {
+      // create a session key
+      if (!isSessionValid()) {
+        sessionKey = await _sessionsApiService.createSession(
+          "Cast",
+          "Google Cast",
+          duration: const Duration(minutes: 15).inSeconds,
+        );
+      }
+
+      final unauthenticatedUrl = asset.isVideo
+          ? getPlaybackUrlForRemoteId(asset.id)
+          : getThumbnailUrlForRemoteId(asset.id, type: AssetMediaSize.fullsize);
+
+      final authenticatedURL = _withSessionKey(unauthenticatedUrl, sessionKey?.token);
+
+      // get image mime type
+      final mimeType = await _assetApiRepository.getAssetMIMEType(asset.id);
+
+      if (mimeType == null) {
+        onCastError?.call("Unable to determine the media type of the asset.");
+        return;
+      }
+
+      currentAssetId = asset.id;
+
+      // The media receiver application registers its transport asynchronously
+      // after we connect. If it is not registered yet, queue the load and let
+      // the next RECEIVER_STATUS flush it instead of losing the message.
+      if (_gCastRepository.getSessionId() == null) {
+        _pendingLoad = (asset, authenticatedURL, mimeType);
+        _pendingLoadTimer?.cancel();
+        _pendingLoadTimer = Timer(const Duration(seconds: 10), () {
+          // The media receiver application never became ready; report it
+          // instead of leaving the user on the idle placeholder screen.
+          _pendingLoad = null;
+          onCastError?.call("The cast device did not become ready in time. Try connecting again.");
+        });
+        return;
+      }
+
+      _sendLoad(asset, authenticatedURL, mimeType);
+    } catch (e) {
+      onCastError?.call("Failed to start casting: $e");
     }
+  }
 
-    final unauthenticatedUrl = asset.isVideo
-        ? getPlaybackUrlForRemoteId(asset.id)
-        : getThumbnailUrlForRemoteId(asset.id, type: AssetMediaSize.fullsize);
+  String _withSessionKey(String url, String? token) {
+    final separator = url.contains('?') ? '&' : '?';
+    return '$url${separator}sessionKey=$token';
+  }
 
-    final authenticatedURL = "$unauthenticatedUrl&sessionKey=${sessionKey?.token}";
-
-    // get image mime type
-    final mimeType = await _assetApiRepository.getAssetMIMEType(asset.id);
-
-    if (mimeType == null) {
-      return;
-    }
-
+  void _sendLoad(RemoteAsset asset, String url, String mimeType) {
     _gCastRepository.sendMessage(CastSession.kNamespaceMedia, {
       "type": "LOAD",
       "media": {
-        "contentId": authenticatedURL,
+        "contentId": url,
         "streamType": "BUFFERED",
         "contentType": mimeType,
-        "contentUrl": authenticatedURL,
+        "contentUrl": url,
       },
       "autoplay": true,
     });
-
-    currentAssetId = asset.id;
 
     // we need to poll for media status since the cast device does not
     // send a message when the media is loaded for whatever reason
@@ -228,6 +301,8 @@ class GCastService {
     _gCastRepository.sendMessage(CastSession.kNamespaceMedia, {"type": "STOP", "mediaSessionId": _sessionId});
     _mediaStatusPollingTimer?.cancel();
 
+    _pendingLoad = null;
+    _pendingLoadTimer?.cancel();
     currentAssetId = null;
   }
 

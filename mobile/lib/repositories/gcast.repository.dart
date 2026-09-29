@@ -19,6 +19,10 @@ class GCastRepository {
   GCastRepository();
 
   Future<void> connect(CastDevice device) async {
+    // Reset the cached receiver status from any previous session so the
+    // media-app readiness gate in loadMedia cannot act on stale data.
+    _receiverStatus = null;
+
     _castSession = await CastSessionManager().startSession(device);
 
     _castSession?.stateStream.listen((state) {
