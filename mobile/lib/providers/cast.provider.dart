@@ -28,6 +28,7 @@ class CastNotifier extends StateNotifier<CastManagerState> {
     _gCastService.onDuration = _onDuration;
     _gCastService.onReceiverName = _onReceiverName;
     _gCastService.onCastState = _onCastState;
+    _gCastService.onCastError = _onCastError;
   }
 
   void _onConnectionState(bool isCasting) {
@@ -50,9 +51,11 @@ class CastNotifier extends StateNotifier<CastManagerState> {
     state = state.copyWith(castState: castState);
   }
 
-  void loadMedia(RemoteAsset asset, bool reload) {
-    _gCastService.loadMedia(asset, reload);
+  void _onCastError(String message) {
+    state = state.copyWith(castError: message);
   }
+
+  Future<void> loadMedia(RemoteAsset asset, bool reload) => _gCastService.loadMedia(asset, reload);
 
   Future<void> connect(CastDestinationType type, dynamic device) async {
     switch (type) {
