@@ -10,6 +10,7 @@ class CastManagerState {
   final CastState castState;
   final Duration currentTime;
   final Duration duration;
+  final String? castError;
 
   const CastManagerState({
     required this.isCasting,
@@ -17,6 +18,7 @@ class CastManagerState {
     required this.castState,
     required this.currentTime,
     required this.duration,
+    this.castError,
   });
 
   CastManagerState copyWith({
@@ -25,6 +27,7 @@ class CastManagerState {
     CastState? castState,
     Duration? currentTime,
     Duration? duration,
+    String? castError,
   }) {
     return CastManagerState(
       isCasting: isCasting ?? this.isCasting,
@@ -32,6 +35,7 @@ class CastManagerState {
       castState: castState ?? this.castState,
       currentTime: currentTime ?? this.currentTime,
       duration: duration ?? this.duration,
+      castError: castError ?? this.castError,
     );
   }
 
@@ -43,6 +47,7 @@ class CastManagerState {
     result.addAll({'castState': castState});
     result.addAll({'currentTime': currentTime.inSeconds});
     result.addAll({'duration': duration.inSeconds});
+    result.addAll({'castError': castError});
 
     return result;
   }
@@ -54,6 +59,7 @@ class CastManagerState {
       castState: map['castState'] ?? CastState.idle,
       currentTime: Duration(seconds: map['currentTime']?.toInt() ?? 0),
       duration: Duration(seconds: map['duration']?.toInt() ?? 0),
+      castError: map['castError'] as String?,
     );
   }
 

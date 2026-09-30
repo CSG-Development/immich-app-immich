@@ -748,6 +748,7 @@
   "airplay": "AirPlay",
   "cast": "Cast",
   "cast_description": "Configure available cast destinations",
+  "cast_load_failed": "Failed to load media on the cast device. Make sure the Immich server is reachable from the TV and its certificate is trusted.",
   "change": "Change",
   "change_date": "Change date",
   "change_description": "Change description",
