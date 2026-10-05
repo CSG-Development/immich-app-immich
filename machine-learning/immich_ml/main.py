@@ -59,7 +59,6 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
 
     try:
         if settings.request_threads > 0:
-            # asyncio is a huge bottleneck for performance, so we use a thread pool to run blocking code
             thread_pool = ThreadPoolExecutor(settings.request_threads) if settings.request_threads > 0 else None
             log.info(f"Initialized request thread pool with {settings.request_threads} threads.")
         if settings.model_ttl > 0 and settings.model_ttl_poll_s > 0:
@@ -241,7 +240,7 @@ def generate_overlapping_parts(image: Image) -> list[dict[str, Any]]:
 
 app = FastAPI(lifespan=lifespan)
 
-declare_endpoints(app) # Search Query Analyzer Endpoints
+declare_endpoints(app)
 
 @app.get("/")
 async def root() -> ORJSONResponse:
@@ -289,7 +288,7 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
         if isinstance(payload, Image) and entry["task"] == "clip" and entry["type"] == "visual":
             fitted = await run(lambda: fit_image_to_224_square(payload))
             original_parts = await run(lambda: generate_overlapping_parts(payload))
-            fitted_parts = await run(lambda: generate_overlapping_parts(fitted))
+            fitted_parts = [await run(lambda: fit_image_to_224_square(part["image"])) for part in original_parts]
 
             embeddings = []
 
@@ -310,7 +309,7 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                 embeddings.append(output)
 
             for part in fitted_parts:
-                output = await run(model.predict, part["image"], **entry["options"])
+                output = await run(model.predict, part, **entry["options"])
                 if isinstance(output, str):
                     output = json.loads(output)
                 embeddings.append(output)
@@ -354,7 +353,7 @@ async def load(model: InferenceModel) -> InferenceModel:
                 if model.model_format == ModelFormat.ONNX:
                     raise e
                 log.warning(
-                    f"{model.model_format.upper()} is available, but model '{model.model_name}' does not support it.",
+                    f"{model.model_format.upper()} is available, но model '{model.model_name}' does not support it.",
                     exc_info=e,
                 )
                 model.model_format = ModelFormat.ONNX
