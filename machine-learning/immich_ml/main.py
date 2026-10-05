@@ -289,7 +289,7 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
         if isinstance(payload, Image) and entry["task"] == "clip" and entry["type"] == "visual":
             fitted = await run(lambda: fit_image_to_224_square(payload))
             original_parts = await run(lambda: generate_overlapping_parts(payload))
-            fitted_parts = await run(lambda: generate_overlapping_parts(fitted))
+            fitted_parts_images = [await run(lambda: fit_image_to_224_square(part["image"])) for part in original_parts]
 
             embeddings = []
 
@@ -309,8 +309,8 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
                     output = json.loads(output)
                 embeddings.append(output)
 
-            for part in fitted_parts:
-                output = await run(model.predict, part["image"], **entry["options"])
+            for part_image in fitted_parts_images:
+                output = await run(model.predict, part_image, **entry["options"])
                 if isinstance(output, str):
                     output = json.loads(output)
                 embeddings.append(output)
