@@ -204,17 +204,11 @@ def generate_overlapping_parts(image: Image) -> list[dict[str, Any]]:
     step_x = max(1, part_width // 2)
     step_y = max(1, part_height // 2)
 
-    x_positions = list(range(0, max(1, width - part_width + 1), step_x))
-    y_positions = list(range(0, max(1, height - part_height + 1), step_y))
-
     last_x = width - part_width
     last_y = height - part_height
 
-    if x_positions[-1] != last_x:
-        x_positions.append(last_x)
-
-    if y_positions[-1] != last_y:
-        y_positions.append(last_y)
+    x_positions = [0, min(step_x, last_x), min(step_x * 2, last_x)]
+    y_positions = [0, min(step_y, last_y), min(step_y * 2, last_y)]
 
     parts = []
     index = 0
@@ -224,6 +218,9 @@ def generate_overlapping_parts(image: Image) -> list[dict[str, Any]]:
             index += 1
             x1 = x + part_width
             y1 = y + part_height
+
+            if x1 > width or y1 > height:
+                continue
 
             parts.append({
                 "index": index,
