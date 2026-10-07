@@ -165,6 +165,38 @@ def get_entries(entries: str = Form()) -> InferenceEntries:
         raise HTTPException(422, "Invalid request format.")
 
 
+def fit_image_to_square(image: Image) -> Image:
+    width, height = image.size
+
+    if width == height:
+        return image
+
+    side = max(width, height)
+
+    if image.mode == "RGBA":
+        background_color = (0, 0, 0, 255)
+    elif image.mode == "RGB":
+        background_color = (0, 0, 0)
+    elif image.mode == "L":
+        background_color = 0
+    else:
+        image = image.convert("RGB")
+        background_color = (0, 0, 0)
+
+    canvas = new(
+        image.mode,
+        (side, side),
+        background_color,
+    )
+
+    x = (side - width) // 2
+    y = (side - height) // 2
+
+    canvas.paste(image, (x, y))
+
+    return canvas
+
+
 def fit_image_to_224_square(image: Image) -> Image:
     width, height = image.size
     max_dimension = max(width, height)
@@ -284,9 +316,9 @@ async def run_inference(payload: Image | str, entries: InferenceEntries) -> Infe
         model = await load(model)
 
         if isinstance(payload, Image) and entry["task"] == "clip" and entry["type"] == "visual":
-            fitted = await run(lambda: fit_image_to_224_square(payload))
+            fitted = await run(lambda: fit_image_to_square(payload))
             original_parts = await run(lambda: generate_overlapping_parts(payload))
-            fitted_parts_images = [await run(lambda: fit_image_to_224_square(part["image"])) for part in original_parts]
+            fitted_parts_images = [await run(lambda: fit_image_to_square(part["image"])) for part in original_parts]
 
             embeddings = []
 
