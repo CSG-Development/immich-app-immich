@@ -3316,7 +3316,7 @@ packages:
       svelte: ^5.0.0
 
   '@immich/ui@https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/84927378d3df563deaa6853df91f9c5a40349256':
-    resolution: {gitHosted: true, integrity: sha512-2tpOjjcQF8JhcnZqNc76oIEV+Mww8b9ZpyIqS354nbe8bbEiepJuVHDNeSzlMsFRHIbC38CgVEQF+91qnw07Qw==, tarball: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/84927378d3df563deaa6853df91f9c5a40349256}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/CSG-Development/immich-app-ui/tar.gz/84927378d3df563deaa6853df91f9c5a40349256}
     version: 0.36.0
     peerDependencies:
       svelte: ^5.0.0
