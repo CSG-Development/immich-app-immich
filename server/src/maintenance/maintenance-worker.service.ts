@@ -140,14 +140,14 @@ export class MaintenanceWorkerService {
 
     return (request: Request, res: Response, next: NextFunction) => {
       if (
-        request.url.startsWith('/api') ||
+        request.url.startsWith('/photos/api') ||
         request.method.toLowerCase() !== 'get' ||
         excludePaths.some((item) => request.url.startsWith(item))
       ) {
         return next();
       }
 
-      const maintenancePath = '/maintenance';
+      const maintenancePath = '/photos/maintenance';
       if (!request.url.startsWith(maintenancePath)) {
         const params = new URLSearchParams();
         params.set('continue', request.path);
