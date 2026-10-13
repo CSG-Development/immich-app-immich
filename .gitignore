@@ -33,3 +33,6 @@ vite.config.js.timestamp-*
 
 homecloud-l10n-5f2611435b25.json
 .venv
+
+# Local cherry-pick progress
+scripts/cherry-pick-mobile-i18n.state
