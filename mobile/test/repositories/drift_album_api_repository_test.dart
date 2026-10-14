@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/repositories/drift_album_api_repository.dart';
+import 'package:immich_mobile/services/api.service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openapi/api.dart';
 
 class _MockAlbumsApi extends Mock implements AlbumsApi {}
 
+class _MockApiService extends Mock implements ApiService {}
+
 void main() {
   late _MockAlbumsApi api;
+  late _MockApiService apiService;
   late DriftAlbumApiRepository repo;
 
   setUpAll(() {
@@ -15,7 +19,9 @@ void main() {
 
   setUp(() {
     api = _MockAlbumsApi();
-    repo = DriftAlbumApiRepository(api);
+    apiService = _MockApiService();
+    when(() => apiService.albumsApi).thenReturn(api);
+    repo = DriftAlbumApiRepository(apiService);
   });
 
   void stubResponse(List<BulkIdResponseDto> response) {
