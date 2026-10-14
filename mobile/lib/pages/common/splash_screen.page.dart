@@ -361,7 +361,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     required bool enablePasscodeLock,
     required bool enablePatternLock,
   }) async {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     final accessToken = Store.tryGet(StoreKey.accessToken);
     final enableBiometric = Store.tryGet(StoreKey.enableBiometric) ?? false;
@@ -423,7 +425,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     final viewedCount = Store.tryGet<int>(StoreKey.onboardingViewedCount) ?? 0;
     if (viewedCount >= kCuratorOnboardingSlidesData.length) {
@@ -433,7 +437,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     final onboardingCompleted = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
 
     Future<void> proceedToMainScreen() async {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       if (context.router.current.name != ShareIntentRoute.name) {
         final currentUser = Store.tryGet(StoreKey.currentUser);
@@ -446,7 +452,9 @@ class SplashScreenPageState extends ConsumerState<SplashScreenPage> {
     }
 
     final canAuthenticate = (await ref.read(localAuthServiceProvider).getStatus()).canAuthenticate;
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (enableBiometric && canAuthenticate) {
       await showLocalAuthBottomSheet(context: context, onSuccess: proceedToMainScreen);

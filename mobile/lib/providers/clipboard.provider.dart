@@ -30,7 +30,9 @@ class ClipboardNotifier extends StateNotifier<ClipboardState> {
   Stream<bool> get clipboardStatusStream => _clipboardStatusController.stream;
 
   Future<void> checkClipboardStatus() async {
-    if (_isDisposed) return;
+    if (_isDisposed) {
+      return;
+    }
     
     try {
       final hasPhotos = await _clipboardService.hasPhotosInClipboard();
@@ -48,7 +50,9 @@ class ClipboardNotifier extends StateNotifier<ClipboardState> {
   }
 
   void notifyItemsCopiedToClipboard() {
-    if (_isDisposed) return;
+    if (_isDisposed) {
+      return;
+    }
     
     Future.delayed(const Duration(milliseconds: 100), () {
       checkClipboardStatus();
@@ -56,7 +60,9 @@ class ClipboardNotifier extends StateNotifier<ClipboardState> {
   }
 
   Future<void> pasteFromClipboard() async {
-    if (state.isProcessing) return;
+    if (state.isProcessing) {
+      return;
+    }
 
     state = state.copyWith(isProcessing: true);
     

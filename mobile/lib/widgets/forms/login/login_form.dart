@@ -281,7 +281,7 @@ class LoginForm extends HookConsumerWidget {
               await getManageMediaPermission();
             }
             unawaited(handleSyncFlow());
-            ref.read(websocketProvider.notifier).connect();
+            unawaited(ref.read(websocketProvider.notifier).connect());
             unawaited(context.router.replaceAll([const TabShellRoute()]));
             return;
           }

@@ -23,10 +23,8 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
 
   RemoteImageProvider({required String url, this.edited = true}) : _fixedUrl = url, assetId = null, thumbhash = null;
 
-  RemoteImageProvider.thumbnail({required String assetId, required String thumbhash, this.edited = true})
-    : assetId = assetId,
-      thumbhash = thumbhash,
-      _fixedUrl = null;
+  RemoteImageProvider.thumbnail({required String this.assetId, required String this.thumbhash, this.edited = true})
+    : _fixedUrl = null;
 
   String get url => _fixedUrl ?? getThumbnailUrlForRemoteId(assetId!, thumbhash: thumbhash, edited: edited);
 

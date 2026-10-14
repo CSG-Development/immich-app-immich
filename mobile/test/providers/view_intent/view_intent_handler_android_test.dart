@@ -78,12 +78,12 @@ class TestViewIntentService extends ViewIntentService {
 class TestAuthNotifier extends AuthNotifier {
   TestAuthNotifier(Ref ref, AuthState initial)
     : super(
+        ref,
         MockAuthService(),
         MockApiService(),
         MockUserService(),
         MockSecureStorageService(),
         MockWidgetService(),
-        ref,
       ) {
     state = initial;
   }

@@ -25,7 +25,9 @@ class RecoveryStatus {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     return other is RecoveryStatus &&
         other.isRecovering == isRecovering &&
         other.currentEndpoint == currentEndpoint &&

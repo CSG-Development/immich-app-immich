@@ -14,7 +14,9 @@ class LockLogoutFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!visible) return const SizedBox.shrink();
+    if (!visible) {
+      return const SizedBox.shrink();
+    }
 
     return Align(
       alignment: Alignment.center,

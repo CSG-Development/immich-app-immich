@@ -54,14 +54,14 @@ class ClipboardService {
     Set<BaseAsset> selectedAssets,
   ) async {
     final tempFiles = <File>[];
-    final Logger _log = Logger("ClipboardService");
+    final Logger log = Logger("ClipboardService");
 
     try {
       final filePaths = <String>[];
       final errors = <String>[];
 
       for (final asset in selectedAssets) {
-        final result = await _prepareAssetFile(asset, ref, _log);
+        final result = await _prepareAssetFile(asset, ref, log);
         if (result.filePath != null) {
           filePaths.add(result.filePath!);
           if (result.tempFile != null) {
@@ -80,7 +80,7 @@ class ClipboardService {
         );
       }
 
-      final validFilePaths = await _validateFiles(filePaths, errors, _log);
+      final validFilePaths = await _validateFiles(filePaths, errors, log);
       if (validFilePaths.isEmpty) {
         return _createErrorResult(
           errors.isEmpty ? 'No valid files could be prepared for clipboard' : errors.join('; '),
@@ -91,7 +91,7 @@ class ClipboardService {
       final result = await NativeClipboardApi().copyPhotosToClipboard(validFilePaths);
 
       if (result.success) {
-        _notifyClipboardProvider(ref, _log);
+        _notifyClipboardProvider(ref, log);
         _scheduleCleanup(tempFiles);
         return ClipboardCopyResult(
           success: true,
@@ -107,7 +107,7 @@ class ClipboardService {
         );
       }
     } catch (e, stackTrace) {
-      _log.severe('Unexpected error during clipboard copy', e, stackTrace);
+      log.severe('Unexpected error during clipboard copy', e, stackTrace);
       _cleanupFiles(tempFiles);
       return ClipboardCopyResult(
         success: false,
@@ -831,7 +831,9 @@ class ClipboardService {
   }
 
   static bool isCopySupportedForSelection(Set<BaseAsset> assets) {
-    if (assets.isEmpty) return false;
+    if (assets.isEmpty) {
+      return false;
+    }
 
     const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm'];
     final supportedExtensions = RegExp(r"\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|dng)");
