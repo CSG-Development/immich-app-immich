@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -8,9 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/network.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/store.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_api.repository.dart';
-import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 import 'package:immich_mobile/utils/semver.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:openapi/api.dart';
@@ -22,11 +23,16 @@ class MockHttpClient extends Mock implements http.Client {}
 
 class MockApiClient extends Mock implements ApiClient {}
 
-class MockEndpointResolver extends Mock implements HcDeviceEndpointResolver {}
-
 class MockStreamedResponse extends Mock implements http.StreamedResponse {}
 
 class FakeBaseRequest extends Fake implements http.BaseRequest {}
+
+class _SharedFakeClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    return http.StreamedResponse(const Stream<List<int>>.empty(), 200);
+  }
+}
 
 String _createJsonLine(String type, Map<String, dynamic> data, String ack) {
   return '${jsonEncode({'type': type, 'data': data, 'ack': ack})}\n';
@@ -37,7 +43,6 @@ void main() {
   late MockApiService mockApiService;
   late MockApiClient mockApiClient;
   late MockSyncApi mockSyncApi;
-  late MockEndpointResolver mockEndpointResolver;
   late MockHttpClient mockHttpClient;
   late MockStreamedResponse mockStreamedResponse;
   late StreamController<List<int>> responseStreamController;
@@ -48,11 +53,15 @@ void main() {
     await StoreService.init(storeRepository: DriftStoreRepository(db));
   });
 
-  setUp(() {
+  setUp(() async {
+    NetworkRepository.debugReset();
+    NetworkRepository.debugClientPointer = () async => 1;
+    NetworkRepository.debugBaseClientFactory = (Pointer<Void> _) => _SharedFakeClient();
+    await NetworkRepository.init();
+
     mockApiService = MockApiService();
     mockApiClient = MockApiClient();
     mockSyncApi = MockSyncApi();
-    mockEndpointResolver = MockEndpointResolver();
     mockHttpClient = MockHttpClient();
     mockStreamedResponse = MockStreamedResponse();
     responseStreamController = StreamController<List<int>>.broadcast(sync: true);
@@ -62,25 +71,21 @@ void main() {
     when(() => mockApiService.apiClient).thenReturn(mockApiClient);
     when(() => mockApiService.syncApi).thenReturn(mockSyncApi);
     when(() => mockApiClient.basePath).thenReturn('http://demo.immich.app/api');
-    when(
-      () => mockEndpointResolver.resolveAndActivateWinner(
-        runId: any(named: 'runId'),
-        trigger: any(named: 'trigger'),
-        mode: any(named: 'mode'),
-      ),
-    ).thenAnswer((_) async => null);
+    when(() => mockApiService.applyToParams(any(), any())).thenAnswer((_) async {});
     // Mock HTTP client behavior
     when(() => mockHttpClient.send(any())).thenAnswer((_) async => mockStreamedResponse);
+    when(() => mockHttpClient.close()).thenReturn(null);
     when(() => mockStreamedResponse.statusCode).thenReturn(200);
     when(() => mockStreamedResponse.stream).thenAnswer((_) => http.ByteStream(responseStreamController.stream));
 
-    sut = SyncApiRepository(mockApiService, mockEndpointResolver);
+    sut = SyncApiRepository(mockApiService);
   });
 
   tearDown(() async {
     if (!responseStreamController.isClosed) {
       await responseStreamController.close();
     }
+    NetworkRepository.debugReset();
   });
 
   Future<void> streamChanges(

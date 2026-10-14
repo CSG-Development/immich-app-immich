@@ -23,7 +23,7 @@ void main() {
       (_) async => PersonResponseDto(
         birthDate: null,
         id: 'person-1',
-        isFavorite: true,
+        isFavorite: const Optional.present(true),
         isHidden: false,
         name: 'Person',
         thumbnailPath: '/thumbnail',
@@ -33,7 +33,8 @@ void main() {
     final person = await repository.update('person-1', isFavorite: true);
     final request = verify(() => api.updatePerson('person-1', captureAny())).captured.single as PersonUpdateDto;
 
-    expect(request.isFavorite, isTrue);
+    expect(request.isFavorite.isPresent, isTrue);
+    expect(request.isFavorite.value, isTrue);
     expect(person.isFavorite, isTrue);
   });
 }
