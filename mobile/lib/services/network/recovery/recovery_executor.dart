@@ -142,7 +142,9 @@ class RecoveryExecutor {
         return;
 
       case PromptRemoteOtp():
-        if (await _reRunIfWifiSettles(snapshot)) return;
+        if (await _reRunIfWifiSettles(snapshot)) {
+          return;
+        }
         await _promptOtp(snapshot);
         return;
 

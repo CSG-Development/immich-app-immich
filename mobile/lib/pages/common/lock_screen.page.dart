@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
-import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/pages/security/lock_flow.dart';
 import 'package:immich_mobile/routing/router.dart';
 import 'package:immich_mobile/services/secure_storage.service.dart';

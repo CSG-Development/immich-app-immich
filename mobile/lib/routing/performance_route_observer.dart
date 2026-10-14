@@ -70,8 +70,12 @@ class PerformanceRouteObserver extends AutoRouterObserver {
       return;
     }
     
-    if (oldRoute != null) _stopTrace(oldRoute);
-    if (newRoute != null) _startTrace(newRoute);
+    if (oldRoute != null) {
+      _stopTrace(oldRoute);
+    }
+    if (newRoute != null) {
+      _startTrace(newRoute);
+    }
   }
 
   @override

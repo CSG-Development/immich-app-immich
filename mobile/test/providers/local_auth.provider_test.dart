@@ -36,7 +36,7 @@ void main() {
       ],
     );
 
-    registerFallbackValue(AuthenticationOptions());
+    registerFallbackValue(const AuthenticationOptions());
   });
 
   tearDown(() {

@@ -15,7 +15,6 @@ import 'package:immich_mobile/infrastructure/repositories/settings.repository.da
 import 'package:immich_mobile/providers/app_life_cycle.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
-import 'package:immich_mobile/providers/backup/backup.provider.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
 import 'package:immich_mobile/providers/device_path_refresh.provider.dart';
 import 'package:immich_mobile/providers/gallery_permission.provider.dart';
@@ -114,9 +113,15 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     bool isDeviceSelectionValid(DeviceItem? d) {
-      if (d == null) return false;
-      if (d.baseUrl != null) return true;
-      if (d.about != null) return true;
+      if (d == null) {
+        return false;
+      }
+      if (d.baseUrl != null) {
+        return true;
+      }
+      if (d.about != null) {
+        return true;
+      }
       return d.remoteDevice != null;
     }
 
@@ -134,12 +139,14 @@ class CuratorLoginForm extends HookConsumerWidget {
     void handleCantFindDeviceManually({required Future<void> Function() onStartDiscovery}) async {
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
       if (isAuthenticated) {
-        context.pushRoute(
-          UnableToDetectRoute(
-            onRetry: () {
-              Navigator.of(context).pop();
-              onStartDiscovery();
-            },
+        unawaited(
+          context.pushRoute(
+            UnableToDetectRoute(
+              onRetry: () {
+                Navigator.of(context).pop();
+                onStartDiscovery();
+              },
+            ),
           ),
         );
       } else {
@@ -149,7 +156,9 @@ class CuratorLoginForm extends HookConsumerWidget {
           return;
         }
 
-        if (isRemoteCodeModalActive.value == true) return;
+        if (isRemoteCodeModalActive.value == true) {
+          return;
+        }
 
         isRemoteCodeModalActive.value = true;
         isCantFindDeviceLoading.value = true;
@@ -243,7 +252,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     }
 
     preselectFavoriteDevice() {
-      if (devices.value.isEmpty) return;
+      if (devices.value.isEmpty) {
+        return;
+      }
 
       final deviceState = ref.read(deviceProvider);
       // Prefer the currently favorite device, then the last device the user
@@ -344,7 +355,9 @@ class CuratorLoginForm extends HookConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         email.value = ref.read(deviceProvider).login ?? '';
 
-        if (staticDevice.value != null) return;
+        if (staticDevice.value != null) {
+          return;
+        }
         preselectFavoriteDevice();
         startDiscovery();
       });
@@ -373,7 +386,9 @@ class CuratorLoginForm extends HookConsumerWidget {
             hasEmailError.value ||
             hasPasswordError.value ||
             hasPreviousLoginFailed.value;
-        if (!shouldClear) return;
+        if (!shouldClear) {
+          return;
+        }
         if (passwordFocusNode.hasFocus && hasPasswordError.value) {
           hasPasswordError.value = false;
         }
@@ -399,7 +414,9 @@ class CuratorLoginForm extends HookConsumerWidget {
     }, []);
 
     void populateDevCredentials() async {
-      if (EnvConfig.environment != AppEnvironment.dev) return;
+      if (EnvConfig.environment != AppEnvironment.dev) {
+        return;
+      }
       final emailValue = await EnvConfig.get(EnvKey.devEmail);
       final password = await EnvConfig.get(EnvKey.devPassword);
 
@@ -998,12 +1015,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         final isServerValid = await fetchServerAuthSettings();
 
         if (!isServerValid) {
-          context.pushRoute(
-            UnableToConnectRoute(
-              onRetry: () {
-                Navigator.of(context).pop();
-                login();
-              },
+          unawaited(
+            context.pushRoute(
+              UnableToConnectRoute(
+                onRetry: () {
+                  Navigator.of(context).pop();
+                  login();
+                },
+              ),
             ),
           );
           return;
@@ -1053,20 +1072,20 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
 
         if (result.shouldChangePassword && !result.isAdmin) {
-          context.pushRoute(const ChangePasswordRoute());
+          unawaited(context.pushRoute(const ChangePasswordRoute()));
         } else {
           final onboardingWasShown = Store.tryGet(StoreKey.onboardingWasShown) ?? false;
           if (!onboardingWasShown) {
             unawaited(ref.read(backgroundSyncProvider).syncRemote());
-            ref.read(websocketProvider.notifier).connect();
-            context.replaceRoute(const CuratorOnboardingRoute());
+            unawaited(ref.read(websocketProvider.notifier).connect());
+            unawaited(context.replaceRoute(const CuratorOnboardingRoute()));
             return;
           }
 
           await ref.read(galleryPermissionNotifier.notifier).requestGalleryPermission();
           unawaited(handleSyncFlow());
-          ref.read(websocketProvider.notifier).connect();
-          context.replaceRoute(const TabShellRoute());
+          unawaited(ref.read(websocketProvider.notifier).connect());
+          unawaited(context.replaceRoute(const TabShellRoute()));
         }
       } on ApiException catch (e) {
         if (e.code == 400 || e.code == 401 || e.code == 403) {
@@ -1078,12 +1097,14 @@ class CuratorLoginForm extends HookConsumerWidget {
         }
         hasPreviousLoginFailed.value = true;
       } catch (error) {
-        context.pushRoute(
-          UnableToConnectRoute(
-            onRetry: () {
-              Navigator.of(context).pop();
-              login();
-            },
+        unawaited(
+          context.pushRoute(
+            UnableToConnectRoute(
+              onRetry: () {
+                Navigator.of(context).pop();
+                login();
+              },
+            ),
           ),
         );
         warningMessage.value = "login_form_failed_login".tr();

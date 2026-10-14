@@ -27,10 +27,9 @@ import 'package:logging/logging.dart';
 class CuratorAppNetworkMonitorCallbacks implements CuratorNetworkMonitorCallbacks {
   CuratorAppNetworkMonitorCallbacks(
     this._ref, {
-    required VoidCallback onFindingNetworkToastDismissed,
-    required VoidCallback onManualRetry,
-  }) : _onFindingNetworkToastDismissed = onFindingNetworkToastDismissed,
-       _onManualRetry = onManualRetry;
+    required this._onFindingNetworkToastDismissed,
+    required this._onManualRetry,
+  });
 
   final Ref _ref;
   final VoidCallback _onFindingNetworkToastDismissed;
@@ -309,12 +308,10 @@ enum NetworkBannerKind { hidden, finding, noInternet, unable }
 
 class NetworkBannerController {
   NetworkBannerController({
-    required BuildContext? Function() contextGetter,
-    required VoidCallback onFindingDismissed,
-    required VoidCallback onRetry,
-  }) : _contextGetter = contextGetter,
-       _onFindingDismissed = onFindingDismissed,
-       _onRetry = onRetry;
+    required this._contextGetter,
+    required this._onFindingDismissed,
+    required this._onRetry,
+  });
 
   final BuildContext? Function() _contextGetter;
   final VoidCallback _onFindingDismissed;

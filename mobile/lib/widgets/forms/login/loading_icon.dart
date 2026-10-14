@@ -30,7 +30,9 @@ class _LoadingIconState extends State<LoadingIcon>
 
   Future<void> _loadSvg() async {
     final svg = await rootBundle.loadString('assets/circular-progress-indicator.svg');
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() => _svgTemplate = svg);
   }
 
