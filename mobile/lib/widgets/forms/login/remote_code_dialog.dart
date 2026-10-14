@@ -146,7 +146,9 @@ class RemoteCodeModal extends HookWidget {
             if (onSuccess != null) {
               await onSuccess!();
             }
-            if (context.mounted) Navigator.of(context).pop();
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
           } catch (error, stackTrace) {
             // Keep the modal usable when post-OTP flows (discovery/reconnect)
             // fail after successful token validation.

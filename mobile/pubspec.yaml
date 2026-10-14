@@ -37,6 +37,7 @@ dependencies:
   home_widget: ^0.9.3
   hooks_riverpod: ^2.6.1
   http: ^1.6.0
+  image: ^4.9.1
   image_picker: ^1.2.1
   immich_ui:
     path: './packages/ui'
@@ -64,6 +65,7 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   share_handler: ^0.0.25
   share_plus: ^10.1.4
+  shared_preferences: ^2.5.5
   sliver_tools: ^0.2.12
   stream_transform: ^2.1.1
   sqlite3: ^3.3.2

@@ -449,7 +449,9 @@ class ViewerKebabMenuButtonBuilder {
   static List<Widget> build(ViewerKebabMenuButtonContext context, BuildContext buildContext, WidgetRef ref) {
     final visibleButtons = ViewerKebabMenuButtonType.values.where((type) => type.shouldShow(context)).toList();
 
-    if (visibleButtons.isEmpty) return [];
+    if (visibleButtons.isEmpty) {
+      return [];
+    }
 
     final List<Widget> result = [];
     int? lastGroup;

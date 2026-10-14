@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
@@ -46,7 +46,7 @@ class PatternLockPage extends HookConsumerWidget {
     final errorText = useState<String?>(null);
     final isLoading = useState<bool>(false);
 
-    String _encode(List<int> nodes) => nodes.join('-');
+    String encode(List<int> nodes) => nodes.join('-');
 
     final enableBiometric = useAppSettingsState(AppSettingsEnum.enableBiometric);
     final handleAddBiometric = useAddBiometricAuthHook(context, ref);
@@ -73,26 +73,17 @@ class PatternLockPage extends HookConsumerWidget {
       }
     }
 
-    String getError() {
-      switch (stage.value) {
-        case _PatternStage.verifyExisting:
-          return 'curator.pattern_enter_error'.tr();
-        case _PatternStage.createNew:
-          return 'curator.pattern_create_error'.tr();
-        case _PatternStage.confirmNew:
-          return 'curator.pattern_confirm_error'.tr();
-      }
-    }
-
     Future<void> handleCompleted(List<int> nodes) async {
-      if (isLoading.value) return;
+      if (isLoading.value) {
+        return;
+      }
       if (nodes.length < 3) {
         hasError.value = true;
         errorText.value = t('pattern_error_short', 'Pattern is too short');
         return;
       }
 
-      final encoded = _encode(nodes);
+      final encoded = encode(nodes);
 
       switch (stage.value) {
         case _PatternStage.verifyExisting:
@@ -116,7 +107,7 @@ class PatternLockPage extends HookConsumerWidget {
             }
 
             // ignore: use_build_context_synchronously
-            context.maybePop(true);
+            unawaited(context.maybePop(true));
             onSuccess?.call();
           } finally {
             isLoading.value = false;
@@ -142,7 +133,7 @@ class PatternLockPage extends HookConsumerWidget {
               }
 
               // ignore: use_build_context_synchronously
-              context.maybePop(true);
+              unawaited(context.maybePop(true));
             } finally {
               isLoading.value = false;
             }
@@ -338,8 +329,7 @@ class _PatternBoardState extends State<_PatternBoard> {
                   centers: _centers,
                   activeNodes: _activeNodes,
                   fingerPosition: _currentPosition,
-                  // activeColor: color,
-                  activeColor: inactiveColor,
+                  activeColor: color,
                   inactiveColor: inactiveColor,
                 ),
               ),
@@ -393,7 +383,7 @@ class _PatternPainter extends CustomPainter {
     // Draw the trailing line to the finger position.
     if (activeNodes.isNotEmpty && fingerPosition != null) {
       final last = centers[activeNodes.last];
-      canvas.drawLine(last, fingerPosition!, linePaint..color = activeColor.withOpacity(0.6));
+      canvas.drawLine(last, fingerPosition!, linePaint..color = activeColor.withValues(alpha: 0.6));
     }
 
     // Draw nodes.

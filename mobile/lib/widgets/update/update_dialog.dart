@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -104,7 +106,9 @@ Future<bool> showUpdateAvailableDialog({
                         return;
                       }
                       UpdateCallbacks.setUp(null);
-                      if (ctx.mounted) ctx.maybePop(true);
+                      if (ctx.mounted) {
+                        unawaited(ctx.maybePop(true));
+                      }
                     },
                     child: const Text('curator.update_dialog_installation_update').tr(),
                   ),
