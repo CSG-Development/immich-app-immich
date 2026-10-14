@@ -27,8 +27,7 @@ class UploadRepository {
   void Function(TaskStatusUpdate)? onUploadStatus;
   void Function(TaskProgressUpdate)? onTaskProgress;
 
-  UploadRepository({required PhotosHttpClientProvider httpClientProvider})
-    : _httpClientProvider = httpClientProvider {
+  UploadRepository({required this._httpClientProvider}) {
     FileDownloader().registerCallbacks(
       group: kBackupGroup,
       taskStatusCallback: (update) => onUploadStatus?.call(update),

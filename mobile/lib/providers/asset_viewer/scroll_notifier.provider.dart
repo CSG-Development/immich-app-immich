@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -63,10 +62,14 @@ class ScrollNotifier with ChangeNotifier {
   }
 
   void handleItemPositionsChange(Iterable<ItemPosition> positions) {
-    if (positions.isEmpty) return;
+    if (positions.isEmpty) {
+      return;
+    }
     
     // Don't update visibility if we're in an overscroll state
-    if (_isOverscrolling) return;
+    if (_isOverscrolling) {
+      return;
+    }
     
     final minIndex = positions
         .where((pos) => pos.itemTrailingEdge > 0)
@@ -78,7 +81,9 @@ class ScrollNotifier with ChangeNotifier {
 
   void _updateVisibility(double current) {
     // Don't update visibility if we're in an overscroll state
-    if (_isOverscrolling) return;
+    if (_isOverscrolling) {
+      return;
+    }
     
     if (current > _lastOffset && _isVisible) {
       _isVisible = false;

@@ -21,7 +21,9 @@ Future<void> performArchiveAction(BuildContext context, WidgetRef ref, {required
 
   final result = await ref.read(actionProvider.notifier).archive(source);
 
-  if (!context.mounted) return;
+  if (!context.mounted) {
+    return;
+  }
 
   final successMessage = 'archive_action_prompt'.t(context: context, args: {'count': result.count.toString()});
 

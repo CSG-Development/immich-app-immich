@@ -41,7 +41,7 @@ class ScaffoldErrorBody extends StatelessWidget {
             FilledButton.tonalIcon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: Text('retry').tr(),
+              label: const Text('retry').tr(),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: const RoundedRectangleBorder(

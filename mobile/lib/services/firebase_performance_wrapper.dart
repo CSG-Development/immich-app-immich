@@ -12,7 +12,9 @@ class FirebasePerformanceWrapper {
 
   /// Initialize the wrapper. This should be called after Firebase.initializeApp()
   static Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      return;
+    }
     
     try {
       _firebasePerformance = FirebasePerformance.instance;
@@ -31,7 +33,9 @@ class FirebasePerformanceWrapper {
 
   /// Get a new HTTP metric trace, or null if Firebase is not available
   static HttpMetric? newHttpMetric(String url, HttpMethod httpMethod) {
-    if (!isAvailable) return null;
+    if (!isAvailable) {
+      return null;
+    }
     
     try {
       return _firebasePerformance!.newHttpMetric(url, httpMethod);
@@ -43,7 +47,9 @@ class FirebasePerformanceWrapper {
 
   /// Get a new trace, or null if Firebase is not available
   static Trace? newTrace(String name) {
-    if (!isAvailable) return null;
+    if (!isAvailable) {
+      return null;
+    }
     
     try {
       return _firebasePerformance!.newTrace(name);

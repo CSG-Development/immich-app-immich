@@ -331,10 +331,18 @@ class LocalExifService {
   Future<String> _detectFormatFromFile(File file) async {
     try {
       final header = await file.openRead(0, 32).expand((chunk) => chunk).take(32).toList();
-      if (_isJpeg(header)) return 'JPEG';
-      if (_isPng(header)) return 'PNG';
-      if (_isWebp(header)) return 'WEBP';
-      if (_isIsobmff(header)) return 'HEIC/MP4';
+      if (_isJpeg(header)) {
+        return 'JPEG';
+      }
+      if (_isPng(header)) {
+        return 'PNG';
+      }
+      if (_isWebp(header)) {
+        return 'WEBP';
+      }
+      if (_isIsobmff(header)) {
+        return 'HEIC/MP4';
+      }
     } catch (_) {
       // Fall back to extension-based format detection below.
     }

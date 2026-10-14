@@ -5,8 +5,6 @@ import 'dart:ui';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/material.dart';
 import 'package:hc_device/hc_device.dart';
-import 'package:hc_device/providers/hcdevice.provider.dart';
-import 'package:hc_device/utils/core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/log.model.dart';

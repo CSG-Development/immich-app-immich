@@ -111,20 +111,28 @@ class DriftSearchPage extends HookConsumerWidget {
     }
 
     void maybeRetrySearch() {
-      if (filter.value.isEmpty) return;
+      if (filter.value.isEmpty) {
+        return;
+      }
       final searchState = ref.read(paginatedSearchProvider);
-      if (searchState.error == null) return;
+      if (searchState.error == null) {
+        return;
+      }
       unawaited(ref.read(paginatedSearchProvider.notifier).search(filter.value));
     }
 
     ref.listen(connectionStateProvider, (prev, next) {
       final cameOnline = prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
-      if (!cameOnline) return;
+      if (!cameOnline) {
+        return;
+      }
       maybeRetrySearch();
     });
 
     ref.listen(curatorOsTransportUsableProvider, (prev, next) {
-      if (prev != false || next != true) return;
+      if (prev != false || next != true) {
+        return;
+      }
       maybeRetrySearch();
     });
 
