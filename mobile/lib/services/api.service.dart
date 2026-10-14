@@ -29,8 +29,8 @@ class ConnectionRecoveryInterceptor extends BaseClient {
   ConnectionRecoveryInterceptor(
     this._inner,
     this._onConnectionError, {
-    Function(String)? onRequestSuccess,
-  }) : _onRequestSuccess = onRequestSuccess;
+    this._onRequestSuccess,
+  });
 
   static const String _nsUrlErrorDomain = 'NSURLErrorDomain';
 

@@ -49,7 +49,9 @@ class AppUpdateService {
 
       final info = await _updateApi.fetchLatestUpdate(updateUrl);
       _log.info("checkOnStart info: ${info?.version ?? 'null'}");
-      if (info == null) return;
+      if (info == null) {
+        return;
+      }
 
       final pkg = await PackageInfo.fromPlatform();
 

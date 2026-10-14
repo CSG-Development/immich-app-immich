@@ -49,7 +49,9 @@ class DeveloperOptionsModal extends HookConsumerWidget {
             final isValidUrl = uri != null && uri.hasScheme && uri.hasAuthority;
             return TextButton(
               onPressed: () {
-                if (!isValidUrl) return;
+                if (!isValidUrl) {
+                  return;
+                }
                 handleSubmit(value.text);
                 Navigator.of(context).pop();
               },

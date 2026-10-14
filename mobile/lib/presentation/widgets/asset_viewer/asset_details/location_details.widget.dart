@@ -11,7 +11,6 @@ import 'package:immich_mobile/domain/models/events.model.dart';
 import 'package:immich_mobile/presentation/widgets/asset_viewer/sheet_tile.widget.dart';
 import 'package:immich_mobile/providers/infrastructure/action.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/asset_viewer/viewer_scope.provider.dart';
-import 'package:immich_mobile/providers/infrastructure/asset_viewer/asset.provider.dart';
 import 'package:immich_mobile/widgets/asset_viewer/detail_panel/exif_map.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 

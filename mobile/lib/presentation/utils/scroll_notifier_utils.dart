@@ -9,7 +9,9 @@ RemoveScrollListener attachScrollNotifierToController({
   required WidgetRef ref,
 }) {
   void onScroll() {
-    if (!controller.hasClients) return;
+    if (!controller.hasClients) {
+      return;
+    }
     final position = controller.position;
     ref.read(scrollNotifierProvider).handleOffset(
           offset: controller.offset,

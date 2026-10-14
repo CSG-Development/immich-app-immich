@@ -216,7 +216,7 @@ class _LocalAssetsSection extends ConsumerWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _PropertySectionCard(
             title: 'local_assets'.tr(),
-            properties: [_PropertyItem(label: 'Status', value: 'Loading...')],
+            properties: [const _PropertyItem(label: 'Status', value: 'Loading...')],
           );
         }
 
@@ -282,7 +282,7 @@ class _RemoteAssetSection extends ConsumerWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _PropertySectionCard(
             title: 'remote_assets'.tr(),
-            properties: [_PropertyItem(label: 'Status', value: 'Loading...')],
+            properties: [const _PropertyItem(label: 'Status', value: 'Loading...')],
           );
         }
 
