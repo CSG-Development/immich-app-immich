@@ -35,6 +35,9 @@ void main() {
   late Drift db;
 
   setUp(() async {
+    registerFallbackValue(Uri());
+    registerFallbackValue(const conn.ConnectionState());
+
     authApiRepository = MockAuthApiRepository();
     authRepository = MockAuthRepository();
     apiService = MockApiService();
@@ -56,9 +59,6 @@ void main() {
     when(() => apiService.clearAccessToken()).thenAnswer((_) async {});
     when(() => apiService.setEndpoint(any())).thenAnswer((_) {});
     when(() => apiService.notifyConnectionState(any())).thenAnswer((_) {});
-
-    registerFallbackValue(Uri());
-    registerFallbackValue(const conn.ConnectionState());
   });
 
   setUpAll(() async {

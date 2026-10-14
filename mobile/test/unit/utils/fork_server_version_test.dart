@@ -24,11 +24,16 @@ void main() {
   });
 
   group('ForkServerVersion.isAtLeastImmich3', () {
-    test('stays off on the current 1.x line until vImmich3 is assigned', () {
-      expect(ForkServerVersion.vImmich3, isNull);
+    test('enables Immich 3.x features from fork 1.34.0', () {
+      expect(ForkServerVersion.vImmich3, const SemVer(major: 1, minor: 34, patch: 0));
+      expect(const SemVer(major: 1, minor: 34, patch: 0).isAtLeastImmich3, isTrue);
+      expect(const SemVer(major: 1, minor: 35, patch: 0).isAtLeastImmich3, isTrue);
+    });
+
+    test('disables Immich 3.x features below fork 1.34.0', () {
       expect(const SemVer(major: 1, minor: 31, patch: 0).isAtLeastImmich3, isFalse);
       expect(const SemVer(major: 1, minor: 32, patch: 0).isAtLeastImmich3, isFalse);
-      expect(const SemVer(major: 1, minor: 40, patch: 0).isAtLeastImmich3, isFalse);
+      expect(const SemVer(major: 1, minor: 33, patch: 9).isAtLeastImmich3, isFalse);
     });
 
     test('enables vanilla Immich 3.x', () {
