@@ -1,17 +1,43 @@
 import Flutter
 import UIKit
+
+#if targetEnvironment(simulator) && (arch(arm64) || arch(arm64_32))
+// telemetry.xcframework ships x86_64/i386 simulator slices only (no arm64 simulator).
+// Same approach as ownCloud TelemetryAnalyticsTracker.
+public class TelemetryWrapperPlugin: NSObject, FlutterPlugin {
+  public static func register(with registrar: FlutterPluginRegistrar) {
+    let channel = FlutterMethodChannel(
+      name: "stxphotos/telemetry",
+      binaryMessenger: registrar.messenger()
+    )
+    let instance = TelemetryWrapperPlugin()
+    registrar.addMethodCallDelegate(instance, channel: channel)
+    registrar.addApplicationDelegate(instance)
+  }
+
+  public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "init", "send", "flush":
+      result(nil)
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+}
+
+#else
 import telemetry
 
 public class TelemetryWrapperPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-      let channel = FlutterMethodChannel(
-          name: "stxphotos/telemetry",
-          binaryMessenger: registrar.messenger()
-      )
+    let channel = FlutterMethodChannel(
+      name: "stxphotos/telemetry",
+      binaryMessenger: registrar.messenger()
+    )
 
-      let instance = TelemetryWrapperPlugin()
-      registrar.addMethodCallDelegate(instance, channel: channel)
-      registrar.addApplicationDelegate(instance)
+    let instance = TelemetryWrapperPlugin()
+    registrar.addMethodCallDelegate(instance, channel: channel)
+    registrar.addApplicationDelegate(instance)
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -66,7 +92,7 @@ public class TelemetryWrapperPlugin: NSObject, FlutterPlugin {
     TelemetryInit(clientId, requestType, configJSON)
     result(nil)
   }
-  
+
   private func handleSend(_ arguments: Any?, result: @escaping FlutterResult) {
     guard let args = arguments as? [Any],
           args.count == 2,
@@ -79,9 +105,11 @@ public class TelemetryWrapperPlugin: NSObject, FlutterPlugin {
     TelemetrySend(rType, messageJSON)
     result(nil)
   }
-  
+
   private func handleFlush(result: @escaping FlutterResult) {
     TelemetryFlush()
     result(nil)
   }
 }
+
+#endif
