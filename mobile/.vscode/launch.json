@@ -10,6 +10,17 @@
                 "--flavor",
                 "devSideload"
             ]
+        },
+        {
+            "name": "Flutter (iOS sim, flavor dev)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "deviceId": "iphone",
+            "args": [
+                "--flavor",
+                "dev"
+            ]
         }
     ]
 }
