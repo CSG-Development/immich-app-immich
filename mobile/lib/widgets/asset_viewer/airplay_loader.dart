@@ -30,7 +30,9 @@ class _AirplayLoaderState extends State<AirplayLoader> {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/airplay_loader.mp4');
       await file.writeAsBytes(bytes.buffer.asUint8List());
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => _tempPath = file.path);
     } catch (_) {
       // Fallback silently; UI will show a spinner

@@ -48,7 +48,9 @@ class RemoteAccessForm extends HookConsumerWidget {
       final email = emailController.text;
 
       final isDisabled = email.isEmpty || validateEmail(email) != null;
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
 
       final isAuthenticated = ref.read(remoteProvider).isAuthenticated;
       final authenticatedEmail = ref.read(deviceProvider).login ?? '';
@@ -82,7 +84,9 @@ class RemoteAccessForm extends HookConsumerWidget {
           hasEmailError.value = false;
           warningMessage.value = null;
         } else {
-          if (emailController.text.isEmpty) return;
+          if (emailController.text.isEmpty) {
+            return;
+          }
           final emailError = validateEmail(emailController.text);
           if (emailError != null) {
             hasEmailError.value = true;

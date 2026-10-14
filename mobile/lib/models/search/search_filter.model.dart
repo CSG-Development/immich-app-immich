@@ -260,7 +260,9 @@ class SearchExifFilterPair {
 
   @override
   bool operator ==(covariant SearchExifFilterPair other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     return other.tag == tag && other.value == value;
   }
 

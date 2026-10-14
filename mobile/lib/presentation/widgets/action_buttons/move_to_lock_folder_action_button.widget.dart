@@ -17,7 +17,9 @@ Future<void> performMoveToLockFolderAction(BuildContext context, WidgetRef ref, 
 
   final result = await ref.read(actionProvider.notifier).moveToLockFolder(source);
 
-  if (!context.mounted) return;
+  if (!context.mounted) {
+    return;
+  }
 
   if (source == ActionSource.viewer && result.success) {
     EventStream.shared.emit(const ViewerReloadAssetEvent());

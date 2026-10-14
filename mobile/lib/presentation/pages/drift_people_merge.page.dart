@@ -56,7 +56,9 @@ class DriftPeopleMergePage extends HookConsumerWidget {
     }
 
     bool shouldAutoRetry(AsyncValue<List<PersonDto>> async, {required bool fromOfflineTransport}) {
-      if (async.isLoading) return false;
+      if (async.isLoading) {
+        return false;
+      }
       if (async.hasError) {
         final error = async.error;
         return error != null && ConnectionRecoveryInterceptor.isTransportFailure(error);
@@ -67,20 +69,26 @@ class DriftPeopleMergePage extends HookConsumerWidget {
 
     void maybeAutoRetry({required bool fromOfflineTransport}) {
       final async = ref.read(getAllPeopleWithParamsProvider(peopleParams));
-      if (!shouldAutoRetry(async, fromOfflineTransport: fromOfflineTransport)) return;
+      if (!shouldAutoRetry(async, fromOfflineTransport: fromOfflineTransport)) {
+        return;
+      }
       retryLoadPeople();
     }
 
     // Airplane toggle updates OS transport before connectionState reaches connected.
     ref.listen(curatorOsTransportUsableProvider, (prev, next) {
-      if (prev != false || next != true) return;
+      if (prev != false || next != true) {
+        return;
+      }
       maybeAutoRetry(fromOfflineTransport: true);
     });
 
     ref.listen(connectionStateProvider, (prev, next) {
       final cameOnline =
           prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
-      if (!cameOnline) return;
+      if (!cameOnline) {
+        return;
+      }
       maybeAutoRetry(fromOfflineTransport: false);
     });
 
@@ -110,7 +118,9 @@ class DriftPeopleMergePage extends HookConsumerWidget {
           ),
         );
 
-        if (confirm != true) return;
+        if (confirm != true) {
+          return;
+        }
 
         isLoadingMerge.value = true;
 
@@ -387,7 +397,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                       height: 18,
                       colorFilter: ColorFilter.mode(
                         selectedPeopleIds.value.isEmpty
-                            ? context.colorScheme.onSurface.withOpacity(0.38)
+                            ? context.colorScheme.onSurface.withValues(alpha: 0.38)
                             : context.colorScheme.onPrimary,
                         BlendMode.srcIn,
                       ),
