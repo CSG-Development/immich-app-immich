@@ -551,15 +551,17 @@ void main() {
   });
 
   group('SyncStreamService - Sync Migration', () {
-    test('ensure that <2.5.0 migrations run', () async {
+    test('ensure that below V1_31 migrations run', () async {
       await Store.put(StoreKey.syncMigrationStatus, "[]");
+      // Vanilla Immich <2.7.5 maps below fork V1_31 feature gate.
       when(
         () => mockServerApi.getServerVersion(),
-      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 4, patch_: 1, prerelease: null));
+      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 7, patch_: 4, prerelease: null));
 
       await sut.sync();
 
       verifyInOrder([
+        () => mockSyncApiRepo.deleteSyncAck([SyncEntityType.albumV1]),
         () => mockSyncApiRepo.deleteSyncAck([
           SyncEntityType.assetExifV1,
           SyncEntityType.partnerAssetExifV1,
@@ -569,7 +571,7 @@ void main() {
         () => mockSyncMigrationRepo.v20260128CopyExifWidthHeightToAsset(),
       ]);
 
-      // should only run on server >2.5.0
+      // should only run on server >= V1_31 / Immich 2.7.5+
       verifyNever(
         () => mockSyncApiRepo.deleteSyncAck([
           SyncEntityType.assetV1,
@@ -579,14 +581,15 @@ void main() {
         ]),
       );
     });
-    test('ensure that >=2.5.0 migrations run', () async {
+    test('ensure that V1_31+ migrations run', () async {
       await Store.put(StoreKey.syncMigrationStatus, "[]");
       when(
         () => mockServerApi.getServerVersion(),
-      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 5, patch_: 0, prerelease: null));
+      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 7, patch_: 5, prerelease: null));
       await sut.sync();
 
       verifyInOrder([
+        () => mockSyncApiRepo.deleteSyncAck([SyncEntityType.albumV1]),
         () => mockSyncApiRepo.deleteSyncAck([
           SyncEntityType.assetExifV1,
           SyncEntityType.partnerAssetExifV1,
@@ -601,8 +604,23 @@ void main() {
         ]),
       ]);
 
+      // Immich 3 reset stays off until Immich 3.x / fork 1.34.0
+      verifyNever(() => mockSyncApiRepo.deleteSyncAck([SyncEntityType.assetV1, SyncEntityType.assetV2]));
+
       // v20260128_ResetAssetV1 writes that v20260128_CopyExifWidthHeightToAsset has been completed
       verifyNever(() => mockSyncMigrationRepo.v20260128CopyExifWidthHeightToAsset());
+    });
+
+    test('ensure that Immich3 migrations run', () async {
+      await Store.put(StoreKey.syncMigrationStatus, "[]");
+      when(
+        () => mockServerApi.getServerVersion(),
+      ).thenAnswer((_) async => ServerVersionResponseDto(major: 3, minor: 0, patch_: 0, prerelease: null));
+      await sut.sync();
+
+      verify(
+        () => mockSyncApiRepo.deleteSyncAck([SyncEntityType.assetV1, SyncEntityType.assetV2]),
+      ).called(1);
     });
 
     test('ensure that migrations do not re-run', () async {
@@ -613,7 +631,7 @@ void main() {
 
       when(
         () => mockServerApi.getServerVersion(),
-      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 4, patch_: 1, prerelease: null));
+      ).thenAnswer((_) async => ServerVersionResponseDto(major: 2, minor: 7, patch_: 4, prerelease: null));
 
       await sut.sync();
 

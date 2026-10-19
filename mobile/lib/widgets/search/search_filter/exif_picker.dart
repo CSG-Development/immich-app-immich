@@ -82,7 +82,7 @@ class _ExifPickerState extends State<ExifPicker> {
                           ? Column(
                               children: [
                                 DropdownButtonFormField<String>(
-                                  value: row.tag,
+                                  initialValue: row.tag,
                                   isExpanded: true,
                                   decoration: InputDecoration(
                                     labelText: _trOrFallback(context, 'search_filter_exif_tag', 'EXIF tag'),
@@ -134,7 +134,7 @@ class _ExifPickerState extends State<ExifPicker> {
                                 Expanded(
                                   flex: 4,
                                   child: DropdownButtonFormField<String>(
-                                    value: row.tag,
+                                    initialValue: row.tag,
                                     isExpanded: true,
                                     decoration: InputDecoration(
                                       labelText: _trOrFallback(context, 'search_filter_exif_tag', 'EXIF tag'),

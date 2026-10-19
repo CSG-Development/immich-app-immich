@@ -12,6 +12,7 @@ import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
 import 'package:immich_mobile/services/foreground_upload.service.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
@@ -105,7 +106,11 @@ class EditImagePage extends HookConsumerWidget {
         return;
       }
 
-      await ref.read(foregroundUploadServiceProvider).uploadManual([localAsset], cancelToken: Completer<void>());
+      await ref.read(foregroundUploadServiceProvider).uploadManual(
+        [localAsset],
+        cancelToken: Completer<void>(),
+        userId: ref.read(currentUserProvider)?.id,
+      );
     } catch (e) {
       ImmichToast.show(
         durationInSecond: 6,

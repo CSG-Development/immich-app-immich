@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hc_device/api/remote_access.enums.swagger.dart' show DevicePathType;
 import 'package:hc_device/hc_device.dart';
+import 'package:immich_mobile/services/api.service.dart' show EndpointResolvePolicy;
 import 'package:immich_mobile/services/network/endpoint_resolver.dart';
 
 class FakeEndpointResolver implements HcDeviceEndpointResolver {
@@ -49,6 +50,14 @@ class FakeEndpointResolver implements HcDeviceEndpointResolver {
     bool localOnly = false,
     ExternalEndpointValidator? validateExternal,
   }) async => null;
+
+  @override
+  Future<String> resolveAndSetEndpointWithPathType(
+    String serverUrl, {
+    DevicePathType? pathType,
+    EndpointResolvePolicy policy = EndpointResolvePolicy.conservative,
+    bool pathAlreadyProbed = false,
+  }) async => serverUrl;
 
   @override
   Future<EndpointResolutionResult> resolveWithDetails({

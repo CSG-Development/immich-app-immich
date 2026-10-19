@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'immich_logo.dart';
+import 'package:immich_mobile/widgets/common/immich_logo.dart';
 
 class ImmichLoadingIndicator extends HookWidget {
   final double? borderRadius;

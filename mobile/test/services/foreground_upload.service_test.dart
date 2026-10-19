@@ -30,6 +30,7 @@ void main() {
   late MockDriftBackupRepository mockBackupRepository;
   late MockConnectivityApi mockConnectivityApi;
   late MockAssetMediaRepository mockAssetMediaRepository;
+  late MockRemoteAlbumRepository mockRemoteAlbumRepository;
   late Drift db;
 
   setUpAll(() async {
@@ -48,6 +49,7 @@ void main() {
     registerFallbackValue(File('file'));
     registerFallbackValue(<String, String>{});
     registerFallbackValue(Completer<void>());
+    registerFallbackValue(LocalAssetStub.image1);
   });
 
   setUp(() {
@@ -56,6 +58,14 @@ void main() {
     mockBackupRepository = MockDriftBackupRepository();
     mockConnectivityApi = MockConnectivityApi();
     mockAssetMediaRepository = MockAssetMediaRepository();
+    mockRemoteAlbumRepository = MockRemoteAlbumRepository();
+    when(
+      () => mockRemoteAlbumRepository.upsertRemoteAssetStub(
+        remoteId: any(named: 'remoteId'),
+        ownerId: any(named: 'ownerId'),
+        source: any(named: 'source'),
+      ),
+    ).thenAnswer((_) async {});
 
     sut = ForegroundUploadService(
       mockUploadRepository,
@@ -63,6 +73,7 @@ void main() {
       mockBackupRepository,
       mockConnectivityApi,
       mockAssetMediaRepository,
+      mockRemoteAlbumRepository,
     );
   });
 
@@ -133,6 +144,13 @@ void main() {
       await sut.uploadCandidates(userId, Completer<void>());
 
       expect(captured, hasLength(1));
+      verify(
+        () => mockRemoteAlbumRepository.upsertRemoteAssetStub(
+          remoteId: any(named: 'remoteId'),
+          ownerId: userId,
+          source: any(named: 'source'),
+        ),
+      ).called(1);
     });
 
     test('uploads on metered wifi', () async {

@@ -184,7 +184,6 @@ class _BackupIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const widgetSize = 30.0;
     final backupError = ref.watch(driftBackupProvider.select((state) => state.error));
     final hasNetworkWarning = backupError.isNetworkWarning;
     final hasError = backupError.isFailure;
@@ -198,11 +197,6 @@ class _BackupIndicator extends ConsumerWidget {
             semanticLabel: 'backup_controller_page_backup'.tr(),
           )
         : _getBackupBadgeIcon(context, ref);
-    final badgeBackground = hasNetworkWarning
-        ? backupError.badgeBackgroundColor(context.colorScheme)
-        : hasError
-        ? context.colorScheme.errorContainer
-        : context.colorScheme.surfaceContainer;
 
     return IconButton(
       onPressed: () => context.pushRoute(const DriftBackupRoute()),

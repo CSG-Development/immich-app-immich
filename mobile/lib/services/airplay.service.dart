@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -193,7 +194,7 @@ class AirplayService {
       return false;
     } finally {
       // Disable statistics callback
-      FFmpegKitConfig.disableStatistics();
+      unawaited(FFmpegKitConfig.disableStatistics());
     }
   }
 
@@ -418,10 +419,10 @@ class AirplayService {
     for (final asset in assets) {
       if (asset.isImage) {
         // Pre-convert photos
-        preConvertPhotoForAirPlay(asset, ref);
+        unawaited(preConvertPhotoForAirPlay(asset, ref));
       } else if (asset.isVideo && asset.hasRemote) {
         // Pre-download remote videos
-        preDownloadVideoForAirPlay(asset, ref);
+        unawaited(preDownloadVideoForAirPlay(asset, ref));
       }
     }
   }

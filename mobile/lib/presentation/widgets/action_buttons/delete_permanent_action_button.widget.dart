@@ -61,7 +61,9 @@ class DeletePermanentActionButton extends ConsumerWidget {
       EventStream.shared.emit(const ViewerReloadAssetEvent());
     }
 
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      return;
+    }
 
     final successMessage = 'delete_permanently_action_prompt'.t(
       context: context,

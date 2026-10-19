@@ -37,6 +37,7 @@ dependencies:
   home_widget: ^0.9.3
   hooks_riverpod: ^2.6.1
   http: ^1.6.0
+  image: ^4.9.1
   image_picker: ^1.2.1
   immich_ui:
     path: './packages/ui'
@@ -64,6 +65,7 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   share_handler: ^0.0.25
   share_plus: ^10.1.4
+  shared_preferences: ^2.5.5
   sliver_tools: ^0.2.12
   stream_transform: ^2.1.1
   sqlite3: ^3.3.2
@@ -79,7 +81,7 @@ dependencies:
   firebase_core: ^3.13.1
   firebase_crashlytics: ^4.3.6
   firebase_performance: ^0.10.1+6
-  ffmpeg_kit_flutter_new: ^3.2.0
+  ffmpeg_kit_flutter_new: ^4.6.7
 
   background_downloader:
     path: background_downloader
