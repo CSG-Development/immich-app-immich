@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/developer_options.provider.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/widgets/forms/login/server_endpoint_input.dart';
 
 class DeveloperOptionsModal extends HookConsumerWidget {
@@ -106,7 +107,7 @@ class DeveloperOptionsModal extends HookConsumerWidget {
                 contentPadding: const EdgeInsets.all(0),
                 value: devEnableSettingsOnLogin,
                 onChanged: (value) => ref.read(developerOptionsProvider.notifier).updateDevEnableSettingsOnLogin(value),
-                activeThumbColor: context.primaryColor,
+                activeThumbColor: resolveSwitchActiveThumbColor(context),
                 dense: true,
                 title: Text('curator.developer_options.show_settings'.tr(), style: context.textTheme.bodyMedium),
               ),
