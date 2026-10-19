@@ -31,14 +31,14 @@ const partialConfig = {
 const updatedConfig = Object.freeze<SystemConfig>({
   job: {
     [QueueName.BackgroundTask]: { concurrency: 5 },
-    [QueueName.SmartSearch]: { concurrency: 2 },
+    [QueueName.SmartSearch]: { concurrency: 1 },
     [QueueName.MetadataExtraction]: { concurrency: 5 },
     [QueueName.FaceDetection]: { concurrency: 2 },
     [QueueName.Search]: { concurrency: 5 },
     [QueueName.Sidecar]: { concurrency: 5 },
     [QueueName.Library]: { concurrency: 5 },
     [QueueName.Migration]: { concurrency: 5 },
-    [QueueName.ThumbnailGeneration]: { concurrency: 3 },
+    [QueueName.ThumbnailGeneration]: { concurrency: 1 },
     [QueueName.VideoConversion]: { concurrency: 1 },
     [QueueName.Notification]: { concurrency: 5 },
     [QueueName.Ocr]: { concurrency: 1 },
@@ -116,7 +116,8 @@ const updatedConfig = Object.freeze<SystemConfig>({
     },
     clip: {
       enabled: true,
-      modelName: 'ViT-B-32__openai',
+      modelName: 'EVA02-B-16__merged2b_s8b_b131k',
+      probabilityThreshold: 0.95,
     },
     duplicateDetection: {
       enabled: true,
@@ -124,8 +125,8 @@ const updatedConfig = Object.freeze<SystemConfig>({
     },
     facialRecognition: {
       enabled: true,
-      modelName: 'buffalo_l',
-      minScore: 0.7,
+      modelName: 'arcfaceresnet8-100',
+      minScore: 0.5,
       maxDistance: 0.5,
       minFaces: 3,
     },
@@ -139,8 +140,8 @@ const updatedConfig = Object.freeze<SystemConfig>({
   },
   map: {
     enabled: true,
-    lightStyle: 'https://tiles.immich.cloud/v1/style/light.json',
-    darkStyle: 'https://tiles.immich.cloud/v1/style/dark.json',
+    lightStyle: 'https://map-tiles-test.api.mylyve.com/styles/light-style/style.json',
+    darkStyle: 'https://map-tiles-test.api.mylyve.com/styles/dark-style/style.json',
   },
   nightlyTasks: {
     startTime: '00:00',
@@ -207,7 +208,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
     extractEmbedded: false,
   },
   newVersionCheck: {
-    enabled: true,
+    enabled: false,
     channel: ReleaseChannel.Stable,
   },
   trash: {
