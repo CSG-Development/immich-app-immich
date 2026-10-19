@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class SettingsSwitchListTile extends StatelessWidget {
   final ValueNotifier<bool> valueNotifier;
@@ -37,34 +38,52 @@ class SettingsSwitchListTile extends StatelessWidget {
       onChanged?.call(value);
     }
 
+    final titleWidget = Text(
+      title,
+      style:
+          titleStyle ??
+          context.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: enabled ? null : context.themeData.disabledColor,
+            height: 1.5,
+          ),
+    );
+    final subtitleWidget = subtitle != null
+        ? Text(
+            subtitle!,
+            style:
+                subtitleStyle ??
+                context.textTheme.bodyMedium?.copyWith(
+                  color: enabled ? context.colorScheme.onSurfaceSecondary : context.themeData.disabledColor,
+                ),
+          )
+        : null;
+    final secondary = icon != null ? Icon(icon!, color: valueNotifier.value ? context.primaryColor : null) : null;
+
+    // Material under SG so SwitchTheme track outline applies on iOS (Cupertino adaptive ignores it).
+    if (isSgTheme(context.themeData)) {
+      return SwitchListTile(
+        contentPadding: contentPadding,
+        selectedTileColor: enabled ? null : context.themeData.disabledColor,
+        value: valueNotifier.value,
+        onChanged: enabled ? onSwitchChanged : null,
+        dense: true,
+        secondary: secondary,
+        title: titleWidget,
+        subtitle: subtitleWidget,
+      );
+    }
+
     return SwitchListTile.adaptive(
       contentPadding: contentPadding,
       selectedTileColor: enabled ? null : context.themeData.disabledColor,
       value: valueNotifier.value,
       onChanged: onSwitchChanged,
-      activeThumbColor: enabled ? context.primaryColor : context.themeData.disabledColor,
+      activeThumbColor: resolveSwitchActiveThumbColor(context, enabled: enabled),
       dense: true,
-      secondary: icon != null ? Icon(icon!, color: valueNotifier.value ? context.primaryColor : null) : null,
-      title: Text(
-        title,
-        style:
-            titleStyle ??
-            context.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: enabled ? null : context.themeData.disabledColor,
-              height: 1.5,
-            ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style:
-                  subtitleStyle ??
-                  context.textTheme.bodyMedium?.copyWith(
-                    color: enabled ? context.colorScheme.onSurfaceSecondary : context.themeData.disabledColor,
-                  ),
-            )
-          : null,
+      secondary: secondary,
+      title: titleWidget,
+      subtitle: subtitleWidget,
     );
   }
 }

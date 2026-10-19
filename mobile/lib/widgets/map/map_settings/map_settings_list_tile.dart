@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class MapSettingsListTile extends StatelessWidget {
   final String title;
@@ -12,7 +13,7 @@ class MapSettingsListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SwitchListTile.adaptive(
-      activeThumbColor: context.primaryColor,
+      activeThumbColor: resolveSwitchActiveThumbColor(context),
       title: Text(title, style: context.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500, height: 1.5)),
       value: selected,
       onChanged: onChanged,
