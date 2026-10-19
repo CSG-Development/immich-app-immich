@@ -18,10 +18,27 @@ describe(SearchService.name, () => {
   beforeEach(() => {
     ({ sut, mocks } = newTestService(SearchService));
     mocks.partner.getAll.mockResolvedValue([]);
+    mocks.search.searchSmart.mockResolvedValue({
+      hasNextPage: false,
+      items: [],
+    });
+    mocks.machineLearning.encodeText.mockResolvedValue('[1, 2, 3]');
   });
 
-  it('should work', () => {
-    expect(sut).toBeDefined();
+  it('should work', async () => {
+    await sut.searchSmart(authStub.user1, { query: 'test' });
+
+    expect(mocks.search.searchSmart).toHaveBeenCalledWith(
+      { page: 1, size: 100 },
+      {
+        query: 'test',
+        embedding: '[1, 2, 3]',
+        counterEmbedding: '[1, 2, 3]',
+        userIds: [authStub.user1.user.id],
+        visibility: 'not-locked',
+      },
+      0.95,
+    );
   });
 
   describe('searchPerson', () => {
@@ -248,22 +265,44 @@ describe(SearchService.name, () => {
         'test',
         expect.objectContaining({ modelName: expect.any(String) }),
       );
+
       expect(mocks.search.searchSmart).toHaveBeenCalledWith(
         { page: 1, size: 100 },
-        { query: 'test', embedding: '[1, 2, 3]', userIds: [authStub.user1.user.id], visibility: 'not-locked' },
+        {
+          query: 'test',
+          embedding: '[1, 2, 3]',
+          counterEmbedding: '[1, 2, 3]',
+          userIds: [authStub.user1.user.id],
+          visibility: 'not-locked',
+        },
+        0.95,
       );
     });
 
     it('should consider page and size parameters', async () => {
-      await sut.searchSmart(authStub.user1, { query: 'test', page: 2, size: 50 });
+      await sut.searchSmart(authStub.user1, {
+        query: 'test',
+        page: 2,
+        size: 50,
+      });
 
       expect(mocks.machineLearning.encodeText).toHaveBeenCalledWith(
         'test',
         expect.objectContaining({ modelName: expect.any(String) }),
       );
+
       expect(mocks.search.searchSmart).toHaveBeenCalledWith(
         { page: 2, size: 50 },
-        expect.objectContaining({ query: 'test', embedding: '[1, 2, 3]', userIds: [authStub.user1.user.id] }),
+        expect.objectContaining({
+          query: 'test',
+          embedding: '[1, 2, 3]',
+          counterEmbedding: '[1, 2, 3]',
+          userIds: [authStub.user1.user.id],
+          visibility: 'not-locked',
+          page: 2,
+          size: 50,
+        }),
+        0.95,
       );
     });
 
