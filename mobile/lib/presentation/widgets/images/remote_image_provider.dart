@@ -10,13 +10,8 @@ import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/utils/image_url_builder.dart';
 import 'package:openapi/api.dart';
 
-class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
-    with CancellableImageProviderMixin<RemoteImageProvider> {
-  /// Absolute URL for one-off remote images (faces, album covers, etc.).
+class RemoteImageProvider extends ImageProvider<RemoteImageProvider> {
   final String? _fixedUrl;
-
-  /// When set, the thumbnail URL is resolved at load time from [StoreKey.serverEndpoint]
-  /// so endpoint switches (local ↔ remote) do not keep a stale host.
   final String? assetId;
   final String? thumbhash;
   final bool edited;
@@ -35,19 +30,20 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
 
   @override
   ImageStreamCompleter loadImage(RemoteImageProvider key, ImageDecoderCallback decode) {
+    final loader = ImageLoader(key);
     return OneFramePlaceholderImageStreamCompleter(
-      _codec(key, decode),
+      _codec(loader, key, decode),
       informationCollector: () => <DiagnosticsNode>[
         DiagnosticsProperty<ImageProvider>('Image provider', this),
         DiagnosticsProperty<String>('URL', key.url),
       ],
-      onLastListenerRemoved: cancel,
+      onLastListenerRemoved: loader.cancel,
     );
   }
 
-  Stream<ImageInfo> _codec(RemoteImageProvider key, ImageDecoderCallback decode) {
-    final request = this.request = RemoteImageRequest(uri: key.url, headers: ApiService.getRequestHeaders());
-    return loadRequest(request, decode, isFinal: true);
+  Stream<ImageInfo> _codec(ImageLoader loader, RemoteImageProvider key, ImageDecoderCallback decode) {
+    final request = loader.request = RemoteImageRequest(uri: key.url, headers: ApiService.getRequestHeaders());
+    return loader.loadRequest(request, decode, isFinal: true);
   }
 
   @override
@@ -71,8 +67,7 @@ class RemoteImageProvider extends CancellableImageProvider<RemoteImageProvider>
   int get hashCode => assetId != null ? Object.hash(assetId, thumbhash, edited) : Object.hash(_fixedUrl, edited);
 }
 
-class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImageProvider>
-    with CancellableImageProviderMixin<RemoteFullImageProvider> {
+class RemoteFullImageProvider extends ImageProvider<RemoteFullImageProvider> {
   final String assetId;
   final String thumbhash;
   final AssetType assetType;
@@ -94,11 +89,12 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
 
   @override
   ImageStreamCompleter loadImage(RemoteFullImageProvider key, ImageDecoderCallback decode) {
+    final loader = ImageLoader(key);
     if (key.isAnimated) {
       return AnimatedImageStreamCompleter(
-        stream: _animatedCodec(key, decode),
+        stream: _animatedCodec(loader, key, decode),
         scale: 1.0,
-        initialImage: getInitialImage(
+        initialImage: loader.getInitialImage(
           RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash, edited: key.edited),
         ),
         informationCollector: () => <DiagnosticsNode>[
@@ -106,13 +102,13 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
           DiagnosticsProperty<String>('Asset Id', key.assetId),
           DiagnosticsProperty<bool>('isAnimated', key.isAnimated),
         ],
-        onLastListenerRemoved: cancel,
+        onLastListenerRemoved: loader.cancel,
       );
     }
 
     return OneFramePlaceholderImageStreamCompleter(
-      _codec(key, decode),
-      initialImage: getInitialImage(
+      _codec(loader, key, decode),
+      initialImage: loader.getInitialImage(
         RemoteImageProvider.thumbnail(assetId: key.assetId, thumbhash: key.thumbhash, edited: key.edited),
       ),
       informationCollector: () => <DiagnosticsNode>[
@@ -120,18 +116,18 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
         DiagnosticsProperty<String>('Asset Id', key.assetId),
         DiagnosticsProperty<bool>('isAnimated', key.isAnimated),
       ],
-      onLastListenerRemoved: cancel,
+      onLastListenerRemoved: loader.cancel,
     );
   }
 
-  Stream<ImageInfo> _codec(RemoteFullImageProvider key, ImageDecoderCallback decode) async* {
-    yield* initialImageStream();
+  Stream<ImageInfo> _codec(ImageLoader loader, RemoteFullImageProvider key, ImageDecoderCallback decode) async* {
+    yield* loader.initialImageStream();
 
-    if (isCancelled) {
+    if (loader.isCancelled) {
       return;
     }
 
-    final previewRequest = request = RemoteImageRequest(
+    final previewRequest = loader.request = RemoteImageRequest(
       uri: getThumbnailUrlForRemoteId(
         key.assetId,
         type: AssetMediaSize.preview,
@@ -141,31 +137,31 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
       headers: ApiService.getRequestHeaders(),
     );
     final loadOriginal = assetType == AssetType.image && SettingsRepository.instance.appConfig.image.loadOriginal;
-    yield* loadRequest(previewRequest, decode, isFinal: !loadOriginal);
+    yield* loader.loadRequest(previewRequest, decode, isFinal: !loadOriginal);
 
     if (!loadOriginal) {
       return;
     }
 
-    if (isCancelled) {
+    if (loader.isCancelled) {
       return;
     }
 
-    final originalRequest = request = RemoteImageRequest(
+    final originalRequest = loader.request = RemoteImageRequest(
       uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
-    yield* loadRequest(originalRequest, decode, isFinal: true);
+    yield* loader.loadRequest(originalRequest, decode, isFinal: true);
   }
 
-  Stream<Object> _animatedCodec(RemoteFullImageProvider key, ImageDecoderCallback decode) async* {
-    yield* initialImageStream();
+  Stream<Object> _animatedCodec(ImageLoader loader, RemoteFullImageProvider key, ImageDecoderCallback decode) async* {
+    yield* loader.initialImageStream();
 
-    if (isCancelled) {
+    if (loader.isCancelled) {
       return;
     }
 
-    final previewRequest = request = RemoteImageRequest(
+    final previewRequest = loader.request = RemoteImageRequest(
       uri: getThumbnailUrlForRemoteId(
         key.assetId,
         type: AssetMediaSize.preview,
@@ -174,20 +170,20 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
       ),
       headers: ApiService.getRequestHeaders(),
     );
-    yield* loadRequest(previewRequest, decode, isFinal: false);
+    yield* loader.loadRequest(previewRequest, decode, isFinal: false);
 
-    if (isCancelled) {
+    if (loader.isCancelled) {
       return;
     }
 
     // always try original for animated, since previews don't support animation
-    final originalRequest = request = RemoteImageRequest(
+    final originalRequest = loader.request = RemoteImageRequest(
       uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
-    final codec = await loadCodecRequest(originalRequest, isFinal: true);
+    final codec = await loader.loadCodecRequest(originalRequest, isFinal: true);
     if (codec == null) {
-      if (isCancelled) {
+      if (loader.isCancelled) {
         return;
       }
       throw StateError('Failed to load animated codec for asset ${key.assetId}');
@@ -214,14 +210,7 @@ class RemoteFullImageProvider extends CancellableImageProvider<RemoteFullImagePr
   int get hashCode => assetId.hashCode ^ thumbhash.hashCode ^ isAnimated.hashCode ^ edited.hashCode;
 }
 
-/// Remote image provider that always loads the original image file only.
-///
-/// Unlike [RemoteFullImageProvider], this provider does **not** stream the
-/// preview-sized image first. It directly requests the original asset URL.
-/// This is intended for use cases like image editing where we must operate
-/// on the full‑resolution source.
-class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOriginalImageProvider>
-    with CancellableImageProviderMixin<RemoteOriginalImageProvider> {
+class RemoteOriginalImageProvider extends ImageProvider<RemoteOriginalImageProvider> {
   final String assetId;
   final bool edited;
 
@@ -234,27 +223,27 @@ class RemoteOriginalImageProvider extends CancellableImageProvider<RemoteOrigina
 
   @override
   ImageStreamCompleter loadImage(RemoteOriginalImageProvider key, ImageDecoderCallback decode) {
+    final loader = ImageLoader(key);
     return OneFramePlaceholderImageStreamCompleter(
-      _codec(key, decode),
+      _codec(loader, key, decode),
       informationCollector: () => <DiagnosticsNode>[
         DiagnosticsProperty<ImageProvider>('Image provider', this),
         DiagnosticsProperty<String>('Asset Id', key.assetId),
       ],
-      onLastListenerRemoved: cancel,
+      onLastListenerRemoved: loader.cancel,
     );
   }
 
-  Stream<ImageInfo> _codec(RemoteOriginalImageProvider key, ImageDecoderCallback decode) async* {
-    if (isCancelled) {
-      await evict();
+  Stream<ImageInfo> _codec(ImageLoader loader, RemoteOriginalImageProvider key, ImageDecoderCallback decode) async* {
+    if (loader.isCancelled) {
       return;
     }
 
-    final request = this.request = RemoteImageRequest(
+    final request = loader.request = RemoteImageRequest(
       uri: getOriginalUrlForRemoteId(key.assetId, edited: key.edited),
       headers: ApiService.getRequestHeaders(),
     );
-    yield* loadRequest(request, decode, isFinal: true);
+    yield* loader.loadRequest(request, decode, isFinal: true);
   }
 
   @override
