@@ -11,6 +11,7 @@ import 'package:immich_mobile/domain/models/user.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/presentation/pages/drift_user_selection.page.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/album.provider.dart';
@@ -209,7 +210,7 @@ class DriftAlbumOptionsPage extends HookConsumerWidget {
                   activityEnabled.value = value;
                   await ref.read(remoteAlbumProvider.notifier).setActivityStatus(album.id, value);
                 },
-                activeThumbColor: activityEnabled.value ? context.primaryColor : context.themeData.disabledColor,
+                activeThumbColor: resolveSwitchActiveThumbColor(context, enabled: activityEnabled.value),
                 dense: true,
                 title: Text(
                   "comments_and_likes",
