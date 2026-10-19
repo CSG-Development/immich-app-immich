@@ -182,6 +182,50 @@ class ImmichToastColors extends ThemeExtension<ImmichToastColors> {
   }
 }
 
+/// Whether the active [ThemeData] is the Seagate (SG) color preset.
+bool isSgTheme(ThemeData theme) {
+  final chrome = theme.extension<ImmichBrandColors>()?.chromeSurface;
+  return chrome == sgChromeSurfaceLight || chrome == sgChromeSurfaceDark;
+}
+
+/// SG switch (Figma): on track+white thumb; off track+grey thumb/outline.
+SwitchThemeData sgSwitchTheme({required bool isDark}) {
+  // Light: #2F743C / #FFFFFF / #6D6D6D / #E7E7E7
+  // Dark:  #8CD873 / #FFFFFF / #B0B0B0 / #5D5D5D
+  final trackOn = isDark ? sgBrandColorDark : sgBrandColorLight;
+  final trackOff = isDark ? sgSwitchTrackOffDark : sgSurfaceLight;
+  final thumbOff = isDark ? sgSwitchThumbOffDark : sgCtaBorderColor;
+
+  return SwitchThemeData(
+    thumbColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return Colors.white;
+      }
+      return thumbOff;
+    }),
+    trackColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return trackOn;
+      }
+      return trackOff;
+    }),
+    trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return Colors.transparent;
+      }
+      return thumbOff;
+    }),
+  );
+}
+
+/// Non-SG: brand thumb. SG: null so [SwitchThemeData] applies.
+Color? resolveSwitchActiveThumbColor(BuildContext context, {bool enabled = true}) {
+  if (isSgTheme(Theme.of(context))) {
+    return null;
+  }
+  return enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor;
+}
+
 /// Filter chips / library section tabs: SG chrome (white/black); other presets keep [fallback].
 Color resolveSgChipBackground(BuildContext context, {required Color fallback}) {
   final chrome = Theme.of(context).extension<ImmichBrandColors>()?.chromeSurface;
@@ -418,6 +462,7 @@ ThemeData getThemeData({
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
       },
     ),
+    switchTheme: isSg ? sgSwitchTheme(isDark: isDark) : const SwitchThemeData(),
   );
 }
 

@@ -8,6 +8,7 @@ import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
 import 'package:immich_mobile/providers/theme.provider.dart';
 import 'package:immich_mobile/theme/color_scheme.dart';
 import 'package:immich_mobile/theme/dynamic_theme.dart';
+import 'package:immich_mobile/theme/theme_data.dart';
 
 class PrimaryColorSetting extends HookConsumerWidget {
   const PrimaryColorSetting({super.key});
@@ -100,7 +101,7 @@ class PrimaryColorSetting extends HookConsumerWidget {
               child: SwitchListTile.adaptive(
                 contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
                 dense: true,
-                activeThumbColor: context.primaryColor,
+                activeThumbColor: resolveSwitchActiveThumbColor(context),
                 tileColor: context.colorScheme.surfaceContainerHigh,
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
                 title: Text(
