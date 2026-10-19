@@ -16,7 +16,11 @@ class BackupAlbumNotifier extends StateNotifier<List<LocalAlbum>> {
   final LocalAlbumService _localAlbumService;
 
   Future<void> getAll() async {
-    state = await _localAlbumService.getAll(sortBy: {SortLocalAlbumsBy.assetCount});
+    final albums = await _localAlbumService.getAll(sortBy: {SortLocalAlbumsBy.assetCount});
+    if (!mounted) {
+      return;
+    }
+    state = albums;
   }
 
   Future<void> selectAlbum(LocalAlbum album) async {
