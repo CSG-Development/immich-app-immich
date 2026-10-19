@@ -25,7 +25,7 @@ describe(SmartInfoService.name, () => {
     it('should allow a valid model', () => {
       expect(() =>
         sut.onConfigValidate({
-          newConfig: { machineLearning: { clip: { modelName: 'ViT-B-16__openai' } } } as SystemConfig,
+          newConfig: { machineLearning: { clip: { modelName: 'EVA02-B-16__merged2b_s8b_b131k' } } } as SystemConfig,
           oldConfig: {} as SystemConfig,
         }),
       ).not.toThrow();
@@ -34,7 +34,7 @@ describe(SmartInfoService.name, () => {
     it('should allow including organization', () => {
       expect(() =>
         sut.onConfigValidate({
-          newConfig: { machineLearning: { clip: { modelName: 'immich-app/ViT-B-16__openai' } } } as SystemConfig,
+          newConfig: { machineLearning: { clip: { modelName: 'immich-app/EVA02-B-16__merged2b_s8b_b131k' } } } as SystemConfig,
           oldConfig: {} as SystemConfig,
         }),
       ).not.toThrow();
@@ -99,10 +99,10 @@ describe(SmartInfoService.name, () => {
 
       await sut.onConfigUpdate({
         newConfig: {
-          machineLearning: { clip: { modelName: 'ViT-B-16__openai', enabled: true }, enabled: true },
+          machineLearning: { clip: { modelName: 'EVA02-B-16__merged2b_s8b_b131k', enabled: true }, enabled: true },
         } as SystemConfig,
         oldConfig: {
-          machineLearning: { clip: { modelName: 'ViT-B-16__openai', enabled: true }, enabled: true },
+          machineLearning: { clip: { modelName: 'EVA02-B-16__merged2b_s8b_b131k', enabled: true }, enabled: true },
         } as SystemConfig,
       });
 
@@ -119,7 +119,7 @@ describe(SmartInfoService.name, () => {
           machineLearning: { clip: { modelName: 'ViT-L-14-quickgelu__dfn2b', enabled: true }, enabled: true },
         } as SystemConfig,
         oldConfig: {
-          machineLearning: { clip: { modelName: 'ViT-B-16__openai', enabled: true }, enabled: true },
+          machineLearning: { clip: { modelName: 'EVA02-B-16__merged2b_s8b_b131k', enabled: true }, enabled: true },
         } as SystemConfig,
       });
 
@@ -135,7 +135,7 @@ describe(SmartInfoService.name, () => {
           machineLearning: { clip: { modelName: 'ViT-B-32__openai', enabled: true }, enabled: true },
         } as SystemConfig,
         oldConfig: {
-          machineLearning: { clip: { modelName: 'ViT-B-16__openai', enabled: true }, enabled: true },
+          machineLearning: { clip: { modelName: 'EVA02-B-16__merged2b_s8b_b131k', enabled: true }, enabled: true },
         } as SystemConfig,
       });
 
@@ -206,7 +206,7 @@ describe(SmartInfoService.name, () => {
 
       expect(mocks.machineLearning.encodeImage).toHaveBeenCalledWith(
         asset.files[0].path,
-        expect.objectContaining({ modelName: 'ViT-B-32__openai' }),
+        expect.objectContaining({ modelName: 'EVA02-B-16__merged2b_s8b_b131k' }),
       );
       expect(mocks.search.upsert).toHaveBeenCalledWith(asset.id, '[0.01, 0.02, 0.03]');
     });
@@ -243,7 +243,7 @@ describe(SmartInfoService.name, () => {
       expect(mocks.database.wait).toHaveBeenCalledWith(512);
       expect(mocks.machineLearning.encodeImage).toHaveBeenCalledWith(
         asset.files[0].path,
-        expect.objectContaining({ modelName: 'ViT-B-32__openai' }),
+        expect.objectContaining({ modelName: 'EVA02-B-16__merged2b_s8b_b131k' }),
       );
       expect(mocks.search.upsert).toHaveBeenCalledWith(asset.id, '[0.01, 0.02, 0.03]');
     });
@@ -251,7 +251,7 @@ describe(SmartInfoService.name, () => {
 
   describe('getCLIPModelInfo', () => {
     it('should return the model info', () => {
-      expect(getCLIPModelInfo('ViT-B-32__openai')).toEqual({ dimSize: 512 });
+      expect(getCLIPModelInfo('EVA02-B-16__merged2b_s8b_b131k')).toEqual({ dimSize: 512 });
       expect(getCLIPModelInfo('M-CLIP/XLM-Roberta-Large-Vit-L-14')).toEqual({ dimSize: 768 });
     });
 

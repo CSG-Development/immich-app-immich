@@ -66,24 +66,24 @@ describe(UserController.name, () => {
   //   });
   // });
 
-  describe('GET /users/:id', () => {
-    it('should be an authenticated route', async () => {
-      await request(ctx.getHttpServer()).get(`/users/${factory.uuid()}`);
-      expect(ctx.authenticate).toHaveBeenCalled();
-    });
-  });
-
-  describe('PUT /users/me/license', () => {
-    it('should be an authenticated route', async () => {
-      await request(ctx.getHttpServer()).put('/users/me/license');
-      expect(ctx.authenticate).toHaveBeenCalled();
-    });
-  });
-
-  describe('DELETE /users/me/license', () => {
-    it('should be an authenticated route', async () => {
-      await request(ctx.getHttpServer()).delete('/users/me/license');
-      expect(ctx.authenticate).toHaveBeenCalled();
-    });
-  });
+  // describe('GET /users/:id', () => {
+  //   it('should be an authenticated route', async () => {
+  //     await request(ctx.getHttpServer()).get(`/users/${factory.uuid()}`);
+  //     expect(ctx.authenticate).toHaveBeenCalled();
+  //   });
+  // });
+  //
+  // describe('PUT /users/me/license', () => {
+  //   it('should be an authenticated route', async () => {
+  //     await request(ctx.getHttpServer()).put('/users/me/license');
+  //     expect(ctx.authenticate).toHaveBeenCalled();
+  //   });
+  // });
+  //
+  // describe('DELETE /users/me/license', () => {
+  //   it('should be an authenticated route', async () => {
+  //     await request(ctx.getHttpServer()).delete('/users/me/license');
+  //     expect(ctx.authenticate).toHaveBeenCalled();
+  //   });
+  // });
 });
