@@ -104,7 +104,7 @@ class _DateTimePicker extends HookWidget {
     }
 
     void popWithDateTime() {
-      final formattedDateTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(date.value);
+      final formattedDateTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss", 'en').format(date.value);
       final dtWithOffset =
           formattedDateTime + Duration(milliseconds: tzOffset.value.offsetInMilliseconds).formatAsOffset();
       context.pop(dtWithOffset);
