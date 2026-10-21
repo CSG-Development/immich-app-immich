@@ -27,6 +27,10 @@ const Color sgChromeSurfaceDark = Color(0xFF191919);
 const Color sgTimelineSurfaceLight = Color(0xFFE7E7E7);
 const Color sgTimelineSurfaceDark = Color(0xFF4F4F4F);
 
+/// SG switch — dark off track / thumb+outline (on: brand; light off: [sgSurfaceLight] / [sgCtaBorderColor]).
+const Color sgSwitchTrackOffDark = Color(0xFF5D5D5D);
+const Color sgSwitchThumbOffDark = Color(0xFFB0B0B0);
+
 const Color whiteOpacity75 = Color.fromRGBO(255, 255, 255, 0.75);
 const Color red400 = Color(0xFFEF5350);
 const Color grey200 = Color(0xFFEEEEEE);
