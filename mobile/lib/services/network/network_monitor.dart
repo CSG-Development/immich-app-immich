@@ -55,12 +55,14 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
     this.probeActiveEndpoint,
     this.getActivePathType,
     RecoveryPolicy? policy,
+    SnapshotBuilder? snapshotBuilder,
   }) {
-    _snapshotBuilder = SnapshotBuilder(
-      deviceProvider: deviceProvider,
-      remoteProvider: remoteProvider,
-      isOtpModalShowing: isOtpModalShowing,
-    );
+    _snapshotBuilder = snapshotBuilder ??
+      SnapshotBuilder(
+        deviceProvider: deviceProvider,
+        remoteProvider: remoteProvider,
+        isOtpModalShowing: isOtpModalShowing,
+      );
     _executor = RecoveryExecutor(
       snapshotBuilder: _snapshotBuilder,
       policy: policy ?? const RecoveryPolicy(),
@@ -139,12 +141,38 @@ class CuratorNetworkMonitor implements RecoveryExecutorCallbacks {
       return;
     }
     _isStarted = true;
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
+    _connectivitySubscription = Connectivity().onConnectivityChanged
+        .listen(_onConnectivityChanged, onError: (Object error) {
+      // A dropped plugin stream must not surface as an unhandled zone error.
+      _log.warning('[Network] Connectivity stream error', error);
+    });
     _endpointHealthTimer?.cancel();
     _endpointHealthTimer = Timer.periodic(curatorEndpointHealthProbeInterval, (_) {
       unawaited(_runEndpointHealthCheck());
     });
-    unawaited(_bootstrapNetworkState());
+    // Cold start has no lifecycle resume / connectivity-change trigger, and a
+    // reachable remote endpoint never fails the health probe — so upgrade
+    // cached remote→local once after bootstrap.
+    unawaited(
+      _bootstrapNetworkState().then((_) {
+        if (!_isStarted || !_isAppInForeground) {
+          return;
+        }
+        if (getActivePathType?.call() == HcPathType.local) {
+          return;
+        }
+        _log.info('[Network] cold start on cached non-local path, running startup recovery');
+        unawaited(
+          _runRecovery(
+            const RecoveryEvent(
+              trigger: RecoveryTrigger.appResume,
+              suppressFindingToast: true,
+              detail: 'cold_start',
+            ),
+          ),
+        );
+      }),
+    );
     _log.info('[Network] Started monitoring network changes');
   }
 
