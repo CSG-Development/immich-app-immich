@@ -59,6 +59,20 @@ class HcDeviceEndpointResolver {
   final AsyncMutex _resolveMutex = AsyncMutex();
   Future<void>? _initFuture;
 
+  /// Activation priority within one resolve run. A `path_upgrade` to local can
+  /// activate while the resolve winner is still probing; that winner is
+  /// activated afterwards and would overwrite the better path, so a strictly
+  /// lower priority activation of the same run is dropped.
+  static int _pathTypeRank(String? pathType) => switch (pathType) {
+    HcPathType.local => 0,
+    HcPathType.public => 1,
+    HcPathType.remote => 2,
+    _ => 3,
+  };
+
+  String? _runActivatedPathType;
+  EndpointResolutionResult? _runActivatedResult;
+
   Future<void> init() => _initFuture ??= _initOnce();
 
   Future<void> _initOnce() async {
@@ -168,6 +182,21 @@ class HcDeviceEndpointResolver {
       return null;
     }
 
+    final candidatePathType = resolvedPathType ?? result.resolvedPathType;
+    final claimedPathType = _runActivatedPathType;
+    if (claimedPathType != null &&
+        _pathTypeRank(candidatePathType) > _pathTypeRank(claimedPathType)) {
+      _log.info(
+        '[Resolver] activation superseded by a better path of the same resolve run '
+        'keep=$claimedPathType drop=${candidatePathType ?? '-'} '
+        'selectionSource=${selectionSource ?? result.selectionSource ?? '-'} '
+        'trigger=$trigger runId=$runId endpoint=$candidate',
+      );
+      return _runActivatedResult;
+    }
+    // Claim the run before the first await so an in-flight activation counts.
+    _runActivatedPathType = candidatePathType ?? claimedPathType;
+
     try {
       final resolved = await _apiService.resolveAndSetEndpoint(
         candidate,
@@ -190,13 +219,19 @@ class HcDeviceEndpointResolver {
         'runId=$runId '
         'endpoint=$resolved',
       );
-      return EndpointResolutionResult.fromHcPath(
+      final activated = EndpointResolutionResult.fromHcPath(
         result,
         endpoint: resolved,
         selectionSource: selectionSource ?? result.selectionSource,
         resolvedPathType: activePathType,
       );
+      _runActivatedResult = activated;
+      return activated;
     } catch (error, stackTrace) {
+      _runActivatedPathType = claimedPathType;
+      if (claimedPathType == null) {
+        _runActivatedResult = null;
+      }
       _log.warning(
         '[Resolver] endpoint activation failed '
         'trigger=$trigger '
@@ -292,6 +327,9 @@ class HcDeviceEndpointResolver {
       'mode=${mode.name} localOnly=$localOnly runId=$runId '
       'allowFallback=$allowFallbackToPreviousEndpoint',
     );
+    // New run: the previous run's activation priority must not carry over.
+    _runActivatedPathType = null;
+    _runActivatedResult = null;
     final result = await _resolver.resolvePath(
       mode: mode,
       trigger: triggerConfig.resolveTrigger,
