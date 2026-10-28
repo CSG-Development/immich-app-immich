@@ -6,7 +6,16 @@ import 'package:immich_mobile/theme/dynamic_theme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
 
 final immichThemeProvider = StateProvider<ImmichTheme>((ref) {
-  final themeConfig = ref.watch(appConfigProvider.select((config) => config.theme));
+  // Mode does not affect ImmichTheme contents — watch only the fields that do.
+  final themeConfig = ref.watch(
+    appConfigProvider.select(
+      (config) => (
+        primaryColor: config.theme.primaryColor,
+        dynamicTheme: config.theme.dynamicTheme,
+        colorfulInterface: config.theme.colorfulInterface,
+      ),
+    ),
+  );
 
   final ImmichTheme? dynamicTheme = DynamicTheme.theme;
   final useDynamicThemeForPreset = themeConfig.primaryColor != ImmichColorPreset.sg;
