@@ -82,6 +82,21 @@ class ImmichBrandColors extends ThemeExtension<ImmichBrandColors> {
       chromeSurface: Color.lerp(chromeSurface, other.chromeSurface, t)!,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is ImmichBrandColors &&
+        other.cta == cta &&
+        other.ctaPressed == ctaPressed &&
+        other.timelineSurface == timelineSurface &&
+        other.chromeSurface == chromeSurface;
+  }
+
+  @override
+  int get hashCode => Object.hash(cta, ctaPressed, timelineSurface, chromeSurface);
 }
 
 @immutable
@@ -180,6 +195,27 @@ class ImmichToastColors extends ThemeExtension<ImmichToastColors> {
       border: Color.lerp(border, other.border, t)!,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is ImmichToastColors &&
+        other.info == info &&
+        other.success == success &&
+        other.error == error &&
+        other.actionInfo == actionInfo &&
+        other.actionDescription == actionDescription &&
+        other.actionCta == actionCta &&
+        other.actionClose == actionClose &&
+        other.background == background &&
+        other.border == border;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(info, success, error, actionInfo, actionDescription, actionCta, actionClose, background, border);
 }
 
 /// Whether the active [ThemeData] is the Seagate (SG) color preset.
@@ -261,7 +297,46 @@ ColorScheme normalizeColorScheme(ColorScheme colorScheme) {
   );
 }
 
+/// Instance cache for [getThemeData], keyed by its exact inputs (bounded, insertion-ordered).
+/// [getThemeData] is a pure function of its parameters; handing `MaterialApp` the *same*
+/// [ThemeData] instance while inputs are unchanged keeps `AnimatedTheme` from restarting the
+/// 200 ms theme crossfade when an unrelated app setting toggles (e.g. "Automatic (follow
+/// system settings)" / "Colorful interface" on the SG preset — Preferences flicker).
+/// Value equality of two separately built themes is not reachable instead: the theme installs
+/// non-const `WidgetStateProperty.resolveWith` lambdas (compared by identity) and Flutter 3.44
+/// wide-gamut `Color.lerp(x, x, t)` is not float-exact, so only instance reuse skips the gate.
+final _themeDataCache = <Object, ThemeData>{};
+
 ThemeData getThemeData({
+  required ColorScheme colorScheme,
+  required Locale locale,
+  Color? ctaColor,
+  Color? ctaPressedColor,
+  Color? timelineSurface,
+  Color? chromeSurface,
+}) {
+  final cacheKey = (colorScheme, locale, ctaColor, ctaPressedColor, timelineSurface, chromeSurface);
+  final cached = _themeDataCache[cacheKey];
+  if (cached != null) {
+    return cached;
+  }
+  final theme = _buildThemeData(
+    colorScheme: colorScheme,
+    locale: locale,
+    ctaColor: ctaColor,
+    ctaPressedColor: ctaPressedColor,
+    timelineSurface: timelineSurface,
+    chromeSurface: chromeSurface,
+  );
+  // Bounded FIFO eviction; presets x brightness x palettes stay well below the cap.
+  if (_themeDataCache.length >= 8) {
+    _themeDataCache.remove(_themeDataCache.keys.first);
+  }
+  _themeDataCache[cacheKey] = theme;
+  return theme;
+}
+
+ThemeData _buildThemeData({
   required ColorScheme colorScheme,
   required Locale locale,
   Color? ctaColor,
