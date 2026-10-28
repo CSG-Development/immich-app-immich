@@ -6,6 +6,7 @@ import 'package:immich_mobile/domain/models/album/album.model.dart';
 import 'package:immich_mobile/presentation/actions/action.widget.dart';
 import 'package:immich_mobile/presentation/actions/asset_debug.action.dart';
 import 'package:immich_mobile/presentation/actions/timeline.action.dart';
+import 'package:immich_mobile/presentation/utils/add_to_album_result_toast.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/archive_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/bulk_tag_assets_action_button.widget.dart';
 import 'package:immich_mobile/presentation/widgets/action_buttons/delete_action_button.widget.dart';
@@ -76,12 +77,11 @@ class _GeneralBottomSheetState extends ConsumerState<GeneralBottomSheet> {
         ImmichToast.show(context: context, msg: 'scaffold_body_error_occurred'.tr(), toastType: ToastType.error);
         return;
       }
-      ImmichToast.show(
+      showAddToAlbumResultToast(
         context: context,
-        msg: result.count == 0
-            ? 'add_to_album_bottom_sheet_already_exists'.tr(namedArgs: {'album': album.name})
-            : 'add_to_album_bottom_sheet_added'.tr(namedArgs: {'album': album.name}),
-        toastType: result.count == 0 ? ToastType.info : ToastType.success,
+        albumName: album.name,
+        added: result.count,
+        failed: result.failedCount,
       );
     }
 
