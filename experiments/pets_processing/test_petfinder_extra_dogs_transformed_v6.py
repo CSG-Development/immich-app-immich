@@ -28,8 +28,7 @@ def load_embedding(name, num):
 
     emb = emb.float().cpu()
 
-    # Оставляем размерность такой же,
-    # какой она была сохранена моделью.
+    # Leaving the dimension as the model has saved it
     if emb.ndim == 1:
         emb = emb.unsqueeze(0)
 
