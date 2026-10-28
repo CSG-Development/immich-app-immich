@@ -23,31 +23,53 @@ class ImmichThemeProvider extends StatelessWidget {
         ],
         colorScheme: colorScheme,
         brightness: colorScheme.brightness,
-        inputDecorationTheme: InputDecorationTheme(
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          border: WidgetStateInputBorder.resolveWith((states) {
-            final color = states.contains(WidgetState.error)
-                ? colorScheme.error
-                : states.contains(WidgetState.focused)
-                ? colorScheme.primary
-                : colorScheme.outline;
-            return OutlineInputBorder(
-              borderSide: BorderSide(color: color),
-              borderRadius: const BorderRadius.all(Radius.circular(ImmichRadius.md)),
-            );
-          }),
-          labelStyle: WidgetStateTextStyle.resolveWith((states) {
-            final color = states.contains(WidgetState.error) ? colorScheme.error : colorScheme.primary;
-            return TextStyle(color: color, fontWeight: FontWeight.w600);
-          }),
-          hintStyle: const TextStyle(fontSize: ImmichTextSize.body),
-          errorStyle: TextStyle(color: colorScheme.error, fontWeight: FontWeight.w600),
-        ),
+        inputDecorationTheme: _inputDecorationFor(colorScheme),
       ),
       child: child,
     );
   }
 }
+
+/// Instance cache so an equal-content rebuild keeps the inner [Theme] value-equal:
+/// [InputDecorationTheme] embeds `WidgetStateProperty` lambdas (no value equality), so a
+/// freshly built one makes the inner Theme re-notify the whole subtree on every build
+/// (Preferences toggle flicker, bugfix-03). Same decoration instance per colorScheme.
+final _inputDecorationCache = <ColorScheme, InputDecorationTheme>{};
+
+InputDecorationTheme _inputDecorationFor(ColorScheme colorScheme) {
+  final cached = _inputDecorationCache[colorScheme];
+  if (cached != null) {
+    return cached;
+  }
+  final decoration = _buildInputDecoration(colorScheme);
+  // Bounded FIFO eviction, mirrors the ThemeData cache in the app.
+  if (_inputDecorationCache.length >= 8) {
+    _inputDecorationCache.remove(_inputDecorationCache.keys.first);
+  }
+  _inputDecorationCache[colorScheme] = decoration;
+  return decoration;
+}
+
+InputDecorationTheme _buildInputDecoration(ColorScheme colorScheme) => InputDecorationTheme(
+      floatingLabelBehavior: FloatingLabelBehavior.always,
+      border: WidgetStateInputBorder.resolveWith((states) {
+        final color = states.contains(WidgetState.error)
+            ? colorScheme.error
+            : states.contains(WidgetState.focused)
+            ? colorScheme.primary
+            : colorScheme.outline;
+        return OutlineInputBorder(
+          borderSide: BorderSide(color: color),
+          borderRadius: const BorderRadius.all(Radius.circular(ImmichRadius.md)),
+        );
+      }),
+      labelStyle: WidgetStateTextStyle.resolveWith((states) {
+        final color = states.contains(WidgetState.error) ? colorScheme.error : colorScheme.primary;
+        return TextStyle(color: color, fontWeight: FontWeight.w600);
+      }),
+      hintStyle: const TextStyle(fontSize: ImmichTextSize.body),
+      errorStyle: TextStyle(color: colorScheme.error, fontWeight: FontWeight.w600),
+    );
 
 class ImmichColors extends ThemeExtension<ImmichColors> {
   final Color info;
@@ -106,6 +128,23 @@ class ImmichColors extends ThemeExtension<ImmichColors> {
       onError: Color.lerp(onError, other.onError, t)!,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is ImmichColors &&
+        other.info == info &&
+        other.onInfo == onInfo &&
+        other.success == success &&
+        other.onSuccess == onSuccess &&
+        other.error == error &&
+        other.onError == onError;
+  }
+
+  @override
+  int get hashCode => Object.hash(info, onInfo, success, onSuccess, error, onError);
 }
 
 extension on ColorScheme {
