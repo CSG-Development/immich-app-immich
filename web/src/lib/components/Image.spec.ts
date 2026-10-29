@@ -55,11 +55,12 @@ describe('Image component', () => {
     expect(cancelImageUrl).toHaveBeenCalledWith('/test.jpg');
   });
 
-  it('does not cancel after a successful load on unmount', async () => {
+  it('cancels the current url on unmount even after a successful load', async () => {
     const { baseElement, unmount } = render(Image, { src: '/test.jpg' });
     await fireEvent.load(baseElement.querySelector('img')!);
-    unmount();
     expect(cancelImageUrl).not.toHaveBeenCalled();
+    unmount();
+    expect(cancelImageUrl).toHaveBeenCalledWith('/test.jpg');
   });
 
   it('updates the img src when the src prop changes', async () => {

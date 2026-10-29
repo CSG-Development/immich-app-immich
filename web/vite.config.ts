@@ -90,6 +90,11 @@ export default defineConfig({
       'xmlhttprequest-ssl': './node_modules/engine.io-client/lib/xmlhttprequest.js',
       // eslint-disable-next-line unicorn/prefer-module
       '@test-data': path.resolve(__dirname, './src/test-data'),
+      // eslint-disable-next-line unicorn/prefer-module
+      $tests: path.resolve(__dirname, './tests'),
+      // Vitest/Node cannot load CSS from package exports; stub timepicker styles in tests.
+      // eslint-disable-next-line unicorn/prefer-module
+      'timepicker-ui/main.css': path.resolve(__dirname, './src/test-data/style-stub.js'),
       // '@immich/ui': path.resolve(__dirname, '../../ui'),
       tabbable: 'tabbable/src/index.js',
     },

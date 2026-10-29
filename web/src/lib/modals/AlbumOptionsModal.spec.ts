@@ -40,6 +40,10 @@ describe('AlbumOptionsModal', () => {
     vi.stubGlobal('visualViewport', getVisualViewportMock());
     vi.resetAllMocks();
     Element.prototype.animate = getAnimateMock();
+    Element.prototype.hasPointerCapture = vi.fn(() => false);
+    Element.prototype.releasePointerCapture = vi.fn();
+    Element.prototype.setPointerCapture = vi.fn();
+    Element.prototype.scrollIntoView = vi.fn();
     sdkMock.getAllSharedLinks.mockResolvedValue([]);
   });
 
@@ -115,10 +119,11 @@ describe('AlbumOptionsModal', () => {
     const album = sharedAlbum();
     render(AlbumOptionsModal, { album, onClose });
 
-    const editorRow = (await screen.findByText(editor.name)).closest('div.flex.min-w-0.items-center.gap-4');
+    const editorName = await screen.findByText(editor.name);
+    const editorRow = editorName.closest('div.flex.min-w-0.items-center.gap-4');
     expect(editorRow).toBeTruthy();
 
-    await userEvent.click(within(editorRow as HTMLElement).getByRole('combobox'));
+    await userEvent.click(within(editorRow as HTMLElement).getByRole('button', { name: 'role_editor' }));
 
     expect(await screen.findByRole('option', { name: 'role_editor' })).toBeVisible();
     expect(screen.getByRole('option', { name: 'role_viewer' })).toBeVisible();
@@ -143,6 +148,6 @@ describe('AlbumOptionsModal', () => {
     expect(name).toHaveClass('truncate');
 
     const row = name.closest('div.flex.min-w-0.items-center.gap-4') as HTMLElement;
-    expect(within(row).getByRole('combobox')).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'role_editor' })).toBeInTheDocument();
   });
 });
