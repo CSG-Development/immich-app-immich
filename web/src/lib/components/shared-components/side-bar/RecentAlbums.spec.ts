@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
+import { Route } from '$lib/route';
 import { sdkMock } from '$lib/__mocks__/sdk.mock';
 import RecentAlbums from '$lib/components/shared-components/side-bar/RecentAlbums.svelte';
 import { albumFactory } from '@test-data/factories/album-factory';
@@ -24,8 +25,8 @@ describe('RecentAlbums component', () => {
 
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(3);
-    expect(links[0]).toHaveAttribute('href', `/albums/${albums[2].id}`);
-    expect(links[1]).toHaveAttribute('href', `/albums/${albums[1].id}`);
-    expect(links[2]).toHaveAttribute('href', `/albums/${albums[3].id}`);
+    expect(links[0]).toHaveAttribute('href', Route.viewAlbum(albums[2]));
+    expect(links[1]).toHaveAttribute('href', Route.viewAlbum(albums[1]));
+    expect(links[2]).toHaveAttribute('href', Route.viewAlbum(albums[3]));
   });
 });
