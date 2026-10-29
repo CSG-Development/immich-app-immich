@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@immich/sdk', () => ({
   getAssetInfo: vi.fn(),
   getAssetOcr: vi.fn(),
+  getFaces: vi.fn(),
 }));
 
 const createMockOcrData = (overrides?: Partial<OcrBoundingBox>): OcrBoundingBox[] => [

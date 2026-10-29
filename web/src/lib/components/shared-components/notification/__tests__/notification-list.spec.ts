@@ -1,11 +1,12 @@
 import { getAnimateMock } from '$lib/__mocks__/animate.mock';
 import '@testing-library/jest-dom';
-import { render, waitFor, type RenderResult } from '@testing-library/svelte';
+import { waitFor } from '@testing-library/svelte';
+import { renderWithTooltips } from '$tests/helpers';
 import { get } from 'svelte/store';
 import { NotificationType, notificationController } from '../notification';
 import NotificationList from '../notification-list.svelte';
 
-function _getNotificationListElement(): HTMLAnchorElement | null {
+function _getNotificationListElement(): HTMLElement | null {
   return document.body.querySelector('#notification-list');
 }
 
@@ -19,7 +20,7 @@ describe('NotificationList component', () => {
   });
 
   it('shows a notification when added and closes it automatically after the delay timeout', async () => {
-    const sut: RenderResult<NotificationList> = render(NotificationList, { intro: false });
+    const sut = renderWithTooltips(NotificationList, {});
     const status = await sut.findAllByRole('status');
 
     expect(status).toHaveLength(1);

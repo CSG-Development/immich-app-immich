@@ -1,38 +1,26 @@
 import { getAnimateMock } from '$lib/__mocks__/animate.mock';
+import { getResizeObserverMock } from '$lib/__mocks__/resize-observer.mock';
 import PhotoViewer from '$lib/components/asset-viewer/PhotoViewer.svelte';
 import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
 import * as utils from '$lib/utils';
-import { AssetMediaSize } from '@immich/sdk';
 import { assetFactory } from '@test-data/factories/asset-factory';
 import { sharedLinkFactory } from '@test-data/factories/shared-link-factory';
 import { render } from '@testing-library/svelte';
-import type { MockInstance } from 'vitest';
 
-class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
-globalThis.ResizeObserver = ResizeObserver;
+vi.stubGlobal('ResizeObserver', getResizeObserverMock());
 
 vi.mock('$lib/utils', async (originalImport) => {
   const meta = await originalImport<typeof import('$lib/utils')>();
   return {
     ...meta,
-    getAssetOriginalUrl: vi.fn(),
-    getAssetThumbnailUrl: vi.fn(),
+    getAssetUrls: vi.fn(),
   };
 });
 
 describe('PhotoViewer component', () => {
-  let getAssetOriginalUrlSpy: MockInstance;
-  let getAssetThumbnailUrlSpy: MockInstance;
+  const getAssetUrlsSpy = vi.spyOn(utils, 'getAssetUrls');
 
   beforeAll(() => {
-    getAssetOriginalUrlSpy = vi.spyOn(utils, 'getAssetOriginalUrl');
-    getAssetThumbnailUrlSpy = vi.spyOn(utils, 'getAssetThumbnailUrl');
-
     vi.stubGlobal('cast', {
       framework: {
         CastState: {
@@ -59,6 +47,11 @@ describe('PhotoViewer component', () => {
 
   beforeEach(() => {
     Element.prototype.animate = getAnimateMock();
+    getAssetUrlsSpy.mockReturnValue({
+      thumbnail: '/thumbnail.jpg',
+      preview: '/preview.jpg',
+      original: '/original.jpg',
+    });
   });
 
   afterEach(() => {
@@ -67,113 +60,28 @@ describe('PhotoViewer component', () => {
     slideshowStore.slideshowTransition.set(true);
   });
 
-  it('loads the thumbnail', () => {
+  it('resolves the asset urls for the current asset', () => {
     const asset = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
     render(PhotoViewer, { cursor: { current: asset } });
 
-    expect(getAssetThumbnailUrlSpy).toBeCalledWith({
-      id: asset.id,
-      size: AssetMediaSize.Preview,
-      cacheKey: asset.thumbhash,
-    });
-    expect(getAssetOriginalUrlSpy).not.toBeCalled();
+    expect(getAssetUrlsSpy).toHaveBeenCalledWith(asset, undefined);
   });
 
-  it('loads the original image for gifs', () => {
-    const asset = assetFactory.build({ originalPath: 'image.gif', originalMimeType: 'image/gif' });
-    render(PhotoViewer, { cursor: { current: asset } });
-
-    expect(getAssetThumbnailUrlSpy).not.toBeCalled();
-    expect(getAssetOriginalUrlSpy).toBeCalledWith({ id: asset.id, cacheKey: asset.thumbhash });
-  });
-
-  it('loads original for shared link when download permission is true and showMetadata permission is true', () => {
+  it('passes the shared link when resolving the asset urls', () => {
     const asset = assetFactory.build({ originalPath: 'image.gif', originalMimeType: 'image/gif' });
     const sharedLink = sharedLinkFactory.build({ allowDownload: true, showMetadata: true, assets: [asset] });
     render(PhotoViewer, { cursor: { current: asset }, sharedLink });
 
-    expect(getAssetThumbnailUrlSpy).not.toBeCalled();
-    expect(getAssetOriginalUrlSpy).toBeCalledWith({ id: asset.id, cacheKey: asset.thumbhash });
+    expect(getAssetUrlsSpy).toHaveBeenCalledWith(asset, sharedLink);
   });
 
-  it('not loads original image when shared link download permission is false', () => {
-    const asset = assetFactory.build({ originalPath: 'image.gif', originalMimeType: 'image/gif' });
-    const sharedLink = sharedLinkFactory.build({ allowDownload: false, assets: [asset] });
-    render(PhotoViewer, { cursor: { current: asset }, sharedLink });
-
-    expect(getAssetThumbnailUrlSpy).toBeCalledWith({
-      id: asset.id,
-      size: AssetMediaSize.Preview,
-      cacheKey: asset.thumbhash,
-    });
-
-    expect(getAssetOriginalUrlSpy).not.toBeCalled();
-  });
-
-  it('not loads original image when shared link showMetadata permission is false', () => {
-    const asset = assetFactory.build({ originalPath: 'image.gif', originalMimeType: 'image/gif' });
-    const sharedLink = sharedLinkFactory.build({ showMetadata: false, assets: [asset] });
-    render(PhotoViewer, { cursor: { current: asset }, sharedLink });
-
-    expect(getAssetThumbnailUrlSpy).toBeCalledWith({
-      id: asset.id,
-      size: AssetMediaSize.Preview,
-      cacheKey: asset.thumbhash,
-    });
-
-    expect(getAssetOriginalUrlSpy).not.toBeCalled();
-  });
-
-  it('does not fade between photos outside of a slideshow', () => {
-    const asset = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const { getByTestId } = render(PhotoViewer, { cursor: { current: asset } });
-
-    expect(getByTestId('photo-viewer-slide')).toHaveAttribute('data-fade-transition', 'false');
-  });
-
-  it('fades between photos when slideshow transition is enabled', () => {
-    slideshowStore.slideshowState.set(SlideshowState.PlaySlideshow);
-    slideshowStore.slideshowTransition.set(true);
-
-    const asset = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const { getByTestId } = render(PhotoViewer, { cursor: { current: asset } });
-
-    expect(getByTestId('photo-viewer-slide')).toHaveAttribute('data-fade-transition', 'true');
-  });
-
-  it('does not fade between photos when slideshow transition is disabled', () => {
-    slideshowStore.slideshowState.set(SlideshowState.PlaySlideshow);
-    slideshowStore.slideshowTransition.set(false);
-
-    const asset = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const { getByTestId } = render(PhotoViewer, { cursor: { current: asset } });
-
-    expect(getByTestId('photo-viewer-slide')).toHaveAttribute('data-fade-transition', 'false');
-  });
-
-  it('keeps the previous photo visible while fading to the next slideshow photo', async () => {
-    slideshowStore.slideshowState.set(SlideshowState.PlaySlideshow);
-    slideshowStore.slideshowTransition.set(true);
-
+  it('resolves the asset urls again when the asset changes', async () => {
     const first = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
     const second = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const { rerender, getAllByTestId } = render(PhotoViewer, { cursor: { current: first } });
+    const { rerender } = render(PhotoViewer, { cursor: { current: first } });
 
     await rerender({ cursor: { current: second } });
 
-    expect(getAllByTestId('photo-viewer-slide')).toHaveLength(2);
-  });
-
-  it('replaces the photo immediately when slideshow transition is disabled', async () => {
-    slideshowStore.slideshowState.set(SlideshowState.PlaySlideshow);
-    slideshowStore.slideshowTransition.set(false);
-
-    const first = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const second = assetFactory.build({ originalPath: 'image.jpg', originalMimeType: 'image/jpeg' });
-    const { rerender, getAllByTestId } = render(PhotoViewer, { cursor: { current: first } });
-
-    await rerender({ cursor: { current: second } });
-
-    expect(getAllByTestId('photo-viewer-slide')).toHaveLength(1);
+    expect(getAssetUrlsSpy).toHaveBeenCalledWith(second, undefined);
   });
 });

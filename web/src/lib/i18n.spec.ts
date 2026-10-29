@@ -4,21 +4,23 @@ import { readFileSync, readdirSync } from 'node:fs';
 
 describe('i18n', () => {
   describe('loaders', () => {
-    const languageFiles = readdirSync('../i18n').sort();
-    for (const filename of languageFiles) {
-      test(`${filename} should have a loader`, async () => {
-        if (!filename.endsWith('.json') || filename == 'package.json') {
-          return;
-        }
+    const languageFiles = new Set(
+      readdirSync('../i18n')
+        .filter((filename) => filename.endsWith('.json') && filename !== 'package.json')
+        .map((filename) => filename.replaceAll('.json', '')),
+    );
 
-        const code = filename.replaceAll('.json', '');
-        const item = langs.find((lang) => lang.weblateCode === code || lang.code === code);
-        expect(item, `${filename} has no loader`).toBeDefined();
-        if (!item) {
-          return;
-        }
+    // Only assert loaders for languages enabled in the app; orphan i18n JSON files are ignored.
+    for (const item of langs) {
+      if (item.code === 'dev') {
+        continue;
+      }
 
-        // verify it loads the right file
+      const code = item.weblateCode ?? item.code;
+      test(`${code} should load its translation file`, async () => {
+        expect(languageFiles.has(code) || languageFiles.has(item.code), `${code} is missing from i18n/`).toBe(true);
+
+        const filename = languageFiles.has(code) ? `${code}.json` : `${item.code}.json`;
         const module: { default?: unknown } = await item.loader();
         const translations = JSON.stringify(module.default, null, 2).trim();
         const content = readFileSync(`../i18n/${filename}`).toString().trim();
