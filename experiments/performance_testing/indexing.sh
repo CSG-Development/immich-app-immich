@@ -8,9 +8,10 @@ set -euo pipefail
 # ============================================================
 
 IMMICH_SERVER_URL="https://homelab-fbx.lasea.fr:25405/photos/api"
-API_KEY="${API_KEY:-}"
-
 INTERVAL=20  # seconds
+
+
+API_KEY="${API_KEY:-}"
 
 # ============================================================
 # Parameters/config validation
