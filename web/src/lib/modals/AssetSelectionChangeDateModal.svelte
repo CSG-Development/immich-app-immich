@@ -8,7 +8,7 @@
   import { getOwnedAssetsWithWarning } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAssets } from '@immich/sdk';
-  import { Field, FormModal, Label, Switch } from '@immich/ui';
+  import { Field, FormModal, Label, Switch, toastManager } from '@immich/ui';
   import { mdiCalendarEdit } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
@@ -41,11 +41,13 @@
             timeZone: selectedOption?.value,
           },
         });
+        toastManager.primary($t('date_updated'));
         onClose(true);
         return;
       }
       const isoDate = toIsoDate(selectedDate, selectedOption);
       await updateAssets({ assetBulkUpdateDto: { ids, dateTimeOriginal: isoDate } });
+      toastManager.primary($t('date_updated'));
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_date'));
