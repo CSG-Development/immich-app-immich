@@ -6,7 +6,7 @@
   import { getPreferredTimeZone, getTimezones, toIsoDate } from '$lib/modals/timezone-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset } from '@immich/sdk';
-  import { FormModal, Label } from '@immich/ui';
+  import { FormModal, Label, toastManager } from '@immich/ui';
   import { mdiCalendarEdit } from '@mdi/js';
   import { DateTime } from 'luxon';
   import { t } from 'svelte-i18n';
@@ -37,6 +37,7 @@
     try {
       const updated = await updateAsset({ id: asset.id, updateAssetDto: { dateTimeOriginal: isoDate } });
       eventManager.emit('AssetUpdate', updated);
+      toastManager.primary($t('date_updated'));
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_date'));

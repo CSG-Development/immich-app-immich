@@ -3,7 +3,7 @@
   import type { OnSetVisibility } from '$lib/utils/actions';
   import { handleError } from '$lib/utils/handle-error';
   import { AssetVisibility, updateAssets } from '@immich/sdk';
-  import { Button, modalManager } from '@immich/ui';
+  import { Button, modalManager, toastManager } from '@immich/ui';
   import { mdiLockOpenVariantOutline, mdiLockOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -39,6 +39,11 @@
         },
       });
 
+      toastManager.primary(
+        unlock
+          ? $t('remove_from_lock_folder_action_prompt', { values: { count: assetIds.length } })
+          : $t('move_to_lock_folder_action_prompt', { values: { count: assetIds.length } }),
+      );
       onVisibilitySet(assetIds);
     } catch (error) {
       handleError(error, $t('errors.unable_to_save_settings'));

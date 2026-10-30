@@ -340,6 +340,11 @@ export const getAssetViewerMoreMenuItems = ($t: MessageFormatter, options: Viewe
           type: locked ? AssetAction.SET_VISIBILITY_TIMELINE : AssetAction.SET_VISIBILITY_LOCKED,
           asset: timelineAsset,
         });
+        toastManager.primary(
+          locked
+            ? $t('remove_from_lock_folder_action_prompt', { values: { count: 1 } })
+            : $t('move_to_lock_folder_action_prompt', { values: { count: 1 } }),
+        );
       } catch (error) {
         handleError(error, $t('errors.unable_to_save_settings'));
       }
