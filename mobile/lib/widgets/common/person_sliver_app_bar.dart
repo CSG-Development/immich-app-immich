@@ -13,6 +13,7 @@ import 'package:immich_mobile/domain/utils/event_stream.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/translate_extensions.dart';
 import 'package:immich_mobile/presentation/widgets/images/image_provider.dart';
+import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/timeline.provider.dart';
 import 'package:immich_mobile/presentation/widgets/images/remote_image_provider.dart';
 import 'package:immich_mobile/providers/timeline/multiselect.provider.dart';
@@ -236,7 +237,11 @@ class _ExpandedBackgroundState extends ConsumerState<_ExpandedBackground> with S
                     child: CircleAvatar(
                       maxRadius: 84 / 2,
                       backgroundImage: RemoteImageProvider(
-                        url: getFaceThumbnailUrl(widget.person.id, updatedAt: widget.person.updatedAt),
+                        url: getFaceThumbnailUrl(
+                          widget.person.id,
+                          updatedAt: widget.person.updatedAt,
+                          revision: ref.watch(personThumbnailEpochProvider(widget.person.id)),
+                        ),
                       ),
                     ),
                   ),

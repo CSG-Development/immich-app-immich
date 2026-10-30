@@ -93,7 +93,7 @@ class PeopleDetails extends ConsumerWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
+class _Avatar extends ConsumerWidget {
   final DriftPerson person;
   final DateTime assetFileCreatedAt;
   final VoidCallback? onTap;
@@ -103,7 +103,7 @@ class _Avatar extends StatelessWidget {
   const _Avatar({required this.person, required this.assetFileCreatedAt, this.onTap, this.onNameTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 96),
       child: Padding(
@@ -122,7 +122,11 @@ class _Avatar extends StatelessWidget {
                   child: CircleAvatar(
                     maxRadius: imageSize / 2,
                     backgroundImage: RemoteImageProvider(
-                      url: getFaceThumbnailUrl(person.id, updatedAt: person.updatedAt),
+                      url: getFaceThumbnailUrl(
+                        person.id,
+                        updatedAt: person.updatedAt,
+                        revision: ref.watch(personThumbnailEpochProvider(person.id)),
+                      ),
                     ),
                   ),
                 ),

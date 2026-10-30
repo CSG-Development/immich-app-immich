@@ -102,6 +102,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                   itemCount: people.length,
                   itemBuilder: (context, index) {
                     final person = people[index];
+                    final thumbnailRevision = ref.watch(personThumbnailEpochProvider(person.id));
 
                     return Column(
                       key: ValueKey(person.id),
@@ -121,7 +122,11 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                                   key: ValueKey(person.id),
                                   maxRadius: isTablet ? 100 / 2 : 96 / 2,
                                   backgroundImage: RemoteImageProvider(
-                                    url: getFaceThumbnailUrl(person.id, updatedAt: person.updatedAt),
+                                    url: getFaceThumbnailUrl(
+                                      person.id,
+                                      updatedAt: person.updatedAt,
+                                      revision: thumbnailRevision,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -180,11 +185,7 @@ class _DriftPeopleCollectionPageState extends ConsumerState<DriftPeopleCollectio
                                       },
                                     );
                                   },
-                                  child: const SizedBox(
-                                    width: 36,
-                                    height: 36,
-                                    child: Icon(Icons.more_vert, size: 20),
-                                  ),
+                                  child: const SizedBox(width: 36, height: 36, child: Icon(Icons.more_vert, size: 20)),
                                 ),
                               ),
                             ),

@@ -116,10 +116,7 @@ class _ActionButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          backgroundColor: resolveSgChipBackground(
-            context,
-            fallback: context.colorScheme.surfaceContainerLow,
-          ),
+          backgroundColor: resolveSgChipBackground(context, fallback: context.colorScheme.surfaceContainerLow),
           alignment: Alignment.centerLeft,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(25)),
@@ -191,7 +188,11 @@ class _PeopleCollectionCard extends ConsumerWidget {
                       children: people.take(4).map((person) {
                         return CircleAvatar(
                           backgroundImage: RemoteImageProvider(
-                            url: getFaceThumbnailUrl(person.id, updatedAt: person.updatedAt),
+                            url: getFaceThumbnailUrl(
+                              person.id,
+                              updatedAt: person.updatedAt,
+                              revision: ref.watch(personThumbnailEpochProvider(person.id)),
+                            ),
                           ),
                         );
                       }).toList(),

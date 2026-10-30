@@ -20,8 +20,11 @@ String getPlaybackUrlForRemoteId(final String id) {
   return '${Store.get(StoreKey.serverEndpoint)}/assets/$id/video/playback';
 }
 
-/// Optional [updatedAt] appends `?c=` as a client cache key; the API ignores it.
-String getFaceThumbnailUrl(final String personId, {DateTime? updatedAt}) {
+String getFaceThumbnailUrl(final String personId, {DateTime? updatedAt, int revision = 0}) {
   final url = '${Store.get(StoreKey.serverEndpoint)}/people/$personId/thumbnail';
-  return updatedAt != null ? '$url?c=${updatedAt.millisecondsSinceEpoch}' : url;
+  if (updatedAt == null && revision == 0) {
+    return url;
+  }
+  final cacheKey = (updatedAt?.millisecondsSinceEpoch ?? 0) + revision;
+  return '$url?c=$cacheKey';
 }

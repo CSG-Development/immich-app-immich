@@ -84,8 +84,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
     });
 
     ref.listen(connectionStateProvider, (prev, next) {
-      final cameOnline =
-          prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
+      final cameOnline = prev?.status != ConnectionStatus.connected && next.status == ConnectionStatus.connected;
       if (!cameOnline) {
         return;
       }
@@ -202,11 +201,8 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     ...selectedPeopleIds.value.map(
-                      (personId) => _PersonCard(
-                        personId: personId,
-                        onTap: () => onPersonRemoved(personId),
-                        size: 117.0,
-                      ),
+                      (personId) =>
+                          _PersonCard(personId: personId, onTap: () => onPersonRemoved(personId), size: 117.0),
                     ),
                     if (selectedPeopleIds.value.isNotEmpty)
                       Column(
@@ -325,10 +321,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
                         itemCount: filteredPeople.length,
                         itemBuilder: (context, index) {
                           final person = filteredPeople[index];
-                          return _PersonCard(
-                            personId: person.id,
-                            onTap: () => onPersonSelected(person.id),
-                          );
+                          return _PersonCard(personId: person.id, onTap: () => onPersonSelected(person.id));
                         },
                       ),
               ),
@@ -420,7 +413,7 @@ class DriftPeopleMergePage extends HookConsumerWidget {
   }
 }
 
-class _PersonCard extends StatelessWidget {
+class _PersonCard extends ConsumerWidget {
   final String personId;
   final VoidCallback? onTap;
   final double? size;
@@ -428,7 +421,7 @@ class _PersonCard extends StatelessWidget {
   const _PersonCard({required this.personId, this.onTap, this.size});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: LayoutBuilder(
@@ -443,7 +436,9 @@ class _PersonCard extends StatelessWidget {
                 border: Border.all(width: 1.0, color: context.colorScheme.primary),
               ),
               child: CircleAvatar(
-                backgroundImage: RemoteImageProvider(url: getFaceThumbnailUrl(personId)),
+                backgroundImage: RemoteImageProvider(
+                  url: getFaceThumbnailUrl(personId, revision: ref.watch(personThumbnailEpochProvider(personId))),
+                ),
               ),
             ),
           );

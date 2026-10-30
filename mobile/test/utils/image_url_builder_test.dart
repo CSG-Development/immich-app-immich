@@ -37,5 +37,14 @@ void main() {
       final after = getFaceThumbnailUrl('person-1', updatedAt: DateTime.fromMillisecondsSinceEpoch(2));
       expect(before, isNot(after));
     });
+
+    test('revision alone cache-busts without updatedAt', () {
+      expect(getFaceThumbnailUrl('person-1', revision: 1), '$endpoint/people/person-1/thumbnail?c=1');
+    });
+
+    test('revision is added to updatedAt cache key', () {
+      final url = getFaceThumbnailUrl('person-1', updatedAt: DateTime.fromMillisecondsSinceEpoch(100), revision: 5);
+      expect(url, '$endpoint/people/person-1/thumbnail?c=105');
+    });
   });
 }

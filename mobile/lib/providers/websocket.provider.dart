@@ -11,6 +11,7 @@ import 'package:immich_mobile/models/server_info/server_version.model.dart';
 import 'package:immich_mobile/providers/api.provider.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/background_sync.provider.dart';
+import 'package:immich_mobile/providers/infrastructure/people.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
 import 'package:immich_mobile/providers/server_info.provider.dart';
 import 'package:immich_mobile/services/api.service.dart';
@@ -199,11 +200,8 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
         if (Platform.isIOS || Platform.isAndroid) {
           options.setWebSocketConnector(
-            (uri, {protocols, headers}) => NetworkRepository.createWebSocket(
-              uri,
-              protocols: protocols,
-              headers: headers,
-            ),
+            (uri, {protocols, headers}) =>
+                NetworkRepository.createWebSocket(uri, protocols: protocols, headers: headers),
           );
         }
 
@@ -212,12 +210,11 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
         socket.onConnect((_) {
           dPrint(() => "Established Websocket Connection");
           state = WebsocketState(isConnected: true, socket: socket);
-          _ref.read(apiServiceProvider).notifyConnectionState(
-            const ConnectionState(
-              status: ConnectionStatus.connected,
-              connectionType: ConnectionType.websocket,
-            ),
-          );
+          _ref
+              .read(apiServiceProvider)
+              .notifyConnectionState(
+                const ConnectionState(status: ConnectionStatus.connected, connectionType: ConnectionType.websocket),
+              );
         });
 
         socket.onDisconnect((_) {
@@ -263,6 +260,7 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
         socket.on('on_asset_update', _handleRemoteChange);
         socket.on('on_config_update', _handleOnConfigUpdate);
         socket.on('on_new_release', _handleReleaseUpdates);
+        socket.on('on_person_thumbnail', _handlePersonThumbnail);
 
         state = WebsocketState(isConnected: false, socket: socket);
 
@@ -347,6 +345,13 @@ class WebsocketNotifier extends StateNotifier<WebsocketState> {
 
   void _handleRemoteChange(dynamic _) {
     unawaited(_ref.read(backgroundSyncProvider).syncRemote(force: true, enqueue: true));
+  }
+
+  void _handlePersonThumbnail(dynamic data) {
+    if (data is! String || data.isEmpty) {
+      return;
+    }
+    _ref.read(personThumbnailEpochProvider(data).notifier).state++;
   }
 
   void _handleSyncAssetEditReadyV2(dynamic data) {
