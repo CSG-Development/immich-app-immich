@@ -11,16 +11,15 @@ import argparse
 # ============================================================
 
 IMMICH_SERVER_URL = "https://homelab-fbx.lasea.fr:25405/photos/"
+VERIFY_SSL = False
+SAMPLE_FILES_LIMIT = 50
+JOB_POLL_INTERVAL = 0.2
+
 API_KEY = os.environ.get("API_KEY")
 
-VERIFY_SSL = False
-
 MB = 1024 * 1024
-
 SMALL_LIMIT = 50 * MB
 LARGE_LIMIT = 512 * MB
-
-SAMPLE_FILES_LIMIT = 50
 
 GROUPS = {
     "small": (0, SMALL_LIMIT),
@@ -28,7 +27,6 @@ GROUPS = {
     "large": (LARGE_LIMIT, float("inf")),
 }
 
-JOB_POLL_INTERVAL = 0.2
 
 JOBS = {
     "thumbnail": {
