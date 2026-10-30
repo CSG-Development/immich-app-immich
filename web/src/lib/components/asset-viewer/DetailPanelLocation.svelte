@@ -2,7 +2,7 @@
   import GeolocationPointPickerModal from '$lib/modals/GeolocationPointPickerModal.svelte';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
-  import { Icon, modalManager } from '@immich/ui';
+  import { Icon, modalManager, toastManager } from '@immich/ui';
   import { mdiMapMarkerOutline, mdiPencil } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -24,6 +24,7 @@
         id: asset.id,
         updateAssetDto: { latitude: point.lat, longitude: point.lng },
       });
+      toastManager.primary($t('location_updated'));
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_location'));
     }

@@ -231,6 +231,7 @@ export const getAssetSelectMenuItems = ($t: MessageFormatter, options: AssetSele
       const ids = getOwnedAssetsWithWarning(assetMultiSelectManager.assets, get(user));
       try {
         await updateAssets({ assetBulkUpdateDto: { ids, description } });
+        toastManager.primary($t('asset_description_updated'));
         assetMultiSelectManager.clear();
       } catch (error) {
         handleError(error, $t('errors.unable_to_change_description'));
@@ -327,6 +328,11 @@ export const getAssetSelectMenuItems = ($t: MessageFormatter, options: AssetSele
             visibility: unlock ? AssetVisibility.Timeline : AssetVisibility.Locked,
           },
         });
+        toastManager.primary(
+          unlock
+            ? $t('remove_from_lock_folder_action_prompt', { values: { count: assetIds.length } })
+            : $t('move_to_lock_folder_action_prompt', { values: { count: assetIds.length } }),
+        );
         onVisibilitySet?.(assetIds);
       } catch (error) {
         handleError(error, $t('errors.unable_to_save_settings'));

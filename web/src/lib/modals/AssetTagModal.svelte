@@ -32,7 +32,7 @@
       return;
     }
 
-    const updatedIds = await tagAssets({ tagIds: [...selectedIds], assetIds, showNotification: false });
+    const updatedIds = await tagAssets({ tagIds: [...selectedIds], assetIds });
     eventManager.emit('AssetsTag', updatedIds);
     onClose(true);
   };
